@@ -13,6 +13,7 @@ import {ConfiguratorEntryEditor} from "./configurator-entry-editor.mjs";
 import {buildRuntimeLabDemoProfile} from "../runtime/runtime-demo-profile.mjs";
 import {applyRuntimeChoice,describeRuntimeResult} from "./runtime-lab-view.mjs";
 import {diagnosticEditor,pathInObject} from "./diagnostic-focus.mjs";
+import {recipeCards,recipeTextKeys} from "./recipes.mjs";
 
 
 const neutral = RTA_NEUTRAL_COLOR;
@@ -320,6 +321,7 @@ export class ConfiguratorApp extends ConfiguratorWindow {
       isGeneral:!!ruleset&&this.#view==="general",isCollection:!!ruleset&&Boolean(currentKind),isContentFamily:currentKind==="contentTemplate",isDependencies:!!ruleset&&this.#view==="dependencies",isRuntimeLab:!!ruleset&&this.#view==="runtimeLab",isContentTypes,isContentTemplates,isContentLibraries,
       currentTitle,currentKind,currentType,canReorder:Boolean(record&&record.status!=="validated"&&currentKind&&currentKind!=="reference"),cards:filteredCards,availableTags,activeTagCount:activeTagIds.size,availableCategories,activeCategoryCount:activeCategoryIds.size,dependencyGroups:dependencyVisibleGroups,dependencySelected,dependencyGraph,dependencyStats,dependencyAvailableTags,dependencyActiveTagCount:dependencyActiveTags.size,dependencyUnresolvedOnly,actors,runtimeDefinitions,runtimeActions,runtimeFormulas,runtimeConditions,runtimeTests,runtimeEvents,runtimeResult:this.#runtimeResult,runtimeStateCards,runtimeSelection:this.#runtimeSelection,runtimeActorTypeOptions:availableDocumentTypes("Actor").map(id=>({id,sourceSelected:id===this.#runtimeSelection.sourceType,targetSelected:id===this.#runtimeSelection.targetType})),runtimeTool,runtimeModes,runtimeGuide,runtimeReady,runtimeStateError,runtimeActorNames,
       publishReadiness:this.#view==='general'&&record?.status==='draft'?this.#publishReadiness(api,ruleset):null,
+      recipes:this.#view==='general'&&record?recipeCards():null,
       lifecycle:record?{isValidated:record.status==="validated",isReady:record.status==="ready",isDraft:record.status==="draft",canMutate:record.status!=="validated",canCreateVersion:record.status==="validated",canActivate:Boolean(record.publishedSnapshot),canDelete:true}:null,
       storage:ruleset?{storageRevision:api.getStorageRevision(),activeVersionId:activeId,engineContractVersion:ruleset.engineContractVersion}:null
     });
@@ -514,6 +516,12 @@ export class ConfiguratorApp extends ConfiguratorWindow {
       if (action==="openDiagnostic") return this.#openEditor(button.dataset.kind,button.dataset.entryId,{focusPath:button.dataset.path??""});
       if (action==="publish") { await api.publishRuleset(button.dataset.versionId??this.#selected); return this.render(false); }
       if (action==="validate") { await api.validateRulesetVersion(button.dataset.versionId??this.#selected); return this.render(false); }
+      if (action==="applyRecipe") {
+        const recipeId=button.dataset.recipeId,i18n=game.i18n;
+        if(!await confirmRTA("RTA.Recipe.Confirm",{title:i18n.localize(`RTA.Recipe.${recipeId}.Title`)}))return;
+        const created=await api.applyRecipe(this.#selected,recipeId,Object.fromEntries(recipeTextKeys(recipeId).map(key=>[key,i18n.localize(key)])));
+        ui.notifications?.info?.(i18n.format("RTA.Recipe.Applied",{count:created.length}));this.#error="";return this.render(false);
+      }
       if (action==="createNewVersion") {
         const source=button.dataset.versionId??this.#selected;
         const record=api.getRulesetVersion(source);

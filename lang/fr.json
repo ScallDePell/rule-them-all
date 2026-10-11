@@ -806,6 +806,207 @@
       "subtract": "Soustraire",
       "multiply": "Multiplier",
       "toggle": "Inverser"
+    },
+    "Recipe": {
+      "Title": "Recettes",
+      "Intro": "Chaque recette ajoute à ce brouillon des objets prêts à l'emploi et montre comment les primitives s'assemblent.",
+      "Apply": "Ajouter à ce brouillon",
+      "Steps": "Étapes",
+      "Applied": "Recette ajoutée : {count} objets créés.",
+      "Confirm": "Ajouter la recette « {title} » à ce brouillon ?",
+      "ReadOnly": "Créez une nouvelle version pour ajouter une recette.",
+      "weaponAmmo": {
+        "Title": "Arme avec munitions",
+        "Summary": "Un arc dont chaque tir consomme une flèche, impossible quand le carquois est vide.",
+        "Steps": {
+          "Type": "Un type de Definition « Arme » avec la capacité réserve (pool).",
+          "Weapon": "La Definition « Arc » porte une réserve « munitions » de 0 à 20.",
+          "Condition": "La Condition « A des munitions » vérifie que la réserve est au-dessus de 0.",
+          "Cost": "L'Effect « Dépenser une munition » retire 1 à la réserve.",
+          "Action": "L'Action « Tirer » exige la Condition et paie l'Effect comme coût."
+        },
+        "Objects": {
+          "Weapon": {
+            "Type": "Arme",
+            "Bow": "Arc",
+            "HasAmmo": "A des munitions",
+            "SpendAmmo": "Dépenser une munition",
+            "Shoot": "Tirer"
+          }
+        }
+      },
+      "consumable": {
+        "Title": "Consommable",
+        "Summary": "Une potion à trois doses : boire coûte une dose et rend 4 points de vitalité, sans dépasser le maximum.",
+        "Steps": {
+          "Type": "Un type de Definition « Ressource » avec la capacité réserve.",
+          "Doses": "La « Potion de soin » porte une réserve « doses » de 0 à 3.",
+          "Vitality": "La « Vitalité » porte une réserve « points de vie » de 0 à 12, qui commence à 6.",
+          "CostAndEffect": "Un Effect retire une dose (le coût), un autre ajoute 4 points de vie (l'effet). La réserve borne le résultat.",
+          "Action": "L'Action « Boire » exige qu'il reste une dose."
+        },
+        "Objects": {
+          "Consumable": {
+            "Type": "Ressource",
+            "Potion": "Potion de soin",
+            "Vitality": "Vitalité",
+            "HasDose": "Reste une dose",
+            "UseDose": "Utiliser une dose",
+            "Heal": "Soigner",
+            "Drink": "Boire"
+          }
+        }
+      },
+      "xpProgression": {
+        "Title": "Progression par l'expérience",
+        "Summary": "Des points d'expérience accumulés et un niveau calculé : un niveau tous les 1000 points.",
+        "Steps": {
+          "Type": "Un type de Definition « Progression » avec la capacité valeur.",
+          "Experience": "La Definition « Expérience » stocke les points gagnés.",
+          "Level": "Le Parameter « Points par niveau » (1000) et la Formula « Niveau » = arrondi inférieur(expérience ÷ points par niveau) + 1.",
+          "Gain": "L'Effect « Gagner de l'expérience » ajoute 250 points.",
+          "Action": "L'Action « Accorder de l'expérience » applique l'Effect."
+        },
+        "Objects": {
+          "Xp": {
+            "Type": "Progression",
+            "Experience": "Expérience",
+            "PerLevel": "Points par niveau",
+            "Level": "Niveau",
+            "Gain": "Gagner de l'expérience",
+            "Award": "Accorder de l'expérience"
+          }
+        }
+      },
+      "encumbrance": {
+        "Title": "Encombrement",
+        "Summary": "Une capacité de charge calculée depuis la Force, et une Condition « Surchargé » quand la charge la dépasse.",
+        "Steps": {
+          "Type": "Un type de Definition « Attribut » avec la capacité valeur.",
+          "Strength": "La Definition « Force ».",
+          "Load": "La Definition « Charge portée ».",
+          "Capacity": "Le Parameter « Capacité par point de Force » (10) et la Formula « Capacité de charge » = Force × ce paramètre.",
+          "Overloaded": "La Condition « Surchargé » est vraie quand la charge dépasse la capacité. Utilisez-la dans une Restriction ou un Modifier."
+        },
+        "Objects": {
+          "Encumbrance": {
+            "Type": "Attribut",
+            "Strength": "Force",
+            "Load": "Charge portée",
+            "PerStrength": "Capacité par point de Force",
+            "Capacity": "Capacité de charge",
+            "Overloaded": "Surchargé"
+          }
+        }
+      }
+    },
+    "Help": {
+      "Title": "Aide",
+      "TypeHelp": "À propos de ce type",
+      "ruleset": {
+        "Summary": "Le Ruleset regroupe toute la configuration d'un jeu : ses types, ses règles et ses contenus.",
+        "Usage": "Travaillez dans un brouillon, publiez quand « Prêt pour publication » ne signale plus rien, puis activez la version pour la jouer."
+      },
+      "definitionType": {
+        "Summary": "Un type de Definition décrit une famille d'éléments de jeu (attribut, compétence, ressource…) : ses capacités et ses champs.",
+        "Usage": "Choisissez les capacités autorisées, par défaut et obligatoires. La description de ce type sert d'aide dans l'éditeur de ses Definitions."
+      },
+      "definition": {
+        "Summary": "Une Definition est un élément de jeu concret d'un type : la Force, l'Arc, la Vitalité…",
+        "Usage": "Ses capacités (valeur, réserve, collection, état) déterminent ce que les Formulas peuvent lire et ce que les Effects peuvent modifier."
+      },
+      "parameter": {
+        "Summary": "Un Parameter est une constante typée du Ruleset, réutilisable partout.",
+        "Usage": "Préférez un Parameter à un nombre écrit en dur : il se modifie à un seul endroit."
+      },
+      "formula": {
+        "Summary": "Une Formula calcule une valeur à partir de Parameters, d'autres Formulas, de références et du contexte.",
+        "Usage": "Son type de résultat est contrôlé : une Formula « nombre » ne peut pas produire un texte."
+      },
+      "formulaBinding": {
+        "Summary": "Une sortie dérivée calcule un output de Definition avec une Formula, au lieu de le stocker.",
+        "Usage": "L'output devient alors en lecture seule : aucun Effect ne peut l'écrire."
+      },
+      "condition": {
+        "Summary": "Une Condition est une expression qui produit vrai ou faux.",
+        "Usage": "Les Actions, Outcomes, Triggers, Restrictions et Modifiers s'en servent pour décider."
+      },
+      "roll": {
+        "Summary": "Un Roll est un jet de dés décrit par une formule sûre (par exemple 1d20 ou 2d6+1).",
+        "Usage": "Un Test l'utilise ; un Test peut aussi se passer de Roll et partir d'une Formula."
+      },
+      "outcome": {
+        "Summary": "Un Outcome est un résultat possible d'un Test (succès, échec, critique…).",
+        "Usage": "Le premier Outcome dont la Condition est vraie l'emporte, par priorité décroissante."
+      },
+      "test": {
+        "Summary": "Un Test lit des entrées typées, lance éventuellement un Roll, calcule un total et une marge, puis choisit un Outcome.",
+        "Usage": "Les Formulas du Test lisent ses valeurs dans variables.test (inputs, total, target, margin)."
+      },
+      "effect": {
+        "Summary": "Un Effect modifie un output modifiable d'une Definition avec une opération (définir, ajouter, retirer, multiplier, inverser).",
+        "Usage": "La cible doit être modifiable et l'opérande d'un type compatible."
+      },
+      "action": {
+        "Summary": "Une Action est ce qu'un joueur ou le MJ déclenche : Conditions, coûts, Test éventuel, puis Effects.",
+        "Usage": "Si une Condition est fausse, rien n'est écrit. Les coûts sont payés avant les effets."
+      },
+      "permissionPolicy": {
+        "Summary": "Une Permission décide qui peut lire ou modifier quoi.",
+        "Usage": "Les règles s'appliquent dans l'ordre, puis l'effet par défaut."
+      },
+      "eventType": {
+        "Summary": "Un type d'Event décrit un fait du jeu (attaque résolue, tour commencé…) et ses données.",
+        "Usage": "Les Triggers réagissent aux Events, les Actions peuvent en émettre."
+      },
+      "trigger": {
+        "Summary": "Un Trigger réagit à un type d'Event : il filtre, vérifie ses Conditions puis lance des Actions.",
+        "Usage": "Il n'y a pas de second langage de règles : tout passe par des Actions."
+      },
+      "contentType": {
+        "Summary": "Un type de contenu décrit des éléments stockés dans Foundry (objets, sorts, équipements…) et leurs champs.",
+        "Usage": "Choisissez s'ils vivent comme Item ou comme Actor, et sous quel sous-type."
+      },
+      "contentTemplate": {
+        "Summary": "Un modèle de contenu est un élément concret prêt à être donné à un personnage.",
+        "Usage": "Il peut accorder des Definitions et des Actions, et proposer des choix à l'acquisition."
+      },
+      "modifier": {
+        "Summary": "Un Modifier ajuste une valeur finale (bonus, malus, plafond) tant que ses Conditions sont vraies.",
+        "Usage": "Les règles d'empilement décident si plusieurs Modifiers se cumulent ou si le meilleur l'emporte."
+      },
+      "restriction": {
+        "Summary": "Une Restriction autorise ou interdit un type d'opération selon des Conditions.",
+        "Usage": "La Restriction de plus haute priorité qui s'applique décide."
+      },
+      "duration": {
+        "Summary": "Une Duration dit combien de temps dure un état : instantané, fixe, jusqu'à un Event, tant qu'une Condition est vraie, jusqu'au retrait ou jusqu'à une date.",
+        "Usage": "« Jusqu'à une date » (absoluteTime) se mesure en secondes de temps du monde."
+      },
+      "creationSystem": {
+        "Summary": "Un système de création décrit les étapes de création d'un personnage.",
+        "Usage": "Chaque étape propose des choix, des répartitions ou des contenus."
+      },
+      "progressionSystem": {
+        "Summary": "Un système de progression décrit comment un personnage évolue.",
+        "Usage": "Ce contrat est encore ouvert ; la recette « Progression par l'expérience » montre une approche avec les primitives actuelles."
+      },
+      "sheetDefinition": {
+        "Summary": "Une feuille décrit l'affichage d'un Actor ou d'un Item.",
+        "Usage": "L'éditeur visuel des feuilles viendra au jalon 4."
+      },
+      "category": {
+        "Summary": "Une catégorie classe les Definitions et les contenus pour les filtrer.",
+        "Usage": "Le catalogue est géré ici ; les éléments ne stockent que l'identifiant."
+      },
+      "tag": {
+        "Summary": "Une étiquette marque librement n'importe quel objet du Ruleset.",
+        "Usage": "Les filtres des listes s'en servent."
+      },
+      "reference": {
+        "Summary": "Une Reference nommée désigne une Definition, une capacité, un slot ou un output.",
+        "Usage": "Une référence vers une valeur doit aller jusqu'à l'output."
+      }
     }
   }
 }

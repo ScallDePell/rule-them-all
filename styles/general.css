@@ -171,3 +171,57 @@
   font-size: .8em;
   opacity: .6;
 }
+
+/* Recipes (§8): folded by default; each recipe is a card with its steps. */
+.rta-configurator .rta-general__recipes summary {
+  cursor: pointer;
+  font-weight: 700;
+  font-size: var(--rta-type-medium);
+}
+
+.rta-configurator .rta-general__recipes[open] > summary {
+  margin-bottom: var(--rta-gap-row);
+}
+
+.rta-configurator .rta-general__recipes > .hint {
+  margin: 0 0 var(--rta-gap-row);
+}
+
+.rta-configurator .rta-general__recipe-list {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(16rem, 1fr));
+  gap: var(--rta-gap-block);
+}
+
+.rta-configurator .rta-general__recipe {
+  display: flex;
+  flex-direction: column;
+  gap: var(--rta-gap-row);
+  min-width: 0;
+  padding: var(--rta-space-4);
+  border: 1px solid var(--rta-color-border);
+  border-radius: var(--rta-radius-control);
+}
+
+.rta-configurator .rta-general__recipe :is(h4, p, ol) {
+  margin: 0;
+}
+
+.rta-configurator .rta-general__recipe h4 {
+  border: 0;
+  font-family: inherit;
+  font-size: var(--rta-type-medium);
+  font-weight: 700;
+}
+
+.rta-configurator .rta-general__recipe ol {
+  display: flex;
+  flex-direction: column;
+  gap: var(--rta-gap-tight);
+  padding-inline-start: var(--rta-space-8);
+}
+
+.rta-configurator .rta-general__recipe button {
+  align-self: flex-start;
+  margin-top: auto;
+}

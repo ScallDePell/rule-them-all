@@ -775,3 +775,14 @@
   border-radius: var(--rta-radius-control);
   animation: rta-diagnostic-focus 4s ease-out;
 }
+
+/* Built-in help (§8): a folded section at the top of every editor. */
+.rta-config-entry__help-body {
+  display: flex;
+  flex-direction: column;
+  gap: var(--rta-gap-row);
+}
+
+.rta-config-entry__help-body p {
+  margin: 0;
+}

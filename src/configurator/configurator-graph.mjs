@@ -7,6 +7,7 @@ import {applyFieldContract} from "./field-output-contracts.mjs";
 import {assertValidRuleset} from "./configurator-validation.mjs";
 import {PREPARERS} from "./rule-contracts.mjs";
 import {prepareDefinitionSlots} from "./capability-slots.mjs";
+import {planRecipe, RECIPES} from "./recipes.mjs";
 import {analyzeChangeImpact, rulesetWithout, collectionOfKind} from "./change-impact.mjs";
 
 /** Draft writes accept incomplete entries; validation reports what publish still needs. */
@@ -164,6 +165,13 @@ export function createGraphAPI(registry) {
     listDependencies: v => new DependencyIndex(definitions.ruleset(v)).list(),
     analyzeChangeImpact: analyzeImpact,
     reorderEntries,
+    listRecipes: () => RECIPES.map(recipe => ({id: recipe.id, steps: [...recipe.steps]})),
+    /** Add a recipe's objects to a draft in one validated write; names maps text keys to localized names. */
+    applyRecipe: (rulesetId, recipeId, names = {}) => {
+      const {patch, created} = planRecipe(definitions.ruleset(rulesetId), recipeId, key => names[key] ?? key);
+      registry.update(rulesetId, patch);
+      return created;
+    },
     getDeletionStatus:(v,id,kind="definition")=>{ const used=consumers(v,id,kind), blocking=used.filter(edge=>edge.strength!=="optional"), optional=used.filter(edge=>edge.strength==="optional"); return {canDelete:blocking.length===0,kind,id,code:blocking.length?"REFERENTIAL_INTEGRITY":optional.length?"OPTIONAL_REFERENCES":null,consumers:copyJSON(used),optionalReferences:copyJSON(optional)}; }
   };
   const singular = {parameters:"Parameter",formulas:"Formula",formulaBindings:"FormulaBinding",conditions:"Condition",rolls:"Roll",outcomes:"Outcome",tests:"Test",effects:"Effect",actions:"Action",permissionPolicies:"PermissionPolicy",eventTypes:"EventType",triggers:"Trigger",contentTypes:"ContentType",contentTemplates:"ContentTemplate",modifiers:"Modifier",restrictions:"Restriction",durations:"Duration",creationSystems:"CreationSystem",progressionSystems:"ProgressionSystem",sheetDefinitions:"SheetDefinition",categories:"Category",tags:"Tag",references:"Reference"};

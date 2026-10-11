@@ -810,6 +810,207 @@
       "subtract": "Subtract",
       "multiply": "Multiply",
       "toggle": "Toggle"
+    },
+    "Recipe": {
+      "Title": "Recipes",
+      "Intro": "Each recipe adds ready-made objects to this draft and shows how the primitives fit together.",
+      "Apply": "Add to this draft",
+      "Steps": "Steps",
+      "Applied": "Recipe added: {count} objects created.",
+      "Confirm": "Add the recipe “{title}” to this draft?",
+      "ReadOnly": "Create a new version to add a recipe.",
+      "weaponAmmo": {
+        "Title": "Weapon with ammunition",
+        "Summary": "A bow whose every shot spends an arrow, impossible once the quiver is empty.",
+        "Steps": {
+          "Type": "A “Weapon” Definition type with the pool capability.",
+          "Weapon": "The “Bow” Definition holds an “ammo” pool from 0 to 20.",
+          "Condition": "The “Has ammunition” Condition checks the pool is above 0.",
+          "Cost": "The “Spend ammunition” Effect removes 1 from the pool.",
+          "Action": "The “Shoot” Action requires the Condition and pays the Effect as its cost."
+        },
+        "Objects": {
+          "Weapon": {
+            "Type": "Weapon",
+            "Bow": "Bow",
+            "HasAmmo": "Has ammunition",
+            "SpendAmmo": "Spend ammunition",
+            "Shoot": "Shoot"
+          }
+        }
+      },
+      "consumable": {
+        "Title": "Consumable",
+        "Summary": "A three-dose potion: drinking costs a dose and restores 4 vitality, never above the maximum.",
+        "Steps": {
+          "Type": "A “Resource” Definition type with the pool capability.",
+          "Doses": "The “Healing potion” holds a “doses” pool from 0 to 3.",
+          "Vitality": "“Vitality” holds an “hit points” pool from 0 to 12, starting at 6.",
+          "CostAndEffect": "One Effect removes a dose (the cost), another adds 4 hit points (the effect). The pool bounds the result.",
+          "Action": "The “Drink” Action requires a dose left."
+        },
+        "Objects": {
+          "Consumable": {
+            "Type": "Resource",
+            "Potion": "Healing potion",
+            "Vitality": "Vitality",
+            "HasDose": "Dose left",
+            "UseDose": "Use a dose",
+            "Heal": "Heal",
+            "Drink": "Drink"
+          }
+        }
+      },
+      "xpProgression": {
+        "Title": "Experience progression",
+        "Summary": "Accumulated experience points and a computed level: one level every 1000 points.",
+        "Steps": {
+          "Type": "A “Progression” Definition type with the value capability.",
+          "Experience": "The “Experience” Definition stores the points earned.",
+          "Level": "The “Points per level” Parameter (1000) and the “Level” Formula = floor(experience ÷ points per level) + 1.",
+          "Gain": "The “Gain experience” Effect adds 250 points.",
+          "Action": "The “Award experience” Action applies the Effect."
+        },
+        "Objects": {
+          "Xp": {
+            "Type": "Progression",
+            "Experience": "Experience",
+            "PerLevel": "Points per level",
+            "Level": "Level",
+            "Gain": "Gain experience",
+            "Award": "Award experience"
+          }
+        }
+      },
+      "encumbrance": {
+        "Title": "Encumbrance",
+        "Summary": "A carrying capacity computed from Strength, and an “Overloaded” Condition when the load exceeds it.",
+        "Steps": {
+          "Type": "An “Attribute” Definition type with the value capability.",
+          "Strength": "The “Strength” Definition.",
+          "Load": "The “Carried load” Definition.",
+          "Capacity": "The “Capacity per Strength point” Parameter (10) and the “Carrying capacity” Formula = Strength × that parameter.",
+          "Overloaded": "The “Overloaded” Condition is true when the load exceeds the capacity. Use it in a Restriction or a Modifier."
+        },
+        "Objects": {
+          "Encumbrance": {
+            "Type": "Attribute",
+            "Strength": "Strength",
+            "Load": "Carried load",
+            "PerStrength": "Capacity per Strength point",
+            "Capacity": "Carrying capacity",
+            "Overloaded": "Overloaded"
+          }
+        }
+      }
+    },
+    "Help": {
+      "Title": "Help",
+      "TypeHelp": "About this type",
+      "ruleset": {
+        "Summary": "The Ruleset holds a game's whole configuration: its types, rules and contents.",
+        "Usage": "Work in a draft, publish once “Publish readiness” reports nothing, then activate the version to play it."
+      },
+      "definitionType": {
+        "Summary": "A Definition type describes a family of game elements (attribute, skill, resource…): its capabilities and fields.",
+        "Usage": "Pick allowed, default and required capabilities. This type's description serves as help in the editor of its Definitions."
+      },
+      "definition": {
+        "Summary": "A Definition is a concrete game element of a type: Strength, Bow, Vitality…",
+        "Usage": "Its capabilities (value, pool, collection, state) decide what Formulas can read and what Effects can change."
+      },
+      "parameter": {
+        "Summary": "A Parameter is a typed Ruleset constant, reusable everywhere.",
+        "Usage": "Prefer a Parameter to a hard-coded number: it changes in one place."
+      },
+      "formula": {
+        "Summary": "A Formula computes a value from Parameters, other Formulas, references and the context.",
+        "Usage": "Its result type is checked: a “number” Formula cannot produce text."
+      },
+      "formulaBinding": {
+        "Summary": "A derived output computes a Definition output with a Formula instead of storing it.",
+        "Usage": "The output then becomes read-only: no Effect can write it."
+      },
+      "condition": {
+        "Summary": "A Condition is an expression that produces true or false.",
+        "Usage": "Actions, Outcomes, Triggers, Restrictions and Modifiers use it to decide."
+      },
+      "roll": {
+        "Summary": "A Roll is a dice roll described by a safe formula (for example 1d20 or 2d6+1).",
+        "Usage": "A Test uses it; a Test can also skip the Roll and start from a Formula."
+      },
+      "outcome": {
+        "Summary": "An Outcome is a possible result of a Test (success, failure, critical…).",
+        "Usage": "The first Outcome whose Condition is true wins, by decreasing priority."
+      },
+      "test": {
+        "Summary": "A Test reads typed inputs, optionally rolls, computes a total and a margin, then picks an Outcome.",
+        "Usage": "The Test's Formulas read its values in variables.test (inputs, total, target, margin)."
+      },
+      "effect": {
+        "Summary": "An Effect changes a mutable Definition output with an operation (set, add, subtract, multiply, toggle).",
+        "Usage": "The target must be mutable and the operand of a compatible type."
+      },
+      "action": {
+        "Summary": "An Action is what a player or the GM triggers: Conditions, costs, an optional Test, then Effects.",
+        "Usage": "If a Condition is false nothing is written. Costs are paid before effects."
+      },
+      "permissionPolicy": {
+        "Summary": "A Permission decides who may read or change what.",
+        "Usage": "Rules apply in order, then the default effect."
+      },
+      "eventType": {
+        "Summary": "An Event type describes a game fact (attack resolved, turn started…) and its data.",
+        "Usage": "Triggers react to Events; Actions can emit them."
+      },
+      "trigger": {
+        "Summary": "A Trigger reacts to an Event type: it filters, checks its Conditions, then runs Actions.",
+        "Usage": "There is no second rule language: everything goes through Actions."
+      },
+      "contentType": {
+        "Summary": "A content type describes elements stored in Foundry (items, spells, gear…) and their fields.",
+        "Usage": "Choose whether they live as Items or Actors, and under which subtype."
+      },
+      "contentTemplate": {
+        "Summary": "A content template is a concrete element ready to be given to a character.",
+        "Usage": "It can grant Definitions and Actions, and offer choices on acquisition."
+      },
+      "modifier": {
+        "Summary": "A Modifier adjusts a final value (bonus, penalty, cap) while its Conditions are true.",
+        "Usage": "Stacking rules decide whether several Modifiers add up or the best one wins."
+      },
+      "restriction": {
+        "Summary": "A Restriction allows or denies an operation kind depending on Conditions.",
+        "Usage": "The highest-priority Restriction that applies decides."
+      },
+      "duration": {
+        "Summary": "A Duration says how long a state lasts: instant, fixed, until an Event, while a Condition holds, until removed or until a date.",
+        "Usage": "“Until a date” (absoluteTime) is measured in world-time seconds."
+      },
+      "creationSystem": {
+        "Summary": "A creation system describes the steps of creating a character.",
+        "Usage": "Each step offers choices, allocations or contents."
+      },
+      "progressionSystem": {
+        "Summary": "A progression system describes how a character evolves.",
+        "Usage": "This contract is still open; the “Experience progression” recipe shows an approach with today's primitives."
+      },
+      "sheetDefinition": {
+        "Summary": "A sheet describes how an Actor or an Item is displayed.",
+        "Usage": "The visual sheet editor comes with milestone 4."
+      },
+      "category": {
+        "Summary": "A category classifies Definitions and contents for filtering.",
+        "Usage": "The catalog is managed here; elements store only the id."
+      },
+      "tag": {
+        "Summary": "A tag freely marks any Ruleset object.",
+        "Usage": "List filters use it."
+      },
+      "reference": {
+        "Summary": "A named Reference designates a Definition, a capability, a slot or an output.",
+        "Usage": "A reference to a value must go down to the output."
+      }
     }
   }
 }
