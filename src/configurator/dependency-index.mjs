@@ -46,6 +46,8 @@ export class DependencyIndex{
       if(e.operand?.kind==='parameter')pushRef(this.#edges,{objectKind:'effect',objectId:e.id},{objectKind:'parameter',objectId:e.operand.id},'effectOperand',`effects[${i}].operand`);
       if(e.operand?.kind==='formula')pushRef(this.#edges,{objectKind:'effect',objectId:e.id},{objectKind:'formula',objectId:e.operand.id},'effectOperand',`effects[${i}].operand`);
       if(e.operand?.kind==='reference')pushRef(this.#edges,{objectKind:'effect',objectId:e.id},e.operand.reference,'effectOperand',`effects[${i}].operand.reference`);
+      if(e.operand?.kind==='roll'){pushRef(this.#edges,{objectKind:'effect',objectId:e.id},{objectKind:'roll',objectId:e.operand.rollRef},'effectOperand',`effects[${i}].operand.rollRef`);
+        for(const key of ['multiplierFormulaRef','bonusFormulaRef'])if(e.operand[key])pushRef(this.#edges,{objectKind:'effect',objectId:e.id},{objectKind:'formula',objectId:e.operand[key]},'effectOperand',`effects[${i}].operand.${key}`);}
     }
     for(const [i,a] of (ruleset.actions??[]).entries()){
       if(a.testRef)pushRef(this.#edges,{objectKind:'action',objectId:a.id},{objectKind:'test',objectId:a.testRef},'actionTest',`actions[${i}].testRef`);

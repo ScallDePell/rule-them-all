@@ -102,7 +102,10 @@ export function prepareEffect(data,options={}){
   need(isRecord(x.targetRef)&&nonempty(x.targetRef.objectKind)&&nonempty(x.targetRef.objectId),'Effect.targetRef must be a logical Reference.',options);
   need(nonempty(x.operation),'Effect.operation is required.',options);
   if(nonempty(x.operation)&&!effectOperationRegistry.has(x.operation))throw new Error(`Unknown Effect operation: ${x.operation}.`);
-  if(!isRecord(x.operand)||!['literal','parameter','formula','reference'].includes(x.operand.kind))throw new Error('Effect.operand must select literal, parameter, formula or reference.');
+  if(!isRecord(x.operand)||!['literal','parameter','formula','reference','roll'].includes(x.operand.kind))throw new Error('Effect.operand must select literal, parameter, formula, reference or roll.');
+  // A roll operand: the Roll's total (its dice multiplied by a Formula, for a critical hit) plus a bonus Formula.
+  if(x.operand.kind==='roll'){need(nonempty(x.operand.rollRef),'Effect roll operand requires a Roll.',options);
+    for(const key of ['multiplierFormulaRef','bonusFormulaRef'])if(x.operand[key]!==undefined&&x.operand[key]!==null&&typeof x.operand[key]!=='string')throw new Error(`Effect.operand.${key} must be a Formula id.`);}
   bool(x.enabled,'Effect.enabled'); arr(x.tags,'Effect.tags'); return x;
 }
 const ROLE_NAME=/^[A-Za-z][A-Za-z0-9_-]*$/;

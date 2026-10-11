@@ -26,9 +26,10 @@ function readTestTarget(fd){
   return{targetFormulaRef:source||null,targetValue:null};
 }
 
-/** The shared operand editor: a literal, a Parameter, a Formula or a Reference. */
+/** The shared operand editor: a literal, a Parameter, a Formula, a Reference or (Effects) a Roll. */
 function readOperand(fd,queryOne){
   const kind=String(fd.get("operandKind")??"literal");
+  if(kind==="roll"){const text=name=>String(fd.get(name)??"").trim();return{kind,rollRef:text("operandRollRef"),...(text("operandRollMultiplier")?{multiplierFormulaRef:text("operandRollMultiplier")}:{}),...(text("operandRollBonus")?{bonusFormulaRef:text("operandRollBonus")}:{})};}
   if(kind==="literal")return{kind,value:Number(fd.get("operandLiteral")??0)};
   if(kind==="parameter"||kind==="formula")return{kind,id:String(queryOne(`[data-operand-editor="${kind}"] select`)?.value??"")};
   return{kind:"reference",reference:parseRefToken(fd.get("operandReference"))};

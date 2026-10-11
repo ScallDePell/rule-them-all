@@ -135,7 +135,9 @@
       "NoAcquisitionAction": "No Action: grant directly",
       "UntilRemoved": "Until removed",
       "NoTarget": "No target",
-      "FixedValue": "Fixed value"
+      "FixedValue": "Fixed value",
+      "NoMultiplier": "×1",
+      "NoBonus": "No bonus"
     },
     "FamilyColor": {
       "parameters": "Parameters",
@@ -523,7 +525,10 @@
       "Unit": "Unit",
       "WorldTimeSeconds": "World time (seconds)",
       "Calculation": "Calculation",
-      "SameAsContentType": "Same as its type ({mode})"
+      "SameAsContentType": "Same as its type ({mode})",
+      "DiceRoll": "Dice roll",
+      "DiceMultiplier": "Dice multiplier",
+      "RollBonus": "Roll bonus"
     },
     "EditorDisplay": {
       "NoneSelected": "None selected",

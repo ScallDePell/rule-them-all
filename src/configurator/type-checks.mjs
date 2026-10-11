@@ -42,6 +42,7 @@ export function rulesetTypes(ruleset) {
     if (operand.kind === "parameter") return leaf("parameter", operand.id);
     if (operand.kind === "formula") return leaf("formula", operand.id);
     if (operand.kind === "reference") return referenceType(operand.reference);
+    if (operand.kind === "roll") return "number";
     return UNKNOWN_TYPE;
   };
   return {infer, leaf, output, referenceType, operandType};

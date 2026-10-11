@@ -131,7 +131,9 @@
       "NoAcquisitionAction": "Aucune Action : ajout direct",
       "UntilRemoved": "Jusqu'au retrait",
       "NoTarget": "Pas de cible",
-      "FixedValue": "Valeur fixe"
+      "FixedValue": "Valeur fixe",
+      "NoMultiplier": "×1",
+      "NoBonus": "Aucun bonus"
     },
     "FamilyColor": {
       "parameters": "Paramètres",
@@ -519,7 +521,10 @@
       "Unit": "Unité",
       "WorldTimeSeconds": "Temps du monde (secondes)",
       "Calculation": "Calcul",
-      "SameAsContentType": "Comme son type ({mode})"
+      "SameAsContentType": "Comme son type ({mode})",
+      "DiceRoll": "Jet de dés",
+      "DiceMultiplier": "Multiplicateur de dés",
+      "RollBonus": "Bonus au jet"
     },
     "EditorDisplay": {
       "NoneSelected": "Aucune sélection",

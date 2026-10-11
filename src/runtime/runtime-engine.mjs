@@ -10,7 +10,7 @@ import {resolvePermission} from "./permission-policy.mjs";
 import {applyModifierStack,createModifierState,createStateInstance,durationEnded,hasDurations,removeModifierStates,removeStateInstance,startDuration} from "./runtime-states.mjs";
 import {toRuntimeReference,resolveContainer} from "./runtime-reference.mjs";
 import {effectOperationRegistry} from "../configurator/operation-registries.mjs";
-import {assertSafeRollFormula} from "../configurator/roll-grammar.mjs";
+import {assertSafeRollFormula,multiplyDice} from "../configurator/roll-grammar.mjs";
 import {findSlot, slotInitialKey} from "../configurator/capability-slots.mjs";
 import {SLOT_CAPABILITIES,requireSlot,poolSlotState,collectionSlotState,boundPoolValue,initialSlotStates,prepareCollectionEntry,assertCollectionRoom,assertCollectionMinimum} from "./capability-slot-runtime.mjs";
 
@@ -330,6 +330,15 @@ export class RuntimeEngine{
     this.hooks?.callAll?.(RUNTIME_HOOKS.event,event,clone(triggered));return {event,triggered,expired};
   }
   #eventFilterMatches(filter,event,context){if(!filter)return true;const matches=filter.payloadMatches??{};for(const [key,value] of Object.entries(matches))if(event.payload?.[key]!==value)return false;return true;}
+  /** Roll operand: the Roll's dice (multiplied by a Formula, e.g. 2 on a critical hit) plus a bonus Formula. */
+  async #rollOperand(versionId,operand,context,evaluator){
+    const ruleset=this.ruleset(versionId),rollDef=ruleset.rolls?.find(x=>x.id===operand.rollRef&&enabled(x));if(!rollDef)throw new Error(`Roll unavailable: ${operand.rollRef}.`);
+    const multiplier=operand.multiplierFormulaRef?Number(await evaluator.formula(operand.multiplierFormulaRef,context)):1;
+    const bonus=operand.bonusFormulaRef?Number(await evaluator.formula(operand.bonusFormulaRef,context)):0;
+    if(!Number.isFinite(bonus))throw new Error(`Roll bonus of ${operand.rollRef} is not a number.`);
+    const roll=await this.roll(multiplyDice(rollDef.formula,multiplier),rollDef.data??{});
+    return {value:Number(roll.total)+bonus,roll:{formula:String(roll.formula??rollDef.formula),total:Number(roll.total),result:String(roll.result??roll.total??""),bonus}};
+  }
   async #operand(versionId,operand,context,evaluator){if(operand.kind==="literal")return clone(operand.value);if(operand.kind==="parameter")return evaluator.parameter(operand.id);if(operand.kind==="formula")return await evaluator.formula(operand.id,context);if(operand.kind==="reference")return await this.resolveReference(versionId,operand.reference,context,{staged:evaluator.__staged});throw new Error(`Unsupported Effect operand: ${operand.kind}.`);}
   #writeOutput(state,reference,operation,operand,pool=null){const ds=state.definitionStates?.[reference.objectId];if(!ds)throw new Error(`Definition is not instantiated on RuntimeContainer: ${reference.objectId}.`);const cap=reference.capabilityId,id=reference.outputId;let current;
     if(cap==="value"&&id==="value.base")current=Number(ds.capabilityStates.value.base??0);
@@ -342,7 +351,7 @@ export class RuntimeEngine{
   }
   async previewEffect(versionId,effectId,context={},staged=new Map()){
     const ruleset=this.ruleset(versionId),effect=ruleset.effects?.find(x=>x.id===effectId&&enabled(x));if(!effect)throw new Error(`Effect unavailable: ${effectId}.`);
-    const evaluator=this.evaluator(versionId,staged);evaluator.__staged=staged;const role=effect.targetRole??"target";const target=await this.resolveReference(versionId,effect.targetRef,{...context,defaultRole:role},{forWrite:true,role,staged});const key=this.#refKey(target.containerRef);if(!staged.has(key))staged.set(key,clone(target.state));const state=staged.get(key);const operand=await this.#operand(versionId,effect.operand,context,evaluator);const before=this.#readOutput(ruleset,state,effect.targetRef);let pool=null;if(effect.targetRef.capabilityId==="pool"){const {slot}=this.#outputContract(ruleset,effect.targetRef);pool={slot,bounds:await this.#poolBounds(slot,{...context,defaultRole:role},evaluator)};}const after=this.#writeOutput(state,effect.targetRef,effect.operation,operand,pool);return {effectId,before,after,operand,containerRef:target.containerRef};
+    const evaluator=this.evaluator(versionId,staged);evaluator.__staged=staged;const role=effect.targetRole??"target";const target=await this.resolveReference(versionId,effect.targetRef,{...context,defaultRole:role},{forWrite:true,role,staged});const key=this.#refKey(target.containerRef);if(!staged.has(key))staged.set(key,clone(target.state));const state=staged.get(key);let rolled=null,operand;if(effect.operand?.kind==="roll"){rolled=await this.#rollOperand(versionId,effect.operand,context,evaluator);operand=rolled.value;}else operand=await this.#operand(versionId,effect.operand,context,evaluator);const before=this.#readOutput(ruleset,state,effect.targetRef);let pool=null;if(effect.targetRef.capabilityId==="pool"){const {slot}=this.#outputContract(ruleset,effect.targetRef);pool={slot,bounds:await this.#poolBounds(slot,{...context,defaultRole:role},evaluator)};}const after=this.#writeOutput(state,effect.targetRef,effect.operation,operand,pool);return {effectId,before,after,operand,...(rolled?{roll:rolled.roll}:{}),containerRef:target.containerRef};
   }
   /** Instantiate one acquired Definition in a container state (CP-16). Returns the new
    * DefinitionState, null when an `ifAbsent` grant is already there, or "present". */
@@ -456,7 +465,9 @@ export class RuntimeEngine{
       else if(Object.keys(acquisition.add??{}).length)changes.push({acquisitionAdd:acquisition.definitionId,add:clone(acquisition.add),containerRef:ref});
     }
     await this.#stageStates(versionId,ruleset,action,context,staged,evaluator,changes);
-    for(const effectId of effectRefs)changes.push(await this.previewEffect(versionId,effectId,context,staged));return {actionId,allowed:true,testResult,changes,acquired,staged};
+    // Effects read the Test under variables.test (total, margin, natural, outcome), e.g. damage that grows with the margin.
+    const effectContext=testResult?{...context,variables:{...(context.variables??{}),...testResult.variables,test:{...testResult.variables.test,outcome:testResult.outcome}}}:context;
+    for(const effectId of effectRefs)changes.push(await this.previewEffect(versionId,effectId,effectContext,staged));return {actionId,allowed:true,testResult,changes,acquired,staged};
   }
   /** triggered: run by a Trigger, so no user chose it and only write permissions apply. */
   async executeAction(versionId,actionId,context={},{preview=false,eventDepth=0,transactionId=null,triggered=false,acquisitions=[]}={}){

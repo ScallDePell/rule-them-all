@@ -38,7 +38,7 @@ function rollError(message, formula, position) {
 }
 
 class RollParser {
-  constructor(formula) { this.formula = formula; this.position = 0; this.references = new Set(); this.diceTerms = 0; }
+  constructor(formula) { this.formula = formula; this.position = 0; this.references = new Set(); this.diceTerms = 0; this.dicePositions = []; }
   rest() { return this.formula.slice(this.position); }
   skipSpaces() { while (this.formula[this.position] === " ") this.position++; }
   match(pattern) {
@@ -87,6 +87,7 @@ class RollParser {
     this.dice(start, count);
   }
   dice(start, count) {
+    this.dicePositions.push({start, d: this.position, count});
     this.position++; // "d"
     if (count !== null && (count < 1 || count > ROLL_MAX_DICE)) throw rollError(`dice count must be between 1 and ${ROLL_MAX_DICE}`, this.formula, start);
     if (this.formula[this.position] === "%" || this.formula[this.position] === "F") this.position++;
@@ -117,3 +118,21 @@ export function parseRollFormula(formula) {
 }
 
 export function assertSafeRollFormula(formula) { return parseRollFormula(formula); }
+
+/** The same formula with every dice count multiplied (a critical hit doubling its dice: 1d8+2 -> 2d8+2).
+ * Only literal counts can be multiplied; a count computed from data or parentheses is refused. */
+export function multiplyDice(formula, multiplier) {
+  const factor = Number(multiplier);
+  if (!Number.isInteger(factor) || factor < 1) throw new Error(`Dice multiplier must be a positive integer, not ${multiplier}.`);
+  parseRollFormula(formula);
+  const parser = new RollParser(formula.trim());
+  parser.parse();
+  let text = formula.trim();
+  if (factor === 1) return text;
+  for (const {start, d, count} of [...parser.dicePositions].reverse()) {
+    if (count === null) throw new Error(`Cannot multiply the dice of ${text}: a dice count is computed.`);
+    text = `${text.slice(0, start)}${count * factor}${text.slice(d)}`;
+  }
+  parseRollFormula(text);
+  return text;
+}
