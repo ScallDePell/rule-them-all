@@ -53,6 +53,11 @@ const numeric = types => types.every(type => type === "integer") ? "integer" : "
 const allInteger = (node, infer) => args(node).length && args(node).every(child => infer(child) === "integer") ? "integer" : "number";
 const same = (a, b) => a === b || a === UNKNOWN || b === UNKNOWN ? (a === UNKNOWN ? b : a) : (["integer", "number"].includes(a) && ["integer", "number"].includes(b) ? "number" : UNKNOWN);
 
+/** reference: {reference: logical Reference, container?: role}. A Ruleset names containers by role only (CP-24). */
+function validateReferenceNode(node, label) {
+  if (!isRecord(node.reference)) throw new Error(`${label}.reference must be a logical Reference.`);
+  if (node.container !== undefined && node.container !== null && !(typeof node.container === "string" && /^[A-Za-z][A-Za-z0-9_-]*$/.test(node.container))) throw new Error(`${label}.container must be a context role.`);
+}
 function validateLookup(node, label) {
   const scalar = value => value === null || ["string", "number", "boolean"].includes(typeof value);
   if (!isRecord(node.key)) throw new Error(`${label}.key must be an AST node.`);
@@ -81,7 +86,7 @@ export const formulaNodeRegistry = new FormulaNodeRegistry()
   .register({id: "literal", evaluate: node => copyJSON(node.value), resultType: node => literalType(node.value)})
   .register({id: "parameter", evaluate: (node, kit) => kit.parameter(node.id), resultType: (node, infer, leaf) => leaf("parameter", node.id)})
   .register({id: "formula", evaluate: (node, kit) => kit.formula(node.id), resultType: (node, infer, leaf) => leaf("formula", node.id)})
-  .register({id: "reference", evaluate: (node, kit) => kit.reference(node.reference), resultType: (node, infer, leaf) => leaf("reference", node.reference)})
+  .register({id: "reference", evaluate: (node, kit) => kit.reference(node.reference, node.container ?? null), resultType: (node, infer, leaf) => leaf("reference", node.reference), validate: validateReferenceNode})
   .register({id: "context", evaluate: (node, kit) => { let value = kit.context; for (const part of String(node.path ?? "").split(".").filter(Boolean)) value = value?.[part]; return value === undefined ? undefined : copyJSON(value); }})
   .register({id: "add", evaluate: async (node, {ev}) => { let out = 0; for (const n of args(node)) out += num(await ev(n), "add operand"); return out; }, resultType: allInteger})
   .register({id: "subtract", evaluate: async (node, {ev}) => { const a = args(node); if (!a.length) return 0; let out = num(await ev(a[0]), "subtract operand"); for (const n of a.slice(1)) out -= num(await ev(n), "subtract operand"); return out; }, resultType: allInteger})

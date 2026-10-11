@@ -18,7 +18,7 @@ export class RuntimeEvaluator {
       context,
       parameter:id=>this.parameter(id),
       formula:id=>this.formula(id,context,stack),
-      reference:reference=>this.resolveReference(reference,context,{forWrite:false})
+      reference:(reference,container=null)=>this.resolveReference(container?{container,reference}:reference,context,{forWrite:false})
     };
     return type.evaluate(node,kit);
   }

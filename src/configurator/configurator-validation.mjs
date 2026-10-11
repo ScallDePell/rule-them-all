@@ -8,7 +8,8 @@ import {DependencyIndex} from "./dependency-index.mjs";
 import {normalizeRelations} from "./generic-relations.mjs";
 import {DiagnosticCollector} from "./diagnostics.mjs";
 import {checkRulesetTypes} from "./type-checks.mjs";
-import {SLOT_CAPABILITIES, findSlot, prepareDefinitionSlots} from "./capability-slots.mjs";
+import {prepareDefinitionSlots} from "./capability-slots.mjs";
+import {checkReferenceLevels, checkUnsetReferences} from "./reference-checks.mjs";
 
 const nonempty = value => typeof value === "string" && value.trim().length > 0;
 
@@ -92,15 +93,6 @@ function checkDefinition(entry, types, path, d) {
     collecting(d, "FIELD_VALUE", `${path}.data`, options => applyFieldContract(entry.data ?? {}, resolveFieldContract(type, entry.capabilities ?? []), options));
   }
 }
-/** A Reference into a slotted capability (pool, collection) must name an existing slot (CP-24). */
-function checkSlotTarget(dep, definitionsById, d) {
-  const target = dep.targetRef;
-  if (target.objectKind !== "definition" || !SLOT_CAPABILITIES.includes(target.capabilityId)) return;
-  const definition = definitionsById.get(target.objectId);
-  if (!(definition?.capabilities ?? []).includes(target.capabilityId)) { d.error("REFERENCE_CAPABILITY", dep.path, `Definition ${target.objectId} does not have capability ${target.capabilityId}.`); return; }
-  if (!nonempty(target.slotId)) { d.incomplete("REFERENCE_SLOT", dep.path, `Reference to ${target.objectId}/${target.capabilityId} requires a slot.`); return; }
-  if (!findSlot(definition, target.capabilityId, target.slotId)) d.error("REFERENCE_SLOT", dep.path, `Slot does not exist: ${target.objectId}/${target.capabilityId}/${target.slotId}.`);
-}
 function checkReference(entry, known, path, d) {
   const issue = d.issue;
   if (!checkIdentity(entry, path, issue)) return;
@@ -175,11 +167,17 @@ export function validateRuleset(ruleset, {scope = "save"} = {}) {
   ]);
   (ruleset.references ?? []).forEach((x,i) => checkReference(x, known, `references[${i}]`, d));
   const definitionsById = new Map((ruleset.definitions ?? []).filter(isRecord).map(entry => [entry.id, entry]));
+  // Generic relation scanning re-finds AST references one level deeper (".reference"): report each once.
+  const reported = new Set();
   for (const dep of new DependencyIndex(ruleset).list()) {
+    const key = `${dep.consumerRef.objectKind}|${dep.consumerRef.objectId}|${JSON.stringify(dep.targetRef)}|${dep.path.replace(/\.reference$/, "")}`;
+    if (reported.has(key)) continue;
+    reported.add(key);
     const ids=known.get(dep.targetRef.objectKind);
     if(ids && !ids.has(dep.targetRef.objectId)) { issue("DEPENDENCY_TARGET", dep.path, `Dependency target does not exist: ${dep.targetRef.objectKind}/${dep.targetRef.objectId}.`); continue; }
-    checkSlotTarget(dep, definitionsById, d);
+    checkReferenceLevels(dep, definitionsById, d);
   }
+  checkUnsetReferences(ruleset, d);
   checkRulesetTypes(ruleset, d);
   return d.result();
 }

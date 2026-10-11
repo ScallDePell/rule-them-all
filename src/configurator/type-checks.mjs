@@ -84,4 +84,22 @@ export function checkRulesetTypes(ruleset, d) {
     const target = types.output(binding.targetRef), actual = types.leaf("formula", binding.formulaRef);
     if (target && !typeCompatible(actual, target.valueType)) d.strict("BINDING_TYPE", `formulaBindings[${index}].formulaRef`, `Formula produces ${actual}, target output expects ${target.valueType}.`);
   });
+  list(ruleset.tests).forEach((test, index) => {
+    if (!isRecord(test)) return;
+    for (const key of ["bonusFormulaRef", "targetFormulaRef", "totalFormulaRef", "marginFormulaRef"]) {
+      if (!test[key]) continue;
+      const actual = types.leaf("formula", test[key]);
+      if (!typeCompatible(actual, "number")) d.strict("TEST_TYPE", `tests[${index}].${key}`, `Test ${key} must produce a number, not ${actual}.`);
+    }
+    list(test.inputBindings).forEach((input, j) => {
+      if (!isRecord(input?.source) || !valueTypeRegistry.has(input.valueType)) return;
+      const actual = input.source.formulaRef ? types.leaf("formula", input.source.formulaRef) : isRecord(input.source.reference) ? types.referenceType(input.source.reference) : UNKNOWN_TYPE;
+      if (!typeCompatible(actual, input.valueType)) d.strict("TEST_INPUT_TYPE", `tests[${index}].inputBindings[${j}].source`, `Input ${input.id} is ${input.valueType}, its source produces ${actual}.`);
+    });
+  });
+  list(ruleset.modifiers).forEach((modifier, index) => {
+    if (!isRecord(modifier)) return;
+    const actual = types.operandType(modifier.valueSource);
+    if (!typeCompatible(actual, "number")) d.strict("MODIFIER_TYPE", `modifiers[${index}].valueSource`, `Modifier value must be a number, not ${actual}.`);
+  });
 }
