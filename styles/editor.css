@@ -684,7 +684,7 @@
 
 .rta-config-entry .rta-declarative-constraint > label { min-width: 0; display: grid; gap: var(--rta-space-1); }
 
-.rta-config-entry .rta-declarative-constraint > label > :is(input, select) { min-width: 0; width: 100%; }
+.rta-config-entry .rta-declarative-constraint > label > :is(input, select) { min-width: 0; width: 100%; height: var(--rta-form-control-height); min-height: var(--rta-form-control-height); }
 
 .rta-config-entry .rta-declarative-presentation__controls { display: flex; align-items: center; gap: var(--rta-form-control-gap); min-width: 0; }
 
