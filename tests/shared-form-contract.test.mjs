@@ -12,7 +12,9 @@ for(const [partial,field,minimum] of [
 ]){
   test(`${field}: a single canonical markup implementation is reused`,()=>{
     assert.equal((hbs.match(new RegExp(`#\\*inline "${partial}"`,'g'))||[]).length,1);
-    assert.ok((hbs.match(new RegExp(`{{> ${partial}}`,'g'))||[]).length>=minimum);
+    // Rule editors reach the description through the shared Notes section.
+    const viaNotes=partial==='rtaIdentityDescription'?(hbs.match(/{{> rtaNotesSection}}/g)||[]).length:0;
+    assert.ok((hbs.match(new RegExp(`{{> ${partial}}`,'g'))||[]).length+viaNotes>=minimum);
   });
 }
 test('shared field partials retain readOnly and checked contracts',()=>{

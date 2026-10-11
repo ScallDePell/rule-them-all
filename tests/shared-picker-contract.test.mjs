@@ -7,7 +7,8 @@ const js=readFileSync(new URL("../src/configurator/configurator-entry-editor.mjs
 const picker=readFileSync(new URL("../src/ui/picker-markup.mjs",import.meta.url),"utf8");
 test("all tag selectors reuse one inline partial across editor families",()=>{
   assert.equal((hbs.match(/#\*inline "rtaTagsPicker"/g)||[]).length,1);
-  assert.ok((hbs.match(/{{> rtaTagsPicker}}/g)||[]).length>=8);
+  // Rule editors reach the tag picker through the shared Notes section.
+  assert.ok((hbs.match(/{{> rtaTagsPicker}}/g)||[]).length+(hbs.match(/{{> rtaNotesSection}}/g)||[]).length>=8);
   assert.equal(hbs.split('placeholder=(localize "RTA.Template.SearchTags")').length-1,1);
 });
 test("dynamic checkbox options escape values and preserve checked state",()=>{

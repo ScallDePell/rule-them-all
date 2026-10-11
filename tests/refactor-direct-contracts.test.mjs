@@ -111,19 +111,17 @@ test('formula and condition AST serializers preserve typed literal, reference an
   assert.deepEqual(collectConditionExpression(fakeBuilder('eq',[numeric,boolean]),fallback),{type:'eq',left:{type:'literal',value:3.5},right:{type:'literal',value:true}});
 });
 
-function creationRow({name='Step',min='0',max='1',source='definitions',objects=['x'],advanced='{}'}={}){
-  return {querySelector:selector=>{
-    if(selector.includes('advanced'))return input(advanced);
+function creationRow({name='Step',min='0',max='1',source='definitions',objects=['x'],original='{}'}={}){
+  return {dataset:{original},querySelector:selector=>{
     if(selector.includes('"name"'))return input(name);
     if(selector.includes('"min"'))return input(min);
     if(selector.includes('"max"'))return input(max);
     if(selector.includes('source-family'))return source?input(source):null;
     if(selector.includes('"kind"'))return input('choice');
-    if(selector.includes('"required"'))return input('',true);
     return null;
   },querySelectorAll:selector=>selector.includes('sourceObjects')?objects.map(input):[]};
 }
-test('creation steps validate sources, cardinality, duplicate ids and keep legacy sources',()=>{
+test('creation steps validate sources, cardinality and duplicate ids, and keep the step id',()=>{
   const sources=[{id:'definitions',items:[{id:'x'}]}];const uid=kind=>kind+'-new';
   const args={sources,uid};
   const [step]=collectCreationSteps([creationRow()],args);
@@ -131,8 +129,10 @@ test('creation steps validate sources, cardinality, duplicate ids and keep legac
   assert.throws(()=>collectCreationSteps([creationRow({objects:['gone']})],args),/Missing Ruleset object/);
   assert.throws(()=>collectCreationSteps([creationRow({min:'3',max:'1'})],args),/Invalid minimum/);
   assert.throws(()=>collectCreationSteps([creationRow(),creationRow()],args),/unique/);
-  const [legacy]=collectCreationSteps([creationRow({source:'',advanced:'{"source":{"collection":"retired","objectIds":["old"]}}'})],args);
-  assert.deepEqual(legacy.source,{collection:'retired',objectIds:['old']});
+  const [cleared]=collectCreationSteps([creationRow({source:'',original:'{"id":"keep","source":{"collection":"retired","objectIds":["old"]}}'})],args);
+  assert.equal(cleared.id,'keep');
+  assert.equal(cleared.source,undefined);
+  assert.equal(step.required,false);
 });
 
 import {createConfiguratorAPI} from '../src/configurator/configurator-api.mjs';

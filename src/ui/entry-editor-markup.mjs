@@ -26,7 +26,6 @@ export const renderCreationStepHTML=({value,kinds,sourceFamilies,sourcePicker,so
           <div class="form-group"><label class="rta-form-row__label">${t('Kind','Kind')}</label><select data-step-prop="kind">${kinds}</select></div>
           <div class="form-group"><label class="rta-form-row__label">${escape(uiText("Minimum","Minimum"))}</label><input type="number" step="1" data-step-prop="min" value="${escape(value.min)}"></div>
           <div class="form-group"><label class="rta-form-row__label">${escape(uiText("Maximum","Maximum"))}</label><input type="number" step="1" data-step-prop="max" value="${escape(value.max)}"></div>
-          <div class="form-group"><label class="rta-form-row__label">${escape(uiText("Required","Required"))}</label><input type="checkbox" data-step-prop="required" ${value.required?"checked":""}></div>
           <div class="form-group"><label class="rta-form-row__label">${escape(uiText("RulesetSource","Ruleset source"))}</label>${sourceFamilies}</div>
           <div class="form-group"><label class="rta-form-row__label" data-step-source-label>${escape(sourceDescriptor.allowedLabel)}</label><div>${sourcePicker}<p class="hint" data-step-source-hint>${escape(sourceDescriptor.help)}</p></div></div>
           <div class="form-group">
@@ -38,7 +37,6 @@ export const renderCreationStepHTML=({value,kinds,sourceFamilies,sourcePicker,so
               <button type="button" data-action="removeStep" title="${escape(uiText("Remove","Remove"))}"><i class="fa-solid fa-trash"></i> ${t('Remove','Remove')}</button>
             </div>
           </div>
-          <details class="rta-config-entry__section rta-config-entry__technical"><summary>${escape(uiText("AdvancedStepData","Advanced step data (JSON)"))}</summary><p>${escape(uiText("AdvancedStepHelp","Other properties and options are preserved. Edit them here when necessary."))}</p><textarea data-step-prop="advanced" rows="5">${escape(JSON.stringify(value,null,2))}</textarea></details>
         </div>
       </details>
     </article>`;

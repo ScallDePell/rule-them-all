@@ -214,8 +214,6 @@
       "MoveDown": "Descendre",
       "Duplicate": "Dupliquer",
       "Remove": "Supprimer",
-      "AdvancedStepData": "Données avancées de l’étape (JSON)",
-      "AdvancedStepHelp": "Les autres propriétés sont conservées. Modifiez-les ici si nécessaire.",
       "SelectSource": "Sélectionnez d’abord une source du Ruleset.",
       "NoSourceItems": "Aucune entrée disponible dans cette source du Ruleset.",
       "MissingSource": "La source enregistrée n’est plus disponible.",
@@ -637,7 +635,9 @@
       "ValidateVersion": "Valider",
       "StatusDraft": "Brouillon",
       "StatusReady": "Publiée",
-      "StatusValidated": "Validée"
+      "StatusValidated": "Validée",
+      "AppliesTo": "S'applique à",
+      "Notes": "Notes et étiquettes"
     },
     "EditorDisplay": {
       "NoneSelected": "Aucune sélection",
@@ -996,7 +996,7 @@
       },
       "creationSystem": {
         "Summary": "Un système de création décrit les étapes de création d'un personnage.",
-        "Usage": "Chaque étape propose des choix, des répartitions ou des contenus."
+        "Usage": "Chaque étape propose un choix de définitions ou de contenus, ou une relecture finale."
       },
       "progressionSystem": {
         "Summary": "Un système de progression décrit comment un personnage évolue.",

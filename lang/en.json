@@ -218,8 +218,6 @@
       "MoveDown": "Move down",
       "Duplicate": "Duplicate",
       "Remove": "Remove",
-      "AdvancedStepData": "Advanced step data (JSON)",
-      "AdvancedStepHelp": "Other properties and options are preserved. Edit them here when necessary.",
       "SelectSource": "Select a Ruleset source above.",
       "NoSourceItems": "No entries available in the selected Ruleset source.",
       "MissingSource": "The saved source collection is not available.",
@@ -641,7 +639,9 @@
       "ValidateVersion": "Validate",
       "StatusDraft": "Draft",
       "StatusReady": "Published",
-      "StatusValidated": "Validated"
+      "StatusValidated": "Validated",
+      "AppliesTo": "Applies to",
+      "Notes": "Notes and tags"
     },
     "EditorDisplay": {
       "NoneSelected": "None selected",
@@ -1000,7 +1000,7 @@
       },
       "creationSystem": {
         "Summary": "A creation system describes the steps of creating a character.",
-        "Usage": "Each step offers choices, allocations or contents."
+        "Usage": "Each step offers a choice of definitions or contents, or a final review."
       },
       "progressionSystem": {
         "Summary": "A progression system describes how a character evolves.",

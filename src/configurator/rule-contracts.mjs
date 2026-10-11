@@ -93,8 +93,9 @@ export function prepareTest(data,options={}){
 }
 
 export function prepareEffect(data,options={}){
-  const x={descriptionKey:'',enabled:true,order:0,tags:[],targetRef:null,operation:'set',operand:{kind:'literal',value:0},...copyJSON(data)};
+  const x={descriptionKey:'',enabled:true,order:0,tags:[],targetRef:null,targetRole:'target',operation:'set',operand:{kind:'literal',value:0},...copyJSON(data)};
   identity(x,'Effect',options);
+  if(!ROLE_NAME.test(String(x.targetRole)))throw new Error('Effect.targetRole must be a role name.');
   if(x.targetRef!==null&&!isRecord(x.targetRef))throw new Error('Effect.targetRef must be a logical Reference.');
   need(isRecord(x.targetRef)&&nonempty(x.targetRef.objectKind)&&nonempty(x.targetRef.objectId),'Effect.targetRef must be a logical Reference.',options);
   need(nonempty(x.operation),'Effect.operation is required.',options);

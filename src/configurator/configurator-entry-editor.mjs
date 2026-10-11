@@ -207,7 +207,8 @@ export class ConfiguratorEntryEditor extends ConfiguratorWindow {
     const categorySummary=pickerSummary(categoryChoices);
     const eventFieldRows=this.#kind==="eventType"?Object.entries(data.payloadFields??{}).map(([id,field])=>buildEventFieldRow(id,field,this.#api.listValueTypes())):[];
     const roleChoices=["self","source","target","subject","owner"].map(id=>({id,label:id,selected:(data.roles??[]).includes(id)}));
-    const roleSelf=data.targetRole==="self"||!data.targetRole, roleSource=data.targetRole==="source", roleTarget=data.targetRole==="target", roleSubject=data.targetRole==="subject", roleOwner=data.targetRole==="owner";
+    // An Effect acts on the target unless told otherwise; a binding reads its own container.
+    const role=data.targetRole||(this.#kind==="effect"?"target":"self"),roleSelf=role==="self",roleSource=role==="source",roleTarget=role==="target",roleSubject=role==="subject",roleOwner=role==="owner";
     const conditionSummary=pickerSummary(conditionChoices),costEffectSummary=pickerSummary(effectChoices,"costSelected"),effectSummary=pickerSummary(effectChoices,"effectSelected"),actionSummary=pickerSummary(actionChoices),definitionSummary=pickerSummary(definitionChoices),templateActionSummary=pickerSummary(templateActionChoices);
     const sheetComponentRows=this.#kind==="sheetDefinition"?(data.layout?.components??[]).map((c,index)=>({...c,index,sourceToken:c.source?refToken(c.source):"",sourceChoices:[{token:"",label:"— none —"},...referenceChoices].map(x=>({...x,selected:x.token===(c.source?refToken(c.source):"")})),isSection:c.kind==="section",isText:c.kind==="text",isField:c.kind==="field",isRepeater:c.kind==="repeater",isActions:c.kind==="actions",isContent:c.kind==="content",isSpacer:c.kind==="spacer",isHalf:c.width==="half",isFull:c.width!=="half"})):[];
     Object.assign(context,{error:this.#error,kind:this.#kind,creating,readOnly:isValidated,deletion:creating?{blocked:false,reason:""}:this.#deletionView(),help:entryHelp(this.#kind,{definitionType:type}),data,type,fieldContract,fieldRows,capabilityChoices,colorSectionChoices,rulesetMainColor:rulesetColor(data),allowTypeColor,inheritedTypeColor,hasCustomColor:!!data.color,valueTypes:this.#api.listValueTypes().map(v=>({...v,selected:v.id===(data.valueType??data.resultType)})),
@@ -335,8 +336,9 @@ export class ConfiguratorEntryEditor extends ConfiguratorWindow {
   }
 
   #creationStepHTML(step={}){
-    const value={id:uid("step"),name:"",kind:"choice",required:true,options:[],min:0,max:1,...copy(step)};
-    const kinds=renderCreationKindsOptions(["choice","allocation","content","review"],value.kind);
+    const value={id:uid("step"),name:"",kind:"choice",min:1,max:1,...copy(step)};
+    // Allocation steps have no runtime contract yet, so they are not offered.
+    const kinds=renderCreationKindsOptions(["choice","content","review"],value.kind);
     const source=value.source??{};
     const sourceFamily=String(source.collection??"");
     const selectedIds=Array.isArray(source.objectIds)?source.objectIds:[];
@@ -365,7 +367,7 @@ export class ConfiguratorEntryEditor extends ConfiguratorWindow {
   #collectCreation(){
     const form=this.element.querySelector('[data-entry-form]'),fd=new FormData(form),current=this.#read()??this.#freshSeed();
     const steps=collectCreationSteps(this.element.querySelectorAll('[data-creation-step]'),{sources:this.#creationSources(),uid});
-    return {...current,nameKey:String(fd.get('nameKey')??'').trim(),descriptionKey:String(fd.get('descriptionKey')??''),enabled:form.querySelector('[name="enabled"]')?.checked===true,...(String(fd.get('order')??'').trim()!==''?{order:Number(fd.get('order'))}:{}),steps};
+    return {...current,nameKey:String(fd.get('nameKey')??'').trim(),descriptionKey:String(fd.get('descriptionKey')??''),enabled:form.querySelector('[name="enabled"]')?.checked===true,steps};
   }
 
   #checkedIds(name){
@@ -519,10 +521,10 @@ export class ConfiguratorEntryEditor extends ConfiguratorWindow {
       if(action==="stepUp"&&row.previousElementSibling)row.parentElement.insertBefore(row,row.previousElementSibling);
       if(action==="stepDown"&&row.nextElementSibling)row.parentElement.insertBefore(row.nextElementSibling,row);
       if(action==="duplicateStep"){
-        const advanced=json(row.querySelector('[data-step-prop="advanced"]')?.value,{});
+        const advanced=json(row.dataset.original,{});
         const sourceCollection=row.querySelector('[data-step-source-family]:checked')?.value??"";
         const sourceIds=[...row.querySelectorAll('[data-step-prop="sourceObjects"] [data-step-source-object]:checked')].map(input=>input.value);
-        const duplicate={...advanced,...(sourceCollection?{source:{...(advanced.source??{}),collection:sourceCollection,objectIds:sourceIds}}:{}),id:uid("step"),name:`${row.querySelector('[data-step-prop="name"]')?.value??"Step"} (copy)`,kind:row.querySelector('[data-step-prop="kind"]')?.value,required:row.querySelector('[data-step-prop="required"]')?.checked===true,min:Number(row.querySelector('[data-step-prop="min"]')?.value??0),max:Number(row.querySelector('[data-step-prop="max"]')?.value??1)};
+        const duplicate={...advanced,...(sourceCollection?{source:{...(advanced.source??{}),collection:sourceCollection,objectIds:sourceIds}}:{}),id:uid("step"),name:`${row.querySelector('[data-step-prop="name"]')?.value??"Step"} (copy)`,kind:row.querySelector('[data-step-prop="kind"]')?.value,min:Number(row.querySelector('[data-step-prop="min"]')?.value??0),max:Number(row.querySelector('[data-step-prop="max"]')?.value??1)};
         row.insertAdjacentHTML("afterend",this.#creationStepHTML(duplicate));
         for(const button of row.nextElementSibling.querySelectorAll("[data-action]"))button.addEventListener("click",event=>this.#action(event));
       }

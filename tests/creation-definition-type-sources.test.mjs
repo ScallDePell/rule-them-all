@@ -46,7 +46,7 @@ test('Step editor changes selection label and help, without changing saved data 
   assert.match(editor,/hint\.textContent=descriptor\.help/);
   const serializer=readFileSync(new URL("../src/configurator/creation-step-serialization.mjs",import.meta.url),"utf8");
   assert.match(serializer,/collection:family,objectIds/);
-  assert.match(serializer,/original\.source\?\.collection/);
+  assert.doesNotMatch(serializer,/original\.source\?\.collection/);
 });
 
 test('new source keeps empty state distinct from missing source selection',()=>{
