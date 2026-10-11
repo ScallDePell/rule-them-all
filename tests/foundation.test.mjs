@@ -20,7 +20,7 @@ test("legacy specialized APIs are absent",async()=>{const api=await createConfig
 
 test("publication then activation uses a published snapshot",async()=>{const api=await createConfiguratorAPI(new MemoryStorage());const v=(await api.createRuleset(base())).versionId;await assert.rejects(()=>api.setActiveVersionId(v),e=>e.code==="VERSION_NOT_ACTIVABLE");await api.publishRuleset(v);await api.setActiveVersionId(v);assert.equal(api.getActiveVersionId(),v);assert.ok(api.getPublishedRuleset(v));});
 
-test("generic reference protects its target",async()=>{const api=await createConfiguratorAPI(new MemoryStorage());const v=(await api.createRuleset(base())).versionId;await api.registerDefinitionType(v,{id:"t",key:"t",nameKey:"T",descriptionKey:"",color:null,enabled:true,order:0,allowedCapabilities:[],defaultCapabilities:[],requiredCapabilities:[],fields:{},constraints:[]});await api.createDefinition(v,{id:"d",key:"d",definitionTypeId:"t",nameKey:"D",descriptionKey:"",data:{},categories:[],capabilities:[],enabled:true,order:0,tags:[]});await api.createReference(v,{id:"ref",objectKind:"definition",objectId:"d"});await assert.rejects(()=>api.deleteDefinition(v,"d"),e=>e.code==="REFERENTIAL_INTEGRITY");});
+test("References are not a Ruleset family",async()=>{const api=await createConfiguratorAPI(new MemoryStorage());const v=(await api.createRuleset(base())).versionId;assert.equal(api.createReference,undefined);assert.equal(Object.hasOwn(api.getRuleset(v),"references"),false);});
 
 test("storage hydration adds newly introduced empty collections to current contract snapshots",async()=>{
   const s=new MemoryStorage();

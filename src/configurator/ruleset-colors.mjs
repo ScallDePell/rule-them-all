@@ -9,11 +9,11 @@ export const RULESET_SECTIONS = Object.freeze([
   {id:'general', titleKey:'RTA.Nav.General', collections:[]},
   {id:'definitions', titleKey:'RTA.Nav.Definitions', collections:['definitionTypes','definitions']},
   {id:'content', titleKey:'RTA.Nav.Content', collections:['contentTypes','contentTemplates']},
-  {id:'rules', titleKey:'RTA.Nav.Rules', collections:['parameters','formulas','formulaBindings','conditions','rolls','outcomes','tests','effects','actions','modifiers','restrictions','durations']},
+  {id:'rules', titleKey:'RTA.Nav.Rules', collections:['parameters','formulas','formulaBindings','conditions','rolls','outcomes','tests','effects','actions','modifiers','durations']},
   {id:'orchestration', titleKey:'RTA.Nav.Orchestration', collections:['permissionPolicies','eventTypes','triggers']},
   {id:'systems', titleKey:'RTA.Nav.Systems', collections:['creationSystems','progressionSystems','sheetDefinitions']},
-  {id:'runtime', titleKey:'RTA.Nav.Runtime', collections:[]},
-  {id:'advanced', titleKey:'RTA.Nav.Advanced', collections:['categories','tags','references']}
+  {id:'organization', titleKey:'RTA.Nav.Organization', collections:['categories','tags']},
+  {id:'tools', titleKey:'RTA.Nav.Tools', collections:[]}
 ]);
 const sectionByCollection = new Map(RULESET_SECTIONS.flatMap(section => section.collections.map(collection => [collection, section.id])));
 if (sectionByCollection.size !== COLLECTION_FIELDS.length || COLLECTION_FIELDS.some(c=>!sectionByCollection.has(c))) {

@@ -43,7 +43,7 @@ export class RuntimeEngine{
   }
   async #require(versionId,operation,target,containerRef,context=null){
     const decision=await this.authorize(versionId,operation,target,containerRef,context);
-    if(!decision.allowed)throw new RuntimeTransactionError(TRANSACTION_ERRORS.forbidden,`Permission denied: ${operation} ${target.objectKind} ${target.objectId}.`,{operation,target,decision});
+    if(!decision.allowed)throw new RuntimeTransactionError(TRANSACTION_ERRORS.forbidden,decision.messageKey?globalThis.game?.i18n?.localize?.(decision.messageKey)??decision.messageKey:`Permission denied: ${operation} ${target.objectKind} ${target.objectId}.`,{operation,target,decision});
     return decision;
   }
   /** Only the DefinitionStates this user may read are returned (CP-11: never sent, then hidden). */
@@ -188,7 +188,6 @@ export class RuntimeEngine{
     for(const modifier of ruleset.modifiers??[]){if(!enabled(modifier))continue;const t=modifier.targetRef??{};if(t.objectKind!==targetRef.objectKind||t.objectId!==targetRef.objectId||String(t.capabilityId??'')!==String(targetRef.capabilityId??'')||String(t.outputId??'')!==String(targetRef.outputId??''))continue;let ok=true;for(const id of modifier.conditionRefs??[])if(!await evaluator.condition(id,context)){ok=false;break;}if(!ok)continue;let value;if(modifier.valueSource.kind==='literal')value=modifier.valueSource.value;else if(modifier.valueSource.kind==='parameter')value=evaluator.parameter(modifier.valueSource.id);else if(modifier.valueSource.kind==='formula')value=await evaluator.formula(modifier.valueSource.id,context);else value=await this.resolveReference(versionId,modifier.valueSource.reference,context);applicable.push({modifier,value:Number(value)});}
     const {value,applied}=applyModifierStack(baseValue,applicable.map(row=>({id:row.modifier.id,operation:row.modifier.operation,value:row.value,priority:row.modifier.priority??0,stacking:row.modifier.stacking})));return{base:Number(baseValue),value,applied};
   }
-  async checkRestrictions(versionId,operationKind,context={}){const ruleset=this.ruleset(versionId),evaluator=this.evaluator(versionId),matches=[];for(const restriction of ruleset.restrictions??[]){if(!enabled(restriction)||restriction.operationKinds?.length&&!restriction.operationKinds.includes(operationKind))continue;let ok=true;for(const id of restriction.conditionRefs??[])if(!await evaluator.condition(id,context)){ok=false;break;}if(ok)matches.push(restriction);}matches.sort((a,b)=>(b.priority??0)-(a.priority??0));const top=matches[0]??null;return{allowed:!top||top.effect!=='deny',restrictionId:top?.id??null,messageKey:top?.messageKey??''};}
   async roll(formula,data={}){assertSafeRollFormula(formula);if(typeof this.adapter.roll!=="function")throw new Error("Runtime adapter does not provide Foundry Roll support.");return this.adapter.roll(formula,data);}
   /** Test (CP-29): inputs, optional Roll, total, target, margin, then the first true Outcome by priority.
    * Each step sees the previous ones under variables.test (inputs, roll, rollTotal, natural, bonus, total, target, margin). */

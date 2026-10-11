@@ -50,8 +50,8 @@
       "Rules": "Rules",
       "Orchestration": "Orchestration",
       "Systems": "Systems",
-      "Runtime": "Runtime",
-      "Advanced": "Advanced",
+      "Organization": "Organization",
+      "Tools": "Tools",
       "Search": "Search sections..."
     },
     "Dependencies": {
@@ -75,13 +75,8 @@
       "Recentrer": "Recenter"
     },
     "CreationSource": {
-      "definitionTypes": {
-        "Label": "Definition types",
-        "Allowed": "Allowed definition types",
-        "Help": "Choose categories of Definitions (for example Characteristics or Skills). Individual Definitions and runtime values are not selected here."
-      },
       "definitions": {
-        "Label": "Definitions (specific)",
+        "Label": "Definitions",
         "Allowed": "Allowed Definitions",
         "Help": "Choose specific Definitions already configured in this Ruleset. This does not create runtime instances."
       },
@@ -90,119 +85,9 @@
         "Allowed": "Allowed content templates",
         "Help": "Choose reusable content templates from the Ruleset, not Items already created in the world."
       },
-      "actions": {
-        "Label": "Actions",
-        "Allowed": "Allowed actions",
-        "Help": "Choose the Ruleset Actions available to this step."
-      },
-      "rolls": {
-        "Label": "Rolls",
-        "Allowed": "Allowed rolls",
-        "Help": "Choose the Ruleset Rolls available to this step."
-      },
-      "conditions": {
-        "Label": "Conditions",
-        "Allowed": "Allowed conditions",
-        "Help": "Choose the Ruleset Conditions available to this step."
-      },
-      "formulas": {
-        "Label": "Formulas",
-        "Allowed": "Allowed formulas",
-        "Help": "Choose the Ruleset Formulas available to this step."
-      },
-      "parameters": {
-        "Label": "Parameters",
-        "Allowed": "Allowed parameters",
-        "Help": "Choose the Ruleset Parameters available to this step."
-      },
       "Empty": {
         "Allowed": "Allowed entries",
         "Help": "Select a Ruleset source above. Nothing is created in the world from this configuration alone."
-      },
-      "formulaBindings": {
-        "Label": "Formula bindings",
-        "Allowed": "Allowed formula bindings",
-        "Help": "Choose configured Ruleset entries. No game effect is executed without an explicit Runtime handler."
-      },
-      "outcomes": {
-        "Label": "Outcomes",
-        "Allowed": "Allowed outcomes",
-        "Help": "Choose configured Ruleset entries. No game effect is executed without an explicit Runtime handler."
-      },
-      "tests": {
-        "Label": "Tests",
-        "Allowed": "Allowed tests",
-        "Help": "Choose configured Ruleset entries. No game effect is executed without an explicit Runtime handler."
-      },
-      "effects": {
-        "Label": "Effects",
-        "Allowed": "Allowed effects",
-        "Help": "Choose configured Ruleset entries. No game effect is executed without an explicit Runtime handler."
-      },
-      "permissionPolicies": {
-        "Label": "Permission policies",
-        "Allowed": "Allowed permission policies",
-        "Help": "Choose configured Ruleset entries. No game effect is executed without an explicit Runtime handler."
-      },
-      "eventTypes": {
-        "Label": "Event types",
-        "Allowed": "Allowed event types",
-        "Help": "Choose configured Ruleset entries. No game effect is executed without an explicit Runtime handler."
-      },
-      "triggers": {
-        "Label": "Triggers",
-        "Allowed": "Allowed triggers",
-        "Help": "Choose configured Ruleset entries. No game effect is executed without an explicit Runtime handler."
-      },
-      "contentTypes": {
-        "Label": "Content types",
-        "Allowed": "Allowed content types",
-        "Help": "Choose Ruleset content categories, not content templates or world Items. A category does not grant an Item on its own."
-      },
-      "modifiers": {
-        "Label": "Modifiers",
-        "Allowed": "Allowed modifiers",
-        "Help": "Choose configured Ruleset entries. No game effect is executed without an explicit Runtime handler."
-      },
-      "restrictions": {
-        "Label": "Restrictions",
-        "Allowed": "Allowed restrictions",
-        "Help": "Choose configured Ruleset entries. No game effect is executed without an explicit Runtime handler."
-      },
-      "durations": {
-        "Label": "Durations",
-        "Allowed": "Allowed durations",
-        "Help": "Choose configured Ruleset entries. No game effect is executed without an explicit Runtime handler."
-      },
-      "creationSystems": {
-        "Label": "Creation systems",
-        "Allowed": "Allowed creation systems",
-        "Help": "Choose configured Ruleset entries. No game effect is executed without an explicit Runtime handler."
-      },
-      "progressionSystems": {
-        "Label": "Progression systems",
-        "Allowed": "Allowed progression systems",
-        "Help": "Choose configured Ruleset entries. No game effect is executed without an explicit Runtime handler."
-      },
-      "sheetDefinitions": {
-        "Label": "Sheet definitions",
-        "Allowed": "Allowed sheet definitions",
-        "Help": "Choose configured Ruleset entries. No game effect is executed without an explicit Runtime handler."
-      },
-      "categories": {
-        "Label": "Categories",
-        "Allowed": "Allowed categories",
-        "Help": "Choose configured Ruleset entries. No game effect is executed without an explicit Runtime handler."
-      },
-      "tags": {
-        "Label": "Tags",
-        "Allowed": "Allowed tags",
-        "Help": "Choose configured Ruleset entries. No game effect is executed without an explicit Runtime handler."
-      },
-      "references": {
-        "Label": "References",
-        "Allowed": "Allowed references",
-        "Help": "Choose configured Ruleset entries. No game effect is executed without an explicit Runtime handler."
       }
     },
     "DynamicUI": {
@@ -247,14 +132,12 @@
       "contentTypes": "Content Types",
       "contentTemplates": "Content Templates",
       "modifiers": "Modifiers",
-      "restrictions": "Restrictions",
       "durations": "Durations",
       "creationSystems": "Creation Systems",
       "progressionSystems": "Progression Systems",
       "sheetDefinitions": "Sheets",
       "categories": "Categories",
-      "tags": "Tags",
-      "references": "References"
+      "tags": "Tags"
     },
     "DynamicMarkup": {
       "NewField": "New field",
@@ -901,7 +784,7 @@
           "Strength": "The “Strength” Definition.",
           "Load": "The “Carried load” Definition.",
           "Capacity": "The “Capacity per Strength point” Parameter (10) and the “Carrying capacity” Formula = Strength × that parameter.",
-          "Overloaded": "The “Overloaded” Condition is true when the load exceeds the capacity. Use it in a Restriction or a Modifier."
+          "Overloaded": "The “Overloaded” Condition is true when the load exceeds the capacity. Use it in a Permission rule or a Modifier."
         },
         "Objects": {
           "Encumbrance": {
@@ -944,7 +827,7 @@
       },
       "condition": {
         "Summary": "A Condition is an expression that produces true or false.",
-        "Usage": "Actions, Outcomes, Triggers, Restrictions and Modifiers use it to decide."
+        "Usage": "Actions, Outcomes, Triggers, Permission rules and Modifiers use it to decide."
       },
       "roll": {
         "Summary": "A Roll is a dice roll described by a safe formula (for example 1d20 or 2d6+1).",
@@ -990,10 +873,6 @@
         "Summary": "A Modifier adjusts a final value (bonus, penalty, cap) while its Conditions are true.",
         "Usage": "Stacking rules decide whether several Modifiers add up or the best one wins."
       },
-      "restriction": {
-        "Summary": "A Restriction allows or denies an operation kind depending on Conditions.",
-        "Usage": "The highest-priority Restriction that applies decides."
-      },
       "duration": {
         "Summary": "A Duration says how long a state lasts: instant, fixed, until an Event, while a Condition holds, until removed or until a date.",
         "Usage": "“Until a date” (absoluteTime) is measured in world-time seconds."
@@ -1017,10 +896,6 @@
       "tag": {
         "Summary": "A tag freely marks any Ruleset object.",
         "Usage": "List filters use it."
-      },
-      "reference": {
-        "Summary": "A named Reference designates a Definition, a capability, a slot or an output.",
-        "Usage": "A reference to a value must go down to the output."
       }
     }
   }

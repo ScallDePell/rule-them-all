@@ -21,7 +21,6 @@ const scanAst=(node,cb,path='expression')=>{
 export class DependencyIndex{
   #edges=[];
   constructor(ruleset={}){
-    for(const [i,ref] of (ruleset.references??[]).entries())pushRef(this.#edges,{objectKind:'reference',objectId:ref.id},ref,'reference',`references[${i}]`);
     for(const [i,f] of (ruleset.formulas??[]).entries())scanAst(f.expression,(r,p)=>pushRef(this.#edges,{objectKind:'formula',objectId:f.id},r,'formula',`formulas[${i}].${p}`));
     for(const [i,b] of (ruleset.formulaBindings??[]).entries()){
       pushRef(this.#edges,{objectKind:'formulaBinding',objectId:b.id},{objectKind:'formula',objectId:b.formulaRef},'bindingFormula',`formulaBindings[${i}].formulaRef`);
@@ -78,7 +77,6 @@ export class DependencyIndex{
       if(m.valueSource?.kind==='formula')pushRef(this.#edges,{objectKind:'modifier',objectId:m.id},{objectKind:'formula',objectId:m.valueSource.id},'modifierValue',`modifiers[${i}].valueSource`);
       if(m.valueSource?.kind==='reference')pushRef(this.#edges,{objectKind:'modifier',objectId:m.id},m.valueSource.reference,'modifierValue',`modifiers[${i}].valueSource.reference`);
     }
-    for(const [i,r] of (ruleset.restrictions??[]).entries())for(const [j,id] of (r.conditionRefs??[]).entries())pushRef(this.#edges,{objectKind:'restriction',objectId:r.id},{objectKind:'condition',objectId:id},'restrictionCondition',`restrictions[${i}].conditionRefs[${j}]`);
     for(const [i,d] of (ruleset.durations??[]).entries()){
       if(d.eventTypeRef)pushRef(this.#edges,{objectKind:'duration',objectId:d.id},{objectKind:'eventType',objectId:d.eventTypeRef},'durationEvent',`durations[${i}].eventTypeRef`);
       if(d.conditionRef)pushRef(this.#edges,{objectKind:'duration',objectId:d.id},{objectKind:'condition',objectId:d.conditionRef},'durationCondition',`durations[${i}].conditionRef`);
@@ -90,7 +88,7 @@ export class DependencyIndex{
       for(const [j,rule] of (policy.rules??[]).entries())if(rule?.conditionRef)pushRef(this.#edges,consumer,{objectKind:'condition',objectId:rule.conditionRef},'permissionCondition',`permissionPolicies[${i}].rules[${j}].conditionRef`);
     }
     for(const [i,sheet] of (ruleset.sheetDefinitions??[]).entries())for(const [j,c] of (sheet.layout?.components??[]).entries())if(c.source?.objectKind&&c.source?.objectId)pushRef(this.#edges,{objectKind:'sheetDefinition',objectId:sheet.id},c.source,'sheetSource',`sheetDefinitions[${i}].layout.components[${j}].source`);
-    const tagCollections=['definitions','parameters','formulas','formulaBindings','conditions','rolls','outcomes','tests','effects','actions','eventTypes','triggers','contentTypes','contentTemplates','modifiers','restrictions','durations','creationSystems','progressionSystems','sheetDefinitions'];
+    const tagCollections=['definitions','parameters','formulas','formulaBindings','conditions','rolls','outcomes','tests','effects','actions','eventTypes','triggers','contentTypes','contentTemplates','modifiers','durations','creationSystems','progressionSystems','sheetDefinitions'];
     for(const collection of tagCollections)for(const [i,entry] of (ruleset[collection]??[]).entries())for(const [j,id] of (entry.tags??[]).entries())pushRef(this.#edges,{objectKind:collection.replace(/s$/,''),objectId:entry.id},{objectKind:'tag',objectId:id},'tag',`${collection}[${i}].tags[${j}]`,'metadata');
     // Category catalog (§47): consumers store catalog ids; a used Category cannot be deleted.
     for(const collection of ['definitions','contentTemplates'])for(const [i,entry] of (ruleset[collection]??[]).entries())for(const [j,id] of (entry.categories??[]).entries())pushRef(this.#edges,{objectKind:collection==='definitions'?'definition':'contentTemplate',objectId:entry.id},{objectKind:'category',objectId:id},'category',`${collection}[${i}].categories[${j}]`,'metadata');

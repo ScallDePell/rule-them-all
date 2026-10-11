@@ -5,8 +5,6 @@ import {capabilityTypeRegistry, resolveFieldContract} from "./capability-type-re
 import {prepareFieldMap, applyFieldContract} from "./field-output-contracts.mjs";
 
 /** Collection CRUD over the Ruleset aggregate; never owns a separate store. */
-/** Collections whose entries carry an `order` (References are addresses, not listed items). */
-export const ORDERED = collection => collection !== "references";
 export const nextOrder = entries => entries.reduce((max, entry) => Math.max(max, Number.isFinite(entry?.order) ? entry.order : 0), 0) + 10;
 
 export class RulesetCollectionRegistry {
@@ -46,7 +44,7 @@ export class RulesetCollectionRegistry {
     const ruleset = this.ruleset(rulesetId);
     const collection = ruleset[this.#collection] ?? [];
     // A new entry goes after the existing ones (10, 20, 30...) unless it names its order.
-    const placed = Object.hasOwn(data, "order") || !ORDERED(this.#collection) ? {} : {order: nextOrder(collection)};
+    const placed = Object.hasOwn(data, "order") ? {} : {order: nextOrder(collection)};
     const next = this.prepareEntry({...copyJSON(this.#defaults), ...placed, ...copyJSON(data)}, ruleset);
     if (collection.some(entry => entry.id === next.id)) throw new Error(`Entry already exists: ${next.id}.`);
     this.#commit(rulesetId, ruleset, [...collection, next]);

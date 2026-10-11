@@ -22,7 +22,7 @@ PALETTE=(ROOT/'src/ui/select-option-presentation.mjs').read_text()
 RULESET_COLORS=(ROOT/'src/configurator/ruleset-colors.mjs').read_text().replace("import {COLLECTION_FIELDS} from './configurator-schema.mjs';",'const COLLECTION_FIELDS='+json.dumps(COLLECTION_NAMES)+';').replace('export ','')
 PALETTE=PALETTE.replace('import {objectColor} from "../configurator/ruleset-colors.mjs";','').replace('import {RTA_NEUTRAL_COLOR} from "./theme-tokens.mjs";','').replace('import {COLLECTION_TO_KIND} from "../configurator/relation-contract.mjs";','').replace('export ','')
 COLORS=(ROOT/'src/ui/theme-tokens.mjs').read_text().replace('export ','')+'\n'+RULESET_COLORS+'\nconst COLLECTION_TO_KIND=Object.freeze('+json.dumps(COLLECTION_TO_KIND_FIXTURE)+');\n'+PALETTE
-KINDS=['Ruleset','DefinitionType','Definition','ContentType','ContentTemplate','Formula','FormulaBinding','Condition','Roll','Outcome','Test','Effect','Action','EventType','Tag','Parameter','PermissionPolicy','Trigger','SheetDefinition','CreationSystem','Reference','Modifier','Restriction','Duration','ProgressionSystem']
+KINDS=['Ruleset','DefinitionType','Definition','ContentType','ContentTemplate','Formula','FormulaBinding','Condition','Roll','Outcome','Test','Effect','Action','EventType','Tag','Parameter','PermissionPolicy','Trigger','SheetDefinition','CreationSystem','Modifier','Duration','ProgressionSystem']
 # Handlebars subset used by this project's template: if/unless/each/else and inline partials.
 TOK=re.compile(r'(\{\{\{[^}]+\}\}\}|\{\{[^}]+\}\})')
 class Frame:
@@ -146,8 +146,8 @@ html,body{margin:0;padding:0}
 def sample(kind):
  ctx=copy.deepcopy(context_default)
  if kind=='CreationSystem':ctx['creationStepRows']=json.loads((Path(__file__).resolve().parent/'fixtures/creation-steps.json').read_text())
- ctx['is'+kind]=True if kind not in ('Modifier','Restriction','Duration','ProgressionSystem') else False
- if kind in ('Modifier','Restriction','Duration','ProgressionSystem'):ctx['isGeneric']=True
+ ctx['is'+kind]=True if kind not in ('Modifier','Duration','ProgressionSystem') else False
+ if kind in ('Modifier','Duration','ProgressionSystem'):ctx['isGeneric']=True
  # Additional allowed local branch flags for exercising nested controls.
  ctx.update({'isUnique':True,'isOne':True,'isStorageActor':True,'isFull':True})
  s=render(TREE,[ctx]);return '<!doctype html><html lang="fr"><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1"><style>'+CSS+'\n'+BASE+'</style><body class="theme-dark"><div class="application theme-dark"><main class="qa-root window-content">'+s+'</main></div><script>'+COLORS+'\n'+SELECT_TEXT+'\n'+SELECT+'\nwindow.__qaEnhanced=RTASelect.enhance(document.querySelector(".rta-config-entry"));window.__qaReady=true;</script></body></html>'

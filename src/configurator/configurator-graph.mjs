@@ -1,4 +1,4 @@
-import {DefinitionTypeRegistry, RulesetCollectionRegistry, ORDERED} from "./definition-type-registry.mjs";
+import {DefinitionTypeRegistry, RulesetCollectionRegistry} from "./definition-type-registry.mjs";
 import {DependencyIndex} from "./dependency-index.mjs";
 import {throwIntegrityError} from "./configurator-registry.mjs";
 import {copyJSON} from "./configurator-schema.mjs";
@@ -51,7 +51,7 @@ export function createGraphAPI(registry) {
   }
   const contentTypes=new ContentTypeRegistry();
   const contentTemplates=new ContentTemplateRegistry();
-  const collections = Object.fromEntries(["parameters","formulas","formulaBindings","conditions","rolls","outcomes","tests","effects","actions","permissionPolicies","eventTypes","triggers","modifiers","restrictions","durations","creationSystems","progressionSystems","sheetDefinitions","categories","tags","references"]
+  const collections = Object.fromEntries(["parameters","formulas","formulaBindings","conditions","rolls","outcomes","tests","effects","actions","permissionPolicies","eventTypes","triggers","modifiers","durations","creationSystems","progressionSystems","sheetDefinitions","categories","tags"]
     .map(name => [name, new RulesetCollectionRegistry(registry, name, {})]));
   collections.contentTypes=contentTypes; collections.contentTemplates=contentTemplates;
   for (const [name, collection] of Object.entries(collections)) {
@@ -82,7 +82,7 @@ export function createGraphAPI(registry) {
   /** One atomic write: the listed entries take orders 10, 20, 30... in that sequence. */
   const reorderEntries = (rulesetId, kind, ids) => {
     const collection = collectionOfKind(kind);
-    if (!collection || !ORDERED(collection)) throw new Error(`${kind} entries cannot be reordered.`);
+    if (!collection) throw new Error(`${kind} entries cannot be reordered.`);
     if (!Array.isArray(ids) || new Set(ids).size !== ids.length) throw new Error("reorderEntries requires distinct ids.");
     const ruleset = definitions.ruleset(rulesetId), entries = ruleset[collection] ?? [];
     for (const id of ids) if (!entries.some(entry => entry.id === id)) throw new Error(`${kind} not found: ${id}.`);
@@ -174,7 +174,7 @@ export function createGraphAPI(registry) {
     },
     getDeletionStatus:(v,id,kind="definition")=>{ const used=consumers(v,id,kind), blocking=used.filter(edge=>edge.strength!=="optional"), optional=used.filter(edge=>edge.strength==="optional"); return {canDelete:blocking.length===0,kind,id,code:blocking.length?"REFERENTIAL_INTEGRITY":optional.length?"OPTIONAL_REFERENCES":null,consumers:copyJSON(used),optionalReferences:copyJSON(optional)}; }
   };
-  const singular = {parameters:"Parameter",formulas:"Formula",formulaBindings:"FormulaBinding",conditions:"Condition",rolls:"Roll",outcomes:"Outcome",tests:"Test",effects:"Effect",actions:"Action",permissionPolicies:"PermissionPolicy",eventTypes:"EventType",triggers:"Trigger",contentTypes:"ContentType",contentTemplates:"ContentTemplate",modifiers:"Modifier",restrictions:"Restriction",durations:"Duration",creationSystems:"CreationSystem",progressionSystems:"ProgressionSystem",sheetDefinitions:"SheetDefinition",categories:"Category",tags:"Tag",references:"Reference"};
+  const singular = {parameters:"Parameter",formulas:"Formula",formulaBindings:"FormulaBinding",conditions:"Condition",rolls:"Roll",outcomes:"Outcome",tests:"Test",effects:"Effect",actions:"Action",permissionPolicies:"PermissionPolicy",eventTypes:"EventType",triggers:"Trigger",contentTypes:"ContentType",contentTemplates:"ContentTemplate",modifiers:"Modifier",durations:"Duration",creationSystems:"CreationSystem",progressionSystems:"ProgressionSystem",sheetDefinitions:"SheetDefinition",categories:"Category",tags:"Tag"};
   for (const [name, collection] of Object.entries(collections)) {
     const label=singular[name];
     api[`create${label}`]=(v,d)=>collection.create(v,d); api[`get${label}`]=(v,id)=>collection.get(v,id); api[`list${label}s`]=v=>collection.list(v); if(label.endsWith("y"))api[`list${label.slice(0,-1)}ies`]=api[`list${label}s`]; api[`update${label}`]=(v,id,p)=>collection.update(v,id,p); api[`delete${label}`]=protectedDelete(collection,label.charAt(0).toLowerCase()+label.slice(1));

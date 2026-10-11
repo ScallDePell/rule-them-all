@@ -46,8 +46,8 @@
       "Rules": "Règles",
       "Orchestration": "Orchestration",
       "Systems": "Systèmes",
-      "Runtime": "Exécution",
-      "Advanced": "Avancé",
+      "Organization": "Organisation",
+      "Tools": "Outils",
       "Search": "Rechercher une rubrique…"
     },
     "Dependencies": {
@@ -71,13 +71,8 @@
       "Recentrer": "Recentrer"
     },
     "CreationSource": {
-      "definitionTypes": {
-        "Label": "Types de définitions",
-        "Allowed": "Types de définitions autorisés",
-        "Help": "Choisir des familles de définitions, par exemple Caractéristiques ou Compétences. Vous ne sélectionnez pas de valeurs de personnage."
-      },
       "definitions": {
-        "Label": "Définitions spécifiques",
+        "Label": "Définitions",
         "Allowed": "Définitions autorisées",
         "Help": "Choisir des définitions précises du Ruleset. Cela ne crée aucune instance de jeu."
       },
@@ -86,119 +81,9 @@
         "Allowed": "Modèles de contenu autorisés",
         "Help": "Choisir des modèles de contenu réutilisables du Ruleset, pas des objets déjà créés."
       },
-      "actions": {
-        "Label": "Actions",
-        "Allowed": "Actions autorisées",
-        "Help": "Choisir les actions du Ruleset proposées pour cette étape."
-      },
-      "rolls": {
-        "Label": "Jets",
-        "Allowed": "Jets autorisés",
-        "Help": "Choisir les jets disponibles dans le Ruleset."
-      },
-      "conditions": {
-        "Label": "Conditions",
-        "Allowed": "Conditions autorisées",
-        "Help": "Choisir les conditions disponibles dans le Ruleset."
-      },
-      "formulas": {
-        "Label": "Formules",
-        "Allowed": "Formules autorisées",
-        "Help": "Choisir les formules disponibles dans le Ruleset."
-      },
-      "parameters": {
-        "Label": "Paramètres",
-        "Allowed": "Paramètres autorisés",
-        "Help": "Choisir les paramètres disponibles dans le Ruleset."
-      },
       "Empty": {
         "Allowed": "Éléments autorisés",
         "Help": "Choisir une source du Ruleset ci-dessus. Cette configuration ne crée aucun objet dans le monde."
-      },
-      "formulaBindings": {
-        "Label": "Associations de formules",
-        "Allowed": "Associations de formules autorisées",
-        "Help": "Vous choisissez des entrées configurées du Ruleset ; aucune opération de jeu n’est exécutée sans gestionnaire Runtime explicite."
-      },
-      "outcomes": {
-        "Label": "Résultats",
-        "Allowed": "Résultats autorisés",
-        "Help": "Vous choisissez des entrées configurées du Ruleset ; aucune opération de jeu n’est exécutée sans gestionnaire Runtime explicite."
-      },
-      "tests": {
-        "Label": "Tests",
-        "Allowed": "Tests autorisés",
-        "Help": "Vous choisissez des entrées configurées du Ruleset ; aucune opération de jeu n’est exécutée sans gestionnaire Runtime explicite."
-      },
-      "effects": {
-        "Label": "Effets",
-        "Allowed": "Effets autorisés",
-        "Help": "Vous choisissez des entrées configurées du Ruleset ; aucune opération de jeu n’est exécutée sans gestionnaire Runtime explicite."
-      },
-      "permissionPolicies": {
-        "Label": "Politiques de permission",
-        "Allowed": "Politiques de permission autorisées",
-        "Help": "Vous choisissez des entrées configurées du Ruleset ; aucune opération de jeu n’est exécutée sans gestionnaire Runtime explicite."
-      },
-      "eventTypes": {
-        "Label": "Types d’événements",
-        "Allowed": "Types d’événements autorisés",
-        "Help": "Vous choisissez des entrées configurées du Ruleset ; aucune opération de jeu n’est exécutée sans gestionnaire Runtime explicite."
-      },
-      "triggers": {
-        "Label": "Déclencheurs",
-        "Allowed": "Déclencheurs autorisés",
-        "Help": "Vous choisissez des entrées configurées du Ruleset ; aucune opération de jeu n’est exécutée sans gestionnaire Runtime explicite."
-      },
-      "contentTypes": {
-        "Label": "Types de contenu",
-        "Allowed": "Types de contenu autorisés",
-        "Help": "Choisir des catégories de contenu du Ruleset, et non des modèles de contenu ou des objets du monde. Une catégorie ne confère aucun objet à elle seule."
-      },
-      "modifiers": {
-        "Label": "Modificateurs",
-        "Allowed": "Modificateurs autorisés",
-        "Help": "Vous choisissez des entrées configurées du Ruleset ; aucune opération de jeu n’est exécutée sans gestionnaire Runtime explicite."
-      },
-      "restrictions": {
-        "Label": "Restrictions",
-        "Allowed": "Restrictions autorisées",
-        "Help": "Vous choisissez des entrées configurées du Ruleset ; aucune opération de jeu n’est exécutée sans gestionnaire Runtime explicite."
-      },
-      "durations": {
-        "Label": "Durées",
-        "Allowed": "Durées autorisées",
-        "Help": "Vous choisissez des entrées configurées du Ruleset ; aucune opération de jeu n’est exécutée sans gestionnaire Runtime explicite."
-      },
-      "creationSystems": {
-        "Label": "Systèmes de création",
-        "Allowed": "Systèmes de création autorisés",
-        "Help": "Vous choisissez des entrées configurées du Ruleset ; aucune opération de jeu n’est exécutée sans gestionnaire Runtime explicite."
-      },
-      "progressionSystems": {
-        "Label": "Systèmes de progression",
-        "Allowed": "Systèmes de progression autorisés",
-        "Help": "Vous choisissez des entrées configurées du Ruleset ; aucune opération de jeu n’est exécutée sans gestionnaire Runtime explicite."
-      },
-      "sheetDefinitions": {
-        "Label": "Définitions de feuilles",
-        "Allowed": "Définitions de feuilles autorisées",
-        "Help": "Vous choisissez des entrées configurées du Ruleset ; aucune opération de jeu n’est exécutée sans gestionnaire Runtime explicite."
-      },
-      "categories": {
-        "Label": "Catégories",
-        "Allowed": "Catégories autorisées",
-        "Help": "Vous choisissez des entrées configurées du Ruleset ; aucune opération de jeu n’est exécutée sans gestionnaire Runtime explicite."
-      },
-      "tags": {
-        "Label": "Tags",
-        "Allowed": "Tags autorisés",
-        "Help": "Vous choisissez des entrées configurées du Ruleset ; aucune opération de jeu n’est exécutée sans gestionnaire Runtime explicite."
-      },
-      "references": {
-        "Label": "Références",
-        "Allowed": "Références autorisées",
-        "Help": "Vous choisissez des entrées configurées du Ruleset ; aucune opération de jeu n’est exécutée sans gestionnaire Runtime explicite."
       }
     },
     "DynamicUI": {
@@ -243,14 +128,12 @@
       "contentTypes": "Types de contenus",
       "contentTemplates": "Modèles de contenus",
       "modifiers": "Modificateurs",
-      "restrictions": "Restrictions",
       "durations": "Durées",
       "creationSystems": "Systèmes de création",
       "progressionSystems": "Systèmes de progression",
       "sheetDefinitions": "Fiches",
       "categories": "Catégories",
-      "tags": "Tags",
-      "references": "Références"
+      "tags": "Tags"
     },
     "DynamicMarkup": {
       "NewField": "Nouveau champ",
@@ -897,7 +780,7 @@
           "Strength": "La Definition « Force ».",
           "Load": "La Definition « Charge portée ».",
           "Capacity": "Le Parameter « Capacité par point de Force » (10) et la Formula « Capacité de charge » = Force × ce paramètre.",
-          "Overloaded": "La Condition « Surchargé » est vraie quand la charge dépasse la capacité. Utilisez-la dans une Restriction ou un Modifier."
+          "Overloaded": "La Condition « Surchargé » est vraie quand la charge dépasse la capacité. Utilisez-la dans une règle de Permission ou un Modifier."
         },
         "Objects": {
           "Encumbrance": {
@@ -940,7 +823,7 @@
       },
       "condition": {
         "Summary": "Une Condition est une expression qui produit vrai ou faux.",
-        "Usage": "Les Actions, Outcomes, Triggers, Restrictions et Modifiers s'en servent pour décider."
+        "Usage": "Les Actions, Outcomes, Triggers, règles de Permission et Modifiers s'en servent pour décider."
       },
       "roll": {
         "Summary": "Un Roll est un jet de dés décrit par une formule sûre (par exemple 1d20 ou 2d6+1).",
@@ -986,10 +869,6 @@
         "Summary": "Un Modifier ajuste une valeur finale (bonus, malus, plafond) tant que ses Conditions sont vraies.",
         "Usage": "Les règles d'empilement décident si plusieurs Modifiers se cumulent ou si le meilleur l'emporte."
       },
-      "restriction": {
-        "Summary": "Une Restriction autorise ou interdit un type d'opération selon des Conditions.",
-        "Usage": "La Restriction de plus haute priorité qui s'applique décide."
-      },
       "duration": {
         "Summary": "Une Duration dit combien de temps dure un état : instantané, fixe, jusqu'à un Event, tant qu'une Condition est vraie, jusqu'au retrait ou jusqu'à une date.",
         "Usage": "« Jusqu'à une date » (absoluteTime) se mesure en secondes de temps du monde."
@@ -1013,10 +892,6 @@
       "tag": {
         "Summary": "Une étiquette marque librement n'importe quel objet du Ruleset.",
         "Usage": "Les filtres des listes s'en servent."
-      },
-      "reference": {
-        "Summary": "Une Reference nommée désigne une Definition, une capacité, un slot ou un output.",
-        "Usage": "Une référence vers une valeur doit aller jusqu'à l'output."
       }
     }
   }

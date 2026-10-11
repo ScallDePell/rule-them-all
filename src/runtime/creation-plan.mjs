@@ -1,8 +1,9 @@
 import {copyJSON} from '../configurator/configurator-schema.mjs';
 import {resolveAcquisitionChoices} from './acquisition-choices.mjs';
 import {initialForDefinition} from './content-binding.mjs';
+import {CREATION_SOURCE_COLLECTIONS} from '../configurator/creation-source-catalog.mjs';
 
-const SUPPORTED=new Set(['definitions','contentTemplates']);
+const SUPPORTED=new Set(CREATION_SOURCE_COLLECTIONS);
 
 /** Pure, strict preflight of a configured Creation System.
  * A Definition Type is a schema, not an instantiated Definition. Therefore

@@ -12,28 +12,17 @@ class MemoryStorage {
   subscribe(listener){this.listeners.add(listener);return ()=>this.listeners.delete(listener);}
 }
 
-test('Creation sources list Definition Types separately from individual Definitions',async()=>{
+test('Creation sources offer only what the creation runtime applies: Definitions and Content Templates',async()=>{
   const api=await createConfiguratorAPI(new MemoryStorage());
   const {versionId}=await api.createRuleset({id:'sample',nameKey:'Example game',version:'1.0.0'});
   await api.registerDefinitionType(versionId,{id:'characteristic',key:'characteristic',nameKey:'Characteristics',allowedCapabilities:[],defaultCapabilities:[],requiredCapabilities:[],fields:{}});
   await api.createDefinition(versionId,{id:'strength',key:'strength',nameKey:'Strength',definitionTypeId:'characteristic',data:{},categories:[],capabilities:[],tags:[]});
   await api.createDefinition(versionId,{id:'agility',key:'agility',nameKey:'Agility',definitionTypeId:'characteristic',data:{},categories:[],capabilities:[],tags:[]});
   const sources=getCreationSources(api,versionId);
-  assert.deepEqual(sources.find(source=>source.id==='definitionTypes')?.items,[{id:'characteristic',label:'Characteristics'}]);
-  assert.deepEqual(sources.find(source=>source.id==='definitions')?.items.map(x=>x.label),['Strength','Agility']);
-  assert.equal(sources[0].id,'definitionTypes');
-});
-
-test('Legacy individual Definition source keeps the same collection and entry IDs',async()=>{
-  const api=await createConfiguratorAPI(new MemoryStorage());
-  const {versionId}=await api.createRuleset({id:'legacy-source',nameKey:'Portable',version:'1'});
-  await api.registerDefinitionType(versionId,{id:'group',key:'group',nameKey:'Group',allowedCapabilities:[],defaultCapabilities:[],requiredCapabilities:[],fields:{}});
-  await api.createDefinition(versionId,{id:'old',key:'old',nameKey:'Old',definitionTypeId:'group',data:{},categories:[],capabilities:[],tags:[]});
-  const sources=getCreationSources(api,versionId);
-  assert.deepEqual(sources.find(x=>x.id==='definitions')?.items,[{id:'old',label:'Old'}]);
-  assert.equal(listCreationSourceCollections(api.getRuleset(versionId)).find(x=>x.id==='definitionTypes')?.entries[0].id,'group');
+  assert.deepEqual(sources.map(source=>source.id),['definitions','contentTemplates']);
+  assert.deepEqual(sources[0].items.map(x=>x.label),['Strength','Agility']);
+  assert.equal(listCreationSourceCollections(api.getRuleset(versionId)).some(x=>x.id==='definitionTypes'),false);
   assert.equal(getCreationSourceDescriptor('definitions').allowedLabel,'Allowed Definitions');
-  assert.match(getCreationSourceDescriptor('definitionTypes').allowedLabel,/^Allowed Definition Types$/);
   assert.equal(getCreationSourceDescriptor('').allowedLabel,'Allowed entries');
 });
 

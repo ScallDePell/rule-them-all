@@ -1,8 +1,6 @@
 /**
- * A Creation System selects sources from the ACTUAL Ruleset document, not
- * from a separately maintained list of editor families or API method names.
- * The structural collection-to-kind contract is shared with the reference
- * resolver; it is not a list of permitted game concepts or Runtime effects.
+ * A Creation System selects sources from the ACTUAL Ruleset document. Only the
+ * collections the creation runtime can apply to a character are offered.
  */
 import {isRecord} from './configurator-schema.mjs';
 import {COLLECTION_TO_KIND} from './relation-contract.mjs';
@@ -17,13 +15,14 @@ const localize=(key,fallback)=>{
 const title=id=>String(id).replace(/([a-z])([A-Z])/g,'$1 $2').replace(/^./,s=>s.toUpperCase());
 const EMPTY={allowedLabel:'Allowed entries',help:'Select a Ruleset source above. Nothing is created in the game world from this configuration alone.'};
 
-/** Every schema-recognized array present on this Ruleset is a selectable
- * collection, including empty collections. No content-type or game-family
- * names are enumerated here. No provider method is guessed from a plural. */
+/** Collections a creation step may select from: the runtime grants Definitions and acquires Content. */
+export const CREATION_SOURCE_COLLECTIONS=Object.freeze(['definitions','contentTemplates']);
+
+/** The supported collections present on this Ruleset, including empty ones. */
 export function listCreationSourceCollections(ruleset){
   if(!isRecord(ruleset))throw new TypeError('A Ruleset document is required for creation source discovery.');
   return Object.entries(ruleset).filter(([id,entries])=>
-    Object.hasOwn(COLLECTION_TO_KIND,id)&&Array.isArray(entries)
+    CREATION_SOURCE_COLLECTIONS.includes(id)&&Array.isArray(entries)
   ).map(([id,entries])=>({id,objectKind:COLLECTION_TO_KIND[id],entries}));
 }
 

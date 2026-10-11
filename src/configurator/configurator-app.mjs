@@ -35,15 +35,14 @@ const TOP_LEVEL = Object.freeze([
   {view:"events", kind:"eventType", title:"Event Types", list:"listEventTypes", collection:"eventTypes"},
   {view:"triggers", kind:"trigger", title:"Triggers", list:"listTriggers", collection:"triggers"},
   {view:"modifiers", kind:"modifier", title:"Modifiers", list:"listModifiers", collection:"modifiers"},
-  {view:"restrictions", kind:"restriction", title:"Restrictions", list:"listRestrictions", collection:"restrictions"},
   {view:"durations", kind:"duration", title:"Durations", list:"listDurations", collection:"durations"},
   {view:"creationSystems", kind:"creationSystem", title:"Creation Systems", list:"listCreationSystems", collection:"creationSystems"},
-  {view:"progressionSystems", kind:"progressionSystem", title:"Progression Systems", list:"listProgressionSystems", collection:"progressionSystems"},
-  {view:"sheetDefinitions", kind:"sheetDefinition", title:"Sheet Builder", list:"listSheetDefinitions", collection:"sheetDefinitions"},
+  // Progression and Sheets stay out of the navigation until their runtime exists (milestone 4 for sheets).
+  {view:"progressionSystems", kind:"progressionSystem", title:"Progression Systems", list:"listProgressionSystems", collection:"progressionSystems", hidden:true},
+  {view:"sheetDefinitions", kind:"sheetDefinition", title:"Sheet Builder", list:"listSheetDefinitions", collection:"sheetDefinitions", hidden:true},
   {view:"contentTypes", kind:"contentType", title:"Content Types", list:"listContentTypes", collection:"contentTypes"},
   {view:"categories", kind:"category", title:"Categories", list:"listCategories", collection:"categories"},
-  {view:"tags", kind:"tag", title:"Tags", list:"listTags", collection:"tags"},
-  {view:"references", kind:"reference", title:"References", list:"listReferences", collection:"references"}
+  {view:"tags", kind:"tag", title:"Tags", list:"listTags", collection:"tags"}
 ]);
 
 function localize(api, versionId, key) {
@@ -158,11 +157,10 @@ export class ConfiguratorApp extends ConfiguratorWindow {
         {view:'contentTypes',title:'Content Types',active:this.#view==='contentTypes'},
         ...contentTypes.map(type=>({view:`content:${type.id}`,title:type.name,active:type.active,color:type.color}))
       ];
-      else if(section.id==='runtime')items=[{view:'runtimeLab',title:'Runtime Lab',active:this.#view==='runtimeLab'}];
+      else if(section.id==='tools')items=[{view:'runtimeLab',title:'Runtime Lab',active:this.#view==='runtimeLab'},{view:'dependencies',title:'Dependencies',active:this.#view==='dependencies'}];
       else {
-        items=TOP_LEVEL.filter(item=>section.collections.includes(item.collection)&&!['contentTypes'].includes(item.collection))
+        items=TOP_LEVEL.filter(item=>section.collections.includes(item.collection)&&!item.hidden&&!['contentTypes'].includes(item.collection))
           .map(item=>({...item,active:this.#view===item.view}));
-        if(section.id==='advanced')items.push({view:'dependencies',title:'Dependencies',active:this.#view==='dependencies'});
       }
       return {group:section.id,titleKey:section.titleKey,items};
     }) : [];
@@ -170,7 +168,7 @@ export class ConfiguratorApp extends ConfiguratorWindow {
     const navGroups = navigation.map(entry => {
       const id = entry.view ?? entry.group.toLowerCase();
       const items = entry.items ?? [];
-      const icons = {general:"fa-sliders",definitions:"fa-shapes",content:"fa-box-open",rules:"fa-gears",orchestration:"fa-diagram-project",systems:"fa-wand-magic-sparkles",runtime:"fa-flask",advanced:"fa-screwdriver-wrench"};
+      const icons = {general:"fa-sliders",definitions:"fa-shapes",content:"fa-box-open",rules:"fa-gears",orchestration:"fa-diagram-project",systems:"fa-wand-magic-sparkles",organization:"fa-tags",tools:"fa-screwdriver-wrench"};
       const groupLabel = label(entry.titleKey);
       const groupColor=sectionColor(ruleset,id);
       return {id, title:groupLabel, color:groupColor, icon:icons[id] ?? "fa-folder", count:items.length,
@@ -311,7 +309,7 @@ export class ConfiguratorApp extends ConfiguratorWindow {
       error:this.#error,displayLines:this.#displayMode==="lines",displayTiles:this.#displayMode==="tiles",isWorkspace:!!ruleset,isRulesets:!ruleset,view:this.#view,rulesets,navigation,navGroups,currentNavGroup,definitionTypes,contentTypes,
       selectedRuleset:ruleset,selectedRecord:record,rulesetAccent:rulesetColor(ruleset),canOverrideCollection,currentCollection,collectionAccent,collectionCustomAccent,canEditRuleset:record?.status!=="validated",selectedRulesetName:ruleset?localize(api,this.#selected,ruleset.nameKey):"",
       isGeneral:!!ruleset&&this.#view==="general",isCollection:!!ruleset&&Boolean(currentKind),isContentFamily:currentKind==="contentTemplate",isDependencies:!!ruleset&&this.#view==="dependencies",isRuntimeLab:!!ruleset&&this.#view==="runtimeLab",isContentTypes,isContentTemplates,isContentLibraries,
-      currentTitle,currentKind,currentType,canReorder:Boolean(record&&record.status!=="validated"&&currentKind&&currentKind!=="reference"),cards:filteredCards,availableTags,activeTagCount:activeTagIds.size,availableCategories,activeCategoryCount:activeCategoryIds.size,dependencyGroups:dependencyVisibleGroups,dependencySelected,dependencyGraph,dependencyStats,dependencyAvailableTags,dependencyActiveTagCount:dependencyActiveTags.size,dependencyUnresolvedOnly,actors,runtimeActions,runtimeFormulas,runtimeConditions,runtimeTests,runtimeEvents,runtimeResult:this.#runtimeResult,runtimeStateCards,runtimeSelection:this.#runtimeSelection,runtimeActorTypeOptions:availableDocumentTypes("Actor").map(id=>({id,sourceSelected:id===this.#runtimeSelection.sourceType,targetSelected:id===this.#runtimeSelection.targetType})),runtimeTool,runtimeModes,runtimeGuide,runtimeReady,runtimeStateError,runtimeActorNames,
+      currentTitle,currentKind,currentType,canReorder:Boolean(record&&record.status!=="validated"&&currentKind),cards:filteredCards,availableTags,activeTagCount:activeTagIds.size,availableCategories,activeCategoryCount:activeCategoryIds.size,dependencyGroups:dependencyVisibleGroups,dependencySelected,dependencyGraph,dependencyStats,dependencyAvailableTags,dependencyActiveTagCount:dependencyActiveTags.size,dependencyUnresolvedOnly,actors,runtimeActions,runtimeFormulas,runtimeConditions,runtimeTests,runtimeEvents,runtimeResult:this.#runtimeResult,runtimeStateCards,runtimeSelection:this.#runtimeSelection,runtimeActorTypeOptions:availableDocumentTypes("Actor").map(id=>({id,sourceSelected:id===this.#runtimeSelection.sourceType,targetSelected:id===this.#runtimeSelection.targetType})),runtimeTool,runtimeModes,runtimeGuide,runtimeReady,runtimeStateError,runtimeActorNames,
       publishReadiness:this.#view==='general'&&record?.status==='draft'?this.#publishReadiness(api,ruleset):null,
       recipes:this.#view==='general'&&record?recipeCards():null,
       lifecycle:record?{isValidated:record.status==="validated",isReady:record.status==="ready",isDraft:record.status==="draft",canMutate:record.status!=="validated",canCreateVersion:record.status==="validated",canActivate:Boolean(record.publishedSnapshot),isActive:record.versionId===activeId,statusLabel:statusLabel(record.status)}:null,

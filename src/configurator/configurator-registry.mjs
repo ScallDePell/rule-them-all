@@ -137,7 +137,7 @@ export class ConfiguratorRegistry {
       if (Array.from(family.versions.values()).some(v => v.versionId !== versionId && v.version === next.version)) throw new Error(`Ruleset version already exists in family ${record.rulesetId}: ${next.version}.`);
     }
     const index = new DependencyIndex(next);
-    const protectedKinds = {definitions:"definition", parameters:"parameter", formulas:"formula", formulaBindings:"formulaBinding", conditions:"condition", rolls:"roll", outcomes:"outcome", tests:"test", effects:"effect", actions:"action", permissionPolicies:"permissionPolicy", eventTypes:"eventType", triggers:"trigger", contentTypes:"contentType", contentTemplates:"contentTemplate", modifiers:"modifier", restrictions:"restriction", durations:"duration", creationSystems:"creationSystem", progressionSystems:"progressionSystem", sheetDefinitions:"sheetDefinition"};
+    const protectedKinds = {definitions:"definition", parameters:"parameter", formulas:"formula", formulaBindings:"formulaBinding", conditions:"condition", rolls:"roll", outcomes:"outcome", tests:"test", effects:"effect", actions:"action", permissionPolicies:"permissionPolicy", eventTypes:"eventType", triggers:"trigger", contentTypes:"contentType", contentTemplates:"contentTemplate", modifiers:"modifier", durations:"duration", creationSystems:"creationSystem", progressionSystems:"progressionSystem", sheetDefinitions:"sheetDefinition"};
     for (const [collection, kind] of Object.entries(protectedKinds)) {
       for (const previous of current[collection] ?? []) {
         if (!(next[collection] ?? []).some(entry => entry?.id === previous.id)) {

@@ -72,7 +72,7 @@ test("real editor options use names, persisted type colors independent of tags, 
   const {emptyStorageSnapshot}=await import("../src/configurator/configurator-storage.mjs");
   class Store {constructor(){this.snapshot=emptyStorageSnapshot();}async load(){return structuredClone(this.snapshot);}async save(v){this.snapshot=structuredClone(v);}}
   const api=await createConfiguratorAPI(new Store());
-  const {versionId}=await api.createRuleset({id:"colors-ui",nameKey:"Règles",version:"1.0.0",familyColors:{actions:"#ddaa22"},sectionColorOverrides:{rules:true,definitions:true,advanced:true}});
+  const {versionId}=await api.createRuleset({id:"colors-ui",nameKey:"Règles",version:"1.0.0",familyColors:{actions:"#ddaa22"},sectionColorOverrides:{rules:true,definitions:true,organization:true}});
   await api.registerDefinitionType(versionId,{id:"skill",key:"skill",nameKey:"Compétences",color:"#dc4039",fields:{unlocked:{id:"unlocked",name:"Compétences débloquées",valueType:"reference",cardinality:"many",referenceTarget:{objectKind:"definition"}}},allowedCapabilities:[],defaultCapabilities:[],requiredCapabilities:[]});
   await api.registerDefinitionType(versionId,{id:"ability",key:"ability",nameKey:"Caractéristiques",color:"#238bc7",fields:{},allowedCapabilities:[],defaultCapabilities:[],requiredCapabilities:[]});
   await api.createTag(versionId,{id:"nature",nameKey:"Nature",color:"#46b55e",enabled:true,order:10});

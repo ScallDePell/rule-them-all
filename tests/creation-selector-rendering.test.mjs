@@ -16,7 +16,7 @@ test('type selector renders a framed, searchable, safe checkbox list',()=>{
   assert.equal((html.match(/type="checkbox"/g)??[]).length,3);
 });
 
-test('actual Creation System editor renders a selected type instead of individual Definitions',async()=>{
+test('actual Creation System editor renders the chosen source and its entries',async()=>{
   const {ConfiguratorEntryEditor}=await import('../src/configurator/configurator-entry-editor.mjs');
   const {createConfiguratorAPI}=await import('../src/configurator/configurator-api.mjs');
   const {emptyStorageSnapshot}=await import('../src/configurator/configurator-storage.mjs');
@@ -25,20 +25,13 @@ test('actual Creation System editor renders a selected type instead of individua
   const {versionId}=await api.createRuleset({id:'r',nameKey:'R',version:'1'});
   await api.registerDefinitionType(versionId,{id:'attributes',nameKey:'Attributes',key:'attributes',fields:{},allowedCapabilities:[],defaultCapabilities:[],requiredCapabilities:[]});
   await api.createDefinition(versionId,{id:'strength',nameKey:'Strength',key:'strength',definitionTypeId:'attributes',data:{},categories:[],capabilities:[],tags:[]});
-  await api.createCreationSystem(versionId,{id:'setup',nameKey:'Setup',steps:[{id:'s1',name:'Assign attributes',source:{collection:'definitionTypes',objectIds:['attributes']},min:1,max:1},{id:'s2',name:'Choose Strength',source:{collection:'definitions',objectIds:['strength']},min:1,max:1}]});
+  await api.createCreationSystem(versionId,{id:'setup',nameKey:'Setup',steps:[{id:'s2',name:'Choose Strength',source:{collection:'definitions',objectIds:['strength']},min:1,max:1}]});
   const editor=new ConfiguratorEntryEditor({api,versionId,kind:'creationSystem',id:'setup'});
-  const ctx=await editor._prepareContext({});
-  const html=ctx.creationStepRows[0].html;
+  const html=(await editor._prepareContext({})).creationStepRows[0].html;
   assert.match(html,/data-step-prop="sourceCollection"/);
-  assert.match(html,/data-step-prop="sourceObjects"/);
-  assert.match(html,/value="definitionTypes" checked/);
-  assert.match(html,/value="attributes" checked/);
-  assert.match(html,/Allowed [Dd]efinition [Tt]ypes/);
-  assert.match(html,/checked > Attributes<\/label>/);
-  assert.doesNotMatch(html,/>Strength<\/label>/);
-  const legacy=ctx.creationStepRows[1].html;
-  assert.match(legacy,/value="definitions" checked/);
-  assert.match(legacy,/value="strength" checked/);
-  assert.match(legacy,/Allowed Definitions/);
-  assert.match(legacy,/checked > Strength<\/label>/);
+  assert.match(html,/value="definitions" checked/);
+  assert.match(html,/value="strength" checked/);
+  assert.match(html,/Allowed Definitions/);
+  assert.match(html,/checked > Strength<\/label>/);
+  assert.doesNotMatch(html,/value="definitionTypes"/);
 });

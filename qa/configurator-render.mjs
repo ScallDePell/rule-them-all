@@ -59,7 +59,7 @@ const {ConfiguratorEntryEditor}=await imp('src/configurator/configurator-entry-e
 const editorTpl=Handlebars.compile(readFileSync(join(root,'templates/configurator/entry-editor.hbs'),'utf8'));
 const selectUrl=pathToFileURL(join(root,'src/ui/rta-select.mjs')).href;
 const editors=[['ruleset',v],['definitionType','stat'],['definition','d0'],['contentType','gear'],['contentTemplate','rope'],['parameter','p1'],['formula','f1'],['condition','c1'],['action','a1'],['tag','tag-a'],['category','cat-core'],
- ...['formulaBinding','roll','outcome','test','effect','eventType','permissionPolicy','trigger','sheetDefinition','creationSystem','reference','modifier','restriction','duration','progressionSystem'].map(kind=>[kind,null])];
+ ...['formulaBinding','roll','outcome','test','effect','eventType','permissionPolicy','trigger','sheetDefinition','creationSystem','modifier','duration','progressionSystem'].map(kind=>[kind,null])];
 for(const [kind,id] of editors){
   const editor=new ConfiguratorEntryEditor({api,versionId:v,kind,id,definitionTypeId:kind==='definition'?'stat':null,contentTypeId:kind==='contentTemplate'?'gear':null});
   const ctx=await editor._prepareContext({});

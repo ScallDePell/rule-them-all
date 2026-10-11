@@ -24,8 +24,8 @@ test('normal selectors share the framed fieldset right edge and compact operands
   assert.match(select,/const formRow=\(control,label\)=>/);
 });
 
-test('browser matrix validates 25 actual Handlebars editor branches including dynamic Creation steps',()=>{
-  const expected=['Ruleset','DefinitionType','Definition','ContentType','ContentTemplate','Formula','Condition','SheetDefinition','CreationSystem','Modifier','Restriction','Duration','ProgressionSystem'];
+test('browser matrix validates the actual Handlebars editor branches including dynamic Creation steps',()=>{
+  const expected=['Ruleset','DefinitionType','Definition','ContentType','ContentTemplate','Formula','Condition','SheetDefinition','CreationSystem','Modifier','Duration','ProgressionSystem'];
   for(const kind of expected)assert.ok(qa.includes(`'${kind}'`),kind);
   assert.match(qa,/RTASelect\.enhance\(document\.querySelector/);
   assert.match(qa,/len\(results\)==len\(KINDS\)\*3/);

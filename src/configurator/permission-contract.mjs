@@ -10,10 +10,11 @@ export const OWNERSHIP_LEVELS=Object.freeze(["none","limited","observer","owner"
 const nonempty=value=>typeof value==="string"&&value.trim().length>0;
 
 /** PermissionRule: effect for some operations, for subjects matching every given criterion.
- * {id, effect:ALLOW|DENY, operations[], roles[]?, minimumOwnership?, userIds[]?, conditionRef?, priority} */
+ * A DENY rule with a Condition is how a Ruleset restricts an operation; messageKey tells the player why.
+ * {id, effect:ALLOW|DENY, operations[], roles[]?, minimumOwnership?, userIds[]?, conditionRef?, priority, messageKey?} */
 export function preparePermissionRule(data,index=0){
   if(!isRecord(data))throw new Error(`PermissionPolicy.rules[${index}] must be an object.`);
-  const rule={roles:[],minimumOwnership:null,userIds:[],conditionRef:null,priority:0,...copyJSON(data)};
+  const rule={roles:[],minimumOwnership:null,userIds:[],conditionRef:null,priority:0,messageKey:"",...copyJSON(data)};
   if(!nonempty(rule.id))throw new Error(`PermissionPolicy.rules[${index}] requires an id.`);
   if(!["ALLOW","DENY"].includes(rule.effect))throw new Error(`Permission rule ${rule.id}: effect must be ALLOW or DENY.`);
   if(!Array.isArray(rule.operations)||!rule.operations.length||rule.operations.some(op=>!PERMISSION_OPERATIONS.includes(op)))throw new Error(`Permission rule ${rule.id}: operations must list ${PERMISSION_OPERATIONS.join(", ")}.`);
@@ -22,6 +23,7 @@ export function preparePermissionRule(data,index=0){
   if(!Array.isArray(rule.userIds)||rule.userIds.some(id=>!nonempty(id)))throw new Error(`Permission rule ${rule.id}: userIds must be user ids.`);
   if(rule.conditionRef!==null&&!nonempty(rule.conditionRef))throw new Error(`Permission rule ${rule.id}: conditionRef must be a Condition id or null.`);
   if(!Number.isFinite(rule.priority))throw new Error(`Permission rule ${rule.id}: priority must be a number.`);
+  if(typeof rule.messageKey!=="string")throw new Error(`Permission rule ${rule.id}: messageKey must be text.`);
   return rule;
 }
 export function preparePermissionRules(rules){

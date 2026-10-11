@@ -68,12 +68,11 @@ export function collectEntryData(kind,{fd,current,bool,checkedIds,queryOne,query
     }
     if(kind==="category")return{...current,nameKey:String(fd.get("nameKey")??"").trim(),descriptionKey:String(fd.get("descriptionKey")??""),enabled:bool("enabled")};
     if(kind==="tag")return{...current,nameKey:String(fd.get("nameKey")??"").trim(),descriptionKey:String(fd.get("descriptionKey")??""),enabled:bool("enabled"),color:fieldPresent(fd,"customColorEnabled")?(String(fd.get("color")??"").trim()||current.color||null):fieldPresent(fd,"customColorPermission")?null:current.color??null};
-    if(kind==="reference")return{...current,...parseRefToken(fd.get("referenceTarget"))};
     if(kind==="sheetDefinition"){
       const components=[...queryAll("[data-sheet-component]")].map(row=>{const sourceToken=String(row.querySelector('[data-sheet-prop="source"]')?.value??"");return{id:row.dataset.componentId||uid("component"),kind:String(row.querySelector('[data-sheet-prop="kind"]')?.value??"text"),label:String(row.querySelector('[data-sheet-prop="label"]')?.value??""),source:sourceToken?parseRefToken(sourceToken):null,editable:row.querySelector('[data-sheet-prop="editable"]')?.checked===true,width:String(row.querySelector('[data-sheet-prop="width"]')?.value??"full")};});
       return{...current,nameKey:String(fd.get("nameKey")??"").trim(),descriptionKey:String(fd.get("descriptionKey")??""),enabled:bool("enabled"),viewType:String(fd.get("viewType")??"actor"),renderer:"foundry",layout:{direction:String(fd.get("layoutDirection")??"column"),components}};
     }
     if(kind==="creationSystem")return collectCreation();
-    if(["modifier","restriction","duration","progressionSystem"].includes(kind)){const parsed=json(fd.get("genericJson"),current);return{...parsed,id:current.id};}
+    if(["modifier","duration","progressionSystem"].includes(kind)){const parsed=json(fd.get("genericJson"),current);return{...parsed,id:current.id};}
     const payload=json(fd.get("genericJson"),{}); if(!payload.id)payload.id=current.id; return payload;
 }

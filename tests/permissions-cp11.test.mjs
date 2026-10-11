@@ -131,3 +131,13 @@ test('CP-11: the socket relay answers only from the active GM, and only to the r
   const noGM=new FoundrySocketRelay({socket:{on(){},emit(){}},user:()=>({id:'p'}),users:{activeGM:null}});
   await assert.rejects(()=>noGM.request('executeAction',[]),error=>error.code==='RUNTIME_GM_UNAVAILABLE');
 });
+
+test('CP-11: a DENY rule carries the message that explains the refusal (former Restriction)', async () => {
+  const {resolvePermission}=await import('../src/runtime/permission-policy.mjs');
+  const {preparePermissionRule}=await import('../src/configurator/permission-contract.mjs');
+  const rule=preparePermissionRule({id:'stunned',effect:'DENY',operations:['execute'],conditionRef:'is-stunned',priority:5,messageKey:'You are stunned.'});
+  const decision=await resolvePermission([{id:'p',enabled:true,scope:{objectKind:'ruleset'},defaultEffect:'ALLOW',rules:[rule]}],{operation:'execute',target:{objectKind:'action',objectId:'attack'},subject:{userId:'u',role:'player',ownership:'owner'},condition:async id=>id==='is-stunned'});
+  assert.equal(decision.allowed,false);
+  assert.equal(decision.messageKey,'You are stunned.');
+  assert.throws(()=>preparePermissionRule({id:'x',effect:'DENY',operations:['read'],messageKey:3}),/messageKey/);
+});

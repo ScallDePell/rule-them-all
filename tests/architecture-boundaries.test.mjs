@@ -91,12 +91,12 @@ test("Runtime Lab numeric presets are isolated, injectable TEST DATA rather than
 
 test("Creation System sources localize via FR/EN while retaining stable collection IDs",()=>{
  const before=globalThis.game;
- globalThis.game={i18n:{lang:"fr",localize:key=>key==="RTA.CreationSource.definitionTypes.Label"?"Types de définitions":key}};
+ globalThis.game={i18n:{lang:"fr",localize:key=>key==="RTA.CreationSource.definitions.Label"?"Définitions":key}};
  try{
-  assert.equal(getCreationSourceDescriptor("definitionTypes").label,"Types de définitions");
-  const fake={getRuleset:()=>({definitionTypes:[{id:"mystic",nameKey:"Mystic"}],contentTypes:[]})};
+  assert.equal(getCreationSourceDescriptor("definitions").label,"Définitions");
+  const fake={getRuleset:()=>({definitions:[{id:"mystic",nameKey:"Mystic"}],contentTypes:[]})};
   const choices=getCreationSources(fake,"v1");
-  assert.equal(choices[0].id,"definitionTypes");assert.equal(choices[0].label,"Types de définitions");assert.equal(choices[0].items[0].id,"mystic");
+  assert.equal(choices.length,1);assert.equal(choices[0].id,"definitions");assert.equal(choices[0].label,"Définitions");assert.equal(choices[0].items[0].id,"mystic");
  }finally{globalThis.game=before;}
 });
 
@@ -116,7 +116,7 @@ test("architecture gate: no system-owned Actor type localizations, no game-speci
  for(const locale of ["en","fr"]){
   const dict=JSON.parse(read(`lang/${locale}.json`));
   assert.equal(dict.TYPES,undefined);assert.equal(dict.RWF,undefined);
-  assert.ok(dict.RTA?.CreationSource?.definitionTypes?.Label);
+  assert.ok(dict.RTA?.CreationSource?.definitions?.Label);
  }
  const prod=walk(path.join(base,"src")).filter(f=>f.endsWith(".mjs"));
  for(const file of prod){const source=readFileSync(file,"utf8");

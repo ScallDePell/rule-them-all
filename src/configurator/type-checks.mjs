@@ -16,19 +16,17 @@ const byId = value => new Map(list(value).filter(isRecord).map(entry => [entry.i
 
 /** Type lookups over one Ruleset. */
 export function rulesetTypes(ruleset) {
-  const parameters = byId(ruleset.parameters), formulas = byId(ruleset.formulas), references = byId(ruleset.references);
-  /** Capability output contract a logical Reference designates, following named References once. */
-  const output = (reference, depth = 0) => {
+  const parameters = byId(ruleset.parameters), formulas = byId(ruleset.formulas);
+  /** Capability output contract a logical Reference designates. */
+  const output = reference => {
     if (!isRecord(reference)) return null;
-    if (reference.objectKind === "reference" && depth === 0) return output(references.get(reference.objectId), 1);
     if (reference.objectKind !== "definition" || !reference.capabilityId || !reference.outputId) return null;
     return capabilityTypeRegistry.get(reference.capabilityId)?.outputs?.[reference.outputId] ?? null;
   };
-  const referenceType = (reference, depth = 0) => {
+  const referenceType = reference => {
     if (!isRecord(reference)) return UNKNOWN_TYPE;
     if (reference.objectKind === "parameter") return parameters.get(reference.objectId)?.valueType ?? UNKNOWN_TYPE;
     if (reference.objectKind === "formula") return formulas.get(reference.objectId)?.resultType ?? UNKNOWN_TYPE;
-    if (reference.objectKind === "reference" && depth === 0) return referenceType(references.get(reference.objectId), 1);
     return output(reference)?.valueType ?? UNKNOWN_TYPE;
   };
   const leaf = (kind, target) => {
@@ -83,7 +81,7 @@ export function checkRulesetTypes(ruleset, d) {
     if (!isRecord(effect) || !isRecord(effect.targetRef)) return;
     const path = `effects[${index}]`, target = types.output(effect.targetRef);
     if (!target) return;
-    const ref = effect.targetRef.objectKind === "reference" ? null : effect.targetRef;
+    const ref = effect.targetRef;
     if (!target.mutable) d.strict("EFFECT_TARGET", `${path}.targetRef`, `Effect target is not mutable: ${target.id}.`);
     else if (ref && bound.has(`${ref.objectId}/${ref.capabilityId}/${ref.slotId ?? ""}/${ref.outputId}`)) d.strict("EFFECT_TARGET", `${path}.targetRef`, `Effect target is computed by a FormulaBinding: ${target.id}.`);
     const operation = effectOperationRegistry.get(effect.operation);

@@ -1,6 +1,6 @@
 /* Built-in help (§8): every editor kind has a localized
    summary and usage note; a Definition also shows its type's description. */
-export const HELP_KINDS = Object.freeze(["ruleset","definitionType","definition","parameter","formula","formulaBinding","condition","roll","outcome","test","effect","action","permissionPolicy","eventType","trigger","contentType","contentTemplate","modifier","restriction","duration","creationSystem","progressionSystem","sheetDefinition","category","tag","reference"]);
+export const HELP_KINDS = Object.freeze(["ruleset","definitionType","definition","parameter","formula","formulaBinding","condition","roll","outcome","test","effect","action","permissionPolicy","eventType","trigger","contentType","contentTemplate","modifier","duration","creationSystem","progressionSystem","sheetDefinition","category","tag"]);
 
 /** {summaryKey, usageKey, typeDescription} for an editor kind, or null. */
 export function entryHelp(kind, {definitionType = null} = {}) {

@@ -259,10 +259,6 @@ export function prepareModifier(data,options={}){
   arr(x.conditionRefs,'Modifier.conditionRefs');if(!isRecord(x.stacking)||!['stack','highest','lowest','replace','unique'].includes(x.stacking.mode))throw new Error('Modifier.stacking.mode is invalid.');
   if(!Number.isSafeInteger(x.priority))throw new Error('Modifier.priority must be a safe integer.');return x;
 }
-export function prepareRestriction(data,options={}){
-  const x=prepareNamedGeneric(data,'Restriction',{operationKinds:[],conditionRefs:[],effect:'deny',priority:0,messageKey:''},options);
-  arr(x.operationKinds,'Restriction.operationKinds');arr(x.conditionRefs,'Restriction.conditionRefs');if(!['allow','deny'].includes(x.effect))throw new Error('Restriction.effect must be allow or deny.');if(!Number.isSafeInteger(x.priority))throw new Error('Restriction.priority must be a safe integer.');return x;
-}
 /** Duration modes (CP-08). absoluteTime ends at a world time, in seconds, read through the time adapter. */
 export const DURATION_MODES=Object.freeze(['instant','fixed','untilEvent','whileCondition','untilRemoved','absoluteTime']);
 /** Fixed Duration units; a round or a turn lasts the world's round time. */
@@ -292,4 +288,4 @@ export function prepareSheetDefinition(data,options={}){
   x.layout.components=x.layout.components.map((component,i)=>{if(!isRecord(component)||!nonempty(component.id)||!kinds.has(component.kind))throw new Error(`SheetDefinition.layout.components[${i}] is invalid.`);return {label:'',source:null,editable:false,width:'full',...copyJSON(component)};});return x;
 }
 
-export const PREPARERS={parameters:prepareParameter,formulas:prepareFormula,formulaBindings:prepareFormulaBinding,conditions:prepareCondition,rolls:prepareRoll,outcomes:prepareOutcome,tests:prepareTest,effects:prepareEffect,actions:prepareAction,permissionPolicies:preparePermissionPolicy,eventTypes:prepareEventType,triggers:prepareTrigger,contentTypes:prepareContentType,contentTemplates:prepareContentTemplate,modifiers:prepareModifier,restrictions:prepareRestriction,durations:prepareDuration,creationSystems:prepareCreationSystem,progressionSystems:prepareProgressionSystem,sheetDefinitions:prepareSheetDefinition,categories:prepareCategory,tags:prepareTag};
+export const PREPARERS={parameters:prepareParameter,formulas:prepareFormula,formulaBindings:prepareFormulaBinding,conditions:prepareCondition,rolls:prepareRoll,outcomes:prepareOutcome,tests:prepareTest,effects:prepareEffect,actions:prepareAction,permissionPolicies:preparePermissionPolicy,eventTypes:prepareEventType,triggers:prepareTrigger,contentTypes:prepareContentType,contentTemplates:prepareContentTemplate,modifiers:prepareModifier,durations:prepareDuration,creationSystems:prepareCreationSystem,progressionSystems:prepareProgressionSystem,sheetDefinitions:prepareSheetDefinition,categories:prepareCategory,tags:prepareTag};

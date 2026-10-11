@@ -35,7 +35,7 @@ export async function resolvePermission(policies,{operation,target,subject,condi
     }
     matching.sort((a,b)=>b.rule.priority-a.rule.priority||(a.rule.effect==="DENY"?-1:1)-(b.rule.effect==="DENY"?-1:1));
     const top=matching[0];
-    if(top)return {allowed:top.rule.effect==="ALLOW",reason:"rule",policyId:top.policy.id,ruleId:top.rule.id};
+    if(top)return {allowed:top.rule.effect==="ALLOW",reason:"rule",policyId:top.policy.id,ruleId:top.rule.id,messageKey:top.rule.messageKey||null};
     // Several policies on the same scope: one DENY default is enough to deny.
     const denied=level.find(policy=>policy.defaultEffect!=="ALLOW");
     return {allowed:!denied,reason:"default",policyId:(denied??level[0]).id,ruleId:null};

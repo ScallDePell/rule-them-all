@@ -25,9 +25,7 @@ export function createEntrySeed(kind,{uid,definitionTypeId=null,contentTypeId=nu
   if(kind==="contentTemplate")return{id:uid("template"),nameKey:"",descriptionKey:"",image:"",data:{},enabled:true,tags:[],contentTypeId:contentTypeId??listContentTypes()[0]?.id??"",definitionBindings:[],actionBindings:[],initialStateRules:[],categories:[],capabilities:[],runtimeMode:"unique"};
   if(kind==="category")return{id:uid("category"),nameKey:"",descriptionKey:"",enabled:true};
   if(kind==="tag")return{id:uid("tag"),nameKey:"",descriptionKey:"",enabled:true,color:null};
-  if(kind==="reference")return{id:uid("reference"),objectKind:"definition",objectId:""};
   if(kind==="modifier")return{id:uid("modifier"),nameKey:"",descriptionKey:"",enabled:true,tags:[],targetRef:{objectKind:"definition",objectId:""},operation:"add",valueSource:{kind:"literal",value:0},conditionRefs:[],stacking:{mode:"stack",group:""},priority:0};
-  if(kind==="restriction")return{id:uid("restriction"),nameKey:"",descriptionKey:"",enabled:true,tags:[],operationKinds:[],conditionRefs:[],effect:"deny",priority:0,messageKey:""};
   if(kind==="duration")return{id:uid("duration"),nameKey:"",descriptionKey:"",enabled:true,tags:[],mode:"untilRemoved",amount:null,unit:null,eventTypeRef:null,conditionRef:null,at:null};
   if(kind==="creationSystem")return{id:uid("creation"),nameKey:"",descriptionKey:"",enabled:true,tags:[],steps:[]};
   if(kind==="progressionSystem")return{id:uid("progression"),nameKey:"",descriptionKey:"",enabled:true,tags:[],tracks:[]};

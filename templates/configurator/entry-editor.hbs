@@ -178,12 +178,6 @@
         <details class="rta-config-entry__section rta-config-entry__technical"><summary>{{localize "RTA.Template.Technical"}}</summary><div class="form-group rta-form-row"><label>{{localize "RTA.Template.Id"}}</label><input value="{{data.id}}" readonly></div></details>
       {{/if}}
 
-      {{#if isReference}}
-        <fieldset><legend>{{localize "RTA.Template.Reference"}}</legend>
-          <div class="form-group rta-form-row"><label>{{localize "RTA.Template.Target"}}</label><select name="referenceTarget" required>{{#each referenceChoices}}<option value="{{token}}" data-rta-colors="{{colors}}" {{#if selected}}selected{{/if}}>{{label}}</option>{{/each}}</select></div>
-        </fieldset>
-      {{/if}}
-
 
       {{#if isParameter}}
         <fieldset><legend>{{localize "RTA.Template.Parameter"}}</legend>

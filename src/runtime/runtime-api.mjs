@@ -18,7 +18,6 @@ export function createRuntimeAPI(configurator,{adapter=new FoundryRuntimeAdapter
     evaluateFormula:(versionId,id,context)=>engine.evaluateFormula(versionId,id,context),
     evaluateCondition:(versionId,id,context)=>engine.evaluateCondition(versionId,id,context),
     resolveModifiers:(versionId,targetRef,baseValue,context)=>engine.resolveModifiers(versionId,targetRef,baseValue,context),
-    checkRestrictions:(versionId,operationKind,context)=>engine.checkRestrictions(versionId,operationKind,context),
     roll:(formula,data)=>engine.roll(formula,data),
     executeTest:(versionId,id,context)=>engine.executeTest(versionId,id,context),
     createTestActors:options=>adapter.createTestActors(options),
