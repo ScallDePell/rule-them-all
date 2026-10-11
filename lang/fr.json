@@ -504,7 +504,8 @@
       "Amount": "Quantité",
       "Unit": "Unité",
       "WorldTimeSeconds": "Temps du monde (secondes)",
-      "Calculation": "Calcul"
+      "Calculation": "Calcul",
+      "SameAsContentType": "Comme son type ({mode})"
     },
     "EditorDisplay": {
       "NoneSelected": "Aucune sélection",

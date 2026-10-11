@@ -22,7 +22,7 @@ export function createEntrySeed(kind,{uid,definitionTypeId=null,contentTypeId=nu
   if(kind==="eventType")return{id:uid("event"),nameKey:"",descriptionKey:"",enabled:true,tags:[],payloadFields:{},roles:[]};
   if(kind==="trigger")return{id:uid("trigger"),nameKey:"",descriptionKey:"",enabled:true,tags:[],eventTypeId:"",eventFilter:null,conditionRefs:[],actionRefs:[]};
   if(kind==="contentType")return{id:uid("content-type"),nameKey:"",descriptionKey:"",image:"",color:null,enabled:true,tags:[],storageKind:"item",documentSubtype:"",runtimeMode:"unique",fields:{}};
-  if(kind==="contentTemplate")return{id:uid("template"),nameKey:"",descriptionKey:"",image:"",data:{},enabled:true,tags:[],contentTypeId:contentTypeId??listContentTypes()[0]?.id??"",definitionBindings:[],actionBindings:[],initialStateRules:[],categories:[],capabilities:[],runtimeMode:"unique"};
+  if(kind==="contentTemplate")return{id:uid("template"),nameKey:"",descriptionKey:"",image:"",data:{},enabled:true,tags:[],contentTypeId:contentTypeId??listContentTypes()[0]?.id??"",definitionBindings:[],actionBindings:[],initialStateRules:[],categories:[],capabilities:[],runtimeMode:null};
   if(kind==="category")return{id:uid("category"),nameKey:"",descriptionKey:""};
   if(kind==="tag")return{id:uid("tag"),nameKey:"",descriptionKey:"",color:null};
   if(kind==="modifier")return{id:uid("modifier"),nameKey:"",descriptionKey:"",enabled:true,tags:[],targetRef:{objectKind:"definition",objectId:""},operation:"add",valueSource:{kind:"literal",value:0},conditionRefs:[],stacking:{mode:"stack",group:""},priority:0};

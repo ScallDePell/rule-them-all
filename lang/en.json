@@ -508,7 +508,8 @@
       "Amount": "Amount",
       "Unit": "Unit",
       "WorldTimeSeconds": "World time (seconds)",
-      "Calculation": "Calculation"
+      "Calculation": "Calculation",
+      "SameAsContentType": "Same as its type ({mode})"
     },
     "EditorDisplay": {
       "NoneSelected": "None selected",

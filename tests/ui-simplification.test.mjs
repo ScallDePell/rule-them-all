@@ -129,3 +129,14 @@ test('an Action says what happens on each Outcome of its Test', async () => {
   const row=(id,mode,effects=[])=>({dataset:{outcomeMapping:id},querySelector:()=>({value:mode}),querySelectorAll:()=>effects.map(value=>({value}))});
   assert.deepEqual(collectOutcomeMappings([row('hit','effects',['dmg']),row('graze','default'),row('miss','block')]),[{outcomeId:'hit',effectRefs:['dmg']},{outcomeId:'miss',block:true}]);
 });
+
+test('a Content Template inherits the runtime mode of its Content Type unless it overrides it', async () => {
+  const {prepareContentTemplate}=await import('../src/configurator/rule-contracts.mjs');
+  const {templateFlags}=await import('../src/runtime/foundry-content-bridge.mjs');
+  const current={id:'arrow',nameKey:'Arrow',contentTypeId:'ammo',tags:[]};
+  assert.equal(collectEntryData('contentTemplate',{...form({nameKey:'Arrow',contentTypeId:'ammo',runtimeMode:''}),current}).runtimeMode,null);
+  assert.equal(prepareContentTemplate({id:'arrow',nameKey:'Arrow',contentTypeId:'ammo'}).runtimeMode,null);
+  assert.equal(templateFlags('v',{id:'arrow',runtimeMode:null},{id:'ammo',runtimeMode:'stackable'}).runtimeMode,'stackable');
+  const html=(await import('node:fs')).readFileSync(new URL('../templates/configurator/entry-editor.hbs',import.meta.url),'utf8');
+  assert.match(html,/RTA\.Template\.SameAsContentType" mode=\(localize inheritedRuntimeModeKey\)/);
+});

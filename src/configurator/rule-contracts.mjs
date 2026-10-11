@@ -200,12 +200,13 @@ export function prepareContentType(data,options={}){
 }
 
 export function prepareContentTemplate(data,options={}){
-  const x={descriptionKey:'',image:'',data:{},enabled:true,order:0,tags:[],contentTypeId:'generic',acquisitionActionRef:null,definitionBindings:[],actionBindings:[],choiceGroups:[],initialStateRules:[],categories:[],capabilities:[],runtimeMode:'unique',...copyJSON(data)};
+  const x={descriptionKey:'',image:'',data:{},enabled:true,order:0,tags:[],contentTypeId:'generic',acquisitionActionRef:null,definitionBindings:[],actionBindings:[],choiceGroups:[],initialStateRules:[],categories:[],capabilities:[],runtimeMode:null,...copyJSON(data)};
   identity(x,'ContentTemplate',options);need(nonempty(x.contentTypeId),'ContentTemplate requires contentTypeId.',options);
   if(!(x.acquisitionActionRef===null||nonempty(x.acquisitionActionRef)))throw new Error('ContentTemplate.acquisitionActionRef must be an Action id or null.');
   if(typeof x.image!=='string')throw new Error('ContentTemplate.image must be a string.');
   if(!isRecord(x.data))throw new Error('ContentTemplate.data must be an object.');
-  if(!['unique','stackable'].includes(x.runtimeMode))throw new Error('ContentTemplate.runtimeMode must be unique or stackable.');
+  // null: the template follows its Content Type.
+  if(![null,'unique','stackable'].includes(x.runtimeMode))throw new Error('ContentTemplate.runtimeMode must be null, unique or stackable.');
   for(const k of ['definitionBindings','actionBindings','choiceGroups','initialStateRules','categories','capabilities','tags'])arr(x[k],`ContentTemplate.${k}`);
   x.definitionBindings=x.definitionBindings.map((binding,index)=>{
     if(!isRecord(binding)||!nonempty(binding.definitionId))throw new Error(`ContentTemplate.definitionBindings[${index}] requires definitionId.`);
