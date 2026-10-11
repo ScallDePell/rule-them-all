@@ -12,6 +12,7 @@ import {ConfiguratorWindow} from "./configurator-window.mjs";
 import {ConfiguratorEntryEditor} from "./configurator-entry-editor.mjs";
 import {buildRuntimeLabDemoProfile} from "../runtime/runtime-demo-profile.mjs";
 import {applyRuntimeChoice,describeRuntimeResult} from "./runtime-lab-view.mjs";
+import {diagnosticEditor,pathInObject} from "./diagnostic-focus.mjs";
 
 
 const neutral = RTA_NEUTRAL_COLOR;
@@ -116,7 +117,8 @@ export class ConfiguratorApp extends ConfiguratorWindow {
     const items = errors.slice(0, 50).map(entry => {
       const target = entryAt(entry.path);
       const name = target?.nameKey ? localize(api, this.#selected, target.nameKey) : entry.objectId ?? entry.objectKind;
-      return {objectLabel: name, message: entry.message};
+      const editor = diagnosticEditor(entry, this.#selected);
+      return {objectLabel: name, message: entry.message, kind: editor?.kind ?? "", entryId: editor?.id ?? "", path: pathInObject(entry.path)};
     });
     return {ready: errors.length === 0, count: errors.length, items};
   }
@@ -506,6 +508,7 @@ export class ConfiguratorApp extends ConfiguratorWindow {
       }
       if (action==="addEntry") return this.#openEditor(button.dataset.kind,null,{definitionTypeId:button.dataset.definitionTypeId??null,contentTypeId:button.dataset.contentTypeId??null});
       if (action==="openEntry") return this.#openEditor(button.dataset.kind,button.dataset.entryId);
+      if (action==="openDiagnostic") return this.#openEditor(button.dataset.kind,button.dataset.entryId,{focusPath:button.dataset.path??""});
       if (action==="publish") { await api.publishRuleset(button.dataset.versionId??this.#selected); return this.render(false); }
       if (action==="validate") { await api.validateRulesetVersion(button.dataset.versionId??this.#selected); return this.render(false); }
       if (action==="createNewVersion") {

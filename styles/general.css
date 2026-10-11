@@ -152,3 +152,30 @@
   gap: var(--rta-gap-tight);
   padding-inline-start: var(--rta-gap-block);
 }
+
+/* Each missing piece opens the editor on the field that fixes it. */
+.rta-configurator .rta-general__readiness-link {
+  display: inline;
+  width: auto;
+  min-height: 0;
+  margin: 0;
+  padding: 0;
+  border: 0;
+  background: none;
+  color: inherit;
+  font: inherit;
+  line-height: inherit;
+  text-align: left;
+  cursor: pointer;
+}
+
+.rta-configurator .rta-general__readiness-link:is(:hover, :focus-visible) {
+  text-decoration: underline;
+  box-shadow: none;
+}
+
+.rta-configurator .rta-general__readiness-link > i {
+  margin-inline-start: var(--rta-gap-tight);
+  font-size: .8em;
+  opacity: .6;
+}

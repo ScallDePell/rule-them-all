@@ -257,7 +257,6 @@
   box-shadow: 5px 5px 18px var(--rta-shadow-color-strong);
   box-sizing: border-box;
   overflow: hidden;
-  min-height: 140px;
 }
 
 .rta-explorer__flyout-list {

@@ -748,3 +748,16 @@
 .rta-config-entry [data-slot-kinds][hidden] {
   display: none;
 }
+
+/* A field reached from "Ready to publish": highlighted for a few seconds. */
+@keyframes rta-diagnostic-focus {
+  0%, 70% { outline-color: var(--rta-color-warning); }
+  100% { outline-color: transparent; }
+}
+
+.rta-config-entry .rta-diagnostic-focus {
+  outline: 2px solid transparent;
+  outline-offset: 2px;
+  border-radius: var(--rta-radius-control);
+  animation: rta-diagnostic-focus 4s ease-out;
+}

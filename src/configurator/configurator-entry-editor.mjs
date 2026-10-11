@@ -34,6 +34,7 @@ import {renderRelationRow} from "../ui/relation-editor-markup.mjs";
 import {ConfiguratorWindow} from "./configurator-window.mjs";
 import {formatEditorValue} from "./editor-value.mjs";
 import {getCreationSources, getCreationSourceDescriptor} from "./creation-source-catalog.mjs";
+import {diagnosticFocusTargets} from "./diagnostic-focus.mjs";
 
 
 const uid=prefix=>`${prefix}-${crypto.randomUUID?.()??Math.random().toString(36).slice(2)}`;
@@ -48,9 +49,9 @@ export class ConfiguratorEntryEditor extends ConfiguratorWindow {
   static PARTS={content:{template:`modules/${MODULE_ID}/templates/configurator/entry-editor.hbs`,scrollable:["[data-entry-scroll]"]}};
   static MINIMUM={width:560,height:440};
 
-  #api; #optionColors=()=>[]; #renderCatalog=null; #versionId; #kind; #id; #definitionTypeId; #contentTypeId; #baseline; #error=""; #dirty=false; #onSaved;
-  constructor({api,versionId,kind,id=null,definitionTypeId=null,contentTypeId=null,onSaved=()=>{}},options={}){
-    super(options);this.#api=api;this.#versionId=versionId;this.#kind=kind;this.#id=id;this.#definitionTypeId=definitionTypeId;this.#contentTypeId=contentTypeId;this.#onSaved=onSaved;
+  #api; #optionColors=()=>[]; #renderCatalog=null; #versionId; #kind; #id; #definitionTypeId; #contentTypeId; #baseline; #error=""; #dirty=false; #onSaved; #focusPath=null;
+  constructor({api,versionId,kind,id=null,definitionTypeId=null,contentTypeId=null,focusPath=null,onSaved=()=>{}},options={}){
+    super(options);this.#focusPath=focusPath;this.#api=api;this.#versionId=versionId;this.#kind=kind;this.#id=id;this.#definitionTypeId=definitionTypeId;this.#contentTypeId=contentTypeId;this.#onSaved=onSaved;
   }
 
   #read(){
@@ -239,6 +240,23 @@ export class ConfiguratorEntryEditor extends ConfiguratorWindow {
     form.addEventListener("change",event=>{if(event.target.matches?.("[data-source-kind]"))syncValueSource(event.target);if(event.target.matches?.('[data-slot-prop="entryMode"]'))syncEntryMode(event.target);});
     form.addEventListener("submit",event=>{event.preventDefault();this.#save(false);});
     for(const button of this.element.querySelectorAll("[data-action]"))button.addEventListener("click",event=>this.#action(event));
+    if(this.#focusPath!==null){const path=this.#focusPath;this.#focusPath=null;requestAnimationFrame(()=>this.#focusDiagnostic(path));}
+  }
+
+  /** Bring the control a diagnostic points to into view and highlight it briefly. */
+  #focusDiagnostic(path){
+    const visible=node=>!node.closest("[hidden]");
+    for(const {selector,index} of diagnosticFocusTargets(this.#kind,path)){
+      const node=[...this.element.querySelectorAll(selector)].filter(visible)[index];
+      if(!node)continue;
+      const box=node.closest(".rta-form-row, [data-definition-field], [data-rule-operand], [data-slot-card]")??node.closest(".rta-select")??node;
+      for(let details=box.closest("details");details;details=details.parentElement?.closest("details"))details.open=true;
+      box.scrollIntoView({block:"center",behavior:"smooth"});
+      box.classList.remove("rta-diagnostic-focus");void box.offsetWidth;box.classList.add("rta-diagnostic-focus");
+      setTimeout(()=>box.classList.remove("rta-diagnostic-focus"),4000);
+      (node.matches("input:not([type=hidden]), textarea")?node:box.querySelector(".rta-select__trigger, input:not([type=hidden]), textarea"))?.focus({preventScroll:true});
+      return;
+    }
   }
 
   #syncStorageKind(target){
