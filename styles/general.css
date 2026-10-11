@@ -136,3 +136,19 @@
   gap: var(--rta-gap-row);
   flex-wrap: wrap;
 }
+
+/* Publish readiness: what the draft still lacks, as diagnosed by the Core. */
+.rta-configurator .rta-general__readiness {
+  display: grid;
+  gap: var(--rta-gap-row);
+}
+
+.rta-configurator .rta-general__readiness :is(p, ul) {
+  margin: 0;
+}
+
+.rta-configurator .rta-general__readiness-list {
+  display: grid;
+  gap: var(--rta-gap-tight);
+  padding-inline-start: var(--rta-gap-block);
+}

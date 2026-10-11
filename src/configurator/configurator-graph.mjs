@@ -7,6 +7,9 @@ import {applyFieldContract} from "./field-output-contracts.mjs";
 import {assertValidRuleset} from "./configurator-validation.mjs";
 import {PREPARERS} from "./rule-contracts.mjs";
 
+/** Draft writes accept incomplete entries; validation reports what publish still needs. */
+const DRAFT = Object.freeze({get incomplete() { return []; }});
+
 class DefinitionRegistry extends RulesetCollectionRegistry {
   constructor(registry) { super(registry, "definitions", {descriptionKey:"", data:{}, categories:[], enabled:true, order:0, tags:[]}, ["id","key","definitionTypeId"]); }
   prepareEntry(data, ruleset) {
@@ -19,9 +22,9 @@ class DefinitionRegistry extends RulesetCollectionRegistry {
     if (capabilities.size !== next.capabilities.length) throw new Error("Definition capabilities contain duplicate ids.");
     const allowed = new Set(type.allowedCapabilities ?? []);
     for (const id of capabilities) if (!allowed.has(id)) throw new Error(`Capability is not allowed by DefinitionType: ${id}.`);
-    for (const id of type.requiredCapabilities ?? []) if (!capabilities.has(id)) throw new Error(`Required capability is missing: ${id}.`);
+    // A missing required capability or value is a completeness diagnostic, reported by validation.
     const fields = resolveFieldContract(type, next.capabilities);
-    next.data = applyFieldContract(next.data ?? {}, fields);
+    next.data = applyFieldContract(next.data ?? {}, fields, DRAFT);
     return next;
   }
 }
@@ -31,14 +34,14 @@ export function createGraphAPI(registry) {
   const definitions = new DefinitionRegistry(registry);
   class ContentTypeRegistry extends RulesetCollectionRegistry {
     constructor(){super(registry,"contentTypes",{});}
-    prepareEntry(data){return PREPARERS.contentTypes(data);}
+    prepareEntry(data){return PREPARERS.contentTypes(data,DRAFT);}
   }
   class ContentTemplateRegistry extends RulesetCollectionRegistry {
     constructor(){super(registry,"contentTemplates",{});}
     prepareEntry(data,ruleset){
-      const next=PREPARERS.contentTemplates(data);
+      const next=PREPARERS.contentTemplates(data,DRAFT);
       const type=(ruleset.contentTypes??[]).find(entry=>entry.id===next.contentTypeId);
-      if(type) next.data=applyFieldContract(next.data??{},type.fields??{});
+      if(type) next.data=applyFieldContract(next.data??{},type.fields??{},DRAFT);
       return next;
     }
   }
@@ -49,7 +52,7 @@ export function createGraphAPI(registry) {
   collections.contentTypes=contentTypes; collections.contentTemplates=contentTemplates;
   for (const [name, collection] of Object.entries(collections)) {
     const prepare = PREPARERS[name];
-    if (prepare) collection.prepareEntry = data => prepare(data);
+    if (prepare) collection.prepareEntry = data => prepare(data, DRAFT);
   }
   const consumers = (rulesetId, id, kind) => new DependencyIndex(definitions.ruleset(rulesetId)).getConsumers(id, kind);
   const protectedDelete = (collection, kind) => (rulesetId, id) => {

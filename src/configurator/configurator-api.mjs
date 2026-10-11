@@ -15,6 +15,7 @@ function registryAPI(registry) {
     getStorageRevision:()=>registry.getStorageRevision(), getActiveVersionId:()=>registry.getActiveVersionId(), setActiveVersionId:id=>registry.setActiveVersionId(id),
     getWorldOverride:(v,l,k)=>registry.getWorldOverride(v,l,k), getVersionWorldOverrides:v=>registry.getVersionWorldOverrides(v), resolveLocalizedText:(v,l,k,f)=>registry.resolveLocalizedText(v,l,k,f), setWorldOverride:(v,l,k,x)=>registry.setWorldOverride(v,l,k,x), deleteWorldOverride:(v,l,k)=>registry.deleteWorldOverride(v,l,k),
     createRuleset:d=>registry.create(d), updateRuleset:(v,p)=>registry.update(v,p), deleteRulesetVersion:v=>registry.delete(v), validateRuleset,
+    diagnoseRuleset:(v,{scope="publish"}={})=>{const r=registry.get(v); if(!r) throw new Error(`RulesetVersion not found: ${v}.`); return validateRuleset(r,{scope});},
     publishRuleset:v=>registry.publish(v), validateRulesetVersion:v=>registry.validateVersion(v), createNewRulesetVersion:(v,n,o)=>registry.createNewVersion(v,n,o),
     exportRuleset:(v,{includeWorldLocalizations=false}={})=>{const r=registry.getRecord(v); if(!r) throw new Error(`RulesetVersion not found: ${v}.`); return exportRulesetData(r,includeWorldLocalizations?{worldLocalizations:registry.getVersionWorldOverrides(v)}:{});},
     importRuleset:(payload,mode)=>{const d=readRulesetPayload(payload); return registry.import(d.record,mode,d.worldLocalizations);}

@@ -28,6 +28,8 @@ export function evaluateConstraints(rules, data, {path='data'}={}) {
   const result=[];
   for (const [index,rule] of rules.entries()) {
     const value=pathValue(data,rule.field), at=`${path}.${rule.field}`;
+    // Presence is the job of 'required'; the other rules judge a value only once it exists.
+    if (value===undefined && !['required','relationCount'].includes(rule.kind)) continue;
     let valid=true;
     switch(rule.kind) {
       case 'required': valid=value!==undefined&&value!==null&&value!==''&&(!Array.isArray(value)||value.length>0); break;
@@ -41,7 +43,7 @@ export function evaluateConstraints(rules, data, {path='data'}={}) {
       case 'notEquals': valid=!Object.is(value,rule.value); break;
       case 'relationCount': valid=Array.isArray(value)&&value.length===rule.value; break;
     }
-    if (!valid) result.push({code:'CONSTRAINT_VIOLATION',path:at,message:`Constraint ${rule.kind} failed at ${rule.field} (rule ${index+1}).`});
+    if (!valid) result.push({code:'CONSTRAINT_VIOLATION',kind:rule.kind,path:at,message:`Constraint ${rule.kind} failed at ${rule.field} (rule ${index+1}).`});
   }
   return result;
 }

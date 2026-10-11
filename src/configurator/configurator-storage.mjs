@@ -1,5 +1,5 @@
 import {copyJSON, isRecord, normalizeRulesetCollections} from "./configurator-schema.mjs";
-import {assertValidRuleset, assertValidRulesetSchema} from "./configurator-validation.mjs";
+import {assertValidRuleset} from "./configurator-validation.mjs";
 import {validateWorldLocalizations} from "./world-localization.mjs";
 
 export const emptyStorageSnapshot = () => ({
@@ -30,12 +30,12 @@ export function validateVersionRecord(record, familyId) {
   if (!nonEmpty(record.version) || !["draft", "ready", "validated"].includes(record.status)) {
     throw new Error("Invalid RulesetVersion metadata.");
   }
-  assertValidRulesetSchema(record.workingDraft);
+  assertValidRuleset(record.workingDraft);
   if (record.workingDraft.id !== familyId || record.workingDraft.version !== record.version || record.workingDraft.status !== record.status) {
     throw new Error("RulesetVersion working draft metadata mismatch.");
   }
   if (record.publishedSnapshot !== null) {
-    assertValidRuleset(record.publishedSnapshot);
+    assertValidRuleset(record.publishedSnapshot, {scope: "publish"});
     if (record.publishedSnapshot.id !== familyId || record.publishedSnapshot.version !== record.version
       || !["ready", "validated"].includes(record.publishedSnapshot.status)) {
       throw new Error("Invalid stored publication.");

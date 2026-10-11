@@ -1,5 +1,6 @@
 import {copyJSON, isRecord} from "./configurator-schema.mjs";
 import {VALUE_CARDINALITIES, validateTypedValue, valueTypeRegistry} from "./value-type-registry.mjs";
+import {need} from "./diagnostics.mjs";
 
 const nonempty = value => typeof value === "string" && value.trim().length > 0;
 const FIELD_KEYS = Object.freeze(["id","name","valueType","cardinality","required","nullable","defaultValue","constraints","editable","referenceTarget","presentation","description"]);
@@ -93,14 +94,15 @@ export function prepareOutputMap(outputs = {}) {
   return Object.fromEntries(Object.entries(copyJSON(outputs)).map(([id, output]) => [id, prepareOutputDefinition(output, id)]));
 }
 
-export function applyFieldContract(data, fieldMap) {
+/** Apply a field contract; a missing required value is a completeness issue (see need()). */
+export function applyFieldContract(data, fieldMap, options = {}) {
   if (!isRecord(data)) throw new TypeError("Definition data must be an object.");
   const result = copyJSON(data);
   for (const key of Object.keys(result)) if (!Object.hasOwn(fieldMap, key)) throw new Error(`Definition data contains undeclared field: ${key}.`);
   for (const [id, field] of Object.entries(fieldMap)) {
     if (!Object.hasOwn(result,id) && Object.hasOwn(field,"defaultValue")) result[id] = copyJSON(field.defaultValue);
     if (!Object.hasOwn(result,id)) {
-      if (field.required) throw new Error(`Required field is missing: ${id}.`);
+      if (field.required) need(false, `Required field is missing: ${id}.`, options);
       continue;
     }
     const check = validateTypedValue(field.valueType, field.cardinality, field.nullable, result[id]);

@@ -1,5 +1,5 @@
 import {copyJSON, createRulesetData, isRecord} from "./configurator-schema.mjs";
-import {assertValidRuleset, assertValidRulesetSchema} from "./configurator-validation.mjs";
+import {assertValidRuleset} from "./configurator-validation.mjs";
 import {readStorageSnapshot} from "./configurator-storage.mjs";
 import {DependencyIndex} from "./dependency-index.mjs";
 import {createStableId} from "./identity.mjs";
@@ -54,7 +54,7 @@ export class ConfiguratorRegistry {
         error.code = "VERSION_NOT_ACTIVABLE";
         throw error;
       }
-      assertValidRuleset(record.publishedSnapshot);
+      assertValidRuleset(record.publishedSnapshot, {scope: "activate"});
     }
     this.#activeVersionId = versionId;
     return versionId;
@@ -108,7 +108,7 @@ export class ConfiguratorRegistry {
     const requestedVersionId = input.versionId;
     delete input.versionId;
     const ruleset = createRulesetData(input);
-    assertValidRulesetSchema(ruleset);
+    assertValidRuleset(ruleset);
     const versionId = requestedVersionId ?? createStableId();
     if (typeof versionId !== "string" || !versionId.trim()) throw new Error("versionId must be a non-empty string.");
     if (this.#versionFamily.has(versionId)) throw new Error(`RulesetVersion already exists: ${versionId}.`);
@@ -152,7 +152,7 @@ export class ConfiguratorRegistry {
         if (consumers.length) throwIntegrityError("definitionType", previous.id, consumers);
       }
     }
-    assertValidRulesetSchema(next);
+    assertValidRuleset(next);
     if (JSON.stringify(next) !== JSON.stringify(current)) next.status = "draft";
     record.version = next.version; record.status = next.status; record.workingDraft = next;
     return copyJSON(next);
@@ -176,7 +176,7 @@ export class ConfiguratorRegistry {
   publish(versionId) {
     const record = this.#requireMutable(versionId);
     const current = record.workingDraft;
-    assertValidRuleset(current);
+    assertValidRuleset(current, {scope: "publish"});
     const revision = Math.max(current.revision, record.publishedSnapshot?.revision ?? 0) + 1;
     if (!Number.isSafeInteger(revision)) throw new Error("Ruleset revision limit reached.");
     const next = {...copyJSON(current), revision, status: "ready"};
@@ -192,7 +192,7 @@ export class ConfiguratorRegistry {
       throw new Error("Only a READY published RulesetVersion can be validated.");
     }
     const frozen = {...copyJSON(record.publishedSnapshot), status: "validated"};
-    assertValidRuleset(frozen);
+    assertValidRuleset(frozen, {scope: "publish"});
     record.status = "validated";
     record.workingDraft = copyJSON(frozen);
     record.publishedSnapshot = copyJSON(frozen);
@@ -214,8 +214,8 @@ export class ConfiguratorRegistry {
   import(record, mode, worldLocalizations = undefined) {
     const next = copyJSON(record);
     if (!isRecord(next) || typeof next.versionId !== "string" || typeof next.rulesetId !== "string") throw new Error("Invalid RulesetVersion import.");
-    assertValidRulesetSchema(next.workingDraft);
-    if (next.publishedSnapshot !== null) assertValidRuleset(next.publishedSnapshot);
+    assertValidRuleset(next.workingDraft);
+    if (next.publishedSnapshot !== null) assertValidRuleset(next.publishedSnapshot, {scope: "publish"});
     if (!["NEW", "REPLACE"].includes(mode)) throw new Error(`Unsupported import mode: ${mode}.`);
     const existing = this.getRecord(next.versionId);
     if (mode === "NEW" && existing) throw new Error(`RulesetVersion already exists: ${next.versionId}.`);

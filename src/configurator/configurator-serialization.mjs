@@ -1,6 +1,6 @@
 import {RULESET_PACKAGE_FORMAT, RULESET_PACKAGE_FORMAT_VERSION, RULESET_PACKAGE_FORMATS, READABLE_PACKAGE_FORMATS} from "../core/module-contract.mjs";
 import {copyJSON, ENGINE_CONTRACT_VERSION, isRecord, normalizeRulesetCollections} from "./configurator-schema.mjs";
-import {assertValidRuleset, assertValidRulesetSchema} from "./configurator-validation.mjs";
+import {assertValidRuleset} from "./configurator-validation.mjs";
 import {storageFingerprint} from "./configurator-storage.mjs";
 import {validateWorldLocalizations} from "./world-localization.mjs";
 
@@ -25,7 +25,7 @@ function validateVersionRecord(record) {
     throw new Error("RulesetVersion working draft metadata mismatch.");
   }
   if (record.publishedSnapshot !== null) {
-    assertValidRuleset(record.publishedSnapshot);
+    assertValidRuleset(record.publishedSnapshot, {scope: "publish"});
     if (record.publishedSnapshot.id !== record.rulesetId || record.publishedSnapshot.version !== record.version
       || !["ready", "validated"].includes(record.publishedSnapshot.status)) throw new Error("Invalid RulesetVersion publication.");
   }

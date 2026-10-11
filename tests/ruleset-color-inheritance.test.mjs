@@ -3,7 +3,7 @@ import assert from 'node:assert/strict';
 import fs from 'node:fs';
 import {createConfiguratorAPI} from '../src/configurator/configurator-api.mjs';
 import {emptyStorageSnapshot} from '../src/configurator/configurator-storage.mjs';
-import {validateRulesetSchema} from '../src/configurator/configurator-validation.mjs';
+import {validateRuleset} from '../src/configurator/configurator-validation.mjs';
 import {RULESET_SECTIONS,DEFAULT_RULESET_COLOR,rulesetColor,sectionColor,collectionColor,objectColor,sectionForCollection,mayOverrideSection} from '../src/configurator/ruleset-colors.mjs';
 import {COLLECTION_FIELDS} from '../src/configurator/configurator-schema.mjs';
 import {createSelectColorResolver} from '../src/ui/select-option-presentation.mjs';
@@ -73,7 +73,7 @@ test('Ruleset editor patch retains existing collection overrides, IDs, collectio
   assert.equal(collectionColor(saved,'parameters'),'#aabbcc');
   assert.equal(saved.definitionTypes[0].id,'element');
   assert.equal(saved.sectionColorOverrides.rules,true);
-  assert.equal(validateRulesetSchema(saved).valid,true);
+  assert.equal(validateRuleset(saved).valid,true);
   await reloaded.updateRuleset(versionId,{sectionColorOverrides:{...saved.sectionColorOverrides,definitions:false,rules:false}});
   const disabled=reloaded.getRuleset(versionId);
   assert.equal(objectColor(disabled,'definitionTypes',disabled.definitionTypes[0]),'#3a4b5c');

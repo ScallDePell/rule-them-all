@@ -1,6 +1,7 @@
 import test from "node:test";
 import assert from "node:assert/strict";
 import {createConfiguratorAPI} from "../src/configurator/configurator-api.mjs";
+import {validateRuleset} from "../src/configurator/configurator-validation.mjs";
 import {emptyStorageSnapshot} from "../src/configurator/configurator-storage.mjs";
 import {capabilityTypeRegistry} from "../src/configurator/capability-type-registry.mjs";
 import {prepareFieldDefinition, prepareOutputDefinition} from "../src/configurator/field-output-contracts.mjs";
@@ -50,7 +51,13 @@ test("DefinitionType default and required capabilities are applied without busin
   const created=await api.createDefinition(v,{id:"m",key:"m",definitionTypeId:"meter",nameKey:"M",descriptionKey:"",data:{},categories:[],enabled:true,order:0,tags:[]});
   assert.deepEqual(created.capabilities,[id]);
   assert.deepEqual(created.data,{metric:0});
-  await assert.rejects(()=>api.updateDefinition(v,"m",{capabilities:[]}),/Required capability is missing/);
+  // A draft may lack a required capability; only publish needs the complete Definition.
+  await api.updateDefinition(v,"m",{capabilities:[],data:{}});
+  assert.equal(validateRuleset(api.getRuleset(v)).valid,true);
+  const publish=validateRuleset(api.getRuleset(v),{scope:"publish"});
+  assert.equal(publish.valid,false);
+  assert.match(publish.errors.map(entry=>entry.message).join(),/Required capability is missing/);
+  await assert.rejects(()=>api.publishRuleset(v),/Required capability is missing/);
 });
 
 test("Capability field collisions are rejected at DefinitionType authoring time",async()=>{

@@ -3,17 +3,17 @@ import assert from "node:assert/strict";
 import fs from "node:fs";
 import path from "node:path";
 import {createRulesetData} from "../src/configurator/configurator-schema.mjs";
-import {validateRulesetSchema} from "../src/configurator/configurator-validation.mjs";
+import {validateRuleset} from "../src/configurator/configurator-validation.mjs";
 import {readCssBundle} from './helpers/css-bundle.mjs';
 
 const root=path.resolve(new URL("..",import.meta.url).pathname);
 
 test("Ruleset family colors are presentation-only configuration with neutral fallback",()=>{
   const ruleset=createRulesetData({id:"r",nameKey:"R",version:"1.0.0",familyColors:{formulas:"#123456"}});
-  assert.equal(validateRulesetSchema(ruleset).valid,true);
+  assert.equal(validateRuleset(ruleset).valid,true);
   assert.deepEqual(ruleset.familyColors,{formulas:"#123456"});
   ruleset.familyColors.unknown="#ffffff";
-  assert.equal(validateRulesetSchema(ruleset).valid,false);
+  assert.equal(validateRuleset(ruleset).valid,false);
 });
 
 test("Rule Them'All restored shell keeps workspace, cards and entry footer",()=>{

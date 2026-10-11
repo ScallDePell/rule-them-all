@@ -104,6 +104,18 @@ export class ConfiguratorApp extends ConfiguratorWindow {
   }
   _onClose(options) { if(this._rtaOutsideClick)document.removeEventListener("pointerdown",this._rtaOutsideClick); if(this._rtaEscape)document.removeEventListener("keydown",this._rtaEscape,true); ConfiguratorApp.#open.delete(this); super._onClose?.(options); }
 
+  /** What the draft still lacks before Publish, as reported by the Core (CP-10). */
+  #publishReadiness(api, ruleset) {
+    const {errors} = api.diagnoseRuleset(this.#selected, {scope: "publish"});
+    const entryAt = path => { const match = /^([A-Za-z]+)\[(\d+)\]/.exec(path); return match ? ruleset[match[1]]?.[Number(match[2])] : null; };
+    const items = errors.slice(0, 50).map(entry => {
+      const target = entryAt(entry.path);
+      const name = target?.nameKey ? localize(api, this.#selected, target.nameKey) : entry.objectId ?? entry.objectKind;
+      return {objectLabel: name, message: entry.message};
+    });
+    return {ready: errors.length === 0, count: errors.length, items};
+  }
+
   async _prepareContext(options) {
     const context = await super._prepareContext(options);
     const api = await this.#api();
@@ -305,6 +317,7 @@ export class ConfiguratorApp extends ConfiguratorWindow {
       selectedRuleset:ruleset,selectedRecord:record,rulesetAccent:rulesetColor(ruleset),canOverrideCollection,currentCollection,collectionAccent,collectionCustomAccent,canEditRuleset:record?.status!=="validated",selectedRulesetName:ruleset?localize(api,this.#selected,ruleset.nameKey):"",
       isGeneral:!!ruleset&&this.#view==="general",isCollection:!!ruleset&&Boolean(currentKind),isContentFamily:currentKind==="contentTemplate",isDependencies:!!ruleset&&this.#view==="dependencies",isRuntimeLab:!!ruleset&&this.#view==="runtimeLab",isContentTypes,isContentTemplates,isContentLibraries,
       currentTitle,currentKind,currentType,cards:filteredCards,availableTags,activeTagCount:activeTagIds.size,dependencyGroups:dependencyVisibleGroups,dependencySelected,dependencyGraph,dependencyStats,dependencyAvailableTags,dependencyActiveTagCount:dependencyActiveTags.size,dependencyUnresolvedOnly,actors,runtimeDefinitions,runtimeActions,runtimeFormulas,runtimeConditions,runtimeTests,runtimeEvents,runtimeResult:this.#runtimeResult,runtimeStateCards,runtimeSelection:this.#runtimeSelection,runtimeActorTypeOptions:availableDocumentTypes("Actor").map(id=>({id,sourceSelected:id===this.#runtimeSelection.sourceType,targetSelected:id===this.#runtimeSelection.targetType})),runtimeTool,runtimeModes,runtimeGuide,selectedActorName,
+      publishReadiness:this.#view==='general'&&record?.status==='draft'?this.#publishReadiness(api,ruleset):null,
       lifecycle:record?{isValidated:record.status==="validated",isReady:record.status==="ready",isDraft:record.status==="draft",canMutate:record.status!=="validated",canCreateVersion:record.status==="validated",canDelete:true}:null,
       storage:ruleset?{storageRevision:api.getStorageRevision(),activeVersionId:activeId,engineContractVersion:ruleset.engineContractVersion}:null
     });
