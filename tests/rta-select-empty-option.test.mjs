@@ -11,5 +11,9 @@ test("single-select empty native options remain in form but never become checkbo
 test("unchecking single choice restores original empty sentinel without losing events",()=>{
   assert.match(source,/native\.selectedIndex=\[\.\.\.native\.options\]\.findIndex\(option=>option\.value===""\)/);
   assert.match(source,/emit\(native\)/);
-  assert.match(source,/selected\.length&&!chosen\.has\(input\)/);
+});
+test("single-select keeps every option selectable: a new choice replaces the current one",()=>{
+  // Disabling the other options forced users to uncheck before switching.
+  assert.doesNotMatch(source,/selected\.length&&!chosen\.has\(input\)/);
+  assert.match(source,/input\.disabled=!!\(this\.native\.disabled\|\|this\.native\.options\[idx\]\?\.disabled\);/);
 });

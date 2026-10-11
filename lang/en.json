@@ -705,6 +705,74 @@
       "MinimumEntries": "Minimum entries",
       "MaximumEntries": "Maximum entries",
       "Capacity": "Capacity Formula"
+    },
+    "Lab": {
+      "Choose": "Choose…",
+      "ChooseActor": "Choose an Actor…",
+      "NoActorChosen": "No Actor chosen",
+      "Reset": "Reset runtime data",
+      "ResetHint": "Erase the chosen Actors' runtime data, then initialize them again from the current Ruleset.",
+      "StateUnreadable": "This Actor's runtime data cannot be read ({error}). Use “Reset runtime data” in step 1.",
+      "NoOutcome": "No outcome",
+      "Roll": "Roll",
+      "Bonus": "Bonus",
+      "Total": "Total",
+      "Difficulty": "Difficulty",
+      "Margin": "Margin",
+      "Dice": "Dice",
+      "True": "TRUE",
+      "False": "FALSE",
+      "BlockedByCondition": "Blocked by the Condition {name}.",
+      "BlockedByOutcome": "Blocked by the Test outcome.",
+      "ChangeCount": "{count} change(s).",
+      "NoChange": "No change.",
+      "TriggerCount": "{count} Trigger(s) fired.",
+      "ActorsReadyMessage": "{source} and {target} are ready with demo values ({count} new runtime value(s)). Existing test Actors are reset to the demo profile.",
+      "InitializedMessage": "{count} runtime value(s) created on {actors} Actor(s).",
+      "ResetMessage": "Runtime data erased and rebuilt: {count} value(s) on {actors} Actor(s).",
+      "SavedMessage": "{name} saved. You can run the next test right away.",
+      "Result": {
+        "Test": "Test resolved",
+        "Formula": "Formula result",
+        "Condition": "Condition result",
+        "ActionPreview": "Action preview",
+        "ActionExecuted": "Action executed",
+        "Event": "Event emitted",
+        "Roll": "Foundry roll",
+        "ActorsReady": "Test Actors ready",
+        "Initialized": "Actors initialized",
+        "Reset": "Runtime data reset",
+        "Saved": "Value saved",
+        "Error": "Operation failed"
+      },
+      "Guide": {
+        "test": "Choose a Test, then run it. Source / Self supplies the tested values; Target is available to the rule context.",
+        "action": "Preview an Action first. Execute it only when the proposed changes look right.",
+        "formula": "Evaluate a Formula against Source / Self to inspect a calculated value.",
+        "condition": "Evaluate a Condition against Source / Self. The result is TRUE or FALSE.",
+        "event": "Emit an Event and see which Triggers fire.",
+        "roll": "Roll Foundry dice on their own, outside the Ruleset rules."
+      },
+      "Empty": {
+        "test": "This Ruleset has no Test yet.",
+        "action": "This Ruleset has no Action yet.",
+        "formula": "This Ruleset has no Formula yet.",
+        "condition": "This Ruleset has no Condition yet.",
+        "event": "This Ruleset has no Event Type yet."
+      },
+      "Error": {
+        "NoTestActors": "Test Actor creation is unavailable.",
+        "ChooseActor": "Choose at least one Actor in step 1.",
+        "InitializeHint": "Use “Initialize both Actors” in step 1, then retry.",
+        "Choose": {
+          "testId": "Choose a Test.",
+          "actionId": "Choose an Action.",
+          "formulaId": "Choose a Formula.",
+          "conditionId": "Choose a Condition.",
+          "eventTypeId": "Choose an Event Type.",
+          "rollFormula": "Enter a dice formula."
+        }
+      }
     }
   }
 }

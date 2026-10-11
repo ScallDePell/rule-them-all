@@ -701,6 +701,74 @@
       "MinimumEntries": "Entrées minimum",
       "MaximumEntries": "Entrées maximum",
       "Capacity": "Formula de capacité"
+    },
+    "Lab": {
+      "Choose": "Choisir…",
+      "ChooseActor": "Choisir un acteur…",
+      "NoActorChosen": "Aucun acteur choisi",
+      "Reset": "Réinitialiser les données",
+      "ResetHint": "Efface les données d’exécution des acteurs choisis, puis les réinitialise depuis le Ruleset courant.",
+      "StateUnreadable": "Les données d’exécution de cet acteur sont illisibles ({error}). Utilisez « Réinitialiser les données » à l’étape 1.",
+      "NoOutcome": "Aucun résultat",
+      "Roll": "Jet",
+      "Bonus": "Bonus",
+      "Total": "Total",
+      "Difficulty": "Difficulté",
+      "Margin": "Marge",
+      "Dice": "Dés",
+      "True": "VRAI",
+      "False": "FAUX",
+      "BlockedByCondition": "Bloquée par la condition {name}.",
+      "BlockedByOutcome": "Bloquée par le résultat du test.",
+      "ChangeCount": "{count} modification(s).",
+      "NoChange": "Aucune modification.",
+      "TriggerCount": "{count} déclencheur(s) activé(s).",
+      "ActorsReadyMessage": "{source} et {target} sont prêts avec des valeurs de démonstration ({count} nouvelle(s) valeur(s)). Les acteurs de test existants reprennent le profil de démonstration.",
+      "InitializedMessage": "{count} valeur(s) d’exécution créée(s) sur {actors} acteur(s).",
+      "ResetMessage": "Données d’exécution effacées puis recréées : {count} valeur(s) sur {actors} acteur(s).",
+      "SavedMessage": "{name} enregistré. Vous pouvez lancer le test suivant tout de suite.",
+      "Result": {
+        "Test": "Test résolu",
+        "Formula": "Résultat de la formule",
+        "Condition": "Résultat de la condition",
+        "ActionPreview": "Aperçu de l’action",
+        "ActionExecuted": "Action exécutée",
+        "Event": "Événement émis",
+        "Roll": "Jet Foundry",
+        "ActorsReady": "Acteurs de test prêts",
+        "Initialized": "Acteurs initialisés",
+        "Reset": "Données réinitialisées",
+        "Saved": "Valeur enregistrée",
+        "Error": "Échec de l’opération"
+      },
+      "Guide": {
+        "test": "Choisissez un test puis lancez-le. Source / Soi fournit les valeurs testées ; la cible est disponible dans le contexte de la règle.",
+        "action": "Prévisualisez d’abord une action. Exécutez-la seulement si les changements proposés sont corrects.",
+        "formula": "Évaluez une formule sur Source / Soi pour vérifier une valeur calculée.",
+        "condition": "Évaluez une condition sur Source / Soi. Le résultat est VRAI ou FAUX.",
+        "event": "Émettez un événement et voyez quels déclencheurs s’activent.",
+        "roll": "Lancez des dés Foundry seuls, hors des règles du Ruleset."
+      },
+      "Empty": {
+        "test": "Ce Ruleset n’a pas encore de test.",
+        "action": "Ce Ruleset n’a pas encore d’action.",
+        "formula": "Ce Ruleset n’a pas encore de formule.",
+        "condition": "Ce Ruleset n’a pas encore de condition.",
+        "event": "Ce Ruleset n’a pas encore de type d’événement."
+      },
+      "Error": {
+        "NoTestActors": "La création d’acteurs de test est indisponible.",
+        "ChooseActor": "Choisissez au moins un acteur à l’étape 1.",
+        "InitializeHint": "Utilisez « Initialiser les deux acteurs » à l’étape 1, puis réessayez.",
+        "Choose": {
+          "testId": "Choisissez un test.",
+          "actionId": "Choisissez une action.",
+          "formulaId": "Choisissez une formule.",
+          "conditionId": "Choisissez une condition.",
+          "eventTypeId": "Choisissez un type d’événement.",
+          "rollFormula": "Saisissez une formule de dés."
+        }
+      }
     }
   }
 }

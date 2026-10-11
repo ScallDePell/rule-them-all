@@ -86,6 +86,8 @@
   --rta-color-success-text: #e1f4d3;
   --rta-color-badge-fill: #34303d;
   --rta-color-badge-text: #ddd;
+  --rta-color-success: var(--color-level-success, #6fa84b);
+  --rta-color-danger: var(--color-level-error, #d0574b);
   --rta-color-warning: #dfad64;
   --rta-color-warning-muted: #d2c39d;
 

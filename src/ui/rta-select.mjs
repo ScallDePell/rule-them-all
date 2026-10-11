@@ -373,16 +373,17 @@ export class RTASelect {
     this.value.textContent=labels.length?labels.join(", "):selectionText(this.host,this.multiple);
     this.value.title=labels.join(", ");
     this.value.classList.toggle("rta-select__placeholder",!labels.length);
-    const chosen=new Set(selected);
+    // Single mode behaves like a radio group that can be cleared: every
+    // option stays selectable, choosing one replaces the previous choice and
+    // clicking the current one clears it. Only intrinsic disabling remains.
     for(const input of this.#items()){
       if(!this.multiple){
         if(this.native){
           const idx=Number(input.dataset.rtaNativeIndex);
-          input.disabled=!!(this.native.disabled||this.native.options[idx]?.disabled||(selected.length&&!chosen.has(input)));
+          input.disabled=!!(this.native.disabled||this.native.options[idx]?.disabled);
         }else{
-          // Intrinsically disabled options stay disabled even after clearing.
           if(input.dataset.rtaDisabledInitial===undefined)input.dataset.rtaDisabledInitial=String(input.disabled);
-          input.disabled=input.dataset.rtaDisabledInitial==="true"||!!(selected.length&&!chosen.has(input));
+          input.disabled=input.dataset.rtaDisabledInitial==="true";
         }
       }
       input.closest("label")?.classList.toggle("is-disabled",input.disabled);

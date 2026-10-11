@@ -11,6 +11,7 @@ import {confirmRTA, promptRTA} from "./foundry-dialogs.mjs";
 import {ConfiguratorWindow} from "./configurator-window.mjs";
 import {ConfiguratorEntryEditor} from "./configurator-entry-editor.mjs";
 import {buildRuntimeLabDemoProfile} from "../runtime/runtime-demo-profile.mjs";
+import {applyRuntimeChoice,describeRuntimeResult} from "./runtime-lab-view.mjs";
 
 
 const neutral = RTA_NEUTRAL_COLOR;
@@ -83,7 +84,8 @@ export class ConfiguratorApp extends ConfiguratorWindow {
   #scroll = new Map();
   #restoreScroll = false;
   #runtimeResult = null;
-  #runtimeSelection = {source:"",target:"",definitionId:"",actionId:"",formulaId:"",conditionId:"",testId:"",eventTypeId:"",rollFormula:"",sourceType:"",targetType:"",actorRole:"source",tool:"test"};
+  // null: not chosen yet, defaulted on render; "": cleared by the user, kept cleared.
+  #runtimeSelection = {source:null,target:null,definitionId:null,actionId:null,formulaId:null,conditionId:null,testId:null,eventTypeId:null,rollFormula:"",sourceType:"",targetType:"",actorRole:"source",tool:"test"};
   entryEditor;
 
   async #api() { return game.ruleThemAll?.configurator ?? await game.ruleThemAll?.configuratorReady; }
@@ -282,43 +284,38 @@ export class ConfiguratorApp extends ConfiguratorWindow {
     const isContentTypes=this.#view==="contentTypes";
     const isContentTemplates=this.#view.startsWith("content:");
     const isContentLibraries=isContentTypes||isContentTemplates;
-    const actors = ruleset && this.#view === "runtimeLab" ? (game.actors?.contents??[]).map(actor=>({uuid:actor.uuid,id:actor.id,name:actor.name,selectedSource:this.#runtimeSelection.source===actor.uuid,selectedTarget:this.#runtimeSelection.target===actor.uuid})) : [];
-    if(actors.length&&!this.#runtimeSelection.source)this.#runtimeSelection.source=actors[0].uuid;if(actors.length&&!this.#runtimeSelection.target)this.#runtimeSelection.target=actors[Math.min(1,actors.length-1)].uuid;
+    const actors = ruleset && this.#view === "runtimeLab" ? (game.actors?.contents??[]).map(actor=>({uuid:actor.uuid,id:actor.id,name:actor.name})) : [];
+    if(actors.length){
+      const source=applyRuntimeChoice(this.#runtimeSelection,"source",actors,{idOf:x=>x.uuid}),target=applyRuntimeChoice(this.#runtimeSelection,"target",actors,{fallbackIndex:1,idOf:x=>x.uuid});
+      for(const actor of actors){actor.selectedSource=actor.uuid===source;actor.selectedTarget=actor.uuid===target;}
+    }
     const selectedActorRef=this.#runtimeSelection.actorRole==="target"?(this.#runtimeSelection.target||this.#runtimeSelection.source):this.#runtimeSelection.source;
-    const selectedActorName=actors.find(x=>x.uuid===selectedActorRef)?.name??"Actor";
+    const runtimeActorNames={source:actors.find(x=>x.uuid===this.#runtimeSelection.source)?.name??label("RTA.Lab.NoActorChosen"),target:actors.find(x=>x.uuid===this.#runtimeSelection.target)?.name??label("RTA.Lab.NoActorChosen")};
     const runtimeColorFor=ruleset&&this.#view==="runtimeLab"?createSelectColorResolver({definitionTypes:api.listDefinitionTypes(this.#selected),contentTypes:api.listContentTypes(this.#selected),familyColors:ruleset.familyColors??{},ruleset}):()=>[];
     const runtimeColors=(kind,entry)=>selectColorsAttribute(runtimeColorFor(kind,entry));
-    const runtimeDefinitions=ruleset&&this.#view==="runtimeLab"?api.listDefinitions(this.#selected).filter(x=>x.enabled!==false).map(x=>({id:x.id,name:localize(api,this.#selected,x.nameKey),colors:runtimeColors("definition",x),selected:this.#runtimeSelection.definitionId===x.id})) : [];
-    const runtimeActions=ruleset&&this.#view==="runtimeLab"?api.listActions(this.#selected).filter(x=>x.enabled!==false).map(x=>({id:x.id,name:localize(api,this.#selected,x.nameKey),colors:runtimeColors("action",x),selected:this.#runtimeSelection.actionId===x.id})) : [];
-    const runtimeFormulas=ruleset&&this.#view==="runtimeLab"?api.listFormulas(this.#selected).filter(x=>x.enabled!==false).map(x=>({id:x.id,name:localize(api,this.#selected,x.nameKey),colors:runtimeColors("formula",x),selected:this.#runtimeSelection.formulaId===x.id})) : [];
-    const runtimeConditions=ruleset&&this.#view==="runtimeLab"?api.listConditions(this.#selected).filter(x=>x.enabled!==false).map(x=>({id:x.id,name:localize(api,this.#selected,x.nameKey),colors:runtimeColors("condition",x),selected:this.#runtimeSelection.conditionId===x.id})) : [];
-    const runtimeTests=ruleset&&this.#view==="runtimeLab"?api.listTests(this.#selected).filter(x=>x.enabled!==false).map(x=>({id:x.id,name:localize(api,this.#selected,x.nameKey),colors:runtimeColors("test",x),selected:this.#runtimeSelection.testId===x.id})) : [];
-    const runtimeEvents=ruleset&&this.#view==="runtimeLab"?api.listEventTypes(this.#selected).filter(x=>x.enabled!==false).map(x=>({id:x.id,name:localize(api,this.#selected,x.nameKey),colors:runtimeColors("eventType",x),selected:this.#runtimeSelection.eventTypeId===x.id})) : [];
-    if(runtimeDefinitions.length&&!this.#runtimeSelection.definitionId)this.#runtimeSelection.definitionId=runtimeDefinitions[0].id;
-    if(runtimeTests.length&&!this.#runtimeSelection.testId)this.#runtimeSelection.testId=runtimeTests[0].id;
-    if(runtimeFormulas.length&&!this.#runtimeSelection.formulaId)this.#runtimeSelection.formulaId=runtimeFormulas[0].id;
-    if(runtimeConditions.length&&!this.#runtimeSelection.conditionId)this.#runtimeSelection.conditionId=runtimeConditions[0].id;
-    if(runtimeActions.length&&!this.#runtimeSelection.actionId)this.#runtimeSelection.actionId=runtimeActions[0].id;
-    if(runtimeEvents.length&&!this.#runtimeSelection.eventTypeId)this.#runtimeSelection.eventTypeId=runtimeEvents[0].id;
-    let runtimeStateCards=[];
+    const runtimeDefinitions=ruleset&&this.#view==="runtimeLab"?api.listDefinitions(this.#selected).filter(x=>x.enabled!==false).map(x=>({id:x.id,name:localize(api,this.#selected,x.nameKey),colors:runtimeColors("definition",x),selected:false})) : [];
+    const runtimeActions=ruleset&&this.#view==="runtimeLab"?api.listActions(this.#selected).filter(x=>x.enabled!==false).map(x=>({id:x.id,name:localize(api,this.#selected,x.nameKey),colors:runtimeColors("action",x),selected:false})) : [];
+    const runtimeFormulas=ruleset&&this.#view==="runtimeLab"?api.listFormulas(this.#selected).filter(x=>x.enabled!==false).map(x=>({id:x.id,name:localize(api,this.#selected,x.nameKey),colors:runtimeColors("formula",x),selected:false})) : [];
+    const runtimeConditions=ruleset&&this.#view==="runtimeLab"?api.listConditions(this.#selected).filter(x=>x.enabled!==false).map(x=>({id:x.id,name:localize(api,this.#selected,x.nameKey),colors:runtimeColors("condition",x),selected:false})) : [];
+    const runtimeTests=ruleset&&this.#view==="runtimeLab"?api.listTests(this.#selected).filter(x=>x.enabled!==false).map(x=>({id:x.id,name:localize(api,this.#selected,x.nameKey),colors:runtimeColors("test",x),selected:false})) : [];
+    const runtimeEvents=ruleset&&this.#view==="runtimeLab"?api.listEventTypes(this.#selected).filter(x=>x.enabled!==false).map(x=>({id:x.id,name:localize(api,this.#selected,x.nameKey),colors:runtimeColors("eventType",x),selected:false})) : [];
+    for(const [key,list] of [["definitionId",runtimeDefinitions],["testId",runtimeTests],["formulaId",runtimeFormulas],["conditionId",runtimeConditions],["actionId",runtimeActions],["eventTypeId",runtimeEvents]]){
+      const chosen=applyRuntimeChoice(this.#runtimeSelection,key,list);for(const entry of list)entry.selected=entry.id===chosen;
+    }
+    let runtimeStateCards=[],runtimeStateError="";
     if(ruleset&&this.#view==="runtimeLab"&&selectedActorRef){
-      try{const state=await game.ruleThemAll.runtimeLab.getContainerState(selectedActorRef,{rulesetVersionId:this.#selected});const byId=new Map((ruleset.definitions??[]).map(d=>[d.id,d]));runtimeStateCards=Object.values(state.definitionStates??{}).map(ds=>{const d=byId.get(ds.definitionId);const cap=ds.capabilityStates??{};return {id:ds.definitionId,name:d?localize(api,this.#selected,d.nameKey):ds.definitionId,hasValue:!!cap.value,base:cap.value?.base??0,pools:Object.entries(cap.pool??{}).map(([slotId,pool])=>({slotId,current:pool?.current??0})),hasState:!!cap.state,active:Boolean(cap.state?.active)};}).sort((a,b)=>a.name.localeCompare(b.name));}catch{}
+      try{const state=await game.ruleThemAll.runtimeLab.getContainerState(selectedActorRef,{rulesetVersionId:this.#selected});const byId=new Map((ruleset.definitions??[]).map(d=>[d.id,d]));runtimeStateCards=Object.values(state.definitionStates??{}).map(ds=>{const d=byId.get(ds.definitionId);const cap=ds.capabilityStates??{};return {id:ds.definitionId,name:d?localize(api,this.#selected,d.nameKey):ds.definitionId,hasValue:!!cap.value,base:cap.value?.base??0,pools:Object.entries(cap.pool??{}).map(([slotId,pool])=>({slotId,current:pool?.current??0})),hasState:!!cap.state,active:Boolean(cap.state?.active)};}).sort((a,b)=>a.name.localeCompare(b.name));}catch(error){runtimeStateError=game.i18n?.format?.("RTA.Lab.StateUnreadable",{error:error?.message??String(error)})??String(error);}
     }
     const runtimeTool=this.#runtimeSelection.tool||"test";
     const runtimeModes={isTest:runtimeTool==="test",isAction:runtimeTool==="action",isFormula:runtimeTool==="formula",isCondition:runtimeTool==="condition",isEvent:runtimeTool==="event",isRoll:runtimeTool==="roll",editSource:this.#runtimeSelection.actorRole!=="target",editTarget:this.#runtimeSelection.actorRole==="target"};
-    const runtimeGuide={
-      test:runtimeTests.length?"Choose a configured Test, then run it. Source / Self supplies the tested values; Target is available to the rule context.":"This Ruleset has no configured Tests yet.",
-      action:runtimeActions.length?"Preview an Action first. Execute only when the proposed changes look correct.":"This Ruleset has no configured Actions yet.",
-      formula:runtimeFormulas.length?"Evaluate a Formula against Source / Self to inspect a calculated value.":"This Ruleset has no configured Formulas yet.",
-      condition:runtimeConditions.length?"Evaluate a Condition against Source / Self. The result is TRUE or FALSE.":"This Ruleset has no configured Conditions yet.",
-      event:runtimeEvents.length?"Emit an Event and inspect which configured Triggers fire.":"This Ruleset has no configured Event Types yet.",
-      roll:"Use this only to verify Foundry dice independently of configured ruleset rules."
-    }[runtimeTool];
+    const runtimeLists={test:runtimeTests,action:runtimeActions,formula:runtimeFormulas,condition:runtimeConditions,event:runtimeEvents};
+    const runtimeGuide=label(runtimeTool==="roll"||runtimeLists[runtimeTool]?.length?`RTA.Lab.Guide.${runtimeTool}`:`RTA.Lab.Empty.${runtimeTool}`);
+    const runtimeReady={source:!!this.#runtimeSelection.source,target:!!this.#runtimeSelection.target,test:!!this.#runtimeSelection.testId,action:!!this.#runtimeSelection.actionId,formula:!!this.#runtimeSelection.formulaId,condition:!!this.#runtimeSelection.conditionId,event:!!this.#runtimeSelection.eventTypeId,actors:!!(this.#runtimeSelection.source||this.#runtimeSelection.target)};
     return Object.assign(context,{
       error:this.#error,displayLines:this.#displayMode==="lines",displayTiles:this.#displayMode==="tiles",isWorkspace:!!ruleset,isRulesets:!ruleset,view:this.#view,rulesets,navigation,navGroups,currentNavGroup,definitionTypes,contentTypes,
       selectedRuleset:ruleset,selectedRecord:record,rulesetAccent:rulesetColor(ruleset),canOverrideCollection,currentCollection,collectionAccent,collectionCustomAccent,canEditRuleset:record?.status!=="validated",selectedRulesetName:ruleset?localize(api,this.#selected,ruleset.nameKey):"",
       isGeneral:!!ruleset&&this.#view==="general",isCollection:!!ruleset&&Boolean(currentKind),isContentFamily:currentKind==="contentTemplate",isDependencies:!!ruleset&&this.#view==="dependencies",isRuntimeLab:!!ruleset&&this.#view==="runtimeLab",isContentTypes,isContentTemplates,isContentLibraries,
-      currentTitle,currentKind,currentType,cards:filteredCards,availableTags,activeTagCount:activeTagIds.size,availableCategories,activeCategoryCount:activeCategoryIds.size,dependencyGroups:dependencyVisibleGroups,dependencySelected,dependencyGraph,dependencyStats,dependencyAvailableTags,dependencyActiveTagCount:dependencyActiveTags.size,dependencyUnresolvedOnly,actors,runtimeDefinitions,runtimeActions,runtimeFormulas,runtimeConditions,runtimeTests,runtimeEvents,runtimeResult:this.#runtimeResult,runtimeStateCards,runtimeSelection:this.#runtimeSelection,runtimeActorTypeOptions:availableDocumentTypes("Actor").map(id=>({id,sourceSelected:id===this.#runtimeSelection.sourceType,targetSelected:id===this.#runtimeSelection.targetType})),runtimeTool,runtimeModes,runtimeGuide,selectedActorName,
+      currentTitle,currentKind,currentType,cards:filteredCards,availableTags,activeTagCount:activeTagIds.size,availableCategories,activeCategoryCount:activeCategoryIds.size,dependencyGroups:dependencyVisibleGroups,dependencySelected,dependencyGraph,dependencyStats,dependencyAvailableTags,dependencyActiveTagCount:dependencyActiveTags.size,dependencyUnresolvedOnly,actors,runtimeDefinitions,runtimeActions,runtimeFormulas,runtimeConditions,runtimeTests,runtimeEvents,runtimeResult:this.#runtimeResult,runtimeStateCards,runtimeSelection:this.#runtimeSelection,runtimeActorTypeOptions:availableDocumentTypes("Actor").map(id=>({id,sourceSelected:id===this.#runtimeSelection.sourceType,targetSelected:id===this.#runtimeSelection.targetType})),runtimeTool,runtimeModes,runtimeGuide,runtimeReady,runtimeStateError,runtimeActorNames,
       publishReadiness:this.#view==='general'&&record?.status==='draft'?this.#publishReadiness(api,ruleset):null,
       lifecycle:record?{isValidated:record.status==="validated",isReady:record.status==="ready",isDraft:record.status==="draft",canMutate:record.status!=="validated",canCreateVersion:record.status==="validated",canDelete:true}:null,
       storage:ruleset?{storageRevision:api.getStorageRevision(),activeVersionId:activeId,engineContractVersion:ruleset.engineContractVersion}:null
@@ -387,7 +384,7 @@ export class ConfiguratorApp extends ConfiguratorWindow {
       }catch(error){this.#error=error.message;await this.render(false);}
     });
     this.#bindDependencyGraph();
-    for(const input of this.element?.querySelectorAll?.("[data-runtime-select], [data-runtime-input]")??[])input.addEventListener("change",event=>{const key=event.currentTarget.dataset.runtimeSelect??event.currentTarget.dataset.runtimeInput;this.#runtimeSelection[key]=event.currentTarget.value;if(key==="actorRole"||key==="tool"||key==="source"||key==="target")this.render(false);});
+    for(const input of this.element?.querySelectorAll?.("[data-runtime-select], [data-runtime-input]")??[])input.addEventListener("change",event=>{const key=event.currentTarget.dataset.runtimeSelect??event.currentTarget.dataset.runtimeInput;this.#runtimeSelection[key]=event.currentTarget.value;if(event.currentTarget.dataset.runtimeSelect)this.render(false);});
   }
 
   #bindDependencyGraph(){
@@ -543,7 +540,7 @@ export class ConfiguratorApp extends ConfiguratorWindow {
         return this.render(false);
       }
       if (action==="runtimeCreateActors") {
-        if(typeof game.ruleThemAll.runtimeLab.createTestActors!=="function")throw new Error("Test Actor creation is unavailable.");
+        if(typeof game.ruleThemAll.runtimeLab.createTestActors!=="function")throw new Error(label("RTA.Lab.Error.NoTestActors"));
         const result=await game.ruleThemAll.runtimeLab.createTestActors({sourceType:this.#runtimeSelection.sourceType||null,targetType:this.#runtimeSelection.targetType||null});
         const {source,target}=result;
         this.#runtimeSelection.source=source.uuid;this.#runtimeSelection.target=target.uuid;
@@ -554,26 +551,39 @@ export class ConfiguratorApp extends ConfiguratorWindow {
           const profile=buildRuntimeLabDemoProfile(ruleset,role);
           for(const [definitionId,values] of Object.entries(profile))await game.ruleThemAll.runtimeLab.setDefinitionState(this.#selected,ref,definitionId,values);
         }
-        this.#runtimeResult={title:"Test Actors ready",message:`${source.name} and ${target.name} are initialized with demo scores (${created} new Definition state(s)). Existing test Actors are reset to the demo profile.`};
-        return this.render(false);
+        return this.#runtimeShow("actorsReady",{source:source.name,target:target.name,created});
       }
-      if (action==="runtimeLoad") { const ref=this.#runtimeSelection.target||this.#runtimeSelection.source;if(!ref)throw new Error("Choose an Actor first.");this.#runtimeResult={title:"Runtime state",state:await game.ruleThemAll.runtimeLab.getContainerState(ref,{rulesetVersionId:this.#selected})};return this.render(false);}
-      if (action==="runtimeInstantiate") {const ref=this.#runtimeSelection.target||this.#runtimeSelection.source,id=this.#runtimeSelection.definitionId;if(!ref||!id)throw new Error("Choose an Actor and Definition.");const base=Number(this.element.querySelector('[name="runtimeBase"]')?.value??0);await game.ruleThemAll.runtimeLab.instantiateDefinition(this.#selected,ref,id,{initial:{"value.base":base,"state.active":false}});this.#runtimeResult={title:"Definition instantiated",message:"Runtime state updated.",state:await game.ruleThemAll.runtimeLab.getContainerState(ref,{rulesetVersionId:this.#selected})};return this.render(false);}
-      if (action==="runtimeInitAll") {
-        const refs=[...new Set([this.#runtimeSelection.source,this.#runtimeSelection.target].filter(Boolean))];
-        if(!refs.length)throw new Error("Choose at least one Actor first.");
-        let created=0,lastState=null;
-        for(const ref of refs){const result=await game.ruleThemAll.runtimeLab.initializeContainer(this.#selected,ref);created+=result.created??0;lastState=result.state;}
-        this.#runtimeResult={title:"Actors initialized",message:`${created} Definition state(s) instantiated across ${refs.length} Actor(s). Formulae, Conditions and Tests use Source / Self by default; Effects may target Target.`,state:lastState};
-        return this.render(false);
+      if (action==="runtimeInitAll"||action==="runtimeReset") {
+        const refs=this.#runtimeActorRefs();
+        if(action==="runtimeReset")for(const ref of refs)await game.ruleThemAll.runtimeLab.resetContainer(ref);
+        let created=0;
+        for(const ref of refs)created+=(await game.ruleThemAll.runtimeLab.initializeContainer(this.#selected,ref)).created??0;
+        return this.#runtimeShow(action==="runtimeReset"?"reset":"initialized",{created,actors:refs.length});
       }
-      if (action==="runtimeUpdateState") {const ref=this.#runtimeSelection.actorRole==="target"?(this.#runtimeSelection.target||this.#runtimeSelection.source):this.#runtimeSelection.source,id=button.dataset.definitionId;if(!ref||!id)throw new Error("Choose an Actor and runtime value.");const row=button.closest("[data-runtime-state-row]");const options={};const base=row?.querySelector('[name="runtimeStateBase"]');const pools=[...(row?.querySelectorAll('[name="runtimeStatePool"]')??[])];const active=row?.querySelector('[name="runtimeStateActive"]');if(base)options.base=Number(base.value);if(pools.length)options.pools=Object.fromEntries(pools.map(input=>[input.dataset.slotId,Number(input.value)]));if(active)options.active=active.checked;await game.ruleThemAll.runtimeLab.setDefinitionState(this.#selected,ref,id,options);this.#runtimeResult={title:"Actor value saved",message:"Runtime state updated. You can run the next test immediately."};return this.render(false);}
-      if (action==="runtimeFormula") {const id=this.#runtimeSelection.formulaId;if(!id)throw new Error("Choose a Formula.");const context=this.#runtimeContext();const value=await game.ruleThemAll.runtimeLab.evaluateFormula(this.#selected,id,context);this.#runtimeResult={title:"Formula result",message:String(value)};return this.render(false);}
-      if (action==="runtimeCondition") {const id=this.#runtimeSelection.conditionId;if(!id)throw new Error("Choose a Condition.");const context=this.#runtimeContext();const value=await game.ruleThemAll.runtimeLab.evaluateCondition(this.#selected,id,context);this.#runtimeResult={title:"Condition result",message:value?"TRUE":"FALSE"};return this.render(false);}
-      if (action==="runtimePreviewAction"||action==="runtimeExecuteAction") {const id=this.#runtimeSelection.actionId;if(!id)throw new Error("Choose an Action.");const context=this.#runtimeContext();const preview=action==="runtimePreviewAction";const result=preview?await game.ruleThemAll.runtimeLab.previewAction(this.#selected,id,context):await game.ruleThemAll.runtimeLab.executeAction(this.#selected,id,context);this.#runtimeResult={title:preview?"Action preview":"Action executed",message:result.allowed===false?`Blocked by ${result.conditionId}`:`${result.changes?.length??0} change(s).`,changes:result.changes??[]};return this.render(false);}
-      if (action==="runtimeTest") {const id=this.#runtimeSelection.testId;if(!id)throw new Error("Choose a Test.");const result=await game.ruleThemAll.runtimeLab.executeTest(this.#selected,id,this.#runtimeContext());this.#runtimeResult={title:"Test resolved",message:`${result.roll.formula}: ${result.roll.total} + ${result.bonus} = ${result.total}${result.target===null?"":` vs ${result.target}`} · ${result.outcome?.nameKey??result.outcome?.resultKey??"No outcome"}`,testResult:result};return this.render(false);}
-      if (action==="runtimeRoll") {const formula=String(this.element.querySelector('[name="runtimeRollFormula"]')?.value??this.#runtimeSelection.rollFormula??"");this.#runtimeSelection.rollFormula=formula;const result=await game.ruleThemAll.runtimeLab.roll(formula,{});this.#runtimeResult={title:"Foundry Roll",message:`${result.formula} = ${result.total}`,rollResult:result.result};return this.render(false);}
-      if (action==="runtimeEvent") {const id=this.#runtimeSelection.eventTypeId;if(!id)throw new Error("Choose an Event Type.");const result=await game.ruleThemAll.runtimeLab.emitEvent(this.#selected,id,{},this.#runtimeContext());this.#runtimeResult={title:"Event emitted",message:`${result.triggered.length} Trigger(s) fired.`,triggered:result.triggered};return this.render(false);}
+      if (action==="runtimeUpdateState") {
+        const ref=this.#runtimeSelection.actorRole==="target"?(this.#runtimeSelection.target||this.#runtimeSelection.source):this.#runtimeSelection.source,id=button.dataset.definitionId;
+        if(!ref)throw new Error(label("RTA.Lab.Error.ChooseActor"));
+        const row=button.closest("[data-runtime-state-row]");const options={};
+        const base=row?.querySelector('[name="runtimeStateBase"]');const pools=[...(row?.querySelectorAll('[name="runtimeStatePool"]')??[])];const active=row?.querySelector('[name="runtimeStateActive"]');
+        if(base)options.base=Number(base.value);if(pools.length)options.pools=Object.fromEntries(pools.map(input=>[input.dataset.slotId,Number(input.value)]));if(active)options.active=active.checked;
+        await game.ruleThemAll.runtimeLab.setDefinitionState(this.#selected,ref,id,options);
+        return this.#runtimeShow("saved",{name:row?.querySelector("strong")?.textContent??id});
+      }
+      const runtimeId=key=>{const id=this.#runtimeSelection[key];if(!id)throw new Error(label(`RTA.Lab.Error.Choose.${key}`));return id;};
+      if (action==="runtimeFormula") return this.#runtimeShow("formula",{value:await game.ruleThemAll.runtimeLab.evaluateFormula(this.#selected,runtimeId("formulaId"),this.#runtimeContext())});
+      if (action==="runtimeCondition") return this.#runtimeShow("condition",{value:await game.ruleThemAll.runtimeLab.evaluateCondition(this.#selected,runtimeId("conditionId"),this.#runtimeContext())});
+      if (action==="runtimePreviewAction"||action==="runtimeExecuteAction") {
+        const id=runtimeId("actionId"),preview=action==="runtimePreviewAction";
+        const result=preview?await game.ruleThemAll.runtimeLab.previewAction(this.#selected,id,this.#runtimeContext()):await game.ruleThemAll.runtimeLab.executeAction(this.#selected,id,this.#runtimeContext());
+        return this.#runtimeShow("action",{...result,preview});
+      }
+      if (action==="runtimeTest") return this.#runtimeShow("test",await game.ruleThemAll.runtimeLab.executeTest(this.#selected,runtimeId("testId"),this.#runtimeContext()));
+      if (action==="runtimeRoll") {
+        const formula=String(this.element.querySelector('[name="runtimeRollFormula"]')?.value??this.#runtimeSelection.rollFormula??"").trim();this.#runtimeSelection.rollFormula=formula;
+        if(!formula)throw new Error(label("RTA.Lab.Error.Choose.rollFormula"));
+        return this.#runtimeShow("roll",await game.ruleThemAll.runtimeLab.roll(formula,{}));
+      }
+      if (action==="runtimeEvent") return this.#runtimeShow("event",await game.ruleThemAll.runtimeLab.emitEvent(this.#selected,runtimeId("eventTypeId"),{},this.#runtimeContext()));
       if (action==="export") {
         const id=button.dataset.versionId??this.#selected; const payload=api.exportRuleset(id,{includeWorldLocalizations:true});
         const blob=new Blob([JSON.stringify(payload,null,2)],{type:"application/json"}),url=URL.createObjectURL(blob),a=document.createElement("a");
@@ -581,9 +591,25 @@ export class ConfiguratorApp extends ConfiguratorWindow {
       }
     } catch(error) {
       let message=error?.message??String(error);
-      if(message.startsWith("Definition is not instantiated on RuntimeContainer:"))message+= " Use ‘Initialize both Actors’ in Runtime Lab, then retry.";
+      if(message.startsWith("Definition is not instantiated on RuntimeContainer:"))message+=` ${label("RTA.Lab.Error.InitializeHint")}`;
+      // Lab errors belong next to the operation that failed, in its result step.
+      if(action?.startsWith("runtime"))return this.#runtimeShow("error",{message});
       this.#error=message; return this.render(false);
     }
+  }
+
+  #runtimeActorRefs(){
+    const refs=[...new Set([this.#runtimeSelection.source,this.#runtimeSelection.target].filter(Boolean))];
+    if(!refs.length)throw new Error(label("RTA.Lab.Error.ChooseActor"));
+    return refs;
+  }
+
+  async #runtimeShow(kind,data){
+    const api=await this.#api(),record=api.getRulesetVersion(this.#selected),ruleset=record?.workingDraft??record?.publishedSnapshot;
+    const i18n=(key,values)=>values?game.i18n?.format?.(key,values)??key:label(key);
+    const nameOf=(collection,id)=>{const entry=(ruleset?.[collection]??[]).find(x=>x.id===id);return entry?.nameKey?localize(api,this.#selected,entry.nameKey):String(id??"");};
+    this.#runtimeResult=describeRuntimeResult(kind,data,{i18n,nameOf});
+    return this.render(false);
   }
 
   #runtimeContext(){const source=this.#runtimeSelection.source,target=this.#runtimeSelection.target||source;return {roles:{self:source,source,target,subject:target,owner:source},defaultRole:"self",userContext:{userId:game.user?.id??null,isGM:Boolean(game.user?.isGM)}};}

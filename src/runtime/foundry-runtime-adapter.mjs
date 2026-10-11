@@ -21,6 +21,8 @@ export class FoundryRuntimeAdapter{
     // later adapters may use foundry.documents.modifyBatch without changing the Core contract.
     const out=[];for(const entry of entries)out.push(await this.save(entry.ref,entry.state));return out;
   }
+  /** Remove a container's runtime data (e.g. stale or unreadable state); the next initialization starts fresh. */
+  async reset(ref){const doc=await this.resolveDocument(ref);if(!await this.canWrite(ref))throw new Error(`User cannot update Foundry Document ${doc.name??doc.id}.`);await doc.unsetFlag?.(MODULE_ID,FLAG_KEY);}
   async describe(ref){const doc=await this.resolveDocument(ref);return {ref:normalizeRuntimeContainerRef(ref),uuid:doc.uuid,id:doc.id,name:doc.name,documentName:doc.documentName,type:doc.type};}
 
 
