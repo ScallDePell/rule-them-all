@@ -217,7 +217,10 @@
       "AdvancedStepHelp": "Les autres propriétés sont conservées. Modifiez-les ici si nécessaire.",
       "SelectSource": "Sélectionnez d’abord une source du Ruleset.",
       "NoSourceItems": "Aucune entrée disponible dans cette source du Ruleset.",
-      "MissingSource": "La source enregistrée n’est plus disponible."
+      "MissingSource": "La source enregistrée n’est plus disponible.",
+      "NoRoll": "Aucun jet : test déterministe",
+      "TotalFromRoll": "Jet + bonus",
+      "MarginFromTotal": "Total − cible"
     },
     "FamilyColor": {
       "parameters": "Paramètres",
@@ -769,6 +772,24 @@
           "eventTypeId": "Choisissez un type d’événement.",
           "rollFormula": "Saisissez une formule de dés."
         }
+      }
+    },
+    "TestInput": {
+      "Title": "Entrées",
+      "Help": "Valeurs typées que le test lit en premier. Les formules les lisent dans variables.test.inputs.<id>.",
+      "Add": "Ajouter une entrée",
+      "New": "Nouvelle entrée",
+      "Remove": "Supprimer l’entrée",
+      "Id": "ID de l’entrée",
+      "SourceLabel": "Source",
+      "Required": "Obligatoire",
+      "Default": "Valeur par défaut",
+      "TotalFormula": "Formule du total",
+      "MarginFormula": "Formule de la marge",
+      "Sources": {
+        "literal": "Valeur",
+        "formula": "Formule",
+        "reference": "Référence"
       }
     }
   }

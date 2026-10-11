@@ -25,7 +25,8 @@ export function describeRuntimeResult(kind, data, {i18n = key => key, nameOf = (
         tone: data.outcome ? "success" : "info",
         message: outcome,
         rows: [
-          row(i18n("RTA.Lab.Roll"), `${data.roll.formula} → ${data.roll.total}`),
+          row(i18n("RTA.Lab.Roll"), data.roll ? `${data.roll.formula} → ${data.roll.total}` : null),
+          ...Object.entries(data.inputs ?? {}).map(([id, value]) => row(id, value)),
           row(i18n("RTA.Lab.Bonus"), data.bonus),
           row(i18n("RTA.Lab.Total"), data.total),
           row(i18n("RTA.Lab.Difficulty"), data.target),

@@ -41,6 +41,7 @@ export function diagnosticFocusTargets(kind, relativePath) {
     add(`[data-slot-card="${css(second)}"]`, slot ? Number(slot[2]) : 0);
   }
   if (first === "capabilities") add('[name^="cap:"]');
+  if (first === "inputBindings") add("[data-test-input]", Number(second) || 0);
   if (first) {
     add(`[name="${css(first)}"]`);
     add(`[data-step-prop="${css(first)}"]`);

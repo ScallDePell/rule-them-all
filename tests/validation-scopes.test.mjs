@@ -25,7 +25,7 @@ test('CP-10 diagnostics carry severity, object location and blocking flag',async
   assert.equal(diagnostic.path,'tests[0]');
   assert.equal(diagnostic.severity,'WARNING');
   assert.equal(diagnostic.blocking,false);
-  assert.match(diagnostic.message,/rollRef/);
+  assert.match(diagnostic.message,/Roll or a total Formula/);
 });
 
 test('An incomplete draft saves, but publish needs the complete graph',async()=>{
@@ -36,7 +36,7 @@ test('An incomplete draft saves, but publish needs the complete graph',async()=>
   const publish=api.diagnoseRuleset(v);
   assert.equal(publish.scope,'publish');
   assert.equal(publish.valid,false);
-  assert.deepEqual(publish.errors.map(entry=>`${entry.objectId}: ${entry.message}`).sort(),['check: Test requires rollRef.','unwritten: Roll requires nameKey.','unwritten: Roll.formula is required.']);
+  assert.deepEqual(publish.errors.map(entry=>`${entry.objectId}: ${entry.message}`).sort(),['check: Test requires a Roll or a total Formula.','unwritten: Roll requires nameKey.','unwritten: Roll.formula is required.']);
   assert.ok(publish.errors.every(entry=>entry.severity==='ERROR'&&entry.blocking));
   await assert.rejects(()=>api.publishRuleset(v),error=>error.code==='INVALID_RULESET'&&error.validation.scope==='publish');
   await api.updateRoll(v,'unwritten',{nameKey:'D20',formula:'1d20'});
@@ -70,7 +70,7 @@ test('Contract helpers stay strict unless the caller collects completeness issue
   assert.throws(()=>prepareTest({id:'t',nameKey:'T'}),error=>error.code==='INCOMPLETE');
   const options={incomplete:[]};
   prepareTest({id:'t',nameKey:'T'},options);
-  assert.deepEqual(options.incomplete,['Test requires rollRef.']);
+  assert.deepEqual(options.incomplete,['Test requires a Roll or a total Formula.']);
   assert.throws(()=>prepareRoll({nameKey:'R',formula:'1d6'},{incomplete:[]}),/requires id/);
 });
 

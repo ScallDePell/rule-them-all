@@ -221,7 +221,10 @@
       "AdvancedStepHelp": "Other properties and options are preserved. Edit them here when necessary.",
       "SelectSource": "Select a Ruleset source above.",
       "NoSourceItems": "No entries available in the selected Ruleset source.",
-      "MissingSource": "The saved source collection is not available."
+      "MissingSource": "The saved source collection is not available.",
+      "NoRoll": "No Roll: deterministic Test",
+      "TotalFromRoll": "Roll + bonus",
+      "MarginFromTotal": "Total − target"
     },
     "FamilyColor": {
       "parameters": "Parameters",
@@ -773,6 +776,24 @@
           "eventTypeId": "Choose an Event Type.",
           "rollFormula": "Enter a dice formula."
         }
+      }
+    },
+    "TestInput": {
+      "Title": "Inputs",
+      "Help": "Typed values the Test reads first. Formulas see them as variables.test.inputs.<id>.",
+      "Add": "Add input",
+      "New": "New input",
+      "Remove": "Remove input",
+      "Id": "Input ID",
+      "SourceLabel": "Source",
+      "Required": "Required",
+      "Default": "Default value",
+      "TotalFormula": "Total Formula",
+      "MarginFormula": "Margin Formula",
+      "Sources": {
+        "literal": "Value",
+        "formula": "Formula",
+        "reference": "Reference"
       }
     }
   }

@@ -90,14 +90,38 @@ export function prepareOutcome(data,options={}){
   if(!Number.isSafeInteger(x.priority))throw new Error('Outcome.priority must be a safe integer.');
   bool(x.enabled,'Outcome.enabled');arr(x.tags,'Outcome.tags');return x;
 }
+/** InputBinding (CP-29): a typed value the Test reads before rolling, exposed as test.inputs.<id>.
+ * source is exactly one of {literal}, {formulaRef} or {reference}. */
+export const INPUT_SOURCE_KINDS=Object.freeze(['literal','formulaRef','reference']);
+export function prepareInputBinding(data,options={},label='InputBinding'){
+  if(!isRecord(data))throw new Error(`${label} must be an object.`);
+  const x={valueType:'number',required:true,...copyJSON(data)};
+  for(const key of Object.keys(x))if(!['id','source','valueType','required','defaultValue'].includes(key))throw new Error(`${label} contains unsupported field: ${key}.`);
+  if(!nonempty(x.id)||!/^[A-Za-z][A-Za-z0-9_]*$/.test(x.id))throw new Error(`${label}.id must start with a letter and use letters, digits or _.`);
+  if(!valueTypeRegistry.has(x.valueType))throw new Error(`${label}.valueType is unknown: ${x.valueType}.`);
+  bool(x.required,`${label}.required`);
+  if(!isRecord(x.source))throw new Error(`${label}.source must be {literal}, {formulaRef} or {reference}.`);
+  const kinds=INPUT_SOURCE_KINDS.filter(kind=>Object.hasOwn(x.source,kind));
+  if(kinds.length!==1||Object.keys(x.source).length!==1)throw new Error(`${label}.source must hold exactly one of literal, formulaRef or reference.`);
+  if(kinds[0]==='literal'){const check=validateTypedValue(x.valueType,'one',false,x.source.literal);if(!check.valid)throw new Error(`${label}.source.literal: ${check.message}`);}
+  if(kinds[0]==='formulaRef')need(nonempty(x.source.formulaRef),`${label} requires a Formula.`,options);
+  if(kinds[0]==='reference')need(isRecord(x.source.reference)&&nonempty(x.source.reference.objectId),`${label} requires a Reference.`,options);
+  if(x.defaultValue!==undefined){const check=validateTypedValue(x.valueType,'one',false,x.defaultValue);if(!check.valid)throw new Error(`${label}.defaultValue: ${check.message}`);}
+  return x;
+}
+/** TestDefinition (CP-29). A Test may run without a Roll; it then needs a total Formula.
+ * total = totalFormulaRef ?? roll total + bonus; margin = marginFormulaRef ?? total - target. */
 export function prepareTest(data,options={}){
-  const x={descriptionKey:'',enabled:true,order:0,tags:[],rollRef:'',bonusFormulaRef:null,targetFormulaRef:null,targetValue:null,outcomeRefs:[],fallbackOutcomeRef:null,...copyJSON(data)};
-  identity(x,'Test',options);need(nonempty(x.rollRef),'Test requires rollRef.',options);
-  if(x.bonusFormulaRef!==null&&!nonempty(x.bonusFormulaRef))throw new Error('Test.bonusFormulaRef must be null or a Formula id.');
-  if(x.targetFormulaRef!==null&&!nonempty(x.targetFormulaRef))throw new Error('Test.targetFormulaRef must be null or a Formula id.');
+  const x={descriptionKey:'',enabled:true,order:0,tags:[],rollRef:null,inputBindings:[],bonusFormulaRef:null,totalFormulaRef:null,targetFormulaRef:null,targetValue:null,marginFormulaRef:null,outcomeRefs:[],fallbackOutcomeRef:null,...copyJSON(data)};
+  identity(x,'Test',options);
+  if(x.rollRef==='')x.rollRef=null;
+  for(const key of ['rollRef','bonusFormulaRef','totalFormulaRef','targetFormulaRef','marginFormulaRef','fallbackOutcomeRef'])if(x[key]!==null&&!nonempty(x[key]))throw new Error(`Test.${key} must be null or an id.`);
+  need(x.rollRef!==null||x.totalFormulaRef!==null,'Test requires a Roll or a total Formula.',options);
   if(x.targetValue!==null&&(!Number.isFinite(Number(x.targetValue))))throw new Error('Test.targetValue must be null or numeric.');
+  arr(x.inputBindings,'Test.inputBindings');
+  const ids=new Set();
+  x.inputBindings=x.inputBindings.map((binding,i)=>{const prepared=prepareInputBinding(binding,options,`Test.inputBindings[${i}]`);if(ids.has(prepared.id))throw new Error(`Duplicate Test input: ${prepared.id}.`);ids.add(prepared.id);return prepared;});
   arr(x.outcomeRefs,'Test.outcomeRefs');
-  if(x.fallbackOutcomeRef!==null&&!nonempty(x.fallbackOutcomeRef))throw new Error('Test.fallbackOutcomeRef must be null or an Outcome id.');
   bool(x.enabled,'Test.enabled');arr(x.tags,'Test.tags');return x;
 }
 

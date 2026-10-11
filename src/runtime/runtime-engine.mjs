@@ -1,5 +1,6 @@
 import {RUNTIME_HOOKS} from "../core/module-contract.mjs";
 import {copyJSON} from "../configurator/configurator-schema.mjs";
+import {validateTypedValue} from "../configurator/value-type-registry.mjs";
 import {CONSTRAINT_KINDS,evaluateConstraints} from "../configurator/declarative-contracts.mjs";
 import {capabilityTypeRegistry} from "../configurator/capability-type-registry.mjs";
 import {createDefinitionState,normalizeRuntimeContainerRef,resolveRuntimeRuleset} from "./runtime-contracts.mjs";
@@ -124,30 +125,52 @@ export class RuntimeEngine{
   }
   async checkRestrictions(versionId,operationKind,context={}){const ruleset=this.ruleset(versionId),evaluator=this.evaluator(versionId),matches=[];for(const restriction of ruleset.restrictions??[]){if(!enabled(restriction)||restriction.operationKinds?.length&&!restriction.operationKinds.includes(operationKind))continue;let ok=true;for(const id of restriction.conditionRefs??[])if(!await evaluator.condition(id,context)){ok=false;break;}if(ok)matches.push(restriction);}matches.sort((a,b)=>(b.priority??0)-(a.priority??0));const top=matches[0]??null;return{allowed:!top||top.effect!=='deny',restrictionId:top?.id??null,messageKey:top?.messageKey??''};}
   async roll(formula,data={}){assertSafeRollFormula(formula);if(typeof this.adapter.roll!=="function")throw new Error("Runtime adapter does not provide Foundry Roll support.");return this.adapter.roll(formula,data);}
+  /** Test (CP-29): inputs, optional Roll, total, target, margin, then the first true Outcome by priority.
+   * Each step sees the previous ones under variables.test (inputs, roll, rollTotal, natural, bonus, total, target, margin). */
   async executeTest(versionId,testId,context={}){
     const ruleset=this.ruleset(versionId),test=ruleset.tests?.find(x=>x.id===testId&&enabled(x));if(!test)throw new Error(`Test unavailable: ${testId}.`);
-    const rollDef=ruleset.rolls?.find(x=>x.id===test.rollRef&&enabled(x));if(!rollDef)throw new Error(`Roll unavailable: ${test.rollRef}.`);
-    const baseContext={...context,variables:{...(context.variables??{})}};
-    const roll=await this.roll(rollDef.formula,rollDef.data??{});
-    const natural=Number.isFinite(Number(roll.natural))?Number(roll.natural):Number(roll.total);
-    baseContext.variables.roll={formula:roll.formula,total:Number(roll.total),natural,result:roll.result};
-    baseContext.variables.test={id:test.id,rollTotal:Number(roll.total),natural,bonus:0,total:Number(roll.total),target:null,margin:null};
-    const bonus=test.bonusFormulaRef?Number(await this.evaluateFormula(versionId,test.bonusFormulaRef,baseContext)):0;
-    const total=Number(roll.total)+bonus;baseContext.variables.test.bonus=bonus;baseContext.variables.test.total=total;
-    const target=test.targetFormulaRef?Number(await this.evaluateFormula(versionId,test.targetFormulaRef,baseContext)):(test.targetValue===null?null:Number(test.targetValue));
-    const margin=target===null?null:total-target;
-    const testContext={...baseContext,variables:{...baseContext.variables,test:{...baseContext.variables.test,target,margin}}};
+    const scope={...context,variables:{...(context.variables??{})}};
+    const state={id:test.id,inputs:{},roll:null,rollTotal:0,natural:null,bonus:0,total:0,target:null,margin:null};
+    const sync=()=>{scope.variables.test={...state,inputs:{...state.inputs}};if(state.roll)scope.variables.roll={...state.roll};};
+    sync();
+    for(const input of test.inputBindings??[]){state.inputs[input.id]=await this.#testInput(versionId,test,input,scope);sync();}
+    if(test.rollRef){
+      const rollDef=ruleset.rolls?.find(x=>x.id===test.rollRef&&enabled(x));if(!rollDef)throw new Error(`Roll unavailable: ${test.rollRef}.`);
+      const roll=await this.roll(rollDef.formula,rollDef.data??{});
+      const natural=Number.isFinite(Number(roll.natural))?Number(roll.natural):Number(roll.total);
+      state.roll={formula:String(roll.formula??rollDef.formula),total:Number(roll.total),natural,result:String(roll.result??roll.total??"")};
+      state.rollTotal=Number(roll.total);state.natural=natural;state.total=Number(roll.total);sync();
+    }
+    const number=async(formulaId,label)=>{const value=Number(await this.evaluateFormula(versionId,formulaId,scope));if(!Number.isFinite(value))throw new Error(`Test ${test.id} ${label} is not a number.`);return value;};
+    if(test.bonusFormulaRef){state.bonus=await number(test.bonusFormulaRef,"bonus");state.total=state.rollTotal+state.bonus;sync();}
+    if(test.totalFormulaRef){state.total=await number(test.totalFormulaRef,"total");sync();}
+    state.target=test.targetFormulaRef?await number(test.targetFormulaRef,"target"):(test.targetValue===null||test.targetValue===undefined?null:Number(test.targetValue));sync();
+    state.margin=test.marginFormulaRef?await number(test.marginFormulaRef,"margin"):(state.target===null?null:state.total-state.target);sync();
     // CP-29: highest priority first (list order breaks ties); the first true Outcome wins,
     // then the explicit fallback. With Outcomes configured and no match, the Test fails explicitly.
     const candidates=(test.outcomeRefs??[]).map((id,index)=>({index,outcome:ruleset.outcomes?.find(x=>x.id===id&&enabled(x))})).filter(x=>x.outcome)
       .sort((a,b)=>(b.outcome.priority??0)-(a.outcome.priority??0)||a.index-b.index).map(x=>x.outcome);
     let outcome=null;
-    for(const candidate of candidates){if(!candidate.conditionRef||await this.evaluateCondition(versionId,candidate.conditionRef,testContext)){outcome=candidate;break;}}
+    for(const candidate of candidates){if(!candidate.conditionRef||await this.evaluateCondition(versionId,candidate.conditionRef,scope)){outcome=candidate;break;}}
     if(!outcome&&test.fallbackOutcomeRef){outcome=ruleset.outcomes?.find(x=>x.id===test.fallbackOutcomeRef&&enabled(x))??null;if(!outcome)throw new Error(`Fallback Outcome unavailable: ${test.fallbackOutcomeRef}.`);}
     if(!outcome&&candidates.length)throw new Error(`Test ${test.id} matched no Outcome and has no fallback Outcome.`);
-    const variables={roll:{...baseContext.variables.roll},test:{...testContext.variables.test}};
-    const result={testId:test.id,roll:{formula:String(roll.formula??rollDef.formula),result:String(roll.result??roll.total??""),total:Number(roll.total),natural},bonus:Number(bonus),total:Number(total),target:target===null?null:Number(target),margin:margin===null?null:Number(margin),outcome:outcome?{id:String(outcome.id),resultKey:String(outcome.resultKey),nameKey:String(outcome.nameKey),labelKey:String(outcome.labelKey||outcome.nameKey)}:null,variables,context:{variables}};
+    const variables={...(state.roll?{roll:{...state.roll}}:{}),test:{...state,inputs:{...state.inputs}}};
+    const result={testId:test.id,inputs:copyJSON(state.inputs),roll:state.roll?{...state.roll}:null,bonus:state.bonus,total:state.total,target:state.target,margin:state.margin,outcome:outcome?{id:String(outcome.id),resultKey:String(outcome.resultKey),nameKey:String(outcome.nameKey),labelKey:String(outcome.labelKey||outcome.nameKey)}:null,variables,context:{variables}};
     this.hooks?.callAll?.(RUNTIME_HOOKS.testResolved,result,{roles:{...(context.roles??{})},defaultRole:context.defaultRole??"self",userContext:{...(context.userContext??{})}});return result;
+  }
+  async #testInput(versionId,test,input,scope){
+    let value;
+    if(Object.hasOwn(input.source,"literal"))value=copyJSON(input.source.literal);
+    else if(input.source.formulaRef)value=await this.evaluateFormula(versionId,input.source.formulaRef,scope);
+    else if(input.source.reference)value=await this.resolveReference(versionId,input.source.reference,scope);
+    if(value===undefined||value===null){
+      if(input.defaultValue!==undefined)return copyJSON(input.defaultValue);
+      if(input.required)throw new Error(`Test ${test.id} input ${input.id} has no value.`);
+      return null;
+    }
+    const check=validateTypedValue(input.valueType,"one",false,value);
+    if(!check.valid)throw new Error(`Test ${test.id} input ${input.id}: ${check.message}`);
+    return value;
   }
   async initializeContainer(versionId,containerRef,{definitionIds=null,initialByDefinition={}}={}){
     const ruleset=this.ruleset(versionId),wanted=definitionIds?new Set(definitionIds):null,ref=normalizeRuntimeContainerRef(containerRef);

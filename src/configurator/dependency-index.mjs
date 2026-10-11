@@ -28,6 +28,12 @@ export class DependencyIndex{
       pushRef(this.#edges,{objectKind:'test',objectId:t.id},{objectKind:'roll',objectId:t.rollRef},'testRoll',`tests[${i}].rollRef`);
       if(t.bonusFormulaRef)pushRef(this.#edges,{objectKind:'test',objectId:t.id},{objectKind:'formula',objectId:t.bonusFormulaRef},'testBonus',`tests[${i}].bonusFormulaRef`);
       if(t.targetFormulaRef)pushRef(this.#edges,{objectKind:'test',objectId:t.id},{objectKind:'formula',objectId:t.targetFormulaRef},'testTarget',`tests[${i}].targetFormulaRef`);
+      if(t.totalFormulaRef)pushRef(this.#edges,{objectKind:'test',objectId:t.id},{objectKind:'formula',objectId:t.totalFormulaRef},'testTotal',`tests[${i}].totalFormulaRef`);
+      if(t.marginFormulaRef)pushRef(this.#edges,{objectKind:'test',objectId:t.id},{objectKind:'formula',objectId:t.marginFormulaRef},'testMargin',`tests[${i}].marginFormulaRef`);
+      for(const [j,input] of (t.inputBindings??[]).entries()){
+        if(input?.source?.formulaRef)pushRef(this.#edges,{objectKind:'test',objectId:t.id},{objectKind:'formula',objectId:input.source.formulaRef},'testInput',`tests[${i}].inputBindings[${j}].source.formulaRef`);
+        if(isRecord(input?.source?.reference))pushRef(this.#edges,{objectKind:'test',objectId:t.id},input.source.reference,'testInput',`tests[${i}].inputBindings[${j}].source.reference`);
+      }
       for(const [j,id] of (t.outcomeRefs??[]).entries())pushRef(this.#edges,{objectKind:'test',objectId:t.id},{objectKind:'outcome',objectId:id},'testOutcome',`tests[${i}].outcomeRefs[${j}]`);
       if(t.fallbackOutcomeRef)pushRef(this.#edges,{objectKind:'test',objectId:t.id},{objectKind:'outcome',objectId:t.fallbackOutcomeRef},'testOutcome',`tests[${i}].fallbackOutcomeRef`);
     }
