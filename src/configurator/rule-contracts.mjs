@@ -51,10 +51,11 @@ export function prepareRoll(data,options={}){
   bool(x.enabled,'Roll.enabled');arr(x.tags,'Roll.tags');return x;
 }
 export function prepareOutcome(data,options={}){
-  const x={descriptionKey:'',enabled:true,order:0,tags:[],resultKey:'outcome',priority:0,conditionRef:null,labelKey:'',...copyJSON(data)};
+  const x={descriptionKey:'',enabled:true,order:0,tags:[],resultKey:'outcome',conditionRef:null,labelKey:'',...copyJSON(data)};
   identity(x,'Outcome',options);need(nonempty(x.resultKey),'Outcome requires resultKey.',options);
   if(x.conditionRef!==null&&!nonempty(x.conditionRef))throw new Error('Outcome.conditionRef must be null or a Condition id.');
-  if(!Number.isSafeInteger(x.priority))throw new Error('Outcome.priority must be a safe integer.');
+  // A Test orders its Outcomes; an Outcome carries no priority of its own.
+  if(Object.hasOwn(x,'priority'))throw new Error('Unsupported Outcome field: priority.');
   bool(x.enabled,'Outcome.enabled');arr(x.tags,'Outcome.tags');return x;
 }
 /** InputBinding (CP-29): a typed value the Test reads before rolling, exposed as test.inputs.<id>.
@@ -104,8 +105,6 @@ export function prepareEffect(data,options={}){
   bool(x.enabled,'Effect.enabled'); arr(x.tags,'Effect.tags'); return x;
 }
 const ROLE_NAME=/^[A-Za-z][A-Za-z0-9_-]*$/;
-/** CP-16 semantic purpose of an Action; it classifies, it adds no engine primitive. */
-export const ACTION_PURPOSES=Object.freeze(['acquisition','advancement','use','recovery']);
 /** Acquisition: the Action instantiates absent DefinitionStates on a role's container. */
 function prepareActionAcquisition(data,index){
   if(!isRecord(data)||!nonempty(data.definitionId))throw new Error(`Action.acquisitions[${index}] requires definitionId.`);
@@ -142,9 +141,10 @@ function prepareModifierApplication(data,index){
   return x;
 }
 export function prepareAction(data,options={}){
-  const x={descriptionKey:'',enabled:true,order:0,tags:[],purpose:null,conditionRefs:[],costEffectRefs:[],acquisitions:[],stateRemovals:[],stateApplications:[],modifierApplications:[],effectRefs:[],testRef:null,outcomeMappings:[],eventTypeRefs:[],...copyJSON(data)};
+  const x={descriptionKey:'',enabled:true,order:0,tags:[],conditionRefs:[],costEffectRefs:[],acquisitions:[],stateRemovals:[],stateApplications:[],modifierApplications:[],effectRefs:[],testRef:null,outcomeMappings:[],eventTypeRefs:[],...copyJSON(data)};
   identity(x,'Action',options);
-  if(x.purpose!==null&&!ACTION_PURPOSES.includes(x.purpose))throw new Error(`Action.purpose must be null or one of ${ACTION_PURPOSES.join(', ')}.`);
+  // An Action acquires when it lists acquisitions; no separate purpose is stored.
+  if(Object.hasOwn(x,'purpose'))throw new Error('Unsupported Action field: purpose.');
   for(const k of ['conditionRefs','costEffectRefs','acquisitions','stateRemovals','stateApplications','modifierApplications','effectRefs','outcomeMappings','eventTypeRefs'])arr(x[k],`Action.${k}`);
   x.acquisitions=x.acquisitions.map(prepareActionAcquisition);
   x.stateRemovals=x.stateRemovals.map(prepareStateRemoval);x.stateApplications=x.stateApplications.map(prepareStateApplication);x.modifierApplications=x.modifierApplications.map(prepareModifierApplication);

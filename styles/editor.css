@@ -786,3 +786,44 @@
 .rta-config-entry__help-body p {
   margin: 0;
 }
+
+/* Ordered reference list (a Test's Outcomes): order comes from drag and drop. */
+.rta-ordered-list__items {
+  display: flex;
+  flex-direction: column;
+  gap: var(--rta-gap-tight);
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.rta-ordered-list__item {
+  display: flex;
+  align-items: center;
+  gap: var(--rta-gap-row);
+  padding: var(--rta-space-2) var(--rta-space-3);
+  border: 1px solid var(--rta-color-border);
+  border-radius: var(--rta-radius-compact);
+  background: var(--rta-color-surface-raised);
+}
+
+.rta-ordered-list__item[hidden] {
+  display: none;
+}
+
+.rta-ordered-list__item[draggable="true"] {
+  cursor: grab;
+}
+
+.rta-ordered-list__item--dragging {
+  opacity: 0.35;
+}
+
+.rta-ordered-list__handle {
+  color: var(--rta-color-text-secondary);
+}
+
+.rta-ordered-list__label {
+  flex: 1;
+}
+

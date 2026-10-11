@@ -109,11 +109,6 @@
       "NoRoll": "No Roll: deterministic Test",
       "TotalFromRoll": "Roll + bonus",
       "MarginFromTotal": "Total − target",
-      "NoPurpose": "No purpose",
-      "PurposeAcquisition": "Acquisition",
-      "PurposeAdvancement": "Advancement",
-      "PurposeUse": "Use",
-      "PurposeRecovery": "Recovery",
       "NoAcquisitionAction": "No Action: grant directly",
       "UntilRemoved": "Until removed"
     },
@@ -478,7 +473,6 @@
       "Category": "Category",
       "SearchCategories": "Search categories…",
       "NoCategoriesYet": "No Categories yet. Create them from the Categories section.",
-      "ActionPurpose": "Purpose",
       "AcquiredDefinitions": "Acquired Definitions",
       "AcquisitionAction": "Acquisition Action",
       "StatesRemoved": "States removed",
@@ -504,7 +498,10 @@
       "AnyKind": "Any kind",
       "AnyDefinitionType": "Any Definition type",
       "FieldsHelpDefinition": "Data every Definition of this type stores, such as an abbreviation or a range.",
-      "NoFieldsYet": "No fields yet."
+      "NoFieldsYet": "No fields yet.",
+      "AddOutcome": "Add an outcome",
+      "OutcomeOrderHint": "Checked from top to bottom: the first outcome whose condition holds wins. Drag to reorder.",
+      "NoOutcomeYet": "No outcome yet."
     },
     "EditorDisplay": {
       "NoneSelected": "None selected",

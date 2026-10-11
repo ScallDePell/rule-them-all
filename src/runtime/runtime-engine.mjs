@@ -189,7 +189,7 @@ export class RuntimeEngine{
     const {value,applied}=applyModifierStack(baseValue,applicable.map(row=>({id:row.modifier.id,operation:row.modifier.operation,value:row.value,priority:row.modifier.priority??0,stacking:row.modifier.stacking})));return{base:Number(baseValue),value,applied};
   }
   async roll(formula,data={}){assertSafeRollFormula(formula);if(typeof this.adapter.roll!=="function")throw new Error("Runtime adapter does not provide Foundry Roll support.");return this.adapter.roll(formula,data);}
-  /** Test (CP-29): inputs, optional Roll, total, target, margin, then the first true Outcome by priority.
+  /** Test (CP-29): inputs, optional Roll, total, target, margin, then the first true Outcome in the Test's order.
    * Each step sees the previous ones under variables.test (inputs, roll, rollTotal, natural, bonus, total, target, margin). */
   async executeTest(versionId,testId,context={}){
     const ruleset=this.ruleset(versionId),test=ruleset.tests?.find(x=>x.id===testId&&enabled(x));if(!test)throw new Error(`Test unavailable: ${testId}.`);
@@ -210,10 +210,9 @@ export class RuntimeEngine{
     if(test.totalFormulaRef){state.total=await number(test.totalFormulaRef,"total");sync();}
     state.target=test.targetFormulaRef?await number(test.targetFormulaRef,"target"):(test.targetValue===null||test.targetValue===undefined?null:Number(test.targetValue));sync();
     state.margin=test.marginFormulaRef?await number(test.marginFormulaRef,"margin"):(state.target===null?null:state.total-state.target);sync();
-    // CP-29: highest priority first (list order breaks ties); the first true Outcome wins,
-    // then the explicit fallback. With Outcomes configured and no match, the Test fails explicitly.
-    const candidates=(test.outcomeRefs??[]).map((id,index)=>({index,outcome:ruleset.outcomes?.find(x=>x.id===id&&enabled(x))})).filter(x=>x.outcome)
-      .sort((a,b)=>(b.outcome.priority??0)-(a.outcome.priority??0)||a.index-b.index).map(x=>x.outcome);
+    // CP-29: the Test's own Outcome order; the first true Outcome wins, then the explicit
+    // fallback. With Outcomes configured and no match, the Test fails explicitly.
+    const candidates=(test.outcomeRefs??[]).map(id=>ruleset.outcomes?.find(x=>x.id===id&&enabled(x))).filter(Boolean);
     let outcome=null;
     for(const candidate of candidates){if(!candidate.conditionRef||await this.evaluateCondition(versionId,candidate.conditionRef,scope)){outcome=candidate;break;}}
     if(!outcome&&test.fallbackOutcomeRef){outcome=ruleset.outcomes?.find(x=>x.id===test.fallbackOutcomeRef&&enabled(x))??null;if(!outcome)throw new Error(`Fallback Outcome unavailable: ${test.fallbackOutcomeRef}.`);}

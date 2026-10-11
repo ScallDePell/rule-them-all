@@ -1,5 +1,4 @@
 import {effectOperationRegistry} from "./operation-registries.mjs";
-import {ACTION_PURPOSES} from "./rule-contracts.mjs";
 import {collectFormulaExpression,collectConditionExpression} from "./entry-expression-serialization.mjs";
 import {collectCreationSteps} from "./creation-step-serialization.mjs";
 import {collectEntryData} from "./entry-data-collector.mjs";
@@ -10,6 +9,7 @@ import {buildFieldRow,buildNewFieldRow,buildEventFieldRow,buildDefinitionFieldMo
 import {buildRuleReferenceChoices} from "./entry-reference-catalog.mjs";
 import {buildSlotFormContext,syncValueSource,syncEntryMode} from "./slot-form.mjs";
 import {slotInitialKey} from "./capability-slots.mjs";
+import {wireOrderedLists} from "../ui/ordered-list.mjs";
 import {capabilityRole,capabilityRoleFlags,capabilityLabel} from "./capability-type-registry.mjs";
 import {availableDocumentTypes} from "../core/system-document-types.mjs";
 
@@ -150,7 +150,9 @@ export class ConfiguratorEntryEditor extends ConfiguratorWindow {
     const rollChoices=[{id:"",label:uiText("NoRoll","No Roll: deterministic Test"),selected:!data.rollRef},...rolls.map(x=>({id:x.id,label:x.nameKey,...withColors("roll",x),selected:x.id===data.rollRef}))];
     const optionalFormula=(selected,emptyKey,emptyLabel)=>[{id:"",label:uiText(emptyKey,emptyLabel),selected:!selected},...formulas.map(x=>({id:x.id,label:x.nameKey,...withColors("formula",x),selected:x.id===selected}))];
     const totalFormulaChoices=optionalFormula(data.totalFormulaRef,"TotalFromRoll","Roll + bonus"),marginFormulaChoices=optionalFormula(data.marginFormulaRef,"MarginFromTotal","Total − target");
-    const outcomeChoices=selection(outcomes.map(x=>({id:x.id,label:x.nameKey,...withColors("outcome",x)})),data.outcomeRefs);
+    // A Test checks its Outcomes in list order: chosen ones first, in that order, then the others (hidden).
+    const outcomeById=new Map(outcomes.map(x=>[x.id,x])),chosenOutcomes=(data.outcomeRefs??[]).filter(id=>outcomeById.has(id));
+    const outcomeRows=[...chosenOutcomes.map(id=>outcomeById.get(id)),...outcomes.filter(x=>!chosenOutcomes.includes(x.id))].map(x=>({id:x.id,label:x.nameKey,...withColors("outcome",x),selected:chosenOutcomes.includes(x.id)}));
     const testChoices=tests.map(x=>({id:x.id,label:x.nameKey,...withColors("test",x),selected:x.id===data.testRef}));
     const outcomeConditionChoices=[{id:"",label:"Always / fallback",selected:!data.conditionRef},...conditions.map(x=>({id:x.id,label:x.nameKey,selected:x.id===data.conditionRef}))];
     const bonusFormulaChoices=[{id:"",label:"None",selected:!data.bonusFormulaRef},...formulas.map(x=>({id:x.id,label:x.nameKey,...withColors("formula",x),selected:x.id===data.bonusFormulaRef}))];
@@ -158,8 +160,7 @@ export class ConfiguratorEntryEditor extends ConfiguratorWindow {
     const targetFormulaChoices=[{id:"",label:"Fixed target",selected:!data.targetFormulaRef},...formulas.map(x=>({id:x.id,label:x.nameKey,...withColors("formula",x),selected:x.id===data.targetFormulaRef}))];
     const effectChoices=effects.map(x=>({id:x.id,label:x.nameKey,...withColors("effect",x),costSelected:(data.costEffectRefs??[]).includes(x.id),effectSelected:(data.effectRefs??[]).includes(x.id)}));
     const actionChoices=selection(actions.map(x=>({id:x.id,label:x.nameKey,...withColors("action",x)})),data.actionRefs);
-    // CP-16: an Action's purpose and the Definitions it acquires; a Content's acquisition Action.
-    const actionPurposeChoices=[{id:"",label:uiText("NoPurpose","No purpose"),selected:!data.purpose},...ACTION_PURPOSES.map(id=>({id,label:uiText(`Purpose${id.charAt(0).toUpperCase()}${id.slice(1)}`,id),selected:data.purpose===id}))];
+    // CP-16: the Definitions an Action acquires; a Content's acquisition Action.
     const acquiredDefinitionChoices=definitions.map(x=>({id:x.id,label:x.nameKey,...withColors("definition",x),selected:(data.acquisitions??[]).some(a=>a?.definitionId===x.id)}));
     // CP-28: states an Action applies or removes, Modifiers it makes persistent, and how long they last.
     const actionKind=this.#kind==="action",stateDefinitions=actionKind?definitions.filter(x=>(x.capabilities??[]).includes("state")):[],modifiers=actionKind?list("listModifiers"):[],durations=actionKind?list("listDurations"):[];
@@ -215,7 +216,7 @@ export class ConfiguratorEntryEditor extends ConfiguratorWindow {
     const sheetComponentRows=this.#kind==="sheetDefinition"?(data.layout?.components??[]).map((c,index)=>({...c,index,sourceToken:c.source?refToken(c.source):"",sourceChoices:[{token:"",label:"— none —"},...referenceChoices].map(x=>({...x,selected:x.token===(c.source?refToken(c.source):"")})),isSection:c.kind==="section",isText:c.kind==="text",isField:c.kind==="field",isRepeater:c.kind==="repeater",isActions:c.kind==="actions",isContent:c.kind==="content",isSpacer:c.kind==="spacer",isHalf:c.width==="half",isFull:c.width!=="half"})):[];
     Object.assign(context,{error:this.#error,kind:this.#kind,creating,readOnly:isValidated,deletion:creating?{blocked:false,reason:""}:this.#deletionView(),help:entryHelp(this.#kind,{definitionType:type}),data,type,fieldContract,fieldRows,newFieldRow,capabilityChoices,colorSectionChoices,rulesetMainColor:rulesetColor(data),allowTypeColor,inheritedTypeColor,hasCustomColor:!!data.color,valueTypes:this.#api.listValueTypes().map(v=>({...v,selected:v.id===(data.valueType??data.resultType)})),
       documentActorTypes:availableDocumentTypes("Actor").map(id=>({id,selected:data.storageKind==="actor"&&data.documentSubtype===id})),documentItemTypes:availableDocumentTypes("Item").map(id=>({id,selected:data.storageKind!=="actor"&&data.documentSubtype===id})),
-      hasForcedCapabilities,hasOptionalCapabilities,conditionChoices,actionPurposeChoices,acquiredDefinitionChoices,acquisitionActionChoices,appliedStateChoices,removedStateChoices,appliedModifierChoices,stateDurationChoices,rollChoices,outcomeChoices,fallbackOutcomeChoices,testChoices,bindingFormulaChoices,tagChoices,tagSummary,categoryChoices,categorySummary,eventFieldRows,roleChoices,contentTypeChoices,relationRows,hasRelations:RELATION_KINDS.includes(this.#kind),roleSelf,roleSource,roleTarget,roleSubject,roleOwner,outcomeConditionChoices,bonusFormulaChoices,targetFormulaChoices,effectChoices,actionChoices,eventTypeChoices,definitionChoices,definitionBindingRows,templateActionChoices,choiceGroupRows,hasLegacyAcquisitions:!!((data.definitionBindings??[]).length||(data.actionBindings??[]).length),conditionSummary,costEffectSummary,effectSummary,actionSummary,definitionSummary,templateActionSummary,formulaModel,conditionModel,conditionOperands:[conditionModel.left,conditionModel.right],sheetComponentRows,sheetViewActor:data.viewType==="actor"||!data.viewType,sheetViewItem:data.viewType==="item",sheetViewContent:data.viewType==="content",sheetViewRuntime:data.viewType==="runtime",
+      hasForcedCapabilities,hasOptionalCapabilities,conditionChoices,acquiredDefinitionChoices,acquisitionActionChoices,appliedStateChoices,removedStateChoices,appliedModifierChoices,stateDurationChoices,rollChoices,outcomeRows,fallbackOutcomeChoices,testChoices,bindingFormulaChoices,tagChoices,tagSummary,categoryChoices,categorySummary,eventFieldRows,roleChoices,contentTypeChoices,relationRows,hasRelations:RELATION_KINDS.includes(this.#kind),roleSelf,roleSource,roleTarget,roleSubject,roleOwner,outcomeConditionChoices,bonusFormulaChoices,targetFormulaChoices,effectChoices,actionChoices,eventTypeChoices,definitionChoices,definitionBindingRows,templateActionChoices,choiceGroupRows,hasLegacyAcquisitions:!!((data.definitionBindings??[]).length||(data.actionBindings??[]).length),conditionSummary,costEffectSummary,effectSummary,actionSummary,definitionSummary,templateActionSummary,formulaModel,conditionModel,conditionOperands:[conditionModel.left,conditionModel.right],sheetComponentRows,sheetViewActor:data.viewType==="actor"||!data.viewType,sheetViewItem:data.viewType==="item",sheetViewContent:data.viewType==="content",sheetViewRuntime:data.viewType==="runtime",
       referenceChoices:referenceChoices.map(x=>({...x,selected:x.token===referenceTargetToken})),
       bindingTargetChoices:referenceChoices.filter(x=>parseRefToken(x.token).capabilityId).map(x=>({...x,selected:x.token===bindingTargetToken})),
       effectTargetChoices:mutableReferenceChoices.map(x=>({...x,selected:x.token===targetToken})),
@@ -256,6 +257,7 @@ export class ConfiguratorEntryEditor extends ConfiguratorWindow {
     const form=this.element?.querySelector("[data-entry-form]");
     if(!form)return;
     const mark=()=>{if(!this.#dirty){this.#dirty=true;this.#syncFooter();}};
+    wireOrderedLists(this.element,{onChange:mark});
     form.addEventListener("input",event=>{mark();const row=event.target.closest?.("[data-definition-field]");if(row&&!row.dataset.required){const use=row.querySelector("[data-field-present]");if(use&&!use.checked){use.checked=true;}}if(event.target.matches?.("[data-picker-filter]"))this.#filterPicker(event.target);});
     form.addEventListener("change",event=>{if(event.target.matches?.("[data-step-source-family]")&&event.target.checked){const group=event.target.closest("[data-step-prop=sourceCollection]");for(const other of group?.querySelectorAll("[data-step-source-family]")??[])if(other!==event.target)other.checked=false;}this.#syncCreationSource(event.target);mark();if(event.target.matches?.("[data-presentation-override]")){const row=event.target.closest("[data-presentation-key]");const control=row?.querySelector(".rta-declarative-presentation__value");if(control)control.hidden=!event.target.checked;}this.#syncFieldRow(event.target);this.#syncOperandEditor(event.target);this.#syncRuleOperandEditor(event.target);this.#syncPickerSummary(event.target);this.#syncStorageKind(event.target);if(event.target.matches?.("[data-color-override-toggle]")){const input=event.target.closest("[data-color-override-editor]")?.querySelector("[data-custom-color-input]");if(input)input.disabled=!event.target.checked;}});
     form.addEventListener("change",event=>{if(event.target.matches?.("[data-source-kind]"))syncValueSource(event.target);if(event.target.matches?.('[data-input-prop="sourceKind"]'))syncTestInputSource(event.target);if(event.target.matches?.('[data-slot-prop="entryMode"]'))syncEntryMode(event.target);});

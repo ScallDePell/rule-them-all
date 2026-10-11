@@ -39,8 +39,8 @@ test('Runtime resolves declarative Test Roll and Outcome with typed context vari
  await api.createRoll(v,{id:'d20-fixed',nameKey:'D20',formula:'20',data:{},enabled:true,order:10,tags:[]});
  await api.createFormula(v,{id:'athletics-bonus',nameKey:'Bonus',resultType:'number',expression:{type:'reference',reference:{objectKind:'definition',objectId:'strength',capabilityId:'value',outputId:'value.final'}},enabled:true,order:10,tags:[]});
  await api.createCondition(v,{id:'natural-20',nameKey:'Critical',expression:{type:'eq',left:{type:'context',path:'variables.test.natural'},right:{type:'literal',value:20}},enabled:true,order:10,tags:[]});
- await api.createOutcome(v,{id:'critical',nameKey:'Critical',resultKey:'critical',conditionRef:'natural-20',priority:100,enabled:true,order:10,tags:[]});
- await api.createOutcome(v,{id:'fallback',nameKey:'Success',resultKey:'success',conditionRef:null,priority:0,enabled:true,order:20,tags:[]});
+ await api.createOutcome(v,{id:'critical',nameKey:'Critical',resultKey:'critical',conditionRef:'natural-20',enabled:true,order:10,tags:[]});
+ await api.createOutcome(v,{id:'fallback',nameKey:'Success',resultKey:'success',conditionRef:null,enabled:true,order:20,tags:[]});
  await api.createTest(v,{id:'check',nameKey:'Check',rollRef:'d20-fixed',bonusFormulaRef:'athletics-bonus',targetFormulaRef:null,targetValue:13,outcomeRefs:['critical','fallback'],enabled:true,order:10,tags:[]});
  await api.publishRuleset(v);const adapter=new MemoryRuntimeAdapter(),engine=new RuntimeEngine({configurator:api,adapter,hooks:null}),actor={kind:'actor',id:'a'};
  await engine.instantiateDefinition(v,actor,'strength',{initial:{'value.base':3}});
@@ -60,7 +60,7 @@ test('v0.6.0 FormulaBinding exposes live derived outputs and makes them read-onl
 test('v0.6.0 Action can run a Test, map its Outcome, commit Effects and emit a Triggered Event',async()=>{
  const {api,v}=await setup();await api.createRoll(v,{id:'fixed',nameKey:'Fixed',formula:'20',data:{},enabled:true,order:10,tags:[]});
  await api.createCondition(v,{id:'nat20',nameKey:'Nat20',expression:{type:'eq',left:{type:'context',path:'variables.test.natural'},right:{type:'literal',value:20}},enabled:true,order:10,tags:[]});
- await api.createOutcome(v,{id:'crit',nameKey:'Critical',resultKey:'critical',conditionRef:'nat20',priority:100,enabled:true,order:10,tags:[]});
+ await api.createOutcome(v,{id:'crit',nameKey:'Critical',resultKey:'critical',conditionRef:'nat20',enabled:true,order:10,tags:[]});
  await api.createTest(v,{id:'attack',nameKey:'Attack',rollRef:'fixed',bonusFormulaRef:null,targetFormulaRef:null,targetValue:13,outcomeRefs:['crit'],enabled:true,order:10,tags:[]});
  await api.createEventType(v,{id:'resolved',nameKey:'Resolved',descriptionKey:'',payloadFields:{},roles:[],enabled:true,order:10});
  await api.createTrigger(v,{id:'after-resolved',nameKey:'After resolved',descriptionKey:'',eventTypeId:'resolved',eventFilter:null,conditionRefs:[],actionRefs:[],enabled:true,order:10,tags:[]});
@@ -73,7 +73,7 @@ test('v0.6.1 Test result stays plain even when adapter roll contains a Foundry-l
  const {api,v}=await setup();
  await api.createRoll(v,{id:'d20-object',nameKey:'D20',formula:'1d20',data:{},enabled:true,order:10,tags:[]});
  await api.createCondition(v,{id:'natural-20-object',nameKey:'Critical',expression:{type:'eq',left:{type:'context',path:'variables.test.natural'},right:{type:'literal',value:20}},enabled:true,order:10,tags:[]});
- await api.createOutcome(v,{id:'critical-object',nameKey:'Critical',resultKey:'critical',conditionRef:'natural-20-object',priority:100,enabled:true,order:10,tags:[]});
+ await api.createOutcome(v,{id:'critical-object',nameKey:'Critical',resultKey:'critical',conditionRef:'natural-20-object',enabled:true,order:10,tags:[]});
  await api.createTest(v,{id:'plain-check',nameKey:'Plain Check',rollRef:'d20-object',bonusFormulaRef:null,targetFormulaRef:null,targetValue:13,outcomeRefs:['critical-object'],enabled:true,order:10,tags:[]});
  class RollLike{constructor(){this.secret=Symbol('not-json')}}
  const adapter=new MemoryRuntimeAdapter();adapter.roll=async()=>({formula:'1d20',result:'20',total:20,natural:20,roll:new RollLike()});
@@ -121,20 +121,20 @@ test('lookup and rangeLookup nodes validate and evaluate',async()=>{
  assert.throws(()=>prepareFormula({id:'f',nameKey:'F',expression:{type:'rangeLookup',value:{type:'literal',value:1},ranges:[{min:5,max:1,value:0}]}}),/min greater than max/);
 });
 
-test('Outcomes resolve by descending priority, then the explicit fallback, else fail',async()=>{
+test('Outcomes resolve in the Test order, then the explicit fallback, else fail',async()=>{
  const {api,v}=await setup();
  await api.createRoll(v,{id:'fixed',nameKey:'Fixed',formula:'20',data:{},enabled:true,order:10,tags:[]});
  await api.createCondition(v,{id:'yes',nameKey:'Yes',expression:{type:'literal',value:true},enabled:true,order:10,tags:[]});
  await api.createCondition(v,{id:'no',nameKey:'No',expression:{type:'literal',value:false},enabled:true,order:20,tags:[]});
- await api.createOutcome(v,{id:'plain',nameKey:'Plain',resultKey:'plain',conditionRef:'yes',priority:0,enabled:true,order:10,tags:[]});
- await api.createOutcome(v,{id:'great',nameKey:'Great',resultKey:'great',conditionRef:'yes',priority:10,enabled:true,order:20,tags:[]});
- await api.createOutcome(v,{id:'never',nameKey:'Never',resultKey:'never',conditionRef:'no',priority:50,enabled:true,order:30,tags:[]});
- await api.createTest(v,{id:'ordered',nameKey:'Ordered',rollRef:'fixed',outcomeRefs:['plain','great','never'],enabled:true,order:10,tags:[]});
+ await api.createOutcome(v,{id:'plain',nameKey:'Plain',resultKey:'plain',conditionRef:'yes',enabled:true,order:10,tags:[]});
+ await api.createOutcome(v,{id:'great',nameKey:'Great',resultKey:'great',conditionRef:'yes',enabled:true,order:20,tags:[]});
+ await api.createOutcome(v,{id:'never',nameKey:'Never',resultKey:'never',conditionRef:'no',enabled:true,order:30,tags:[]});
+ await api.createTest(v,{id:'ordered',nameKey:'Ordered',rollRef:'fixed',outcomeRefs:['great','plain','never'],enabled:true,order:10,tags:[]});
  await api.createTest(v,{id:'fallback',nameKey:'Fallback',rollRef:'fixed',outcomeRefs:['never'],fallbackOutcomeRef:'plain',enabled:true,order:20,tags:[]});
  await api.createTest(v,{id:'strict',nameKey:'Strict',rollRef:'fixed',outcomeRefs:['never'],enabled:true,order:30,tags:[]});
  await api.publishRuleset(v);
  const engine=new RuntimeEngine({configurator:api,adapter:new MemoryRuntimeAdapter(),hooks:null});
- assert.equal((await engine.executeTest(v,'ordered',{})).outcome.id,'great','priority 10 beats an earlier priority 0');
+ assert.equal((await engine.executeTest(v,'ordered',{})).outcome.id,'great','the first true Outcome in the Test order wins');
  assert.equal((await engine.executeTest(v,'fallback',{})).outcome.id,'plain');
  await assert.rejects(()=>engine.executeTest(v,'strict',{}),/no fallback Outcome/);
  await assert.rejects(()=>api.deleteOutcome(v,'plain'),/referenced/,'a fallback Outcome is a protected dependency');

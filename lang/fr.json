@@ -105,11 +105,6 @@
       "NoRoll": "Aucun jet : test déterministe",
       "TotalFromRoll": "Jet + bonus",
       "MarginFromTotal": "Total − cible",
-      "NoPurpose": "Aucun rôle",
-      "PurposeAcquisition": "Acquisition",
-      "PurposeAdvancement": "Progression",
-      "PurposeUse": "Utilisation",
-      "PurposeRecovery": "Récupération",
       "NoAcquisitionAction": "Aucune Action : ajout direct",
       "UntilRemoved": "Jusqu'au retrait"
     },
@@ -474,7 +469,6 @@
       "Category": "Catégorie",
       "SearchCategories": "Rechercher des catégories…",
       "NoCategoriesYet": "Aucune catégorie pour le moment. Créez-en dans la section Catégories.",
-      "ActionPurpose": "Rôle",
       "AcquiredDefinitions": "Definitions acquises",
       "AcquisitionAction": "Action d’acquisition",
       "StatesRemoved": "États retirés",
@@ -500,7 +494,10 @@
       "AnyKind": "Tout type",
       "AnyDefinitionType": "Tout type de définition",
       "FieldsHelpDefinition": "Données stockées par chaque Définition de ce type, par exemple une abréviation ou une portée.",
-      "NoFieldsYet": "Aucun champ pour l'instant."
+      "NoFieldsYet": "Aucun champ pour l'instant.",
+      "AddOutcome": "Ajouter un résultat",
+      "OutcomeOrderHint": "Vérifiés de haut en bas : le premier résultat dont la condition est vraie l'emporte. Glissez pour réordonner.",
+      "NoOutcomeYet": "Aucun résultat pour l'instant."
     },
     "EditorDisplay": {
       "NoneSelected": "Aucune sélection",

@@ -17,8 +17,8 @@ async function setup({publish=true}={}){
   await api.createCondition(v,{id:'has-xp',nameKey:'Has XP',expression:{type:'gte',left:{type:'reference',reference:value('xp')},right:{type:'literal',value:5}},enabled:true,tags:[]});
   await api.createEffect(v,{id:'spend-xp',nameKey:'Spend XP',targetRole:'self',targetRef:value('xp'),operation:'subtract',operand:{kind:'literal',value:5},enabled:true,tags:[]});
   await api.createEffect(v,{id:'first-rank',nameKey:'First rank',targetRole:'self',targetRef:value('swordplay'),operation:'set',operand:{kind:'literal',value:1},enabled:true,tags:[]});
-  await api.createAction(v,{id:'learn-swordplay',nameKey:'Learn swordplay',purpose:'acquisition',conditionRefs:['has-xp'],costEffectRefs:['spend-xp'],acquisitions:[{definitionId:'swordplay'}],effectRefs:['first-rank'],enabled:true,tags:[]});
-  await api.createAction(v,{id:'train',nameKey:'Train',purpose:'acquisition',conditionRefs:['has-xp'],costEffectRefs:['spend-xp'],enabled:true,tags:[]});
+  await api.createAction(v,{id:'learn-swordplay',nameKey:'Learn swordplay',conditionRefs:['has-xp'],costEffectRefs:['spend-xp'],acquisitions:[{definitionId:'swordplay'}],effectRefs:['first-rank'],enabled:true,tags:[]});
+  await api.createAction(v,{id:'train',nameKey:'Train',conditionRefs:['has-xp'],costEffectRefs:['spend-xp'],enabled:true,tags:[]});
   if(publish){await api.deleteAction(v,'train');await api.publishRuleset(v);}
   const engine=new RuntimeEngine({configurator:api,adapter:new MemoryRuntimeAdapter(),hooks:null});
   if(publish)await engine.initializeContainer(v,self,{definitionIds:['xp'],initialByDefinition:{xp:{'value.base':7}}});
@@ -71,15 +71,11 @@ test('CP-16: Content acquisition grants only the absent Definitions, with or wit
   assert.equal(refused.allowed,false);
 });
 
-test('CP-16: Action purpose and acquisitions are validated and protect their Definitions', async () => {
-  assert.throws(()=>prepareAction({id:'a',nameKey:'A',purpose:'shopping'}),/purpose/);
+test('CP-16: Action acquisitions are validated and protect their Definitions; no purpose is stored', async () => {
+  assert.throws(()=>prepareAction({id:'a',nameKey:'A',purpose:'acquisition'}),/purpose/);
   assert.throws(()=>prepareAction({id:'a',nameKey:'A',acquisitions:[{definitionId:'x'},{definitionId:'x'}]}),/twice/);
   assert.throws(()=>prepareAction({id:'a',nameKey:'A',acquisitions:[{definitionId:'x',targetRole:'1'}]}),/role name/);
   assert.deepEqual(prepareAction({id:'a',nameKey:'A',acquisitions:[{definitionId:'x'}]}).acquisitions,[{definitionId:'x',targetRole:'self',initial:{}}]);
   const {api,v}=await setup({publish:false});
-  const draft=api.diagnoseRuleset(v,{scope:'edit'}).diagnostics.filter(d=>d.code==='ACTION_ACQUISITION');
-  assert.equal(draft.length,1);
-  assert.equal(draft[0].severity,'WARNING');
-  assert.equal(api.diagnoseRuleset(v,{scope:'publish'}).diagnostics.find(d=>d.code==='ACTION_ACQUISITION').severity,'ERROR');
   await assert.rejects(()=>api.deleteDefinition(v,'swordplay'),/referenced/);
 });

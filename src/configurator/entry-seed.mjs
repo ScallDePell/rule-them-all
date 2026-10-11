@@ -14,7 +14,7 @@ export function createEntrySeed(kind,{uid,definitionTypeId=null,contentTypeId=nu
   if(kind==="formulaBinding")return{id:uid("binding"),nameKey:"",descriptionKey:"",enabled:true,tags:[],formulaRef:"",targetRef:{objectKind:"definition",objectId:"",capabilityId:"",outputId:""},targetRole:"self"};
   if(kind==="condition")return{id:uid("condition"),nameKey:"",descriptionKey:"",enabled:true,tags:[],expression:{type:"literal",value:true}};
   if(kind==="roll")return{id:uid("roll"),nameKey:"",descriptionKey:"",enabled:true,tags:[],formula:"",data:{}};
-  if(kind==="outcome")return{id:uid("outcome"),nameKey:"",descriptionKey:"",enabled:true,tags:[],resultKey:"",priority:0,conditionRef:null,labelKey:""};
+  if(kind==="outcome")return{id:uid("outcome"),nameKey:"",descriptionKey:"",enabled:true,tags:[],resultKey:"",conditionRef:null,labelKey:""};
   if(kind==="test")return{id:uid("test"),nameKey:"",descriptionKey:"",enabled:true,tags:[],rollRef:"",bonusFormulaRef:null,targetFormulaRef:null,targetValue:null,outcomeRefs:[],fallbackOutcomeRef:null};
   if(kind==="effect")return{id:uid("effect"),nameKey:"",descriptionKey:"",enabled:true,tags:[],targetRef:{objectKind:"definition",objectId:""},operation:"set",operand:{kind:"literal",value:0}};
   if(kind==="action")return{id:uid("action"),nameKey:"",descriptionKey:"",enabled:true,tags:[],conditionRefs:[],costEffectRefs:[],effectRefs:[],testRef:null,outcomeMappings:[]};

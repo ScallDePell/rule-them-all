@@ -15,8 +15,8 @@ async function setup(){
   await api.createFormula(v,{id:'skill-total',nameKey:'Skill total',resultType:'number',expression:{type:'add',args:[ctx('inputs.rank'),ctx('inputs.edge')]},enabled:true,order:20,tags:[]});
   await api.createFormula(v,{id:'half-margin',nameKey:'Half margin',resultType:'number',expression:{type:'divide',args:[{type:'subtract',args:[ctx('total'),ctx('target')]},{type:'literal',value:2}]},enabled:true,order:30,tags:[]});
   await api.createCondition(v,{id:'passed',nameKey:'Passed',expression:{type:'gte',left:ctx('margin'),right:{type:'literal',value:0}},enabled:true,order:10,tags:[]});
-  await api.createOutcome(v,{id:'success',nameKey:'Success',resultKey:'success',conditionRef:'passed',priority:10,enabled:true,order:10,tags:[]});
-  await api.createOutcome(v,{id:'failure',nameKey:'Failure',resultKey:'failure',conditionRef:null,priority:0,enabled:true,order:20,tags:[]});
+  await api.createOutcome(v,{id:'success',nameKey:'Success',resultKey:'success',conditionRef:'passed',enabled:true,order:10,tags:[]});
+  await api.createOutcome(v,{id:'failure',nameKey:'Failure',resultKey:'failure',conditionRef:null,enabled:true,order:20,tags:[]});
   return {api,v};
 }
 

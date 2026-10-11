@@ -10,8 +10,8 @@ function form(values={},checked={}){
 }
 
 test('saving an Outcome keeps its label key, which the form does not show', () => {
-  const current={id:'hit',nameKey:'Hit',labelKey:'RULES.Hit',resultKey:'hit',priority:0,conditionRef:null,tags:[]};
-  const saved=collectEntryData('outcome',{...form({nameKey:'Hit',resultKey:'hit',priority:'0'}),current});
+  const current={id:'hit',nameKey:'Hit',labelKey:'RULES.Hit',resultKey:'hit',conditionRef:null,tags:[]};
+  const saved=collectEntryData('outcome',{...form({nameKey:'Hit',resultKey:'hit'}),current});
   assert.equal(saved.labelKey,'RULES.Hit');
 });
 
@@ -69,4 +69,13 @@ test('a Content Template description becomes the Item description where the Game
   assert.equal(data.system.description.value,'Fifteen metres.');
   const none=new FoundryContentBridge({},{},{hooks:null,documentTypeResolver:()=>'gear',descriptionPath:()=>null});
   assert.equal(none.documentData('v1',{id:'rope',nameKey:'Rope',descriptionKey:'x'},{id:'gear',storageKind:'item'}).system,undefined);
+});
+
+test('a Test keeps its Outcomes in the dragged order and an Outcome has no priority', async () => {
+  const {prepareOutcome}=await import('../src/configurator/rule-contracts.mjs');
+  assert.throws(()=>prepareOutcome({id:'o',nameKey:'O',resultKey:'o',priority:3}),/priority/);
+  const rows=['great','plain'].map(id=>({dataset:{orderedItem:id}}));
+  const list={querySelectorAll:selector=>selector==='[data-ordered-item]:not([hidden])'?rows:[]};
+  const saved=collectEntryData('test',{...form({nameKey:'Check'}),queryOne:selector=>selector==='[data-ordered-list="outcomeRefs"]'?list:null,current:{id:'check'}});
+  assert.deepEqual(saved.outcomeRefs,['great','plain']);
 });

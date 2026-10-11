@@ -50,9 +50,7 @@ export function rulesetTypes(ruleset) {
 /** Report type problems on a DiagnosticCollector (strict: warning in draft, error at publish). */
 export function checkRulesetTypes(ruleset, d) {
   const types = rulesetTypes(ruleset);
-  // CP-16: an acquisition Action must instantiate something.
   list(ruleset.actions).forEach((action, index) => {
-    if (isRecord(action) && action.purpose === "acquisition" && !list(action.acquisitions).length) d.strict("ACTION_ACQUISITION", `actions[${index}].acquisitions`, "An acquisition Action must acquire at least one Definition.");
     // CP-28: a StateInstance is a state Definition; a persistent ModifierState changes a value.
     const definitions = new Map(list(ruleset.definitions).map(definition => [definition?.id, definition])), modifiers = new Map(list(ruleset.modifiers).map(modifier => [modifier?.id, modifier]));
     for (const [key, rows] of [["stateApplications", list(action?.stateApplications)], ["stateRemovals", list(action?.stateRemovals)]]) rows.forEach((row, at) => {
