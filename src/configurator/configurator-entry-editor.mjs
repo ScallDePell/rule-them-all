@@ -36,7 +36,7 @@ import {renderRelationRow} from "../ui/relation-editor-markup.mjs";
 import {ConfiguratorWindow} from "./configurator-window.mjs";
 import {formatEditorValue} from "./editor-value.mjs";
 import {getCreationSources, getCreationSourceDescriptor} from "./creation-source-catalog.mjs";
-import {diagnosticFocusTargets} from "./diagnostic-focus.mjs";
+import {diagnosticFocusTargets,saveErrorFocusPath} from "./diagnostic-focus.mjs";
 import {buildTestInputContext,syncTestInputSource} from "./test-input-form.mjs";
 
 
@@ -406,8 +406,9 @@ export class ConfiguratorEntryEditor extends ConfiguratorWindow {
   }
 
   async #save(close){
+    let data=null;
     try{
-      const data=this.#collect();
+      data=this.#collect();
       let savedResult;
       if(this.#kind==="ruleset"){
         if(this.#id){await this.#api.updateRuleset(this.#versionId,data);savedResult={versionId:this.#versionId};}
@@ -435,8 +436,15 @@ export class ConfiguratorEntryEditor extends ConfiguratorWindow {
       // silent success if any selected Ruleset relationship disappeared.
       if(this.#kind!=="ruleset")assertPersistedRelations(this.#kind,data,this.#read());
       this.#baseline=copy(this.#read());this.#dirty=false;this.#error="";await this.#onSaved(savedResult);if(close)return this.close();return this.render(false);
-    }catch(error){this.#error=error?.message??String(error);return this.render(false);}
+    }catch(error){
+      this.#error=error?.message??String(error);
+      // Open the section holding the first problem and focus its field (§46).
+      const path=saveErrorFocusPath(error,{kind:this.#kind,id:this.#kind==="ruleset"?null:(this.#id??data?.id??null)});
+      if(path!==null)this.#focusPath=path;
+      return this.render(false);
+    }
   }
+
 
   #newEventFieldRow(){
     const id=fieldUid(),row=document.createElement("article");row.className="rta-field-editor";row.dataset.eventFieldRow="";row.dataset.eventFieldId=id;

@@ -50,3 +50,18 @@ export function diagnosticFocusTargets(kind, relativePath) {
   add('[name="genericJson"]');
   return targets;
 }
+
+const MESSAGE_PATH = /^[A-Z][A-Za-z]*\.([A-Za-z]+(?:\[\d+\])?(?:\.[A-Za-z]+(?:\[\d+\])?)*)/;
+
+/** Path, inside the edited object, of the first blocking problem a refused save reports; null when none applies. */
+export function saveErrorFocusPath(error, {kind, id} = {}) {
+  const diagnostics = error?.validation?.errors ?? [];
+  const own = diagnostics.find(d => d.objectKind === kind && (!id || d.objectId === id)) ?? (kind === "ruleset" ? diagnostics.find(d => d.objectKind === "ruleset") : null);
+  if (own) {
+    const relative = pathInObject(own.path);
+    const fromMessage = MESSAGE_PATH.exec(String(own.message ?? ""))?.[1];
+    return relative || fromMessage || "";
+  }
+  if (diagnostics.length) return null;
+  return MESSAGE_PATH.exec(String(error?.message ?? ""))?.[1] ?? null;
+}
