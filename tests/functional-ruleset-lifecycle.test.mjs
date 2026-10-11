@@ -22,7 +22,7 @@ test('new Ruleset editor renders with no version or existing Ruleset, then a sav
   assert.equal(context.creating,true);
   assert.equal(context.isRuleset,true);
   assert.deepEqual(context.contentTypeChoices,[]);
-  assert.deepEqual(context.definitionChoices,[]);
+  assert.deepEqual(context.acquiredDefinitionChoices,[]);
   const record=await api.createRuleset({id:'test-universe',nameKey:'Test Universe',version:'1.0.0'});
   assert.equal(api.getRulesetVersion(record.versionId)?.workingDraft?.nameKey,'Test Universe');
   const reopened=await createConfiguratorAPI(storage);

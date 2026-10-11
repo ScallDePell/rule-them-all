@@ -26,12 +26,10 @@ test('all native selects including runtime and dynamic edits are picked up',()=>
   assert.match(source,/scan\('select:not\(\[data-rta-select-source\]\)'/);
   assert.match(source,/MutationObserver/);
 });
-test('checkbox pickers, capabilities and data-bearing Definitions get same control',()=>{
+test('checkbox pickers and capabilities get same control',()=>{
   assert.ok((editor.match(/data-picker\b/g)||[]).length>=12);
   assert.match(source,/scan\("\[data-picker\]"/);
   assert.match(source,/rta-config-entry__check-group/);
-  assert.match(source,/rta-binding-list:has/);
-  assert.match(source,/templateDefinitionRefs/);
   assert.match(source,/\.rta-select__option/);
 });
 test('one CSS row visual without borders and shared selector frame',()=>{
@@ -52,5 +50,5 @@ test('original controls preserve native value and bubble change events',()=>{
   assert.match(source,/native\.dataset\.rtaSelectSource/);
   assert.match(source,/native\.selectedIndex=\[\.\.\.native\.options\]\.findIndex/);
   assert.match(source,/dispatchEvent\(new Event\("change",\{bubbles:true\}\)\)/);
-  assert.match(source,/original\.checked=clone\.checked/);
+  assert.match(source,/source\.checked=true;emit\(source\)/);
 });

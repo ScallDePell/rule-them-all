@@ -13,7 +13,7 @@ Ce document doit être lu **avant** toute modification de RTA. Les changelogs d�
 ## 1 bis. Infrastructure transversale des références (v0.1.59)
 
 - `src/configurator/relation-contract.mjs` établit la correspondance entre collections de Ruleset et identifiants logiques ; `dependency-index.mjs` enregistre les consommateurs connus ainsi que les références logiques imbriquées.
-- `src/configurator/content-template-form.mjs` conserve les données non éditées (en particulier `initialStateRules`) et sérialise les liaisons de contenus/Definitions/Actions/choix.
+- `src/configurator/content-template-form.mjs` conserve les données non éditées et sérialise les groupes de choix en relations typées (`targetRef`, `operation`, `config`).
 - `src/configurator/relation-persistence.mjs` vérifie **après relecture** que les relations soumises dans le formulaire ont bien survécu à la sauvegarde ; l'erreur est bloquante plutôt que masquée.
 - Les champs de référence s'alimentent des **24 collections du schéma**. Une famille sélectionnable n'est pas forcément exécutable dans le Runtime : ne jamais confondre disponibilité de la sélection et gameplay fonctionnel.
 - Test transversal : `python qa/relations-browser.py` (véritable template et RTA Select Chromium, puis API/stockage simulé). Cela ne remplace pas une recette Foundry v14.

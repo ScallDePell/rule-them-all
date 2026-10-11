@@ -104,10 +104,7 @@ export class DependencyIndex{
     const contentTypesById=new Map((ruleset.contentTypes??[]).map(type=>[type.id,type]));
     for(const [i,t] of (ruleset.contentTemplates??[]).entries()){
       if(t.contentTypeId)pushRef(this.#edges,{objectKind:'contentTemplate',objectId:t.id},{objectKind:'contentType',objectId:t.contentTypeId},'templateContentType',`contentTemplates[${i}].contentTypeId`);
-      for(const [j,b] of (t.definitionBindings??[]).entries())if(b?.definitionId)pushRef(this.#edges,{objectKind:'contentTemplate',objectId:t.id},{objectKind:'definition',objectId:b.definitionId},'templateDefinition',`contentTemplates[${i}].definitionBindings[${j}]`);
       if(t.acquisitionActionRef)pushRef(this.#edges,{objectKind:'contentTemplate',objectId:t.id},{objectKind:'action',objectId:t.acquisitionActionRef},'templateAcquisitionAction',`contentTemplates[${i}].acquisitionActionRef`);
-      for(const [j,b] of (t.actionBindings??[]).entries())if(b?.actionId)pushRef(this.#edges,{objectKind:'contentTemplate',objectId:t.id},{objectKind:'action',objectId:b.actionId},'templateAction',`contentTemplates[${i}].actionBindings[${j}]`);
-      for(const [g,group] of (t.choiceGroups??[]).entries())for(const [o,option] of (group.options??[]).entries()){if(option?.kind==='definition'&&option.definitionId)pushRef(this.#edges,{objectKind:'contentTemplate',objectId:t.id},{objectKind:'definition',objectId:option.definitionId},'acquisitionChoice',`contentTemplates[${i}].choiceGroups[${g}].options[${o}]`);if(option?.kind==='action'&&option.actionId)pushRef(this.#edges,{objectKind:'contentTemplate',objectId:t.id},{objectKind:'action',objectId:option.actionId},'acquisitionChoice',`contentTemplates[${i}].choiceGroups[${g}].options[${o}]`);}
       const type=contentTypesById.get(t.contentTypeId);
       for(const [fieldId,field] of Object.entries(type?.fields??{})){
         if(field?.valueType!=="reference"||!Object.hasOwn(t.data??{},fieldId))continue;

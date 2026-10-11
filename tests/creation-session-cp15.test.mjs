@@ -26,7 +26,7 @@ async function build(){
   await api.registerDefinitionType(v,{id:'ability',key:'ability',nameKey:'Ability',allowedCapabilities:['value'],defaultCapabilities:['value'],requiredCapabilities:['value'],fields:{}});
   for(const id of ['sense','grit'])await api.createDefinition(v,{id,key:id,nameKey:id,definitionTypeId:'ability',capabilities:['value'],data:{}});
   await api.createContentType(v,{id:'origin',nameKey:'Origin',storageKind:'item'});
-  await api.createContentTemplate(v,{id:'culture',nameKey:'Culture',contentTypeId:'origin',definitionBindings:[{definitionId:'sense',initial:{'value.base':7}}]});
+  await api.createContentTemplate(v,{id:'culture',nameKey:'Culture',contentTypeId:'origin',relations:[{id:'sense',operation:'grant',targetRef:{objectKind:'definition',objectId:'sense'},config:{initial:{'value.base':7}}}]});
   await api.createCreationSystem(v,{id:'creation',nameKey:'Creation',steps:[
     {id:'abilities',name:'Ability',kind:'choice',required:true,min:1,max:2,source:{collection:'definitions',objectIds:['sense','grit']}},
     {id:'origin',name:'Origin',kind:'content',required:true,min:1,max:1,source:{collection:'contentTemplates',objectIds:['culture']}},

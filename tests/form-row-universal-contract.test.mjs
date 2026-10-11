@@ -29,12 +29,6 @@ test('no duplicate row for pickers already nested in creation step form-group',(
   assert.match(editor,/class="form-group"[^\n]*Ruleset source/);
   assert.match(component,/if\(addFormRow\)native\.parentNode\.insertBefore\(formRow\(root/);
 });
-test('Definitions granted retains data-bound cards but selector uses same grid',()=>{
-  assert.match(component,/list\.parentNode\.insertBefore\(formRow\(root,"Definitions granted"\),list\)/);
-  assert.match(component,/row\.hidden=!original\.checked/);
-  assert.match(component,/emit\(original\)/);
-  assert.match(hbs,/data-binding-slot="value\.base"/);
-});
 test('form row enhancement runs after every selector pass including dynamic render',()=>{
   assert.match(component,/RTAFormRows\.enhance\(root\);/);
   assert.match(component,/MutationObserver\(records=>/);
@@ -52,7 +46,6 @@ test('one shared CSS grid, nested-inset compensation and responsive behavior',()
 });
 test('specialized compact builders and technical panels stay explicitly excluded',()=>{
   assert.doesNotMatch(component,/'.rta-config-entry \.rta-sheet-component__config > label'/);
-  assert.doesNotMatch(component,/'.rta-config-entry \.rta-binding-card__values > label'/);
-  assert.match(component,/label\.closest\('\.rta-config-entry__technical, \.rta-binding-card__values, \.rta-sheet-component__config'\)/);
+  assert.match(component,/label\.closest\('\.rta-config-entry__technical, \.rta-sheet-component__config'\)/);
   assert.match(component,/const isToolbarControl=/);
 });

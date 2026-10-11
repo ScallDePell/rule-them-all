@@ -8,7 +8,6 @@ import {assertPersistedRelations} from "./relation-persistence.mjs";
 import {buildFieldRow,buildNewFieldRow,buildEventFieldRow,buildDefinitionFieldModel} from "./entry-field-models.mjs";
 import {buildRuleReferenceChoices} from "./entry-reference-catalog.mjs";
 import {buildSlotFormContext,syncValueSource,syncEntryMode} from "./slot-form.mjs";
-import {slotInitialKey} from "./capability-slots.mjs";
 import {wireOrderedLists} from "../ui/ordered-list.mjs";
 import {modifierFormContext,durationFormContext} from "./modifier-duration-form.mjs";
 import {permissionFormContext} from "./permission-form.mjs";
@@ -179,23 +178,13 @@ export class ConfiguratorEntryEditor extends ConfiguratorWindow {
     const acquisitionActionChoices=[{id:"",label:uiText("NoAcquisitionAction","No Action: grant directly"),selected:!data.acquisitionActionRef},...actions.map(x=>({id:x.id,label:x.nameKey,...withColors("action",x),selected:x.id===data.acquisitionActionRef}))];
     const eventTypeChoices=eventTypes.map(x=>({id:x.id,label:x.nameKey,...withColors("eventType",x),selected:x.id===data.eventTypeId,actionSelected:(data.eventTypeRefs??[]).includes(x.id)}));
     const contentTypeChoices=contentTypes.map(x=>({id:x.id,label:x.nameKey,...withColors("contentType",x),selected:x.id===data.contentTypeId}));
-    const definitionChoices=definitions.map(x=>({id:x.id,label:x.nameKey,...withColors("definition",x),selected:(data.definitionBindings??[]).some(b=>b?.definitionId===x.id)}));
-    const definitionBindingRows=definitions.map(definition=>{
-      const binding=(data.definitionBindings??[]).find(b=>b?.definitionId===definition.id)??{}, legacy=(data.initialStateRules??[]).find(r=>r?.definitionId===definition.id)??{}, initial=binding.initial??legacy.initial??legacy.values??{};
-      const caps=new Set(definition.capabilities??[]);
-      return {id:definition.id,label:definition.nameKey,colors:selectColorsAttribute(this.#optionColors("definition",definition)),selected:Boolean((data.definitionBindings??[]).some(b=>b?.definitionId===definition.id)),hasValue:caps.has("value"),poolSlots:caps.has("pool")?(definition.slots?.pool??[]).map(slot=>({id:slot.id,key:slotInitialKey("pool",slot.id,"current"),value:initial[slotInitialKey("pool",slot.id,"current")]??""})):[],hasState:caps.has("state"),valueBase:initial["value.base"]??"",stateActive:initial["state.active"]===true};
-    });
-    const templateActionChoices=actions.map(x=>({id:x.id,label:x.nameKey,...withColors("action",x),selected:(data.actionBindings??[]).some(b=>b?.actionId===x.id)}));
     const relationTargetChoices=relationCatalog(this.#renderCatalog??{}).map(x=>({
       id:refToken(x),label:`${referenceKindTitle(x.objectKind,globalThis.game?.i18n?.lang==='fr')} · ${x.label}`,
       colors:selectColorsAttribute(this.#optionColors(x.objectKind,x.entry)),
       objectKind:x.objectKind,objectId:x.objectId
     }));
     const choiceGroupRows=(data.choiceGroups??[]).map(group=>{
-      const currentRefs=new Set((group.options??[]).map(option=>refToken(option.targetRef??(
-        option.kind==='definition'?{objectKind:'definition',objectId:option.definitionId}:
-        option.kind==='action'?{objectKind:'action',objectId:option.actionId}:{}
-      ))));
+      const currentRefs=new Set((group.options??[]).map(option=>refToken(option.targetRef??{})));
       const operation=group.options?.[0]?.operation??'grant';
       return {...group,operation,isGrant:operation==='grant',isUnlock:operation==='unlock',isLink:operation==='link',
         targetOptions:relationTargetChoices.map(option=>({...option,selected:currentRefs.has(option.id)}))};
@@ -221,11 +210,11 @@ export class ConfiguratorEntryEditor extends ConfiguratorWindow {
     const roleChoices=["self","source","target","subject","owner"].map(id=>({id,label:id,selected:(data.roles??[]).includes(id)}));
     // An Effect acts on the target unless told otherwise; a binding reads its own container.
     const role=data.targetRole||(this.#kind==="effect"?"target":"self"),roleSelf=role==="self",roleSource=role==="source",roleTarget=role==="target",roleSubject=role==="subject",roleOwner=role==="owner";
-    const conditionSummary=pickerSummary(conditionChoices),costEffectSummary=pickerSummary(effectChoices,"costSelected"),effectSummary=pickerSummary(effectChoices,"effectSelected"),actionSummary=pickerSummary(actionChoices),definitionSummary=pickerSummary(definitionChoices),templateActionSummary=pickerSummary(templateActionChoices);
+    const conditionSummary=pickerSummary(conditionChoices),costEffectSummary=pickerSummary(effectChoices,"costSelected"),effectSummary=pickerSummary(effectChoices,"effectSelected"),actionSummary=pickerSummary(actionChoices);
     const sheetComponentRows=this.#kind==="sheetDefinition"?(data.layout?.components??[]).map((c,index)=>({...c,index,sourceToken:c.source?refToken(c.source):"",sourceChoices:[{token:"",label:"— none —"},...referenceChoices].map(x=>({...x,selected:x.token===(c.source?refToken(c.source):"")})),isSection:c.kind==="section",isText:c.kind==="text",isField:c.kind==="field",isRepeater:c.kind==="repeater",isActions:c.kind==="actions",isContent:c.kind==="content",isSpacer:c.kind==="spacer",isHalf:c.width==="half",isFull:c.width!=="half"})):[];
     Object.assign(context,{error:this.#error,kind:this.#kind,creating,readOnly:isValidated,deletion:creating?{blocked:false,reason:""}:this.#deletionView(),help:entryHelp(this.#kind,{definitionType:type}),data,type,fieldContract,fieldRows,newFieldRow,capabilityChoices,colorSectionChoices,rulesetMainColor:rulesetColor(data),allowTypeColor,inheritedTypeColor,hasCustomColor:!!data.color,valueTypes:this.#api.listValueTypes().map(v=>({...v,selected:v.id===(data.valueType??data.resultType)})),
       documentActorTypes:availableDocumentTypes("Actor").map(id=>({id,selected:data.storageKind==="actor"&&data.documentSubtype===id})),documentItemTypes:availableDocumentTypes("Item").map(id=>({id,selected:data.storageKind!=="actor"&&data.documentSubtype===id})),
-      hasForcedCapabilities,hasOptionalCapabilities,conditionChoices,acquiredDefinitionChoices,acquisitionActionChoices,appliedStateChoices,removedStateChoices,appliedModifierChoices,stateDurationChoices,rollChoices,outcomeRows,fallbackOutcomeChoices,testChoices,bindingFormulaChoices,tagChoices,tagSummary,categoryChoices,categorySummary,eventFieldRows,roleChoices,contentTypeChoices,relationRows,hasRelations:RELATION_KINDS.includes(this.#kind),roleSelf,roleSource,roleTarget,roleSubject,roleOwner,outcomeConditionChoices,bonusFormulaChoices,targetSourceChoices,fixedTarget,showTestCalculation,effectChoices,actionChoices,eventTypeChoices,definitionChoices,definitionBindingRows,templateActionChoices,choiceGroupRows,hasLegacyAcquisitions:!!((data.definitionBindings??[]).length||(data.actionBindings??[]).length),conditionSummary,costEffectSummary,effectSummary,actionSummary,definitionSummary,templateActionSummary,formulaModel,conditionModel,conditionOperands:[conditionModel.left,conditionModel.right],sheetComponentRows,sheetViewActor:data.viewType==="actor"||!data.viewType,sheetViewItem:data.viewType==="item",sheetViewContent:data.viewType==="content",sheetViewRuntime:data.viewType==="runtime",
+      hasForcedCapabilities,hasOptionalCapabilities,conditionChoices,acquiredDefinitionChoices,acquisitionActionChoices,appliedStateChoices,removedStateChoices,appliedModifierChoices,stateDurationChoices,rollChoices,outcomeRows,fallbackOutcomeChoices,testChoices,bindingFormulaChoices,tagChoices,tagSummary,categoryChoices,categorySummary,eventFieldRows,roleChoices,contentTypeChoices,relationRows,hasRelations:RELATION_KINDS.includes(this.#kind),roleSelf,roleSource,roleTarget,roleSubject,roleOwner,outcomeConditionChoices,bonusFormulaChoices,targetSourceChoices,fixedTarget,showTestCalculation,effectChoices,actionChoices,eventTypeChoices,choiceGroupRows,conditionSummary,costEffectSummary,effectSummary,actionSummary,formulaModel,conditionModel,conditionOperands:[conditionModel.left,conditionModel.right],sheetComponentRows,sheetViewActor:data.viewType==="actor"||!data.viewType,sheetViewItem:data.viewType==="item",sheetViewContent:data.viewType==="content",sheetViewRuntime:data.viewType==="runtime",
       referenceChoices:referenceChoices.map(x=>({...x,selected:x.token===referenceTargetToken})),
       bindingTargetChoices:referenceChoices.filter(x=>parseRefToken(x.token).capabilityId).map(x=>({...x,selected:x.token===bindingTargetToken})),
       effectTargetChoices:mutableReferenceChoices.map(x=>({...x,selected:x.token===targetToken})),
@@ -252,7 +241,7 @@ export class ConfiguratorEntryEditor extends ConfiguratorWindow {
       imagePreview:data.image||"icons/svg/mystery-man.svg",
       dataJson:JSON.stringify(data.data??{},null,2),genericJson:JSON.stringify(data,null,2),
       expressionJson:JSON.stringify(data.expression??{type:"literal",value:0},null,2),
-      rollDataJson:JSON.stringify(data.data??{},null,2),initialStateRulesJson:JSON.stringify(data.initialStateRules??[],null,2),rolesText:(data.roles??[]).join("\n"),tagsText:(data.tags??[]).join("\n"),capabilitiesText:(data.capabilities??[]).join("\n"),
+      rollDataJson:JSON.stringify(data.data??{},null,2),rolesText:(data.roles??[]).join("\n"),tagsText:(data.tags??[]).join("\n"),capabilitiesText:(data.capabilities??[]).join("\n"),
       isAllow:data.defaultEffect==="ALLOW",isDeny:data.defaultEffect!=="ALLOW",isStackable:data.runtimeMode==="stackable",isUnique:data.runtimeMode!=="stackable",inheritsRuntimeMode:!data.runtimeMode,templateUnique:data.runtimeMode==="unique",inheritedRuntimeModeKey:type?.runtimeMode==="stackable"?"RTA.Template.Stackable":"RTA.Template.Unique",isStorageItem:data.storageKind!=="actor",isStorageActor:data.storageKind==="actor",effectOperationChoices:effectOperationRegistry.list().map(id=>({id,labelKey:effectOperationRegistry.get(id).labelKey,operand:effectOperationRegistry.get(id).operand,colors:selectColorsAttribute([RTA_NEUTRAL_COLOR]),selected:id===(data.operation??"set")})),effectNeedsOperand:needsOperand, title:editorDisplayTitle(creating,creating?this.#kind:(data.nameKey??data.key??data.id))});
     return context;
     } finally { this.#renderCatalog=null; }

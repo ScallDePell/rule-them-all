@@ -215,10 +215,6 @@
   display: none;
 }
 
-.rta-config-entry .rta-binding-card__title.rta-select__binding-title > .rta-select__binding-source {
-  display: none;
-}
-
 .rta-select__panel .rta-select__options > p {
   margin: var(--rta-space-3);
   opacity: .7;

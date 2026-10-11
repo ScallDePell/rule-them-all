@@ -17,7 +17,6 @@ api=await createConfiguratorAPI(storage);
 const loaded=api.getContentTemplate(v,form.id);
 assert.deepEqual(loaded.relations,form.relations);
 assert.deepEqual(loaded.choiceGroups,form.choiceGroups);
-assert.deepEqual(loaded.initialStateRules,form.initialStateRules);
 const status=api.getDeletionStatus(v,'linked','contentTemplate');
 assert.equal(status.canDelete,false);
 await assert.rejects(()=>api.deleteContentTemplate(v,'linked'),/referenced/i);

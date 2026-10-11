@@ -29,11 +29,8 @@ export function templateFlags(versionId,template,contentType){
     templateId:String(template.id),
     contentTypeId:String(contentType.id),
     runtimeMode:template.runtimeMode??contentType.runtimeMode??"unique",
-    definitionBindings:clone(template.definitionBindings??[]),
     relations:clone(template.relations??[]),
-    actionBindings:clone(template.actionBindings??[]),
     choiceGroups:clone(template.choiceGroups??[]),
-    initialStateRules:clone(template.initialStateRules??[]),
     categories:clone(template.categories??[]),
     capabilities:clone(template.capabilities??[]),
     tags:clone(template.tags??[]),
@@ -160,16 +157,14 @@ export class FoundryContentBridge{
     const contentType=(ruleset.contentTypes??[]).find(x=>x.id===template.contentTypeId&&x.enabled!==false);
     if(!contentType)throw new Error(`Content Type unavailable: ${template.contentTypeId}.`);
     const selected=resolveAcquisitionChoices(template,selections);
-    const selectedRelations=selected.filter(option=>option.targetRef).map(option=>({
+    const selectedRelations=selected.map(option=>({
       id:`${option.groupId}:${option.id}`,operation:option.operation,targetRef:option.targetRef,config:option.config??{}
     }));
     const plan=this.grantHandlers.prepare(ruleset,[...(template.relations??[]),...selectedRelations]);
-    const allBindings=[...(template.definitionBindings??[]),...plan.definitionBindings,
-      ...selected.filter(o=>o.kind==='definition').map(o=>({definitionId:o.definitionId,initial:o.initial??{}}))];
     // A definition can be granted more than once, but conflicting configured
     // initial states may never be silently resolved by input ordering.
     const bindings=new Map();
-    for(const binding of allBindings){
+    for(const binding of plan.definitionBindings){
       const id=binding?.definitionId;if(!id)continue;
       const explicit=binding.initial??{};
       const initial=Object.keys(explicit).length?explicit:initialForDefinition(template,id);
@@ -182,8 +177,7 @@ export class FoundryContentBridge{
     }
     const definitionBindings=[...bindings.values()];
     const grantedDefinitionIds=[...bindings.keys()];
-    const actionIds=[...new Set([...(template.actionBindings??[]).map(x=>x?.actionId),...plan.actionIds,
-      ...selected.filter(o=>o.kind==='action').map(o=>o.actionId)].filter(Boolean))];
+    const actionIds=[...new Set(plan.actionIds.filter(Boolean))];
     if(Array.isArray(ruleset.definitions))for(const id of grantedDefinitionIds)
       if(!ruleset.definitions.some(d=>d.id===id&&d.enabled!==false))throw new Error(`Acquisition Definition unavailable: ${id}.`);
     if(Array.isArray(ruleset.actions))for(const id of actionIds)

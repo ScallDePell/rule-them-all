@@ -200,21 +200,15 @@ export function prepareContentType(data,options={}){
 }
 
 export function prepareContentTemplate(data,options={}){
-  const x={descriptionKey:'',image:'',data:{},enabled:true,order:0,tags:[],contentTypeId:'generic',acquisitionActionRef:null,definitionBindings:[],actionBindings:[],choiceGroups:[],initialStateRules:[],categories:[],capabilities:[],runtimeMode:null,...copyJSON(data)};
+  const x={descriptionKey:'',image:'',data:{},enabled:true,order:0,tags:[],contentTypeId:'generic',acquisitionActionRef:null,choiceGroups:[],categories:[],capabilities:[],runtimeMode:null,...copyJSON(data)};
+  for(const k of ['definitionBindings','actionBindings','initialStateRules'])if(Object.hasOwn(x,k))throw new Error(`Unsupported ContentTemplate field: ${k}.`);
   identity(x,'ContentTemplate',options);need(nonempty(x.contentTypeId),'ContentTemplate requires contentTypeId.',options);
   if(!(x.acquisitionActionRef===null||nonempty(x.acquisitionActionRef)))throw new Error('ContentTemplate.acquisitionActionRef must be an Action id or null.');
   if(typeof x.image!=='string')throw new Error('ContentTemplate.image must be a string.');
   if(!isRecord(x.data))throw new Error('ContentTemplate.data must be an object.');
   // null: the template follows its Content Type.
   if(![null,'unique','stackable'].includes(x.runtimeMode))throw new Error('ContentTemplate.runtimeMode must be null, unique or stackable.');
-  for(const k of ['definitionBindings','actionBindings','choiceGroups','initialStateRules','categories','capabilities','tags'])arr(x[k],`ContentTemplate.${k}`);
-  x.definitionBindings=x.definitionBindings.map((binding,index)=>{
-    if(!isRecord(binding)||!nonempty(binding.definitionId))throw new Error(`ContentTemplate.definitionBindings[${index}] requires definitionId.`);
-    const next={id:`definition-${binding.definitionId}`,initial:{},...copyJSON(binding)};
-    if(!isRecord(next.initial))throw new Error(`ContentTemplate.definitionBindings[${index}].initial must be an object.`);
-    return next;
-  });
-  x.actionBindings=x.actionBindings.map((binding,index)=>{if(!isRecord(binding)||!nonempty(binding.actionId))throw new Error(`ContentTemplate.actionBindings[${index}] requires actionId.`);return {id:`action-${binding.actionId}`,...copyJSON(binding)};});
+  for(const k of ['choiceGroups','categories','capabilities','tags'])arr(x[k],`ContentTemplate.${k}`);
   const groupIds=new Set();
   x.choiceGroups=x.choiceGroups.map((group,index)=>{
     if(!isRecord(group)||!nonempty(group.id))throw new Error(`ContentTemplate.choiceGroups[${index}] requires id.`);
@@ -229,14 +223,9 @@ export function prepareContentTemplate(data,options={}){
       if(!isRecord(option)||!nonempty(option.id))throw new Error(`ContentTemplate.choiceGroups[${index}].options[${optionIndex}] is invalid.`);
       if(optionIds.has(option.id))throw new Error(`Duplicate acquisition option ID: ${group.id}/${option.id}.`);
       optionIds.add(option.id);
-      if(option.targetRef){
-        if(!nonempty(option.targetRef.objectKind)||!nonempty(option.targetRef.objectId)||!['link','unlock','grant'].includes(option.operation))
-          throw new Error(`ContentTemplate.choiceGroups[${index}].options[${optionIndex}] requires a typed target and operation.`);
-        return copyJSON(option);
-      }
-      if(!['definition','action'].includes(option.kind))throw new Error(`ContentTemplate.choiceGroups[${index}].options[${optionIndex}] is invalid.`);
-      if(option.kind==='definition')need(nonempty(option.definitionId),`ContentTemplate.choiceGroups[${index}].options[${optionIndex}] requires definitionId.`,options);
-      if(option.kind==='action')need(nonempty(option.actionId),`ContentTemplate.choiceGroups[${index}].options[${optionIndex}] requires actionId.`,options);
+      for(const k of ['kind','definitionId','actionId','initial'])if(Object.hasOwn(option,k))throw new Error(`Unsupported ContentTemplate choice option field: ${k}.`);
+      if(!isRecord(option.targetRef)||!nonempty(option.targetRef.objectKind)||!nonempty(option.targetRef.objectId)||!['link','unlock','grant'].includes(option.operation))
+        throw new Error(`ContentTemplate.choiceGroups[${index}].options[${optionIndex}] requires a typed target and operation.`);
       return copyJSON(option);
     });
     need(next.max<=next.options.length,`ContentTemplate.choiceGroups[${index}].max exceeds available options.`,options);

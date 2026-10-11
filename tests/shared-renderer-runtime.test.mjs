@@ -17,7 +17,7 @@ test("real picker output escapes input and renders exactly one checked choice",(
 test("real visible and accordion list body is the same with different data",()=>{
  const items=[{id:'one',label:'One'},{id:'two',label:'Two'}];
  const creation=renderChoiceListBody(items,{selected:['one'],attribute:'data-step-source-family'});
- const relation=renderChoiceListBody(items,{selected:['one'],name:'choiceDefinitionOption',placeholder:'Search Definitions…'});
+ const relation=renderChoiceListBody(items,{selected:['one'],name:'choiceTargetRef',placeholder:'Search Definitions…'});
  for(const html of [creation,relation]){
   assert.match(html,/class="rta-picker__body rta-choice-list"/);
   assert.match(html,/data-picker-filter/);
@@ -25,7 +25,7 @@ test("real visible and accordion list body is the same with different data",()=>
   assert.equal((html.match(/ checked/g)||[]).length,1);
  }
  assert.match(creation,/data-step-source-family/);
- assert.match(relation,/name="choiceDefinitionOption"/);
+ assert.match(relation,/name="choiceTargetRef"/);
 });
 
 test("empty lists render a readable state and search text is escaped",()=>{

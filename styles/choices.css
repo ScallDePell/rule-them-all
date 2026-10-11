@@ -97,36 +97,11 @@
   font-style: italic;
 }
 
-/* Content acquisition bindings */
-.rta-binding-list {
-  display: grid;
-  gap: var(--rta-gap-row);
-  margin-top: var(--rta-space-4);
-}
-
+/* Bordered editor cards */
 .rta-binding-card {
   border: 1px solid var(--rta-color-border-tertiary);
   border-radius: var(--rta-radius-panel);
   padding: var(--rta-space-4) var(--rta-space-5);
-}
-
-.rta-binding-card__title {
-  display: flex;
-  align-items: center;
-  gap: var(--rta-gap-row);
-  margin: 0;
-}
-
-.rta-binding-card__values {
-  display: grid;
-  grid-template-columns: repeat(auto-fit,minmax(130px,1fr));
-  gap: var(--rta-gap-row);
-  margin: var(--rta-space-4) 0 0 var(--rta-space-12);
-}
-
-.rta-binding-card__values label {
-  display: grid;
-  gap: var(--rta-gap-tight);
 }
 
 /* Shared editor window contract. Reuse the same section surface for
@@ -214,13 +189,6 @@
   min-height: 1.8rem;
 }
 
-/* A long grant list stays accessible without making the entire editor endless. */
-.rta-config-entry .rta-binding-list {
-  max-height: 17rem;
-  overflow-y: auto;
-  padding-right: var(--rta-space-2);
-}
-
 /* A card holding form rows is a frame: border plus padding is one --rta-frame-step. */
 .rta-config-entry .rta-binding-card {
   padding: var(--rta-frame-pad);
@@ -232,7 +200,7 @@
 /* Script-built lists and cards (slots, choice groups, relations, constraints):
    one row gap between children, however many rows a script appends. */
 .rta-config-entry :is([data-slot-list], [data-choice-group-list], [data-relation-list], [data-declarative-constraints], [data-test-input-list], .rta-generic-relation, .rta-generic-relation__fields),
-.rta-config-entry .rta-binding-card:not([data-definition-binding]) {
+.rta-config-entry .rta-binding-card {
   display: flex;
   flex-direction: column;
   gap: var(--rta-gap-row);
@@ -263,23 +231,6 @@
 
 .rta-config-entry .rta-generic-relation > [data-action="removeRelation"] {
   align-self: flex-end;
-}
-
-.rta-config-entry .rta-binding-card__title {
-  min-height: 1.7rem;
-}
-
-.rta-config-entry .rta-binding-card__values {
-  margin: var(--rta-space-3) 0 0 var(--rta-space-12);
-}
-
-.rta-config-entry .rta-binding-card:has(> .rta-binding-card__title > input[type="checkbox"]:not(:checked)) > .rta-binding-card__values {
-  display: none;
-}
-
-.rta-config-entry .rta-binding-card__values input {
-  width: 100%;
-  min-width: 0;
 }
 
 /* One scroll and spacing contract for open and collapsible checkbox collections.
@@ -326,15 +277,6 @@
 .rta-config-entry .rta-choice-list > label:focus-within {
   outline: 1px solid var(--rta-color-border-highlight);
   outline-offset: 1px;
-}
-
-/* A data-bearing Definition grant shares the choice-row frame, but keeps its
-   additional value inputs and conditional expansion; it is not a plain picker. */
-.rta-config-entry .rta-binding-card[data-definition-binding] {
-  border-color: var(--rta-choice-row-border);
-  border-radius: var(--rta-choice-row-radius);
-  background: var(--rta-choice-row-fill);
-  padding: var(--rta-choice-row-pad-block) var(--rta-choice-row-pad-inline);
 }
 
 .rta-config-entry .rta-binding-card[hidden] {

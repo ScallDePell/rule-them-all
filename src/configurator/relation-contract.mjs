@@ -39,11 +39,6 @@ export function collectCrossFamilyRelations(ruleset={}){
       if(collection==='definitions'&&entry.definitionTypeId){
         add(edges,consumer,{objectKind:'definitionType',objectId:entry.definitionTypeId},'definitionType',`${root}.definitionTypeId`);
       }
-      if(collection==='contentTemplates'){
-        for(const [i,rule] of (entry.initialStateRules??[]).entries()){
-          if(rule?.definitionId)add(edges,consumer,{objectKind:'definition',objectId:rule.definitionId},'initialStateRule',`${root}.initialStateRules[${i}].definitionId`);
-        }
-      }
       if(collection==='creationSystems'){
         for(const [i,step] of (entry.steps??[]).entries()){
           const source=step?.source;

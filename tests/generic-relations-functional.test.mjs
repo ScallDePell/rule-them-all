@@ -111,11 +111,11 @@ test('grant for an arbitrary Ruleset family persists an entitlement without inve
  assert.equal(await bridge.hasGrantedReference(v,actor.uuid,{objectKind:'contentTemplate',objectId:'linked'}),false);
 });
 
-test('historical choice metadata and initial Definition values survive migration to typed generic choices',()=>{
- const current={choiceGroups:[{id:'group',name:'Group',min:1,max:1,options:[{
-  id:'old',kind:'definition',definitionId:'d',initial:{'value.base':3},labelKey:'custom',customProperty:'retained'
- }]}]};
+test('choice option metadata and initial Definition values survive a form round trip',()=>{
  const target={objectKind:'definition',objectId:'d'};
+ const current={choiceGroups:[{id:'group',name:'Group',min:1,max:1,options:[{
+  id:'old',operation:'grant',targetRef:target,config:{initial:{'value.base':3}},labelKey:'custom',customProperty:'retained'
+ }]}]};
  const row={dataset:{choiceGroup:'group'},querySelector(selector){
   if(selector.includes('"operation"'))return {value:'grant'};
   if(selector.includes('"name"'))return {value:'Group'};
@@ -125,7 +125,7 @@ test('historical choice metadata and initial Definition values survive migration
  },querySelectorAll(selector){return selector.includes('choiceTargetRef')?[{value:refToken(target)}]:[]}};
  const result=collectTemplateAcquisitions({current,choiceRows:[row]});
  assert.deepEqual(result.choiceGroups[0].options,[{
-  id:'old',labelKey:'custom',customProperty:'retained',operation:'grant',targetRef:target,config:{initial:{'value.base':3}}
+  id:'old',operation:'grant',targetRef:target,config:{initial:{'value.base':3}},labelKey:'custom',customProperty:'retained'
  }]);
 });
 

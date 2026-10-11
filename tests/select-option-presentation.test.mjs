@@ -52,16 +52,14 @@ test("mixed reference kinds are readable while one-kind field labels need no red
   assert.match(builder,/colors:selectColorsAttribute\(optionColors\(objectKind,entry\)\)/);
   assert.match(file("src/configurator/configurator-entry-editor.mjs"),/buildFieldReferenceChoices/);
 });
-test("all three source adapters use one safe accent renderer; native values remain unchanged",()=>{
+test("source adapters use one safe accent renderer; native values remain unchanged",()=>{
   const select=file("src/ui/rta-select.mjs");
   assert.match(select,/decorateOption\(option,option\.dataset\.rtaColors\)/);
   assert.match(select,/decorateOption\(line,option\.dataset\.rtaColors\)/);
-  assert.match(select,/option\.dataset\.rtaColors=row\.dataset\.rtaColors/);
   assert.match(select,/line\.style\.backgroundColor=color/);
   assert.match(select,/input\.value=option\.value/);
   const template=file("templates/configurator/entry-editor.hbs");
   assert.match(template,/data-picker-label="\{\{label\}\}" data-rta-colors="\{\{colors\}\}"/);
-  assert.match(template,/data-definition-binding="\{\{id\}\}" data-rta-colors="\{\{colors\}\}"/);
   assert.match(template,/<option value="\{\{token\}\}" data-rta-colors="\{\{colors\}\}"/);
 });
 

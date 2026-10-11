@@ -150,3 +150,12 @@ test('navigation titles are translated keys present in every language', async ()
     for(const [,key] of source.matchAll(/RTA\.Nav\.(\w+)/g))assert.ok(nav[key],`${lang} RTA.Nav.${key}`);
   }
 });
+
+test('a Content Template rejects the removed binding fields and legacy choice options', async () => {
+  const {prepareContentTemplate}=await import('../src/configurator/rule-contracts.mjs');
+  const seed={id:'arrow',nameKey:'Arrow',contentTypeId:'ammo'};
+  assert.throws(()=>prepareContentTemplate({...seed,definitionBindings:[]}),/Unsupported ContentTemplate field: definitionBindings/);
+  assert.throws(()=>prepareContentTemplate({...seed,choiceGroups:[{id:'g',name:'G',min:1,max:1,options:[{id:'o',kind:'definition',definitionId:'d'}]}]}),/Unsupported ContentTemplate choice option field: kind/);
+  const option={id:'o',operation:'grant',targetRef:{objectKind:'definition',objectId:'d'},config:{initial:{'value.base':2}}};
+  assert.deepEqual(prepareContentTemplate({...seed,choiceGroups:[{id:'g',name:'G',min:1,max:1,options:[option]}]}).choiceGroups[0].options,[option]);
+});

@@ -16,9 +16,7 @@ function typedOperations(entry){
  const choices=(entry?.choiceGroups??[]).map(group=>({
    id:group.id,min:group.min,max:group.max,
    options:(group.options??[]).map(o=>JSON.stringify({
-     id:o.id,operation:o.operation??null,targetRef:o.targetRef??null,
-     kind:o.kind??null,definitionId:o.definitionId??null,actionId:o.actionId??null,
-     config:o.config??null,initial:o.initial??null
+     id:o.id,operation:o.operation??null,targetRef:o.targetRef??null,config:o.config??null
    })).sort()
  })).sort((a,b)=>String(a.id).localeCompare(String(b.id)));
  return JSON.stringify({rels,choices});

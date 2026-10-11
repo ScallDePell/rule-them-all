@@ -28,7 +28,7 @@ async function build(){
  await api.registerDefinitionType(v,{id:'ability',key:'ability',nameKey:'Ability',allowedCapabilities:['value'],defaultCapabilities:['value'],requiredCapabilities:['value'],fields:{}});
  await api.createDefinition(v,{id:'sense',key:'sense',nameKey:'Sense',definitionTypeId:'ability',capabilities:['value'],data:{}});
  await api.createContentType(v,{id:'origin',nameKey:'Origin',storageKind:'item'});
- await api.createContentTemplate(v,{id:'culture',nameKey:'Culture',contentTypeId:'origin',definitionBindings:[{definitionId:'sense',initial:{'value.base':7}}],actionBindings:[]});
+ await api.createContentTemplate(v,{id:'culture',nameKey:'Culture',contentTypeId:'origin',relations:[{id:'sense',operation:'grant',targetRef:{objectKind:'definition',objectId:'sense'},config:{initial:{'value.base':7}}}]});
  await api.createCreationSystem(v,{id:'creation',nameKey:'Character creation',steps:[
   {id:'abilities',name:'Choose an ability',kind:'choice',required:true,min:1,max:1,source:{collection:'definitions',objectIds:['sense']}},
   {id:'origin',name:'Choose an origin',kind:'content',required:true,min:1,max:1,source:{collection:'contentTemplates',objectIds:['culture']}},
@@ -50,7 +50,7 @@ test('creation planner rejects unsupported and invalid steps BEFORE Actor creati
  invalid.creationSystems[0].steps[0].kind='allocation';
  assert.throws(()=>planCreationSystem(invalid,'creation',answers),/explicit allocation contract/);
  const conflicting=structuredClone(ruleset);
- conflicting.contentTemplates.push({...conflicting.contentTemplates[0],id:'culture-2',definitionBindings:[{definitionId:'sense',initial:{'value.base':99}}]});
+ conflicting.contentTemplates.push({...conflicting.contentTemplates[0],id:'culture-2',relations:[{id:'sense',operation:'grant',targetRef:{objectKind:'definition',objectId:'sense'},config:{initial:{'value.base':99}}}]});
  conflicting.creationSystems[0].steps[1].max=2;
  conflicting.creationSystems[0].steps[1].source.objectIds.push('culture-2');
  assert.throws(()=>planCreationSystem(conflicting,'creation',{abilities:['sense'],origin:['culture','culture-2']}),/Conflicting initial values/);

@@ -15,7 +15,7 @@ function setup(){
       ref('tag-option','grant','tag','tag'),
       ref('unlock-option','unlock','contentTemplate','other'),
       ref('association-option','link','action','act')
-    ]}],definitionBindings:[],actionBindings:[]};
+    ]}]};
   const ruleset={contentTypes:[{id:'type',enabled:true,storageKind:'item'}],contentTemplates:[template,{id:'other',enabled:true}],
     definitions:[{id:'def',enabled:true}],actions:[{id:'act',enabled:true}],tags:[{id:'tag'}],familyColors:{}};
   const flags={},created=[],removed=[],instantiated=[];
@@ -142,9 +142,9 @@ test('unique template cannot leave a second orphaned owned Item before an acquis
   await assert.rejects(bridge.createOwnedContentItem('v',actor.uuid,'selection',{selections:flag.acquisitionSelections}),/already has the unique/);
 });
 
-test('invalid initial-state collision across a legacy binding and typed grant is rejected before writing',async()=>{
+test('invalid initial-state collision across a template grant and a chosen grant is rejected before writing',async()=>{
   const {bridge,actor,created,template}=setup();
-  template.definitionBindings=[{definitionId:'def',initial:{'value.base':8}}];
+  template.relations.push(ref('grant-def','grant','definition','def',{initial:{'value.base':8}}));
   await assert.rejects(bridge.createOwnedContentItem('v',actor.uuid,'selection',{
     selections:{pick:['definition-option','tag-option']}
   }),/Conflicting initial Definition states/);
@@ -161,15 +161,6 @@ test('native drag without choice groups is also routed through the transaction t
   const result=await bridge.createOwnedContentItem('v',actor.uuid,'selection');
   assert.equal(result.item.id,'item-1');
   assert.equal(created.length,1);
-});
-
-test('historical initial-state values remain available when a Definition binding specifies no override',async()=>{
-  const {bridge,actor,template,instantiated}=setup();
-  template.choiceGroups=[];
-  template.definitionBindings=[{definitionId:'def',initial:{}}];
-  template.initialStateRules=[{id:'legacy',definitionId:'def',initial:{'value.base':4}}];
-  await bridge.createOwnedContentItem('v',actor.uuid,'selection');
-  assert.deepEqual(instantiated,[{id:'def',initial:{'value.base':4}}]);
 });
 
 test('disabled executable target is detected before any Foundry Item is created',async()=>{

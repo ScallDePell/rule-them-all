@@ -65,8 +65,8 @@ export function analyzeCreationSystem(ruleset,creationSystemId,answers={}){
         const choices=copyJSON(templateChoices[id]??{});
         const template=registered.get(id);
         const resolved=resolveAcquisitionChoices(template,choices); // preflight all choices
-        for(const binding of template.definitionBindings??[])setInitial(binding.definitionId,initialForDefinition(template,binding.definitionId));
-        for(const option of resolved)if(option.kind==='definition')setInitial(option.definitionId,option.initial??{});
+        for(const relation of template.relations??[])if(relation?.operation==='grant'&&relation.targetRef?.objectKind==='definition')setInitial(relation.targetRef.objectId,initialForDefinition(template,relation.targetRef.objectId));
+        for(const option of resolved)if(option.operation==='grant'&&option.targetRef?.objectKind==='definition')setInitial(option.targetRef.objectId,option.config?.initial??{});
         operations.push({kind:'content',stepId:step.id,templateId:id,selections:choices});
       }
     }

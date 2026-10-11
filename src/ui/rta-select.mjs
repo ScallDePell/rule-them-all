@@ -57,7 +57,6 @@ export class RTASelect {
       }
     };
     // Specific adapters first, so no original control is doubly enhanced.
-    scan(".rta-binding-list:has([data-definition-binding])",node=>RTASelect.#fromBindings(node));
     scan("[data-picker]",node=>RTASelect.#fromPicker(node));
     scan(".rta-config-entry__check-group:has(input[type=checkbox])",node=>RTASelect.#fromCheckGroup(node));
     scan('select:not([data-rta-select-source])',node=>RTASelect.#fromNative(node));
@@ -183,41 +182,6 @@ export class RTASelect {
     old.replaceWith(replacement);
     const inst=new RTASelect(root,{multiple:true,body:old});
     inst.#collectExisting(old);
-    return inst;
-  }
-  static #fromBindings(list){
-    if(list.dataset.rtaSelectBound!==undefined)return null;
-    const entries=[...list.querySelectorAll(":scope > [data-definition-binding]")];
-    if(!entries.length)return null;
-    list.dataset.rtaSelectBound="";
-    const root=build("div","rta-select");
-    root.dataset.rtaSelectKind="bindings";
-    root.dataset.rtaSelectMode="multiple";
-    root.dataset.rtaSelectLabel=selectUiText("Definitions");
-    list.parentNode.insertBefore(formRow(root,"Definitions granted"),list);
-    const body=build("div","rta-select__options");
-    const inst=new RTASelect(root,{multiple:true,body});
-    for(const row of entries){
-      const original=row.querySelector(':scope > .rta-binding-card__title input[name="templateDefinitionRefs"]');
-      if(!original)continue;
-      const title=row.querySelector(":scope > .rta-binding-card__title");
-      const label=title?.querySelector("strong")?.textContent?.trim()||original.value;
-      const option=build("label","rta-select__option");
-      option.dataset.rtaColors=row.dataset.rtaColors??"";
-      const clone=build("input");clone.type="checkbox";clone.value=original.value;clone.checked=original.checked;clone.disabled=original.disabled;
-      option.append(clone,document.createTextNode(label));body.append(option);
-      // Original values remain on the binding card for existing #collect logic.
-      // Only the selectable checkbox moves into the unified control.
-      original.classList.add("rta-select__binding-source");
-      title?.classList.add("rta-select__binding-title");
-      row.hidden=!original.checked;
-      clone.addEventListener("change",()=>{
-        original.checked=clone.checked;row.hidden=!clone.checked;emit(original);
-        inst.refresh();
-      });
-      original.addEventListener("change",()=>{clone.checked=original.checked;row.hidden=!original.checked;inst.refresh();});
-    }
-    inst.#collectExisting(body);
     return inst;
   }
   static #fromRadios(container){
@@ -474,11 +438,11 @@ export class RTAFormRows {
     ].join(','));
     for(const label of candidates){
       if(!withinEntry(label)||label.classList.contains('rta-form-row')||
-        label.matches('.rta-field-editor__check, .rta-definition-field__use, .rta-binding-card__title, .rta-select__option, [data-picker-option]'))continue;
+        label.matches('.rta-field-editor__check, .rta-definition-field__use, .rta-select__option, [data-picker-option]'))continue;
       if(!label.querySelector(':scope > input, :scope > select, :scope > textarea, :scope > .rta-select'))continue;
       // Raw/JSON editors and compact repeating card controls are intentionally
       // full-width/inline specialized surfaces, not ordinary form rows.
-      if(label.closest('.rta-config-entry__technical, .rta-binding-card__values, .rta-sheet-component__config'))continue;
+      if(label.closest('.rta-config-entry__technical, .rta-sheet-component__config'))continue;
       label.classList.add('rta-form-row','rta-form-row--nested');changed++;
     }
     return changed;

@@ -29,9 +29,9 @@ test("every checkbox option stack uses canonical list styling",()=>{
  assert.match(css,/--rta-choice-row-border/);
 });
 test("business cards remain distinct from plain checkbox rows",()=>{
- assert.match(editor,/data-definition-binding/);
+ assert.match(editor,/class="rta-binding-card"/);
  assert.match(js,/data-choice-group/);
- assert.match(css,/\.rta-binding-card\[data-definition-binding\]/);
+ assert.match(css,/\.rta-config-entry \.rta-binding-card \{/);
 });
 test("other UI families remain: shell, actions, field editors, panels, tables, sheet builder, runtime",()=>{
  for(const token of ['rta-config-action','rta-config-card','rta-config-table','rta-dependencies','rta-runtime-lab'])assert.ok(shell.includes(token),token);

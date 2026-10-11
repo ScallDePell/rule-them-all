@@ -30,7 +30,7 @@ async function system(){
   await configurator.createEffect(versionId,{id:'increase',nameKey:'Increase',targetRef:{objectKind:'definition',objectId:'practised',capabilityId:'value',outputId:'value.base'},operation:'add',operand:{kind:'literal',value:2}});
   await configurator.createAction(versionId,{id:'use-ability',nameKey:'Use Ability',conditionRefs:[],costEffectRefs:[],effectRefs:['increase']});
   await configurator.createContentType(versionId,{id:'background',nameKey:'Background',storageKind:'item',runtimeMode:'unique'});
-  await configurator.createContentTemplate(versionId,{id:'starter',nameKey:'Starter',contentTypeId:'background',definitionBindings:[{definitionId:'practised',initial:{'value.base':0}}],actionBindings:[{actionId:'use-ability'}],choiceGroups:[]});
+  await configurator.createContentTemplate(versionId,{id:'starter',nameKey:'Starter',contentTypeId:'background',relations:[{id:'practised',operation:'grant',targetRef:{objectKind:'definition',objectId:'practised'},config:{initial:{'value.base':0}}},{id:'use-ability',operation:'grant',targetRef:{objectKind:'action',objectId:'use-ability'}}],choiceGroups:[]});
   const actor=new ActorMock('Actor.A'),other=new ActorMock('Actor.B'),actors=new Map([[actor.uuid,actor],[other.uuid,other]]);
   await configurator.publishRuleset(versionId);const runtime=createRuntimeAPI(configurator,{adapter:new Adapter(actors),hooks:null});
   const content=new FoundryContentBridge(configurator,runtime,{hooks:null});
@@ -40,7 +40,7 @@ async function system(){
 test('Ruleset -> Content Type -> Content Template -> Actor acquisition -> authorized Action -> save -> release',async()=>{
   const {configurator,storage,versionId,actor,other,runtime,content}=await system();
   const reloaded=await createConfiguratorAPI(storage);
-  assert.equal(reloaded.getContentTemplate(versionId,'starter').definitionBindings[0].definitionId,'practised');
+  assert.equal(reloaded.getContentTemplate(versionId,'starter').relations[0].targetRef.objectId,'practised');
   assert.deepEqual(await content.listAcquiredActions(versionId,actor.uuid),[]);
   await assert.rejects(()=>content.executeAcquiredAction(versionId,actor.uuid,'use-ability'),/not acquired/);
   const grant=await content.acquireTemplate(versionId,actor.uuid,'starter',{sourceItemId:'item-1'});
@@ -60,7 +60,7 @@ test('Ruleset -> Content Type -> Content Template -> Actor acquisition -> author
 
 test('overlapping Content grants keep a Definition until its last acquisition is removed',async()=>{
   const {configurator,versionId,actor,runtime,content}=await system();
-  await configurator.createContentTemplate(versionId,{id:'second',nameKey:'Second Source',contentTypeId:'background',definitionBindings:[{definitionId:'practised'}],actionBindings:[],choiceGroups:[]});
+  await configurator.createContentTemplate(versionId,{id:'second',nameKey:'Second Source',contentTypeId:'background',relations:[{id:'practised',operation:'grant',targetRef:{objectKind:'definition',objectId:'practised'}}],choiceGroups:[]});
   await configurator.publishRuleset(versionId);
   await content.acquireTemplate(versionId,actor.uuid,'starter',{sourceItemId:'item-first'});
   await content.acquireTemplate(versionId,actor.uuid,'second',{sourceItemId:'item-second'});

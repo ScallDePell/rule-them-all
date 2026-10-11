@@ -8,7 +8,6 @@ export function selectUiText(key){
     SingularItem: ["item","objet"],
     PluralItems: ["items","objets"],
     GenericSelection: ["Selection","Choix"],
-    Definitions: ["definitions","définitions"],
     Mode: ["mode","mode"],
     Search: ["Search…","Rechercher…"],
     OperandType: ["Operand type","Type d’opérande"],

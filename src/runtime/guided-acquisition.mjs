@@ -12,8 +12,6 @@ const message=(key,fallback,data={})=>{
   const translation=i18n?.format?.(`RTA.Acquisition.${key}`,data)??i18n?.localize?.(`RTA.Acquisition.${key}`);
   return translation&&translation!==`RTA.Acquisition.${key}`?translation:fallback;
 };
-const legacyTarget=option=>option.targetRef??(option.kind==='definition'?{objectKind:'definition',objectId:option.definitionId}:
-  option.kind==='action'?{objectKind:'action',objectId:option.actionId}:null);
 
 export function acquisitionChoiceCatalog(ruleset,template){
   const catalog=new Map(relationCatalog(ruleset).map(x=>[`${x.objectKind}\u0000${x.objectId}`,x]));
@@ -21,7 +19,7 @@ export function acquisitionChoiceCatalog(ruleset,template){
   return (template.choiceGroups??[]).map(group=>({
     id:group.id,name:group.name,min:group.min,max:group.max,
     options:(group.options??[]).map(option=>{
-      const ref=legacyTarget(option),target=ref?catalog.get(`${ref.objectKind}\u0000${ref.objectId}`):null;
+      const ref=option.targetRef??null,target=ref?catalog.get(`${ref.objectKind}\u0000${ref.objectId}`):null;
       return {id:option.id,targetRef:ref,entry:target?.entry??null,objectKind:ref?.objectKind??'',
         label:target?`${referenceKindTitle(target.objectKind,french)} · ${target.label}`:`${referenceKindTitle(ref?.objectKind??'?',french)} · ${ref?.objectId??'?'}`,
         unavailable:!target||target.entry?.enabled===false};
