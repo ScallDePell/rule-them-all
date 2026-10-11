@@ -7,7 +7,7 @@ ROOT=Path(sys.argv[1]) if len(sys.argv)>1 else Path(__file__).resolve().parent.p
 OUT=Path(sys.argv[2]) if len(sys.argv)>2 else Path.cwd()/'rta-ui-qa'
 OUT.mkdir(parents=True,exist_ok=True)
 SOURCE=(ROOT/'templates/configurator/entry-editor.hbs').read_text()
-CSS=(ROOT/'styles/configurator.css').read_text()
+CSS='\n'.join((ROOT/rel).read_text() for rel in json.loads((ROOT/'module.json').read_text())['styles'])
 QA_LOCALE=os.environ.get('RTA_QA_LOCALE','en')
 if QA_LOCALE not in ('en','fr'):raise ValueError('Only FR/EN QA locales are supported')
 TEST_LOCALE=json.loads((ROOT/f'lang/{QA_LOCALE}.json').read_text())
@@ -19,8 +19,9 @@ SCHEMA=(ROOT/'src/configurator/configurator-schema.mjs').read_text()
 COLLECTION_NAMES=re.findall(r'"([^"]+)"',re.search(r'COLLECTION_FIELDS\s*=\s*Object\.freeze\(\[([\s\S]*?)\]\)',SCHEMA).group(1))
 COLLECTION_TO_KIND_FIXTURE={name:(name[:-3]+'y' if name.endswith('ies') else name[:-1] if name.endswith('s') else name) for name in COLLECTION_NAMES}
 PALETTE=(ROOT/'src/ui/select-option-presentation.mjs').read_text()
-PALETTE=PALETTE.replace('import {RTA_NEUTRAL_COLOR} from "./theme-tokens.mjs";','').replace('import {COLLECTION_TO_KIND} from "../configurator/relation-contract.mjs";','').replace('export ','')
-COLORS=(ROOT/'src/ui/theme-tokens.mjs').read_text().replace('export ','')+'\nconst COLLECTION_TO_KIND=Object.freeze('+json.dumps(COLLECTION_TO_KIND_FIXTURE)+');\n'+PALETTE
+RULESET_COLORS=(ROOT/'src/configurator/ruleset-colors.mjs').read_text().replace("import {COLLECTION_FIELDS} from './configurator-schema.mjs';",'const COLLECTION_FIELDS='+json.dumps(COLLECTION_NAMES)+';').replace('export ','')
+PALETTE=PALETTE.replace('import {objectColor} from "../configurator/ruleset-colors.mjs";','').replace('import {RTA_NEUTRAL_COLOR} from "./theme-tokens.mjs";','').replace('import {COLLECTION_TO_KIND} from "../configurator/relation-contract.mjs";','').replace('export ','')
+COLORS=(ROOT/'src/ui/theme-tokens.mjs').read_text().replace('export ','')+'\n'+RULESET_COLORS+'\nconst COLLECTION_TO_KIND=Object.freeze('+json.dumps(COLLECTION_TO_KIND_FIXTURE)+');\n'+PALETTE
 KINDS=['Ruleset','DefinitionType','Definition','ContentType','ContentTemplate','Formula','FormulaBinding','Condition','Roll','Outcome','Test','Effect','Action','EventType','Tag','Parameter','PermissionPolicy','Trigger','SheetDefinition','CreationSystem','Reference','Modifier','Restriction','Duration','ProgressionSystem']
 # Handlebars subset used by this project's template: if/unless/each/else and inline partials.
 TOK=re.compile(r'(\{\{\{[^}]+\}\}\}|\{\{[^}]+\}\})')
@@ -148,7 +149,7 @@ return {controls:controls.map(e=>({tag:e.classList.contains('rta-select__trigger
 if __name__=='__main__':
  results={};total=0
  with sync_playwright() as p:
-  b=p.chromium.launch(headless=True,executable_path='/usr/bin/chromium',args=['--no-sandbox'])
+  b=p.chromium.launch(headless=True,executable_path=os.environ.get('RTA_CHROMIUM','/usr/bin/chromium'),args=['--no-sandbox'])
   for width in (560,760,1250):
    for kind in KINDS:
     page=b.new_page(viewport={'width':width,'height':980},device_scale_factor=1)
@@ -157,7 +158,7 @@ if __name__=='__main__':
     page.set_content(markup,wait_until='load');page.wait_for_function('window.__qaReady===true',timeout=10000)
     page.evaluate('''() => [...document.querySelectorAll('details')].forEach(el=>el.open=true)''')
     data=page.evaluate(MEASURE);data['errors']=err;results[f'{kind}-{width}']=data
-    if width==760:page.screenshot(path=str(OUT/(kind+'.png')),full_page=True)
+    page.screenshot(path=str(OUT/f'{kind}-{width}.png'),full_page=True)
     total+=len(data['controls'])
     print(kind,width,'controls',len(data['controls']),'rows',len(data['rows']),'overflow',len(data['overflow']),'errors',err[:1],flush=True)
     page.close()

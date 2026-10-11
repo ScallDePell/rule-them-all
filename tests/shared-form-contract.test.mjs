@@ -1,9 +1,10 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import {readFileSync} from 'node:fs';
+import {readCssBundle} from './helpers/css-bundle.mjs';
 const hbs=readFileSync(new URL('../templates/configurator/entry-editor.hbs',import.meta.url),'utf8');
 const js=readFileSync(new URL('../src/configurator/configurator-entry-editor.mjs',import.meta.url),'utf8');
-const css=readFileSync(new URL('../styles/configurator.css',import.meta.url),'utf8');
+const css=readCssBundle();
 for(const [partial,field,minimum] of [
   ['rtaIdentityName','nameKey',18],
   ['rtaIdentityDescription','descriptionKey',18],

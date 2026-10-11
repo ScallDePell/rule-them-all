@@ -1,7 +1,8 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import {readFileSync} from 'node:fs';
-const css=readFileSync(new URL('../styles/configurator.css',import.meta.url),'utf8');
+import {readCssBundle} from './helpers/css-bundle.mjs';
+const css=readCssBundle();
 const home=readFileSync(new URL('../templates/configurator/configurator.hbs',import.meta.url),'utf8');
 
 test('one canonical full-height rail for Ruleset tiles, General, collections, dependencies, and navigation',()=>{

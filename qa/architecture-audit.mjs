@@ -36,8 +36,9 @@ for(const locale of ['fr','en']){
  for(const key of ['CreationSource','DynamicUI','FamilyColor'])if(!dict.RTA?.[key])add('missing-locales',file,`RTA.${key} missing`);
 }
 // Display-time styles must use the module namespace; historical docs/changelogs are excluded.
-const css=data(join(root,'styles/configurator.css'));
-if(!css.includes('.rta-'))add('missing-rta-components',join(root,'styles/configurator.css'),'canonical component selectors missing');
+const stylesheets=JSON.parse(data(join(root,'module.json'))).styles;
+const css=stylesheets.map(rel=>data(join(root,rel))).join('\n');
+if(!css.includes('.rta-'))add('missing-rta-components',join(root,'module.json'),'canonical component selectors missing');
 const entry=data(join(root,'src/configurator/configurator-entry-editor.mjs'));
 if(!entry.includes('entry-operations.mjs'))add('routing-not-centralized',join(root,'src/configurator/configurator-entry-editor.mjs'),'entry dispatch must use the operations registry');
 for(const rel of ['src/ui/entry-editor-markup.mjs','src/ui/picker-markup.mjs','src/core/system-document-types.mjs','src/runtime/runtime-lab-fixtures.mjs','RTA-ARCHITECTURE-CANONIQUE.md']){

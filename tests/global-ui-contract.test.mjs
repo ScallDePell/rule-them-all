@@ -1,12 +1,13 @@
 import test from "node:test";
 import assert from "node:assert/strict";
 import {readFileSync} from "node:fs";
+import {readCssBundle} from './helpers/css-bundle.mjs';
 const root=new URL("../",import.meta.url);
 const read=p=>readFileSync(new URL(p,root),"utf8");
 const editor=read("templates/configurator/entry-editor.hbs");
 const shell=read("templates/configurator/configurator.hbs");
 const js=read("src/configurator/configurator-entry-editor.mjs")+read("src/ui/entry-editor-markup.mjs");
-const css=read("styles/configurator.css");
+const css=readCssBundle();
 const count=(v,re)=>(v.match(re)||[]).length;
 test("all relationship pickers use one shared search template",()=>{
  assert.equal(count(editor,/#\*inline "rtaPickerSearch"/g),1);

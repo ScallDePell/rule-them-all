@@ -1,8 +1,9 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import {readFileSync} from 'node:fs';
+import {readCssBundle} from './helpers/css-bundle.mjs';
 const source=file=>readFileSync(new URL('../'+file,import.meta.url),'utf8');
-const css=source('styles/configurator.css');
+const css=readCssBundle();
 const qa=source('qa/form-matrix.py');
 const select=source('src/ui/rta-select.mjs');
 

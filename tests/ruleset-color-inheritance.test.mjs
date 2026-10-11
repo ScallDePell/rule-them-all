@@ -8,6 +8,7 @@ import {RULESET_SECTIONS,DEFAULT_RULESET_COLOR,rulesetColor,sectionColor,collect
 import {COLLECTION_FIELDS} from '../src/configurator/configurator-schema.mjs';
 import {createSelectColorResolver} from '../src/ui/select-option-presentation.mjs';
 import {collectEntryData} from '../src/configurator/entry-data-collector.mjs';
+import {readCssBundle} from './helpers/css-bundle.mjs';
 
 class Storage {
   constructor(){this.snapshot=emptyStorageSnapshot();}
@@ -94,7 +95,7 @@ test('invalid CSS injection and unknown section IDs are rejected before persiste
 test('General view and source editors expose only the governed color controls',()=>{
   const home=fs.readFileSync(new URL('../templates/configurator/configurator.hbs',import.meta.url),'utf8');
   const form=fs.readFileSync(new URL('../templates/configurator/entry-editor.hbs',import.meta.url),'utf8');
-  const css=fs.readFileSync(new URL('../styles/configurator.css',import.meta.url),'utf8');
+  const css=readCssBundle();
   assert.match(home,/data-action="editRuleset"/);
   assert.match(home,/rta-general" style="--rta-card-accent:\{\{rulesetAccent\}\}"/);
   assert.match(home,/rta-ruleset-tile" role="listitem" style="--rta-card-accent:\{\{color\}\}"/);

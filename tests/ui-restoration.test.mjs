@@ -4,6 +4,7 @@ import fs from "node:fs";
 import path from "node:path";
 import {createRulesetData} from "../src/configurator/configurator-schema.mjs";
 import {validateRulesetSchema} from "../src/configurator/configurator-validation.mjs";
+import {readCssBundle} from './helpers/css-bundle.mjs';
 
 const root=path.resolve(new URL("..",import.meta.url).pathname);
 
@@ -18,7 +19,7 @@ test("Ruleset family colors are presentation-only configuration with neutral fal
 test("Rule Them'All restored shell keeps workspace, cards and entry footer",()=>{
   const main=fs.readFileSync(path.join(root,"templates/configurator/configurator.hbs"),"utf8");
   const editor=fs.readFileSync(path.join(root,"templates/configurator/entry-editor.hbs"),"utf8");
-  const css=fs.readFileSync(path.join(root,"styles/configurator.css"),"utf8");
+  const css=readCssBundle();
   assert.match(main,/rta-configurator__workspace/);
   assert.match(main,/rta-config-card-grid/);
   assert.match(main,/data-action="navigate"/);
@@ -37,7 +38,7 @@ test("Rule Them'All restored shell keeps workspace, cards and entry footer",()=>
 test("v0.2.4 field ergonomics and drag ordering remain in the restored shell", async () => {
   const editor=fs.readFileSync(path.join(root,"templates/configurator/entry-editor.hbs"),"utf8");
   const app=fs.readFileSync(path.join(root,"templates/configurator/configurator.hbs"),"utf8");
-  const css=fs.readFileSync(path.join(root,"styles/configurator.css"),"utf8");
+  const css=readCssBundle();
   assert.match(editor, /data-field-prop="name"/);
   assert.match(editor, /data-field-prop="min"/);
   assert.match(editor, /data-field-prop="max"/);
@@ -64,7 +65,7 @@ test("v0.3.1 keeps rule-family editors and removes ID entry from normal relation
 
 test("v0.3.2 keeps compact Definition fields and adds collapsible relationship pickers",()=>{
   const html=fs.readFileSync(path.join(root,"templates/configurator/entry-editor.hbs"),"utf8");
-  const css=fs.readFileSync(path.join(root,"styles/configurator.css"),"utf8");
+  const css=readCssBundle();
   assert.match(html,/class="form-group rta-definition-field"/);
   assert.match(html,/<label>{{label}}<\/label>/);
   assert.doesNotMatch(html,/rta-definition-field__heading/);

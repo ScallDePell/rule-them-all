@@ -1,7 +1,8 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import {readFileSync} from 'node:fs';
-const source = readFileSync(new URL('../styles/configurator.css', import.meta.url), 'utf8');
+import {readCssBundle} from './helpers/css-bundle.mjs';
+const source = readCssBundle();
 const markup = readFileSync(new URL('../templates/configurator/configurator.hbs', import.meta.url), 'utf8');
 const cssWithoutComments = source.replace(/\/\*[\s\S]*?\*\//g, '');
 

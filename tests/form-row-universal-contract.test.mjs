@@ -1,10 +1,11 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import {readFileSync} from 'node:fs';
+import {readCssBundle} from './helpers/css-bundle.mjs';
 const read=(file)=>readFileSync(new URL('../'+file,import.meta.url),'utf8');
 const hbs=read('templates/configurator/entry-editor.hbs');
 const shell=read('templates/configurator/configurator.hbs');
-const css=read('styles/configurator.css');
+const css=readCssBundle();
 const component=read('src/ui/rta-select.mjs');
 const editor=read('src/configurator/configurator-entry-editor.mjs')+read('src/ui/entry-editor-markup.mjs');
 

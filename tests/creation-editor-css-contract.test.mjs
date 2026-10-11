@@ -1,7 +1,8 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import {readFileSync} from 'node:fs';
-const css=readFileSync(new URL('../styles/configurator.css',import.meta.url),'utf8');
+import {readCssBundle} from './helpers/css-bundle.mjs';
+const css=readCssBundle();
 const js=readFileSync(new URL('../src/configurator/configurator-entry-editor.mjs',import.meta.url),'utf8');
 const markup=readFileSync(new URL('../src/ui/entry-editor-markup.mjs',import.meta.url),'utf8');
 test('Creation steps use shared form stack and canonical row labels without scoped CSS patches',()=>{

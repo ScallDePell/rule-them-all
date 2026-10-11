@@ -2,13 +2,14 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import {readFileSync} from 'node:fs';
 import {RTASelect,enhanceRTASelects} from '../src/ui/rta-select.mjs';
+import {readCssBundle} from './helpers/css-bundle.mjs';
 const root=new URL('../',import.meta.url);
 const read=path=>readFileSync(new URL(path,root),'utf8');
 const editor=read('templates/configurator/entry-editor.hbs');
 const config=read('templates/configurator/configurator.hbs');
 const dynamic=read('src/configurator/configurator-entry-editor.mjs')+read('src/ui/entry-editor-markup.mjs');
 const base=read('src/configurator/configurator-window.mjs');
-const css=read('styles/configurator.css');
+const css=readCssBundle();
 const source=read('src/ui/rta-select.mjs');
 
 test('RTA Select is one generic JS entry point installed at window base',()=>{
