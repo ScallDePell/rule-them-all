@@ -143,6 +143,8 @@ export const formulaNodeRegistry = new FormulaNodeRegistry()
   .register({id: "sum", evaluate: async (node, {ev}) => { let out = 0; for (const n of args(node)) out += num(await ev(n), "sum operand"); return out; }, resultType: allInteger})
   .register({id: "average", evaluate: async (node, {ev}) => { const a = args(node); if (!a.length) return 0; let out = 0; for (const n of a) out += num(await ev(n), "average operand"); return out / a.length; }, resultType: "number"})
   .register({id: "round", evaluate: async (node, {ev}) => Math.round(num(await ev(node.value ?? node.arg), "round operand")), resultType: "integer"})
+  // mod: remainder, always from 0 to the divisor (every third round: mod(round, 3) = 0).
+  .register({id: "mod", evaluate: async (node, {ev}) => { const a = args(node); if (a.length !== 2) throw new Error("mod needs two operands."); const x = num(await ev(a[0]), "mod operand"), d = num(await ev(a[1]), "mod operand"); if (d === 0) throw new Error("Division by zero."); return ((x % d) + d) % d; }, resultType: "number"})
   .register({id: "floor", evaluate: async (node, {ev}) => Math.floor(num(await ev(node.value ?? node.arg), "floor operand")), resultType: "integer"})
   .register({id: "ceil", evaluate: async (node, {ev}) => Math.ceil(num(await ev(node.value ?? node.arg), "ceil operand")), resultType: "integer"})
   .register({id: "clamp", evaluate: async (node, {ev}) => Math.min(num(await ev(node.max), "clamp max"), Math.max(num(await ev(node.min), "clamp min"), num(await ev(node.value), "clamp value"))), resultType: (node, infer) => numeric([infer(node.value), infer(node.min), infer(node.max)])})

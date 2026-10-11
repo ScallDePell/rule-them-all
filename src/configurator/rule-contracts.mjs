@@ -1,3 +1,4 @@
+import {SYSTEM_EVENT_PREFIX} from './system-events.mjs';
 import {copyJSON, isRecord} from './configurator-schema.mjs';
 import {valueTypeRegistry, validateTypedValue} from './value-type-registry.mjs';
 import {prepareFieldMap} from './field-output-contracts.mjs';
@@ -81,12 +82,15 @@ export function prepareInputBinding(data,options={},label='InputBinding'){
 /** TestDefinition (CP-29). A Test may run without a Roll; it then needs a total Formula.
  * total = totalFormulaRef ?? roll total + bonus; margin = marginFormulaRef ?? total - target. */
 export function prepareTest(data,options={}){
-  const x={descriptionKey:'',enabled:true,order:0,tags:[],rollRef:null,inputBindings:[],bonusFormulaRef:null,totalFormulaRef:null,targetFormulaRef:null,targetValue:null,marginFormulaRef:null,outcomeRefs:[],fallbackOutcomeRef:null,...copyJSON(data)};
+  const x={descriptionKey:'',enabled:true,order:0,tags:[],rollRef:null,inputBindings:[],bonusFormulaRef:null,totalFormulaRef:null,targetFormulaRef:null,targetValue:null,opposedTestRef:null,marginFormulaRef:null,outcomeRefs:[],fallbackOutcomeRef:null,...copyJSON(data)};
   identity(x,'Test',options);
   if(x.rollRef==='')x.rollRef=null;
   for(const key of ['rollRef','bonusFormulaRef','totalFormulaRef','targetFormulaRef','marginFormulaRef','fallbackOutcomeRef'])if(x[key]!==null&&!nonempty(x[key]))throw new Error(`Test.${key} must be null or an id.`);
   need(x.rollRef!==null||x.totalFormulaRef!==null,'Test requires a Roll or a total Formula.',options);
   if(x.targetValue!==null&&(!Number.isFinite(Number(x.targetValue))))throw new Error('Test.targetValue must be null or numeric.');
+  // opposedTestRef: the target role makes that Test, and its total is this Test's target.
+  if(x.opposedTestRef==='')x.opposedTestRef=null;
+  if(x.opposedTestRef!==null){if(!nonempty(x.opposedTestRef))throw new Error('Test.opposedTestRef must be null or a Test id.');if(x.opposedTestRef===x.id)throw new Error('A Test cannot oppose itself.');if(x.targetFormulaRef!==null||x.targetValue!==null)throw new Error('An opposed Test takes its target from the opposed Test only.');}
   arr(x.inputBindings,'Test.inputBindings');
   const ids=new Set();
   x.inputBindings=x.inputBindings.map((binding,i)=>{const prepared=prepareInputBinding(binding,options,`Test.inputBindings[${i}]`);if(ids.has(prepared.id))throw new Error(`Duplicate Test input: ${prepared.id}.`);ids.add(prepared.id);return prepared;});
@@ -181,6 +185,7 @@ export function prepareCategory(data,options={}){
 export function prepareEventType(data,options={}){
   const x={descriptionKey:'',enabled:true,order:0,tags:[],payloadFields:{},roles:[],...copyJSON(data)};
   identity(x,'EventType',options);
+  if(String(x.id).startsWith(SYSTEM_EVENT_PREFIX))throw new Error(`EventType ids starting with ${SYSTEM_EVENT_PREFIX} are kept for the module's own events.`);
   if(!isRecord(x.payloadFields))throw new Error('EventType.payloadFields must be an object.');
   arr(x.roles,'EventType.roles'); arr(x.tags,'EventType.tags'); bool(x.enabled,'EventType.enabled'); return x;
 }

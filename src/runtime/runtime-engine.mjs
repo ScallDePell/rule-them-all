@@ -12,6 +12,7 @@ import {toRuntimeReference,resolveContainer} from "./runtime-reference.mjs";
 import {effectOperationRegistry} from "../configurator/operation-registries.mjs";
 import {assertSafeRollFormula,multiplyDice,resolveRollData} from "../configurator/roll-grammar.mjs";
 import {findSlot, slotInitialKey} from "../configurator/capability-slots.mjs";
+import {systemEventType} from "../configurator/system-events.mjs";
 import {SLOT_CAPABILITIES,requireSlot,poolSlotState,collectionSlotState,boundPoolValue,initialSlotStates,prepareCollectionEntry,assertCollectionRoom,assertCollectionMinimum} from "./capability-slot-runtime.mjs";
 
 const clone=v=>copyJSON(v);
@@ -286,7 +287,16 @@ export class RuntimeEngine{
     const number=async(formulaId,label)=>{const value=Number(await this.evaluateFormula(versionId,formulaId,scope));if(!Number.isFinite(value))throw new Error(`Test ${test.id} ${label} is not a number.`);return value;};
     if(test.bonusFormulaRef){state.bonus=await number(test.bonusFormulaRef,"bonus");state.total=state.rollTotal+state.bonus;sync();}
     if(test.totalFormulaRef){state.total=await number(test.totalFormulaRef,"total");sync();}
-    state.target=test.targetFormulaRef?await number(test.targetFormulaRef,"target"):(test.targetValue===null||test.targetValue===undefined?null:Number(test.targetValue));sync();
+    // Opposed Test: the target role makes the other Test as its self, against this Test's self; its total is the target.
+    if(test.opposedTestRef){
+      const opposing=ruleset.tests?.find(x=>x.id===test.opposedTestRef&&enabled(x));if(!opposing)throw new Error(`Test unavailable: ${test.opposedTestRef}.`);
+      if(opposing.opposedTestRef)throw new Error(`Test ${opposing.id} is itself opposed and cannot answer ${test.id}.`);
+      const opponent=roleRef(context,"target");if(!opponent)throw new Error(`Opposed Test ${test.id} needs a target.`);
+      const roles={...(context.roles??{}),self:opponent,source:opponent,target:roleRef(context,"self")};
+      const {content:_attackerContent,...opponentContext}=context,answer=await this.executeTest(versionId,opposing.id,{...opponentContext,roles,variables:{...(context.variables??{})}});
+      state.opposed={testId:opposing.id,total:answer.total,natural:answer.roll?.natural??null,outcome:answer.outcome?.resultKey??null};state.target=answer.total;sync();
+    }
+    else state.target=test.targetFormulaRef?await number(test.targetFormulaRef,"target"):(test.targetValue===null||test.targetValue===undefined?null:Number(test.targetValue));sync();
     state.margin=test.marginFormulaRef?await number(test.marginFormulaRef,"margin"):(state.target===null?null:state.total-state.target);sync();
     // CP-29: the Test's own Outcome order; the first true Outcome wins, then the explicit
     // fallback. With Outcomes configured and no match, the Test fails explicitly.
@@ -296,7 +306,7 @@ export class RuntimeEngine{
     if(!outcome&&test.fallbackOutcomeRef){outcome=ruleset.outcomes?.find(x=>x.id===test.fallbackOutcomeRef&&enabled(x))??null;if(!outcome)throw new Error(`Fallback Outcome unavailable: ${test.fallbackOutcomeRef}.`);}
     if(!outcome&&candidates.length)throw new Error(`Test ${test.id} matched no Outcome and has no fallback Outcome.`);
     const variables={...(state.roll?{roll:{...state.roll}}:{}),test:{...state,inputs:{...state.inputs}}};
-    const result={testId:test.id,inputs:copyJSON(state.inputs),roll:state.roll?{...state.roll}:null,bonus:state.bonus,total:state.total,target:state.target,margin:state.margin,outcome:outcome?{id:String(outcome.id),resultKey:String(outcome.resultKey),nameKey:String(outcome.nameKey),labelKey:String(outcome.labelKey||outcome.nameKey)}:null,variables,context:{variables}};
+    const result={testId:test.id,inputs:copyJSON(state.inputs),roll:state.roll?{...state.roll}:null,bonus:state.bonus,total:state.total,target:state.target,margin:state.margin,...(state.opposed?{opposed:{...state.opposed}}:{}),outcome:outcome?{id:String(outcome.id),resultKey:String(outcome.resultKey),nameKey:String(outcome.nameKey),labelKey:String(outcome.labelKey||outcome.nameKey)}:null,variables,context:{variables}};
     this.hooks?.callAll?.(RUNTIME_HOOKS.testResolved,result,{roles:{...(context.roles??{})},defaultRole:context.defaultRole??"self",userContext:{...(context.userContext??{})}});return result;
   }
   async #testInput(versionId,test,input,scope){
@@ -351,7 +361,7 @@ export class RuntimeEngine{
     const committed=await this.#commit(tx);return committed.entries[0]??null;
   }
   async emitEvent(versionId,eventTypeId,payload={},context={},options={}){
-    const ruleset=this.ruleset(versionId),eventType=ruleset.eventTypes?.find(x=>x.id===eventTypeId&&enabled(x));if(!eventType)throw new Error(`EventType unavailable: ${eventTypeId}.`);
+    const ruleset=this.ruleset(versionId),eventType=ruleset.eventTypes?.find(x=>x.id===eventTypeId&&enabled(x))??systemEventType(eventTypeId);if(!eventType)throw new Error(`EventType unavailable: ${eventTypeId}.`);
     const depth=Number(options.depth??0);if(depth>20)throw new Error("Rule Them'All event chain depth exceeded.");
     const event={id:globalThis.crypto?.randomUUID?.()??`evt-${Date.now()}-${Math.random().toString(36).slice(2)}`,eventTypeId,rulesetVersionId:versionId,occurredAt:Date.now(),payload:clone(payload),chainId:options.chainId??null,parentEventId:options.parentEventId??null,depth};event.chainId??=event.id;
     const eventContext={...context,event};const triggered=[];
@@ -359,6 +369,17 @@ export class RuntimeEngine{
     // untilEvent Durations end on the containers the event concerns.
     const expired=[];for(const ref of new Map(Object.values(context.roles??{}).filter(Boolean).map(ref=>{const n=normalizeRuntimeContainerRef(ref);return [this.#refKey(n),n];})).values()){const state=await this.adapter.load(ref);if(state.rulesetVersionId===versionId&&hasDurations(state)){const result=await this.expireStates(versionId,ref,{eventTypeId});if(result.stateInstanceIds.length||result.modifierStateIds.length)expired.push({ref,...result});}}
     this.hooks?.callAll?.(RUNTIME_HOOKS.event,event,clone(triggered));return {event,triggered,expired};
+  }
+  /** A module event (combat, world clock) on each container concerned, under its own Ruleset; containers whose Ruleset has no Trigger for it are skipped. */
+  async emitSystemEvent(eventTypeId,payload,refs){
+    if(!systemEventType(eventTypeId))throw new Error(`Not a module event: ${eventTypeId}.`);
+    const results=[];
+    for(const ref of refs){
+      const state=await this.adapter.load(ref),versionId=state.rulesetVersionId;
+      if(!versionId||!this.#hasRuleset(versionId)||!(this.ruleset(versionId).triggers??[]).some(trigger=>enabled(trigger)&&trigger.eventTypeId===eventTypeId))continue;
+      results.push({ref,...await this.emitEvent(versionId,eventTypeId,payload,{roles:{self:ref}})});
+    }
+    return results;
   }
   #eventFilterMatches(filter,event,context){if(!filter)return true;const matches=filter.payloadMatches??{};for(const [key,value] of Object.entries(matches))if(event.payload?.[key]!==value)return false;return true;}
   /** Roll operand: the Roll's dice (multiplied by a Formula, e.g. 2 on a critical hit) plus a bonus Formula. */

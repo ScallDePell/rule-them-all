@@ -8,6 +8,15 @@ import {FoundrySocketRelay} from "./src/runtime/runtime-relay.mjs";
 import {CreationSessions, FoundryCreationSessionStore} from "./src/runtime/creation-sessions.mjs";
 import {FoundryContentBridge} from "./src/runtime/foundry-content-bridge.mjs";
 import {isOwningContentHook,guardOwnedContentCreation} from "./src/runtime/foundry-content-hooks.mjs";
+import {combatChangeEvents, timeElapsedPayload} from "./src/configurator/system-events.mjs";
+
+/** events: () => [{eventTypeId, payload, refs}], emitted in order on the containers they concern. */
+function emitModuleEvents(events) {
+  Promise.resolve().then(async () => {
+    await game.ruleThemAll?.configuratorReady;
+    for (const {eventTypeId, payload, refs} of await events()) await game.ruleThemAll.runtime.emitSystemEvent(eventTypeId, payload, refs);
+  }).catch(error => console.error("Rule Them'All | Module event failed", error));
+}
 
 
 let storage;
@@ -54,9 +63,19 @@ Hooks.once("ready", () => {
   game.ruleThemAll.configuratorReady.catch(error => console.error("Rule Them'All | Configurator initialization failed", error));
 
   // CP-28: timed states end when the world clock passes them; the active GM writes the change once.
-  Hooks.on("updateWorldTime", worldTime => {
+  Hooks.on("updateWorldTime", (worldTime, delta) => {
     if (!game.users.activeGM?.isSelf) return;
     Promise.resolve(game.ruleThemAll?.runtime?.expireAll({worldTime})).catch(error => console.error("Rule Them'All | State expiry failed", error));
+    const payload = timeElapsedPayload(worldTime, delta);
+    if (payload) emitModuleEvents(async () => [{eventTypeId: "rta.time.elapsed", payload, refs: await game.ruleThemAll.runtime.adapter.listContainers()}]);
+  });
+  // Module events: Triggers react to the combat tracker; the active GM emits them once.
+  Hooks.on("combatTurnChange", (combat, prior, current) => {
+    if (game.users.activeGM?.isSelf) emitModuleEvents(() => combatChangeEvents(combat, prior, current));
+  });
+  Hooks.on("deleteCombat", combat => {
+    if (!game.users.activeGM?.isSelf || !combat.started) return;
+    emitModuleEvents(() => [{eventTypeId: "rta.combat.end", payload: {combatId: combat.id, round: combat.round}, refs: combat.combatants.map(c => c.actor?.uuid).filter(Boolean)}]);
   });
   Hooks.on("preCreateItem", (item, _data, _options, userId) => {
     return guardOwnedContentCreation(item,userId,game.user?.id,game.ruleThemAll?.content,{

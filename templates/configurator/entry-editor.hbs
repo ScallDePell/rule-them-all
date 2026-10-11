@@ -343,7 +343,7 @@
       {{#if isTrigger}}
         <fieldset><legend>{{localize "RTA.Template.Trigger"}}</legend>
           {{> rtaIdentityName}}
-          <div class="form-group rta-form-row"><label>{{localize "RTA.Template.EventType"}}</label><select name="eventTypeId" required>{{#each eventTypeChoices}}<option value="{{id}}" data-rta-colors="{{colors}}" {{#if selected}}selected{{/if}}>{{label}}</option>{{/each}}</select></div>
+          <div class="form-group rta-form-row"><label>{{localize "RTA.Template.EventType"}}</label><select name="eventTypeId" required>{{#each triggerEventChoices}}<option value="{{id}}" data-rta-colors="{{colors}}" {{#if selected}}selected{{/if}}>{{label}}</option>{{/each}}</select></div>
           {{> rtaEnabled}}
           {{> rtaConditionsPicker}}
           <details class="rta-picker rta-config-entry__section" data-picker><summary><strong>{{localize "RTA.Template.Actions"}}</strong><span data-picker-summary>{{actionSummary}}</span></summary><div class="rta-picker__body rta-choice-list">{{> rtaPickerSearch placeholder=(localize "RTA.Template.SearchActions")}}{{#each actionChoices}}<label data-picker-option data-picker-label="{{label}}" data-rta-colors="{{colors}}"><input type="checkbox" name="actionRefs" value="{{id}}" {{#if selected}}checked{{/if}}> {{label}}</label>{{else}}<p>{{localize "RTA.Template.NoActionsAvailable"}}</p>{{/each}}</div></details>

@@ -1,5 +1,6 @@
 import {copyJSON,isRecord} from './configurator-schema.mjs';
 import {collectCrossFamilyRelations} from './relation-contract.mjs';
+import {isSystemEventType} from './system-events.mjs';
 
 /* Dependency strength (CP-31): `required` blocks deleting the target;
    `optional` means the consumer contract accepts the reference being absent,
@@ -35,6 +36,7 @@ export class DependencyIndex{
       if(t.bonusFormulaRef)pushRef(this.#edges,{objectKind:'test',objectId:t.id},{objectKind:'formula',objectId:t.bonusFormulaRef},'testBonus',`tests[${i}].bonusFormulaRef`,'optional');
       if(t.targetFormulaRef)pushRef(this.#edges,{objectKind:'test',objectId:t.id},{objectKind:'formula',objectId:t.targetFormulaRef},'testTarget',`tests[${i}].targetFormulaRef`,'optional');
       if(t.totalFormulaRef)pushRef(this.#edges,{objectKind:'test',objectId:t.id},{objectKind:'formula',objectId:t.totalFormulaRef},'testTotal',`tests[${i}].totalFormulaRef`);
+      if(t.opposedTestRef)pushRef(this.#edges,{objectKind:'test',objectId:t.id},{objectKind:'test',objectId:t.opposedTestRef},'testOpposed',`tests[${i}].opposedTestRef`);
       if(t.marginFormulaRef)pushRef(this.#edges,{objectKind:'test',objectId:t.id},{objectKind:'formula',objectId:t.marginFormulaRef},'testMargin',`tests[${i}].marginFormulaRef`,'optional');
       for(const [j,input] of (t.inputBindings??[]).entries()){
         if(input?.source?.formulaRef)pushRef(this.#edges,{objectKind:'test',objectId:t.id},{objectKind:'formula',objectId:input.source.formulaRef},'testInput',`tests[${i}].inputBindings[${j}].source.formulaRef`);
@@ -69,7 +71,7 @@ export class DependencyIndex{
       for(const [j,acquisition] of (a.acquisitions??[]).entries())pushRef(this.#edges,{objectKind:'action',objectId:a.id},{objectKind:'definition',objectId:acquisition?.definitionId},'actionAcquisition',`actions[${i}].acquisitions[${j}].definitionId`);
     }
     for(const [i,t] of (ruleset.triggers??[]).entries()){
-      pushRef(this.#edges,{objectKind:'trigger',objectId:t.id},{objectKind:'eventType',objectId:t.eventTypeId},'triggerEvent',`triggers[${i}].eventTypeId`);
+      if(!isSystemEventType(t.eventTypeId))pushRef(this.#edges,{objectKind:'trigger',objectId:t.id},{objectKind:'eventType',objectId:t.eventTypeId},'triggerEvent',`triggers[${i}].eventTypeId`);
       for(const [j,id] of (t.conditionRefs??[]).entries())pushRef(this.#edges,{objectKind:'trigger',objectId:t.id},{objectKind:'condition',objectId:id},'triggerCondition',`triggers[${i}].conditionRefs[${j}]`);
       for(const [j,id] of (t.actionRefs??[]).entries())pushRef(this.#edges,{objectKind:'trigger',objectId:t.id},{objectKind:'action',objectId:id},'triggerAction',`triggers[${i}].actionRefs[${j}]`);
     }

@@ -24,6 +24,7 @@ export function createRuntimeAPI(configurator,{adapter=new FoundryRuntimeAdapter
     resetContainer:ref=>adapter.reset(ref),
     initializeContainer:write("initializeContainer"),
     emitEvent:(versionId,eventTypeId,payload,context,options)=>engine.emitEvent(versionId,eventTypeId,payload,context,options),
+    emitSystemEvent:(eventTypeId,payload,refs)=>engine.emitSystemEvent(eventTypeId,payload,refs),
     previewAction:(versionId,id,context)=>engine.previewAction(versionId,id,context),
     executeAction:write("executeAction"),
     describeContainer:ref=>adapter.describe(ref),

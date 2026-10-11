@@ -144,7 +144,8 @@
       "PointsPerTarget": "Points per target at most",
       "ComputedPointsPerTarget": "Computed points per target",
       "OptionCondition": "Option filter",
-      "AlwaysAvailable": "Always available"
+      "AlwaysAvailable": "Always available",
+      "OpposedBy": "Opposed by {test}"
     },
     "FamilyColor": {
       "parameters": "Parameters",
@@ -1011,6 +1012,13 @@
       "default": "Run the Action's effects",
       "effects": "Run other effects",
       "block": "Stop the Action"
+    },
+    "SystemEvent": {
+      "CombatStart": "Combat starts",
+      "CombatRound": "New round",
+      "CombatTurn": "Turn starts",
+      "CombatEnd": "Combat ends",
+      "TimeElapsed": "Time elapsed"
     }
   }
 }

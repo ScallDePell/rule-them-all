@@ -19,11 +19,12 @@ const json=(value,fallback)=>{const text=String(value??"").trim();return text?JS
 const fieldPresent=(fd,key)=>typeof fd.has==="function"?fd.has(key):fd.get(key)!==undefined&&fd.get(key)!==null;
 const lines=value=>String(value??"").split(/\r?\n/).map(x=>x.trim()).filter(Boolean);
 
-/** A Test target is none, a fixed value or a Formula, chosen in one select. */
+/** A Test target is none, a fixed value, a Formula or the total of an opposed Test, chosen in one select. */
 function readTestTarget(fd){
   const source=String(fd.get("targetSource")??"").trim(),fixed=String(fd.get("targetValue")??"").trim();
-  if(source==="__fixed")return{targetFormulaRef:null,targetValue:fixed===""?null:Number(fixed)};
-  return{targetFormulaRef:source||null,targetValue:null};
+  if(source==="__fixed")return{targetFormulaRef:null,targetValue:fixed===""?null:Number(fixed),opposedTestRef:null};
+  if(source.startsWith("__opposed:"))return{targetFormulaRef:null,targetValue:null,opposedTestRef:source.slice("__opposed:".length)};
+  return{targetFormulaRef:source||null,targetValue:null,opposedTestRef:null};
 }
 
 /** The shared operand editor: a literal, a Parameter, a Formula, a Reference or (Effects) a Roll. */

@@ -140,7 +140,8 @@
       "PointsPerTarget": "Points par cible, au plus",
       "ComputedPointsPerTarget": "Points par cible, calculés",
       "OptionCondition": "Filtre des options",
-      "AlwaysAvailable": "Toujours disponible"
+      "AlwaysAvailable": "Toujours disponible",
+      "OpposedBy": "En opposition à {test}"
     },
     "FamilyColor": {
       "parameters": "Paramètres",
@@ -1007,6 +1008,13 @@
       "default": "Appliquer les effets de l'Action",
       "effects": "Appliquer d'autres effets",
       "block": "Arrêter l'Action"
+    },
+    "SystemEvent": {
+      "CombatStart": "Début du combat",
+      "CombatRound": "Nouveau round",
+      "CombatTurn": "Début de tour",
+      "CombatEnd": "Fin du combat",
+      "TimeElapsed": "Temps écoulé"
     }
   }
 }

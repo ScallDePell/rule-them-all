@@ -12,6 +12,7 @@ import {wireOrderedLists} from "../ui/ordered-list.mjs";
 import {modifierFormContext,durationFormContext} from "./modifier-duration-form.mjs";
 import {permissionFormContext} from "./permission-form.mjs";
 import {triggerFilterContext} from "./trigger-filter-form.mjs";
+import {SYSTEM_EVENT_TYPES} from "./system-events.mjs";
 import {outcomeMappingContext} from "./action-outcome-form.mjs";
 import {capabilityRole,capabilityRoleFlags,capabilityLabel} from "./capability-type-registry.mjs";
 import {availableDocumentTypes} from "../core/system-document-types.mjs";
@@ -162,8 +163,10 @@ export class ConfiguratorEntryEditor extends ConfiguratorWindow {
     const bonusFormulaChoices=[{id:"",label:"None",selected:!data.bonusFormulaRef},...formulas.map(x=>({id:x.id,label:x.nameKey,...withColors("formula",x),selected:x.id===data.bonusFormulaRef}))];
     const fallbackOutcomeChoices=[{id:"",label:uiText("NoFallbackOutcome","No fallback: fail explicitly"),selected:!data.fallbackOutcomeRef},...outcomes.map(x=>({id:x.id,label:x.nameKey,...withColors("outcome",x),selected:x.id===data.fallbackOutcomeRef}))];
     // One "Target" control: none, a fixed value, or a Formula.
-    const fixedTarget=!data.targetFormulaRef&&data.targetValue!==null&&data.targetValue!==undefined;
-    const targetSourceChoices=[{id:"",label:uiText("NoTarget","No target"),selected:!data.targetFormulaRef&&!fixedTarget},{id:"__fixed",label:uiText("FixedValue","Fixed value"),selected:fixedTarget},...formulas.map(x=>({id:x.id,label:x.nameKey,...withColors("formula",x),selected:x.id===data.targetFormulaRef}))];
+    const fixedTarget=!data.targetFormulaRef&&!data.opposedTestRef&&data.targetValue!==null&&data.targetValue!==undefined;
+    const targetSourceChoices=[{id:"",label:uiText("NoTarget","No target"),selected:!data.targetFormulaRef&&!fixedTarget},{id:"__fixed",label:uiText("FixedValue","Fixed value"),selected:fixedTarget},...formulas.map(x=>({id:x.id,label:x.nameKey,...withColors("formula",x),selected:x.id===data.targetFormulaRef})),
+      // Opposed: the target is the total the target role makes on another Test (a dodge against an attack).
+      ...tests.filter(x=>x.id!==data.id&&!x.opposedTestRef).map(x=>({id:`__opposed:${x.id}`,label:uiText("OpposedBy","Opposed by {test}").replace("{test}",x.nameKey),...withColors("test",x),selected:x.id===data.opposedTestRef}))];
     const showTestCalculation=Boolean(data.bonusFormulaRef||data.totalFormulaRef||data.marginFormulaRef);
     const effectChoices=effects.map(x=>({id:x.id,label:x.nameKey,...withColors("effect",x),costSelected:(data.costEffectRefs??[]).includes(x.id),effectSelected:(data.effectRefs??[]).includes(x.id)}));
     const actionChoices=selection(actions.map(x=>({id:x.id,label:x.nameKey,...withColors("action",x)})),data.actionRefs);
@@ -178,6 +181,8 @@ export class ConfiguratorEntryEditor extends ConfiguratorWindow {
     const stateDurationChoices=[{id:"",label:uiText("UntilRemoved","Until removed"),selected:!appliedDurationRef},...durations.map(x=>({id:x.id,label:x.nameKey,...withColors("duration",x),selected:x.id===appliedDurationRef}))];
     const acquisitionActionChoices=[{id:"",label:uiText("NoAcquisitionAction","No Action: grant directly"),selected:!data.acquisitionActionRef},...actions.map(x=>({id:x.id,label:x.nameKey,...withColors("action",x),selected:x.id===data.acquisitionActionRef}))];
     const eventTypeChoices=eventTypes.map(x=>({id:x.id,label:x.nameKey,...withColors("eventType",x),selected:x.id===data.eventTypeId,actionSelected:(data.eventTypeRefs??[]).includes(x.id)}));
+    // A Trigger can also listen to the module's own events (combat, world clock); an Action cannot emit them.
+    const systemEvents=SYSTEM_EVENT_TYPES.map(x=>({...x,nameKey:globalThis.game?.i18n?.localize?.(x.nameKey)??x.nameKey})),triggerEventChoices=[...eventTypeChoices,...systemEvents.map(x=>({id:x.id,label:x.nameKey,colors:selectColorsAttribute([RTA_NEUTRAL_COLOR]),selected:x.id===data.eventTypeId}))];
     const contentTypeChoices=contentTypes.map(x=>({id:x.id,label:x.nameKey,...withColors("contentType",x),selected:x.id===data.contentTypeId}));
     const relationTargetChoices=relationCatalog(this.#renderCatalog??{}).map(x=>({
       id:refToken(x),label:`${referenceKindTitle(x.objectKind,globalThis.game?.i18n?.lang==='fr')} · ${x.label}`,
@@ -230,7 +235,7 @@ export class ConfiguratorEntryEditor extends ConfiguratorWindow {
       ...(this.#kind==="modifier"?modifierFormContext(data,{valueTargetChoices:referenceChoices.filter(x=>parseRefToken(x.token).capabilityId==="value").map(x=>({...x,selected:x.token===targetToken}))}):{}),
       ...(this.#kind==="duration"?durationFormContext(data,{eventTypes,conditions,withColors}):{}),
       ...(this.#kind==="action"?outcomeMappingContext(data,{tests,outcomes,effects,withColors}):{}),
-      ...(this.#kind==="trigger"?triggerFilterContext(data,{eventTypes}):{}),
+      ...(this.#kind==="trigger"?{...triggerFilterContext(data,{eventTypes:[...eventTypes,...systemEvents]}),triggerEventChoices}:{}),
       ...(this.#kind==="permissionPolicy"?permissionFormContext(data,{definitions,actions,conditions,withColors}):{}),dirty:this.#dirty,canPersist:!isValidated&&this.#dirty,
       constraintRows:(data.constraints??[]).filter(rule=>CONSTRAINT_KINDS.includes(rule?.kind)).map(rule=>{
         const model=constraintRowModel(rule);
