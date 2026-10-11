@@ -134,7 +134,7 @@ test('a Content Template inherits the runtime mode of its Content Type unless it
   const {prepareContentTemplate}=await import('../src/configurator/rule-contracts.mjs');
   const {templateFlags}=await import('../src/runtime/foundry-content-bridge.mjs');
   const current={id:'arrow',nameKey:'Arrow',contentTypeId:'ammo',tags:[]};
-  assert.equal(collectEntryData('contentTemplate',{...form({nameKey:'Arrow',contentTypeId:'ammo',runtimeMode:''}),current}).runtimeMode,null);
+  assert.equal(collectEntryData('contentTemplate',{...form({nameKey:'Arrow',contentTypeId:'ammo',runtimeMode:'inherit'}),current}).runtimeMode,null);
   assert.equal(prepareContentTemplate({id:'arrow',nameKey:'Arrow',contentTypeId:'ammo'}).runtimeMode,null);
   assert.equal(templateFlags('v',{id:'arrow',runtimeMode:null},{id:'ammo',runtimeMode:'stackable'}).runtimeMode,'stackable');
   const html=(await import('node:fs')).readFileSync(new URL('../templates/configurator/entry-editor.hbs',import.meta.url),'utf8');
