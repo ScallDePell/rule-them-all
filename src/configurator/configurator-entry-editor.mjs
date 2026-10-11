@@ -6,6 +6,8 @@ import {CONSTRAINT_KINDS} from "./declarative-contracts.mjs";
 import {assertPersistedRelations} from "./relation-persistence.mjs";
 import {buildFieldRow,buildEventFieldRow,buildDefinitionFieldModel} from "./entry-field-models.mjs";
 import {buildRuleReferenceChoices} from "./entry-reference-catalog.mjs";
+import {buildSlotFormContext,syncValueSource,syncEntryMode} from "./slot-form.mjs";
+import {slotInitialKey} from "./capability-slots.mjs";
 import {availableDocumentTypes} from "../core/system-document-types.mjs";
 
 import {pickerSummary,missingTargetLabel,editorDisplayTitle} from "../ui/editor-display-text.mjs";
@@ -150,7 +152,7 @@ export class ConfiguratorEntryEditor extends ConfiguratorWindow {
     const definitionBindingRows=definitions.map(definition=>{
       const binding=(data.definitionBindings??[]).find(b=>b?.definitionId===definition.id)??{}, legacy=(data.initialStateRules??[]).find(r=>r?.definitionId===definition.id)??{}, initial=binding.initial??legacy.initial??legacy.values??{};
       const caps=new Set(definition.capabilities??[]);
-      return {id:definition.id,label:definition.nameKey,colors:selectColorsAttribute(this.#optionColors("definition",definition)),selected:Boolean((data.definitionBindings??[]).some(b=>b?.definitionId===definition.id)),hasValue:caps.has("value"),hasPool:caps.has("pool"),hasState:caps.has("state"),valueBase:initial["value.base"]??"",poolCurrent:initial["pool.current"]??"",poolMinimum:initial["pool.minimum"]??"",poolMaximum:initial["pool.maximum"]??"",stateActive:initial["state.active"]===true};
+      return {id:definition.id,label:definition.nameKey,colors:selectColorsAttribute(this.#optionColors("definition",definition)),selected:Boolean((data.definitionBindings??[]).some(b=>b?.definitionId===definition.id)),hasValue:caps.has("value"),poolSlots:caps.has("pool")?(definition.slots?.pool??[]).map(slot=>({id:slot.id,key:slotInitialKey("pool",slot.id,"current"),value:initial[slotInitialKey("pool",slot.id,"current")]??""})):[],hasState:caps.has("state"),valueBase:initial["value.base"]??"",stateActive:initial["state.active"]===true};
     });
     const templateActionChoices=actions.map(x=>({id:x.id,label:x.nameKey,...withColors("action",x),selected:(data.actionBindings??[]).some(b=>b?.actionId===x.id)}));
     const relationTargetChoices=relationCatalog(this.#renderCatalog??{}).map(x=>({
@@ -199,7 +201,8 @@ export class ConfiguratorEntryEditor extends ConfiguratorWindow {
       operandReferenceChoices:referenceChoices.map(x=>({...x,selected:x.token===operandRefToken})),operandKind,isOperandLiteral:operandKind==="literal",isOperandParameter:operandKind==="parameter",isOperandFormula:operandKind==="formula",isOperandReference:operandKind==="reference",operandLiteral:operandKind==="literal"?formatEditorValue("number","one",data.operand?.value??0):"",
       isRuleset:this.#kind==="ruleset",isDefinitionType:this.#kind==="definitionType",isDefinition:this.#kind==="definition",isReference:this.#kind==="reference",
       isParameter:this.#kind==="parameter",isFormula:this.#kind==="formula",isFormulaBinding:this.#kind==="formulaBinding",isCondition:this.#kind==="condition",isRoll:this.#kind==="roll",isOutcome:this.#kind==="outcome",isTest:this.#kind==="test",isEffect:this.#kind==="effect",isAction:this.#kind==="action",
-      isPermissionPolicy:this.#kind==="permissionPolicy",isSheetDefinition:this.#kind==="sheetDefinition",isTag:this.#kind==="tag",isCategory:this.#kind==="category",isEventType:this.#kind==="eventType",isTrigger:this.#kind==="trigger",isContentType:this.#kind==="contentType",isContentTemplate:this.#kind==="contentTemplate",
+      isPermissionPolicy:this.#kind==="permissionPolicy",isSheetDefinition:this.#kind==="sheetDefinition",isTag:this.#kind==="tag",isCategory:this.#kind==="category",
+      slots:this.#kind==="definition"?buildSlotFormContext({definition:data,permittedCapabilities:capabilityChoices.filter(cap=>cap.permitted).map(cap=>cap.id),formulas,contentTypes,valueTypes:this.#api.listValueTypes(),colorsOf:(kind,entry)=>withColors(kind,entry).colors,neutral:selectColorsAttribute([RTA_NEUTRAL_COLOR])}):null,isEventType:this.#kind==="eventType",isTrigger:this.#kind==="trigger",isContentType:this.#kind==="contentType",isContentTemplate:this.#kind==="contentTemplate",
       isCreationSystem:this.#kind==="creationSystem",creationStepRows:this.#kind==="creationSystem"?(data.steps??[]).map(step=>({html:this.#creationStepHTML(step)})):[],isGeneric:["modifier","restriction","duration","progressionSystem"].includes(this.#kind),dirty:this.#dirty,canPersist:!isValidated&&this.#dirty,
       constraintRows:(data.constraints??[]).filter(rule=>CONSTRAINT_KINDS.includes(rule?.kind)).map(rule=>{
         const model=constraintRowModel(rule);
@@ -233,6 +236,7 @@ export class ConfiguratorEntryEditor extends ConfiguratorWindow {
     const mark=()=>{if(!this.#dirty){this.#dirty=true;this.#syncFooter();}};
     form.addEventListener("input",event=>{mark();const row=event.target.closest?.("[data-definition-field]");if(row&&!row.dataset.required){const use=row.querySelector("[data-field-present]");if(use&&!use.checked){use.checked=true;}}if(event.target.matches?.("[data-picker-filter]"))this.#filterPicker(event.target);});
     form.addEventListener("change",event=>{if(event.target.matches?.("[data-step-source-family]")&&event.target.checked){const group=event.target.closest("[data-step-prop=sourceCollection]");for(const other of group?.querySelectorAll("[data-step-source-family]")??[])if(other!==event.target)other.checked=false;}this.#syncCreationSource(event.target);mark();if(event.target.matches?.("[data-presentation-override]")){const row=event.target.closest("[data-presentation-key]");const control=row?.querySelector(".rta-declarative-presentation__value");if(control)control.hidden=!event.target.checked;}this.#syncCapabilityCheckboxes(event.target);this.#syncOperandEditor(event.target);this.#syncRuleOperandEditor(event.target);this.#syncPickerSummary(event.target);this.#syncStorageKind(event.target);if(event.target.matches?.("[data-color-override-toggle]")){const input=event.target.closest("[data-color-override-editor]")?.querySelector("[data-custom-color-input]");if(input)input.disabled=!event.target.checked;}});
+    form.addEventListener("change",event=>{if(event.target.matches?.("[data-source-kind]"))syncValueSource(event.target);if(event.target.matches?.('[data-slot-prop="entryMode"]'))syncEntryMode(event.target);});
     form.addEventListener("submit",event=>{event.preventDefault();this.#save(false);});
     for(const button of this.element.querySelectorAll("[data-action]"))button.addEventListener("click",event=>this.#action(event));
   }
@@ -487,6 +491,8 @@ export class ConfiguratorEntryEditor extends ConfiguratorWindow {
     if(action==="addEventField"){const list=this.element.querySelector("[data-event-field-list]");if(list){const row=this.#newEventFieldRow();row.querySelector('[data-action="removeEventField"]')?.addEventListener("click",event=>this.#action(event));list.append(row);this.#dirty=true;this.#syncFooter();}return;}
     if(action==="removeEventField"){event.currentTarget.closest("[data-event-field-row]")?.remove();this.#dirty=true;this.#syncFooter();return;}
     if(action==="addChoiceGroup"){const list=this.element.querySelector("[data-choice-group-list]");if(list){list.insertAdjacentHTML("beforeend",this.#choiceGroupHTML());for(const button of list.lastElementChild?.querySelectorAll("[data-action]")??[])button.addEventListener("click",event=>this.#action(event));this.#dirty=true;this.#syncFooter();}return;}
+    if(action==="addSlot"){const capability=event.currentTarget.dataset.slotCapability,list=this.element.querySelector(`[data-slot-list="${capability}"]`),template=this.element.querySelector(`[data-slot-template="${capability}"]`);if(list&&template){list.append(template.content.cloneNode(true));for(const button of list.lastElementChild?.querySelectorAll("[data-action]")??[])button.addEventListener("click",event=>this.#action(event));this.#dirty=true;this.#syncFooter();}return;}
+    if(action==="removeSlot"){event.currentTarget.closest("[data-slot-card]")?.remove();this.#dirty=true;this.#syncFooter();return;}
     if(action==="removeChoiceGroup"){event.currentTarget.closest("[data-choice-group]")?.remove();this.#dirty=true;this.#syncFooter();return;}
     if(action==="addFormulaOperand"){
       const list=this.element.querySelector("[data-formula-operands]");if(list){list.insertAdjacentHTML("beforeend",this.#ruleOperandHTML(list.querySelectorAll("[data-rule-operand]").length));list.lastElementChild?.querySelector('[data-action="removeRuleOperand"]')?.addEventListener("click",event=>this.#action(event));this.#renumberRuleOperands(list);this.#dirty=true;this.#syncFooter();}return;

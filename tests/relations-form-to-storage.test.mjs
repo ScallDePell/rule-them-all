@@ -17,6 +17,8 @@ function bindingRow(id,checked=true,values={}){
     if(selector.includes('templateDefinitionRefs'))return input(id,checked);
     const slot=selector.match(/data-binding-slot="([^"]+)"/)?.[1];
     return Object.hasOwn(values,slot)?input(values[slot],slot==='state.active'&&values[slot]===true):null;
+  },querySelectorAll(selector){
+    return selector.includes('data-binding-slot')?Object.entries(values).filter(([slot])=>slot!=='state.active').map(([slot,value])=>({...input(value),dataset:{bindingSlot:slot}})):[];
   }};
 }
 function choiceRow(id,selected={definitions:[],actions:[]},metadata={}){

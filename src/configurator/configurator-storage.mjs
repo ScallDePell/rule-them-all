@@ -35,7 +35,9 @@ export function validateVersionRecord(record, familyId) {
     throw new Error("RulesetVersion working draft metadata mismatch.");
   }
   if (record.publishedSnapshot !== null) {
-    assertValidRuleset(record.publishedSnapshot, {scope: "publish"});
+    // Completeness was checked when it was published; loading only re-checks structure,
+    // so a later, stricter publish rule never makes an existing World unloadable.
+    assertValidRuleset(record.publishedSnapshot);
     if (record.publishedSnapshot.id !== familyId || record.publishedSnapshot.version !== record.version
       || !["ready", "validated"].includes(record.publishedSnapshot.status)) {
       throw new Error("Invalid stored publication.");

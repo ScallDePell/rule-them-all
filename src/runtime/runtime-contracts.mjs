@@ -1,6 +1,7 @@
 import {copyJSON, isRecord} from "../configurator/configurator-schema.mjs";
 
-export const RUNTIME_SCHEMA_VERSION = 1;
+// 2: pool and collection states are keyed by capability slot (CP-26/27).
+export const RUNTIME_SCHEMA_VERSION = 2;
 
 export function createRuntimeState({rulesetVersionId=""}={}) {
   return {schemaVersion:RUNTIME_SCHEMA_VERSION,rulesetVersionId,runtimeRevision:0,definitionStates:{},stateInstances:[]};
@@ -16,16 +17,13 @@ export function prepareRuntimeState(data,{rulesetVersionId=""}={}) {
   return state;
 }
 
-export function createDefinitionState(definition,{initial={}}={}) {
+/** slotStates: per-slot pool/collection states, already evaluated by the engine. */
+export function createDefinitionState(definition,{initial={},slotStates={}}={}) {
   const capabilityStates={};
   const caps=new Set(definition.capabilities??[]);
   if(caps.has("value")) capabilityStates.value={base:Number(initial["value.base"]??0)};
-  if(caps.has("pool")) capabilityStates.pool={
-    current:Number(initial["pool.current"]??0),
-    minimum:Number(initial["pool.minimum"]??0),
-    maximum:Number(initial["pool.maximum"]??initial["pool.current"]??0)
-  };
-  if(caps.has("collection")) capabilityStates.collection={entries:Array.isArray(initial["collection.entries"])?copyJSON(initial["collection.entries"]):[]};
+  if(caps.has("pool")) capabilityStates.pool=copyJSON(slotStates.pool??{});
+  if(caps.has("collection")) capabilityStates.collection=copyJSON(slotStates.collection??{});
   if(caps.has("state")) capabilityStates.state={active:Boolean(initial["state.active"]??false)};
   return {definitionId:definition.id,fields:{},capabilityStates,modifiers:[]};
 }

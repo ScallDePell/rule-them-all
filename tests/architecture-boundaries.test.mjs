@@ -79,10 +79,10 @@ test("RTA always exports rta-ruleset and still reads packages exported by the or
 });
 
 test("Runtime Lab numeric presets are isolated, injectable TEST DATA rather than game rules",()=>{
- const ruleset={definitions:[{id:"alpha",capabilities:["value","pool","state"]},{id:"beta",capabilities:["value"]},{id:"disabled",enabled:false,capabilities:["value"]}]};
+ const ruleset={definitions:[{id:"alpha",capabilities:["value","pool","state"],slots:{pool:[{id:"hp"}]}},{id:"beta",capabilities:["value"]},{id:"disabled",enabled:false,capabilities:["value"]}]};
  const presets={source:{valueSequence:[7,9],poolMaximum:42},target:{valueSequence:[5],poolMaximum:8}};
  const result=buildRuntimeLabDemoProfile(ruleset,"source",{presets});
- assert.deepEqual(result,{alpha:{base:7,maximum:42,current:42,active:false},beta:{base:9}});
+ assert.deepEqual(result,{alpha:{base:7,pools:{hp:42},active:false},beta:{base:9}});
  assert.throws(()=>buildRuntimeLabDemoProfile(ruleset,"pj",{presets}),/No Runtime Lab sample preset/);
  assert.throws(()=>buildRuntimeLabDemoProfile(ruleset,"source",{presets:{source:{valueSequence:[],poolMaximum:0}}}),/Invalid Runtime Lab sample/);
  const engine=read("src/runtime/runtime-engine.mjs");

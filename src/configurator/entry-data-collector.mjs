@@ -8,6 +8,7 @@ import {parseRefToken} from './reference-token.mjs';
 import {collectFieldDefinitions,collectEventPayloadFields,collectDefinitionData} from './entry-field-serialization.mjs';
 import {RULESET_SECTIONS,DEFAULT_RULESET_COLOR} from './ruleset-colors.mjs';
 import {collectTemplateAcquisitions} from './content-template-form.mjs';
+import {collectDefinitionSlots} from './slot-form.mjs';
 const slug=value=>String(value??"").trim().toLowerCase().normalize("NFKD").replace(/[^a-z0-9]+/g,"-").replace(/^-|-$/g,"");
 const json=(value,fallback)=>{const text=String(value??"").trim();return text?JSON.parse(text):fallback;};
 const fieldPresent=(fd,key)=>typeof fd.has==="function"?fd.has(key):fd.get(key)!==undefined&&fd.get(key)!==null;
@@ -36,7 +37,7 @@ export function collectEntryData(kind,{fd,current,bool,checkedIds,queryOne,query
     if(kind==="definition"){
       const name=String(fd.get("nameKey")??"").trim(),key=current.key||slug(name)||uid("definition"),capabilities=[];
       for(const cap of capabilityTypes)if(bool(`cap:${cap.id}`))capabilities.push(cap.id);
-      return{...current,key,nameKey:name,descriptionKey:String(fd.get("descriptionKey")??""),enabled:bool("enabled"),capabilities,data:collectDefinitionData(queryAll("[data-definition-field]")),categories:checkedIds("categories"),tags:checkedIds("tags"),presentationProfile:readPresentationRows(queryAll("[data-presentation-key]"),json(fd.get("profileJson"),null))};
+      return{...current,key,nameKey:name,descriptionKey:String(fd.get("descriptionKey")??""),enabled:bool("enabled"),capabilities,data:collectDefinitionData(queryAll("[data-definition-field]")),slots:collectDefinitionSlots(queryAll,current),categories:checkedIds("categories"),tags:checkedIds("tags"),presentationProfile:readPresentationRows(queryAll("[data-presentation-key]"),json(fd.get("profileJson"),null))};
     }
     if(kind==="parameter"){const vt=String(fd.get("valueType")??"number"),nullable=bool("nullable"),value=parseEditorValue(vt,"one",nullable,fd.get("value")??"");return{...current,nameKey:String(fd.get("nameKey")??"").trim(),descriptionKey:String(fd.get("descriptionKey")??""),enabled:bool("enabled"),valueType:vt,nullable,value,scope:"ruleset",tags:checkedIds("tags")};}
     if(kind==="formula"){const fallback=json(fd.get("expressionJson"),{type:"literal",value:0});return{...current,nameKey:String(fd.get("nameKey")??"").trim(),descriptionKey:String(fd.get("descriptionKey")??""),enabled:bool("enabled"),resultType:String(fd.get("resultType")??"number"),expression:collectFormulaExpression(fallback),tags:checkedIds("tags")};}

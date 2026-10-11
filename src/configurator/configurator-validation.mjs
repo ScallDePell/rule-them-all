@@ -7,6 +7,7 @@ import {PREPARERS} from "./rule-contracts.mjs";
 import {DependencyIndex} from "./dependency-index.mjs";
 import {normalizeRelations} from "./generic-relations.mjs";
 import {DiagnosticCollector} from "./diagnostics.mjs";
+import {SLOT_CAPABILITIES, findSlot, prepareDefinitionSlots} from "./capability-slots.mjs";
 
 const nonempty = value => typeof value === "string" && value.trim().length > 0;
 
@@ -67,7 +68,7 @@ function checkDefinitionType(entry, path, d) {
 function checkDefinition(entry, types, path, d) {
   const issue = d.issue;
   if (!checkIdentity(entry, path, issue)) return;
-  exactFields(entry, ["id","key","definitionTypeId","nameKey","descriptionKey","data","categories","capabilities","enabled","order","tags","presentationProfile","relations"], path, issue);
+  exactFields(entry, ["id","key","definitionTypeId","nameKey","descriptionKey","data","categories","capabilities","slots","enabled","order","tags","presentationProfile","relations"], path, issue);
   if (!nonempty(entry.key)) issue("REQUIRED_STRING", `${path}.key`, "key must be a non-empty string.");
   if (!nonempty(entry.definitionTypeId) || !types.has(entry.definitionTypeId)) issue("DEFINITION_TYPE", `${path}.definitionTypeId`, "definitionTypeId must target an existing DefinitionType.");
   if (!nonempty(entry.nameKey)) d.incomplete("REQUIRED_STRING", `${path}.nameKey`, "nameKey must be a non-empty string.");
@@ -77,6 +78,7 @@ function checkDefinition(entry, types, path, d) {
   if (typeof entry.enabled !== "boolean") issue("BOOLEAN_TYPE", `${path}.enabled`, "enabled must be boolean.");
   if (!Number.isSafeInteger(entry.order)) issue("ORDER", `${path}.order`, "order must be a safe integer.");
   for (const error of validatePresentationContract(entry.presentationProfile,{path:`${path}.presentationProfile`})) issue(error.code,error.path,error.message);
+  collecting(d, "SLOT_CONTRACT", `${path}.slots`, options => prepareDefinitionSlots(entry.slots, Array.isArray(entry.capabilities) ? entry.capabilities : [], options));
   const type = types.get(entry.definitionTypeId);
   if (type) {
     const capabilities = new Set(entry.capabilities ?? []), allowed = new Set(type.allowedCapabilities ?? []);
@@ -88,6 +90,15 @@ function checkDefinition(entry, types, path, d) {
     }
     collecting(d, "FIELD_VALUE", `${path}.data`, options => applyFieldContract(entry.data ?? {}, resolveFieldContract(type, entry.capabilities ?? []), options));
   }
+}
+/** A Reference into a slotted capability (pool, collection) must name an existing slot (CP-24). */
+function checkSlotTarget(dep, definitionsById, d) {
+  const target = dep.targetRef;
+  if (target.objectKind !== "definition" || !SLOT_CAPABILITIES.includes(target.capabilityId)) return;
+  const definition = definitionsById.get(target.objectId);
+  if (!(definition?.capabilities ?? []).includes(target.capabilityId)) { d.error("REFERENCE_CAPABILITY", dep.path, `Definition ${target.objectId} does not have capability ${target.capabilityId}.`); return; }
+  if (!nonempty(target.slotId)) { d.incomplete("REFERENCE_SLOT", dep.path, `Reference to ${target.objectId}/${target.capabilityId} requires a slot.`); return; }
+  if (!findSlot(definition, target.capabilityId, target.slotId)) d.error("REFERENCE_SLOT", dep.path, `Slot does not exist: ${target.objectId}/${target.capabilityId}/${target.slotId}.`);
 }
 function checkReference(entry, known, path, d) {
   const issue = d.issue;
@@ -162,9 +173,11 @@ export function validateRuleset(ruleset, {scope = "save"} = {}) {
     ["action", new Set((ruleset.actions ?? []).map(x => x?.id))], ["permissionPolicy", new Set((ruleset.permissionPolicies ?? []).map(x => x?.id))], ["contentType", new Set((ruleset.contentTypes ?? []).map(x => x?.id))], ["tag", new Set((ruleset.tags ?? []).map(x => x?.id))], ["category", new Set((ruleset.categories ?? []).map(x => x?.id))], ["eventType", new Set((ruleset.eventTypes ?? []).map(x => x?.id))], ["trigger", new Set((ruleset.triggers ?? []).map(x => x?.id))], ["contentTemplate", new Set((ruleset.contentTemplates ?? []).map(x => x?.id))], ["modifier", new Set((ruleset.modifiers ?? []).map(x => x?.id))], ["restriction", new Set((ruleset.restrictions ?? []).map(x => x?.id))], ["duration", new Set((ruleset.durations ?? []).map(x => x?.id))], ["creationSystem", new Set((ruleset.creationSystems ?? []).map(x => x?.id))], ["progressionSystem", new Set((ruleset.progressionSystems ?? []).map(x => x?.id))], ["sheetDefinition", new Set((ruleset.sheetDefinitions ?? []).map(x => x?.id))]
   ]);
   (ruleset.references ?? []).forEach((x,i) => checkReference(x, known, `references[${i}]`, d));
+  const definitionsById = new Map((ruleset.definitions ?? []).filter(isRecord).map(entry => [entry.id, entry]));
   for (const dep of new DependencyIndex(ruleset).list()) {
     const ids=known.get(dep.targetRef.objectKind);
-    if(ids && !ids.has(dep.targetRef.objectId)) issue("DEPENDENCY_TARGET", dep.path, `Dependency target does not exist: ${dep.targetRef.objectKind}/${dep.targetRef.objectId}.`);
+    if(ids && !ids.has(dep.targetRef.objectId)) { issue("DEPENDENCY_TARGET", dep.path, `Dependency target does not exist: ${dep.targetRef.objectKind}/${dep.targetRef.objectId}.`); continue; }
+    checkSlotTarget(dep, definitionsById, d);
   }
   return d.result();
 }

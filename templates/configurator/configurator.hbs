@@ -143,7 +143,7 @@
                     <strong>{{name}}</strong>
                     <div class="rta-runtime-state-row__values">
                       {{#if hasValue}}<label>{{localize "RTA.Template.Value"}} <input name="runtimeStateBase" type="number" value="{{base}}"></label>{{/if}}
-                      {{#if hasPool}}<label>{{localize "RTA.Template.Current"}} <input name="runtimeStateCurrent" type="number" value="{{current}}"></label><label>{{localize "RTA.Template.Max"}} <input name="runtimeStateMaximum" type="number" value="{{maximum}}"></label>{{/if}}
+                      {{#each pools}}<label>{{localize "RTA.Template.Current"}} · {{slotId}} <input name="runtimeStatePool" data-slot-id="{{slotId}}" type="number" value="{{current}}"></label>{{/each}}
                       {{#if hasState}}<label class="rta-runtime-state-row__check"><input name="runtimeStateActive" type="checkbox" {{#if active}}checked{{/if}}> {{localize "RTA.Template.Active2"}}</label>{{/if}}
                     </div>
                     <button type="button" data-action="runtimeUpdateState" data-definition-id="{{id}}">{{localize "RTA.Template.Save"}}</button>

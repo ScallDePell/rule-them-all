@@ -2,6 +2,7 @@
  * UI colors are injected from the Ruleset resolver. No Foundry access.
  */
 import {refToken} from './reference-token.mjs';
+import {SLOT_CAPABILITIES} from './capability-slots.mjs';
 import {referenceKindTitle,selectColorsAttribute} from '../ui/select-option-presentation.mjs';
 
 export function buildRuleReferenceChoices({definitions=[],parameters=[],formulas=[],findCapability=()=>null,optionColors=()=>[],language='en',mutableOnly=false}={}){
@@ -10,9 +11,12 @@ export function buildRuleReferenceChoices({definitions=[],parameters=[],formulas
     if(!mutableOnly)choices.push({token:refToken({objectKind:'definition',objectId:definition.id}),label:`${definition.nameKey} · ${referenceKindTitle('definition',fr)}`,colors:selectColorsAttribute(optionColors('definition',definition))});
     for(const capId of definition.capabilities??[]){
       const cap=findCapability(capId);
-      for(const output of Object.values(cap?.outputs??{})){
+      // A slotted capability (pool, collection) exposes its outputs once per configured slot.
+      const slots=SLOT_CAPABILITIES.includes(capId)?(definition.slots?.[capId]??[]).map(slot=>slot.id):[null];
+      for(const slotId of slots)for(const output of Object.values(cap?.outputs??{})){
         if(mutableOnly&&!output.mutable)continue;
-        choices.push({token:refToken({objectKind:'definition',objectId:definition.id,capabilityId:capId,outputId:output.id}),label:`${definition.nameKey} · ${capId} · ${output.id}`,colors:selectColorsAttribute(optionColors('definition',definition)),valueType:output.valueType,mutable:output.mutable});
+        const reference={objectKind:'definition',objectId:definition.id,capabilityId:capId,...(slotId?{slotId}:{}),outputId:output.id};
+        choices.push({token:refToken(reference),label:`${definition.nameKey} · ${slotId?`${capId} ${slotId}`:capId} · ${output.id}`,colors:selectColorsAttribute(optionColors('definition',definition)),valueType:output.valueType,mutable:output.mutable});
       }
     }
   }

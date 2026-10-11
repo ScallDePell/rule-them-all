@@ -66,6 +66,15 @@ export class DependencyIndex{
     for(const collection of tagCollections)for(const [i,entry] of (ruleset[collection]??[]).entries())for(const [j,id] of (entry.tags??[]).entries())pushRef(this.#edges,{objectKind:collection.replace(/s$/,''),objectId:entry.id},{objectKind:'tag',objectId:id},'tag',`${collection}[${i}].tags[${j}]`,'metadata');
     // Category catalog (§47): consumers store catalog ids; a used Category cannot be deleted.
     for(const collection of ['definitions','contentTemplates'])for(const [i,entry] of (ruleset[collection]??[]).entries())for(const [j,id] of (entry.categories??[]).entries())pushRef(this.#edges,{objectKind:collection==='definitions'?'definition':'contentTemplate',objectId:entry.id},{objectKind:'category',objectId:id},'category',`${collection}[${i}].categories[${j}]`,'metadata');
+    // Capability slots (CP-26/27): bound Formulas and allowed ContentTypes are dependencies.
+    for(const [i,definition] of (ruleset.definitions??[]).entries()){
+      const consumer={objectKind:'definition',objectId:definition.id};
+      for(const [j,slot] of (definition.slots?.pool??[]).entries())for(const bound of ['minimum','maximum','initial'])if(slot?.[bound]?.formulaRef)pushRef(this.#edges,consumer,{objectKind:'formula',objectId:slot[bound].formulaRef},'poolBound',`definitions[${i}].slots.pool[${j}].${bound}.formulaRef`);
+      for(const [j,slot] of (definition.slots?.collection??[]).entries()){
+        if(slot?.capacityFormulaRef)pushRef(this.#edges,consumer,{objectKind:'formula',objectId:slot.capacityFormulaRef},'collectionCapacity',`definitions[${i}].slots.collection[${j}].capacityFormulaRef`);
+        if(slot?.entryMode!=='value')for(const [k,kind] of (slot?.allowedKinds??[]).entries())pushRef(this.#edges,consumer,{objectKind:'contentType',objectId:kind},'collectionKind',`definitions[${i}].slots.collection[${j}].allowedKinds[${k}]`);
+      }
+    }
     const contentTypesById=new Map((ruleset.contentTypes??[]).map(type=>[type.id,type]));
     for(const [i,t] of (ruleset.contentTemplates??[]).entries()){
       if(t.contentTypeId)pushRef(this.#edges,{objectKind:'contentTemplate',objectId:t.id},{objectKind:'contentType',objectId:t.contentTypeId},'templateContentType',`contentTemplates[${i}].contentTypeId`);

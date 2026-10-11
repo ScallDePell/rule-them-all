@@ -221,9 +221,10 @@
   padding-right: var(--rta-space-2);
 }
 
+/* A card holding form rows is a frame: border plus padding is one --rta-frame-step. */
 .rta-config-entry .rta-binding-card {
-  padding: var(--rta-space-3) var(--rta-space-5);
-  border: 1px solid var(--rta-editor-border);
+  padding: var(--rta-frame-pad);
+  border: var(--rta-frame-border) solid var(--rta-editor-border);
   border-radius: var(--rta-editor-radius);
   background: var(--rta-editor-fill);
 }

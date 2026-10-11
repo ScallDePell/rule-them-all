@@ -40,8 +40,8 @@ export const capabilityTypeRegistry = new CapabilityTypeRegistry()
   },presentationHints:{renderer:"value"}})
   .register({id:"pool", category:"structural", fields:{}, outputs:{
     "pool.current":{id:"pool.current",valueType:"number",cardinality:"one",nullable:false,source:"pool.current",readable:true,mutable:true,derived:false},
-    "pool.minimum":{id:"pool.minimum",valueType:"number",cardinality:"one",nullable:false,source:"pool.minimum",readable:true,mutable:false,derived:true},
-    "pool.maximum":{id:"pool.maximum",valueType:"number",cardinality:"one",nullable:false,source:"pool.maximum",readable:true,mutable:false,derived:true}
+    "pool.minimum":{id:"pool.minimum",valueType:"number",cardinality:"one",nullable:true,source:"pool.minimum",readable:true,mutable:false,derived:true},
+    "pool.maximum":{id:"pool.maximum",valueType:"number",cardinality:"one",nullable:true,source:"pool.maximum",readable:true,mutable:false,derived:true}
   },presentationHints:{renderer:"pool"}})
   .register({id:"collection", category:"structural", fields:{}, outputs:{
     "collection.count":{id:"collection.count",valueType:"integer",cardinality:"one",nullable:false,source:"collection.count",readable:true,mutable:false,derived:true}

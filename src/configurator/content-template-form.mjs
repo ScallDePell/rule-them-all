@@ -14,9 +14,9 @@ export function collectTemplateAcquisitions({current={},definitionRows=[],choice
     if(!row.querySelector('[name="templateDefinitionRefs"]')?.checked)continue;
     const previous=previousDefinitions.get(id)??{};
     const initial={...(previous.initial??{})};
-    for(const slot of ['value.base','pool.current','pool.minimum','pool.maximum']){
-      const input=row.querySelector(`[data-binding-slot="${slot}"]`);
-      if(!input)continue;
+    // value.base and one "pool.<slot>.current" per pool slot of the Definition.
+    for(const input of row.querySelectorAll('input[type="number"][data-binding-slot]')){
+      const slot=input.dataset.bindingSlot;
       const raw=String(input.value??'').trim();
       if(!raw){delete initial[slot];continue;}
       const value=Number(raw);

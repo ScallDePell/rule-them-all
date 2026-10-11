@@ -663,6 +663,44 @@
       "UseCustomColor": "Personnaliser",
       "CollectionOverride": "Couleur de cette rubrique",
       "ResetInheritance": "Revenir à la couleur héritée"
+    },
+    "Slots": {
+      "Pools": "Réserves",
+      "PoolsHelp": "Chaque réserve est une valeur bornée au runtime (vie, mana…). Les bornes sont un nombre ou une Formula.",
+      "AddPool": "Ajouter une réserve",
+      "NewPool": "Nouvelle réserve",
+      "Collections": "Collections",
+      "CollectionsHelp": "Chaque collection contient des entrées : contenu possédé, références vers d’autres entités ou petites valeurs.",
+      "AddCollection": "Ajouter une collection",
+      "NewCollection": "Nouvelle collection",
+      "Remove": "Retirer",
+      "Id": "ID du slot",
+      "ValueType": "Type de valeur",
+      "Initial": "Valeur de départ",
+      "Underflow": "Sous le minimum",
+      "Overflow": "Au-dessus du maximum",
+      "Source": {
+        "none": "Aucune",
+        "literal": "Nombre",
+        "formula": "Formula"
+      },
+      "Policy": {
+        "clamp": "Ramener à la borne",
+        "reject": "Refuser le changement",
+        "allow": "Autoriser"
+      },
+      "EntryMode": "Mode d’entrée",
+      "Mode": {
+        "owned": "Contenu possédé",
+        "reference": "Référence",
+        "value": "Valeur"
+      },
+      "AllowedContent": "Types de contenu autorisés",
+      "AllowedValues": "Types de valeur autorisés",
+      "NoContentTypes": "Aucun Content Type pour le moment.",
+      "MinimumEntries": "Entrées minimum",
+      "MaximumEntries": "Entrées maximum",
+      "Capacity": "Formula de capacité"
     }
   }
 }

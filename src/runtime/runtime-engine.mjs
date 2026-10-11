@@ -5,6 +5,8 @@ import {capabilityTypeRegistry} from "../configurator/capability-type-registry.m
 import {createDefinitionState,normalizeRuntimeContainerRef,resolveRuntimeRuleset} from "./runtime-contracts.mjs";
 import {RuntimeEvaluator} from "./runtime-evaluator.mjs";
 import {assertSafeRollFormula} from "../configurator/roll-grammar.mjs";
+import {findSlot, slotInitialKey} from "../configurator/capability-slots.mjs";
+import {SLOT_CAPABILITIES,requireSlot,poolSlotState,collectionSlotState,boundPoolValue,initialSlotStates,prepareCollectionEntry,assertCollectionRoom,assertCollectionMinimum} from "./capability-slot-runtime.mjs";
 
 const clone=v=>copyJSON(v);
 const roleRef=(context,role)=>context?.roles?.[role]??null;
@@ -30,30 +32,87 @@ export class RuntimeEngine{
     const ref=normalizeRuntimeContainerRef(containerRef),state=await this.adapter.load(ref,{rulesetVersionId:versionId});
     if(state.rulesetVersionId&&state.rulesetVersionId!==versionId)throw new Error(`Runtime container is bound to another Ruleset version: ${state.rulesetVersionId}.`);
     if(state.definitionStates[definitionId])throw new Error(`Definition is already instantiated: ${definitionId}.`);
-    state.rulesetVersionId=versionId;state.definitionStates[definitionId]=createDefinitionState(definition,{initial});state.runtimeRevision++;
+    state.rulesetVersionId=versionId;state.definitionStates[definitionId]=await this.#newDefinitionState(versionId,definition,ref,state,initial);state.runtimeRevision++;
     await this.adapter.save(ref,state);return clone(state.definitionStates[definitionId]);
   }
   async removeDefinitionState(versionId,containerRef,definitionId){const ref=normalizeRuntimeContainerRef(containerRef),state=await this.adapter.load(ref,{rulesetVersionId:versionId});if(!state.definitionStates[definitionId])return false;delete state.definitionStates[definitionId];state.runtimeRevision++;await this.adapter.save(ref,state);return true;}
-  async setDefinitionState(versionId,containerRef,definitionId,{base,current,maximum,active}={}){
+  /** Evaluate starting pool values (explicit initial, else the slot's initial, else maximum, else minimum, else 0). */
+  async #newDefinitionState(versionId,definition,ref,state,initial={}){
+    const context={roles:{self:ref},defaultRole:"self"},evaluator=this.evaluator(versionId,new Map([[this.#refKey(ref),state]])),resolved={pool:{}};
+    for(const slot of definition.slots?.pool??[]){
+      const bounds=await this.#poolBounds(slot,context,evaluator),given=initial[slotInitialKey("pool",slot.id,"current")];
+      const start=given!==undefined?given:slot.initial?await this.#valueSource(slot.initial,context,evaluator):bounds.maximum??bounds.minimum??0;
+      resolved.pool[slot.id]=boundPoolValue(slot,start,bounds,`${definition.id}/${slot.id}`);
+    }
+    return createDefinitionState(definition,{initial,slotStates:initialSlotStates(definition,initial,resolved)});
+  }
+  async #valueSource(source,context,evaluator){if(!source)return null;if(Object.hasOwn(source,"literal"))return Number(source.literal);return Number(await evaluator.formula(source.formulaRef,context));}
+  async #poolBounds(slot,context,evaluator){return {minimum:await this.#valueSource(slot.minimum,context,evaluator),maximum:await this.#valueSource(slot.maximum,context,evaluator)};}
+  /** Load one slot of an instantiated Definition on a container. */
+  async #slotTarget(versionId,containerRef,definitionId,capabilityId,slotId){
+    const ruleset=this.ruleset(versionId),definition=ruleset.definitions?.find(x=>x.id===definitionId&&x.enabled!==false);if(!definition)throw new Error(`Definition unavailable: ${definitionId}.`);
+    const slot=findSlot(definition,capabilityId,slotId);if(!slot)throw new Error(`Slot not found: ${definitionId}/${capabilityId}/${slotId}.`);
+    const ref=normalizeRuntimeContainerRef(containerRef),state=await this.adapter.load(ref,{rulesetVersionId:versionId});
+    const ds=state.definitionStates?.[definitionId];if(!ds)throw new Error(`Definition is not instantiated on RuntimeContainer: ${definitionId}.`);
+    return {definition,slot,ref,state,ds};
+  }
+  async #collectionCapacity(versionId,slot,ref,state){if(!slot.capacityFormulaRef)return null;return Number(await this.evaluator(versionId,new Map([[this.#refKey(ref),state]])).formula(slot.capacityFormulaRef,{roles:{self:ref},defaultRole:"self"}));}
+  /** CP-27: add an entry to a collection slot (no implicit creation of runtime entities). */
+  async addCollectionEntry(versionId,containerRef,definitionId,slotId,entry){
+    const {slot,ref,state,ds}=await this.#slotTarget(versionId,containerRef,definitionId,"collection",slotId),entries=collectionSlotState(ds,slotId).entries;
+    assertCollectionRoom(slot,entries,await this.#collectionCapacity(versionId,slot,ref,state));
+    const next=prepareCollectionEntry(slot,entry,entries);entries.push(next);state.runtimeRevision++;await this.adapter.save(ref,state);return clone(next);
+  }
+  /** Remove only the entry; an owned or referenced entity is never destroyed here. */
+  async removeCollectionEntry(versionId,containerRef,definitionId,slotId,entryId){
+    const {slot,ref,state,ds}=await this.#slotTarget(versionId,containerRef,definitionId,"collection",slotId),entries=collectionSlotState(ds,slotId).entries;
+    const index=entries.findIndex(entry=>entry.id===entryId);if(index<0)throw new Error(`Collection entry not found: ${entryId}.`);
+    assertCollectionMinimum(slot,entries.length-1);const [removed]=entries.splice(index,1);state.runtimeRevision++;await this.adapter.save(ref,state);return clone(removed);
+  }
+  /** Move an owned entry to another owned collection: ownership changes, nothing is cloned. */
+  async transferCollectionEntry(versionId,{from,to,entryId}){
+    const source=await this.#slotTarget(versionId,from.containerRef,from.definitionId,"collection",from.slotId);
+    if(source.slot.entryMode!=="owned")throw new Error(`Only owned collection entries can be transferred (${source.slot.id} is ${source.slot.entryMode}).`);
+    const target=await this.#slotTarget(versionId,to.containerRef,to.definitionId,"collection",to.slotId);
+    // Within one container both slots must live in the same loaded state.
+    const same=this.#refKey(source.ref)===this.#refKey(target.ref);
+    if(same){target.state=source.state;target.ds=source.state.definitionStates[to.definitionId];}
+    if(target.slot.entryMode!=="owned")throw new Error(`Transfer target ${target.slot.id} must be an owned collection.`);
+    const fromEntries=collectionSlotState(source.ds,from.slotId).entries,toEntries=collectionSlotState(target.ds,to.slotId).entries;
+    const index=fromEntries.findIndex(entry=>entry.id===entryId);if(index<0)throw new Error(`Collection entry not found: ${entryId}.`);
+    if(fromEntries===toEntries)return clone(fromEntries[index]);
+    assertCollectionMinimum(source.slot,fromEntries.length-1);
+    assertCollectionRoom(target.slot,toEntries,await this.#collectionCapacity(versionId,target.slot,target.ref,target.state));
+    const moved=prepareCollectionEntry(target.slot,fromEntries[index],toEntries);
+    fromEntries.splice(index,1);toEntries.push(moved);
+    source.state.runtimeRevision++;await this.adapter.save(source.ref,source.state);
+    if(!same){target.state.runtimeRevision++;await this.adapter.save(target.ref,target.state);}
+    return clone(moved);
+  }
+  async setDefinitionState(versionId,containerRef,definitionId,{base,active,pools}={}){
     const ruleset=this.ruleset(versionId),definition=ruleset.definitions?.find(x=>x.id===definitionId&&x.enabled!==false);if(!definition)throw new Error(`Definition unavailable: ${definitionId}.`);
     const ref=normalizeRuntimeContainerRef(containerRef),state=await this.adapter.load(ref,{rulesetVersionId:versionId});
     const ds=state.definitionStates?.[definitionId];if(!ds)throw new Error(`Definition is not instantiated on RuntimeContainer: ${definitionId}.`);
     if(ds.capabilityStates?.value&&base!==undefined)ds.capabilityStates.value.base=Number(base);
-    if(ds.capabilityStates?.pool){if(maximum!==undefined)ds.capabilityStates.pool.maximum=Number(maximum);if(current!==undefined)ds.capabilityStates.pool.current=Math.min(Number(ds.capabilityStates.pool.maximum??current),Math.max(Number(ds.capabilityStates.pool.minimum??0),Number(current)));}
+    if(pools!==undefined){const context={roles:{self:ref},defaultRole:"self"},evaluator=this.evaluator(versionId,new Map([[this.#refKey(ref),state]]));
+      for(const [slotId,current] of Object.entries(pools)){const slot=findSlot(definition,"pool",slotId);if(!slot)throw new Error(`Slot not found: ${definitionId}/pool/${slotId}.`);poolSlotState(ds,slotId).current=boundPoolValue(slot,current,await this.#poolBounds(slot,context,evaluator),`${definitionId}/${slotId}`);}}
     if(ds.capabilityStates?.state&&active!==undefined)ds.capabilityStates.state.active=Boolean(active);
     state.runtimeRevision++;await this.adapter.save(ref,state);return clone(ds);
   }
 
   async #stateForRole(versionId,context,role){const ref=roleRef(context,role);if(!ref)throw new Error(`EvaluationContext role is missing: ${role}.`);return {ref:normalizeRuntimeContainerRef(ref),state:await this.adapter.load(ref,{rulesetVersionId:versionId})};}
-  #outputContract(ruleset,reference){const def=ruleset.definitions?.find(x=>x.id===reference.objectId);if(!def)throw new Error(`Definition not found: ${reference.objectId}.`);if(reference.objectKind!=="definition")throw new Error(`Runtime Reference must target a Definition output, got ${reference.objectKind}.`);if(!reference.capabilityId||!reference.outputId)throw new Error("Runtime Reference requires capabilityId and outputId.");if(!(def.capabilities??[]).includes(reference.capabilityId))throw new Error(`Definition ${def.id} does not have capability ${reference.capabilityId}.`);const cap=capabilityTypeRegistry.get(reference.capabilityId);const output=cap?.outputs?.[reference.outputId];if(!output)throw new Error(`Output not found: ${reference.capabilityId}/${reference.outputId}.`);return {definition:def,output};}
+  #outputContract(ruleset,reference){const def=ruleset.definitions?.find(x=>x.id===reference.objectId);if(!def)throw new Error(`Definition not found: ${reference.objectId}.`);if(reference.objectKind!=="definition")throw new Error(`Runtime Reference must target a Definition output, got ${reference.objectKind}.`);if(!reference.capabilityId||!reference.outputId)throw new Error("Runtime Reference requires capabilityId and outputId.");if(!(def.capabilities??[]).includes(reference.capabilityId))throw new Error(`Definition ${def.id} does not have capability ${reference.capabilityId}.`);const cap=capabilityTypeRegistry.get(reference.capabilityId);const output=cap?.outputs?.[reference.outputId];if(!output)throw new Error(`Output not found: ${reference.capabilityId}/${reference.outputId}.`);const slot=SLOT_CAPABILITIES.includes(reference.capabilityId)?requireSlot(def,reference):null;return {definition:def,output,slot};}
   #readOutput(ruleset,containerState,reference){const {definition,output}=this.#outputContract(ruleset,reference);const ds=containerState.definitionStates?.[definition.id];if(!ds)throw new Error(`Definition is not instantiated on RuntimeContainer: ${definition.id}.`);const cap=reference.capabilityId;
     if(cap==="value"){const base=Number(ds.capabilityStates?.value?.base??0);if(reference.outputId==="value.base")return base;if(reference.outputId==="value.final"){let value=base;for(const m of ds.modifiers??[]){if(m?.active===false)continue;const operand=Number(m.operand??0);if(m.operation==="add")value+=operand;else if(m.operation==="subtract")value-=operand;else if(m.operation==="multiply")value*=operand;else if(m.operation==="set")value=operand;}return value;}}
-    if(cap==="pool"){const p=ds.capabilityStates?.pool??{};if(reference.outputId==="pool.current")return Number(p.current??0);if(reference.outputId==="pool.minimum")return Number(p.minimum??0);if(reference.outputId==="pool.maximum")return Number(p.maximum??0);}
-    if(cap==="collection"&&reference.outputId==="collection.count")return ds.capabilityStates?.collection?.entries?.length??0;
+    if(cap==="pool"&&reference.outputId==="pool.current")return Number(poolSlotState(ds,reference.slotId).current);
+    if(cap==="pool")throw new Error(`Pool bounds are derived; resolve ${reference.outputId} through resolveReference.`);
+    if(cap==="collection"&&reference.outputId==="collection.count")return collectionSlotState(ds,reference.slotId).entries.length;
     if(cap==="state"&&reference.outputId==="state.active")return Boolean(ds.capabilityStates?.state?.active);
     const source=output.source?.split(".")??[];let value=ds.capabilityStates?.[cap];for(const part of source.slice(1))value=value?.[part];return clone(value);
   }
-  async resolveReference(versionId,reference,context,{forWrite=false,role=null,staged=null,skipBinding=false}={}){const ruleset=this.ruleset(versionId);const selectedRole=role??reference.containerRole??context?.defaultRole??"self";const ref=roleRef(context,selectedRole);if(!ref)throw new Error(`EvaluationContext role is missing: ${selectedRole}.`);const n=normalizeRuntimeContainerRef(ref);const state=staged?.get(this.#refKey(n))??await this.adapter.load(n,{rulesetVersionId:versionId});const binding=(ruleset.formulaBindings??[]).find(b=>enabled(b)&&b.targetRef?.objectKind===reference.objectKind&&b.targetRef?.objectId===reference.objectId&&b.targetRef?.capabilityId===reference.capabilityId&&b.targetRef?.outputId===reference.outputId&&(b.targetRole??"self")===selectedRole);if(forWrite){const {output}=this.#outputContract(ruleset,reference);if(binding)throw new Error(`Output is derived and read-only: ${reference.outputId}.`);if(!output.mutable)throw new Error(`Output is not mutable: ${reference.outputId}.`);return {containerRef:n,state,reference,output};}if(binding&&!skipBinding){const derivedContext={...context,defaultRole:selectedRole};return await this.evaluator(versionId,staged).formula(binding.formulaRef,derivedContext);}return this.#readOutput(ruleset,state,reference);}
+  async resolveReference(versionId,reference,context,{forWrite=false,role=null,staged=null,skipBinding=false}={}){const ruleset=this.ruleset(versionId);const selectedRole=role??reference.containerRole??context?.defaultRole??"self";const ref=roleRef(context,selectedRole);if(!ref)throw new Error(`EvaluationContext role is missing: ${selectedRole}.`);const n=normalizeRuntimeContainerRef(ref);const state=staged?.get(this.#refKey(n))??await this.adapter.load(n,{rulesetVersionId:versionId});const binding=(ruleset.formulaBindings??[]).find(b=>enabled(b)&&b.targetRef?.objectKind===reference.objectKind&&b.targetRef?.objectId===reference.objectId&&b.targetRef?.capabilityId===reference.capabilityId&&b.targetRef?.outputId===reference.outputId&&(b.targetRef?.slotId??null)===(reference.slotId??null)&&(b.targetRole??"self")===selectedRole);if(forWrite){const {output}=this.#outputContract(ruleset,reference);if(binding)throw new Error(`Output is derived and read-only: ${reference.outputId}.`);if(!output.mutable)throw new Error(`Output is not mutable: ${reference.outputId}.`);return {containerRef:n,state,reference,output};}if(binding&&!skipBinding){const derivedContext={...context,defaultRole:selectedRole};return await this.evaluator(versionId,staged).formula(binding.formulaRef,derivedContext);}
+    if(reference.capabilityId==="pool"&&reference.outputId!=="pool.current"){const {slot}=this.#outputContract(ruleset,reference);const bounds=await this.#poolBounds(slot,{...context,defaultRole:selectedRole},this.evaluator(versionId,staged));return reference.outputId==="pool.minimum"?bounds.minimum:bounds.maximum;}
+    return this.#readOutput(ruleset,state,reference);}
   #refKey(ref){return ref.uuid??`${ref.kind}:${ref.id}`;}
   evaluator(versionId,staged=null){const ruleset=this.ruleset(versionId);return new RuntimeEvaluator({ruleset,resolveReference:(reference,context,opts)=>this.resolveReference(versionId,reference,context,{...opts,staged})});}
   async evaluateFormula(versionId,formulaId,context={}){return await this.evaluator(versionId).formula(formulaId,context);}
@@ -95,7 +154,9 @@ export class RuntimeEngine{
     const state=await this.adapter.load(ref,{rulesetVersionId:versionId});
     if(state.rulesetVersionId&&state.rulesetVersionId!==versionId)throw new Error(`Runtime container is bound to another Ruleset version: ${state.rulesetVersionId}.`);
     state.rulesetVersionId=versionId;let created=0;
-    for(const definition of ruleset.definitions??[]){if(definition.enabled===false||wanted&&!wanted.has(definition.id)||state.definitionStates[definition.id])continue;assertDefinitionContract(ruleset,definition);state.definitionStates[definition.id]=createDefinitionState(definition,{initial:initialByDefinition?.[definition.id]??{}});created++;}
+    // Pools last: their bounds may be Formulas over the container's other Definitions.
+    const ordered=[...(ruleset.definitions??[])].sort((a,b)=>Number(Boolean(a.slots?.pool?.length))-Number(Boolean(b.slots?.pool?.length)));
+    for(const definition of ordered){if(definition.enabled===false||wanted&&!wanted.has(definition.id)||state.definitionStates[definition.id])continue;assertDefinitionContract(ruleset,definition);state.definitionStates[definition.id]=await this.#newDefinitionState(versionId,definition,ref,state,initialByDefinition?.[definition.id]??{});created++;}
     if(created){state.runtimeRevision++;await this.adapter.save(ref,state);}return {created,state:clone(state)};
   }
   async emitEvent(versionId,eventTypeId,payload={},context={},options={}){
@@ -108,18 +169,18 @@ export class RuntimeEngine{
   }
   #eventFilterMatches(filter,event,context){if(!filter)return true;const matches=filter.payloadMatches??{};for(const [key,value] of Object.entries(matches))if(event.payload?.[key]!==value)return false;return true;}
   async #operand(versionId,operand,context,evaluator){if(operand.kind==="literal")return clone(operand.value);if(operand.kind==="parameter")return evaluator.parameter(operand.id);if(operand.kind==="formula")return await evaluator.formula(operand.id,context);if(operand.kind==="reference")return await this.resolveReference(versionId,operand.reference,context,{staged:evaluator.__staged});throw new Error(`Unsupported Effect operand: ${operand.kind}.`);}
-  #writeOutput(state,reference,operation,operand){const ds=state.definitionStates?.[reference.objectId];if(!ds)throw new Error(`Definition is not instantiated on RuntimeContainer: ${reference.objectId}.`);const cap=reference.capabilityId,id=reference.outputId;let current;
+  #writeOutput(state,reference,operation,operand,pool=null){const ds=state.definitionStates?.[reference.objectId];if(!ds)throw new Error(`Definition is not instantiated on RuntimeContainer: ${reference.objectId}.`);const cap=reference.capabilityId,id=reference.outputId;let current;
     if(cap==="value"&&id==="value.base")current=Number(ds.capabilityStates.value.base??0);
-    else if(cap==="pool"&&id==="pool.current")current=Number(ds.capabilityStates.pool.current??0);
+    else if(cap==="pool"&&id==="pool.current")current=Number(poolSlotState(ds,reference.slotId).current);
     else if(cap==="state"&&id==="state.active")current=Boolean(ds.capabilityStates.state.active);
     else throw new Error(`Mutable runtime output not implemented: ${cap}/${id}.`);
     let next;if(operation==="set")next=operand;else if(operation==="add")next=Number(current)+Number(operand);else if(operation==="subtract")next=Number(current)-Number(operand);else if(operation==="multiply")next=Number(current)*Number(operand);else if(operation==="toggle")next=!Boolean(current);else throw new Error(`Unsupported Effect operation: ${operation}.`);
-    if(cap==="pool"){const p=ds.capabilityStates.pool;const min=Number(p.minimum??0),max=Number(p.maximum??Number.POSITIVE_INFINITY);next=Math.min(max,Math.max(min,Number(next)));p.current=next;}
+    if(cap==="pool"){next=boundPoolValue(pool.slot,next,pool.bounds,`${reference.objectId}/${pool.slot.id}`);poolSlotState(ds,reference.slotId).current=next;}
     else if(cap==="value")ds.capabilityStates.value.base=Number(next);else ds.capabilityStates.state.active=Boolean(next);return clone(next);
   }
   async previewEffect(versionId,effectId,context={},staged=new Map()){
     const ruleset=this.ruleset(versionId),effect=ruleset.effects?.find(x=>x.id===effectId&&enabled(x));if(!effect)throw new Error(`Effect unavailable: ${effectId}.`);
-    const evaluator=this.evaluator(versionId,staged);evaluator.__staged=staged;const role=effect.targetRole??"target";const target=await this.resolveReference(versionId,effect.targetRef,{...context,defaultRole:role},{forWrite:true,role,staged});const key=this.#refKey(target.containerRef);if(!staged.has(key))staged.set(key,clone(target.state));const state=staged.get(key);const operand=await this.#operand(versionId,effect.operand,context,evaluator);const before=this.#readOutput(ruleset,state,effect.targetRef);const after=this.#writeOutput(state,effect.targetRef,effect.operation,operand);return {effectId,before,after,operand,containerRef:target.containerRef};
+    const evaluator=this.evaluator(versionId,staged);evaluator.__staged=staged;const role=effect.targetRole??"target";const target=await this.resolveReference(versionId,effect.targetRef,{...context,defaultRole:role},{forWrite:true,role,staged});const key=this.#refKey(target.containerRef);if(!staged.has(key))staged.set(key,clone(target.state));const state=staged.get(key);const operand=await this.#operand(versionId,effect.operand,context,evaluator);const before=this.#readOutput(ruleset,state,effect.targetRef);let pool=null;if(effect.targetRef.capabilityId==="pool"){const {slot}=this.#outputContract(ruleset,effect.targetRef);pool={slot,bounds:await this.#poolBounds(slot,{...context,defaultRole:role},evaluator)};}const after=this.#writeOutput(state,effect.targetRef,effect.operation,operand,pool);return {effectId,before,after,operand,containerRef:target.containerRef};
   }
   async previewAction(versionId,actionId,context={}){
     const ruleset=this.ruleset(versionId),action=ruleset.actions?.find(x=>x.id===actionId&&enabled(x));if(!action)throw new Error(`Action unavailable: ${actionId}.`);const staged=new Map(),evaluator=this.evaluator(versionId,staged);evaluator.__staged=staged;

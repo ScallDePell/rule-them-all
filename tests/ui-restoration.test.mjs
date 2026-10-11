@@ -147,7 +147,7 @@ test("v0.7.2 Content Types and Templates expose Foundry library synchronization"
 
 test("v0.8.0 Content bindings expose visual Definition initial values instead of raw initial-state JSON",()=>{
   const template=fs.readFileSync(new URL("../templates/configurator/entry-editor.hbs",import.meta.url),"utf8"), editor=fs.readFileSync(new URL("../src/configurator/configurator-entry-editor.mjs",import.meta.url),"utf8"), serializer=fs.readFileSync(new URL("../src/configurator/entry-data-collector.mjs",import.meta.url),"utf8");
-  assert.match(template,/RTA\.Template\.DefinitionsGranted/);assert.match(template,/data-binding-slot="value\.base"/);assert.match(template,/data-binding-slot="pool\.maximum"/);assert.doesNotMatch(template,/initialStateRulesJson/);
+  assert.match(template,/RTA\.Template\.DefinitionsGranted/);assert.match(template,/data-binding-slot="value\.base"/);assert.match(template,/data-binding-slot="\{\{key\}\}"/);assert.doesNotMatch(template,/initialStateRulesJson/);
   assert.match(editor,/definitionBindingRows/);assert.match(serializer,/collectTemplateAcquisitions/);
 });
 

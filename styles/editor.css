@@ -722,3 +722,29 @@
     grid-row: 2;
   }
 }
+
+/* Pool bound (ValueSource): source kind, then the number or the Formula. */
+.rta-config-entry .rta-value-source {
+  display: flex;
+  gap: var(--rta-gap-tight);
+  min-width: 0;
+}
+
+.rta-config-entry .rta-value-source > * {
+  flex: 1 1 0;
+  min-width: 0;
+}
+
+.rta-config-entry .rta-value-source__input {
+  display: flex;
+}
+
+.rta-config-entry .rta-value-source__input > * {
+  flex: 1 1 auto;
+  min-width: 0;
+}
+
+.rta-config-entry .rta-value-source > [hidden],
+.rta-config-entry [data-slot-kinds][hidden] {
+  display: none;
+}

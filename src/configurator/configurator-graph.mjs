@@ -6,6 +6,7 @@ import {resolveFieldContract} from "./capability-type-registry.mjs";
 import {applyFieldContract} from "./field-output-contracts.mjs";
 import {assertValidRuleset} from "./configurator-validation.mjs";
 import {PREPARERS} from "./rule-contracts.mjs";
+import {prepareDefinitionSlots} from "./capability-slots.mjs";
 
 /** Draft writes accept incomplete entries; validation reports what publish still needs. */
 const DRAFT = Object.freeze({get incomplete() { return []; }});
@@ -25,6 +26,7 @@ class DefinitionRegistry extends RulesetCollectionRegistry {
     // A missing required capability or value is a completeness diagnostic, reported by validation.
     const fields = resolveFieldContract(type, next.capabilities);
     next.data = applyFieldContract(next.data ?? {}, fields, DRAFT);
+    if (Object.hasOwn(next, "slots")) next.slots = prepareDefinitionSlots(next.slots, next.capabilities, DRAFT);
     return next;
   }
 }

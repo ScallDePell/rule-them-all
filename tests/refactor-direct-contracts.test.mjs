@@ -78,10 +78,11 @@ test('content subtypes are unique-or-explicit, never first-in-list when ambiguou
 });
 
 test('reference catalog is Ruleset-fed, filtered and colors are injected',()=>{
-  const choices=buildRuleReferenceChoices({definitions:[{id:'a',nameKey:'Alpha',capabilities:['pool']}],parameters:[{id:'p',nameKey:'Param'}],formulas:[],findCapability:id=>id==='pool'?{outputs:{current:{id:'current',valueType:'number',mutable:true},maximum:{id:'maximum',valueType:'number',mutable:false}}}:null,optionColors:()=>['#808080']});
+  const choices=buildRuleReferenceChoices({definitions:[{id:'a',nameKey:'Alpha',capabilities:['pool'],slots:{pool:[{id:'hp'}]}}],parameters:[{id:'p',nameKey:'Param'}],formulas:[],findCapability:id=>id==='pool'?{outputs:{current:{id:'current',valueType:'number',mutable:true},maximum:{id:'maximum',valueType:'number',mutable:false}}}:null,optionColors:()=>['#808080']});
   assert.equal(choices.length,4);
-  const mutable=buildRuleReferenceChoices({mutableOnly:true,definitions:[{id:'a',nameKey:'Alpha',capabilities:['pool']}],findCapability:()=>({outputs:{current:{id:'current',mutable:true},maximum:{id:'maximum',mutable:false}}})});
-  assert.equal(mutable.length,1);assert.match(mutable[0].token,/current/);
+  const mutable=buildRuleReferenceChoices({mutableOnly:true,definitions:[{id:'a',nameKey:'Alpha',capabilities:['pool'],slots:{pool:[{id:'hp'},{id:'mp'}]}}],findCapability:()=>({outputs:{current:{id:'current',mutable:true},maximum:{id:'maximum',mutable:false}}})});
+  assert.equal(mutable.length,2);assert.match(mutable[0].token,/hp\|current/);assert.match(mutable[1].token,/mp\|current/);
+  assert.equal(buildRuleReferenceChoices({definitions:[{id:'a',nameKey:'Alpha',capabilities:['pool']}],findCapability:()=>({outputs:{current:{id:'current'}}})}).length,1,'no slot, no pool output');
 });
 
 test('new rule defaults do not silently create a d20 mechanic',()=>{

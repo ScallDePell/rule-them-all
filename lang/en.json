@@ -667,6 +667,44 @@
       "UseCustomColor": "Customize",
       "CollectionOverride": "Collection color",
       "ResetInheritance": "Restore inherited color"
+    },
+    "Slots": {
+      "Pools": "Pools",
+      "PoolsHelp": "Each pool is a bounded runtime value (health, mana…). Bounds are a number or a Formula.",
+      "AddPool": "Add pool",
+      "NewPool": "New pool",
+      "Collections": "Collections",
+      "CollectionsHelp": "Each collection holds entries: owned content, references to other entities, or small values.",
+      "AddCollection": "Add collection",
+      "NewCollection": "New collection",
+      "Remove": "Remove",
+      "Id": "Slot ID",
+      "ValueType": "Value type",
+      "Initial": "Starting value",
+      "Underflow": "Below minimum",
+      "Overflow": "Above maximum",
+      "Source": {
+        "none": "None",
+        "literal": "Number",
+        "formula": "Formula"
+      },
+      "Policy": {
+        "clamp": "Clamp to the bound",
+        "reject": "Refuse the change",
+        "allow": "Allow"
+      },
+      "EntryMode": "Entry mode",
+      "Mode": {
+        "owned": "Owned content",
+        "reference": "Reference",
+        "value": "Value"
+      },
+      "AllowedContent": "Allowed content types",
+      "AllowedValues": "Allowed value types",
+      "NoContentTypes": "No Content Types yet.",
+      "MinimumEntries": "Minimum entries",
+      "MaximumEntries": "Maximum entries",
+      "Capacity": "Capacity Formula"
     }
   }
 }

@@ -18,7 +18,9 @@ export function buildRuntimeLabDemoProfile(ruleset,role="source",{presets=RUNTIM
     if(def.enabled===false)continue;
     const caps=new Set(def.capabilities??[]),initial={};
     if(caps.has("value"))initial.base=sequence[ordinal++%sequence.length];
-    if(caps.has("pool")){initial.maximum=maximum;initial.current=maximum;}
+    // Sample pool value for every pool slot; the engine applies the slot bounds.
+    const pools=caps.has("pool")?Object.fromEntries((def.slots?.pool??[]).map(slot=>[slot.id,maximum])):{};
+    if(Object.keys(pools).length)initial.pools=pools;
     if(caps.has("state"))initial.active=false;
     if(Object.keys(initial).length)out[def.id]=initial;
   }
