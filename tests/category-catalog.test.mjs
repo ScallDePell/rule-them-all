@@ -16,7 +16,7 @@ async function setup(){
 test('Categories are a GM-managed catalog persisted with the Ruleset',async()=>{
   const {api,v,storage}=await setup();
   const created=await api.createCategory(v,{id:'combat',nameKey:'Combat'});
-  assert.deepEqual(created,{descriptionKey:'',enabled:true,order:0,id:'combat',nameKey:'Combat'});
+  assert.deepEqual(created,{descriptionKey:'',enabled:true,order:10,id:'combat',nameKey:'Combat'});
   await api.updateCategory(v,'combat',{order:20,enabled:false});
   const reloaded=await createConfiguratorAPI(storage);
   assert.deepEqual(reloaded.listCategories(v).map(entry=>[entry.id,entry.order,entry.enabled]),[['combat',20,false]]);

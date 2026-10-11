@@ -244,6 +244,9 @@ export class ConfiguratorEntryEditor extends ConfiguratorWindow {
     form.addEventListener("change",event=>{if(event.target.matches?.("[data-step-source-family]")&&event.target.checked){const group=event.target.closest("[data-step-prop=sourceCollection]");for(const other of group?.querySelectorAll("[data-step-source-family]")??[])if(other!==event.target)other.checked=false;}this.#syncCreationSource(event.target);mark();if(event.target.matches?.("[data-presentation-override]")){const row=event.target.closest("[data-presentation-key]");const control=row?.querySelector(".rta-declarative-presentation__value");if(control)control.hidden=!event.target.checked;}this.#syncCapabilityCheckboxes(event.target);this.#syncOperandEditor(event.target);this.#syncRuleOperandEditor(event.target);this.#syncPickerSummary(event.target);this.#syncStorageKind(event.target);if(event.target.matches?.("[data-color-override-toggle]")){const input=event.target.closest("[data-color-override-editor]")?.querySelector("[data-custom-color-input]");if(input)input.disabled=!event.target.checked;}});
     form.addEventListener("change",event=>{if(event.target.matches?.("[data-source-kind]"))syncValueSource(event.target);if(event.target.matches?.('[data-input-prop="sourceKind"]'))syncTestInputSource(event.target);if(event.target.matches?.('[data-slot-prop="entryMode"]'))syncEntryMode(event.target);});
     form.addEventListener("submit",event=>{event.preventDefault();this.#save(false);});
+    // Section counters follow rows added or removed by script (§46).
+    const counters=[...form.querySelectorAll("[data-live-count]")];
+    if(counters.length){const sync=()=>{for(const counter of counters){const scope=counter.closest("details")??form;const count=String(scope.querySelectorAll(counter.dataset.liveCount).length);if(counter.textContent!==count)counter.textContent=count;}};sync();this._rtaCountObserver?.disconnect();this._rtaCountObserver=new MutationObserver(sync);this._rtaCountObserver.observe(form,{childList:true,subtree:true});}
     for(const button of this.element.querySelectorAll("[data-action]"))button.addEventListener("click",event=>this.#action(event));
     if(this.#focusPath!==null){const path=this.#focusPath;this.#focusPath=null;requestAnimationFrame(()=>this.#focusDiagnostic(path));}
   }
@@ -345,7 +348,7 @@ export class ConfiguratorEntryEditor extends ConfiguratorWindow {
   #collectCreation(){
     const form=this.element.querySelector('[data-entry-form]'),fd=new FormData(form),current=this.#read()??this.#freshSeed();
     const steps=collectCreationSteps(this.element.querySelectorAll('[data-creation-step]'),{sources:this.#creationSources(),uid});
-    return {...current,nameKey:String(fd.get('nameKey')??'').trim(),descriptionKey:String(fd.get('descriptionKey')??''),enabled:form.querySelector('[name="enabled"]')?.checked===true,order:Number(fd.get('order')??0),steps};
+    return {...current,nameKey:String(fd.get('nameKey')??'').trim(),descriptionKey:String(fd.get('descriptionKey')??''),enabled:form.querySelector('[name="enabled"]')?.checked===true,...(String(fd.get('order')??'').trim()!==''?{order:Number(fd.get('order'))}:{}),steps};
   }
 
   #checkedIds(name){
@@ -563,7 +566,8 @@ export class ConfiguratorEntryEditor extends ConfiguratorWindow {
   /** Delete is disabled ahead of time when the Core would refuse it (§46). */
   #deletionView(){
     const i18n=globalThis.game?.i18n,format=(key,data)=>{const text=i18n?.format?.(key,data);return text&&text!==key?text:`${key} ${Object.values(data).join(", ")}`.trim();};
-    if(this.#kind==="ruleset")return this.#api.getActiveVersionId()===this.#versionId?{blocked:true,reason:format("RTA.UI.DeleteActiveVersion",{})}:{blocked:false,reason:""};
+    // Deleting the active version stays possible from the Ruleset list, which deactivates it first.
+    if(this.#kind==="ruleset")return {blocked:false,reason:""};
     const ruleset=this.#api.getRuleset(this.#versionId),fr=i18n?.lang==="fr";
     return describeDeletion(this.#api.getDeletionStatus(this.#versionId,this.#id,this.#kind),{format,nameOf:(kind,id)=>`${referenceKindTitle(kind,fr)} · ${rulesetObjectName(ruleset,kind,id)}`});
   }

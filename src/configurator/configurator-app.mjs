@@ -74,6 +74,7 @@ export class ConfiguratorApp extends ConfiguratorWindow {
   #selected = "";
   #displayMode = "tiles";
   #dependencySelected = "";
+  #dependencyClick = null;
   #tagFilters = new Map();
   #categoryFilters = new Map();
   #dependencySearch = "";
@@ -137,7 +138,7 @@ export class ConfiguratorApp extends ConfiguratorWindow {
       versionId:record.versionId, rulesetId:record.rulesetId, version:record.version, status:record.status,
       name:localize(api,record.versionId,record.workingDraft.nameKey), color:rulesetColor(record.workingDraft), isActive:record.versionId===activeId,
       isValidated:record.status==="validated", isReady:record.status==="ready", isDraft:record.status==="draft",
-      canDelete:record.versionId!==activeId, canCreateVersion:record.status==="validated"
+      canDelete:true, canActivate:Boolean(record.publishedSnapshot), canCreateVersion:record.status==="validated"
     }));
 
     const definitionTypes = ruleset ? api.listDefinitionTypes(this.#selected).map(type => ({
@@ -317,9 +318,9 @@ export class ConfiguratorApp extends ConfiguratorWindow {
       error:this.#error,displayLines:this.#displayMode==="lines",displayTiles:this.#displayMode==="tiles",isWorkspace:!!ruleset,isRulesets:!ruleset,view:this.#view,rulesets,navigation,navGroups,currentNavGroup,definitionTypes,contentTypes,
       selectedRuleset:ruleset,selectedRecord:record,rulesetAccent:rulesetColor(ruleset),canOverrideCollection,currentCollection,collectionAccent,collectionCustomAccent,canEditRuleset:record?.status!=="validated",selectedRulesetName:ruleset?localize(api,this.#selected,ruleset.nameKey):"",
       isGeneral:!!ruleset&&this.#view==="general",isCollection:!!ruleset&&Boolean(currentKind),isContentFamily:currentKind==="contentTemplate",isDependencies:!!ruleset&&this.#view==="dependencies",isRuntimeLab:!!ruleset&&this.#view==="runtimeLab",isContentTypes,isContentTemplates,isContentLibraries,
-      currentTitle,currentKind,currentType,cards:filteredCards,availableTags,activeTagCount:activeTagIds.size,availableCategories,activeCategoryCount:activeCategoryIds.size,dependencyGroups:dependencyVisibleGroups,dependencySelected,dependencyGraph,dependencyStats,dependencyAvailableTags,dependencyActiveTagCount:dependencyActiveTags.size,dependencyUnresolvedOnly,actors,runtimeDefinitions,runtimeActions,runtimeFormulas,runtimeConditions,runtimeTests,runtimeEvents,runtimeResult:this.#runtimeResult,runtimeStateCards,runtimeSelection:this.#runtimeSelection,runtimeActorTypeOptions:availableDocumentTypes("Actor").map(id=>({id,sourceSelected:id===this.#runtimeSelection.sourceType,targetSelected:id===this.#runtimeSelection.targetType})),runtimeTool,runtimeModes,runtimeGuide,runtimeReady,runtimeStateError,runtimeActorNames,
+      currentTitle,currentKind,currentType,canReorder:Boolean(record&&record.status!=="validated"&&currentKind&&currentKind!=="reference"),cards:filteredCards,availableTags,activeTagCount:activeTagIds.size,availableCategories,activeCategoryCount:activeCategoryIds.size,dependencyGroups:dependencyVisibleGroups,dependencySelected,dependencyGraph,dependencyStats,dependencyAvailableTags,dependencyActiveTagCount:dependencyActiveTags.size,dependencyUnresolvedOnly,actors,runtimeDefinitions,runtimeActions,runtimeFormulas,runtimeConditions,runtimeTests,runtimeEvents,runtimeResult:this.#runtimeResult,runtimeStateCards,runtimeSelection:this.#runtimeSelection,runtimeActorTypeOptions:availableDocumentTypes("Actor").map(id=>({id,sourceSelected:id===this.#runtimeSelection.sourceType,targetSelected:id===this.#runtimeSelection.targetType})),runtimeTool,runtimeModes,runtimeGuide,runtimeReady,runtimeStateError,runtimeActorNames,
       publishReadiness:this.#view==='general'&&record?.status==='draft'?this.#publishReadiness(api,ruleset):null,
-      lifecycle:record?{isValidated:record.status==="validated",isReady:record.status==="ready",isDraft:record.status==="draft",canMutate:record.status!=="validated",canCreateVersion:record.status==="validated",canDelete:true}:null,
+      lifecycle:record?{isValidated:record.status==="validated",isReady:record.status==="ready",isDraft:record.status==="draft",canMutate:record.status!=="validated",canCreateVersion:record.status==="validated",canActivate:Boolean(record.publishedSnapshot),canDelete:true}:null,
       storage:ruleset?{storageRevision:api.getStorageRevision(),activeVersionId:activeId,engineContractVersion:ruleset.engineContractVersion}:null
     });
   }
@@ -434,17 +435,15 @@ export class ConfiguratorApp extends ConfiguratorWindow {
 
   async #persistCardOrder(grid){
     try{
-      const api=await this.#api(),kind=grid.querySelector("[data-orderable-card]")?.dataset.kind??grid.querySelector("[data-orderable-card]")?.dataset.action;
-      const buttons=[...grid.querySelectorAll("[data-orderable-card]")];
-      const method={definitionType:"updateDefinitionType",definition:"updateDefinition",contentType:"updateContentType",contentTemplate:"updateContentTemplate",parameter:"updateParameter",formula:"updateFormula",formulaBinding:"updateFormulaBinding",condition:"updateCondition",effect:"updateEffect",action:"updateAction",permissionPolicy:"updatePermissionPolicy",eventType:"updateEventType",trigger:"updateTrigger",tag:"updateTag",reference:"updateReference"}[this.#currentCardKind()];
-      if(!method)return;
-      for(let i=0;i<buttons.length;i++){const id=buttons[i].dataset.entryId,entry=this.#readCardEntry(api,this.#currentCardKind(),id);const order=(i+1)*10;if(entry&&(entry.order??0)!==order)await api[method](this.#selected,id,{...entry,order});}
+      const api=await this.#api(),kind=this.#currentCardKind();
+      if(!kind)return;
+      // One atomic write for the whole new sequence (orders 10, 20, 30...).
+      await api.reorderEntries(this.#selected,kind,[...grid.querySelectorAll("[data-orderable-card]")].map(card=>card.dataset.entryId));
       await this.render(false);
     }catch(error){this.#error=error?.message??String(error);await this.render(false);}
   }
 
   #currentCardKind(){if(this.#view==="definitionTypes")return "definitionType";if(this.#view.startsWith("definitions:"))return "definition";if(this.#view==="contentTypes")return "contentType";if(this.#view.startsWith("content:"))return "contentTemplate";return TOP_LEVEL.find(item=>item.view===this.#view)?.kind??null;}
-  #readCardEntry(api,kind,id){const getter={definitionType:"getDefinitionType",definition:"getDefinition",contentType:"getContentType",contentTemplate:"getContentTemplate",parameter:"getParameter",formula:"getFormula",formulaBinding:"getFormulaBinding",condition:"getCondition",effect:"getEffect",action:"getAction",permissionPolicy:"getPermissionPolicy",eventType:"getEventType",trigger:"getTrigger",tag:"getTag",reference:"getReference"}[kind];return getter?api[getter](this.#selected,id):null;}
 
   #rememberScroll() {
     const area=this.element?.querySelector("[data-main-scroll]");
@@ -489,7 +488,11 @@ export class ConfiguratorApp extends ConfiguratorWindow {
         this.#dependencyListScroll=0;
         return this.render(false);
       }
-      if (action==="selectDependency") {this.#dependencyListScroll=this.element?.querySelector('.rta-dependencies__items')?.scrollTop??0;this.#dependencySelected=button.dataset.dependencyKey;return this.render(false);}
+      if (action==="selectDependency") {
+        // A second click on the same node within a double-click delay opens its editor (§46).
+        // The first click re-renders the graph, so a native dblclick never reaches the new node.
+        const now=Date.now(),key=button.dataset.dependencyKey,last=this.#dependencyClick;this.#dependencyClick={key,time:now};
+        if(last?.key===key&&now-last.time<450&&button.dataset.nodeKind){this.#dependencyClick=null;return this.#openEditor(button.dataset.nodeKind,button.dataset.nodeId);}this.#dependencyListScroll=this.element?.querySelector('.rta-dependencies__items')?.scrollTop??0;this.#dependencySelected=button.dataset.dependencyKey;return this.render(false);}
       if (action==="setDisplayMode") { this.#displayMode=button.dataset.mode==="lines"?"lines":"tiles"; return this.render(false); }
       if (action==="openWorkspace") { this.#selected=button.dataset.versionId; this.#view="general"; await game.settings?.set(MODULE_ID,"configuratorSelectedRuleset",this.#selected); return this.render(false); }
       if (action==="backToRulesets") { this.#selected=""; this.#view="general"; await game.settings?.set(MODULE_ID,"configuratorSelectedRuleset",""); return this.render(false); }

@@ -43,8 +43,7 @@
       "FilterByCategories": "Filter by categories",
       "ClearCategoryFilters": "Clear",
       "ClearOptionalReferences": "These entries reference it optionally: {list}. Their reference will be removed. Continue?",
-      "DeleteBlocked": "Used by: {list}. Remove these references before deleting.",
-      "DeleteActiveVersion": "Active version: deactivate it before deleting."
+      "DeleteBlocked": "Used by: {list}. Remove these references before deleting."
     },
     "Nav": {
       "General": "General",

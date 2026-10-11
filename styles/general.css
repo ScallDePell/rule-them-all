@@ -84,9 +84,11 @@
   margin: 0;
 }
 
+/* Storage / Persistence is technical: folded by default inside General. */
 .rta-configurator .rta-general__storage summary {
   cursor: pointer;
   font-weight: 700;
+  font-size: var(--rta-type-medium);
 }
 
 .rta-configurator .rta-general__storage[open] summary {
@@ -109,16 +111,6 @@
   margin-top: auto;
   padding-top: var(--rta-space-8);
   justify-content: flex-end;
-}
-
-.rta-configurator .rta-general__storage h3 {
-  margin: 0;
-  font-size: var(--rta-type-medium);
-}
-
-.rta-configurator .rta-general__storage h3 i {
-  margin-right: var(--rta-space-4);
-  opacity: .8;
 }
 
 .rta-configurator .rta-general__card,

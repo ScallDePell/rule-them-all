@@ -1,4 +1,4 @@
-import {DefinitionTypeRegistry, RulesetCollectionRegistry} from "./definition-type-registry.mjs";
+import {DefinitionTypeRegistry, RulesetCollectionRegistry, ORDERED} from "./definition-type-registry.mjs";
 import {DependencyIndex} from "./dependency-index.mjs";
 import {throwIntegrityError} from "./configurator-registry.mjs";
 import {copyJSON} from "./configurator-schema.mjs";
@@ -78,6 +78,18 @@ export function createGraphAPI(registry) {
     registry.update(rulesetId, Object.fromEntries([...changed].map(name => [name, candidate[name]])));
     return true;
   };
+  /** One atomic write: the listed entries take orders 10, 20, 30... in that sequence. */
+  const reorderEntries = (rulesetId, kind, ids) => {
+    const collection = collectionOfKind(kind);
+    if (!collection || !ORDERED(collection)) throw new Error(`${kind} entries cannot be reordered.`);
+    if (!Array.isArray(ids) || new Set(ids).size !== ids.length) throw new Error("reorderEntries requires distinct ids.");
+    const ruleset = definitions.ruleset(rulesetId), entries = ruleset[collection] ?? [];
+    for (const id of ids) if (!entries.some(entry => entry.id === id)) throw new Error(`${kind} not found: ${id}.`);
+    const next = entries.map(entry => { const index = ids.indexOf(entry.id); return index < 0 ? entry : {...entry, order: (index + 1) * 10}; });
+    assertValidRuleset({...ruleset, [collection]: next});
+    registry.update(rulesetId, {[collection]: next});
+    return copyJSON(ids);
+  };
   /** ChangeImpactReport for {delete:{kind,id}, clearOptionalReferences?}, {update:{kind,id,patch}} or {ruleset}. */
   const analyzeImpact = (rulesetId, change = {}) => {
     const current = definitions.ruleset(rulesetId);
@@ -151,6 +163,7 @@ export function createGraphAPI(registry) {
     getConsumers: consumers,
     listDependencies: v => new DependencyIndex(definitions.ruleset(v)).list(),
     analyzeChangeImpact: analyzeImpact,
+    reorderEntries,
     getDeletionStatus:(v,id,kind="definition")=>{ const used=consumers(v,id,kind), blocking=used.filter(edge=>edge.strength!=="optional"), optional=used.filter(edge=>edge.strength==="optional"); return {canDelete:blocking.length===0,kind,id,code:blocking.length?"REFERENTIAL_INTEGRITY":optional.length?"OPTIONAL_REFERENCES":null,consumers:copyJSON(used),optionalReferences:copyJSON(optional)}; }
   };
   const singular = {parameters:"Parameter",formulas:"Formula",formulaBindings:"FormulaBinding",conditions:"Condition",rolls:"Roll",outcomes:"Outcome",tests:"Test",effects:"Effect",actions:"Action",permissionPolicies:"PermissionPolicy",eventTypes:"EventType",triggers:"Trigger",contentTypes:"ContentType",contentTemplates:"ContentTemplate",modifiers:"Modifier",restrictions:"Restriction",durations:"Duration",creationSystems:"CreationSystem",progressionSystems:"ProgressionSystem",sheetDefinitions:"SheetDefinition",categories:"Category",tags:"Tag",references:"Reference"};
