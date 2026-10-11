@@ -305,6 +305,7 @@ export class FoundryContentBridge{
     // The grant's owner is always the initiating Actor: callers cannot
     // substitute a different self/source while reusing another Actor's grant.
     const safeContext={...context,roles:{...(context.roles??{}),self:actor.uuid,source:actor.uuid},...(contentKey?{content:{key:contentKey,role:"self"}}:{})};
+    if(contentKey&&!(await this.runtime.listOwnedContents(versionId,actor.uuid,safeContext)).find(row=>row.key===contentKey)?.available)throw new Error(`Content ${contentKey} is not available.`);
     const {contentKey:_contentKey,...actionOptions}=options;
     return this.runtime.executeAction(versionId,actionId,safeContext,actionOptions);
   }

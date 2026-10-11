@@ -239,6 +239,13 @@ export class RuntimeEngine{
     const templates=new Map((this.ruleset(versionId).contentTemplates??[]).map(template=>[template.id,template]));
     return Object.entries(state.contents??{}).map(([key,content])=>({key,templateId:content.templateId,contentTypeId:content.contentTypeId,fields:{...clone(templates.get(content.templateId)?.data??{}),...clone(content.fields??{})}}));
   }
+  /** The Contents a container owns, with their merged fields and whether their Content Type's availability Condition holds (a latent power the mind has not reached yet). */
+  async listOwnedContents(versionId,containerRef,context={}){
+    const ruleset=this.ruleset(versionId),types=new Map((ruleset.contentTypes??[]).map(type=>[type.id,type]));
+    const scope={...context,roles:{...(context.roles??{}),self:containerRef}},rows=await this.#contents(versionId,scope,"self");
+    for(const row of rows){const conditionId=types.get(row.contentTypeId)?.availabilityConditionRef;row.available=!conditionId||Boolean(await this.evaluateCondition(versionId,conditionId,{...scope,content:{key:row.key,role:"self"}}));}
+    return rows;
+  }
   /** Set one instance field of an owned Content (equipped, ammunition...), checked against its Content Type. */
   async setContentField(versionId,containerRef,key,fieldId,value,{transactionId=null}={}){
     const ruleset=this.ruleset(versionId),tx=this.transaction(versionId,"content.field",{transactionId,summary:{key,fieldId}}),state=await tx.load(containerRef);

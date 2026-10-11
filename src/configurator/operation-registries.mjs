@@ -106,11 +106,31 @@ async function contentField(node, kit) {
   throw new Error(content ? `Content ${content.templateId} has no field ${node.field}.` : `No Content in context for field ${node.field}.`);
 }
 
+/** A Definition named by a value: an id, or a reference {objectKind: "definition", objectId} (a Test input, a reference field). */
+const definitionIdOf = value => typeof value === "string" ? value : isRecord(value) && value.objectKind === "definition" ? value.objectId : null;
+/** definitionValue: {definition: AST, capabilityId, outputId, slotId?, container?}: the output of a Definition chosen at run time (the skill a Test was asked for). */
+async function definitionValue(node, kit) {
+  const id = definitionIdOf(await kit.ev(node.definition));
+  if (!id) throw new Error("definitionValue needs a Definition id or reference.");
+  return kit.reference({objectKind: "definition", objectId: id, capabilityId: node.capabilityId, outputId: node.outputId, ...(node.slotId ? {slotId: node.slotId} : {})}, node.container ?? null);
+}
+/** definitionField: {definition: AST, field}: a data field of a Definition chosen at run time (a skill's associated attribute). */
+async function definitionField(node, kit) {
+  const id = definitionIdOf(await kit.ev(node.definition)), definition = id ? kit.definition(id) : null;
+  if (!definition) throw new Error(`definitionField: Definition not found: ${id}.`);
+  const value = definition.data?.[node.field];
+  if (value === undefined) throw new Error(`Definition ${id} has no field ${node.field}.`);
+  return copyJSON(value);
+}
+const needsDefinitionNode = keys => (node, label) => { if (!isRecord(node.definition)) throw new Error(`${label}.definition must be an AST node.`); for (const key of keys) if (!nonempty(node[key])) throw new Error(`${label}.${key} is required.`); };
+
 export const formulaNodeRegistry = new FormulaNodeRegistry()
   .register({id: "literal", evaluate: node => copyJSON(node.value), resultType: node => literalType(node.value)})
   .register({id: "parameter", evaluate: (node, kit) => kit.parameter(node.id), resultType: (node, infer, leaf) => leaf("parameter", node.id)})
   .register({id: "formula", evaluate: (node, kit) => kit.formula(node.id), resultType: (node, infer, leaf) => leaf("formula", node.id)})
   .register({id: "reference", evaluate: (node, kit) => kit.reference(node.reference, node.container ?? null), resultType: (node, infer, leaf) => leaf("reference", node.reference), validate: validateReferenceNode})
+  .register({id: "definitionValue", evaluate: definitionValue, resultType: node => node.outputId === "state.active" ? "boolean" : "number", validate: needsDefinitionNode(["capabilityId", "outputId"])})
+  .register({id: "definitionField", evaluate: definitionField, validate: needsDefinitionNode(["field"])})
   .register({id: "contentAggregate", evaluate: aggregateContents, resultType: node => node.operation === "count" ? "integer" : "number", validate: validateContentAggregate})
   .register({id: "contentField", evaluate: contentField, validate: (node, label) => { if (!nonempty(node.field)) throw new Error(`${label}.field is required.`); }})
   .register({id: "context", evaluate: (node, kit) => { let value = kit.context; for (const part of String(node.path ?? "").split(".").filter(Boolean)) value = value?.[part]; return value === undefined ? undefined : copyJSON(value); }})

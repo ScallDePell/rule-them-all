@@ -143,7 +143,8 @@
       "ComputedMaximum": "Computed maximum",
       "PointsPerTarget": "Points per target at most",
       "ComputedPointsPerTarget": "Computed points per target",
-      "OptionCondition": "Option filter"
+      "OptionCondition": "Option filter",
+      "AlwaysAvailable": "Always available"
     },
     "FamilyColor": {
       "parameters": "Parameters",
@@ -534,7 +535,9 @@
       "SameAsContentType": "Same as its type ({mode})",
       "DiceRoll": "Dice roll",
       "DiceMultiplier": "Dice multiplier",
-      "RollBonus": "Roll bonus"
+      "RollBonus": "Roll bonus",
+      "Availability": "Availability",
+      "AvailabilityHint": "While this Condition is false, the Actions of a Content of this type cannot be used. It can read the Content's fields."
     },
     "EditorDisplay": {
       "NoneSelected": "None selected",

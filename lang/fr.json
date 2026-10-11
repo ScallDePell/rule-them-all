@@ -139,7 +139,8 @@
       "ComputedMaximum": "Maximum calculé",
       "PointsPerTarget": "Points par cible, au plus",
       "ComputedPointsPerTarget": "Points par cible, calculés",
-      "OptionCondition": "Filtre des options"
+      "OptionCondition": "Filtre des options",
+      "AlwaysAvailable": "Toujours disponible"
     },
     "FamilyColor": {
       "parameters": "Paramètres",
@@ -530,7 +531,9 @@
       "SameAsContentType": "Comme son type ({mode})",
       "DiceRoll": "Jet de dés",
       "DiceMultiplier": "Multiplicateur de dés",
-      "RollBonus": "Bonus au jet"
+      "RollBonus": "Bonus au jet",
+      "Availability": "Disponibilité",
+      "AvailabilityHint": "Tant que cette Condition est fausse, les Actions d'un contenu de ce type ne peuvent pas être utilisées. Elle peut lire les champs du contenu."
     },
     "EditorDisplay": {
       "NoneSelected": "Aucune sélection",

@@ -192,8 +192,11 @@ export function prepareTrigger(data,options={}){
 }
 
 export function prepareContentType(data,options={}){
-  const x={descriptionKey:'',image:'',color:null,enabled:true,order:0,tags:[],storageKind:'item',documentSubtype:'',runtimeMode:'unique',fields:{},...copyJSON(data)};
+  const x={descriptionKey:'',image:'',color:null,enabled:true,order:0,tags:[],storageKind:'item',documentSubtype:'',runtimeMode:'unique',fields:{},availabilityConditionRef:null,...copyJSON(data)};
   identity(x,'ContentType',options);
+  // availabilityConditionRef: a Condition read with the Content as current Content; while false, its Actions cannot be used.
+  if(x.availabilityConditionRef==='')x.availabilityConditionRef=null;
+  if(x.availabilityConditionRef!==null&&!nonempty(x.availabilityConditionRef))throw new Error('ContentType.availabilityConditionRef must be null or a Condition id.');
   if(typeof x.image!=='string')throw new Error('ContentType.image must be a string.');
   if(!(x.color===null||nonempty(x.color)))throw new Error('ContentType.color must be null or a non-empty string.');
   if(!['actor','item'].includes(x.storageKind))throw new Error('ContentType.storageKind must be actor or item.');

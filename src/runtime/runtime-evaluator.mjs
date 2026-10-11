@@ -21,6 +21,7 @@ export class RuntimeEvaluator {
       formula:id=>this.formula(id,context,stack),
       reference:(reference,container=null)=>this.resolveReference(container?{container,reference}:reference,context,{forWrite:false}),
       contents:(container=null)=>this.listContents(context,container),
+      definition:id=>this.ruleset.definitions?.find(x=>x.id===id&&x.enabled!==false)??null,
       content:()=>this.currentContent(context)
     };
     return type.evaluate(node,kit);

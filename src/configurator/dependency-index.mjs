@@ -28,6 +28,7 @@ export class DependencyIndex{
       pushRef(this.#edges,{objectKind:'formulaBinding',objectId:b.id},b.targetRef,'bindingTarget',`formulaBindings[${i}].targetRef`);
     }
     for(const [i,c] of (ruleset.conditions??[]).entries())scanAst(c.expression,(r,p)=>pushRef(this.#edges,{objectKind:'condition',objectId:c.id},r,'condition',`conditions[${i}].${p}`));
+    for(const [i,type] of (ruleset.contentTypes??[]).entries())if(type.availabilityConditionRef)pushRef(this.#edges,{objectKind:'contentType',objectId:type.id},{objectKind:'condition',objectId:type.availabilityConditionRef},'contentAvailability',`contentTypes[${i}].availabilityConditionRef`);
     for(const [i,o] of (ruleset.outcomes??[]).entries())if(o.conditionRef)pushRef(this.#edges,{objectKind:'outcome',objectId:o.id},{objectKind:'condition',objectId:o.conditionRef},'outcomeCondition',`outcomes[${i}].conditionRef`);
     for(const [i,t] of (ruleset.tests??[]).entries()){
       pushRef(this.#edges,{objectKind:'test',objectId:t.id},{objectKind:'roll',objectId:t.rollRef},'testRoll',`tests[${i}].rollRef`);
