@@ -106,6 +106,18 @@
   opacity: .8;
 }
 
+/* Explicit cardinality (1, 0..1, 1..n, 0..n): small, never the only state signal. */
+.rta-select__cardinality {
+  flex: 0 0 auto;
+  padding: 0 var(--rta-space-2);
+  border: 1px solid var(--rta-color-border);
+  border-radius: var(--rta-radius-control);
+  font-size: .75em;
+  line-height: 1.4;
+  font-variant-numeric: tabular-nums;
+  opacity: .75;
+}
+
 .rta-select__panel,
 .rta-select__panel:popover-open {
   box-sizing: border-box;

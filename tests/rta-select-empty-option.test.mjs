@@ -17,3 +17,16 @@ test("single-select keeps every option selectable: a new choice replaces the cur
   assert.doesNotMatch(source,/selected\.length&&!chosen\.has\(input\)/);
   assert.match(source,/input\.disabled=!!\(this\.native\.disabled\|\|this\.native\.options\[idx\]\?\.disabled\);/);
 });
+
+test('§46.8: every RTA Select shows an explicit cardinality', async () => {
+  const {selectCardinality, CARDINALITY_KEYS} = await import('../src/ui/select-text.mjs');
+  const native = (values, {required = false} = {}) => ({required, options: values.map(value => ({value}))});
+  assert.equal(selectCardinality({native: native(['', 'a'])}), '0..1');
+  assert.equal(selectCardinality({native: native(['a', 'b'])}), '1');
+  assert.equal(selectCardinality({multiple: true, native: native(['a'])}), '0..n');
+  assert.equal(selectCardinality({multiple: true, native: native(['a'], {required: true})}), '1..n');
+  assert.equal(selectCardinality({multiple: true}), '0..n');
+  assert.equal(selectCardinality({radios: true}), '1');
+  assert.equal(selectCardinality({explicit: '1..n'}), '1..n');
+  assert.deepEqual(Object.keys(CARDINALITY_KEYS), ['1', '0..1', '1..n', '0..n']);
+});

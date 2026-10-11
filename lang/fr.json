@@ -324,7 +324,13 @@
       "Formula": "Formule",
       "Reference": "Référence",
       "ComponentType": "Type de composant",
-      "ComponentSource": "Source du composant"
+      "ComponentSource": "Source du composant",
+      "Cardinality": {
+        "One": "Exactement un choix",
+        "Optional": "Au plus un choix, facultatif",
+        "Some": "Au moins un choix",
+        "Any": "Autant de choix que voulu, facultatif"
+      }
     },
     "Template": {
       "Allow": "AUTORISER",

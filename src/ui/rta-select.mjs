@@ -1,5 +1,5 @@
 import {normalizedSelectColors} from "./select-option-presentation.mjs";
-import {selectUiText,selectionPlaceholder} from "./select-text.mjs";
+import {selectUiText,selectionPlaceholder,selectCardinality,CARDINALITY_KEYS} from "./select-text.mjs";
 /**
  * Rule Them'All — universal selection control.
  * A single visual contract for native <select>, checkbox pickers, independent
@@ -250,7 +250,12 @@ export class RTASelect {
     this.trigger.setAttribute("aria-label",host.dataset.rtaSelectLabel||selectUiText("GenericSelection"));
     const text=build("span","rta-select__value");
     const arrow=build("span","rta-select__chevron");arrow.setAttribute("aria-hidden","true");arrow.textContent="▾";
-    this.value=text;this.trigger.append(text,arrow);
+    // Explicit cardinality next to the value (§46.8): 1, 0..1, 1..n or 0..n.
+    const native=host.querySelector(":scope > select");
+    const cardinality=selectCardinality({multiple,native,radios:host.dataset.rtaSelectKind==="radios",explicit:host.dataset.cardinality??native?.dataset.cardinality??""});
+    host.dataset.rtaCardinality=cardinality;
+    const badge=build("span","rta-select__cardinality");badge.textContent=cardinality;badge.title=selectUiText(`Cardinality.${CARDINALITY_KEYS[cardinality]}`);
+    this.value=text;this.trigger.append(text,badge,arrow);
     this.panel=build("div","rta-select__panel");
     this.panel.hidden=true;
     this.panel.setAttribute("role","dialog");

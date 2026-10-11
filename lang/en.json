@@ -328,7 +328,13 @@
       "Formula": "Formula",
       "Reference": "Reference",
       "ComponentType": "Component type",
-      "ComponentSource": "Component source"
+      "ComponentSource": "Component source",
+      "Cardinality": {
+        "One": "Exactly one choice",
+        "Optional": "At most one choice, optional",
+        "Some": "At least one choice",
+        "Any": "Any number of choices, optional"
+      }
     },
     "Template": {
       "Allow": "ALLOW",
