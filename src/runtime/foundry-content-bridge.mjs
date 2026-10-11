@@ -85,7 +85,7 @@ export class FoundryContentBridge{
     if(existing?.getFlag(MODULE_ID,"creationRun"))return {actor:existing,run:clone(existing.getFlag(MODULE_ID,"creationRun"))};
     if(existing)await existing.delete();
     const ruleset=this.ruleset(versionId);
-    const plan=planCreationSystem(ruleset,creationSystemId,answers);
+    const plan=await planCreationSystem(ruleset,creationSystemId,answers);
     const type=this.documentTypeResolver("Actor",{requestedType:actorType});
     const klass=globalThis.Actor?.implementation??globalThis.Actor;
     if(!klass?.create)throw new Error("Foundry Actor.create API is unavailable.");
@@ -103,6 +103,11 @@ export class FoundryContentBridge{
         });
         for(const id of result.createdDefinitionIds??[])created.add(id);
         acquisitions.push({templateId:operation.templateId,stepId:operation.stepId,alreadyApplied:result.alreadyApplied===true});
+      }
+      // Allocated points come last: they add to what the Contents granted.
+      for(const operation of plan.operations.filter(operation=>operation.kind==="allocation")){
+        const result=await this.runtime.acquire(versionId,actor.uuid,{definitionBindings:Object.entries(operation.allocations).map(([definitionId,points])=>({definitionId,initial:{},add:{"value.base":points}})),summary:{creationSystemId,stepId:operation.stepId}});
+        for(const id of result.acquiredDefinitionIds)created.add(id);
       }
       const run={versionId,creationSystemId,sessionId,selectedByStep:plan.selectedByStep,createdDefinitionIds:[...created],acquisitions,completedAt:Date.now()};
       await actor.setFlag(MODULE_ID,"creationRun",run);

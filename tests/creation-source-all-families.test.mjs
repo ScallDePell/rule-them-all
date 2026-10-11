@@ -38,7 +38,7 @@ test('A stored source the runtime cannot apply is refused at planning, not offer
  await api.createContentType(versionId,{id:'sample-kind',nameKey:'Kind',storageKind:'item',fields:{},color:'#224466'});
  await api.createCreationSystem(versionId,{id:'builder',nameKey:'Builder',steps:[{id:'choose-type',name:'Choose type',kind:'choice',min:1,max:1,source:{collection:'contentTypes',objectIds:['sample-kind']}}]});
  assert.equal(getCreationSources(api,versionId).some(source=>source.id==='contentTypes'),false);
- assert.throws(()=>planCreationSystem(api.getRuleset(versionId),'builder',{'choose-type':['sample-kind']}),/explicit runtime mapping/);
+ await assert.rejects(()=>planCreationSystem(api.getRuleset(versionId),'builder',{'choose-type':['sample-kind']}),/explicit runtime mapping/);
 });
 
 test('FR/EN creation source titles exist for every supported collection',()=>{

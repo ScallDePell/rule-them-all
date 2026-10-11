@@ -11,6 +11,12 @@ export function collectCreationSteps(rows,{sources=[],uid}={}){
     const family=row.querySelector('[data-step-source-family]:checked')?.value??'';
     const objectIds=[...row.querySelectorAll('[data-step-prop="sourceObjects"] [data-step-source-object]:checked')].map(input=>input.value);
     const next={...original,id:original.id||uid('step'),name,kind:row.querySelector('[data-step-prop="kind"]')?.value??'choice',required:min>0,min,max};
+    // Optional computed values: an empty select or field keeps none.
+    for(const key of ['minFormulaRef','maxFormulaRef','perTargetMaxFormulaRef','optionConditionRef']){const id=String(row.querySelector(`[data-step-prop="${key}"]`)?.value??'').trim();if(id)next[key]=id;else delete next[key];}
+    const perTarget=String(row.querySelector('[data-step-prop="perTargetMax"]')?.value??'').trim();
+    if(perTarget===''||next.kind!=='allocation')delete next.perTargetMax;else{const value=Number(perTarget);if(!Number.isInteger(value)||value<0)throw new Error(`Invalid points per target for step ${name}.`);next.perTargetMax=value;}
+    if(next.kind!=='allocation')delete next.perTargetMaxFormulaRef;
+    if(!['choice','content'].includes(next.kind))delete next.optionConditionRef;
     if(family){
       const source=choices.get(family);
       if(!source)throw new Error(`Unknown Ruleset source: ${family}`);

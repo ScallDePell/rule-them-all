@@ -41,19 +41,19 @@ async function build(){
 }
 test('creation planner rejects unsupported and invalid steps BEFORE Actor creation',async()=>{
  const {api,v,answers,actors,bridge}=await build(),ruleset=api.getRuleset(v);
- assert.equal(planCreationSystem(ruleset,'creation',answers).operations.length,2);
+ assert.equal((await planCreationSystem(ruleset,'creation',answers)).operations.length,2);
  await assert.rejects(()=>bridge.createActorFromCreationSystem(v,'creation',{name:'Sample',actorType:'hero',answers:{abilities:['unknown'],origin:['culture']}}),/cannot select/);
  await assert.rejects(()=>bridge.createActorFromCreationSystem(v,'creation',{name:'Sample',actorType:'hero',answers:{abilities:['sense'],origin:[]}}),/requires 1 to 1/);
  assert.equal(actors.created.length,0);
  const invalid=structuredClone(ruleset);invalid.creationSystems[0].steps[0].source.collection='definitionTypes';
- assert.throws(()=>planCreationSystem(invalid,'creation',answers),/explicit runtime mapping/);
+ await assert.rejects(()=>planCreationSystem(invalid,'creation',answers),/explicit runtime mapping/);
  invalid.creationSystems[0].steps[0].kind='allocation';
- assert.throws(()=>planCreationSystem(invalid,'creation',answers),/explicit allocation contract/);
+ await assert.rejects(()=>planCreationSystem(invalid,'creation',answers),/must list Definitions/);
  const conflicting=structuredClone(ruleset);
  conflicting.contentTemplates.push({...conflicting.contentTemplates[0],id:'culture-2',relations:[{id:'sense',operation:'grant',targetRef:{objectKind:'definition',objectId:'sense'},config:{initial:{'value.base':99}}}]});
  conflicting.creationSystems[0].steps[1].max=2;
  conflicting.creationSystems[0].steps[1].source.objectIds.push('culture-2');
- assert.throws(()=>planCreationSystem(conflicting,'creation',{abilities:['sense'],origin:['culture','culture-2']}),/Conflicting initial values/);
+ await assert.rejects(()=>planCreationSystem(conflicting,'creation',{abilities:['sense'],origin:['culture','culture-2']}),/Conflicting initial values/);
 });
 test('Creation System creates real Actor through injected Foundry API and persists selected Definitions and Content',async()=>{
  const {v,answers,actors,runtime,bridge}=await build();

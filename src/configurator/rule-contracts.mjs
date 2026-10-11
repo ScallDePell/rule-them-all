@@ -273,7 +273,11 @@ export function prepareDuration(data,options={}){
   if(x.mode==='absoluteTime')need(x.at!==null,'absoluteTime Duration requires at.',options);return x;
 }
 export function prepareCreationSystem(data,options={}){
-  const x=prepareNamedGeneric(data,'CreationSystem',{steps:[]},options);arr(x.steps,'CreationSystem.steps');x.steps=x.steps.map((step,i)=>{if(!isRecord(step)||!nonempty(step.id))throw new Error(`CreationSystem.steps[${i}] requires id.`);need(nonempty(step.name),`CreationSystem.steps[${i}] requires name.`,options);const n={kind:'choice',required:true,options:[],min:0,max:1,...copyJSON(step)};if(!['choice','allocation','content','review'].includes(n.kind))throw new Error(`CreationSystem.steps[${i}].kind is invalid.`);arr(n.options,`CreationSystem.steps[${i}].options`);return n;});return x;
+  const x=prepareNamedGeneric(data,'CreationSystem',{steps:[]},options);arr(x.steps,'CreationSystem.steps');x.steps=x.steps.map((step,i)=>{if(!isRecord(step)||!nonempty(step.id))throw new Error(`CreationSystem.steps[${i}] requires id.`);need(nonempty(step.name),`CreationSystem.steps[${i}] requires name.`,options);const n={kind:'choice',required:true,options:[],min:0,max:1,...copyJSON(step)};if(!['choice','allocation','content','review'].includes(n.kind))throw new Error(`CreationSystem.steps[${i}].kind is invalid.`);arr(n.options,`CreationSystem.steps[${i}].options`);
+    // Computed bounds and option filter (Formulas and a Condition over the earlier steps); allocation: points per Definition.
+    for(const key of ['minFormulaRef','maxFormulaRef','perTargetMaxFormulaRef','optionConditionRef'])if(n[key]===null||n[key]==='')delete n[key];else if(n[key]!==undefined&&!nonempty(n[key]))throw new Error(`CreationSystem.steps[${i}].${key} must be an id.`);
+    if(n.perTargetMax===null||n.perTargetMax==='')delete n.perTargetMax;else if(n.perTargetMax!==undefined&&!(Number.isSafeInteger(n.perTargetMax)&&n.perTargetMax>=0))throw new Error(`CreationSystem.steps[${i}].perTargetMax must be a whole number of 0 or more.`);
+    return n;});return x;
 }
 export function prepareProgressionSystem(data,options={}){
   const x=prepareNamedGeneric(data,'ProgressionSystem',{tracks:[]},options);arr(x.tracks,'ProgressionSystem.tracks');x.tracks=x.tracks.map((track,i)=>{if(!isRecord(track)||!nonempty(track.id))throw new Error(`ProgressionSystem.tracks[${i}] requires id.`);need(nonempty(track.name),`ProgressionSystem.tracks[${i}] requires name.`,options);return {mode:'threshold',thresholds:[],...copyJSON(track)};});return x;

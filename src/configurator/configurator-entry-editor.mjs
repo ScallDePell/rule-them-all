@@ -263,7 +263,7 @@ export class ConfiguratorEntryEditor extends ConfiguratorWindow {
     const mark=()=>{if(!this.#dirty){this.#dirty=true;this.#syncFooter();}};
     wireOrderedLists(this.element,{onChange:mark});
     form.addEventListener("input",event=>{mark();const row=event.target.closest?.("[data-definition-field]");if(row&&!row.dataset.required){const use=row.querySelector("[data-field-present]");if(use&&!use.checked){use.checked=true;}}if(event.target.matches?.("[data-picker-filter]"))this.#filterPicker(event.target);});
-    form.addEventListener("change",event=>{if(event.target.matches?.("[data-step-source-family]")&&event.target.checked){const group=event.target.closest("[data-step-prop=sourceCollection]");for(const other of group?.querySelectorAll("[data-step-source-family]")??[])if(other!==event.target)other.checked=false;}this.#syncCreationSource(event.target);mark();if(event.target.matches?.("[data-presentation-override]")){const row=event.target.closest("[data-presentation-key]");const control=row?.querySelector(".rta-declarative-presentation__value");if(control)control.hidden=!event.target.checked;}this.#syncFieldRow(event.target);this.#syncModeRows(event.target);this.#syncOperandEditor(event.target);this.#syncRuleOperandEditor(event.target);this.#syncPickerSummary(event.target);this.#syncStorageKind(event.target);if(event.target.matches?.("[data-color-override-toggle]")){const input=event.target.closest("[data-color-override-editor]")?.querySelector("[data-custom-color-input]");if(input)input.disabled=!event.target.checked;}});
+    form.addEventListener("change",event=>{if(event.target.matches?.("[data-step-source-family]")&&event.target.checked){const group=event.target.closest("[data-step-prop=sourceCollection]");for(const other of group?.querySelectorAll("[data-step-source-family]")??[])if(other!==event.target)other.checked=false;}this.#syncCreationSource(event.target);this.#syncCreationKind(event.target);mark();if(event.target.matches?.("[data-presentation-override]")){const row=event.target.closest("[data-presentation-key]");const control=row?.querySelector(".rta-declarative-presentation__value");if(control)control.hidden=!event.target.checked;}this.#syncFieldRow(event.target);this.#syncModeRows(event.target);this.#syncOperandEditor(event.target);this.#syncRuleOperandEditor(event.target);this.#syncPickerSummary(event.target);this.#syncStorageKind(event.target);if(event.target.matches?.("[data-color-override-toggle]")){const input=event.target.closest("[data-color-override-editor]")?.querySelector("[data-custom-color-input]");if(input)input.disabled=!event.target.checked;}});
     form.addEventListener("change",event=>{if(event.target.matches?.("[data-source-kind]"))syncValueSource(event.target);if(event.target.matches?.('[data-input-prop="sourceKind"]'))syncTestInputSource(event.target);if(event.target.matches?.('[data-slot-prop="entryMode"]'))syncEntryMode(event.target);});
     form.addEventListener("submit",event=>{event.preventDefault();this.#save(false);});
     // Section counters follow rows added or removed by script (§46).
@@ -345,17 +345,25 @@ export class ConfiguratorEntryEditor extends ConfiguratorWindow {
 
   #creationStepHTML(step={}){
     const value={id:uid("step"),name:"",kind:"choice",min:1,max:1,...copy(step)};
-    // Allocation steps have no runtime contract yet, so they are not offered.
-    const kinds=renderCreationKindsOptions(["choice","content","review"],value.kind);
+    const kinds=renderCreationKindsOptions(["choice","content","allocation","review"],value.kind);
+    // Bounds may be Formulas over the earlier steps; options may be filtered by a Condition.
+    const pick=(collection,method,kind,selected,noneLabel)=>renderSelectOptions([{id:"",label:noneLabel,colors:RTA_NEUTRAL_COLOR},...this.#renderList(collection,method).map(entry=>({id:entry.id,label:entry.nameKey||entry.id,colors:selectColorsAttribute(this.#optionColors(kind,entry))}))],{selectedValue:selected??"",colorize:true});
+    const computed={min:pick("formulas","listFormulas","formula",value.minFormulaRef,uiText("FixedValue","Fixed value")),max:pick("formulas","listFormulas","formula",value.maxFormulaRef,uiText("FixedValue","Fixed value")),
+      perTarget:pick("formulas","listFormulas","formula",value.perTargetMaxFormulaRef,uiText("FixedValue","Fixed value")),condition:pick("conditions","listConditions","condition",value.optionConditionRef,uiText("EveryOption","Every option"))};
     const source=value.source??{};
     const sourceFamily=String(source.collection??"");
     const selectedIds=Array.isArray(source.objectIds)?source.objectIds:[];
     const families=this.#creationSources();
     const sourceFamilies=this.#creationCheckboxList({property:"sourceCollection",items:families,selected:sourceFamily?[sourceFamily]:[],single:true});
     const sourcePicker=this.#creationSourcePicker(sourceFamily,selectedIds);
-    return renderCreationStepHTML({value,kinds,sourceFamilies,sourcePicker,sourceDescriptor:getCreationSourceDescriptor(sourceFamily),uiText});
+    return renderCreationStepHTML({value,kinds,computed,sourceFamilies,sourcePicker,sourceDescriptor:getCreationSourceDescriptor(sourceFamily),uiText});
   }
 
+  /** Rows that only make sense for some step kinds follow the kind select. */
+  #syncCreationKind(target){
+    if(!target?.matches?.('[data-step-prop="kind"]'))return;
+    for(const row of target.closest("[data-creation-step]")?.querySelectorAll("[data-step-kind-only]")??[])row.hidden=!row.dataset.stepKindOnly.split(" ").includes(target.value);
+  }
   #syncCreationSource(target){
     if(!target?.matches?.("[data-step-source-family]"))return;
     const row=target.closest("[data-creation-step]");

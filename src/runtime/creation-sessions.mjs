@@ -37,13 +37,13 @@ export class CreationSessions{
     if(draft&&session.status!=="draft")throw sessionError(CREATION_SESSION_ERRORS.closed,`Creation session is ${session.status}.`,{id});
     return session;
   }
-  #validate(session){
-    const analysis=analyzeCreationSystem(this.#ruleset(session.rulesetVersionId),session.creationSystemId,session.answers);
+  async #validate(session){
+    const analysis=await analyzeCreationSystem(this.#ruleset(session.rulesetVersionId),session.creationSystemId,session.answers);
     session.validationState={complete:analysis.complete,steps:analysis.steps.map(step=>({id:step.id,valid:!step.errors.length,errors:step.errors}))};
     session.selectedRefs=copyJSON(analysis.selectedByStep);
     return analysis;
   }
-  async #save(session){session.revision+=1;session.updatedAt=this.now();this.#validate(session);return this.store.put(session);}
+  async #save(session){session.revision+=1;session.updatedAt=this.now();await this.#validate(session);return this.store.put(session);}
   async start(versionId,creationSystemId,{targetContainerKind="character",notes={}}={}){
     const system=(this.#ruleset(versionId).creationSystems??[]).find(entry=>entry.id===creationSystemId&&entry.enabled!==false);
     if(!system)throw new Error(`Creation System unavailable: ${creationSystemId}.`);
@@ -69,14 +69,14 @@ export class CreationSessions{
   async abandon(id,{revision=null}={}){const session=await this.#load(id,{revision});session.status="abandoned";return this.#save(session);}
   /** CreationContext: the session with each step's state, recomputed from the current Ruleset. */
   async context(id){
-    const session=await this.#load(id,{draft:false}),analysis=this.#validate(session),byId=new Map(analysis.steps.map(step=>[step.id,step]));
+    const session=await this.#load(id,{draft:false}),analysis=await this.#validate(session),byId=new Map(analysis.steps.map(step=>[step.id,step]));
     return {session,complete:analysis.complete,steps:this.#steps(session).map(step=>({...copyJSON(step),answer:copyJSON(session.answers[step.id]??null),current:step.id===session.currentStepId,valid:!byId.get(step.id)?.errors.length,errors:byId.get(step.id)?.errors??[]})),
       preview:analysis.complete?{operations:copyJSON(analysis.operations),initialByDefinition:copyJSON(analysis.initialByDefinition)}:null};
   }
   /** Build the character; the session becomes completed only after that succeeded. */
   async finalize(id,{name,actorType=null,revision=null}={}){
     const session=await this.#load(id,{revision});
-    if(!this.#validate(session).complete)throw sessionError(CREATION_SESSION_ERRORS.incomplete,"Creation session has invalid or missing answers.",{id,steps:session.validationState.steps.filter(step=>!step.valid)});
+    if(!(await this.#validate(session)).complete)throw sessionError(CREATION_SESSION_ERRORS.incomplete,"Creation session has invalid or missing answers.",{id,steps:session.validationState.steps.filter(step=>!step.valid)});
     const {actor,run}=await this.finalizer(session,{name,actorType});
     const done=await this.#load(id,{revision:session.revision});
     done.status="completed";done.result={actorUuid:actor?.uuid??null,completedAt:run?.completedAt??this.now()};

@@ -91,6 +91,10 @@ export class DependencyIndex{
       for(const [j,rule] of (policy.rules??[]).entries())if(rule?.conditionRef)pushRef(this.#edges,consumer,{objectKind:'condition',objectId:rule.conditionRef},'permissionCondition',`permissionPolicies[${i}].rules[${j}].conditionRef`);
     }
     for(const [i,sheet] of (ruleset.sheetDefinitions??[]).entries())for(const [j,c] of (sheet.layout?.components??[]).entries())if(c.source?.objectKind&&c.source?.objectId)pushRef(this.#edges,{objectKind:'sheetDefinition',objectId:sheet.id},c.source,'sheetSource',`sheetDefinitions[${i}].layout.components[${j}].source`);
+    for(const [i,system] of (ruleset.creationSystems??[]).entries())for(const [j,step] of (system?.steps??[]).entries()){
+      for(const key of ['minFormulaRef','maxFormulaRef','perTargetMaxFormulaRef'])if(step?.[key])pushRef(this.#edges,{objectKind:'creationSystem',objectId:system.id},{objectKind:'formula',objectId:step[key]},'creationFormula',`creationSystems[${i}].steps[${j}].${key}`);
+      if(step?.optionConditionRef)pushRef(this.#edges,{objectKind:'creationSystem',objectId:system.id},{objectKind:'condition',objectId:step.optionConditionRef},'creationCondition',`creationSystems[${i}].steps[${j}].optionConditionRef`);
+    }
     const tagCollections=['definitions','parameters','formulas','formulaBindings','conditions','rolls','outcomes','tests','effects','actions','eventTypes','triggers','contentTypes','contentTemplates','modifiers','durations','creationSystems','progressionSystems','sheetDefinitions'];
     for(const collection of tagCollections)for(const [i,entry] of (ruleset[collection]??[]).entries())for(const [j,id] of (entry.tags??[]).entries())pushRef(this.#edges,{objectKind:collection.replace(/s$/,''),objectId:entry.id},{objectKind:'tag',objectId:id},'tag',`${collection}[${i}].tags[${j}]`,'metadata');
     // Category catalog (§47): consumers store catalog ids; a used Category cannot be deleted.

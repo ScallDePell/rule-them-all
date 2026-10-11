@@ -137,7 +137,13 @@
       "NoTarget": "No target",
       "FixedValue": "Fixed value",
       "NoMultiplier": "×1",
-      "NoBonus": "No bonus"
+      "NoBonus": "No bonus",
+      "EveryOption": "Every option",
+      "ComputedMinimum": "Computed minimum",
+      "ComputedMaximum": "Computed maximum",
+      "PointsPerTarget": "Points per target at most",
+      "ComputedPointsPerTarget": "Computed points per target",
+      "OptionCondition": "Option filter"
     },
     "FamilyColor": {
       "parameters": "Parameters",
