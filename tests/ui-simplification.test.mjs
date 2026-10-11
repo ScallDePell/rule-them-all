@@ -140,3 +140,13 @@ test('a Content Template inherits the runtime mode of its Content Type unless it
   const html=(await import('node:fs')).readFileSync(new URL('../templates/configurator/entry-editor.hbs',import.meta.url),'utf8');
   assert.match(html,/RTA\.Template\.SameAsContentType" mode=\(localize inheritedRuntimeModeKey\)/);
 });
+
+test('navigation titles are translated keys present in every language', async () => {
+  const fs=await import('node:fs');
+  const source=fs.readFileSync(new URL('../src/configurator/configurator-app.mjs',import.meta.url),'utf8');
+  assert.doesNotMatch(source,/\{view:["'][\w:]+["'],\s*(kind:"\w+",\s*)?title:["'][A-Z]/);
+  for(const lang of ['en','fr']){
+    const nav=JSON.parse(fs.readFileSync(new URL(`../lang/${lang}.json`,import.meta.url),'utf8')).RTA.Nav;
+    for(const [,key] of source.matchAll(/RTA\.Nav\.(\w+)/g))assert.ok(nav[key],`${lang} RTA.Nav.${key}`);
+  }
+});

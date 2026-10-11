@@ -22,27 +22,27 @@ const uid = prefix => `${prefix}-${crypto.randomUUID?.() ?? Math.random().toStri
 
 
 const TOP_LEVEL = Object.freeze([
-  {view:"parameters", kind:"parameter", title:"Parameters", list:"listParameters", collection:"parameters"},
-  {view:"formulas", kind:"formula", title:"Formulas", list:"listFormulas", collection:"formulas"},
-  {view:"formulaBindings", kind:"formulaBinding", title:"Derived Outputs", list:"listFormulaBindings", collection:"formulaBindings"},
-  {view:"conditions", kind:"condition", title:"Conditions", list:"listConditions", collection:"conditions"},
-  {view:"rolls", kind:"roll", title:"Rolls", list:"listRolls", collection:"rolls"},
-  {view:"outcomes", kind:"outcome", title:"Outcomes", list:"listOutcomes", collection:"outcomes"},
-  {view:"tests", kind:"test", title:"Tests", list:"listTests", collection:"tests"},
-  {view:"effects", kind:"effect", title:"Effects", list:"listEffects", collection:"effects"},
-  {view:"actions", kind:"action", title:"Actions", list:"listActions", collection:"actions"},
-  {view:"permissions", kind:"permissionPolicy", title:"Permissions", list:"listPermissionPolicys", collection:"permissionPolicies"},
-  {view:"events", kind:"eventType", title:"Event Types", list:"listEventTypes", collection:"eventTypes"},
-  {view:"triggers", kind:"trigger", title:"Triggers", list:"listTriggers", collection:"triggers"},
-  {view:"modifiers", kind:"modifier", title:"Modifiers", list:"listModifiers", collection:"modifiers"},
-  {view:"durations", kind:"duration", title:"Durations", list:"listDurations", collection:"durations"},
-  {view:"creationSystems", kind:"creationSystem", title:"Creation Systems", list:"listCreationSystems", collection:"creationSystems"},
+  {view:"parameters", kind:"parameter", titleKey:"RTA.Nav.Parameters", list:"listParameters", collection:"parameters"},
+  {view:"formulas", kind:"formula", titleKey:"RTA.Nav.Formulas", list:"listFormulas", collection:"formulas"},
+  {view:"formulaBindings", kind:"formulaBinding", titleKey:"RTA.Nav.FormulaBindings", list:"listFormulaBindings", collection:"formulaBindings"},
+  {view:"conditions", kind:"condition", titleKey:"RTA.Nav.Conditions", list:"listConditions", collection:"conditions"},
+  {view:"rolls", kind:"roll", titleKey:"RTA.Nav.Rolls", list:"listRolls", collection:"rolls"},
+  {view:"outcomes", kind:"outcome", titleKey:"RTA.Nav.Outcomes", list:"listOutcomes", collection:"outcomes"},
+  {view:"tests", kind:"test", titleKey:"RTA.Nav.Tests", list:"listTests", collection:"tests"},
+  {view:"effects", kind:"effect", titleKey:"RTA.Nav.Effects", list:"listEffects", collection:"effects"},
+  {view:"actions", kind:"action", titleKey:"RTA.Nav.Actions", list:"listActions", collection:"actions"},
+  {view:"permissions", kind:"permissionPolicy", titleKey:"RTA.Nav.Permissions", list:"listPermissionPolicys", collection:"permissionPolicies"},
+  {view:"events", kind:"eventType", titleKey:"RTA.Nav.Events", list:"listEventTypes", collection:"eventTypes"},
+  {view:"triggers", kind:"trigger", titleKey:"RTA.Nav.Triggers", list:"listTriggers", collection:"triggers"},
+  {view:"modifiers", kind:"modifier", titleKey:"RTA.Nav.Modifiers", list:"listModifiers", collection:"modifiers"},
+  {view:"durations", kind:"duration", titleKey:"RTA.Nav.Durations", list:"listDurations", collection:"durations"},
+  {view:"creationSystems", kind:"creationSystem", titleKey:"RTA.Nav.CreationSystems", list:"listCreationSystems", collection:"creationSystems"},
   // Progression and Sheets stay out of the navigation until their runtime exists (milestone 4 for sheets).
-  {view:"progressionSystems", kind:"progressionSystem", title:"Progression Systems", list:"listProgressionSystems", collection:"progressionSystems", hidden:true},
-  {view:"sheetDefinitions", kind:"sheetDefinition", title:"Sheet Builder", list:"listSheetDefinitions", collection:"sheetDefinitions", hidden:true},
-  {view:"contentTypes", kind:"contentType", title:"Content Types", list:"listContentTypes", collection:"contentTypes"},
-  {view:"categories", kind:"category", title:"Categories", list:"listCategories", collection:"categories"},
-  {view:"tags", kind:"tag", title:"Tags", list:"listTags", collection:"tags"}
+  {view:"progressionSystems", kind:"progressionSystem", titleKey:"RTA.Nav.ProgressionSystems", list:"listProgressionSystems", collection:"progressionSystems", hidden:true},
+  {view:"sheetDefinitions", kind:"sheetDefinition", titleKey:"RTA.Nav.SheetDefinitions", list:"listSheetDefinitions", collection:"sheetDefinitions", hidden:true},
+  {view:"contentTypes", kind:"contentType", titleKey:"RTA.Nav.ContentTypes", list:"listContentTypes", collection:"contentTypes"},
+  {view:"categories", kind:"category", titleKey:"RTA.Nav.Categories", list:"listCategories", collection:"categories"},
+  {view:"tags", kind:"tag", titleKey:"RTA.Nav.Tags", list:"listTags", collection:"tags"}
 ]);
 
 function localize(api, versionId, key) {
@@ -150,17 +150,17 @@ export class ConfiguratorApp extends ConfiguratorWindow {
       let items=[];
       if(section.id==='general')items=[{view:'general',title:label(section.titleKey),active:this.#view==='general'}];
       else if(section.id==='definitions')items=[
-        {view:'definitionTypes',title:'Definition Types',active:this.#view==='definitionTypes'},
+        {view:'definitionTypes',title:label('RTA.Nav.DefinitionTypes'),active:this.#view==='definitionTypes'},
         ...definitionTypes.map(type=>({view:`definitions:${type.id}`,title:type.name,active:type.active,color:type.color}))
       ];
       else if(section.id==='content')items=[
-        {view:'contentTypes',title:'Content Types',active:this.#view==='contentTypes'},
+        {view:'contentTypes',title:label('RTA.Nav.ContentTypes'),active:this.#view==='contentTypes'},
         ...contentTypes.map(type=>({view:`content:${type.id}`,title:type.name,active:type.active,color:type.color}))
       ];
-      else if(section.id==='tools')items=[{view:'runtimeLab',title:'Runtime Lab',active:this.#view==='runtimeLab'},{view:'dependencies',title:'Dependencies',active:this.#view==='dependencies'}];
+      else if(section.id==='tools')items=[{view:'runtimeLab',title:label('RTA.Nav.RuntimeLab'),active:this.#view==='runtimeLab'},{view:'dependencies',title:label('RTA.Nav.Dependencies'),active:this.#view==='dependencies'}];
       else {
         items=TOP_LEVEL.filter(item=>section.collections.includes(item.collection)&&!item.hidden&&!['contentTypes'].includes(item.collection))
-          .map(item=>({...item,active:this.#view===item.view}));
+          .map(item=>({...item,title:label(item.titleKey),active:this.#view===item.view}));
       }
       return {group:section.id,titleKey:section.titleKey,items};
     }) : [];
@@ -181,10 +181,10 @@ export class ConfiguratorApp extends ConfiguratorWindow {
     const currentNavGroup=navGroups.find(group=>group.id===this.#navGroup) ?? navGroups[0];
     let cards = [], currentTitle = "", currentKind = "", currentType = null;
     if (ruleset && this.#view === "definitionTypes") {
-      currentTitle="Definition Types"; currentKind="definitionType";
+      currentTitle=label("RTA.Nav.DefinitionTypes"); currentKind="definitionType";
       cards = definitionTypes.map(row=>({...row,cardColor:row.color,image:row.image||""}));
     } else if (ruleset && this.#view === "contentTypes") {
-      currentTitle="Content Types"; currentKind="contentType";
+      currentTitle=label("RTA.Nav.ContentTypes"); currentKind="contentType";
       cards = contentTypes.map(row=>({...row,cardColor:row.color,image:row.image||""}));
     } else if (ruleset && this.#view.startsWith("content:")) {
       const typeId=this.#view.slice("content:".length); currentType=contentTypes.find(type=>type.id===typeId)??null;
@@ -208,7 +208,7 @@ export class ConfiguratorApp extends ConfiguratorWindow {
     } else if (ruleset) {
       const meta=TOP_LEVEL.find(item=>item.view===this.#view);
       if (meta) {
-        currentTitle=meta.title; currentKind=meta.kind;
+        currentTitle=label(meta.titleKey); currentKind=meta.kind;
         cards=(api[meta.list]?.(this.#selected)??[]).map(entry=>({
           ...entry,name:localize(api,this.#selected,entry.nameKey??entry.key??entry.id),cardColor:collectionColor(ruleset,meta.collection)
         })).map(row=>({...row})).sort((a,b)=>(a.order??0)-(b.order??0)||a.name.localeCompare(b.name));
