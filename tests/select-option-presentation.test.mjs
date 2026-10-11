@@ -112,7 +112,7 @@ test("all data-fed editor options and pickers carry a metadata color hook; world
   const options=[...editor.matchAll(/\{\{#each ([^}]+)\}\}\s*<option\b([^>]*?)>/g)];
   assert.ok(options.length>=25);
   for(const [match,collection,attrs] of options){
-    if(["documentActorTypes","documentItemTypes"].includes(collection))continue; // Host-system identifiers have no Ruleset family color.
+    if(["documentActorTypes","documentItemTypes","actionPurposeChoices"].includes(collection))continue; // Host-system identifiers and fixed engine purposes have no Ruleset family color.
     assert.match(attrs,/data-rta-colors="\{\{colors\}\}"/,collection);
   }
   const labels=[...editor.matchAll(/<label\b[^>]*data-picker-option[^>]*>/g)];

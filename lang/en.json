@@ -226,7 +226,13 @@
       "MissingSource": "The saved source collection is not available.",
       "NoRoll": "No Roll: deterministic Test",
       "TotalFromRoll": "Roll + bonus",
-      "MarginFromTotal": "Total − target"
+      "MarginFromTotal": "Total − target",
+      "NoPurpose": "No purpose",
+      "PurposeAcquisition": "Acquisition",
+      "PurposeAdvancement": "Advancement",
+      "PurposeUse": "Use",
+      "PurposeRecovery": "Recovery",
+      "NoAcquisitionAction": "No Action: grant directly"
     },
     "FamilyColor": {
       "parameters": "Parameters",
@@ -630,7 +636,10 @@
       "RollFormulaPlaceholder": "Foundry dice expression",
       "Category": "Category",
       "SearchCategories": "Search categories…",
-      "NoCategoriesYet": "No Categories yet. Create them from the Categories section."
+      "NoCategoriesYet": "No Categories yet. Create them from the Categories section.",
+      "ActionPurpose": "Purpose",
+      "AcquiredDefinitions": "Acquired Definitions",
+      "AcquisitionAction": "Acquisition Action"
     },
     "EditorDisplay": {
       "NoneSelected": "None selected",
@@ -953,7 +962,7 @@
       },
       "action": {
         "Summary": "An Action is what a player or the GM triggers: Conditions, costs, an optional Test, then Effects.",
-        "Usage": "If a Condition is false nothing is written. Costs are paid before effects."
+        "Usage": "If a Condition is false nothing is written. Costs are paid before effects. An acquisition Action adds Definitions to the character before its effects."
       },
       "permissionPolicy": {
         "Summary": "A Permission decides who may read, write, execute or configure what. The GM always has every right.",
@@ -973,7 +982,7 @@
       },
       "contentTemplate": {
         "Summary": "A content template is a concrete element ready to be given to a character.",
-        "Usage": "It can grant Definitions and Actions, and offer choices on acquisition."
+        "Usage": "It can grant Definitions and Actions, and offer choices on acquisition. Its optional acquisition Action adds its Conditions and costs to the acquisition, in a single write."
       },
       "modifier": {
         "Summary": "A Modifier adjusts a final value (bonus, penalty, cap) while its Conditions are true.",

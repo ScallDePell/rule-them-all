@@ -53,6 +53,7 @@ export class DependencyIndex{
       for(const [j,id] of (a.conditionRefs??[]).entries())pushRef(this.#edges,{objectKind:'action',objectId:a.id},{objectKind:'condition',objectId:id},'actionCondition',`actions[${i}].conditionRefs[${j}]`);
       for(const k of ['costEffectRefs','effectRefs'])for(const [j,id] of (a[k]??[]).entries())pushRef(this.#edges,{objectKind:'action',objectId:a.id},{objectKind:'effect',objectId:id},k,`actions[${i}].${k}[${j}]`);
       for(const [j,id] of (a.eventTypeRefs??[]).entries())pushRef(this.#edges,{objectKind:'action',objectId:a.id},{objectKind:'eventType',objectId:id},'actionEvent',`actions[${i}].eventTypeRefs[${j}]`);
+      for(const [j,acquisition] of (a.acquisitions??[]).entries())pushRef(this.#edges,{objectKind:'action',objectId:a.id},{objectKind:'definition',objectId:acquisition?.definitionId},'actionAcquisition',`actions[${i}].acquisitions[${j}].definitionId`);
     }
     for(const [i,t] of (ruleset.triggers??[]).entries()){
       pushRef(this.#edges,{objectKind:'trigger',objectId:t.id},{objectKind:'eventType',objectId:t.eventTypeId},'triggerEvent',`triggers[${i}].eventTypeId`);
@@ -96,6 +97,7 @@ export class DependencyIndex{
     for(const [i,t] of (ruleset.contentTemplates??[]).entries()){
       if(t.contentTypeId)pushRef(this.#edges,{objectKind:'contentTemplate',objectId:t.id},{objectKind:'contentType',objectId:t.contentTypeId},'templateContentType',`contentTemplates[${i}].contentTypeId`);
       for(const [j,b] of (t.definitionBindings??[]).entries())if(b?.definitionId)pushRef(this.#edges,{objectKind:'contentTemplate',objectId:t.id},{objectKind:'definition',objectId:b.definitionId},'templateDefinition',`contentTemplates[${i}].definitionBindings[${j}]`);
+      if(t.acquisitionActionRef)pushRef(this.#edges,{objectKind:'contentTemplate',objectId:t.id},{objectKind:'action',objectId:t.acquisitionActionRef},'templateAcquisitionAction',`contentTemplates[${i}].acquisitionActionRef`);
       for(const [j,b] of (t.actionBindings??[]).entries())if(b?.actionId)pushRef(this.#edges,{objectKind:'contentTemplate',objectId:t.id},{objectKind:'action',objectId:b.actionId},'templateAction',`contentTemplates[${i}].actionBindings[${j}]`);
       for(const [g,group] of (t.choiceGroups??[]).entries())for(const [o,option] of (group.options??[]).entries()){if(option?.kind==='definition'&&option.definitionId)pushRef(this.#edges,{objectKind:'contentTemplate',objectId:t.id},{objectKind:'definition',objectId:option.definitionId},'acquisitionChoice',`contentTemplates[${i}].choiceGroups[${g}].options[${o}]`);if(option?.kind==='action'&&option.actionId)pushRef(this.#edges,{objectKind:'contentTemplate',objectId:t.id},{objectKind:'action',objectId:option.actionId},'acquisitionChoice',`contentTemplates[${i}].choiceGroups[${g}].options[${o}]`);}
       const type=contentTypesById.get(t.contentTypeId);

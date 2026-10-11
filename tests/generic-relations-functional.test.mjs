@@ -1,3 +1,4 @@
+import {fakeAcquire} from './helpers/fake-acquire.mjs';
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import {createConfiguratorAPI} from '../src/configurator/configurator-api.mjs';
@@ -77,7 +78,7 @@ test('generic choice options across Content/Definition/Action are serialized wit
 test('Content runtime treats link, unlock and grant as separate semantics; release removes entitlement',async()=>{
  const {api,v}=await rules();
  const actor=new ActorMock(),calls=[];
- const runtime={adapter:{resolveDocument:async()=>actor,canWrite:async()=>true},
+ const runtime={acquire:fakeAcquire,adapter:{resolveDocument:async()=>actor,canWrite:async()=>true},
   getContainerState:async()=>({rulesetVersionId:v,definitionStates:{}}),
   instantiateDefinition:async(_v,_uuid,id,{initial})=>calls.push({id,initial}),removeDefinitionState:async()=>{}};
  await api.updateContentTemplate(v,'selected',{...api.getContentTemplate(v,'selected'),relations:[
@@ -99,7 +100,7 @@ test('Content runtime treats link, unlock and grant as separate semantics; relea
 test('grant for an arbitrary Ruleset family persists an entitlement without inventing side effects',async()=>{
  const {api,v}=await rules();const actor=new ActorMock(),calls=[];
  await api.updateContentTemplate(v,'selected',{...api.getContentTemplate(v,'selected'),relations:[rel('bad','grant','contentTemplate','linked')]});
- const runtime={adapter:{resolveDocument:async()=>actor,canWrite:async()=>true},getContainerState:async()=>({definitionStates:{}}),instantiateDefinition:async()=>calls.push('changed')};
+ const runtime={acquire:fakeAcquire,adapter:{resolveDocument:async()=>actor,canWrite:async()=>true},getContainerState:async()=>({definitionStates:{}}),instantiateDefinition:async()=>calls.push('changed')};
  await api.publishRuleset(v);
  const bridge=new FoundryContentBridge(api,runtime,{hooks:null});
  await bridge.acquireTemplate(v,actor.uuid,'selected',{sourceItemId:'demo'});

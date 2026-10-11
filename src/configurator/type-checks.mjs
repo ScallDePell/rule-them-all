@@ -52,6 +52,10 @@ export function rulesetTypes(ruleset) {
 /** Report type problems on a DiagnosticCollector (strict: warning in draft, error at publish). */
 export function checkRulesetTypes(ruleset, d) {
   const types = rulesetTypes(ruleset);
+  // CP-16: an acquisition Action must instantiate something.
+  list(ruleset.actions).forEach((action, index) => {
+    if (isRecord(action) && action.purpose === "acquisition" && !list(action.acquisitions).length) d.strict("ACTION_ACQUISITION", `actions[${index}].acquisitions`, "An acquisition Action must acquire at least one Definition.");
+  });
   list(ruleset.formulas).forEach((formula, index) => {
     if (!isRecord(formula) || !valueTypeRegistry.has(formula.resultType)) return;
     const actual = types.infer(formula.expression);

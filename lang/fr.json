@@ -222,7 +222,13 @@
       "MissingSource": "La source enregistrée n’est plus disponible.",
       "NoRoll": "Aucun jet : test déterministe",
       "TotalFromRoll": "Jet + bonus",
-      "MarginFromTotal": "Total − cible"
+      "MarginFromTotal": "Total − cible",
+      "NoPurpose": "Aucun rôle",
+      "PurposeAcquisition": "Acquisition",
+      "PurposeAdvancement": "Progression",
+      "PurposeUse": "Utilisation",
+      "PurposeRecovery": "Récupération",
+      "NoAcquisitionAction": "Aucune Action : ajout direct"
     },
     "FamilyColor": {
       "parameters": "Paramètres",
@@ -626,7 +632,10 @@
       "RollFormulaPlaceholder": "Expression de dés Foundry",
       "Category": "Catégorie",
       "SearchCategories": "Rechercher des catégories…",
-      "NoCategoriesYet": "Aucune catégorie pour le moment. Créez-en dans la section Catégories."
+      "NoCategoriesYet": "Aucune catégorie pour le moment. Créez-en dans la section Catégories.",
+      "ActionPurpose": "Rôle",
+      "AcquiredDefinitions": "Definitions acquises",
+      "AcquisitionAction": "Action d’acquisition"
     },
     "EditorDisplay": {
       "NoneSelected": "Aucune sélection",
@@ -949,7 +958,7 @@
       },
       "action": {
         "Summary": "Une Action est ce qu'un joueur ou le MJ déclenche : Conditions, coûts, Test éventuel, puis Effects.",
-        "Usage": "Si une Condition est fausse, rien n'est écrit. Les coûts sont payés avant les effets."
+        "Usage": "Si une Condition est fausse, rien n'est écrit. Les coûts sont payés avant les effets. Une Action d'acquisition ajoute des Definitions au personnage avant ses effets."
       },
       "permissionPolicy": {
         "Summary": "Une Permission décide qui peut lire, modifier, exécuter ou configurer quoi. Le MJ a toujours tous les droits.",
@@ -969,7 +978,7 @@
       },
       "contentTemplate": {
         "Summary": "Un modèle de contenu est un élément concret prêt à être donné à un personnage.",
-        "Usage": "Il peut accorder des Definitions et des Actions, et proposer des choix à l'acquisition."
+        "Usage": "Il peut accorder des Definitions et des Actions, et proposer des choix à l'acquisition. Son Action d'acquisition, facultative, ajoute ses Conditions et ses coûts à l'acquisition, dans une seule écriture."
       },
       "modifier": {
         "Summary": "Un Modifier ajuste une valeur finale (bonus, malus, plafond) tant que ses Conditions sont vraies.",

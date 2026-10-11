@@ -102,10 +102,24 @@ export function prepareEffect(data,options={}){
   if(!isRecord(x.operand)||!['literal','parameter','formula','reference'].includes(x.operand.kind))throw new Error('Effect.operand must select literal, parameter, formula or reference.');
   bool(x.enabled,'Effect.enabled'); arr(x.tags,'Effect.tags'); return x;
 }
+/** CP-16 semantic purpose of an Action; it classifies, it adds no engine primitive. */
+export const ACTION_PURPOSES=Object.freeze(['acquisition','advancement','use','recovery']);
+/** Acquisition: the Action instantiates absent DefinitionStates on a role's container. */
+function prepareActionAcquisition(data,index){
+  if(!isRecord(data)||!nonempty(data.definitionId))throw new Error(`Action.acquisitions[${index}] requires definitionId.`);
+  const x={targetRole:'self',initial:{},...copyJSON(data)};
+  if(!/^[A-Za-z][A-Za-z0-9_-]*$/.test(String(x.targetRole)))throw new Error(`Action.acquisitions[${index}].targetRole must be a role name.`);
+  if(!isRecord(x.initial))throw new Error(`Action.acquisitions[${index}].initial must be an object.`);
+  return x;
+}
 export function prepareAction(data,options={}){
-  const x={descriptionKey:'',enabled:true,order:0,tags:[],conditionRefs:[],costEffectRefs:[],effectRefs:[],testRef:null,outcomeMappings:[],eventTypeRefs:[],...copyJSON(data)};
+  const x={descriptionKey:'',enabled:true,order:0,tags:[],purpose:null,conditionRefs:[],costEffectRefs:[],acquisitions:[],effectRefs:[],testRef:null,outcomeMappings:[],eventTypeRefs:[],...copyJSON(data)};
   identity(x,'Action',options);
-  for(const k of ['conditionRefs','costEffectRefs','effectRefs','outcomeMappings','eventTypeRefs'])arr(x[k],`Action.${k}`); bool(x.enabled,'Action.enabled'); return x;
+  if(x.purpose!==null&&!ACTION_PURPOSES.includes(x.purpose))throw new Error(`Action.purpose must be null or one of ${ACTION_PURPOSES.join(', ')}.`);
+  for(const k of ['conditionRefs','costEffectRefs','acquisitions','effectRefs','outcomeMappings','eventTypeRefs'])arr(x[k],`Action.${k}`);
+  x.acquisitions=x.acquisitions.map(prepareActionAcquisition);
+  if(new Set(x.acquisitions.map(a=>`${a.targetRole}/${a.definitionId}`)).size!==x.acquisitions.length)throw new Error('Action.acquisitions lists a Definition twice for the same role.');
+  bool(x.enabled,'Action.enabled'); return x;
 }
 export function preparePermissionPolicy(data,options={}){
   const x={descriptionKey:'',enabled:true,order:0,scope:{objectKind:'ruleset'},rules:[],defaultEffect:'DENY',...copyJSON(data)};
@@ -156,8 +170,9 @@ export function prepareContentType(data,options={}){
 }
 
 export function prepareContentTemplate(data,options={}){
-  const x={descriptionKey:'',image:'',data:{},enabled:true,order:0,tags:[],contentTypeId:'generic',definitionBindings:[],actionBindings:[],choiceGroups:[],initialStateRules:[],categories:[],capabilities:[],runtimeMode:'unique',...copyJSON(data)};
+  const x={descriptionKey:'',image:'',data:{},enabled:true,order:0,tags:[],contentTypeId:'generic',acquisitionActionRef:null,definitionBindings:[],actionBindings:[],choiceGroups:[],initialStateRules:[],categories:[],capabilities:[],runtimeMode:'unique',...copyJSON(data)};
   identity(x,'ContentTemplate',options);need(nonempty(x.contentTypeId),'ContentTemplate requires contentTypeId.',options);
+  if(!(x.acquisitionActionRef===null||nonempty(x.acquisitionActionRef)))throw new Error('ContentTemplate.acquisitionActionRef must be an Action id or null.');
   if(typeof x.image!=='string')throw new Error('ContentTemplate.image must be a string.');
   if(!isRecord(x.data))throw new Error('ContentTemplate.data must be an object.');
   if(!['unique','stackable'].includes(x.runtimeMode))throw new Error('ContentTemplate.runtimeMode must be unique or stackable.');

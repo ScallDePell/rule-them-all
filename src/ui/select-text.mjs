@@ -29,7 +29,9 @@ export function selectUiText(key){
 export function selectionPlaceholder(root,multiple){
   const label=String(root?.dataset?.rtaSelectLabel??"").trim();
   const name=label||selectUiText(multiple?"PluralItems":"SingularItem");
-  return selectUiText(multiple?"Multiple":"Single").replaceAll("{label}",name);
+  const text=selectUiText(multiple?"Multiple":"Single");
+  // English article: "an Action", "an Acquisition Action".
+  return (/^select a \{label\}/i.test(text)&&/^[aeiou]/i.test(name)?text.replace(/^(select) a /i,"$1 an "):text).replaceAll("{label}",name);
 }
 
 const CARDINALITIES=new Set(["1","0..1","1..n","0..n"]);

@@ -74,6 +74,7 @@ export class RuntimeEngine{
   writeTargets(method,args){
     const [versionId]=args;
     if(method==="transferCollectionEntry")return [args[1]?.from?.containerRef,args[1]?.to?.containerRef].filter(Boolean).map(normalizeRuntimeContainerRef);
+    if(method==="acquire"){const ref=normalizeRuntimeContainerRef(args[1]),{actionId=null,context={}}=args[2]??{};return actionId?[ref,...this.writeTargets("executeAction",[versionId,actionId,{...context,roles:{...(context.roles??{}),self:ref,source:ref}}])]:[ref];}
     if(method!=="executeAction")return [normalizeRuntimeContainerRef(args[1])];
     const ruleset=this.ruleset(versionId),context=args[2]??{},roles=new Set(),seen=new Set();
     const visit=actionId=>{
@@ -94,7 +95,7 @@ export class RuntimeEngine{
     const tx=this.transaction(versionId,"instantiate",{transactionId,summary:{definitionId}}),ref=normalizeRuntimeContainerRef(containerRef),state=await tx.load(ref);
     if(state.rulesetVersionId&&state.rulesetVersionId!==versionId)throw new Error(`Runtime container is bound to another Ruleset version: ${state.rulesetVersionId}.`);
     if(state.definitionStates[definitionId])throw new Error(`Definition is already instantiated: ${definitionId}.`);
-    state.rulesetVersionId=versionId;state.definitionStates[definitionId]=await this.#newDefinitionState(versionId,definition,ref,state,initial);
+    await this.#acquireInto(versionId,ruleset,ref,state,{definitionId,initial});
     await this.#commit(tx);return clone(state.definitionStates[definitionId]);
   }
   async removeDefinitionState(versionId,containerRef,definitionId,{transactionId=null}={}){const tx=this.transaction(versionId,"remove",{transactionId,summary:{definitionId}}),state=await tx.load(containerRef);if(!state.definitionStates[definitionId])return false;delete state.definitionStates[definitionId];await this.#commit(tx);return true;}
@@ -241,6 +242,20 @@ export class RuntimeEngine{
     for(const definition of ordered){if(definition.enabled===false||wanted&&!wanted.has(definition.id)||state.definitionStates[definition.id])continue;assertDefinitionContract(ruleset,definition);state.definitionStates[definition.id]=await this.#newDefinitionState(versionId,definition,ref,state,initialByDefinition?.[definition.id]??{});created++;}
     if(created)await this.#commit(tx);return {created,state:clone(state)};
   }
+  /** CP-16 acquisition: the Content's Definition grants (only the absent ones) and, when given,
+   * the acquisition Action's Conditions, Costs and Effects commit as one transaction. */
+  async acquire(versionId,containerRef,{actionId=null,definitionBindings=[],context={},transactionId=null,summary=null}={}){
+    const ref=normalizeRuntimeContainerRef(containerRef),grants=definitionBindings.map(binding=>({definitionId:binding.definitionId,initial:binding.initial??{},targetRole:"self",ifAbsent:true}));
+    if(actionId){
+      const roles={...(context.roles??{}),self:ref,source:ref};
+      const result=await this.executeAction(versionId,actionId,{...context,roles,defaultRole:context.defaultRole??"self"},{acquisitions:grants,transactionId});
+      return {allowed:result.allowed,reason:result.reason??null,acquiredDefinitionIds:result.acquired??[],transactionId:result.transactionId??null,ledgerEntryIds:result.ledgerEntryIds??[],duplicate:Boolean(result.duplicate),action:{...result,staged:undefined}};
+    }
+    const ruleset=this.ruleset(versionId),tx=this.transaction(versionId,"acquisition",{transactionId,summary}),state=await tx.load(ref),acquired=[];
+    for(const grant of grants)if(await this.#acquireInto(versionId,ruleset,ref,state,grant))acquired.push(grant.definitionId);
+    const committed=await this.#commit(tx);
+    return {allowed:true,reason:null,acquiredDefinitionIds:committed.duplicate?committed.entries.flatMap(entry=>entry.changes.filter(change=>change.before===null).map(change=>change.id)):acquired,transactionId:committed.transactionId,ledgerEntryIds:committed.entries.map(entry=>entry.id),duplicate:committed.duplicate,action:null};
+  }
   /** A correction is a new compensating entry: the ledger is never rewritten. It applies only
    * when the container still holds what the entry wrote; otherwise the later history wins. */
   async compensate(versionId,containerRef,entryId,{transactionId=null}={}){
@@ -276,23 +291,44 @@ export class RuntimeEngine{
     const ruleset=this.ruleset(versionId),effect=ruleset.effects?.find(x=>x.id===effectId&&enabled(x));if(!effect)throw new Error(`Effect unavailable: ${effectId}.`);
     const evaluator=this.evaluator(versionId,staged);evaluator.__staged=staged;const role=effect.targetRole??"target";const target=await this.resolveReference(versionId,effect.targetRef,{...context,defaultRole:role},{forWrite:true,role,staged});const key=this.#refKey(target.containerRef);if(!staged.has(key))staged.set(key,clone(target.state));const state=staged.get(key);const operand=await this.#operand(versionId,effect.operand,context,evaluator);const before=this.#readOutput(ruleset,state,effect.targetRef);let pool=null;if(effect.targetRef.capabilityId==="pool"){const {slot}=this.#outputContract(ruleset,effect.targetRef);pool={slot,bounds:await this.#poolBounds(slot,{...context,defaultRole:role},evaluator)};}const after=this.#writeOutput(state,effect.targetRef,effect.operation,operand,pool);return {effectId,before,after,operand,containerRef:target.containerRef};
   }
-  async previewAction(versionId,actionId,context={}){
+  /** Instantiate one acquired Definition in a container state (CP-16). Returns the new
+   * DefinitionState, null when an `ifAbsent` grant is already there, or "present". */
+  async #acquireInto(versionId,ruleset,ref,state,acquisition){
+    const definition=ruleset.definitions?.find(x=>x.id===acquisition.definitionId&&enabled(x));if(!definition)throw new Error(`Definition unavailable: ${acquisition.definitionId}.`);
+    if(state.rulesetVersionId&&state.rulesetVersionId!==versionId)throw new Error(`Runtime container is bound to another Ruleset version: ${state.rulesetVersionId}.`);
+    if(state.definitionStates[definition.id])return acquisition.ifAbsent?null:"present";
+    assertDefinitionContract(ruleset,definition);
+    state.rulesetVersionId=versionId;state.definitionStates[definition.id]=await this.#newDefinitionState(versionId,definition,ref,state,acquisition.initial??{});
+    return state.definitionStates[definition.id];
+  }
+  /** previewAction options.acquisitions: extra grants run with the Action's own (a Content's bindings). */
+  async previewAction(versionId,actionId,context={},{acquisitions=[]}={}){
     const ruleset=this.ruleset(versionId),action=ruleset.actions?.find(x=>x.id===actionId&&enabled(x));if(!action)throw new Error(`Action unavailable: ${actionId}.`);const staged=new Map(),evaluator=this.evaluator(versionId,staged);evaluator.__staged=staged;
     for(const conditionId of action.conditionRefs??[])if(!await evaluator.condition(conditionId,context))return {actionId,allowed:false,reason:"condition",conditionId,changes:[]};
     const changes=[];for(const effectId of action.costEffectRefs??[])changes.push(await this.previewEffect(versionId,effectId,context,staged));
     let testResult=null,effectRefs=[...(action.effectRefs??[])];
     if(action.testRef){testResult=await this.executeTest(versionId,action.testRef,context);const mapping=(action.outcomeMappings??[]).find(m=>m?.outcomeId===testResult.outcome?.id||m?.resultKey===testResult.outcome?.resultKey);if(mapping){if(Array.isArray(mapping.effectRefs))effectRefs=mapping.effectRefs;if(mapping.block===true)return {actionId,allowed:false,reason:"outcome",testResult,changes:[]};}}
-    for(const effectId of effectRefs)changes.push(await this.previewEffect(versionId,effectId,context,staged));return {actionId,allowed:true,testResult,changes,staged};
+    // Acquisitions come before the Effects, which may then target the new DefinitionStates.
+    const acquired=[];
+    for(const acquisition of [...(action.acquisitions??[]),...acquisitions]){
+      const role=acquisition.targetRole??"self",target=roleRef(context,role);if(!target)throw new Error(`EvaluationContext role is missing: ${role}.`);
+      const ref=normalizeRuntimeContainerRef(target),key=this.#refKey(ref);
+      if(!staged.has(key))staged.set(key,await this.adapter.load(ref,{rulesetVersionId:versionId}));
+      const created=await this.#acquireInto(versionId,ruleset,ref,staged.get(key),acquisition);
+      if(created==="present")return {actionId,allowed:false,reason:"acquired",definitionId:acquisition.definitionId,testResult,changes:[]};
+      if(created){changes.push({acquisition:acquisition.definitionId,before:null,after:clone(created),containerRef:ref});acquired.push(acquisition.definitionId);}
+    }
+    for(const effectId of effectRefs)changes.push(await this.previewEffect(versionId,effectId,context,staged));return {actionId,allowed:true,testResult,changes,acquired,staged};
   }
   /** triggered: run by a Trigger, so no user chose it and only write permissions apply. */
-  async executeAction(versionId,actionId,context={},{preview=false,eventDepth=0,transactionId=null,triggered=false}={}){
+  async executeAction(versionId,actionId,context={},{preview=false,eventDepth=0,transactionId=null,triggered=false,acquisitions=[]}={}){
     if(!triggered)await this.#require(versionId,"execute",{objectKind:"action",objectId:actionId},roleRef(context,"self")??roleRef(context,context.defaultRole??"self"),context);
-    const plan=await this.previewAction(versionId,actionId,context);if(preview||!plan.allowed)return {...plan,staged:undefined};
+    const plan=await this.previewAction(versionId,actionId,context,{acquisitions});if(preview||!plan.allowed)return {...plan,staged:undefined};
     // Staged states were read once by the preview: the commit expects their revision unchanged.
     const tx=this.transaction(versionId,"action",{transactionId,summary:{actionId,outcomeKey:plan.testResult?.outcome?.resultKey??null}});
     for(const [key,state] of plan.staged){const change=plan.changes.find(x=>this.#refKey(x.containerRef)===key);if(change)tx.stage(change.containerRef,state);}
     const committed=await this.#commit(tx);
-    const result={actionId,allowed:true,testResult:plan.testResult??null,changes:plan.changes,committed:true,duplicate:committed.duplicate,transactionId:committed.transactionId,ledgerEntryIds:committed.entries.map(entry=>entry.id),events:[]};
+    const result={actionId,allowed:true,testResult:plan.testResult??null,changes:plan.changes,acquired:plan.acquired,committed:true,duplicate:committed.duplicate,transactionId:committed.transactionId,ledgerEntryIds:committed.entries.map(entry=>entry.id),events:[]};
     if(committed.duplicate)return result;
     this.hooks?.callAll?.(RUNTIME_HOOKS.actionExecuted,clone(result),context);
     const action=this.ruleset(versionId).actions?.find(x=>x.id===actionId);for(const eventTypeId of action?.eventTypeRefs??[]){const emitted=await this.emitEvent(versionId,eventTypeId,{actionId,outcomeKey:plan.testResult?.outcome?.resultKey??null},context,{depth:eventDepth+1});result.events.push({eventTypeId,triggered:emitted.triggered});}return result;

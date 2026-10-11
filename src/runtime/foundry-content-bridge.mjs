@@ -250,22 +250,19 @@ export class FoundryContentBridge{
     const {selected:selectedOptions,plan:relationPlan,definitionBindings,grantedDefinitionIds,actionIds}=
       this.preflightAcquisition(versionId,templateId,selections);
     if(this.runtime.adapter.canWrite&&!await this.runtime.adapter.canWrite(actorRef))throw new Error("Actor is not writable by the current user.");
-    const state=await this.runtime.getContainerState(actor.uuid,{rulesetVersionId:versionId}),createdDefinitionIds=[];
-    if(state.rulesetVersionId&&state.rulesetVersionId!==versionId)throw new Error("Actor belongs to another Ruleset version.");
     const previousAcquisitions=clone(current);
     const previousOrigins=clone(actor.getFlag?.(MODULE_ID,DEFINITION_ORIGINS_FLAG)??{});
     const origins=clone(previousOrigins);
     for(const acquisition of Object.values(current))for(const id of acquisition?.createdDefinitionIds??[])origins[originKey(acquisition.versionId,id)]=true;
+    // CP-16: the Content's grants and its acquisition Action (Conditions, Costs, Effects) are one transaction.
+    const bindings=definitionBindings.filter(binding=>binding?.definitionId).map(binding=>({definitionId:binding.definitionId,initial:binding.initial??initialForDefinition(template,binding.definitionId)}));
+    const runtimeResult=await this.runtime.acquire(versionId,actor.uuid,{actionId:template.acquisitionActionRef??null,definitionBindings:bindings,summary:{templateId:template.id,sourceItemId}});
+    if(!runtimeResult.allowed)throw new Error(`Acquisition refused by Action ${template.acquisitionActionRef}: ${runtimeResult.reason}.`);
+    const createdDefinitionIds=[...runtimeResult.acquiredDefinitionIds];
     let writtenOrigins=false,writtenAcquisitions=false;
     try{
-      for(const binding of definitionBindings){
-        const definitionId=binding?.definitionId;
-        if(!definitionId||state.definitionStates?.[definitionId]||createdDefinitionIds.includes(definitionId))continue;
-        await this.runtime.instantiateDefinition(versionId,actor.uuid,definitionId,{initial:binding.initial??initialForDefinition(template,definitionId)});
-        createdDefinitionIds.push(definitionId);
-      }
       for(const id of createdDefinitionIds)origins[originKey(versionId,id)]=true;
-      const acquisition={templateId:template.id,contentTypeId:template.contentTypeId,versionId,sourceItemId,createdDefinitionIds,grantedDefinitionIds,actionIds,linkedRefs:relationPlan.linkedRefs,unlockedRefs:relationPlan.unlockedRefs,grantedRefs:relationPlan.grantedRefs,selections:clone(selections),selectedOptions,appliedAt:Date.now()};
+      const acquisition={templateId:template.id,contentTypeId:template.contentTypeId,versionId,sourceItemId,createdDefinitionIds,grantedDefinitionIds,actionIds,linkedRefs:relationPlan.linkedRefs,unlockedRefs:relationPlan.unlockedRefs,grantedRefs:relationPlan.grantedRefs,selections:clone(selections),selectedOptions,transactionId:runtimeResult.transactionId,appliedAt:Date.now()};
       current[key]=acquisition;
       await actor.setFlag(MODULE_ID,DEFINITION_ORIGINS_FLAG,origins);writtenOrigins=true;
       await actor.setFlag(MODULE_ID,ACQUISITIONS_FLAG,current);writtenAcquisitions=true;
@@ -275,8 +272,9 @@ export class FoundryContentBridge{
       const rollbackFailures=[];
       if(writtenAcquisitions)try{await actor.setFlag(MODULE_ID,ACQUISITIONS_FLAG,previousAcquisitions);}catch(failure){rollbackFailures.push(failure);}
       if(writtenOrigins)try{await actor.setFlag(MODULE_ID,DEFINITION_ORIGINS_FLAG,previousOrigins);}catch(failure){rollbackFailures.push(failure);}
-      for(const definitionId of [...createdDefinitionIds].reverse()){
-        try{await this.runtime.removeDefinitionState(versionId,actor.uuid,definitionId);}catch(failure){rollbackFailures.push(failure);}
+      // The runtime transaction is corrected by compensating entries, never by rewriting the ledger.
+      for(const entryId of [...(runtimeResult.ledgerEntryIds??[])].reverse()){
+        try{await this.runtime.compensate(versionId,actor.uuid,entryId);}catch(failure){rollbackFailures.push(failure);}
       }
       if(rollbackFailures.length)throw new AggregateError([error,...rollbackFailures],"Acquisition failed and rollback was incomplete.");
       throw error;

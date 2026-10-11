@@ -7,7 +7,7 @@ const root=label=>({dataset:{rtaSelectLabel:label}});
 test('RTA Select keeps generic placeholders and selected labels independent of RPG rules',()=>{
  try{
   globalThis.game={i18n:{lang:'en',localize:key=>key}};
-  assert.equal(selectionPlaceholder(root(''),false),'Select a item');
+  assert.equal(selectionPlaceholder(root(''),false),'Select an item');
   assert.equal(selectionPlaceholder(root(''),true),'Select one or more items');
   assert.equal(selectionPlaceholder(root('Definitions'),true),'Select one or more Definitions');
   globalThis.game={i18n:{lang:'fr',localize:key=>key}};

@@ -1,3 +1,4 @@
+import {fakeAcquire} from './helpers/fake-acquire.mjs';
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import {FoundryContentBridge} from '../src/runtime/foundry-content-bridge.mjs';
@@ -26,7 +27,7 @@ function setup(){
         async delete(){removed.push(this.id);}};
       return [item];
     }};
-  const runtime={adapter:{resolveDocument:async()=>actor,canWrite:async()=>true},
+  const runtime={acquire:fakeAcquire,adapter:{resolveDocument:async()=>actor,canWrite:async()=>true},
     getContainerState:async()=>({rulesetVersionId:'v',definitionStates:{}}),
     instantiateDefinition:async(_v,_actor,id,{initial})=>instantiated.push({id,initial}),
     removeDefinitionState:async()=>{}};
