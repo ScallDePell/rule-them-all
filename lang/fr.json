@@ -656,7 +656,8 @@
           "eventTypeId": "Choisissez un type d’événement.",
           "rollFormula": "Saisissez une formule de dés."
         }
-      }
+      },
+      "Diagnostics": "Diagnostic"
     },
     "TestInput": {
       "Title": "Entrées",

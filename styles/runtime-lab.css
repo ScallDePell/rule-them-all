@@ -173,6 +173,7 @@
 .rta-lab-tool-tabs {
   display: flex;
   flex-wrap: wrap;
+  align-items: center;
   gap: var(--rta-gap-row);
   margin-bottom: var(--rta-space-4);
 }
@@ -186,6 +187,10 @@
   border: 1px solid var(--rta-color-border-secondary);
   border-radius: var(--rta-radius-control);
   cursor: pointer;
+}
+
+.rta-lab-tool-tabs__label {
+  opacity: .8;
 }
 
 .rta-lab-tool-tabs input {

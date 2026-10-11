@@ -113,10 +113,10 @@
                 <div class="form-group rta-form-row"><label>{{localize "RTA.Template.SourceSelf"}}</label><select data-runtime-select="source"><option value="">{{#if actors.length}}{{localize "RTA.Lab.ChooseActor"}}{{else}}{{localize "RTA.Template.NoActorsInThisWorld"}}{{/if}}</option>{{#each actors}}<option value="{{uuid}}" {{#if selectedSource}}selected{{/if}}>{{name}}</option>{{/each}}</select></div>
                 <div class="form-group rta-form-row"><label>{{localize "RTA.Template.Target"}}</label><select data-runtime-select="target"><option value="">{{#if actors.length}}{{localize "RTA.Lab.ChooseActor"}}{{else}}{{localize "RTA.Template.NoActorsInThisWorld"}}{{/if}}</option>{{#each actors}}<option value="{{uuid}}" {{#if selectedTarget}}selected{{/if}}>{{name}}</option>{{/each}}</select></div>
               </div>
-              <div class="rta-runtime-lab__grid">
+              {{#if runtimeHasActorSubtypes}}<div class="rta-runtime-lab__grid">
                 <div class="form-group rta-form-row"><label>{{localize "RTA.DocumentSubtype.Source"}}</label><select data-runtime-select="sourceType"><option value="">{{localize "RTA.DocumentSubtype.Choose"}}</option>{{#each runtimeActorTypeOptions}}<option value="{{id}}" {{#if sourceSelected}}selected{{/if}}>{{id}}</option>{{/each}}</select></div>
                 <div class="form-group rta-form-row"><label>{{localize "RTA.DocumentSubtype.Target"}}</label><select data-runtime-select="targetType"><option value="">{{localize "RTA.DocumentSubtype.Choose"}}</option>{{#each runtimeActorTypeOptions}}<option value="{{id}}" {{#if targetSelected}}selected{{/if}}>{{id}}</option>{{/each}}</select></div>
-              </div>
+              </div>{{/if}}
               <div class="rta-runtime-lab__actions"><button type="button" data-action="runtimeCreateActors"><i class="fa-solid fa-user-plus"></i> {{localize "RTA.Template.CreateSelectTestActors"}}</button><button type="button" data-action="runtimeInitAll" {{#unless runtimeReady.actors}}disabled{{/unless}}><i class="fa-solid fa-layer-group"></i> {{localize "RTA.Template.InitializeBothActors"}}</button><button type="button" data-action="runtimeReset" data-tooltip="{{localize "RTA.Lab.ResetHint"}}" {{#unless runtimeReady.actors}}disabled{{/unless}}><i class="fa-solid fa-rotate-left"></i> {{localize "RTA.Lab.Reset"}}</button></div>
             </section>
 
@@ -129,7 +129,7 @@
                     <strong>{{name}}</strong>
                     <div class="rta-runtime-state-row__values">
                       {{#if hasValue}}<label>{{localize "RTA.Template.Value"}} <input name="runtimeStateBase" type="number" value="{{base}}"></label>{{/if}}
-                      {{#each pools}}<label>{{localize "RTA.Template.Current"}} · {{slotId}} <input name="runtimeStatePool" data-slot-id="{{slotId}}" type="number" value="{{current}}"></label>{{/each}}
+                      {{#each pools}}<label>{{#if label}}{{label}}{{else}}{{localize "RTA.Template.Current"}}{{/if}} <input name="runtimeStatePool" data-slot-id="{{slotId}}" type="number" value="{{current}}"></label>{{/each}}
                       {{#if hasState}}<label class="rta-runtime-state-row__check"><input name="runtimeStateActive" type="checkbox" {{#if active}}checked{{/if}}> {{localize "RTA.Template.Active2"}}</label>{{/if}}
                     </div>
                     <button type="button" data-action="runtimeUpdateState" data-definition-id="{{id}}">{{localize "RTA.Template.Save"}}</button>
@@ -143,6 +143,9 @@
               <div class="rta-lab-tool-tabs">
                 <label><input type="radio" name="runtimeTool" data-runtime-select="tool" value="test" {{#if runtimeModes.isTest}}checked{{/if}}> {{localize "RTA.Template.Test"}}</label>
                 <label><input type="radio" name="runtimeTool" data-runtime-select="tool" value="action" {{#if runtimeModes.isAction}}checked{{/if}}> {{localize "RTA.Template.Action"}}</label>
+              </div>
+              <div class="rta-lab-tool-tabs" role="group" aria-label="{{localize 'RTA.Lab.Diagnostics'}}">
+                <span class="rta-lab-tool-tabs__label">{{localize "RTA.Lab.Diagnostics"}}</span>
                 <label><input type="radio" name="runtimeTool" data-runtime-select="tool" value="formula" {{#if runtimeModes.isFormula}}checked{{/if}}> {{localize "RTA.Template.Formula"}}</label>
                 <label><input type="radio" name="runtimeTool" data-runtime-select="tool" value="condition" {{#if runtimeModes.isCondition}}checked{{/if}}> {{localize "RTA.Template.Condition"}}</label>
                 <label><input type="radio" name="runtimeTool" data-runtime-select="tool" value="event" {{#if runtimeModes.isEvent}}checked{{/if}}> {{localize "RTA.Template.Event"}}</label>

@@ -660,7 +660,8 @@
           "eventTypeId": "Choose an Event Type.",
           "rollFormula": "Enter a dice formula."
         }
-      }
+      },
+      "Diagnostics": "Diagnostics"
     },
     "TestInput": {
       "Title": "Inputs",
