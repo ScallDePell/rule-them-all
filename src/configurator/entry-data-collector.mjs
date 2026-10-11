@@ -18,6 +18,13 @@ const json=(value,fallback)=>{const text=String(value??"").trim();return text?JS
 const fieldPresent=(fd,key)=>typeof fd.has==="function"?fd.has(key):fd.get(key)!==undefined&&fd.get(key)!==null;
 const lines=value=>String(value??"").split(/\r?\n/).map(x=>x.trim()).filter(Boolean);
 
+/** A Test target is none, a fixed value or a Formula, chosen in one select. */
+function readTestTarget(fd){
+  const source=String(fd.get("targetSource")??"").trim(),fixed=String(fd.get("targetValue")??"").trim();
+  if(source==="__fixed")return{targetFormulaRef:null,targetValue:fixed===""?null:Number(fixed)};
+  return{targetFormulaRef:source||null,targetValue:null};
+}
+
 /** The shared operand editor: a literal, a Parameter, a Formula or a Reference. */
 function readOperand(fd,queryOne){
   const kind=String(fd.get("operandKind")??"literal");
@@ -57,7 +64,7 @@ export function collectEntryData(kind,{fd,current,bool,checkedIds,queryOne,query
     if(kind==="condition"){const fallback=json(fd.get("expressionJson"),{type:"literal",value:true});return{...current,nameKey:String(fd.get("nameKey")??"").trim(),descriptionKey:String(fd.get("descriptionKey")??""),enabled:bool("enabled"),expression:collectConditionExpression(fallback),tags:checkedIds("tags")};}
     if(kind==="roll")return{...current,nameKey:String(fd.get("nameKey")??"").trim(),descriptionKey:String(fd.get("descriptionKey")??""),enabled:bool("enabled"),formula:String(fd.get("rollFormula")??"").trim(),data:json(fd.get("rollDataJson"),{}),tags:checkedIds("tags")};
     if(kind==="outcome")return{...current,nameKey:String(fd.get("nameKey")??"").trim(),descriptionKey:String(fd.get("descriptionKey")??""),enabled:bool("enabled"),resultKey:String(fd.get("resultKey")??"outcome").trim(),conditionRef:String(fd.get("conditionRef")??"").trim()||null,tags:checkedIds("tags")};
-    if(kind==="test")return{...current,nameKey:String(fd.get("nameKey")??"").trim(),descriptionKey:String(fd.get("descriptionKey")??""),enabled:bool("enabled"),rollRef:String(fd.get("rollRef")??"").trim()||null,inputBindings:collectTestInputs(queryAll),bonusFormulaRef:String(fd.get("bonusFormulaRef")??"").trim()||null,totalFormulaRef:String(fd.get("totalFormulaRef")??"").trim()||null,marginFormulaRef:String(fd.get("marginFormulaRef")??"").trim()||null,targetFormulaRef:String(fd.get("targetFormulaRef")??"").trim()||null,targetValue:String(fd.get("targetValue")??"").trim()===""?null:Number(fd.get("targetValue")),outcomeRefs:[...(queryOne('[data-ordered-list="outcomeRefs"]')?.querySelectorAll("[data-ordered-item]:not([hidden])")??[])].map(row=>row.dataset.orderedItem),fallbackOutcomeRef:String(fd.get("fallbackOutcomeRef")??"").trim()||null,tags:checkedIds("tags")};
+    if(kind==="test")return{...current,nameKey:String(fd.get("nameKey")??"").trim(),descriptionKey:String(fd.get("descriptionKey")??""),enabled:bool("enabled"),rollRef:String(fd.get("rollRef")??"").trim()||null,inputBindings:collectTestInputs(queryAll),bonusFormulaRef:String(fd.get("bonusFormulaRef")??"").trim()||null,totalFormulaRef:String(fd.get("totalFormulaRef")??"").trim()||null,marginFormulaRef:String(fd.get("marginFormulaRef")??"").trim()||null,...readTestTarget(fd),outcomeRefs:[...(queryOne('[data-ordered-list="outcomeRefs"]')?.querySelectorAll("[data-ordered-item]:not([hidden])")??[])].map(row=>row.dataset.orderedItem),fallbackOutcomeRef:String(fd.get("fallbackOutcomeRef")??"").trim()||null,tags:checkedIds("tags")};
     if(kind==="effect"){const operand=readOperand(fd,queryOne);return{...current,nameKey:String(fd.get("nameKey")??"").trim(),descriptionKey:String(fd.get("descriptionKey")??""),enabled:bool("enabled"),targetRef:parseRefToken(fd.get("targetRef")),targetRole:String(fd.get("targetRole")??"target").trim()||"target",operation:String(fd.get("operation")??"set").trim(),operand,tags:checkedIds("tags")};}
     if(kind==="action")return{...current,nameKey:String(fd.get("nameKey")??"").trim(),descriptionKey:String(fd.get("descriptionKey")??""),enabled:bool("enabled"),conditionRefs:checkedIds("conditionRefs"),costEffectRefs:checkedIds("costEffectRefs"),effectRefs:checkedIds("effectRefs"),tags:checkedIds("tags"),outcomeMappings:current.outcomeMappings??[],eventTypeRefs:checkedIds("eventTypeRefs"),testRef:String(fd.get("testRef")??"").trim()||null,
       // Keep the role and initial values of Definitions still acquired; new ones go to "self".

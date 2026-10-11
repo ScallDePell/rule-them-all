@@ -106,7 +106,9 @@
       "TotalFromRoll": "Jet + bonus",
       "MarginFromTotal": "Total − cible",
       "NoAcquisitionAction": "Aucune Action : ajout direct",
-      "UntilRemoved": "Jusqu'au retrait"
+      "UntilRemoved": "Jusqu'au retrait",
+      "NoTarget": "Pas de cible",
+      "FixedValue": "Valeur fixe"
     },
     "FamilyColor": {
       "parameters": "Paramètres",
@@ -210,8 +212,6 @@
       "Actor": "Acteur",
       "ActorRole": "Rôle de l’acteur",
       "Add": "Additionner",
-      "AdvancedRawAst": "Avancé / AST brut",
-      "AdvancedRollData": "Avancé / données du jet",
       "AlwaysFalse": "Toujours faux",
       "AlwaysTrue": "Toujours vrai",
       "Apply": "Appliquer",
@@ -256,7 +256,7 @@
       "Expression": "Expression",
       "Field": "Champ",
       "Fields": "Champs",
-      "FixedTarget": "Cible fixe",
+      "FixedTarget": "Valeur",
       "Formula": "Formule",
       "FoundryStorage": "Stockage Foundry",
       "Full": "Entière",
@@ -503,7 +503,8 @@
       "Mode": "Mode",
       "Amount": "Quantité",
       "Unit": "Unité",
-      "WorldTimeSeconds": "Temps du monde (secondes)"
+      "WorldTimeSeconds": "Temps du monde (secondes)",
+      "Calculation": "Calcul"
     },
     "EditorDisplay": {
       "NoneSelected": "Aucune sélection",

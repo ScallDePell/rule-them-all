@@ -114,3 +114,10 @@ test('a Trigger filter is built from payload-field rows typed by the field', asy
   const context=triggerFilterContext({eventTypeId:'hit',eventFilter:{payloadMatches:{amount:5}}},{eventTypes:[{id:'hit',payloadFields:{amount:{name:'Amount',valueType:'number'}}},{id:'heal',payloadFields:{gain:{name:'Gain',valueType:'number'}}}]});
   assert.deepEqual(context.triggerFilterRows[0].fieldChoices.map(x=>[x.id,x.selected,x.disabled]),[['amount',true,false],['gain',false,true]]);
 });
+
+test('a Test target is chosen in one select: none, a fixed value or a Formula', () => {
+  const save=values=>collectEntryData('test',{...form({nameKey:'T',...values}),current:{id:'t'}});
+  assert.deepEqual([save({targetSource:'__fixed',targetValue:'12'}).targetValue,save({targetSource:'__fixed',targetValue:'12'}).targetFormulaRef],[12,null]);
+  assert.deepEqual([save({targetSource:'dc',targetValue:'12'}).targetValue,save({targetSource:'dc'}).targetFormulaRef],[null,'dc']);
+  assert.deepEqual([save({targetSource:''}).targetValue,save({targetSource:''}).targetFormulaRef],[null,null]);
+});

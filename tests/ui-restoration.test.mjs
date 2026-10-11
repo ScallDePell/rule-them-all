@@ -59,7 +59,7 @@ test("v0.3.1 keeps rule-family editors and removes ID entry from normal relation
   assert.match(html,/name="effectRefs" value="{{id}}"/);
   assert.match(html,/name="eventTypeId" required/);
   assert.match(html,/name="targetRef" required/);
-  assert.match(html,/RTA\.Template\.AdvancedRawAst/);
+  assert.match(html,/rta-config-entry__technical"><summary>{{localize "RTA.Template.Technical"}}<\/summary><textarea name="expressionJson"/);
   assert.doesNotMatch(html,/RTA\.Template\.AdvancedTechnical/);
 });
 

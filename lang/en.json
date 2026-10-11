@@ -110,7 +110,9 @@
       "TotalFromRoll": "Roll + bonus",
       "MarginFromTotal": "Total − target",
       "NoAcquisitionAction": "No Action: grant directly",
-      "UntilRemoved": "Until removed"
+      "UntilRemoved": "Until removed",
+      "NoTarget": "No target",
+      "FixedValue": "Fixed value"
     },
     "FamilyColor": {
       "parameters": "Parameters",
@@ -214,8 +216,6 @@
       "Actor": "Actor",
       "ActorRole": "Actor role",
       "Add": "Add",
-      "AdvancedRawAst": "Advanced / Raw AST",
-      "AdvancedRollData": "Advanced / Roll data",
       "AlwaysFalse": "Always false",
       "AlwaysTrue": "Always true",
       "Apply": "Apply",
@@ -260,7 +260,7 @@
       "Expression": "Expression",
       "Field": "Field",
       "Fields": "Fields",
-      "FixedTarget": "Fixed target",
+      "FixedTarget": "Value",
       "Formula": "Formula",
       "FoundryStorage": "Foundry storage",
       "Full": "Full",
@@ -507,7 +507,8 @@
       "Mode": "Mode",
       "Amount": "Amount",
       "Unit": "Unit",
-      "WorldTimeSeconds": "World time (seconds)"
+      "WorldTimeSeconds": "World time (seconds)",
+      "Calculation": "Calculation"
     },
     "EditorDisplay": {
       "NoneSelected": "None selected",
