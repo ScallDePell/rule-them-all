@@ -1,0 +1,148 @@
+import test from "node:test";
+import assert from "node:assert/strict";
+import {readFileSync,readdirSync} from "node:fs";
+import {fileURLToPath} from "node:url";
+import path from "node:path";
+import {availableDocumentTypes,resolveDocumentType} from "../src/core/system-document-types.mjs";
+import {MODULE_ID,LEGACY_RULESET_PACKAGE_FORMAT,RULESET_PACKAGE_FORMAT,RUNTIME_HOOKS} from "../src/core/module-contract.mjs";
+import {FoundryRuntimeAdapter} from "../src/runtime/foundry-runtime-adapter.mjs";
+import {FoundryContentBridge} from "../src/runtime/foundry-content-bridge.mjs";
+import {exportRulesetData,readRulesetPayload} from "../src/configurator/configurator-serialization.mjs";
+import {createConfiguratorAPI} from "../src/configurator/configurator-api.mjs";
+import {emptyStorageSnapshot} from "../src/configurator/configurator-storage.mjs";
+import {buildRuntimeLabDemoProfile} from "../src/runtime/runtime-demo-profile.mjs";
+import {getCreationSourceDescriptor,getCreationSources} from "../src/configurator/creation-source-catalog.mjs";
+import {renderNewFieldInnerHTML,renderNewEventFieldInnerHTML,renderNewSheetComponentHTML} from "../src/ui/entry-editor-markup.mjs";
+
+const base=path.resolve(fileURLToPath(new URL("..",import.meta.url)));
+function read(rel){return readFileSync(path.join(base,rel),"utf8");}
+function walk(dir){return readdirSync(dir,{withFileTypes:true}).flatMap(d=>d.isDirectory()?walk(path.join(dir,d.name)):[path.join(dir,d.name)]);}
+
+const systemA={documentTypes:{Actor:["pilot","mech"],Item:["relic","augment"]}};
+const systemB={documentTypes:{Actor:{avatar:{},creature:{}},Item:{spell:{},gear:{}}}};
+
+test("the active Game System, not RTA, owns document subtypes",()=>{
+ assert.deepEqual(availableDocumentTypes("Actor",{system:systemA}),["pilot","mech"]);
+ assert.deepEqual(availableDocumentTypes("Item",{system:systemB}),["spell","gear"]);
+ assert.throws(()=>resolveDocumentType("Actor",{system:systemA}),/Select a subtype for Actor documents/);
+ assert.equal(resolveDocumentType("Actor",{system:systemA,requestedType:"pilot"}),"pilot");
+ assert.equal(resolveDocumentType("Actor",{system:systemB,requestedType:"creature"}),"creature");
+ assert.throws(()=>resolveDocumentType("Item",{system:systemB}),/Select a subtype for Item documents/);
+ assert.equal(resolveDocumentType("Item",{system:{documentTypes:{Item:["single"]}}}),"single");
+ assert.throws(()=>resolveDocumentType("Actor",{system:systemA,requestedType:"npc"}),/Unsupported Actor document type/);
+ assert.throws(()=>resolveDocumentType("Actor",{system:{documentTypes:{Actor:[]}}}),/no Actor document type/);
+ assert.deepEqual(availableDocumentTypes("Actor",{system:{},config:{Actor:{dataModels:{robot:{},person:{}}}}}),["robot","person"]);
+});
+
+test("Runtime Lab creates source/target with system-defined subtypes and keeps deprecated aliases",async()=>{
+ const priorGame=globalThis.game,priorActor=globalThis.Actor;
+ const actors=[];
+ globalThis.game={system:systemA,actors:{find:fn=>actors.find(fn)}};
+ globalThis.Actor={create:async data=>{const actor={...data,id:String(actors.length),uuid:`Actor.${actors.length}`,getFlag:(scope,key)=>data.flags?.[scope]?.[key]};actors.push(actor);return actor;}};
+ try{
+  const adapter=new FoundryRuntimeAdapter();
+  await assert.rejects(()=>adapter.createTestActors(),/Select a subtype for Actor documents/);
+  const normal=await adapter.createTestActors({sourceType:"pilot",targetType:"pilot"});
+  assert.equal(normal.source.type,"pilot");assert.equal(normal.target.type,"pilot");
+  assert.deepEqual(normal.pj,normal.source);assert.deepEqual(normal.pnj,normal.target);
+  assert.equal((await adapter.createTestActors({sourceType:"pilot",targetType:"pilot"})).source.uuid,normal.source.uuid);
+  assert.equal(actors.length,2);
+  await assert.rejects(()=>adapter.createTestActors({sourceType:"mech",targetType:"pilot"}),/already has type/);
+  await assert.rejects(()=>adapter.createTestActors({sourceType:"npc",targetType:"pilot"}),/Unsupported Actor document type/);
+ }finally{globalThis.game=priorGame;globalThis.Actor=priorActor;}
+});
+
+test("content type documentation follows an unrelated Game System without a built-in npc assumption",()=>{
+ const before=globalThis.game,oldActor=globalThis.Actor,oldItem=globalThis.Item;
+ globalThis.game={system:systemB};globalThis.Actor={};globalThis.Item={};
+ try{
+  const bridge=new FoundryContentBridge({},{},{hooks:null});
+  assert.equal(bridge.documentData("v1",{id:"x",nameKey:"X"},{id:"c",storageKind:"actor",documentSubtype:"avatar"}).type,"avatar");
+  assert.equal(bridge.documentData("v1",{id:"y",nameKey:"Y"},{id:"d",storageKind:"item",documentSubtype:"spell"}).type,"spell");
+  assert.throws(()=>bridge.documentData("v1",{id:"y",nameKey:"Y"},{id:"d",storageKind:"item"}),/Select a subtype for Item documents/);
+ }finally{globalThis.game=before;globalThis.Actor=oldActor;globalThis.Item=oldItem;}
+});
+
+test("new package readers accept both RTA and historical RWF envelopes without changing domain data",async()=>{
+ class MemoryStorage{constructor(){this.value=emptyStorageSnapshot();this.listeners=new Set();}async load(){return structuredClone(this.value)}async save(v){this.value=structuredClone(v)}subscribe(fn){this.listeners.add(fn);return()=>this.listeners.delete(fn)}}
+ const api=await createConfiguratorAPI(new MemoryStorage());
+ const record=await api.createRuleset({id:"alien-setting",nameKey:"Alien World",version:"1"});
+ const value=api.getRulesetVersion(record.versionId);
+ const old=exportRulesetData(value),modern=exportRulesetData(value,{format:RULESET_PACKAGE_FORMAT});
+ assert.equal(old.format,LEGACY_RULESET_PACKAGE_FORMAT);assert.equal(modern.format,RULESET_PACKAGE_FORMAT);
+ assert.deepEqual(readRulesetPayload(old).record,readRulesetPayload(modern).record);
+ assert.throws(()=>exportRulesetData(value,{format:"unknown"}),/Unsupported/);
+ assert.throws(()=>readRulesetPayload({...old,format:"unknown"}),/Unsupported/);
+ assert.equal(MODULE_ID,"rule-them-all");
+ assert.equal(RUNTIME_HOOKS.event,"rwfEvent"); // external integration: deliberately stable
+ assert.equal(RUNTIME_HOOKS.actionExecuted,"rwfActionExecuted");
+});
+
+test("Runtime Lab numeric presets are isolated, injectable TEST DATA rather than game rules",()=>{
+ const ruleset={definitions:[{id:"alpha",capabilities:["value","pool","state"]},{id:"beta",capabilities:["value"]},{id:"disabled",enabled:false,capabilities:["value"]}]};
+ const presets={source:{valueSequence:[7,9],poolMaximum:42},target:{valueSequence:[5],poolMaximum:8}};
+ const result=buildRuntimeLabDemoProfile(ruleset,"source",{presets});
+ assert.deepEqual(result,{alpha:{base:7,maximum:42,current:42,active:false},beta:{base:9}});
+ assert.deepEqual(buildRuntimeLabDemoProfile(ruleset,"pj",{presets}),result);
+ assert.throws(()=>buildRuntimeLabDemoProfile(ruleset,"source",{presets:{source:{valueSequence:[],poolMaximum:0}}}),/Invalid Runtime Lab sample/);
+ const engine=read("src/runtime/runtime-engine.mjs");
+ assert.doesNotMatch(engine,/RUNTIME_LAB_SAMPLE_PRESETS|runtime-lab-fixtures/);
+});
+
+test("Creation System sources localize via FR/EN while retaining stable collection IDs",()=>{
+ const before=globalThis.game;
+ globalThis.game={i18n:{lang:"fr",localize:key=>key==="RTA.CreationSource.definitionTypes.Label"?"Types de définitions":key}};
+ try{
+  assert.equal(getCreationSourceDescriptor("definitionTypes").label,"Types de définitions");
+  const fake={getRuleset:()=>({definitionTypes:[{id:"mystic",nameKey:"Mystic"}],contentTypes:[]})};
+  const choices=getCreationSources(fake,"v1");
+  assert.equal(choices[0].id,"definitionTypes");assert.equal(choices[0].label,"Types de définitions");assert.equal(choices[0].items[0].id,"mystic");
+ }finally{globalThis.game=before;}
+});
+
+test("dynamic editor markup lives in pure generators and preserves data-* contracts",()=>{
+ const field=renderNewFieldInnerHTML("f123",'<option value="integer">integer</option>');
+ assert.match(field,/data-field-prop="valueType"/);assert.match(field,/data-field-prop="constraints"/);
+ assert.match(field,/value="f123"/);assert.match(field,/integer/);
+ const event=renderNewEventFieldInnerHTML("e123",'<option>boolean</option>');
+ assert.match(event,/data-event-field-prop="name"/);assert.match(event,/data-action="removeEventField"/);
+ const sheet=renderNewSheetComponentHTML("s123",'<option value="">— none —</option>');
+ for(const action of ["sheetUp","sheetDown","removeSheetComponent"])assert.match(sheet,new RegExp(`data-action="${action}"`));
+ assert.match(sheet,/data-sheet-prop="kind"/);assert.match(sheet,/data-sheet-prop="source"/);
+ assert.doesNotMatch(read("src/ui/entry-editor-markup.mjs"),/globalThis\.game|game\.settings|fromUuid|this\.#api/);
+});
+
+test("architecture gate: no system-owned Actor type localizations, no game-specific subtype preferences",()=>{
+ for(const locale of ["en","fr"]){
+  const dict=JSON.parse(read(`lang/${locale}.json`));
+  assert.equal(dict.TYPES,undefined);assert.equal(dict.RWF,undefined);
+  assert.ok(dict.RTA?.CreationSource?.definitionTypes?.Label);
+ }
+ const prod=walk(path.join(base,"src")).filter(f=>f.endsWith(".mjs"));
+ for(const file of prod){const source=readFileSync(file,"utf8");
+  if(!file.endsWith("module-contract.mjs"))assert.doesNotMatch(source,/const MODULE_ID\s*=\s*["']rule-them-all["']/,file);
+  assert.doesNotMatch(source,/\[\s*["']character["']\s*,\s*["'](?:pc|npc)["']/,file);
+ }
+});
+
+// The architectural rules must be enforceable by CI, not just described in prose.
+test("canonical architecture file is checked in and architecture gate passes",async()=>{
+ const {spawnSync}=await import("node:child_process");
+ const doc=read("RTA-ARCHITECTURE-CANONIQUE.md");
+ for(const required of ["Foundry v14","rwf-ruleset","storageVersion: 3","RTA Select","Limites et dettes identifiées"])
+  assert.ok(doc.includes(required),`Missing architecture contract: ${required}`);
+ const proc=spawnSync(process.execPath,["qa/architecture-audit.mjs","--strict","--json"],{cwd:base,encoding:"utf8"});
+ assert.equal(proc.status,0,proc.stderr||proc.stdout);
+ const result=JSON.parse(proc.stdout);
+ assert.equal(result.status,"PASS");
+ assert.equal(result.violations.length,0);
+ assert.ok(result.scanned.productionModules>=35);
+});
+
+test("no transient legacy RWF UI hooks or CSS classes remain, except explicit compatibility tokens",()=>{
+ const files=[...walk(path.join(base,"src")),...walk(path.join(base,"templates")),...walk(path.join(base,"styles"))].filter(f=>/\.(?:mjs|hbs|css)$/.test(f));
+ const exceptions=files.filter(f=>f.endsWith("module-contract.mjs"));
+ assert.equal(exceptions.length,1);
+ for(const file of files.filter(f=>!exceptions.includes(f)))assert.doesNotMatch(readFileSync(file,"utf8"),/rwf-/i,file);
+ assert.match(read("src/core/module-contract.mjs"),/LEGACY_RULESET_PACKAGE_FORMAT = "rwf-ruleset"/);
+});
