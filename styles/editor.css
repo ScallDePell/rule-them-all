@@ -296,8 +296,8 @@
 .rta-field-editor {
   padding: 0;
   overflow: hidden;
-  margin-block: var(--rta-space-2);
-  border: 1px solid var(--rta-color-border);
+  margin-block: 0;
+  border: var(--rta-frame-border) solid var(--rta-color-border);
   border-radius: var(--rta-radius-panel);
   box-shadow: 0 0 0 1px rgba(255,255,255,.035);
   background: rgba(255,255,255,.018);
@@ -383,12 +383,13 @@
 }
 
 .rta-config-entry .rta-field-editor__details > summary {
-  padding: var(--rta-space-5) var(--rta-space-6);
+  padding: var(--rta-space-5) var(--rta-frame-pad);
   min-height: 2.3rem;
 }
 
+/* The card border plus this padding is exactly one --rta-frame-step. */
 .rta-config-entry .rta-field-editor__body {
-  padding: var(--rta-space-6) var(--rta-space-6) var(--rta-space-6);
+  padding: var(--rta-frame-pad);
   background: transparent;
 }
 
@@ -447,7 +448,7 @@
 }
 
 /* A label wrapping its own control (technical fields, JSON) stacks text over control. */
-.rta-config-entry :is(fieldset, details.rta-config-entry__section, details.rta-config-entry__technical) > label:has(> :is(textarea, select, input:not([type="checkbox"]):not([type="radio"]):not([type="hidden"]))) {
+.rta-config-entry :is(fieldset, details.rta-config-entry__section, details.rta-config-entry__technical) > label:not(.rta-form-row):has(> :is(textarea, select, input:not([type="checkbox"]):not([type="radio"]):not([type="hidden"]))) {
   display: grid;
   gap: var(--rta-gap-tight);
   width: 100%;
@@ -685,9 +686,39 @@
 .rta-config-entry :is(.rta-config-entry__scroll, fieldset, details[open], section.rta-config-entry__section, .rta-rule-builder, .rta-rule-operands, .rta-section-color-config, .rta-field-editor__body, .rta-config-entry__full-width, .rta-capability-contracts) > * {
   margin-block: 0;
 }
-.rta-config-entry :is(fieldset, details[open], section.rta-config-entry__section, .rta-rule-builder, .rta-rule-operands, .rta-section-color-config, .rta-field-editor__body, .rta-config-entry__full-width, .rta-capability-contracts) > :not([hidden]) ~ :not([hidden]) {
+.rta-config-entry :is(fieldset, details[open], section.rta-config-entry__section, .rta-rule-builder, .rta-rule-operands, .rta-section-color-config, .rta-field-editor__body, .rta-config-entry__full-width, .rta-capability-contracts) > :not([hidden], div:empty) ~ :not([hidden], div:empty) {
   margin-block-start: var(--rta-gap-row);
 }
-.rta-config-entry .rta-config-entry__scroll > :not([hidden]) ~ :not([hidden]) {
+.rta-config-entry .rta-config-entry__scroll > :not([hidden], div:empty) ~ :not([hidden], div:empty) {
   margin-block-start: var(--rta-gap-block);
+}
+
+/* Paragraph margins never add to a frame's padding: the first and last text
+   block of any container sit directly on the container's padding. */
+.rta-config-entry :is(p, ul, ol):first-child { margin-block-start: 0; }
+.rta-config-entry :is(p, ul, ol):last-child { margin-block-end: 0; }
+
+/* Boolean options of a field card follow the same row contract as "Enabled":
+   text in the label column, checkbox at the start of the control column. */
+:is(.rta-config-entry, .rta-configurator) label.rta-field-editor__check {
+  display: grid;
+  grid-template-columns: minmax(calc(var(--rta-form-label-column-min) - var(--rta-form-column-inset)), calc(var(--rta-form-label-column-max) - var(--rta-form-column-inset))) minmax(0, 1fr);
+  gap: var(--rta-form-row-gap) var(--rta-form-control-gap);
+  align-items: center;
+  font-weight: 600;
+}
+:is(.rta-config-entry, .rta-configurator) label.rta-field-editor__check > input[type="checkbox"] {
+  grid-column: 2;
+  grid-row: 1;
+  justify-self: start;
+}
+@container rta-window (max-width: 586px) {
+  :is(.rta-config-entry, .rta-configurator) label.rta-field-editor__check {
+    grid-template-columns: minmax(0, 1fr);
+    row-gap: var(--rta-gap-tight);
+  }
+  :is(.rta-config-entry, .rta-configurator) label.rta-field-editor__check > input[type="checkbox"] {
+    grid-column: 1;
+    grid-row: 2;
+  }
 }

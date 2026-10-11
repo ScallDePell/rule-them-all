@@ -99,6 +99,14 @@ test('frames share one padding/border step used as the column inset', () => {
 });
 
 test('vertical rhythm: siblings are spaced by a single gap token, never stacked margins', () => {
-  assert.match(cssWithoutComments, /> :not\(\[hidden\]\) ~ :not\(\[hidden\]\)\s*{\s*margin-block-start:\s*var\(--rta-gap-row\)/);
-  assert.match(cssWithoutComments, /> :not\(\[hidden\]\) ~ :not\(\[hidden\]\)\s*{\s*margin-block-start:\s*var\(--rta-gap-block\)/);
+  assert.match(cssWithoutComments, /> :not\(\[hidden\], div:empty\) ~ :not\(\[hidden\], div:empty\)\s*{\s*margin-block-start:\s*var\(--rta-gap-row\)/);
+  assert.match(cssWithoutComments, /> :not\(\[hidden\], div:empty\) ~ :not\(\[hidden\], div:empty\)\s*{\s*margin-block-start:\s*var\(--rta-gap-block\)/);
+});
+
+test('field cards count as one frame step and open frames keep their bottom padding',()=>{
+  assert.match(cssWithoutComments,/\.rta-field-editor, \.rta-binding-card\)\s*{\s*--rta-form-column-inset:\s*var\(--rta-frame-step\)/);
+  assert.doesNotMatch(cssWithoutComments,/rta-field-editor__(?:grid|body), [^{]*{\s*--rta-form-column-inset/,'grid/body add no inset of their own');
+  assert.match(cssWithoutComments,/\.rta-field-editor__body\s*{\s*padding:\s*var\(--rta-frame-pad\)/);
+  assert.match(cssWithoutComments,/details\.rta-config-entry__technical\)\[open\]\s*{\s*padding-bottom:\s*var\(--rta-frame-pad\)/);
+  assert.match(cssWithoutComments,/> label:not\(\.rta-form-row\):has\(/,'stacked label rule never applies to a form row');
 });

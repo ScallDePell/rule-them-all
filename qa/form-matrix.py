@@ -165,7 +165,7 @@ if __name__=='__main__':
  STYLE_DUMP='''() => [...document.querySelectorAll('body *')].map((el,i)=>{const s=getComputedStyle(el);const o={};for(const k of s)o[k]=s.getPropertyValue(k);return [i+':'+el.tagName+'.'+[...el.classList].join('.'),o]})'''
  results={};total=0
  with sync_playwright() as p:
-  b=p.chromium.launch(headless=True,executable_path=os.environ.get('RTA_CHROMIUM','/usr/bin/chromium'),args=['--no-sandbox'])
+  b=p.chromium.launch(headless=True,executable_path=os.environ.get('RTA_CHROMIUM','/usr/bin/chromium'),args=['--no-sandbox','--allow-file-access-from-files'])
   for width in (560,760,1250):
    for kind in KINDS:
     page=b.new_page(viewport={'width':width,'height':980},device_scale_factor=1)

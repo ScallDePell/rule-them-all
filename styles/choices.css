@@ -197,8 +197,9 @@
   border-bottom: 1px solid var(--rta-editor-border);
 }
 
-.rta-config-entry details.rta-picker[open] {
-  padding-bottom: var(--rta-space-5);
+/* An open frame keeps the same interior padding below its last row. */
+.rta-config-entry :is(details.rta-config-entry__section, details.rta-picker, details.rta-config-entry__technical)[open] {
+  padding-bottom: var(--rta-frame-pad);
 }
 
 .rta-config-entry .rta-picker__body {
@@ -308,13 +309,13 @@
    track. The select, input and textarea remain on a single visual vertical. */
 /* The inset is inherited, so a row wrapped in an unframed <div> keeps its
    frame's compensation. Each nested frame adds exactly one --rta-frame-step. */
-:is(.rta-config-entry, .rta-configurator) :is(fieldset, details.rta-config-entry__section, details.rta-config-entry__technical, .rta-rule-builder, .rta-section-color-config, .rta-field-editor__grid, .rta-field-editor__body, .rta-binding-card) {
+:is(.rta-config-entry, .rta-configurator) :is(fieldset, details.rta-config-entry__section, details.rta-config-entry__technical, .rta-rule-builder, .rta-section-color-config, .rta-field-editor, .rta-binding-card) {
   --rta-form-column-inset: var(--rta-frame-step);
 }
-:is(.rta-config-entry, .rta-configurator) :is(fieldset, details.rta-config-entry__section, details.rta-config-entry__technical, .rta-rule-builder, .rta-section-color-config, .rta-field-editor__grid, .rta-field-editor__body, .rta-binding-card) :is(fieldset, details.rta-config-entry__section, details.rta-config-entry__technical, .rta-rule-builder, .rta-section-color-config, .rta-field-editor__grid, .rta-field-editor__body, .rta-binding-card) {
+:is(.rta-config-entry, .rta-configurator) :is(fieldset, details.rta-config-entry__section, details.rta-config-entry__technical, .rta-rule-builder, .rta-section-color-config, .rta-field-editor, .rta-binding-card) :is(fieldset, details.rta-config-entry__section, details.rta-config-entry__technical, .rta-rule-builder, .rta-section-color-config, .rta-field-editor, .rta-binding-card) {
   --rta-form-column-inset: calc(2 * var(--rta-frame-step));
 }
-:is(.rta-config-entry, .rta-configurator) :is(fieldset, details.rta-config-entry__section, details.rta-config-entry__technical, .rta-rule-builder, .rta-section-color-config, .rta-field-editor__grid, .rta-field-editor__body, .rta-binding-card) :is(fieldset, details.rta-config-entry__section, details.rta-config-entry__technical, .rta-rule-builder, .rta-section-color-config, .rta-field-editor__grid, .rta-field-editor__body, .rta-binding-card) :is(fieldset, details.rta-config-entry__section, details.rta-config-entry__technical, .rta-rule-builder, .rta-section-color-config, .rta-field-editor__grid, .rta-field-editor__body, .rta-binding-card) {
+:is(.rta-config-entry, .rta-configurator) :is(fieldset, details.rta-config-entry__section, details.rta-config-entry__technical, .rta-rule-builder, .rta-section-color-config, .rta-field-editor, .rta-binding-card) :is(fieldset, details.rta-config-entry__section, details.rta-config-entry__technical, .rta-rule-builder, .rta-section-color-config, .rta-field-editor, .rta-binding-card) :is(fieldset, details.rta-config-entry__section, details.rta-config-entry__technical, .rta-rule-builder, .rta-section-color-config, .rta-field-editor, .rta-binding-card) {
   --rta-form-column-inset: calc(3 * var(--rta-frame-step));
 }
 

@@ -248,9 +248,9 @@
 .rta-configurator :is(.rta-configurator__scroll, .rta-runtime-lab, .rta-lab-step, nav.rta-explorer, .rta-dependencies__list, .rta-dependencies__detail, .rta-general__card, .rta-configurator__storage) > * {
   margin-block: 0;
 }
-.rta-configurator :is(.rta-lab-step, .rta-dependencies__list, .rta-dependencies__detail, .rta-general__card, .rta-configurator__storage) > :not([hidden]) ~ :not([hidden]) {
+.rta-configurator :is(.rta-lab-step, .rta-dependencies__list, .rta-dependencies__detail, .rta-general__card, .rta-configurator__storage) > :not([hidden], div:empty) ~ :not([hidden], div:empty) {
   margin-block-start: var(--rta-gap-row);
 }
-.rta-configurator :is(.rta-configurator__scroll, .rta-runtime-lab, nav.rta-explorer) > :not([hidden]) ~ :not([hidden]) {
+.rta-configurator :is(.rta-configurator__scroll, .rta-runtime-lab, nav.rta-explorer) > :not([hidden], div:empty) ~ :not([hidden], div:empty) {
   margin-block-start: var(--rta-gap-block);
 }
