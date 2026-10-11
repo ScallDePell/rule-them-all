@@ -216,13 +216,17 @@ export function prepareRestriction(data,options={}){
   const x=prepareNamedGeneric(data,'Restriction',{operationKinds:[],conditionRefs:[],effect:'deny',priority:0,messageKey:''},options);
   arr(x.operationKinds,'Restriction.operationKinds');arr(x.conditionRefs,'Restriction.conditionRefs');if(!['allow','deny'].includes(x.effect))throw new Error('Restriction.effect must be allow or deny.');if(!Number.isSafeInteger(x.priority))throw new Error('Restriction.priority must be a safe integer.');return x;
 }
+/** Duration modes (CP-08). absoluteTime ends at a world time, in seconds, read through the time adapter. */
+export const DURATION_MODES=Object.freeze(['instant','fixed','untilEvent','whileCondition','untilRemoved','absoluteTime']);
 export function prepareDuration(data,options={}){
-  const x=prepareNamedGeneric(data,'Duration',{mode:'persistent',amount:null,unit:null,eventTypeRef:null,conditionRef:null},options);
-  if(!['instant','fixed','untilEvent','whileCondition','persistent'].includes(x.mode))throw new Error('Duration.mode is invalid.');
+  const x=prepareNamedGeneric(data,'Duration',{mode:'untilRemoved',amount:null,unit:null,eventTypeRef:null,conditionRef:null,at:null},options);
+  if(!DURATION_MODES.includes(x.mode))throw new Error(`Duration.mode is invalid: ${x.mode}. Expected one of ${DURATION_MODES.join(', ')}.`);
   if(x.mode==='fixed'&&x.amount!==null&&(!Number.isFinite(Number(x.amount))||Number(x.amount)<0))throw new Error('Fixed Duration requires a non-negative amount.');
   if(x.mode==='fixed')need(x.amount!==null&&nonempty(x.unit),'Fixed Duration requires amount and unit.',options);
   if(x.mode==='untilEvent')need(nonempty(x.eventTypeRef),'untilEvent Duration requires eventTypeRef.',options);
-  if(x.mode==='whileCondition')need(nonempty(x.conditionRef),'whileCondition Duration requires conditionRef.',options);return x;
+  if(x.mode==='whileCondition')need(nonempty(x.conditionRef),'whileCondition Duration requires conditionRef.',options);
+  if(x.at!==null&&!(typeof x.at==='number'&&Number.isFinite(x.at)&&x.at>=0))throw new Error('Duration.at must be a non-negative world time in seconds.');
+  if(x.mode==='absoluteTime')need(x.at!==null,'absoluteTime Duration requires at.',options);return x;
 }
 export function prepareCreationSystem(data,options={}){
   const x=prepareNamedGeneric(data,'CreationSystem',{steps:[]},options);arr(x.steps,'CreationSystem.steps');x.steps=x.steps.map((step,i)=>{if(!isRecord(step)||!nonempty(step.id))throw new Error(`CreationSystem.steps[${i}] requires id.`);need(nonempty(step.name),`CreationSystem.steps[${i}] requires name.`,options);const n={kind:'choice',required:true,options:[],min:0,max:1,...copyJSON(step)};if(!['choice','allocation','content','review'].includes(n.kind))throw new Error(`CreationSystem.steps[${i}].kind is invalid.`);arr(n.options,`CreationSystem.steps[${i}].options`);return n;});return x;
