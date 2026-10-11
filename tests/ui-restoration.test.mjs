@@ -60,7 +60,7 @@ test("v0.3.1 keeps rule-family editors and removes ID entry from normal relation
   assert.match(html,/name="eventTypeId" required/);
   assert.match(html,/name="targetRef" required/);
   assert.match(html,/RTA\.Template\.AdvancedRawAst/);
-  assert.match(html,/RTA\.Template\.AdvancedTechnical/);
+  assert.doesNotMatch(html,/RTA\.Template\.AdvancedTechnical/);
 });
 
 test("v0.3.2 keeps compact Definition fields and adds collapsible relationship pickers",()=>{
@@ -92,9 +92,9 @@ test('v0.5.4 Runtime Lab initializes both context Actors and allows deleting val
   const tpl=fs.readFileSync(path.join(root,'templates/configurator/configurator.hbs'),'utf8');
   assert.match(app,/new Set\(\[this\.#runtimeSelection\.source,this\.#runtimeSelection\.target\]/);
   assert.match(tpl,/RTA\.Template\.InitializeBothActors/);
-  assert.match(app,/Deactivate and delete it\?/);
+  assert.match(app,/RTA\.UI\.DeleteActiveRuleset/);
   assert.match(app,/await api\.setActiveVersionId\(null\)/);
-  assert.match(app,/canDelete:true/);
+  assert.doesNotMatch(tpl,/data-action="deleteRuleset"[^>]*disabled/);
 });
 
 
@@ -131,7 +131,7 @@ test('v0.7.3 Content mirrors Definition UX with dynamic families, fields, color 
  assert.match(editor,/name="color" type="color"/);
  assert.match(editor,/data-field-definition-list/);
  assert.match(editor,/name="contentTypeId" type="hidden"/);
- assert.match(editor,/name="templateCapabilities"/);
+ assert.doesNotMatch(editor,/name="templateCapabilities"/);
  assert.match(editor,/RTA\.Template\.ReferenceTarget/);
 });
 

@@ -13,14 +13,12 @@
           <article class="rta-ruleset-tile" role="listitem" style="--rta-card-accent:{{color}}">
             <button type="button" class="rta-ruleset-tile__title" data-action="openWorkspace" data-version-id="{{versionId}}" title="{{localize 'RTA.Template.OpenRuleset'}}">{{name}}</button>
             <div class="rta-ruleset-tile__bottom">
-              <div class="rta-ruleset-tile__badges"><span class="rta-ruleset-badge rta-ruleset-badge--status">{{status}}</span><span class="rta-ruleset-badge rta-ruleset-badge--version"><i class="fa-solid fa-code-branch" aria-hidden="true"></i> {{version}}</span>{{#if isActive}}<span class="rta-ruleset-badge rta-ruleset-badge--active">{{localize "RTA.Template.Active"}}</span>{{/if}}</div>
+              <div class="rta-ruleset-tile__badges"><span class="rta-ruleset-badge rta-ruleset-badge--status">{{statusLabel}}</span><span class="rta-ruleset-badge rta-ruleset-badge--version"><i class="fa-solid fa-code-branch" aria-hidden="true"></i> {{version}}</span>{{#if isActive}}<span class="rta-ruleset-badge rta-ruleset-badge--active">{{localize "RTA.Template.Active"}}</span>{{/if}}</div>
               <div class="rta-config-actions rta-ruleset-tile__actions">
-                <button class="rta-config-action" type="button" data-action="openWorkspace" data-version-id="{{versionId}}" data-tooltip="Open"><i class="fa-solid fa-folder-open"></i></button>
-                {{#if canCreateVersion}}<button class="rta-config-action" type="button" data-action="createNewVersion" data-version-id="{{versionId}}" data-tooltip="Create New Version"><i class="fa-solid fa-code-branch"></i></button>{{/if}}
-                {{#if isActive}}<button class="rta-config-action" type="button" data-action="deactivate" data-tooltip="Deactivate"><i class="fa-solid fa-pause"></i></button>{{else}}{{#if canActivate}}<button class="rta-config-action" type="button" data-action="activate" data-version-id="{{versionId}}" data-tooltip="Activate"><i class="fa-solid fa-play"></i></button>{{/if}}{{/if}}
-                {{#unless isValidated}}<button class="rta-config-action" type="button" data-action="publish" data-version-id="{{versionId}}" data-tooltip="Publish"><i class="fa-solid fa-upload"></i></button>{{/unless}}
-                <button class="rta-config-action" type="button" data-action="export" data-version-id="{{versionId}}" data-tooltip="Export"><i class="fa-solid fa-download"></i></button>
-                <button class="rta-config-action rta-config-action--danger" type="button" data-action="deleteRuleset" data-version-id="{{versionId}}" data-tooltip="Delete version" {{#unless canDelete}}disabled{{/unless}}><i class="fa-solid fa-trash"></i></button>
+                {{#if canCreateVersion}}<button class="rta-config-action" type="button" data-action="createNewVersion" data-version-id="{{versionId}}" data-tooltip="{{localize 'RTA.Template.CreateNewVersion'}}"><i class="fa-solid fa-code-branch"></i></button>{{/if}}
+                {{#if isActive}}<button class="rta-config-action" type="button" data-action="deactivate" data-tooltip="{{localize 'RTA.Template.Deactivate'}}"><i class="fa-solid fa-pause"></i></button>{{else}}{{#if canActivate}}<button class="rta-config-action" type="button" data-action="activate" data-version-id="{{versionId}}" data-tooltip="{{localize 'RTA.Template.Activate'}}"><i class="fa-solid fa-play"></i></button>{{/if}}{{/if}}
+                <button class="rta-config-action" type="button" data-action="export" data-version-id="{{versionId}}" data-tooltip="{{localize 'RTA.Template.Export'}}"><i class="fa-solid fa-download"></i></button>
+                <button class="rta-config-action rta-config-action--danger" type="button" data-action="deleteRuleset" data-version-id="{{versionId}}" data-tooltip="{{localize 'RTA.Template.DeleteVersion'}}"><i class="fa-solid fa-trash"></i></button>
               </div>
             </div>
           </article>
@@ -32,15 +30,11 @@
   {{else}}
     <header class="rta-configurator__workspace-header">
       <button type="button" data-action="backToRulesets"><i class="fa-solid fa-arrow-left"></i> {{localize "RTA.Template.Rulesets"}}</button>
-      <div><strong>{{selectedRulesetName}}</strong><span>v{{selectedRuleset.version}} · {{selectedRuleset.status}}</span></div>
-      <div class="rta-config-actions">
-        {{#if lifecycle.canCreateVersion}}<button class="rta-config-action" type="button" data-action="createNewVersion" data-tooltip="Create New Version"><i class="fa-solid fa-code-branch"></i></button>{{/if}}
-        {{#if lifecycle.isReady}}<button class="rta-config-action" type="button" data-action="validate" data-tooltip="Validate Version"><i class="fa-solid fa-check-double"></i></button>{{/if}}
-      </div>
+      <div><strong>{{selectedRulesetName}}</strong><span>v{{selectedRuleset.version}} · {{lifecycle.statusLabel}}</span></div>
+      <div class="rta-config-actions"></div>
     </header>
     <div class="rta-configurator__workspace">
       <nav class="rta-explorer" style="--rta-card-accent:{{rulesetAccent}}" aria-label="{{localize 'RTA.Template.RuleThemAllNavigation'}}" data-explorer>
-        <div class="rta-explorer__heading"><i class="fa-solid fa-book-open"></i><div><strong>{{selectedRulesetName}}</strong><small>v{{selectedRuleset.version}}</small></div></div>
         <div class="rta-explorer__groups">
           {{#each navGroups}}
             <button type="button" style="--rta-card-accent:{{color}};--rta-nav-accent:{{color}}" data-action="navGroup" data-group="{{id}}" data-nav-group class="rta-explorer__group{{#if active}} is-active{{/if}}" aria-expanded="false"><i class="fa-solid {{icon}} rta-explorer__icon--{{id}}"></i><span>{{title}}</span><i class="fa-solid fa-chevron-right rta-explorer__chevron"></i></button>
@@ -53,8 +47,6 @@
               <section data-flyout-group="{{id}}" hidden>
                 {{#each items}}
                   <button type="button" style="--rta-card-accent:{{color}};--rta-nav-accent:{{color}}" data-action="navigate" data-view="{{view}}" data-nav-item class="rta-explorer__item{{#if primary}} rta-explorer__item--primary{{/if}}{{#if active}} is-active{{/if}}" {{#if active}}aria-current="page"{{/if}}><span>{{title}}</span>{{#if primary}}<i class="fa-solid fa-sliders rta-explorer__primary-icon" aria-hidden="true"></i>{{/if}}</button>
-                {{else}}
-                  <button type="button" data-action="navigate" data-view="general" data-nav-item class="rta-explorer__item">{{../title}}</button>
                 {{/each}}
               </section>
             {{/each}}
@@ -65,25 +57,23 @@
         {{#if isGeneral}}
           <section class="rta-general" style="--rta-card-accent:{{rulesetAccent}}" aria-label="{{localize 'RTA.Template.General'}}">
             <header class="rta-general__header">
-              <div><span class="rta-general__eyebrow">{{localize "RTA.Template.RulesetGeneral"}}</span><h2>{{selectedRulesetName}}</h2><p>{{localize "RTA.Template.RulesetIdentityLifecycleAndPersistence"}}</p></div>
-              <div class="rta-general__header-actions"><span class="rta-general__status">{{selectedRuleset.status}}</span><button type="button" data-action="editRuleset" {{#unless canEditRuleset}}disabled title="{{localize 'RTA.Colors.ReadOnly'}}"{{/unless}}><i class="fa-solid fa-pen" aria-hidden="true"></i> {{localize "RTA.Colors.EditRuleset"}}</button></div>
+              <div><h2>{{selectedRulesetName}}</h2></div>
+              <div class="rta-general__header-actions"><button type="button" data-action="editRuleset" {{#unless canEditRuleset}}disabled title="{{localize 'RTA.Colors.ReadOnly'}}"{{/unless}}><i class="fa-solid fa-pen" aria-hidden="true"></i> {{localize "RTA.Colors.EditRuleset"}}</button></div>
             </header>
             <div class="rta-general__cards">
-              <section class="rta-general__card"><h3><i class="fa-solid fa-book-open" aria-hidden="true"></i> {{localize "RTA.Template.Identity"}}</h3>
-                <dl><dt>{{localize "RTA.Template.Name"}}</dt><dd>{{selectedRulesetName}}</dd><dt>{{localize "RTA.Template.Id"}}</dt><dd>{{selectedRuleset.id}}</dd><dt>versionId</dt><dd>{{selectedRecord.versionId}}</dd></dl>
-              </section>
               <section class="rta-general__card"><h3><i class="fa-solid fa-sliders" aria-hidden="true"></i> {{localize "RTA.Template.VersionAndStatus"}}</h3>
-                <dl><dt>{{localize "RTA.Template.Version"}}</dt><dd>{{selectedRuleset.version}}</dd><dt>{{localize "RTA.Template.Status"}}</dt><dd>{{selectedRuleset.status}}</dd></dl>
-                {{#unless lifecycle.canMutate}}<button type="button" data-action="createNewVersion"><i class="fa-solid fa-code-branch"></i> {{localize "RTA.Template.CreateNewVersion"}}</button>{{/unless}}
+                <dl><dt>{{localize "RTA.Template.Version"}}</dt><dd>{{selectedRuleset.version}}</dd><dt>{{localize "RTA.Template.Status"}}</dt><dd>{{lifecycle.statusLabel}}{{#if lifecycle.isActive}} · {{localize "RTA.Template.Active"}}{{/if}}</dd></dl>
                 <div class="rta-general__lifecycle-actions rta-config-actions">
-                  {{#if lifecycle.canMutate}}<button class="rta-config-action" type="button" data-action="publish" data-tooltip="Publish" aria-label="{{localize 'RTA.Template.Publish'}}"><i class="fa-solid fa-upload"></i></button>{{/if}}
-                  {{#if lifecycle.canActivate}}<button class="rta-config-action" type="button" data-action="activate" data-tooltip="Activate latest published snapshot" aria-label="{{localize 'RTA.Template.Activate'}}"><i class="fa-solid fa-play"></i></button>{{/if}}
+                  {{#if lifecycle.canMutate}}<button type="button" data-action="publish"><i class="fa-solid fa-upload" aria-hidden="true"></i> {{localize "RTA.Template.Publish"}}</button>{{/if}}
+                  {{#if lifecycle.isReady}}<button type="button" data-action="validate"><i class="fa-solid fa-check-double" aria-hidden="true"></i> {{localize "RTA.Template.ValidateVersion"}}</button>{{/if}}
+                  {{#if lifecycle.isActive}}<button type="button" data-action="deactivate"><i class="fa-solid fa-pause" aria-hidden="true"></i> {{localize "RTA.Template.Deactivate"}}</button>{{else}}{{#if lifecycle.canActivate}}<button type="button" data-action="activate"><i class="fa-solid fa-play" aria-hidden="true"></i> {{localize "RTA.Template.Activate"}}</button>{{/if}}{{/if}}
+                  {{#if lifecycle.canCreateVersion}}<button type="button" data-action="createNewVersion"><i class="fa-solid fa-code-branch" aria-hidden="true"></i> {{localize "RTA.Template.CreateNewVersion"}}</button>{{/if}}
                 </div>
               </section>
             </div>
             {{#if publishReadiness}}<section class="rta-general__card rta-general__readiness"><h3><i class="fa-solid fa-list-check" aria-hidden="true"></i> {{localize "RTA.Template.PublishReadiness"}}</h3>{{#if publishReadiness.ready}}<p>{{localize "RTA.Template.PublishReady"}}</p>{{else}}<p>{{localize "RTA.Template.PublishMissing"}} ({{publishReadiness.count}})</p><ul class="rta-general__readiness-list">{{#each publishReadiness.items}}<li>{{#if kind}}<button type="button" class="rta-general__readiness-link" data-action="openDiagnostic" data-kind="{{kind}}" data-entry-id="{{entryId}}" data-path="{{path}}" data-tooltip="{{localize "RTA.Template.PublishFix"}}"><strong>{{objectLabel}}</strong> {{message}}<i class="fa-solid fa-arrow-up-right-from-square" aria-hidden="true"></i></button>{{else}}<strong>{{objectLabel}}</strong> {{message}}{{/if}}</li>{{/each}}</ul>{{/if}}</section>{{/if}}
             {{#if recipes}}<details class="rta-general__card rta-general__recipes"><summary><i class="fa-solid fa-book" aria-hidden="true"></i> {{localize "RTA.Recipe.Title"}}</summary><p class="hint">{{#if lifecycle.canMutate}}{{localize "RTA.Recipe.Intro"}}{{else}}{{localize "RTA.Recipe.ReadOnly"}}{{/if}}</p><div class="rta-general__recipe-list">{{#each recipes}}<article class="rta-general__recipe"><h4>{{localize titleKey}}</h4><p>{{localize summaryKey}}</p><ol>{{#each steps}}<li>{{localize this}}</li>{{/each}}</ol>{{#if ../lifecycle.canMutate}}<button type="button" data-action="applyRecipe" data-recipe-id="{{id}}"><i class="fa-solid fa-plus" aria-hidden="true"></i> {{localize "RTA.Recipe.Apply"}}</button>{{/if}}</article>{{/each}}</div></details>{{/if}}
-            <details class="rta-configurator__storage rta-general__storage"><summary><i class="fa-solid fa-database" aria-hidden="true"></i> {{localize "RTA.Template.StoragePersistence"}}</summary><dl><dt>storageRevision</dt><dd>{{storage.storageRevision}}</dd><dt>activeVersionId</dt><dd>{{storage.activeVersionId}}</dd><dt>engineContractVersion</dt><dd>{{storage.engineContractVersion}}</dd></dl></details>
+            <details class="rta-configurator__storage rta-general__storage"><summary><i class="fa-solid fa-database" aria-hidden="true"></i> {{localize "RTA.Template.Technical"}}</summary><dl><dt>{{localize "RTA.Template.Id"}}</dt><dd>{{selectedRuleset.id}}</dd><dt>versionId</dt><dd>{{selectedRecord.versionId}}</dd><dt>storageRevision</dt><dd>{{storage.storageRevision}}</dd><dt>engineContractVersion</dt><dd>{{storage.engineContractVersion}}</dd></dl></details>
           </section>
         {{/if}}
 
@@ -207,7 +197,7 @@
             </aside>
             <section class="rta-dependencies__detail" aria-label="{{localize 'RTA.Dependencies.Detail'}}">
               {{#if dependencySelected}}
-                <header><div><h3>{{dependencySelected.name}}</h3><p>{{dependencySelected.type}} · {{dependencySelected.id}}</p></div><span>{{dependencySelected.relationCount}} {{localize "RTA.Dependencies.Relations"}}</span></header>
+                <header><div><h3>{{dependencySelected.name}}</h3><p>{{dependencySelected.type}}</p></div><span>{{dependencySelected.relationCount}} {{localize "RTA.Dependencies.Relations"}}</span></header>
                 <div class="rta-dependencies__graph-tools"><span>{{dependencyGraph.incomingCount}} {{localize 'RTA.Dependencies.UsedBy'}} · {{dependencyGraph.outgoingCount}} {{localize 'RTA.Dependencies.DependsOn'}}</span><div><button type="button" data-graph-zoom-out title="{{localize 'RTA.Template.Zoom'}}">−</button><button type="button" data-graph-reset title="{{localize 'RTA.Template.Recentrer'}}"><i class="fa-solid fa-arrows-to-circle"></i></button><button type="button" data-graph-zoom-in title="{{localize 'RTA.Template.Zoom2'}}">+</button></div></div>
                 <svg class="rta-dependencies__graph" data-dependency-graph viewBox="0 0 {{dependencyGraph.width}} {{dependencyGraph.height}}" role="img" aria-label="{{localize 'RTA.Dependencies.Graph'}}" xmlns="http://www.w3.org/2000/svg">
                   <defs><pattern id="rta-dep-dots" width="18" height="18" patternUnits="userSpaceOnUse"><circle cx="2" cy="2" r="1" fill="currentColor" opacity=".16"/></pattern></defs>
@@ -215,7 +205,7 @@
                   <g data-graph-viewport>
                     {{#each dependencyGraph.edges}}<path d="{{path}}" class="rta-dependencies__edge{{#if unresolved}} is-unresolved{{/if}}"><title>{{title}}</title></path>{{/each}}
                     {{#each dependencyGraph.nodes}}<g class="rta-dependencies__node{{#if center}} is-center{{/if}}{{#unless found}} is-unresolved{{/unless}}" transform="translate({{x}} {{y}})" {{#if selectable}}data-action="selectDependency" data-dependency-key="{{key}}" tabindex="0" role="button"{{/if}} {{#if found}}data-node-kind="{{kind}}" data-node-id="{{id}}"{{/if}} aria-label="{{name}}">
-                      <rect width="155" height="58" rx="5"/><rect class="rta-dependencies__node-bar" width="155" height="17" rx="5"/><text class="rta-dependencies__node-type" x="8" y="12">{{type}}</text><text class="rta-dependencies__node-name" x="8" y="37">{{shortName}}</text><text class="rta-dependencies__node-id" x="8" y="51">{{id}}</text><title>{{name}} ({{type}})</title>
+                      <rect width="155" height="58" rx="5"/><rect class="rta-dependencies__node-bar" width="155" height="17" rx="5"/><text class="rta-dependencies__node-type" x="8" y="12">{{type}}</text><text class="rta-dependencies__node-name" x="8" y="37">{{shortName}}</text><title>{{name}} ({{type}})</title>
                     </g>{{/each}}
                   </g>
                 </svg>

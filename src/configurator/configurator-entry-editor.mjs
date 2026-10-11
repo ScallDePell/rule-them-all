@@ -14,7 +14,7 @@ import {availableDocumentTypes} from "../core/system-document-types.mjs";
 
 import {pickerSummary,missingTargetLabel,editorDisplayTitle} from "../ui/editor-display-text.mjs";
 import {refToken,parseRefToken} from "./reference-token.mjs";
-import {simpleFormulaModel,simpleConditionModel} from "./entry-expression-model.mjs";
+import {simpleFormulaModel,simpleConditionModel,CONSTANT_OPERATORS} from "./entry-expression-model.mjs";
 import {buildFieldReferenceChoices} from "./field-reference-choices.mjs";
 import {createEntrySeed} from "./entry-seed.mjs";
 import {ENTRY_OPERATIONS} from "./entry-operations.mjs";
@@ -44,6 +44,8 @@ import {buildTestInputContext,syncTestInputSource} from "./test-input-form.mjs";
 
 const uid=prefix=>`${prefix}-${crypto.randomUUID?.()??Math.random().toString(36).slice(2)}`;
 const fieldUid=()=>`field-${crypto.randomUUID?.()??Math.random().toString(36).slice(2)}`;
+/** Families whose relations the runtime reads: Content Template grants and Definition relationCount. */
+const RELATION_KINDS=Object.freeze(["definition","contentTemplate"]);
 const copy=value=>value===undefined?undefined:JSON.parse(JSON.stringify(value));
 const json=(value,fallback)=>{const text=String(value??"").trim();return text?JSON.parse(text):fallback;};
 const checked=form=>name=>form.querySelector(`[name="${CSS.escape(name)}"]`)?.checked===true;
@@ -134,7 +136,7 @@ export class ConfiguratorEntryEditor extends ConfiguratorWindow {
     }));
     const hasForcedCapabilities=capabilityChoices.some(cap=>cap.permitted&&cap.forced);
     const hasOptionalCapabilities=capabilityChoices.some(cap=>cap.permitted&&!cap.forced);
-    const colorSectionChoices=RULESET_SECTIONS.map(section=>({id:section.id,title:globalThis.game?.i18n?.localize?.(section.titleKey)??section.id,color:sectionColor(data,section.id),allowOverrides:mayOverrideSection(data,section.id)}));
+    const colorSectionChoices=RULESET_SECTIONS.map(section=>({id:section.id,title:globalThis.game?.i18n?.localize?.(section.titleKey)??section.id,color:sectionColor(data,section.id),allowOverrides:mayOverrideSection(data,section.id),hasSubsections:section.collections.length>0}));
     const typeCollection=this.#kind==='definitionType'?'definitionTypes':this.#kind==='contentType'?'contentTypes':this.#kind==='tag'?'tags':null;
     const allowTypeColor=!!typeCollection && mayOverrideSection(colorContext,sectionForCollection(typeCollection));
     const inheritedTypeColor=typeCollection?objectColor(colorContext,typeCollection,null):RTA_NEUTRAL_COLOR;
@@ -197,8 +199,6 @@ export class ConfiguratorEntryEditor extends ConfiguratorWindow {
     const conditionModel=simpleConditionModel(data.expression??{type:"literal",value:true},{parameters,formulas,references:referenceChoices,withColors});
     const relationTargets=relationCatalog(this.#renderCatalog??{}, {exclude:{objectKind:this.#kind,objectId:data.id}});
     const relationRows=(data.relations??[]).map(relation=>relationRowModel(relation,relationTargets,(kind,entry)=>selectColorsAttribute(this.#optionColors(kind,entry))));
-    const contentCapabilityChoices=selection(capabilityTypes.map(x=>({id:x.id,label:x.name??x.id})),data.capabilities);
-    const contentCapabilitySummary=pickerSummary(contentCapabilityChoices);
     const tagChoices=selection(tags.map(x=>({id:x.id,label:x.nameKey,...withColors("tag",x)})),data.tags);
     const tagSummary=pickerSummary(tagChoices);
     // Stored ids that no longer resolve stay visible so the GM can remove them.
@@ -212,12 +212,12 @@ export class ConfiguratorEntryEditor extends ConfiguratorWindow {
     const sheetComponentRows=this.#kind==="sheetDefinition"?(data.layout?.components??[]).map((c,index)=>({...c,index,sourceToken:c.source?refToken(c.source):"",sourceChoices:[{token:"",label:"— none —"},...referenceChoices].map(x=>({...x,selected:x.token===(c.source?refToken(c.source):"")})),isSection:c.kind==="section",isText:c.kind==="text",isField:c.kind==="field",isRepeater:c.kind==="repeater",isActions:c.kind==="actions",isContent:c.kind==="content",isSpacer:c.kind==="spacer",isHalf:c.width==="half",isFull:c.width!=="half"})):[];
     Object.assign(context,{error:this.#error,kind:this.#kind,creating,readOnly:isValidated,deletion:creating?{blocked:false,reason:""}:this.#deletionView(),help:entryHelp(this.#kind,{definitionType:type}),data,type,fieldContract,fieldRows,capabilityChoices,colorSectionChoices,rulesetMainColor:rulesetColor(data),allowTypeColor,inheritedTypeColor,hasCustomColor:!!data.color,valueTypes:this.#api.listValueTypes().map(v=>({...v,selected:v.id===(data.valueType??data.resultType)})),
       documentActorTypes:availableDocumentTypes("Actor").map(id=>({id,selected:data.storageKind==="actor"&&data.documentSubtype===id})),documentItemTypes:availableDocumentTypes("Item").map(id=>({id,selected:data.storageKind!=="actor"&&data.documentSubtype===id})),
-      hasForcedCapabilities,hasOptionalCapabilities,conditionChoices,actionPurposeChoices,acquiredDefinitionChoices,acquisitionActionChoices,appliedStateChoices,removedStateChoices,appliedModifierChoices,stateDurationChoices,rollChoices,outcomeChoices,fallbackOutcomeChoices,testChoices,bindingFormulaChoices,tagChoices,tagSummary,categoryChoices,categorySummary,eventFieldRows,roleChoices,contentTypeChoices,contentCapabilityChoices,contentCapabilitySummary,relationRows,roleSelf,roleSource,roleTarget,roleSubject,roleOwner,outcomeConditionChoices,bonusFormulaChoices,targetFormulaChoices,effectChoices,actionChoices,eventTypeChoices,definitionChoices,definitionBindingRows,templateActionChoices,choiceGroupRows,hasLegacyAcquisitions:!!((data.definitionBindings??[]).length||(data.actionBindings??[]).length),conditionSummary,costEffectSummary,effectSummary,actionSummary,definitionSummary,templateActionSummary,formulaModel,conditionModel,conditionOperands:[conditionModel.left,conditionModel.right],sheetComponentRows,sheetViewActor:data.viewType==="actor"||!data.viewType,sheetViewItem:data.viewType==="item",sheetViewContent:data.viewType==="content",sheetViewRuntime:data.viewType==="runtime",
+      hasForcedCapabilities,hasOptionalCapabilities,conditionChoices,actionPurposeChoices,acquiredDefinitionChoices,acquisitionActionChoices,appliedStateChoices,removedStateChoices,appliedModifierChoices,stateDurationChoices,rollChoices,outcomeChoices,fallbackOutcomeChoices,testChoices,bindingFormulaChoices,tagChoices,tagSummary,categoryChoices,categorySummary,eventFieldRows,roleChoices,contentTypeChoices,relationRows,hasRelations:RELATION_KINDS.includes(this.#kind),roleSelf,roleSource,roleTarget,roleSubject,roleOwner,outcomeConditionChoices,bonusFormulaChoices,targetFormulaChoices,effectChoices,actionChoices,eventTypeChoices,definitionChoices,definitionBindingRows,templateActionChoices,choiceGroupRows,hasLegacyAcquisitions:!!((data.definitionBindings??[]).length||(data.actionBindings??[]).length),conditionSummary,costEffectSummary,effectSummary,actionSummary,definitionSummary,templateActionSummary,formulaModel,conditionModel,conditionOperands:[conditionModel.left,conditionModel.right],sheetComponentRows,sheetViewActor:data.viewType==="actor"||!data.viewType,sheetViewItem:data.viewType==="item",sheetViewContent:data.viewType==="content",sheetViewRuntime:data.viewType==="runtime",
       referenceChoices:referenceChoices.map(x=>({...x,selected:x.token===referenceTargetToken})),
       bindingTargetChoices:referenceChoices.filter(x=>parseRefToken(x.token).capabilityId).map(x=>({...x,selected:x.token===bindingTargetToken})),
       effectTargetChoices:mutableReferenceChoices.map(x=>({...x,selected:x.token===targetToken})),
       parameterChoices:parameters.map(x=>({id:x.id,label:x.nameKey,...withColors("parameter",x),selected:operandKind==="parameter"&&data.operand?.id===x.id})),formulaChoices:formulas.map(x=>({id:x.id,label:x.nameKey,...withColors("formula",x),selected:operandKind==="formula"&&data.operand?.id===x.id})),
-      operandReferenceChoices:referenceChoices.map(x=>({...x,selected:x.token===operandRefToken})),operandKind,isOperandLiteral:operandKind==="literal",isOperandParameter:operandKind==="parameter",isOperandFormula:operandKind==="formula",isOperandReference:operandKind==="reference",operandLiteral:operandKind==="literal"?formatEditorValue("number","one",data.operand?.value??0):"",
+      operandReferenceChoices:referenceChoices.map(x=>({...x,selected:x.token===operandRefToken})),operandKind,isOperandLiteral:operandKind==="literal",isOperandParameter:operandKind==="parameter",isOperandFormula:operandKind==="formula",isOperandReference:operandKind==="reference",showOperand:Object.fromEntries(["literal","parameter","formula","reference"].map(kind=>[kind,operandKind===kind&&effectOperationRegistry.get(data.operation??"set")?.operand!==false])),operandLiteral:operandKind==="literal"?formatEditorValue("number","one",data.operand?.value??0):"",
       isRuleset:this.#kind==="ruleset",isDefinitionType:this.#kind==="definitionType",isDefinition:this.#kind==="definition",isReference:this.#kind==="reference",
       isParameter:this.#kind==="parameter",isFormula:this.#kind==="formula",isFormulaBinding:this.#kind==="formulaBinding",isCondition:this.#kind==="condition",isRoll:this.#kind==="roll",isOutcome:this.#kind==="outcome",isTest:this.#kind==="test",isEffect:this.#kind==="effect",isAction:this.#kind==="action",
       isPermissionPolicy:this.#kind==="permissionPolicy",isSheetDefinition:this.#kind==="sheetDefinition",isTag:this.#kind==="tag",isCategory:this.#kind==="category",
@@ -231,11 +231,11 @@ export class ConfiguratorEntryEditor extends ConfiguratorWindow {
       }),
       constraintFieldOptions:[...new Set([...Object.keys(data.fields??{}),'relations'])].map(id=>({id,colors:RTA_NEUTRAL_COLOR})),
       presentationRows:presentationRowModel(this.#kind==="definition"?data.presentationProfile:data.presentation),
-      imagePreview:data.image||"icons/svg/mystery-man.svg",constraintsJson:JSON.stringify(data.constraints??[],null,2),presentationJson:JSON.stringify(data.presentation??null,null,2),
-      dataJson:JSON.stringify(data.data??{},null,2),profileJson:JSON.stringify(data.presentationProfile??null,null,2),genericJson:JSON.stringify(data,null,2),
+      imagePreview:data.image||"icons/svg/mystery-man.svg",
+      dataJson:JSON.stringify(data.data??{},null,2),genericJson:JSON.stringify(data,null,2),
       expressionJson:JSON.stringify(data.expression??{type:"literal",value:0},null,2),scopeJson:JSON.stringify(data.scope??{objectKind:"ruleset"},null,2),rulesJson:JSON.stringify(data.rules??[],null,2),payloadFieldsJson:JSON.stringify(data.payloadFields??{},null,2),eventFilterJson:JSON.stringify(data.eventFilter??null,null,2),
       rollDataJson:JSON.stringify(data.data??{},null,2),initialStateRulesJson:JSON.stringify(data.initialStateRules??[],null,2),rolesText:(data.roles??[]).join("\n"),tagsText:(data.tags??[]).join("\n"),capabilitiesText:(data.capabilities??[]).join("\n"),
-      isAllow:data.defaultEffect==="ALLOW",isDeny:data.defaultEffect!=="ALLOW",isStackable:data.runtimeMode==="stackable",isUnique:data.runtimeMode!=="stackable",isStorageItem:data.storageKind!=="actor",isStorageActor:data.storageKind==="actor",effectOperationChoices:effectOperationRegistry.list().map(id=>({id,labelKey:effectOperationRegistry.get(id).labelKey,colors:selectColorsAttribute([RTA_NEUTRAL_COLOR]),selected:id===(data.operation??"set")})), title:editorDisplayTitle(creating,creating?this.#kind:(data.nameKey??data.key??data.id))});
+      isAllow:data.defaultEffect==="ALLOW",isDeny:data.defaultEffect!=="ALLOW",isStackable:data.runtimeMode==="stackable",isUnique:data.runtimeMode!=="stackable",isStorageItem:data.storageKind!=="actor",isStorageActor:data.storageKind==="actor",effectOperationChoices:effectOperationRegistry.list().map(id=>({id,labelKey:effectOperationRegistry.get(id).labelKey,operand:effectOperationRegistry.get(id).operand,colors:selectColorsAttribute([RTA_NEUTRAL_COLOR]),selected:id===(data.operation??"set")})),effectNeedsOperand:effectOperationRegistry.get(data.operation??"set")?.operand!==false, title:editorDisplayTitle(creating,creating?this.#kind:(data.nameKey??data.key??data.id))});
     return context;
     } finally { this.#renderCatalog=null; }
   }
@@ -303,10 +303,14 @@ export class ConfiguratorEntryEditor extends ConfiguratorWindow {
     for(const editor of row?.querySelectorAll("[data-rule-operand-editor]")??[])editor.hidden=editor.dataset.ruleOperandEditor!==target.value;
   }
 
+  /** Effect value rows follow the value source, and disappear for operations without operand (toggle). */
   #syncOperandEditor(target){
-    if(target?.name!=="operandKind")return;
-    const kind=target.value;
-    for(const node of this.element.querySelectorAll("[data-operand-editor]"))node.hidden=node.dataset.operandEditor!==kind;
+    if(target?.name==="conditionOperator"){const operands=this.element.querySelector("[data-condition-builder] .rta-rule-operands");if(operands)operands.hidden=CONSTANT_OPERATORS.includes(target.value);return;}
+    if(!["operandKind","operation"].includes(target?.name))return;
+    const kind=this.element.querySelector('[name="operandKind"]')?.value,operation=this.element.querySelector('[name="operation"]');
+    const needsOperand=operation?.selectedOptions?.[0]?.dataset.operand!=="false";
+    const kindRow=this.element.querySelector('[name="operandKind"]')?.closest(".form-group");if(kindRow)kindRow.hidden=!needsOperand;
+    for(const node of this.element.querySelectorAll("[data-operand-editor]"))node.hidden=!needsOperand||node.dataset.operandEditor!==kind;
   }
 
   #creationSources(){
@@ -397,9 +401,8 @@ export class ConfiguratorEntryEditor extends ConfiguratorWindow {
       collectConditionExpression:fallback=>collectConditionExpression(this.element.querySelector("[data-condition-builder]"),fallback),
       collectCreation:()=>this.#collectCreation(),uid,fieldUid
     });
-    // All editor families use one relation serializer. This runs AFTER the
-    // legacy form collector so generic JSON cannot erase relations accidentally.
-    if(this.#kind!=="ruleset")data.relations=collectRelationRows(
+    // Relations are edited only where the runtime reads them (grants, relationCount).
+    if(RELATION_KINDS.includes(this.#kind))data.relations=collectRelationRows(
       this.element.querySelectorAll('[data-relation-row]'),current.relations??[]);
     return data;
   }
@@ -527,7 +530,7 @@ export class ConfiguratorEntryEditor extends ConfiguratorWindow {
     }
     if(action==="removeSheetComponent"){event.currentTarget.closest("[data-sheet-component]")?.remove();this.#dirty=true;this.#syncFooter();return;}
     if(action==="sheetUp"||action==="sheetDown"){const row=event.currentTarget.closest("[data-sheet-component]");if(!row)return;const sibling=action==="sheetUp"?row.previousElementSibling:row.nextElementSibling;if(sibling){if(action==="sheetUp")row.parentElement.insertBefore(row,sibling);else row.parentElement.insertBefore(sibling,row);this.#dirty=true;this.#syncFooter();}return;}
-    if(action==="addDeclarativeConstraint"){const list=this.element.querySelector("[data-declarative-constraints]");if(list){const row=document.createElement("div");row.className="rta-declarative-constraint";row.dataset.declarativeConstraint="";row.innerHTML=renderDeclarativeConstraintRow({fields:[...this.element.querySelectorAll("[data-constraint-field-options] option")].map(option=>({id:option.value,colors:option.dataset.rtaColors??RTA_NEUTRAL_COLOR})),labels:{field:game?.i18n?.localize?.("RTA.Declarative.Field")??"Field",rule:game?.i18n?.localize?.("RTA.Declarative.Rule")??"Rule",value:game?.i18n?.localize?.("RTA.Declarative.Value")??"Value",remove:game?.i18n?.localize?.("RTA.Declarative.DeleteConstraint")??"Remove constraint"}});list.append(row);RTASelect.enhance(this.element);row.querySelector("[data-action]").addEventListener("click",event=>this.#action(event));this.#dirty=true;this.#syncFooter();}return;}
+    if(action==="addDeclarativeConstraint"){const list=this.element.querySelector("[data-declarative-constraints]");if(list){const row=document.createElement("div");row.className="rta-declarative-constraint";row.dataset.declarativeConstraint="";row.innerHTML=renderDeclarativeConstraintRow({fields:[...(this.element.querySelector("template[data-constraint-field-options]")?.content.querySelectorAll("option")??[])].map(option=>({id:option.value,colors:option.dataset.rtaColors??RTA_NEUTRAL_COLOR})),labels:{field:game?.i18n?.localize?.("RTA.Declarative.Field")??"Field",rule:game?.i18n?.localize?.("RTA.Declarative.Rule")??"Rule",value:game?.i18n?.localize?.("RTA.Declarative.Value")??"Value",remove:game?.i18n?.localize?.("RTA.Declarative.DeleteConstraint")??"Remove constraint"}});list.append(row);RTASelect.enhance(this.element);row.querySelector("[data-action]").addEventListener("click",event=>this.#action(event));this.#dirty=true;this.#syncFooter();}return;}
     if(action==="removeDeclarativeConstraint"){event.currentTarget.closest("[data-declarative-constraint]")?.remove();this.#dirty=true;this.#syncFooter();return;}
     if(action==="addField"){
       const list=this.element.querySelector("[data-field-definition-list]");if(list){const row=this.#newFieldRow();row.querySelector('[data-action="removeField"]')?.addEventListener("click",event=>this.#action(event));list.append(row);this.#dirty=true;this.#syncFooter();}return;

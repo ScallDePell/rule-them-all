@@ -284,11 +284,6 @@
   fill: var(--rta-graph-label);
 }
 
-.rta-configurator .rta-dependencies__node-id {
-  font-size: var(--rta-type-micro);
-  fill: var(--rta-graph-label-muted);
-}
-
 .rta-configurator .rta-dependencies__technical {
   margin-top: var(--rta-space-5);
   border: 1px solid var(--rta-panel-border);

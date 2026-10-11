@@ -438,11 +438,11 @@
 /* Delete stays in the footer flow; when the Core would refuse it, the wrapper carries the reason tooltip. */
 .rta-config-entry .form-footer .rta-delete-guard {
   display: flex;
-  flex: 1;
+  flex: none;
 }
 
 .rta-config-entry .form-footer .rta-delete-guard > button {
-  flex: 1;
+  flex: none;
 }
 
 .rta-config-entry .form-footer .rta-delete-guard > button:disabled {

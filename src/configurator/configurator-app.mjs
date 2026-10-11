@@ -1,7 +1,6 @@
 import {resolvePresentation} from "./declarative-contracts.mjs";
 import {buildFacet, matchesFacet, toggleFacet} from "./card-facets.mjs";
 import {availableDocumentTypes} from "../core/system-document-types.mjs";
-import {escapeHTML} from "../ui/html-utils.mjs";
 import {RTA_NEUTRAL_COLOR} from "../ui/theme-tokens.mjs";
 import {RULESET_SECTIONS,rulesetColor,sectionColor,collectionColor,objectColor,sectionForCollection,mayOverrideSection} from "./ruleset-colors.mjs";
 import {MODULE_ID} from "../core/module-contract.mjs";
@@ -53,13 +52,8 @@ function localize(api, versionId, key) {
   catch { return label(key); }
 }
 
-function cardTooltip(row) {
-  const details = [row.name, `ID: ${row.id}`];
-  if (row.key) details.push(`Key: ${row.key}`);
-  if (row.typeName) details.push(`Type: ${row.typeName}`);
-  if (row.enabled === false) details.push("Disabled");
-  return details.map(escapeHTML).join("<br>");
-}
+const STATUS_LABELS={draft:"RTA.Template.StatusDraft",ready:"RTA.Template.StatusReady",validated:"RTA.Template.StatusValidated"};
+const statusLabel=status=>STATUS_LABELS[status]?game.i18n?.localize?.(STATUS_LABELS[status])??status:status;
 
 export class ConfiguratorApp extends ConfiguratorWindow {
   static registerSettings(settings) {
@@ -88,7 +82,7 @@ export class ConfiguratorApp extends ConfiguratorWindow {
   #restoreScroll = false;
   #runtimeResult = null;
   // null: not chosen yet, defaulted on render; "": cleared by the user, kept cleared.
-  #runtimeSelection = {source:null,target:null,definitionId:null,actionId:null,formulaId:null,conditionId:null,testId:null,eventTypeId:null,rollFormula:"",sourceType:"",targetType:"",actorRole:"source",tool:"test"};
+  #runtimeSelection = {source:null,target:null,actionId:null,formulaId:null,conditionId:null,testId:null,eventTypeId:null,rollFormula:"",sourceType:"",targetType:"",actorRole:"source",tool:"test"};
   entryEditor;
 
   async #api() { return game.ruleThemAll?.configurator ?? await game.ruleThemAll?.configuratorReady; }
@@ -139,7 +133,7 @@ export class ConfiguratorApp extends ConfiguratorWindow {
       versionId:record.versionId, rulesetId:record.rulesetId, version:record.version, status:record.status,
       name:localize(api,record.versionId,record.workingDraft.nameKey), color:rulesetColor(record.workingDraft), isActive:record.versionId===activeId,
       isValidated:record.status==="validated", isReady:record.status==="ready", isDraft:record.status==="draft",
-      canDelete:true, canActivate:Boolean(record.publishedSnapshot), canCreateVersion:record.status==="validated"
+      statusLabel:statusLabel(record.status), canActivate:Boolean(record.publishedSnapshot), canCreateVersion:record.status==="validated"
     }));
 
     const definitionTypes = ruleset ? api.listDefinitionTypes(this.#selected).map(type => ({
@@ -190,16 +184,16 @@ export class ConfiguratorApp extends ConfiguratorWindow {
     let cards = [], currentTitle = "", currentKind = "", currentType = null;
     if (ruleset && this.#view === "definitionTypes") {
       currentTitle="Definition Types"; currentKind="definitionType";
-      cards = definitionTypes.map(row=>({...row,tooltipHtml:cardTooltip(row),cardColor:row.color,image:row.image||""}));
+      cards = definitionTypes.map(row=>({...row,cardColor:row.color,image:row.image||""}));
     } else if (ruleset && this.#view === "contentTypes") {
       currentTitle="Content Types"; currentKind="contentType";
-      cards = contentTypes.map(row=>({...row,tooltipHtml:cardTooltip(row),cardColor:row.color,image:row.image||""}));
+      cards = contentTypes.map(row=>({...row,cardColor:row.color,image:row.image||""}));
     } else if (ruleset && this.#view.startsWith("content:")) {
       const typeId=this.#view.slice("content:".length); currentType=contentTypes.find(type=>type.id===typeId)??null;
       if(!currentType)this.#view="contentTypes";
       else {
         currentTitle=currentType.name; currentKind="contentTemplate";
-        cards=api.listContentTemplates(this.#selected).filter(entry=>entry.contentTypeId===typeId).map(entry=>({...entry,name:localize(api,this.#selected,entry.nameKey),typeName:currentType.name,cardColor:currentType.color,image:entry.image||currentType.image||"",tooltipHtml:""})).map(row=>({...row,tooltipHtml:cardTooltip(row)})).sort((a,b)=>(a.order??0)-(b.order??0)||a.name.localeCompare(b.name));
+        cards=api.listContentTemplates(this.#selected).filter(entry=>entry.contentTypeId===typeId).map(entry=>({...entry,name:localize(api,this.#selected,entry.nameKey),typeName:currentType.name,cardColor:currentType.color,image:entry.image||currentType.image||""})).map(row=>({...row})).sort((a,b)=>(a.order??0)-(b.order??0)||a.name.localeCompare(b.name));
       }
     } else if (ruleset && this.#view.startsWith("definitions:")) {
       const typeId=this.#view.slice("definitions:".length); currentType=definitionTypes.find(type=>type.id===typeId)??null;
@@ -210,17 +204,16 @@ export class ConfiguratorApp extends ConfiguratorWindow {
           const display=resolvePresentation(currentType.presentation,entry.presentationProfile,null);
           return {...entry,name:display.label||localize(api,this.#selected,entry.nameKey),typeName:currentType.name,
             cardColor:display.color||currentType.color,display,displayGroup:display.group??"",displayFormat:display.format??"",
-            displayOrder:display.order??entry.order,tooltipHtml:""};
-        }).map(row=>({...row,tooltipHtml:cardTooltip(row)}))
-          .sort((a,b)=>(a.displayOrder??0)-(b.displayOrder??0)||a.name.localeCompare(b.name));
+            displayOrder:entry.order};
+        }).sort((a,b)=>(a.displayOrder??0)-(b.displayOrder??0)||a.name.localeCompare(b.name));
       }
     } else if (ruleset) {
       const meta=TOP_LEVEL.find(item=>item.view===this.#view);
       if (meta) {
         currentTitle=meta.title; currentKind=meta.kind;
         cards=(api[meta.list]?.(this.#selected)??[]).map(entry=>({
-          ...entry,name:localize(api,this.#selected,entry.nameKey??entry.key??entry.id),cardColor:collectionColor(ruleset,meta.collection),tooltipHtml:""
-        })).map(row=>({...row,tooltipHtml:cardTooltip(row)})).sort((a,b)=>(a.order??0)-(b.order??0)||a.name.localeCompare(b.name));
+          ...entry,name:localize(api,this.#selected,entry.nameKey??entry.key??entry.id),cardColor:collectionColor(ruleset,meta.collection)
+        })).map(row=>({...row})).sort((a,b)=>(a.order??0)-(b.order??0)||a.name.localeCompare(b.name));
       }
     }
 
@@ -297,13 +290,12 @@ export class ConfiguratorApp extends ConfiguratorWindow {
     const runtimeActorNames={source:actors.find(x=>x.uuid===this.#runtimeSelection.source)?.name??label("RTA.Lab.NoActorChosen"),target:actors.find(x=>x.uuid===this.#runtimeSelection.target)?.name??label("RTA.Lab.NoActorChosen")};
     const runtimeColorFor=ruleset&&this.#view==="runtimeLab"?createSelectColorResolver({definitionTypes:api.listDefinitionTypes(this.#selected),contentTypes:api.listContentTypes(this.#selected),familyColors:ruleset.familyColors??{},ruleset}):()=>[];
     const runtimeColors=(kind,entry)=>selectColorsAttribute(runtimeColorFor(kind,entry));
-    const runtimeDefinitions=ruleset&&this.#view==="runtimeLab"?api.listDefinitions(this.#selected).filter(x=>x.enabled!==false).map(x=>({id:x.id,name:localize(api,this.#selected,x.nameKey),colors:runtimeColors("definition",x),selected:false})) : [];
     const runtimeActions=ruleset&&this.#view==="runtimeLab"?api.listActions(this.#selected).filter(x=>x.enabled!==false).map(x=>({id:x.id,name:localize(api,this.#selected,x.nameKey),colors:runtimeColors("action",x),selected:false})) : [];
     const runtimeFormulas=ruleset&&this.#view==="runtimeLab"?api.listFormulas(this.#selected).filter(x=>x.enabled!==false).map(x=>({id:x.id,name:localize(api,this.#selected,x.nameKey),colors:runtimeColors("formula",x),selected:false})) : [];
     const runtimeConditions=ruleset&&this.#view==="runtimeLab"?api.listConditions(this.#selected).filter(x=>x.enabled!==false).map(x=>({id:x.id,name:localize(api,this.#selected,x.nameKey),colors:runtimeColors("condition",x),selected:false})) : [];
     const runtimeTests=ruleset&&this.#view==="runtimeLab"?api.listTests(this.#selected).filter(x=>x.enabled!==false).map(x=>({id:x.id,name:localize(api,this.#selected,x.nameKey),colors:runtimeColors("test",x),selected:false})) : [];
     const runtimeEvents=ruleset&&this.#view==="runtimeLab"?api.listEventTypes(this.#selected).filter(x=>x.enabled!==false).map(x=>({id:x.id,name:localize(api,this.#selected,x.nameKey),colors:runtimeColors("eventType",x),selected:false})) : [];
-    for(const [key,list] of [["definitionId",runtimeDefinitions],["testId",runtimeTests],["formulaId",runtimeFormulas],["conditionId",runtimeConditions],["actionId",runtimeActions],["eventTypeId",runtimeEvents]]){
+    for(const [key,list] of [["testId",runtimeTests],["formulaId",runtimeFormulas],["conditionId",runtimeConditions],["actionId",runtimeActions],["eventTypeId",runtimeEvents]]){
       const chosen=applyRuntimeChoice(this.#runtimeSelection,key,list);for(const entry of list)entry.selected=entry.id===chosen;
     }
     let runtimeStateCards=[],runtimeStateError="";
@@ -319,10 +311,10 @@ export class ConfiguratorApp extends ConfiguratorWindow {
       error:this.#error,displayLines:this.#displayMode==="lines",displayTiles:this.#displayMode==="tiles",isWorkspace:!!ruleset,isRulesets:!ruleset,view:this.#view,rulesets,navigation,navGroups,currentNavGroup,definitionTypes,contentTypes,
       selectedRuleset:ruleset,selectedRecord:record,rulesetAccent:rulesetColor(ruleset),canOverrideCollection,currentCollection,collectionAccent,collectionCustomAccent,canEditRuleset:record?.status!=="validated",selectedRulesetName:ruleset?localize(api,this.#selected,ruleset.nameKey):"",
       isGeneral:!!ruleset&&this.#view==="general",isCollection:!!ruleset&&Boolean(currentKind),isContentFamily:currentKind==="contentTemplate",isDependencies:!!ruleset&&this.#view==="dependencies",isRuntimeLab:!!ruleset&&this.#view==="runtimeLab",isContentTypes,isContentTemplates,isContentLibraries,
-      currentTitle,currentKind,currentType,canReorder:Boolean(record&&record.status!=="validated"&&currentKind&&currentKind!=="reference"),cards:filteredCards,availableTags,activeTagCount:activeTagIds.size,availableCategories,activeCategoryCount:activeCategoryIds.size,dependencyGroups:dependencyVisibleGroups,dependencySelected,dependencyGraph,dependencyStats,dependencyAvailableTags,dependencyActiveTagCount:dependencyActiveTags.size,dependencyUnresolvedOnly,actors,runtimeDefinitions,runtimeActions,runtimeFormulas,runtimeConditions,runtimeTests,runtimeEvents,runtimeResult:this.#runtimeResult,runtimeStateCards,runtimeSelection:this.#runtimeSelection,runtimeActorTypeOptions:availableDocumentTypes("Actor").map(id=>({id,sourceSelected:id===this.#runtimeSelection.sourceType,targetSelected:id===this.#runtimeSelection.targetType})),runtimeTool,runtimeModes,runtimeGuide,runtimeReady,runtimeStateError,runtimeActorNames,
+      currentTitle,currentKind,currentType,canReorder:Boolean(record&&record.status!=="validated"&&currentKind&&currentKind!=="reference"),cards:filteredCards,availableTags,activeTagCount:activeTagIds.size,availableCategories,activeCategoryCount:activeCategoryIds.size,dependencyGroups:dependencyVisibleGroups,dependencySelected,dependencyGraph,dependencyStats,dependencyAvailableTags,dependencyActiveTagCount:dependencyActiveTags.size,dependencyUnresolvedOnly,actors,runtimeActions,runtimeFormulas,runtimeConditions,runtimeTests,runtimeEvents,runtimeResult:this.#runtimeResult,runtimeStateCards,runtimeSelection:this.#runtimeSelection,runtimeActorTypeOptions:availableDocumentTypes("Actor").map(id=>({id,sourceSelected:id===this.#runtimeSelection.sourceType,targetSelected:id===this.#runtimeSelection.targetType})),runtimeTool,runtimeModes,runtimeGuide,runtimeReady,runtimeStateError,runtimeActorNames,
       publishReadiness:this.#view==='general'&&record?.status==='draft'?this.#publishReadiness(api,ruleset):null,
       recipes:this.#view==='general'&&record?recipeCards():null,
-      lifecycle:record?{isValidated:record.status==="validated",isReady:record.status==="ready",isDraft:record.status==="draft",canMutate:record.status!=="validated",canCreateVersion:record.status==="validated",canActivate:Boolean(record.publishedSnapshot),canDelete:true}:null,
+      lifecycle:record?{isValidated:record.status==="validated",isReady:record.status==="ready",isDraft:record.status==="draft",canMutate:record.status!=="validated",canCreateVersion:record.status==="validated",canActivate:Boolean(record.publishedSnapshot),isActive:record.versionId===activeId,statusLabel:statusLabel(record.status)}:null,
       storage:ruleset?{storageRevision:api.getStorageRevision(),activeVersionId:activeId,engineContractVersion:ruleset.engineContractVersion}:null
     });
   }
@@ -539,7 +531,6 @@ export class ConfiguratorApp extends ConfiguratorWindow {
       if (action==="deleteRuleset") {
         const id=button.dataset.versionId??this.#selected;
         const isActive=api.getActiveVersionId()===id;
-        const prompt=isActive?"This Ruleset version is active. Deactivate and delete it? This cannot be undone.":"Delete this Ruleset version? This cannot be undone.";
         if (!await confirmRTA(isActive?"RTA.UI.DeleteActiveRuleset":"RTA.UI.DeleteRuleset")) return;
         if(isActive)await api.setActiveVersionId(null);
         await api.deleteRulesetVersion(id);

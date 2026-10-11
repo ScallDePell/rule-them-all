@@ -28,18 +28,18 @@ import {emptyStorageSnapshot} from '../src/configurator/configurator-storage.mjs
 const mockRule=(kind,field,value)=>({querySelector:selector=>({
  '[data-constraint-kind]':{value:kind},'[data-constraint-field]':{value:field},'[data-constraint-value]':{value}
 }[selector])});
-test('visual constraint editor serializes numeric and comparison rules, preserving unknown historic records',()=>{
- const legacy={kind:'extensionContract',payload:{custom:true}};
- const data=readConstraintRows([mockRule('min','score','2'),mockRule('fieldEquals','other','score')],[{kind:'min',field:'score',value:1},legacy]);
- assert.deepEqual(data,[legacy,{kind:'min',field:'score',value:2},{kind:'fieldEquals',field:'other',otherField:'score'}]);
- assert.equal(evaluateConstraints(data.slice(1),{score:2,other:2}).length,0);
+test('visual constraint editor serializes numeric and comparison rules',()=>{
+ const data=readConstraintRows([mockRule('min','score','2'),mockRule('fieldEquals','other','score')]);
+ assert.deepEqual(data,[{kind:'min',field:'score',value:2},{kind:'fieldEquals',field:'other',otherField:'score'}]);
+ assert.equal(evaluateConstraints(data,{score:2,other:2}).length,0);
 });
-test('presentation overrides retain unknown historic metadata and remove only explicit overrides',()=>{
+test('presentation keeps only the overrides that are switched on',()=>{
  const rows=presentationRowModel({label:'Override',visible:false});
  assert.equal(rows.find(row=>row.key==='visible').active,true);
- const source={customModule:{preserve:1},label:'Old'};
- const dom=[{dataset:{presentationKey:'label'},querySelector:selector=>selector==='[data-presentation-override]'?{checked:false}:{value:'Ignore'}}];
- assert.deepEqual(readPresentationRows(dom,source),{customModule:{preserve:1}});
+ const off=[{dataset:{presentationKey:'label'},querySelector:selector=>selector==='[data-presentation-override]'?{checked:false}:{value:'Ignore'}}];
+ assert.equal(readPresentationRows(off),null);
+ const on=[{dataset:{presentationKey:'label'},querySelector:selector=>selector==='[data-presentation-override]'?{checked:true}:{value:'Shown'}}];
+ assert.deepEqual(readPresentationRows(on),{label:'Shown'});
 });
 class Store {constructor(){this.value=emptyStorageSnapshot();}async load(){return structuredClone(this.value);}async save(v){this.value=structuredClone(v);}}
 test('Configurator rejects invalid values at persistence and preserves inherited metadata after reload',async()=>{

@@ -12,7 +12,9 @@ export const operandEditorRow=(node,index,{parameters=[],formulas=[],references=
     referenceChoices:references.map(x=>({...x,selected:kind==="reference"&&x.token===token}))};
 };
 const formulaFlags=operator=>({opSingle:operator==="single",opAdd:operator==="add",opSubtract:operator==="subtract",opMultiply:operator==="multiply",opDivide:operator==="divide",opMin:operator==="min",opMax:operator==="max",opSum:operator==="sum",opAverage:operator==="average"});
-const conditionFlags=operator=>({opEq:operator==="eq",opNeq:operator==="neq",opGt:operator==="gt",opGte:operator==="gte",opLt:operator==="lt",opLte:operator==="lte",opAlwaysTrue:operator==="alwaysTrue",opAlwaysFalse:operator==="alwaysFalse"});
+const conditionFlags=operator=>({opEq:operator==="eq",opNeq:operator==="neq",opGt:operator==="gt",opGte:operator==="gte",opLt:operator==="lt",opLte:operator==="lte",opAlwaysTrue:operator==="alwaysTrue",opAlwaysFalse:operator==="alwaysFalse",noOperands:CONSTANT_OPERATORS.includes(operator)});
+/** Comparisons that ignore their operands. */
+export const CONSTANT_OPERATORS=Object.freeze(["alwaysTrue","alwaysFalse"]);
 export const simpleFormulaModel=(expression,sources)=>{
   const supported=new Set(["add","subtract","multiply","divide","min","max","sum","average"]);
   if(supported.has(expression?.type)&&Array.isArray(expression.args)&&expression.args.length){const operator=expression.type;return {supported:true,operator,...formulaFlags(operator),operands:expression.args.map((n,i)=>operandEditorRow(n,i,sources))};}

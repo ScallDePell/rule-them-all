@@ -10,10 +10,8 @@ export function presentationRowModel(value) {
  const source=record(value)?value:{};
  return PRESENTATION_KEYS.map(key=>({key,active:Object.hasOwn(source,key),isBoolean:key==='visible',isColor:key==='color',isNumber:key==='order',value:source[key]===undefined||source[key]===null?'':String(source[key]),checked:source[key]===true}));
 }
-/** Unrecognized historic rules remain in the advanced JSON, never discarded. */
-export function readConstraintRows(rows,legacy=[]) {
- const kept=Array.isArray(legacy)?legacy.filter(rule=>!record(rule)||!CONSTRAINT_KINDS.includes(rule.kind)):[];
- const result=[...kept];
+export function readConstraintRows(rows) {
+ const result=[];
  for(const row of rows) {
   const get=key=>row.querySelector(`[data-constraint-${key}]`)?.value;
   const kind=get('kind'),field=String(get('field')??'').trim();
@@ -30,8 +28,8 @@ export function readConstraintRows(rows,legacy=[]) {
  }
  return result;
 }
-export function readPresentationRows(rows,legacy=null) {
- const result=record(legacy)?structuredClone(legacy):{};
+export function readPresentationRows(rows) {
+ const result={};
  for(const row of rows){
   const key=row.dataset.presentationKey;
   if(!PRESENTATION_KEYS.includes(key))continue;
