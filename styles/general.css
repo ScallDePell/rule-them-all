@@ -13,7 +13,7 @@
   align-items: flex-start;
   gap: var(--rta-space-8);
   padding: var(--rta-space-2) var(--rta-space-1) var(--rta-space-7);
-  border-bottom: 1px solid var(--color-border-light-primary,#777);
+  border-bottom: 1px solid var(--rta-color-border);
 }
 
 .rta-configurator .rta-general__header h2 {
@@ -35,7 +35,7 @@
 
 .rta-configurator .rta-general__status {
   padding: var(--rta-space-2) var(--rta-space-5);
-  border: 1px solid var(--color-border-light-primary,#777);
+  border: 1px solid var(--rta-color-border);
   border-radius: var(--rta-radius-control);
   text-transform: capitalize;
 }
@@ -49,7 +49,7 @@
 .rta-configurator .rta-general__card, .rta-configurator .rta-general__storage {
   min-width: 0;
   padding: var(--rta-space-8);
-  border: 1px solid var(--color-border-light-primary,#777);
+  border: 1px solid var(--rta-color-border);
   border-radius: var(--rta-radius-panel);
   background: rgba(128,128,128,.06);
 }

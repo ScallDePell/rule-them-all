@@ -90,7 +90,7 @@
 
 .rta-config-entry__section-summary {
   margin-inline-start: var(--rta-space-4);
-  color: var(--color-text-light-6, var(--color-warm-1));
+  color: var(--rta-color-text-secondary);
   font-size: 0.82em;
   font-weight: 400;
   opacity: 0.82;
@@ -154,7 +154,7 @@
   border: 1px solid var(--color-border-light-primary);
   border-radius: var(--rta-radius-compact);
   padding: var(--rta-space-5);
-  background: color-mix(in srgb, var(--color-cool-5, #222) 12%, transparent);
+  background: color-mix(in srgb, var(--rta-color-surface) 12%, transparent);
 }
 
 .rta-field-editor > header,
@@ -327,7 +327,7 @@
 }
 
 .rta-field-editor__body {
-  background: color-mix(in srgb, var(--color-cool-5, #222) 8%, transparent);
+  background: color-mix(in srgb, var(--rta-color-surface) 8%, transparent);
   border-top: 0;
   padding: var(--rta-space-6) var(--rta-space-7) var(--rta-space-7);
 }
@@ -500,8 +500,8 @@
    Definition grants use a different *data-bearing* binding card: see exception table.
    No selectors here depend on game system, entry kind or accordion state. */
 .rta-config-entry {
-  --rta-editor-border: var(--color-border-light-primary, #49404e);
-  --rta-editor-fill: color-mix(in srgb, var(--color-cool-5, #222) 9%, transparent);
+  --rta-editor-border: var(--rta-color-border);
+  --rta-editor-fill: color-mix(in srgb, var(--rta-color-surface) 9%, transparent);
   --rta-editor-radius: 5px;
   --rta-editor-gap: .65rem;
   color: var(--color-text-primary, inherit);
@@ -528,7 +528,7 @@
 .rta-config-entry__fixed-capabilities {
   margin: var(--rta-space-4) 0 var(--rta-space-5);
   padding: var(--rta-space-4) var(--rta-space-5);
-  border: 1px solid var(--color-border-light-primary, var(--rta-editor-border, #59505f));
+  border: 1px solid var(--rta-color-border);
   border-radius: var(--rta-radius-control);
 }
 
@@ -655,7 +655,7 @@
 }
 
 .rta-config-entry .rta-section-color-config {
-  border-left: var(--rta-rail-width, 4px) solid var(--rta-section-color, #666666);
+  border-left: var(--rta-rail-width, 4px) solid var(--rta-section-color, var(--rta-color-neutral));
   padding-inline-start: var(--rta-space-5);
   margin-block: var(--rta-space-5);
 }

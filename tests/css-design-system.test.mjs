@@ -1,7 +1,7 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import {readFileSync} from 'node:fs';
-import {readCssBundle} from './helpers/css-bundle.mjs';
+import {readCssBundle,stylesheetPaths} from './helpers/css-bundle.mjs';
 const source = readCssBundle();
 const markup = readFileSync(new URL('../templates/configurator/configurator.hbs', import.meta.url), 'utf8');
 const cssWithoutComments = source.replace(/\/\*[\s\S]*?\*\//g, '');
@@ -54,4 +54,11 @@ test('CSS has one unconditional rule per selector; responsive exceptions stay in
   assert.equal(depth,0,'Unclosed CSS rule');
   const duplicates = selectors.filter((item, index) => selectors.indexOf(item) < index);
   assert.deepEqual(duplicates, [], `Repeated CSS selectors: ${duplicates}`);
+});
+
+test('hard-coded colors live only in tokens.css', () => {
+  for (const path of stylesheetPaths().filter(path => !path.endsWith('/tokens.css'))) {
+    const text = readFileSync(new URL(`../${path}`, import.meta.url), 'utf8').replace(/\/\*[\s\S]*?\*\//g, '');
+    assert.doesNotMatch(text, /#[0-9a-fA-F]{3,8}\b/, `${path} contains a literal hex color`);
+  }
 });

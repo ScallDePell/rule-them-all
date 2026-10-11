@@ -41,8 +41,8 @@
 
 .rta-ruleset-badge.rta-ruleset-badge--version,
 .rta-ruleset-badge.rta-ruleset-badge--active {
-  background: #28570d;
-  color: #e1f4d3;
+  background: var(--rta-color-success-fill);
+  color: var(--rta-color-success-text);
 }
 
 /* v0.1.4: compact Foundry-like cards, fixed footer and single-line controls. */
@@ -59,7 +59,7 @@
   justify-content: space-between;
   min-width: 0;
   padding: var(--rta-space-5) var(--rta-space-6) var(--rta-space-4);
-  border: 1px solid var(--color-border-light-primary, #403844);
+  border: 1px solid var(--rta-color-border);
   border-radius: var(--rta-radius-compact);
   background: rgba(15, 11, 23, .72);
   display: grid;
@@ -78,7 +78,7 @@
   margin: 0;
   background: transparent;
   box-shadow: none;
-  color: var(--color-text-light-highlight, #eee);
+  color: var(--rta-color-text-highlight);
   font-size: var(--rta-type-medium);
   font-weight: 700;
   width: 100%;
@@ -115,8 +115,8 @@
   border-radius: var(--rta-radius-rail);
   font-weight: 700;
   line-height: 1.2;
-  background: #34303d;
-  color: #ddd;
+  background: var(--rta-color-badge-fill);
+  color: var(--rta-color-badge-text);
   flex-shrink: 0;
   white-space: nowrap;
   font-size: var(--rta-type-xs);
@@ -257,8 +257,8 @@
 .rta-configurator :is(.rta-ruleset-tile, .rta-config-card) {
   box-sizing: border-box;
   border-radius: var(--rta-radius-compact);
-  border: 1px solid var(--color-border-light-primary, #403844);
-  background: var(--color-cool-5, #17141e);
+  border: 1px solid var(--rta-color-border);
+  background: var(--rta-color-surface);
 }
 
 .rta-configurator :is(.rta-ruleset-tiles, .rta-config-card-grid):not(.rta-display-lines) > :is(.rta-ruleset-tile, .rta-config-card) {
@@ -279,7 +279,7 @@
   padding: 0;
   margin: 0;
   min-height: 0;
-  color: var(--color-text-light-highlight, #eee);
+  color: var(--rta-color-text-highlight);
   text-align: left;
   font-size: var(--rta-type-medium);
   font-weight: 700;
@@ -294,7 +294,7 @@
 
 /* Keyboard navigation remains visibly accessible on the parent card only. */
 .rta-configurator :is(.rta-ruleset-tile, .rta-config-card):has(> :is(.rta-ruleset-tile__title, .rta-config-card__title):focus-visible) {
-  outline: 1px solid var(--rta-card-accent, #666666);
+  outline: 1px solid var(--rta-card-accent, var(--rta-color-neutral));
   outline-offset: 1px;
 }
 

@@ -101,7 +101,7 @@
   gap: var(--rta-space-6);
   padding: var(--rta-space-4) var(--rta-space-5);
   margin: var(--rta-space-3) 0 var(--rta-space-5);
-  border: 1px solid var(--color-border-light-secondary, #777);
+  border: 1px solid var(--rta-color-border-secondary);
   border-radius: var(--rta-radius-compact);
 }
 
@@ -109,7 +109,7 @@
   width: 72px;
   height: 72px;
   object-fit: cover;
-  border: 1px solid var(--color-border-light-primary, #999);
+  border: 1px solid var(--rta-color-border);
   border-radius: var(--rta-radius-compact);
   flex: 0 0 auto;
 }
@@ -155,7 +155,7 @@
   border-radius: 0;
   background: transparent;
   box-shadow: none;
-  color: var(--color-text-light-highlight, #eee);
+  color: var(--rta-color-text-highlight);
   font-size: var(--rta-type-medium);
   font-weight: 700;
   line-height: 1.35rem;
@@ -185,10 +185,10 @@
   min-width: 0;
   max-width: 100%;
   padding: var(--rta-space-1) var(--rta-space-2);
-  border: 1px solid var(--rta-tag-color, #777);
+  border: 1px solid var(--rta-tag-color, var(--rta-color-border));
   border-radius: var(--rta-radius-rail);
-  background: color-mix(in srgb, var(--rta-tag-color, #777) 26%, #17121e);
-  color: var(--color-text-light-highlight, #eee);
+  background: color-mix(in srgb, var(--rta-tag-color, var(--rta-color-border)) 26%, var(--rta-color-surface));
+  color: var(--rta-color-text-highlight);
   font-size: var(--rta-type-xs);
   line-height: 1.2;
   overflow: hidden;
@@ -236,7 +236,7 @@
 /* v0.1.19: understated category accent; preserve neutral borders and tile geometry. */
 .rta-configurator .rta-config-card:hover,
 .rta-configurator .rta-config-card:focus-visible {
-  background: color-mix(in srgb, var(--rta-card-accent, #666666) 5%, var(--color-cool-5, #17141e));
+  background: color-mix(in srgb, var(--rta-card-accent, var(--rta-color-neutral)) 5%, var(--rta-color-surface));
 }
 
 /* v0.1.20: two non-destructive collection display modes. */
@@ -255,14 +255,14 @@
   padding: 0;
   display: grid;
   place-items: center;
-  border: 1px solid var(--color-border-light-primary,#777);
+  border: 1px solid var(--rta-color-border);
   border-radius: var(--rta-radius-compact);
   background: transparent;
 }
 
 .rta-configurator .rta-display-switch button.is-active {
-  background: color-mix(in srgb, var(--rta-card-accent, #666666) 22%, transparent);
-  border-color: var(--rta-card-accent, #666666);
+  background: color-mix(in srgb, var(--rta-card-accent, var(--rta-color-neutral)) 22%, transparent);
+  border-color: var(--rta-card-accent, var(--rta-color-neutral));
 }
 
 .rta-configurator .rta-config-card-grid.rta-display-lines .rta-config-card {
@@ -328,10 +328,10 @@
   justify-content: initial;
   padding: var(--rta-space-5) var(--rta-space-6) var(--rta-space-4);
   margin: 0;
-  border: 1px solid var(--color-border-light-primary, #403844);
+  border: 1px solid var(--rta-color-border);
   text-align: left;
   overflow: hidden;
-  background: var(--color-cool-5, #17141e);
+  background: var(--rta-color-surface);
   padding-left: calc(var(--rta-space-6) - var(--rta-space-1));
   border-top-color: var(--rta-panel-border);
   border-right-color: var(--rta-panel-border);
@@ -370,9 +370,9 @@
   padding: var(--rta-space-1) var(--rta-space-2);
   border: 1px solid var(--rta-tag-color,var(--rta-panel-border));
   border-radius: var(--rta-radius-rail);
-  background: color-mix(in srgb,var(--rta-tag-color,#777) 26%,#17121e);
+  background: color-mix(in srgb,var(--rta-tag-color, var(--rta-color-border)) 26%,var(--rta-color-surface));
   box-shadow: none;
-  color: var(--color-text-light-highlight,#eee);
+  color: var(--rta-color-text-highlight);
   font-size: var(--rta-type-xs);
   line-height: 1.2;
   white-space: normal;
@@ -385,13 +385,13 @@
 }
 
 .rta-configurator .rta-tag-facets__chip:hover:not(.is-active) {
-  background: color-mix(in srgb,var(--rta-tag-color, #666666) 13%,transparent);
+  background: color-mix(in srgb,var(--rta-tag-color, var(--rta-color-neutral)) 13%,transparent);
 }
 
 .rta-configurator .rta-tag-facets__chip.is-active,
 .rta-configurator .rta-tag-facets__chip.is-active:hover {
-  background: #fff;
-  color: #000;
+  background: var(--rta-color-inverse-fill);
+  color: var(--rta-color-inverse-text);
   /* Keep the exact same border, dimensions and tag accent as the unselected chip. */
 }
 

@@ -51,7 +51,7 @@
 
 .rta-sheet-component__preview {
   min-height: 42px;
-  border: 1px solid var(--color-border-light-tertiary,#aaa);
+  border: 1px solid var(--rta-color-border-tertiary);
   border-radius: var(--rta-radius-control);
   padding: var(--rta-space-5);
   display: flex;

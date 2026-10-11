@@ -23,7 +23,7 @@
 /* v0.1.7 - Two-level Ruleset explorer, scoped to workspace */
 .rta-explorer__heading>i {
   font-size: var(--rta-type-heading);
-  color: var(--rta-card-accent, #666666);
+  color: var(--rta-card-accent, var(--rta-color-neutral));
 }
 
 .rta-explorer__heading>div {
@@ -77,7 +77,7 @@
 }
 
 .rta-explorer__group.is-active {
-  background: color-mix(in srgb, var(--rta-nav-accent, #666666) 17%, transparent);
+  background: color-mix(in srgb, var(--rta-nav-accent, var(--rta-color-neutral)) 17%, transparent);
   border: 1px solid var(--rta-panel-border);
   border-radius: var(--rta-radius-compact) !important;
   font-weight: 700;
@@ -101,11 +101,11 @@
 }
 
 .rta-explorer__item:hover,.rta-explorer__group:hover {
-  background: color-mix(in srgb, var(--rta-nav-accent, #666666) 12%, transparent);
+  background: color-mix(in srgb, var(--rta-nav-accent, var(--rta-color-neutral)) 12%, transparent);
 }
 
 .rta-explorer__item.is-active {
-  background: color-mix(in srgb, var(--rta-nav-accent, #666666) 18%, transparent);
+  background: color-mix(in srgb, var(--rta-nav-accent, var(--rta-color-neutral)) 18%, transparent);
   font-weight: 700;
 }
 
@@ -196,7 +196,7 @@
 }
 
 .rta-explorer__group > i:first-child {
-  color: var(--rta-nav-accent, #666666);
+  color: var(--rta-nav-accent, var(--rta-color-neutral));
 }
 
 .rta-explorer__flyout[hidden],.rta-explorer__flyout-list section[hidden] {
@@ -254,10 +254,10 @@
   gap: var(--rta-space-5);
   z-index: 20;
   padding: var(--rta-space-5);
-  background: var(--color-cool-5,#17141e);
+  background: var(--rta-color-surface);
   border: 1px solid var(--color-border-light-primary);
   border-radius: var(--rta-radius-panel);
-  box-shadow: 5px 5px 18px #000a;
+  box-shadow: 5px 5px 18px var(--rta-shadow-color-strong);
   box-sizing: border-box;
   overflow: hidden;
   min-height: 140px;
@@ -300,7 +300,7 @@
 }
 
 .rta-explorer .rta-explorer__item--primary {
-  background: color-mix(in srgb, var(--rta-nav-accent, #666666) 13%, transparent);
+  background: color-mix(in srgb, var(--rta-nav-accent, var(--rta-color-neutral)) 13%, transparent);
   border: 1px solid var(--rta-panel-border);
   border-radius: var(--rta-radius-control);
   font-weight: 650;
@@ -308,7 +308,7 @@
 }
 
 .rta-explorer__primary-icon {
-  color: var(--rta-nav-accent, #666666);
+  color: var(--rta-nav-accent, var(--rta-color-neutral));
   flex: 0 0 auto;
   font-size: var(--rta-type-base);
 }
@@ -341,10 +341,10 @@
 }
 
 .rta-configurator .rta-explorer__flyout {
-  background: var(--color-cool-5, #17141e);
+  background: var(--rta-color-surface);
   width: 270px;
   max-height: none;
-  border: 1px solid var(--color-border-light-tertiary, #49404e);
+  border: 1px solid var(--rta-color-border-tertiary);
   border-radius: var(--rta-radius-control);
   z-index: 30;
 }
@@ -361,7 +361,7 @@
   .rta-explorer__group.is-active,
   .rta-explorer__flyout-list .rta-explorer__item
 ) {
-  border-left: var(--rta-rail-width) solid var(--rta-card-accent, #666666);
+  border-left: var(--rta-rail-width) solid var(--rta-card-accent, var(--rta-color-neutral));
   border-top-left-radius: var(--rta-radius-compact);
   border-bottom-left-radius: var(--rta-radius-compact);
 }

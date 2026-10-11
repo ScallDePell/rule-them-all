@@ -23,7 +23,7 @@
   gap: var(--rta-space-3);
   border: 1px solid var(--color-border-light-primary);
   border-radius: var(--rta-radius-control);
-  background: color-mix(in srgb, var(--color-cool-5, #222) 8%, transparent);
+  background: color-mix(in srgb, var(--rta-color-surface) 8%, transparent);
   display: block;
   max-height: none;
   overflow: visible;
@@ -105,7 +105,7 @@
 }
 
 .rta-binding-card {
-  border: 1px solid var(--color-border-light-tertiary, #666);
+  border: 1px solid var(--rta-color-border-tertiary);
   border-radius: var(--rta-radius-panel);
   padding: var(--rta-space-4) var(--rta-space-5);
 }
@@ -288,7 +288,7 @@
 
 /* Specific controls retain Foundry's native checked/disabled/focus appearance. */
 .rta-config-entry .rta-choice-list > label:focus-within {
-  outline: 1px solid var(--color-border-highlight, var(--rta-choice-row-border));
+  outline: 1px solid var(--rta-color-border-highlight);
   outline-offset: 1px;
 }
 

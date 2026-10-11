@@ -50,3 +50,43 @@
   --rta-type-display: 1.625rem;
   /* 26px, page titles */
 }
+
+/* Couleurs. Les composants n'utilisent que ces jetons. Chaque jeton suit la
+   variable du thème Foundry quand elle existe, avec UNE seule valeur de repli.
+   Ils sont redéclarés sur les racines RTA car Foundry définit son thème sur un
+   ancêtre (.theme-dark…), pas sur :root. */
+:root, :is(.rta-configurator, .rta-config-entry, .rta-select__panel) {
+  --rta-color-neutral: #666666; /* = DEFAULT_RULESET_COLOR / RTA_NEUTRAL_COLOR */
+  --rta-color-border: var(--color-border-light-primary, #777);
+  --rta-color-border-secondary: var(--color-border-light-secondary, #777);
+  --rta-color-border-tertiary: var(--color-border-light-tertiary, #666);
+  --rta-color-border-highlight: var(--color-border-highlight, #947f9c);
+  --rta-color-surface: var(--color-cool-5, #17141e);
+  --rta-color-surface-option: var(--color-bg-option, #2b2530);
+  --rta-color-text-highlight: var(--color-text-light-highlight, #eee);
+  --rta-color-text-secondary: var(--color-text-light-6, #bcb8bf);
+  --rta-color-inverse-fill: #fff;
+  --rta-color-inverse-text: #000;
+
+  --rta-color-success-fill: #28570d;
+  --rta-color-success-text: #e1f4d3;
+  --rta-color-badge-fill: #34303d;
+  --rta-color-badge-text: #ddd;
+  --rta-color-warning: #dfad64;
+  --rta-color-warning-muted: #d2c39d;
+
+  --rta-shadow-color: #0007;
+  --rta-shadow-color-strong: #000a;
+
+  --rta-graph-edge: #b8a06d;
+  --rta-graph-edge-active: #e0a05e;
+  --rta-graph-node-fill: #29252e;
+  --rta-graph-node-fill-hover: #4a4154;
+  --rta-graph-node-fill-selected: #6b5639;
+  --rta-graph-node-stroke: #827a88;
+  --rta-graph-node-stroke-selected: #d6b76e;
+  --rta-graph-node-stroke-unresolved: #d99255;
+  --rta-graph-label: #f1e9df;
+  --rta-graph-label-strong: #fff;
+  --rta-graph-label-muted: #bdb3c0;
+}

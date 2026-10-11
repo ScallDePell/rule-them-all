@@ -223,7 +223,7 @@
   --rta-card-action-size: 23px;
   --rta-card-padding-top: .65rem;
   --rta-card-padding-bottom: .5rem;
-  --rta-panel-border: var(--color-border-light-primary, #403844);
+  --rta-panel-border: var(--rta-color-border);
   --rta-panel-radius: 4px;
   --rta-rail-width: 4px;
 }

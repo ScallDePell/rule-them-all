@@ -7,7 +7,7 @@
   gap: var(--rta-space-6);
   flex-wrap: wrap;
   margin: 0 0 var(--rta-space-6);
-  color: var(--color-text-light-6,#bcb8bf);
+  color: var(--rta-color-text-secondary);
   font-size: var(--rta-type-base);
 }
 
@@ -226,7 +226,7 @@
   background: rgba(0,0,0,.13);
   touch-action: none;
   cursor: grab;
-  color: var(--color-text-light-6,#bbb);
+  color: var(--rta-color-text-secondary);
 }
 
 .rta-configurator .rta-dependencies__graph:active {
@@ -235,13 +235,13 @@
 
 .rta-configurator .rta-dependencies__edge {
   fill: none;
-  stroke: #b8a06d;
+  stroke: var(--rta-graph-edge);
   stroke-width: 2;
   stroke-linecap: round;
 }
 
 .rta-configurator .rta-dependencies__edge.is-unresolved {
-  stroke: #e0a05e;
+  stroke: var(--rta-graph-edge-active);
   stroke-dasharray: 6 4;
 }
 
@@ -250,43 +250,43 @@
 }
 
 .rta-configurator .rta-dependencies__node>rect:first-child {
-  fill: #29252e;
-  stroke: #827a88;
+  fill: var(--rta-graph-node-fill);
+  stroke: var(--rta-graph-node-stroke);
   stroke-width: 1.2;
 }
 
 .rta-configurator .rta-dependencies__node.is-center>rect:first-child {
-  stroke: #d6b76e;
+  stroke: var(--rta-graph-node-stroke-selected);
   stroke-width: 2;
 }
 
 .rta-configurator .rta-dependencies__node.is-unresolved>rect:first-child {
-  stroke: #d99255;
+  stroke: var(--rta-graph-node-stroke-unresolved);
   stroke-dasharray: 4 3;
 }
 
 .rta-configurator .rta-dependencies__node-bar {
-  fill: #4a4154;
+  fill: var(--rta-graph-node-fill-hover);
 }
 
 .rta-configurator .rta-dependencies__node.is-center .rta-dependencies__node-bar {
-  fill: #6b5639;
+  fill: var(--rta-graph-node-fill-selected);
 }
 
 .rta-configurator .rta-dependencies__node-type {
   font-size: var(--rta-type-xs);
-  fill: #fff;
+  fill: var(--rta-graph-label-strong);
 }
 
 .rta-configurator .rta-dependencies__node-name {
   font-size: var(--rta-type-sm);
   font-weight: 700;
-  fill: #f1e9df;
+  fill: var(--rta-graph-label);
 }
 
 .rta-configurator .rta-dependencies__node-id {
   font-size: var(--rta-type-micro);
-  fill: #bdb3c0;
+  fill: var(--rta-graph-label-muted);
 }
 
 .rta-configurator .rta-dependencies__technical {
@@ -333,7 +333,7 @@
 
 /* Dependencies: canonical source color, actionable unresolved facet. */
 .rta-configurator .rta-dependencies__warning {
-  color: #dfad64;
+  color: var(--rta-color-warning);
   display: inline-flex;
   align-items: center;
   gap: var(--rta-space-3);
@@ -359,11 +359,11 @@
 
 /* Dependencies: neutral title, secondary description, edit action at bottom right. */
 .rta-configurator .rta-dependencies__row .rta-dependencies__item-name {
-  color: var(--color-text-light-highlight,#f5f1ec);
+  color: var(--rta-color-text-highlight);
 }
 
 .rta-configurator .rta-dependencies__row .rta-dependencies__item small {
-  color: #d2c39d;
+  color: var(--rta-color-warning-muted);
   opacity: 1;
 }
 
