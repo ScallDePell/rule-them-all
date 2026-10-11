@@ -69,8 +69,8 @@ test("v0.3.2 keeps compact Definition fields and adds collapsible relationship p
   assert.match(html,/class="form-group rta-definition-field"/);
   assert.match(html,/<label>{{label}}<\/label>/);
   assert.doesNotMatch(html,/rta-definition-field__heading/);
-  assert.match(css,/v0\.3\.1 No IDs UI/);
-  assert.match(css,/v0\.3\.2/);
+  assert.match(css,/\.rta-definition-field\b/);
+  assert.match(css,/\.rta-picker\b/);
   assert.match(html,/data-picker-summary/);
   assert.match(html,/data-picker-filter/);
   assert.match(html,/data-formula-builder/);

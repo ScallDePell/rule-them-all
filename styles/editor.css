@@ -71,7 +71,7 @@
   margin: 0;
 }
 
-/* Mission 11 clean rebuild: editor spacing, disclosure and selectors. */
+/* editor spacing, disclosure and selectors. */
 .rta-config-entry__section {
   margin-block: var(--rta-space-3) var(--rta-space-6);
 }
@@ -132,7 +132,7 @@
   margin-block-start: var(--rta-space-5);
 }
 
-/* v0.2.3 generic DefinitionType field editor and generated Definition data editor. */
+/* generic DefinitionType field editor and generated Definition data editor. */
 .rta-config-entry__section-heading {
   display: flex;
   align-items: center;
@@ -289,7 +289,7 @@
   }
 }
 
-/* v0.3.1 No IDs UI: business-first pickers and compact Definition fields. */
+/* No IDs UI: business-first pickers and compact Definition fields. */
 .rta-definition-field.form-group {
   border: 0;
   border-radius: 0;
@@ -307,7 +307,7 @@
   min-height: 8rem;
 }
 
-/* v0.3.2: clearer field cards, collapsible relationship pickers, visual rule builders. */
+/* clearer field cards, collapsible relationship pickers, visual rule builders. */
 .rta-field-editor {
   padding: 0;
   overflow: hidden;
@@ -332,7 +332,7 @@
   padding: var(--rta-space-6) var(--rta-space-7) var(--rta-space-7);
 }
 
-/* v0.6.1: reuse existing entry/field components; only align section title actions. */
+/* reuse existing entry/field components; only align section title actions. */
 .rta-config-entry__section-title {
   display: flex;
   align-items: center;
@@ -341,7 +341,7 @@
   margin-bottom: var(--rta-space-4);
 }
 
-/* v0.1.23 — Canonical entry-window presentation.
+/* Canonical entry-window presentation.
    ONE scoped editor contract, reusing Foundry form controls and the existing
    Configurator palette. All entry kinds inherit this; no per-kind theme.
    Preserve functional layouts (grids, pickers, sheet builder) and native focus. */
@@ -549,7 +549,7 @@
   opacity: .7;
 }
 
-/* v0.1.47 — CANONICAL FIELD ROW (all Rule Them'All entry editors).
+/* CANONICAL FIELD ROW (all Rule Them'All entry editors).
    All normal controls — text, numeric, checkbox, textarea, RTA Select — share
    exactly this two-column geometry. There is no independent select layout.
    Sections, the Sheet Builder's toolbar, checkboxes in choice menus and the

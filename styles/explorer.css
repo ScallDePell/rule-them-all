@@ -20,7 +20,7 @@
   opacity: 0.7;
 }
 
-/* v0.1.7 - Two-level Ruleset explorer, scoped to workspace */
+/* Two-level Ruleset explorer, scoped to workspace */
 .rta-explorer__heading>i {
   font-size: var(--rta-type-heading);
   color: var(--rta-card-accent, var(--rta-color-neutral));
@@ -123,7 +123,7 @@
   }
 }
 
-/* v0.1.8 - compact overlay explorer; never changes editor width */
+/* compact overlay explorer; never changes editor width */
 .rta-configurator__workspace:has(> .rta-explorer) {
   grid-template-columns: 180px minmax(0,1fr);
 }
@@ -242,7 +242,7 @@
   }
 }
 
-/* v0.1.9 - readable overlay, special type configuration entries */
+/* readable overlay, special type configuration entries */
 .rta-explorer__flyout {
   position: absolute;
   left: 100%;
@@ -313,21 +313,21 @@
   font-size: var(--rta-type-base);
 }
 
-/* v0.1.10: flyout card border and full-strength family accents */
+/* flyout card border and full-strength family accents */
 .rta-configurator .rta-explorer__flyout-list .rta-explorer__item {
   color: var(--color-text-primary, inherit);
   opacity: 1;
   text-align: left !important;
 }
 
-/* v0.1.12: 1.5x wide flyout; use the entire sidebar height before scrolling. */
+/* 1.5x wide flyout; use the entire sidebar height before scrolling. */
 @media (max-width:760px) {
   .rta-configurator .rta-explorer__flyout {
     width: 270px;
   }
 }
 
-/* v0.1.14: allow the flyout to extend above the workspace without being
+/* allow the flyout to extend above the workspace without being
    clipped by the workspace grid; keep the native Foundry title bar above it. */
 .rta-configurator .rta-configurator__workspace:has(> .rta-explorer) {
   position: relative;

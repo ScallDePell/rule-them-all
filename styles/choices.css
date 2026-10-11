@@ -97,7 +97,7 @@
   font-style: italic;
 }
 
-/* v0.8.0 Content acquisition bindings */
+/* Content acquisition bindings */
 .rta-binding-list {
   display: grid;
   gap: var(--rta-space-4);
@@ -129,7 +129,7 @@
   gap: var(--rta-space-2);
 }
 
-/* v0.1.24 — Shared editor window contract. Reuse the same section surface for
+/* Shared editor window contract. Reuse the same section surface for
    collapsible pickers, technical blocks and field cards. No per-entry theme. */
 .rta-config-entry :is(details.rta-config-entry__section, details.rta-picker, details.rta-config-entry__technical) {
   box-sizing: border-box;

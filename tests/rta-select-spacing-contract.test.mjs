@@ -13,7 +13,7 @@ const contract = css.split('/* v0.1.44 - Canonical flow rhythm')[1]?.split('/* R
 test('Replacing a legacy picker places label and selector in the same canonical row', () => {
   assert.match(select, /const replacement=nestedInRow\?root:formRow\(root/);
   assert.match(select, /rta-form-row rta-form-row--picker/);
-  const shared = css.split('/* v0.1.47 — CANONICAL FIELD ROW')[1] ?? '';
+  const shared = css.split('/* CANONICAL FIELD ROW')[1] ?? '';
   assert.match(shared,/grid-template-columns: minmax\(calc\(var\(--rta-form-label-column-min\)/);
   for (const parent of ['.rta-config-entry__scroll', 'details.rta-config-entry__section',
     '.rta-binding-card', '.rta-field-editor__body']) {

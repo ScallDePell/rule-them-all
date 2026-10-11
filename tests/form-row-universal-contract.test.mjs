@@ -42,7 +42,7 @@ test('form row enhancement runs after every selector pass including dynamic rend
   assert.match(component,/\.rta-config-entry \.rta-field-editor__grid > label/);
 });
 test('one shared CSS grid, nested-inset compensation and responsive behavior',()=>{
-  const block=css.split('/* v0.1.47 — CANONICAL FIELD ROW')[1];
+  const block=css.split('/* CANONICAL FIELD ROW')[1];
   assert.ok(block);
   assert.match(block,/--rta-form-label-column-max:\s*200px/);
   assert.match(block,/\.rta-form-row\s*\{[\s\S]*?grid-template-columns:\s*minmax\(calc\(var\(--rta-form-label-column-min\)/);

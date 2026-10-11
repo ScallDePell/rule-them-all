@@ -45,7 +45,7 @@
   color: var(--rta-color-success-text);
 }
 
-/* v0.1.4: compact Foundry-like cards, fixed footer and single-line controls. */
+/* compact Foundry-like cards, fixed footer and single-line controls. */
 .rta-ruleset-tiles {
   display: grid;
   align-content: start;
@@ -123,7 +123,7 @@
   padding-inline: var(--rta-space-1);
 }
 
-/* v0.1.5: independent badge and action columns, anchored to card edges. */
+/* independent badge and action columns, anchored to card edges. */
 .rta-ruleset-tile__bottom {
   gap: var(--rta-space-2);
   margin-top: 0;
@@ -162,7 +162,7 @@
   width: max-content;
 }
 
-/* v0.1.6: pin both footer groups to the card itself, not the footer layout. */
+/* pin both footer groups to the card itself, not the footer layout. */
 .rta-configurator .rta-ruleset-tile {
   position: relative;
 }
@@ -247,7 +247,7 @@
   flex-wrap: wrap;
 }
 
-/* v0.1.22 — Canonical card geometry shared by Ruleset and collection views.
+/* Canonical card geometry shared by Ruleset and collection views.
    Keep semantic focus-visible feedback for keyboard users, never transient mouse rings. */
 .rta-configurator :is(.rta-ruleset-tiles, .rta-config-card-grid):not(.rta-display-lines) {
   grid-template-columns: repeat(auto-fill, var(--rta-card-width));

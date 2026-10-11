@@ -35,7 +35,7 @@ test('checkbox pickers, capabilities and data-bearing Definitions get same contr
   assert.match(source,/\.rta-select__option/);
 });
 test('one CSS row visual without borders and shared selector frame',()=>{
-  assert.match(css,/RTA Select v0\.1\.43/);
+  assert.match(css,/\.rta-select\s*\{/);
   assert.match(css,/\.rta-select__option\s*\{/);
   assert.match(css,/border: none;/);
   assert.match(css,/\.rta-select__panel:popover-open/);

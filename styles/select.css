@@ -41,7 +41,7 @@
   }
 }
 
-/* RTA Select v0.1.43 — ONE visual contract for every single/multi selector.
+/* RTA Select — ONE visual contract for every single/multi selector.
    No item frames: only a classic collapsed field and plain checkbox rows.
    Popover top layer avoids clipping by Foundry ApplicationV2 scroll areas.
    Native selects/checkboxes retain form semantics and event contracts. */
@@ -217,7 +217,7 @@
   opacity: .7;
 }
 
-/* v0.1.46: permanent context labels and clearly non-editable required capabilities. */
+/* permanent context labels and clearly non-editable required capabilities. */
 .rta-select > .rta-select__label {
   display: block;
   font: inherit;
@@ -255,7 +255,7 @@
   display: none;
 }
 
-/* v0.1.50: uniform color rails for ALL RTA Select adapters.
+/* uniform color rails for ALL RTA Select adapters.
    Use persisted colors when available, canonical #666666 otherwise.
    Checkbox geometry and original values are unchanged. */
 .rta-select__panel .rta-select__accents {

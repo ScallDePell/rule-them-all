@@ -1,0 +1,52 @@
+// Rend 13 vues du configurateur en HTML statique (Handlebars réel + API réelle).
+// Prérequis hors dépôt : npm i --no-save handlebars playwright-core
+// Usage: node qa/configurator-render.mjs <repoRoot> <outDir>
+import {readFileSync,writeFileSync,mkdirSync,rmSync} from 'node:fs';
+import {join} from 'node:path';
+import {pathToFileURL} from 'node:url';
+import Handlebars from 'handlebars';
+const [root,out]=process.argv.slice(2);mkdirSync(out,{recursive:true});
+const en=JSON.parse(readFileSync(join(root,'lang/en.json'),'utf8'));
+const lookup=key=>key.split('.').reduce((o,k)=>o?.[k],en)??key;
+class ApplicationV2{async _prepareContext(){return {}} render(){}}
+globalThis.foundry={applications:{api:{ApplicationV2,HandlebarsApplicationMixin:B=>B,DialogV2:class{}}}};
+const settings=new Map();
+globalThis.game={i18n:{lang:'en',localize:lookup,format:(k,d)=>lookup(k).replace(/\{(\w+)\}/g,(_,n)=>d?.[n]??'')},settings:{get:(m,k)=>settings.get(k),set:async(m,k,v)=>settings.set(k,v),register(){}},
+  system:{documentTypes:{Actor:['hero','foe'],Item:['gear','power']}},actors:{contents:[]},user:{isGM:true}};
+const imp=rel=>import(pathToFileURL(join(root,rel)).href);
+const {createConfiguratorAPI}=await imp('src/configurator/configurator-api.mjs');
+const {emptyStorageSnapshot}=await imp('src/configurator/configurator-storage.mjs');
+class Storage{snapshot=emptyStorageSnapshot();async load(){return structuredClone(this.snapshot)}async save(d){this.snapshot=structuredClone(d)}}
+const api=await createConfiguratorAPI(new Storage());
+globalThis.game.ruleThemAll={configurator:api};
+const v=(await api.createRuleset({id:'qa',nameKey:'QA Ruleset',descriptionKey:'Fixture used for visual regression only.',version:'1.0.0'})).versionId;
+await api.createRuleset({id:'qa2',nameKey:'Second Ruleset',version:'2.0.0'});
+await api.createTag(v,{id:'tag-a',nameKey:'Tag Alpha',color:'#3a7bd5'});
+await api.createTag(v,{id:'tag-b',nameKey:'Tag Beta'});
+await api.registerDefinitionType(v,{id:'stat',key:'stat',nameKey:'Stat',color:'#b8572e',allowedCapabilities:['value','pool'],defaultCapabilities:['value'],requiredCapabilities:[],fields:{}});
+await api.registerDefinitionType(v,{id:'skill',key:'skill',nameKey:'Skill',allowedCapabilities:['value'],defaultCapabilities:['value'],requiredCapabilities:[],fields:{}});
+for(const [i,n] of ['Vigor','Focus','Grace','Wits','Resolve'].entries())await api.createDefinition(v,{id:'d'+i,key:'d'+i,nameKey:n,descriptionKey:'A sample definition with a description long enough to wrap on narrow tiles.',definitionTypeId:'stat',capabilities:['value'],tags:i%2?['tag-a']:['tag-b'],data:{}});
+await api.createDefinition(v,{id:'s1',key:'s1',nameKey:'Climb',definitionTypeId:'skill',capabilities:['value'],data:{}});
+await api.createContentType(v,{id:'gear',nameKey:'Gear',storageKind:'item',documentSubtype:'gear',runtimeMode:'unique'});
+await api.createContentTemplate(v,{id:'rope',nameKey:'Rope',contentTypeId:'gear'});
+await api.createParameter(v,{id:'p1',nameKey:'Base',valueType:'number',value:2});
+await api.createFormula(v,{id:'f1',nameKey:'Total',resultType:'number',expression:{type:'add',args:[{type:'literal',value:1},{type:'parameter',id:'p1'}]}});
+await api.createCondition(v,{id:'c1',nameKey:'Is ready',expression:{type:'literal',value:true}});
+await api.createAction(v,{id:'a1',nameKey:'Strike',conditionRefs:['c1'],costEffectRefs:[],effectRefs:[]});
+// Harness-only copy exposing the private view state.
+const src=readFileSync(join(root,'src/configurator/configurator-app.mjs'),'utf8')
+  .replace('#view = "general";','#view = globalThis.__qa.view;').replace('#displayMode = "tiles";','#displayMode = globalThis.__qa.mode;').replace('#selected = "";','#selected = globalThis.__qa.selected;');
+const tmp=join(root,'src/configurator/.qa-configurator-app.mjs');writeFileSync(tmp,src);
+let ConfiguratorApp;try{({ConfiguratorApp}=await import(pathToFileURL(tmp).href));}finally{rmSync(tmp);}
+Handlebars.registerHelper('localize',(k,o)=>{const t=lookup(String(k));return o?.hash&&Object.keys(o.hash).length?t.replace(/\{(\w+)\}/g,(_,n)=>o.hash[n]??''):t;});
+const tpl=Handlebars.compile(readFileSync(join(root,'templates/configurator/configurator.hbs'),'utf8'));
+const css=JSON.parse(readFileSync(join(root,'module.json'),'utf8')).styles.map(p=>readFileSync(join(root,p),'utf8')).join('\n');
+const views=[['rulesets','',''],['general',v,'general'],['definitionTypes',v,'definitionTypes'],['definitions-tiles',v,'definitions:stat'],['definitions-lines',v,'definitions:stat','lines'],
+ ['contentTypes',v,'contentTypes'],['content',v,'content:gear'],['formulas',v,'formulas'],['actions',v,'actions'],['tags',v,'tags'],['dependencies',v,'dependencies'],['runtimeLab',v,'runtimeLab'],['sheets',v,'sheetDefinitions']];
+for(const [name,selected,view,mode='tiles'] of views){
+  globalThis.__qa={selected,view:view||'general',mode};
+  const app=new ConfiguratorApp();const ctx=await app._prepareContext({});
+  const html=`<!doctype html><html lang="en"><meta charset="utf-8"><style>${css}\nbody{margin:0;font-family:sans-serif;font-size:14px}#rta-configurator{height:860px;display:flex;flex-direction:column}</style><body><div id="rta-configurator" class="application"><div class="window-content" style="display:flex;flex-direction:column;min-height:0;overflow:hidden;height:100%">${tpl(ctx)}</div></div></body></html>`;
+  writeFileSync(join(out,name+'.html'),html);
+}
+console.log('rendered',views.length);

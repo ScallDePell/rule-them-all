@@ -59,7 +59,7 @@
   margin: 0 0 var(--rta-space-3);
 }
 
-/* v0.5.5 Guided Runtime Lab ------------------------------------------ */
+/* Guided Runtime Lab ------------------------------------------ */
 .rta-runtime-lab--guided {
   gap: var(--rta-space-5);
 }

@@ -1,7 +1,7 @@
 /* Rule Them'All — general.css : Vue Général du Ruleset.
    L'ordre de chargement (module.json "styles") fait partie de la cascade. */
 
-/* v0.1.17: General presentation only; other views retain their styling. */
+/* General presentation only; other views retain their styling. */
 .rta-configurator .rta-general {
   display: grid;
   gap: var(--rta-space-6);
@@ -99,7 +99,7 @@
   }
 }
 
-/* v0.1.18: General lifecycle controls remain in the Version and status card. */
+/* General lifecycle controls remain in the Version and status card. */
 .rta-configurator .rta-general__cards > .rta-general__card:nth-child(2) {
   display: flex;
   flex-direction: column;

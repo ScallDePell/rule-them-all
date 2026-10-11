@@ -2,7 +2,7 @@
    L'ordre de chargement (module.json "styles") fait partie de la cascade. */
 
 /* ================================================================
-   RTA DESIGN SYSTEM — single shared scale (v0.1.55)
+   RTA DESIGN SYSTEM — single shared scale
    These are the only generic spacing and typography primitives.
    Component-specific geometry (grids, icon sizes, min-width) is
    intentionally kept out of the scale and documented separately.

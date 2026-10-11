@@ -61,7 +61,7 @@
   margin-inline-start: var(--rta-space-1);
 }
 
-/* Mission 11-D: root Rulesets + Ruleset workspace shell. */
+/* root Rulesets + Ruleset workspace shell. */
 .rta-configurator__error {
   flex-shrink: 0;
   white-space: pre-wrap;
@@ -131,7 +131,7 @@
   min-width: 520px;
 }
 
-/* v0.2.4 ergonomic field cards + single-line Ruleset header. */
+/* ergonomic field cards + single-line Ruleset header. */
 .rta-configurator__workspace-header {
   border-bottom: 1px solid var(--color-border-light-primary);
   flex-wrap: nowrap;
@@ -177,7 +177,7 @@
   width: 100%;
 }
 
-/* v0.1.3: fixed three-row tiles at every supported window width. */
+/* fixed three-row tiles at every supported window width. */
 .rta-configurator__root-footer {
   flex: 0 0 auto;
   display: flex;
@@ -215,7 +215,7 @@
   z-index: 1;
 }
 
-/* v0.1.25: shared canonical border between General panels and collection tiles. */
+/* shared canonical border between General panels and collection tiles. */
 .rta-configurator {
   --rta-card-width: 282px;
   --rta-card-height: 94px;

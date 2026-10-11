@@ -1,7 +1,7 @@
 /* Rule Them'All — cards.css : Cartes de collection, modes tuiles/lignes, filtres par tags.
    L'ordre de chargement (module.json "styles") fait partie de la cascade. */
 
-/* Mission 11 clean rebuild: collection cards. */
+/* collection cards. */
 .rta-config-card-grid {
   display: grid;
   grid-template-columns: repeat(auto-fill, 5.25rem);
@@ -94,7 +94,7 @@
   cursor: grabbing;
 }
 
-/* v0.7.3 unified Content UX */
+/* unified Content UX */
 .rta-content-image-editor {
   display: flex;
   align-items: center;
@@ -131,7 +131,7 @@
   pointer-events: none;
 }
 
-/* v0.1.15: shared Foundry Ruleset tile geometry for every collection. */
+/* shared Foundry Ruleset tile geometry for every collection. */
 .rta-configurator .rta-config-card-grid {
   display: grid;
   grid-template-columns: repeat(auto-fill, 282px);
@@ -228,18 +228,18 @@
   justify-self: auto;
 }
 
-/* v0.1.16: match the 12px inter-tile gap above the first collection row. */
+/* match the 12px inter-tile gap above the first collection row. */
 .rta-configurator .rta-configurator__section-heading:has(+ .rta-config-card-grid) {
   margin-bottom: var(--rta-space-6);
 }
 
-/* v0.1.19: understated category accent; preserve neutral borders and tile geometry. */
+/* understated category accent; preserve neutral borders and tile geometry. */
 .rta-configurator .rta-config-card:hover,
 .rta-configurator .rta-config-card:focus-visible {
   background: color-mix(in srgb, var(--rta-card-accent, var(--rta-color-neutral)) 5%, var(--rta-color-surface));
 }
 
-/* v0.1.20: two non-destructive collection display modes. */
+/* two non-destructive collection display modes. */
 .rta-configurator .rta-display-switch {
   display: inline-flex;
   align-items: center;

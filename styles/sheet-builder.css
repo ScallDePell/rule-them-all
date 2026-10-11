@@ -1,7 +1,7 @@
 /* Rule Them'All — sheet-builder.css : Constructeur de fiches.
    L'ordre de chargement (module.json "styles") fait partie de la cascade. */
 
-/* v0.9.0 constrained WYSIWYG sheet builder */
+/* constrained WYSIWYG sheet builder */
 .rta-sheet-builder__head {
   display: flex;
   align-items: center;
