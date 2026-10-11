@@ -237,9 +237,6 @@
   .rta-configurator__workspace:has(> .rta-explorer) {
     grid-template-columns: 165px minmax(0,1fr);
   }
-  .rta-explorer__flyout {
-    width: 165px;
-  }
 }
 
 /* readable overlay, special type configuration entries */
@@ -320,11 +317,7 @@
 }
 
 /* 1.5x wide flyout; use the entire sidebar height before scrolling. */
-@media (max-width:760px) {
-  .rta-configurator .rta-explorer__flyout {
-    width: 270px;
-  }
-}
+
 
 /* allow the flyout to extend above the workspace without being
    clipped by the workspace grid; keep the native Foundry title bar above it. */
