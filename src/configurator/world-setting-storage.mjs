@@ -19,6 +19,8 @@ export class WorldSettingStorage {
   }
   async load() { return copyJSON(this.#settings.get(STORAGE_NAMESPACE, STORAGE_KEY)); }
   async save(value) {
+    // CP-11: configuring a Ruleset is a GM operation, whatever Foundry lets the role write.
+    if (!globalThis.game?.user?.isGM) throw new Error("Only a GM can configure Rule Them'All.");
     const snapshot = readStorageSnapshot(value);
     const current = readStorageSnapshot(await this.load());
     if (current.storageRevision !== snapshot.storageRevision - 1) {

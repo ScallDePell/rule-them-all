@@ -72,6 +72,12 @@ export class DependencyIndex{
       if(d.eventTypeRef)pushRef(this.#edges,{objectKind:'duration',objectId:d.id},{objectKind:'eventType',objectId:d.eventTypeRef},'durationEvent',`durations[${i}].eventTypeRef`);
       if(d.conditionRef)pushRef(this.#edges,{objectKind:'duration',objectId:d.id},{objectKind:'condition',objectId:d.conditionRef},'durationCondition',`durations[${i}].conditionRef`);
     }
+    // PermissionPolicy (CP-11): a scope naming one object and a rule Condition are required.
+    for(const [i,policy] of (ruleset.permissionPolicies??[]).entries()){
+      const consumer={objectKind:'permissionPolicy',objectId:policy.id};
+      if(policy.scope?.objectKind&&policy.scope.objectKind!=='ruleset'&&policy.scope.objectId)pushRef(this.#edges,consumer,{objectKind:policy.scope.objectKind,objectId:policy.scope.objectId},'permissionScope',`permissionPolicies[${i}].scope`);
+      for(const [j,rule] of (policy.rules??[]).entries())if(rule?.conditionRef)pushRef(this.#edges,consumer,{objectKind:'condition',objectId:rule.conditionRef},'permissionCondition',`permissionPolicies[${i}].rules[${j}].conditionRef`);
+    }
     for(const [i,sheet] of (ruleset.sheetDefinitions??[]).entries())for(const [j,c] of (sheet.layout?.components??[]).entries())if(c.source?.objectKind&&c.source?.objectId)pushRef(this.#edges,{objectKind:'sheetDefinition',objectId:sheet.id},c.source,'sheetSource',`sheetDefinitions[${i}].layout.components[${j}].source`);
     const tagCollections=['definitions','parameters','formulas','formulaBindings','conditions','rolls','outcomes','tests','effects','actions','eventTypes','triggers','contentTypes','contentTemplates','modifiers','restrictions','durations','creationSystems','progressionSystems','sheetDefinitions'];
     for(const collection of tagCollections)for(const [i,entry] of (ruleset[collection]??[]).entries())for(const [j,id] of (entry.tags??[]).entries())pushRef(this.#edges,{objectKind:collection.replace(/s$/,''),objectId:entry.id},{objectKind:'tag',objectId:id},'tag',`${collection}[${i}].tags[${j}]`,'metadata');

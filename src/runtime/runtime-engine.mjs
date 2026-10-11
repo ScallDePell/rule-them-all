@@ -6,6 +6,7 @@ import {capabilityTypeRegistry} from "../configurator/capability-type-registry.m
 import {createDefinitionState,normalizeRuntimeContainerRef,resolveRuntimeRuleset} from "./runtime-contracts.mjs";
 import {RuntimeEvaluator} from "./runtime-evaluator.mjs";
 import {RuntimeTransaction,RuntimeTransactionError,TRANSACTION_ERRORS,applyLedgerChanges} from "./runtime-transaction.mjs";
+import {resolvePermission} from "./permission-policy.mjs";
 import {toRuntimeReference,resolveContainer} from "./runtime-reference.mjs";
 import {effectOperationRegistry} from "../configurator/operation-registries.mjs";
 import {assertSafeRollFormula} from "../configurator/roll-grammar.mjs";
@@ -27,12 +28,65 @@ function assertDefinitionContract(ruleset,definition){
 
 
 export class RuntimeEngine{
-  constructor({configurator,adapter,hooks=globalThis.Hooks,rulesetSource="published"}={}){if(!configurator)throw new Error("RuntimeEngine requires configurator API.");if(!adapter)throw new Error("RuntimeEngine requires a runtime adapter.");this.configurator=configurator;this.adapter=adapter;this.hooks=hooks;this.rulesetSource=rulesetSource;}
+  /** userId: the user the rules are checked for (null = the adapter's current user). */
+  constructor({configurator,adapter,hooks=globalThis.Hooks,rulesetSource="published",userId=null}={}){if(!configurator)throw new Error("RuntimeEngine requires configurator API.");if(!adapter)throw new Error("RuntimeEngine requires a runtime adapter.");this.configurator=configurator;this.adapter=adapter;this.hooks=hooks;this.rulesetSource=rulesetSource;this.userId=userId;}
   ruleset(versionId){return resolveRuntimeRuleset(this.configurator,versionId,{source:this.rulesetSource});}
-  async getContainerState(ref,{rulesetVersionId=""}={}){return this.adapter.load(normalizeRuntimeContainerRef(ref),{rulesetVersionId});}
+  /** Same engine, checking the rules for another user (the GM serving a player's request). */
+  forUser(userId){return new RuntimeEngine({configurator:this.configurator,adapter:this.adapter,hooks:this.hooks,rulesetSource:this.rulesetSource,userId});}
+  #subject(ref){return this.adapter.subject(ref?normalizeRuntimeContainerRef(ref):null,this.userId??undefined);}
+  /** CP-11 decision for one operation on one Ruleset object, for this engine's user on a container. */
+  async authorize(versionId,operation,target,containerRef=null,context=null){
+    const subject=await this.#subject(containerRef),evaluator=this.evaluator(versionId);
+    const conditionContext=context??(containerRef?{roles:{self:normalizeRuntimeContainerRef(containerRef)},defaultRole:"self"}:{});
+    return resolvePermission(this.ruleset(versionId).permissionPolicies,{operation,target,subject,condition:id=>evaluator.condition(id,conditionContext)});
+  }
+  async #require(versionId,operation,target,containerRef,context=null){
+    const decision=await this.authorize(versionId,operation,target,containerRef,context);
+    if(!decision.allowed)throw new RuntimeTransactionError(TRANSACTION_ERRORS.forbidden,`Permission denied: ${operation} ${target.objectKind} ${target.objectId}.`,{operation,target,decision});
+    return decision;
+  }
+  /** Only the DefinitionStates this user may read are returned (CP-11: never sent, then hidden). */
+  async getContainerState(ref,{rulesetVersionId=""}={}){
+    const n=normalizeRuntimeContainerRef(ref),state=await this.adapter.load(n,{rulesetVersionId});
+    if(!state.rulesetVersionId||!this.#hasRuleset(state.rulesetVersionId))return state;
+    for(const definitionId of Object.keys(state.definitionStates))if(!(await this.authorize(state.rulesetVersionId,"read",{objectKind:"definition",objectId:definitionId},n)).allowed)delete state.definitionStates[definitionId];
+    const readable=new Set(Object.keys(state.definitionStates));
+    state.stateInstances=state.stateInstances.filter(instance=>!instance.definitionId||readable.has(instance.definitionId));
+    return state;
+  }
+  #hasRuleset(versionId){try{this.ruleset(versionId);return true;}catch{return false;}}
   /** Every persistent runtime write goes through one transaction (CP-08, CP-18). */
-  transaction(versionId,kind,{transactionId=null,summary=null,corrects=null}={}){return new RuntimeTransaction(this.adapter,{kind,rulesetVersionId:versionId,transactionId,summary,corrects});}
-  async getLedger(containerRef){return this.adapter.loadLedger(normalizeRuntimeContainerRef(containerRef));}
+  transaction(versionId,kind,{transactionId=null,summary=null,corrects=null}={}){
+    const authorize=async(ref,changes)=>{for(const change of changes)await this.#require(versionId,"write",{objectKind:"definition",objectId:change.scope==="definition"?change.id:(change.after??change.before)?.definitionId},ref);};
+    return new RuntimeTransaction(this.adapter,{kind,rulesetVersionId:versionId,transactionId,summary,corrects,authorize,...(this.userId?{userId:this.userId}:{})});
+  }
+  /** Ledger entries of a container, keeping only the changes this user may read. */
+  async getLedger(containerRef){
+    const ref=normalizeRuntimeContainerRef(containerRef),ledger=await this.adapter.loadLedger(ref),out=[];
+    for(const entry of ledger){
+      if(!this.#hasRuleset(entry.rulesetVersionId)){out.push(entry);continue;}
+      const changes=[];for(const change of entry.changes){const definitionId=change.scope==="definition"?change.id:(change.after??change.before)?.definitionId;if(!definitionId||(await this.authorize(entry.rulesetVersionId,"read",{objectKind:"definition",objectId:definitionId},ref)).allowed)changes.push(change);}
+      out.push({...entry,changes});
+    }
+    return out;
+  }
+  /** Containers a call may write: where this client needs the GM when Foundry refuses the update. */
+  writeTargets(method,args){
+    const [versionId]=args;
+    if(method==="transferCollectionEntry")return [args[1]?.from?.containerRef,args[1]?.to?.containerRef].filter(Boolean).map(normalizeRuntimeContainerRef);
+    if(method!=="executeAction")return [normalizeRuntimeContainerRef(args[1])];
+    const ruleset=this.ruleset(versionId),context=args[2]??{},roles=new Set(),seen=new Set();
+    const visit=actionId=>{
+      if(seen.has(actionId))return;seen.add(actionId);
+      const action=ruleset.actions?.find(x=>x.id===actionId);if(!action)return;
+      const effectIds=[...(action.costEffectRefs??[]),...(action.effectRefs??[]),...(action.outcomeMappings??[]).flatMap(m=>m?.effectRefs??[])];
+      for(const id of effectIds){const effect=ruleset.effects?.find(x=>x.id===id);if(effect)roles.add(effect.targetRole??"target");}
+      for(const eventTypeId of action.eventTypeRefs??[])for(const trigger of ruleset.triggers??[])if(trigger.eventTypeId===eventTypeId)(trigger.actionRefs??[]).forEach(visit);
+    };
+    visit(args[1]);
+    return [...roles].map(role=>roleRef(context,role)).filter(Boolean).map(normalizeRuntimeContainerRef);
+  }
+  async needsGM(method,args){for(const ref of this.writeTargets(method,args))if(!await this.adapter.canWrite(ref))return true;return false;}
   async #commit(tx){const committed=await tx.commit();if(!committed.duplicate)for(const entry of committed.entries)this.hooks?.callAll?.(RUNTIME_HOOKS.ledgerEntry,clone(entry));return committed;}
   async instantiateDefinition(versionId,containerRef,definitionId,{initial={},transactionId=null}={}){
     const ruleset=this.ruleset(versionId),definition=ruleset.definitions?.find(x=>x.id===definitionId&&x.enabled!==false);if(!definition)throw new Error(`Definition unavailable: ${definitionId}.`);
@@ -204,7 +258,7 @@ export class RuntimeEngine{
     const depth=Number(options.depth??0);if(depth>20)throw new Error("Rule Them'All event chain depth exceeded.");
     const event={id:globalThis.crypto?.randomUUID?.()??`evt-${Date.now()}-${Math.random().toString(36).slice(2)}`,eventTypeId,rulesetVersionId:versionId,occurredAt:Date.now(),payload:clone(payload),chainId:options.chainId??null,parentEventId:options.parentEventId??null,depth};event.chainId??=event.id;
     const eventContext={...context,event};const triggered=[];
-    for(const trigger of ruleset.triggers??[]){if(!enabled(trigger)||trigger.eventTypeId!==eventTypeId)continue;if(!this.#eventFilterMatches(trigger.eventFilter,event,eventContext))continue;let ok=true;for(const conditionId of trigger.conditionRefs??[])if(!await this.evaluateCondition(versionId,conditionId,eventContext)){ok=false;break;}if(!ok)continue;const actions=[];for(const actionId of trigger.actionRefs??[]){actions.push(await this.executeAction(versionId,actionId,eventContext));}triggered.push({triggerId:trigger.id,actions});}
+    for(const trigger of ruleset.triggers??[]){if(!enabled(trigger)||trigger.eventTypeId!==eventTypeId)continue;if(!this.#eventFilterMatches(trigger.eventFilter,event,eventContext))continue;let ok=true;for(const conditionId of trigger.conditionRefs??[])if(!await this.evaluateCondition(versionId,conditionId,eventContext)){ok=false;break;}if(!ok)continue;const actions=[];for(const actionId of trigger.actionRefs??[]){actions.push(await this.executeAction(versionId,actionId,eventContext,{eventDepth:depth,triggered:true}));}triggered.push({triggerId:trigger.id,actions});}
     this.hooks?.callAll?.(RUNTIME_HOOKS.event,event,clone(triggered));return {event,triggered};
   }
   #eventFilterMatches(filter,event,context){if(!filter)return true;const matches=filter.payloadMatches??{};for(const [key,value] of Object.entries(matches))if(event.payload?.[key]!==value)return false;return true;}
@@ -230,7 +284,9 @@ export class RuntimeEngine{
     if(action.testRef){testResult=await this.executeTest(versionId,action.testRef,context);const mapping=(action.outcomeMappings??[]).find(m=>m?.outcomeId===testResult.outcome?.id||m?.resultKey===testResult.outcome?.resultKey);if(mapping){if(Array.isArray(mapping.effectRefs))effectRefs=mapping.effectRefs;if(mapping.block===true)return {actionId,allowed:false,reason:"outcome",testResult,changes:[]};}}
     for(const effectId of effectRefs)changes.push(await this.previewEffect(versionId,effectId,context,staged));return {actionId,allowed:true,testResult,changes,staged};
   }
-  async executeAction(versionId,actionId,context={},{preview=false,eventDepth=0,transactionId=null}={}){
+  /** triggered: run by a Trigger, so no user chose it and only write permissions apply. */
+  async executeAction(versionId,actionId,context={},{preview=false,eventDepth=0,transactionId=null,triggered=false}={}){
+    if(!triggered)await this.#require(versionId,"execute",{objectKind:"action",objectId:actionId},roleRef(context,"self")??roleRef(context,context.defaultRole??"self"),context);
     const plan=await this.previewAction(versionId,actionId,context);if(preview||!plan.allowed)return {...plan,staged:undefined};
     // Staged states were read once by the preview: the commit expects their revision unchanged.
     const tx=this.transaction(versionId,"action",{transactionId,summary:{actionId,outcomeKey:plan.testResult?.outcome?.resultKey??null}});

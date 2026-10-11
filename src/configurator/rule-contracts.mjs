@@ -3,6 +3,7 @@ import {valueTypeRegistry, validateTypedValue} from './value-type-registry.mjs';
 import {prepareFieldMap} from './field-output-contracts.mjs';
 import {assertSafeRollFormula} from './roll-grammar.mjs';
 import {need} from './diagnostics.mjs';
+import {preparePermissionRules} from './permission-contract.mjs';
 import {validateFormulaAst, effectOperationRegistry} from './operation-registries.mjs';
 
 const nonempty=v=>typeof v==='string'&&v.trim().length>0;
@@ -111,7 +112,8 @@ export function preparePermissionPolicy(data,options={}){
   identity(x,'PermissionPolicy',options);
   if(!isRecord(x.scope)||!nonempty(x.scope.objectKind))throw new Error('PermissionPolicy.scope requires objectKind.');
   if(!['ALLOW','DENY'].includes(x.defaultEffect))throw new Error('PermissionPolicy.defaultEffect must be ALLOW or DENY.');
-  arr(x.rules,'PermissionPolicy.rules'); bool(x.enabled,'PermissionPolicy.enabled'); return x;
+  if(x.scope.objectKind!=='ruleset'&&!(x.scope.objectId===undefined||x.scope.objectId===null||nonempty(x.scope.objectId)))throw new Error('PermissionPolicy.scope.objectId must be an id or null.');
+  x.rules=preparePermissionRules(x.rules); bool(x.enabled,'PermissionPolicy.enabled'); return x;
 }
 export function prepareTag(data,options={}){
   const x={descriptionKey:'',enabled:true,order:0,color:null,...copyJSON(data)};

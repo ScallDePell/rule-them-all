@@ -1,16 +1,20 @@
 import {RuntimeEngine} from "./runtime-engine.mjs";
 import {FoundryRuntimeAdapter} from "./foundry-runtime-adapter.mjs";
+import {serveRuntimeRelay} from "./runtime-relay.mjs";
 
-export function createRuntimeAPI(configurator,{adapter=new FoundryRuntimeAdapter(),hooks=globalThis.Hooks,rulesetSource="published"}={}){
+/** relay: {request(method,args)}; a write this client cannot make on a Document goes to the GM client. */
+export function createRuntimeAPI(configurator,{adapter=new FoundryRuntimeAdapter(),hooks=globalThis.Hooks,rulesetSource="published",relay=null}={}){
   const engine=new RuntimeEngine({configurator,adapter,hooks,rulesetSource});
+  const relayed=async(method,args)=>Boolean(relay)&&!(method==="executeAction"&&args[3]?.preview)&&await engine.needsGM(method,args);
+  const write=method=>async(...args)=>await relayed(method,args)?relay.request(method,args):engine[method](...args);
   return Object.freeze({
     getContainerState:(ref,o)=>engine.getContainerState(ref,o),
-    instantiateDefinition:(versionId,ref,definitionId,o)=>engine.instantiateDefinition(versionId,ref,definitionId,o),
-    removeDefinitionState:(versionId,ref,definitionId,o)=>engine.removeDefinitionState(versionId,ref,definitionId,o),
-    setDefinitionState:(versionId,ref,definitionId,o)=>engine.setDefinitionState(versionId,ref,definitionId,o),
-    addCollectionEntry:(versionId,ref,definitionId,slotId,entry,o)=>engine.addCollectionEntry(versionId,ref,definitionId,slotId,entry,o),
-    removeCollectionEntry:(versionId,ref,definitionId,slotId,entryId,o)=>engine.removeCollectionEntry(versionId,ref,definitionId,slotId,entryId,o),
-    transferCollectionEntry:(versionId,options)=>engine.transferCollectionEntry(versionId,options),
+    instantiateDefinition:write("instantiateDefinition"),
+    removeDefinitionState:write("removeDefinitionState"),
+    setDefinitionState:write("setDefinitionState"),
+    addCollectionEntry:write("addCollectionEntry"),
+    removeCollectionEntry:write("removeCollectionEntry"),
+    transferCollectionEntry:write("transferCollectionEntry"),
     evaluateFormula:(versionId,id,context)=>engine.evaluateFormula(versionId,id,context),
     evaluateCondition:(versionId,id,context)=>engine.evaluateCondition(versionId,id,context),
     resolveModifiers:(versionId,targetRef,baseValue,context)=>engine.resolveModifiers(versionId,targetRef,baseValue,context),
@@ -19,13 +23,16 @@ export function createRuntimeAPI(configurator,{adapter=new FoundryRuntimeAdapter
     executeTest:(versionId,id,context)=>engine.executeTest(versionId,id,context),
     createTestActors:options=>adapter.createTestActors(options),
     resetContainer:ref=>adapter.reset(ref),
-    initializeContainer:(versionId,ref,o)=>engine.initializeContainer(versionId,ref,o),
+    initializeContainer:write("initializeContainer"),
     emitEvent:(versionId,eventTypeId,payload,context,options)=>engine.emitEvent(versionId,eventTypeId,payload,context,options),
     previewAction:(versionId,id,context)=>engine.previewAction(versionId,id,context),
-    executeAction:(versionId,id,context,options)=>engine.executeAction(versionId,id,context,options),
+    executeAction:write("executeAction"),
     describeContainer:ref=>adapter.describe(ref),
     getLedger:ref=>engine.getLedger(ref),
-    compensate:(versionId,ref,entryId,o)=>engine.compensate(versionId,ref,entryId,o),
+    compensate:write("compensate"),
+    authorize:(versionId,operation,target,ref,context)=>engine.authorize(versionId,operation,target,ref,context),
+    /** GM client: serve a relayed request from another user. */
+    serveRelay:message=>serveRuntimeRelay(engine,message),
     rulesetSource,
     adapter
   });

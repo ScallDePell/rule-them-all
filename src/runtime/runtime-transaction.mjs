@@ -3,7 +3,7 @@ import {normalizeRuntimeContainerRef} from "./runtime-contracts.mjs";
 
 /** Ledger entries kept per container; older ones are evicted (retention, not edition). */
 export const LEDGER_LIMIT=200;
-export const TRANSACTION_ERRORS=Object.freeze({conflict:"RUNTIME_CONFLICT",forbidden:"RUNTIME_FORBIDDEN",failed:"TRANSACTION_FAILED",compensation:"COMPENSATION_REFUSED"});
+export const TRANSACTION_ERRORS=Object.freeze({conflict:"RUNTIME_CONFLICT",forbidden:"RUNTIME_FORBIDDEN",needsGM:"RUNTIME_NEEDS_GM",failed:"TRANSACTION_FAILED",compensation:"COMPENSATION_REFUSED"});
 
 export class RuntimeTransactionError extends Error{
   constructor(code,message,details={}){super(message,details.cause?{cause:details.cause}:undefined);this.name="RuntimeTransactionError";this.code=code;this.details=details;}
@@ -43,11 +43,12 @@ export function applyLedgerChanges(state,changes,side="before"){
  * Foundry has no multi-document ACID: each container is written in one Document update
  * (state + ledger), and a failed write compensates the containers already written. */
 export class RuntimeTransaction{
-  #adapter;#staged=new Map();
-  constructor(adapter,{kind,rulesetVersionId,transactionId=null,summary=null,corrects=null,userId=globalThis.game?.user?.id??null}={}){
+  #adapter;#authorize;#staged=new Map();
+  /** authorize(ref, changes) throws when the business permission (CP-11) refuses a change. */
+  constructor(adapter,{kind,rulesetVersionId,transactionId=null,summary=null,corrects=null,userId=globalThis.game?.user?.id??null,authorize=null}={}){
     if(!kind)throw new Error("RuntimeTransaction requires a kind.");
     this.#adapter=adapter;this.kind=String(kind);this.rulesetVersionId=String(rulesetVersionId??"");
-    this.id=transactionId?String(transactionId):newId("tx");this.summary=summary;this.corrects=corrects;this.userId=userId;
+    this.id=transactionId?String(transactionId):newId("tx");this.summary=summary;this.corrects=corrects;this.userId=userId;this.#authorize=authorize;
   }
   /** Working copy of a container; the revision read here is the one the commit expects. */
   async load(containerRef){
@@ -69,7 +70,9 @@ export class RuntimeTransaction{
       if(current.runtimeRevision!==expected)throw new RuntimeTransactionError(TRANSACTION_ERRORS.conflict,`Runtime container changed since it was read (revision ${current.runtimeRevision}, expected ${expected}).`,{ref,expected,actual:current.runtimeRevision});
       const changes=diffRuntimeStates(current,state);
       if(!changes.length&&current.rulesetVersionId===state.rulesetVersionId)continue;
-      if(!await adapter.canWrite(ref))throw new RuntimeTransactionError(TRANSACTION_ERRORS.forbidden,"Runtime target is not writable by the current user.",{ref});
+      await this.#authorize?.(ref,changes);
+      // Allowed by the rules but not by Foundry: only the GM client can write this Document.
+      if(!await adapter.canWrite(ref))throw new RuntimeTransactionError(TRANSACTION_ERRORS.needsGM,"Runtime target can only be written by the GM client.",{ref});
       const next={...copyJSON(state),runtimeRevision:current.runtimeRevision+1};
       const entry={id:newId("ledger"),transactionId:this.id,kind:this.kind,rulesetVersionId:this.rulesetVersionId,at:Date.now(),worldTime:globalThis.game?.time?.worldTime??null,userId:this.userId,summary:copyJSON(this.summary),revision:next.runtimeRevision,changes,corrects:this.corrects};
       writes.push({ref,previous:current,previousLedger:ledger,next,ledger:[...ledger,entry].slice(-LEDGER_LIMIT),entry});

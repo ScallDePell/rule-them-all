@@ -76,12 +76,12 @@ test('CP-08: a failed write compensates the containers already written', async (
   assert.equal((await engine.getContainerState(A)).runtimeRevision,revisionA+2);
 });
 
-test('CP-08: every container is checked for write permission before the first write', async () => {
+test('CP-08: every container is checked for Foundry write permission before the first write', async () => {
   class ReadOnlyB extends MemoryRuntimeAdapter{async canWrite(ref){return ref.id!=='b';}}
   const adapter=new MemoryRuntimeAdapter();
   const {v,engine,api}=await setup(adapter);
   const locked=new RuntimeEngine({configurator:api,adapter:Object.assign(new ReadOnlyB(),{states:adapter.states,ledgers:adapter.ledgers}),hooks:null});
-  await assert.rejects(()=>locked.executeAction(v,'strike',context),error=>error.code==='RUNTIME_FORBIDDEN');
+  await assert.rejects(()=>locked.executeAction(v,'strike',context),error=>error.code==='RUNTIME_NEEDS_GM');
   assert.equal(await pool(engine,A,'stamina'),3);
 });
 

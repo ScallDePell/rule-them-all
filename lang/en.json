@@ -956,8 +956,8 @@
         "Usage": "If a Condition is false nothing is written. Costs are paid before effects."
       },
       "permissionPolicy": {
-        "Summary": "A Permission decides who may read or change what.",
-        "Usage": "Rules apply in order, then the default effect."
+        "Summary": "A Permission decides who may read, write, execute or configure what. The GM always has every right.",
+        "Usage": "The most specific scope decides (one object, then a kind of object, then the Ruleset). Among its matching rules (role, minimum ownership, users, Condition), the highest priority wins and DENY wins a tie; otherwise the default effect applies. Without any Permission, Foundry ownership decides."
       },
       "eventType": {
         "Summary": "An Event type describes a game fact (attack resolved, turn started…) and its data.",

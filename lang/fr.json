@@ -952,8 +952,8 @@
         "Usage": "Si une Condition est fausse, rien n'est écrit. Les coûts sont payés avant les effets."
       },
       "permissionPolicy": {
-        "Summary": "Une Permission décide qui peut lire ou modifier quoi.",
-        "Usage": "Les règles s'appliquent dans l'ordre, puis l'effet par défaut."
+        "Summary": "Une Permission décide qui peut lire, modifier, exécuter ou configurer quoi. Le MJ a toujours tous les droits.",
+        "Usage": "La portée la plus précise décide (un objet, puis un type d'objet, puis le Ruleset). Parmi ses règles qui correspondent (rôle, niveau de propriété minimal, utilisateurs, Condition), la plus prioritaire gagne et REFUSER l'emporte en cas d'égalité, sinon l'effet par défaut s'applique. Sans Permission, la propriété Foundry décide."
       },
       "eventType": {
         "Summary": "Un type d'Event décrit un fait du jeu (attaque résolue, tour commencé…) et ses données.",

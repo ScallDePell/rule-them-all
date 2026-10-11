@@ -2,6 +2,7 @@ import {resolveDocumentType} from "../core/system-document-types.mjs";
 import {MODULE_ID} from "../core/module-contract.mjs";
 import {copyJSON} from "../configurator/configurator-schema.mjs";
 import {createRuntimeState,normalizeRuntimeContainerRef,prepareRuntimeState} from "./runtime-contracts.mjs";
+import {OWNERSHIP_LEVELS,PERMISSION_ROLES} from "../configurator/permission-contract.mjs";
 
 
 const FLAG_KEY="runtimeState";
@@ -17,7 +18,14 @@ export class FoundryRuntimeAdapter{
     const doc=collection?.get?.(n.id);if(!doc)throw new Error(`Foundry ${n.kind} not found: ${n.id}.`);return doc;
   }
   async load(ref,{rulesetVersionId=""}={}){const doc=await this.resolveDocument(ref);const stored=doc.getFlag?.(MODULE_ID,FLAG_KEY);return prepareRuntimeState(stored??createRuntimeState({rulesetVersionId}),{rulesetVersionId});}
+  /** Physical permission of this client: Foundry only lets a Document owner (or a GM) update it. */
   async canWrite(ref,user=game.user){const doc=await this.resolveDocument(ref);if(typeof doc.canUserModify==="function")return doc.canUserModify(user,"update");if(typeof doc.testUserPermission==="function"&&globalThis.CONST?.DOCUMENT_OWNERSHIP_LEVELS)return doc.testUserPermission(user,CONST.DOCUMENT_OWNERSHIP_LEVELS.OWNER);return Boolean(user?.isGM);}
+  /** PermissionPolicy subject (CP-11): Foundry role and ownership of a user on the container. */
+  async subject(ref,userId=game.user?.id){
+    const user=game.users?.get?.(userId);if(!user)throw new Error(`Foundry User not found: ${userId}.`);
+    const doc=ref?await this.resolveDocument(ref):null,level=Number(doc?.getUserLevel?.(user)??(user.isGM?3:0));
+    return {userId:user.id,role:PERMISSION_ROLES[Math.min(Math.max(Number(user.role)-1,0),PERMISSION_ROLES.length-1)],isGM:Boolean(user.isGM),ownership:OWNERSHIP_LEVELS[Math.min(Math.max(level,0),OWNERSHIP_LEVELS.length-1)]};
+  }
   async loadLedger(ref){const doc=await this.resolveDocument(ref);const stored=doc.getFlag?.(MODULE_ID,LEDGER_KEY);return Array.isArray(stored)?copyJSON(stored):[];}
   /** One Document update carries the state and its ledger, so each container is written atomically.
    * The state replaces the stored object: a merge would keep removed DefinitionStates. */
