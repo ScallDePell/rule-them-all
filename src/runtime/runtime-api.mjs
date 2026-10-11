@@ -30,6 +30,8 @@ export function createRuntimeAPI(configurator,{adapter=new FoundryRuntimeAdapter
     getLedger:ref=>engine.getLedger(ref),
     compensate:write("compensate"),
     acquire:write("acquire"),
+    setContentField:write("setContentField"),
+    releaseContent:write("releaseContent"),
     removeStateInstance:write("removeStateInstance"),
     expireStates:write("expireStates"),
     expireAll:options=>engine.expireAll(options),

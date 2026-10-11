@@ -64,6 +64,15 @@ export function checkRulesetTypes(ruleset, d) {
       if (modifier && modifier.targetRef?.capabilityId !== "value") d.strict("MODIFIER_PERSISTENT", `actions[${index}]`, `Modifier ${modifier.id} must target a value output to be applied persistently.`);
     }
   });
+  // contentAggregate reads declared fields of an existing Content Type.
+  const contentTypes = byId(ruleset.contentTypes);
+  const scan = (node, path, visit) => { if (Array.isArray(node)) return node.forEach((child, i) => scan(child, `${path}[${i}]`, visit)); if (!isRecord(node)) return; visit(node, path); for (const [key, value] of Object.entries(node)) if (key !== "type") scan(value, `${path}.${key}`, visit); };
+  for (const collection of ["formulas", "conditions"]) list(ruleset[collection]).forEach((entry, index) => scan(entry?.expression, `${collection}[${index}].expression`, (node, path) => {
+    if (node.type !== "contentAggregate") return;
+    const type = contentTypes.get(node.contentTypeId);
+    if (!type) return d.strict("CONTENT_AGGREGATE", path, `Content Type not found: ${node.contentTypeId}.`);
+    for (const key of ["field", "whereField"]) if (node[key] && !isRecord(type.fields?.[node[key]])) d.strict("CONTENT_AGGREGATE", `${path}.${key}`, `Content Type ${type.id} has no field ${node[key]}.`);
+  }));
   // A grant's config.add raises value.base (RWF: a +1 from several Contents adds up).
   const definitionsById = new Map(list(ruleset.definitions).map(definition => [definition?.id, definition]));
   list(ruleset.contentTemplates).forEach((template, index) => {

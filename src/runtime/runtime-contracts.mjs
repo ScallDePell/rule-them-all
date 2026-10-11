@@ -4,7 +4,7 @@ import {copyJSON, isRecord} from "../configurator/configurator-schema.mjs";
 export const RUNTIME_SCHEMA_VERSION = 2;
 
 export function createRuntimeState({rulesetVersionId=""}={}) {
-  return {schemaVersion:RUNTIME_SCHEMA_VERSION,rulesetVersionId,runtimeRevision:0,definitionStates:{},stateInstances:[]};
+  return {schemaVersion:RUNTIME_SCHEMA_VERSION,rulesetVersionId,runtimeRevision:0,definitionStates:{},stateInstances:[],contents:{}};
 }
 
 export function prepareRuntimeState(data,{rulesetVersionId=""}={}) {
@@ -14,6 +14,9 @@ export function prepareRuntimeState(data,{rulesetVersionId=""}={}) {
   if(!Number.isSafeInteger(state.runtimeRevision)||state.runtimeRevision<0) throw new Error("runtimeRevision must be a non-negative safe integer.");
   if(!isRecord(state.definitionStates)) throw new Error("definitionStates must be an object.");
   if(!Array.isArray(state.stateInstances)) throw new Error("stateInstances must be an array.");
+  // Owned Contents: acquisition key -> {templateId, contentTypeId, fields} (instance values over the template's data).
+  state.contents??={};
+  if(!isRecord(state.contents)) throw new Error("contents must be an object.");
   return state;
 }
 

@@ -85,7 +85,7 @@ test('CP-15: finalizing builds the character, and only then completes the sessio
   assert.deepEqual(Object.keys(state.definitionStates).sort(),['grit','sense']);
   assert.equal(state.definitionStates.sense.capabilityStates.value.base,7);
   // The chosen Definitions were written in one transaction.
-  assert.equal((await runtime.getLedger(actor.uuid)).filter(entry=>entry.kind==='acquisition').length,1);
+  assert.equal((await runtime.getLedger(actor.uuid)).filter(entry=>entry.kind==='acquisition'&&entry.changes.some(change=>change.scope==='definition')).length,1);
   await assert.rejects(()=>sessions.answer(s.id,'abilities',['sense']),error=>error.code==='CREATION_SESSION_CLOSED');
 });
 

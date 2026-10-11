@@ -258,7 +258,7 @@ export class FoundryContentBridge{
     for(const acquisition of Object.values(current))for(const id of acquisition?.createdDefinitionIds??[])origins[originKey(acquisition.versionId,id)]=true;
     // CP-16: the Content's grants and its acquisition Action (Conditions, Costs, Effects) are one transaction.
     const bindings=definitionBindings.filter(binding=>binding?.definitionId).map(binding=>({definitionId:binding.definitionId,initial:binding.initial??initialForDefinition(template,binding.definitionId),add:binding.add??{}}));
-    const runtimeResult=await this.runtime.acquire(versionId,actor.uuid,{actionId:template.acquisitionActionRef??null,definitionBindings:bindings,summary:{templateId:template.id,sourceItemId}});
+    const runtimeResult=await this.runtime.acquire(versionId,actor.uuid,{actionId:template.acquisitionActionRef??null,definitionBindings:bindings,content:{key,templateId:template.id,contentTypeId:template.contentTypeId},summary:{templateId:template.id,sourceItemId}});
     if(!runtimeResult.allowed)throw new Error(`Acquisition refused by Action ${template.acquisitionActionRef}: ${runtimeResult.reason}.`);
     const createdDefinitionIds=[...runtimeResult.acquiredDefinitionIds];
     let writtenOrigins=false,writtenAcquisitions=false;
@@ -292,12 +292,16 @@ export class FoundryContentBridge{
     const ruleset=this.ruleset(versionId);
     if(!(ruleset.actions??[]).some(action=>action.id===actionId&&action.enabled!==false))
       throw new Error(`Action unavailable: ${actionId}.`);
-    const grants=acquiredActionIds(actor.getFlag?.(MODULE_ID,ACQUISITIONS_FLAG),versionId);
+    const records=actor.getFlag?.(MODULE_ID,ACQUISITIONS_FLAG)??{},grants=acquiredActionIds(records,versionId);
     if(!grants.includes(actionId))throw new Error(`Action not acquired by Actor: ${actionId}.`);
+    // options.contentKey: the owned Content the Action is used from (its fields feed contentField Formulas).
+    const contentKey=options.contentKey??null;
+    if(contentKey&&!(records[contentKey]?.versionId===versionId&&(records[contentKey].actionIds??[]).includes(actionId)))throw new Error(`Action ${actionId} is not granted by Content ${contentKey}.`);
     // The grant's owner is always the initiating Actor: callers cannot
     // substitute a different self/source while reusing another Actor's grant.
-    const safeContext={...context,roles:{...(context.roles??{}),self:actor.uuid,source:actor.uuid}};
-    return this.runtime.executeAction(versionId,actionId,safeContext,options);
+    const safeContext={...context,roles:{...(context.roles??{}),self:actor.uuid,source:actor.uuid},...(contentKey?{content:{key:contentKey,role:"self"}}:{})};
+    const {contentKey:_contentKey,...actionOptions}=options;
+    return this.runtime.executeAction(versionId,actionId,safeContext,actionOptions);
   }
   async listGrantedReferences(versionId,actorRef){
     const actor=await this.runtime.adapter.resolveDocument(actorRef);
@@ -346,6 +350,7 @@ export class FoundryContentBridge{
       await this.runtime.removeDefinitionState(acquisition.versionId,actor.uuid,definitionId);
       delete origins[identity];
     }
+    await this.runtime.releaseContent?.(acquisition.versionId,actor.uuid,acquisitionKey);
     await actor.setFlag(MODULE_ID,DEFINITION_ORIGINS_FLAG,origins);
     await actor.setFlag(MODULE_ID,ACQUISITIONS_FLAG,current);
     this.hooks?.callAll?.("ruleThemAllContentReleased",actor,clone(acquisition));

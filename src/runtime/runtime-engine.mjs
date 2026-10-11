@@ -10,7 +10,7 @@ import {resolvePermission} from "./permission-policy.mjs";
 import {applyModifierStack,createModifierState,createStateInstance,durationEnded,hasDurations,removeModifierStates,removeStateInstance,startDuration} from "./runtime-states.mjs";
 import {toRuntimeReference,resolveContainer} from "./runtime-reference.mjs";
 import {effectOperationRegistry} from "../configurator/operation-registries.mjs";
-import {assertSafeRollFormula,multiplyDice} from "../configurator/roll-grammar.mjs";
+import {assertSafeRollFormula,multiplyDice,resolveRollData} from "../configurator/roll-grammar.mjs";
 import {findSlot, slotInitialKey} from "../configurator/capability-slots.mjs";
 import {SLOT_CAPABILITIES,requireSlot,poolSlotState,collectionSlotState,boundPoolValue,initialSlotStates,prepareCollectionEntry,assertCollectionRoom,assertCollectionMinimum} from "./capability-slot-runtime.mjs";
 
@@ -70,7 +70,8 @@ export class RuntimeEngine{
   #hasRuleset(versionId){try{this.ruleset(versionId);return true;}catch{return false;}}
   /** Every persistent runtime write goes through one transaction (CP-08, CP-18). */
   transaction(versionId,kind,{transactionId=null,summary=null,corrects=null}={}){
-    const authorize=async(ref,changes)=>{for(const change of changes)await this.#require(versionId,"write",{objectKind:"definition",objectId:change.scope==="definition"?change.id:(change.after??change.before)?.definitionId},ref);};
+    const target=change=>change.scope==="content"?{objectKind:"contentTemplate",objectId:(change.after??change.before)?.templateId}:{objectKind:"definition",objectId:change.scope==="definition"?change.id:(change.after??change.before)?.definitionId};
+    const authorize=async(ref,changes)=>{for(const change of changes)await this.#require(versionId,"write",target(change),ref);};
     const prepare=(ref,state)=>this.#followMaxima(versionId,ref,state);
     return new RuntimeTransaction(this.adapter,{kind,rulesetVersionId:versionId,transactionId,summary,corrects,authorize,prepare,...(this.userId?{userId:this.userId}:{})});
   }
@@ -228,7 +229,29 @@ export class RuntimeEngine{
     return rows;
   }
   #refKey(ref){return ref.uuid??`${ref.kind}:${ref.id}`;}
-  evaluator(versionId,staged=null){const ruleset=this.ruleset(versionId);return new RuntimeEvaluator({ruleset,resolveReference:(reference,context,opts)=>this.resolveReference(versionId,reference,context,{...opts,staged})});}
+  evaluator(versionId,staged=null){const ruleset=this.ruleset(versionId);return new RuntimeEvaluator({ruleset,resolveReference:(reference,context,opts)=>this.resolveReference(versionId,reference,context,{...opts,staged}),
+    listContents:async(context,container)=>this.#contents(versionId,context,container??context?.defaultRole??"self",staged),
+    currentContent:async context=>{if(!context?.content?.key)return null;return (await this.#contents(versionId,context,context.content.role??"self",staged)).find(row=>row.key===context.content.key)??null;}});}
+  /** A role's owned Contents, each with its template data overlaid by its instance fields. */
+  async #contents(versionId,context,role,staged){
+    const target=roleRef(context,role);if(!target)throw new Error(`EvaluationContext role is missing: ${role}.`);
+    const ref=normalizeRuntimeContainerRef(target),state=staged?.get(this.#refKey(ref))??await this.adapter.load(ref,{rulesetVersionId:versionId});
+    const templates=new Map((this.ruleset(versionId).contentTemplates??[]).map(template=>[template.id,template]));
+    return Object.entries(state.contents??{}).map(([key,content])=>({key,templateId:content.templateId,contentTypeId:content.contentTypeId,fields:{...clone(templates.get(content.templateId)?.data??{}),...clone(content.fields??{})}}));
+  }
+  /** Set one instance field of an owned Content (equipped, ammunition...), checked against its Content Type. */
+  async setContentField(versionId,containerRef,key,fieldId,value,{transactionId=null}={}){
+    const ruleset=this.ruleset(versionId),tx=this.transaction(versionId,"content.field",{transactionId,summary:{key,fieldId}}),state=await tx.load(containerRef);
+    const content=state.contents?.[key];if(!content)throw new Error(`Owned Content not found: ${key}.`);
+    const field=ruleset.contentTypes?.find(type=>type.id===content.contentTypeId)?.fields?.[fieldId];if(!field)throw new Error(`Content Type ${content.contentTypeId} has no field ${fieldId}.`);
+    const check=validateTypedValue(field.valueType,field.cardinality??"one",field.nullable===true,value);if(!check.valid)throw new Error(`Content field ${fieldId}: ${check.message}`);
+    (content.fields??={})[fieldId]=clone(value);await this.#commit(tx);return clone(content);
+  }
+  /** Forget an owned Content (its Item was removed). Definitions it granted are released by the caller. */
+  async releaseContent(versionId,containerRef,key,{transactionId=null}={}){
+    const tx=this.transaction(versionId,"content.release",{transactionId,summary:{key}}),state=await tx.load(containerRef);
+    if(!state.contents?.[key])return false;delete state.contents[key];await this.#commit(tx);return true;
+  }
   async evaluateFormula(versionId,formulaId,context={}){return await this.evaluator(versionId).formula(formulaId,context);}
   async evaluateCondition(versionId,conditionId,context={}){return await this.evaluator(versionId).condition(conditionId,context);}
   async resolveModifiers(versionId,targetRef,baseValue,context={}){
@@ -295,15 +318,16 @@ export class RuntimeEngine{
   }
   /** CP-16 acquisition: the Content's Definition grants (only the absent ones) and, when given,
    * the acquisition Action's Conditions, Costs and Effects commit as one transaction. */
-  async acquire(versionId,containerRef,{actionId=null,definitionBindings=[],context={},transactionId=null,summary=null}={}){
+  async acquire(versionId,containerRef,{actionId=null,definitionBindings=[],content=null,context={},transactionId=null,summary=null}={}){
     const ref=normalizeRuntimeContainerRef(containerRef),grants=definitionBindings.map(binding=>({definitionId:binding.definitionId,initial:binding.initial??{},add:binding.add??{},targetRole:"self",ifAbsent:true}));
     if(actionId){
       const roles={...(context.roles??{}),self:ref,source:ref};
-      const result=await this.executeAction(versionId,actionId,{...context,roles,defaultRole:context.defaultRole??"self"},{acquisitions:grants,transactionId});
+      const result=await this.executeAction(versionId,actionId,{...context,roles,defaultRole:context.defaultRole??"self"},{acquisitions:grants,content,transactionId});
       return {allowed:result.allowed,reason:result.reason??null,acquiredDefinitionIds:result.acquired??[],transactionId:result.transactionId??null,ledgerEntryIds:result.ledgerEntryIds??[],duplicate:Boolean(result.duplicate),action:{...result,staged:undefined}};
     }
     const ruleset=this.ruleset(versionId),tx=this.transaction(versionId,"acquisition",{transactionId,summary}),state=await tx.load(ref),acquired=[];
     for(const grant of grants)if(await this.#acquireInto(versionId,ruleset,ref,state,grant))acquired.push(grant.definitionId);
+    if(content)this.#addContent(versionId,state,content);
     const committed=await this.#commit(tx);
     return {allowed:true,reason:null,acquiredDefinitionIds:committed.duplicate?committed.entries.flatMap(entry=>entry.changes.filter(change=>change.before===null).map(change=>change.id)):acquired,transactionId:committed.transactionId,ledgerEntryIds:committed.entries.map(entry=>entry.id),duplicate:committed.duplicate,action:null};
   }
@@ -336,7 +360,9 @@ export class RuntimeEngine{
     const multiplier=operand.multiplierFormulaRef?Number(await evaluator.formula(operand.multiplierFormulaRef,context)):1;
     const bonus=operand.bonusFormulaRef?Number(await evaluator.formula(operand.bonusFormulaRef,context)):0;
     if(!Number.isFinite(bonus))throw new Error(`Roll bonus of ${operand.rollRef} is not a number.`);
-    const roll=await this.roll(multiplyDice(rollDef.formula,multiplier),rollDef.data??{});
+    // The Content the Action is used from lends its fields as @content.<field> (a weapon's damage dice).
+    const content=await evaluator.currentContent(context),data={...clone(rollDef.data??{}),...(content?{content:content.fields}:{})};
+    const roll=await this.roll(multiplyDice(resolveRollData(rollDef.formula,data),multiplier),data);
     return {value:Number(roll.total)+bonus,roll:{formula:String(roll.formula??rollDef.formula),total:Number(roll.total),result:String(roll.result??roll.total??""),bonus}};
   }
   async #operand(versionId,operand,context,evaluator){if(operand.kind==="literal")return clone(operand.value);if(operand.kind==="parameter")return evaluator.parameter(operand.id);if(operand.kind==="formula")return await evaluator.formula(operand.id,context);if(operand.kind==="reference")return await this.resolveReference(versionId,operand.reference,context,{staged:evaluator.__staged});throw new Error(`Unsupported Effect operand: ${operand.kind}.`);}
@@ -371,6 +397,12 @@ export class RuntimeEngine{
       const value=Number(amount);if(!Number.isFinite(value))throw new Error(`Acquisition add for ${definition.id} is not a number.`);
       ds.capabilityStates.value.base=Number(ds.capabilityStates.value.base??0)+value;
     }
+  }
+  /** content: {key, templateId, contentTypeId}; the same key acquired twice keeps its instance fields. */
+  #addContent(versionId,state,content){
+    if(!content?.key||!content.templateId)throw new Error("An owned Content needs a key and a templateId.");
+    state.rulesetVersionId||=versionId;state.contents??={};
+    state.contents[content.key]??={templateId:content.templateId,contentTypeId:content.contentTypeId??null,fields:{}};
   }
   async #stagedState(versionId,context,role,staged){
     const target=roleRef(context,role);if(!target)throw new Error(`EvaluationContext role is missing: ${role}.`);
@@ -447,7 +479,7 @@ export class RuntimeEngine{
     return results;
   }
   /** previewAction options.acquisitions: extra grants run with the Action's own (a Content's bindings). */
-  async previewAction(versionId,actionId,context={},{acquisitions=[]}={}){
+  async previewAction(versionId,actionId,context={},{acquisitions=[],content=null}={}){
     const ruleset=this.ruleset(versionId),action=ruleset.actions?.find(x=>x.id===actionId&&enabled(x));if(!action)throw new Error(`Action unavailable: ${actionId}.`);const staged=new Map(),evaluator=this.evaluator(versionId,staged);evaluator.__staged=staged;
     for(const conditionId of action.conditionRefs??[])if(!await evaluator.condition(conditionId,context))return {actionId,allowed:false,reason:"condition",conditionId,changes:[]};
     const changes=[];for(const effectId of action.costEffectRefs??[])changes.push(await this.previewEffect(versionId,effectId,context,staged));
@@ -464,15 +496,16 @@ export class RuntimeEngine{
       if(created){changes.push({acquisition:acquisition.definitionId,before:null,after:clone(created),containerRef:ref});acquired.push(acquisition.definitionId);}
       else if(Object.keys(acquisition.add??{}).length)changes.push({acquisitionAdd:acquisition.definitionId,add:clone(acquisition.add),containerRef:ref});
     }
+    if(content){const {ref,state}=await this.#stagedState(versionId,context,"self",staged);this.#addContent(versionId,state,content);changes.push({content:content.key,templateId:content.templateId,containerRef:ref});}
     await this.#stageStates(versionId,ruleset,action,context,staged,evaluator,changes);
     // Effects read the Test under variables.test (total, margin, natural, outcome), e.g. damage that grows with the margin.
     const effectContext=testResult?{...context,variables:{...(context.variables??{}),...testResult.variables,test:{...testResult.variables.test,outcome:testResult.outcome}}}:context;
     for(const effectId of effectRefs)changes.push(await this.previewEffect(versionId,effectId,effectContext,staged));return {actionId,allowed:true,testResult,changes,acquired,staged};
   }
   /** triggered: run by a Trigger, so no user chose it and only write permissions apply. */
-  async executeAction(versionId,actionId,context={},{preview=false,eventDepth=0,transactionId=null,triggered=false,acquisitions=[]}={}){
+  async executeAction(versionId,actionId,context={},{preview=false,eventDepth=0,transactionId=null,triggered=false,acquisitions=[],content=null}={}){
     if(!triggered)await this.#require(versionId,"execute",{objectKind:"action",objectId:actionId},roleRef(context,"self")??roleRef(context,context.defaultRole??"self"),context);
-    const plan=await this.previewAction(versionId,actionId,context,{acquisitions});if(preview||!plan.allowed)return {...plan,staged:undefined};
+    const plan=await this.previewAction(versionId,actionId,context,{acquisitions,content});if(preview||!plan.allowed)return {...plan,staged:undefined};
     // Staged states were read once by the preview: the commit expects their revision unchanged.
     const tx=this.transaction(versionId,"action",{transactionId,summary:{actionId,outcomeKey:plan.testResult?.outcome?.resultKey??null}});
     for(const [key,state] of plan.staged){const change=plan.changes.find(x=>this.#refKey(x.containerRef)===key);if(change)tx.stage(change.containerRef,state);}

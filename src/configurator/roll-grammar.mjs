@@ -136,3 +136,17 @@ export function multiplyDice(formula, multiplier) {
   parseRollFormula(text);
   return text;
 }
+
+/** Replace the @data references a formula names by their values (a weapon's "@content.damage" becomes "1d8"),
+ * so the dice can be multiplied; unknown references stay for Foundry. The result is parsed again. */
+export function resolveRollData(formula, data = {}) {
+  const text = String(formula ?? "").trim().replace(/@([A-Za-z_][A-Za-z0-9_-]*(?:\.[A-Za-z_][A-Za-z0-9_-]*)*)/g, (whole, path) => {
+    let value = data;
+    for (const part of path.split(".")) value = value?.[part];
+    if (typeof value === "number" && Number.isFinite(value)) return String(value);
+    if (typeof value === "string" && value.trim()) return `(${value.trim()})`.replace(/^\((\d*d\d+)\)$/, "$1");
+    return whole;
+  });
+  parseRollFormula(text);
+  return text;
+}

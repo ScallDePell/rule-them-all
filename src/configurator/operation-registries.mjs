@@ -82,11 +82,37 @@ const tableType = values => { const types = new Set(values.map(value => value ==
 const literalType = value => typeof value === "boolean" ? "boolean" : typeof value === "string" ? "string" : Number.isSafeInteger(value) ? "integer" : typeof value === "number" ? "number" : UNKNOWN;
 const compare = op => ({evaluate: async (node, {ev}) => op(await ev(node.left), await ev(node.right)), resultType: "boolean"});
 
+/** contentAggregate: {operation: sum|max|min|count, contentTypeId, field?, whereField?, container?} over a role's owned Contents. */
+export const CONTENT_AGGREGATES = Object.freeze(["sum", "max", "min", "count"]);
+function validateContentAggregate(node, label) {
+  if (!CONTENT_AGGREGATES.includes(node.operation)) throw new Error(`${label}.operation must be ${CONTENT_AGGREGATES.join(", ")}.`);
+  if (!nonempty(node.contentTypeId)) throw new Error(`${label}.contentTypeId is required.`);
+  if (node.operation !== "count" && !nonempty(node.field)) throw new Error(`${label}.field is required.`);
+  for (const key of ["whereField", "container"]) if (node[key] !== undefined && node[key] !== null && !nonempty(node[key])) throw new Error(`${label}.${key} must be an id.`);
+}
+async function aggregateContents(node, kit) {
+  const rows = (await kit.contents(node.container ?? null)).filter(row => row.contentTypeId === node.contentTypeId && (!node.whereField || Boolean(row.fields?.[node.whereField])));
+  if (node.operation === "count") return rows.length;
+  const values = rows.map(row => num(row.fields?.[node.field] ?? 0, `${node.contentTypeId}.${node.field}`));
+  if (!values.length) return 0;
+  return node.operation === "sum" ? values.reduce((a, b) => a + b, 0) : node.operation === "max" ? Math.max(...values) : Math.min(...values);
+}
+/** contentField: {field, default?} of the Content the Action is used from (a weapon's damage). */
+async function contentField(node, kit) {
+  const content = await kit.content();
+  const value = content?.fields?.[node.field];
+  if (value !== undefined && value !== null) return copyJSON(value);
+  if (node.default !== undefined) return kit.ev(node.default);
+  throw new Error(content ? `Content ${content.templateId} has no field ${node.field}.` : `No Content in context for field ${node.field}.`);
+}
+
 export const formulaNodeRegistry = new FormulaNodeRegistry()
   .register({id: "literal", evaluate: node => copyJSON(node.value), resultType: node => literalType(node.value)})
   .register({id: "parameter", evaluate: (node, kit) => kit.parameter(node.id), resultType: (node, infer, leaf) => leaf("parameter", node.id)})
   .register({id: "formula", evaluate: (node, kit) => kit.formula(node.id), resultType: (node, infer, leaf) => leaf("formula", node.id)})
   .register({id: "reference", evaluate: (node, kit) => kit.reference(node.reference, node.container ?? null), resultType: (node, infer, leaf) => leaf("reference", node.reference), validate: validateReferenceNode})
+  .register({id: "contentAggregate", evaluate: aggregateContents, resultType: node => node.operation === "count" ? "integer" : "number", validate: validateContentAggregate})
+  .register({id: "contentField", evaluate: contentField, validate: (node, label) => { if (!nonempty(node.field)) throw new Error(`${label}.field is required.`); }})
   .register({id: "context", evaluate: (node, kit) => { let value = kit.context; for (const part of String(node.path ?? "").split(".").filter(Boolean)) value = value?.[part]; return value === undefined ? undefined : copyJSON(value); }})
   .register({id: "add", evaluate: async (node, {ev}) => { let out = 0; for (const n of args(node)) out += num(await ev(n), "add operand"); return out; }, resultType: allInteger})
   .register({id: "subtract", evaluate: async (node, {ev}) => { const a = args(node); if (!a.length) return 0; let out = num(await ev(a[0]), "subtract operand"); for (const n of a.slice(1)) out -= num(await ev(n), "subtract operand"); return out; }, resultType: allInteger})
