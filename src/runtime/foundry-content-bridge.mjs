@@ -1,0 +1,362 @@
+import {resolveDocumentType} from "../core/system-document-types.mjs";
+import {MODULE_ID} from "../core/module-contract.mjs";
+import {copyJSON} from "../configurator/configurator-schema.mjs";
+import {acquiredActionIds} from "./content-access.mjs";
+import {resolveAcquisitionChoices} from "./acquisition-choices.mjs";
+import {planCreationSystem} from "./creation-plan.mjs";
+import {initialForDefinition} from "./content-binding.mjs";
+import {ContentGrantHandlers,listAcquisitionReferences} from "./content-relations.mjs";
+import {promptAcquisitionChoices} from "./guided-acquisition.mjs";
+
+
+const TEMPLATE_FLAG="contentTemplate";
+const ACQUISITIONS_FLAG="contentAcquisitions";
+const DEFINITION_ORIGINS_FLAG="contentDefinitionOrigins";
+const originKey=(versionId,definitionId)=>JSON.stringify([versionId,definitionId]);
+const slug=value=>String(value??"").trim().toLowerCase().normalize("NFKD").replace(/[\u0300-\u036f]/g,"").replace(/[^a-z0-9]+/g,"-").replace(/^-|-$/g,"").slice(0,48)||"content";
+const clone=value=>copyJSON(value);
+
+export function packNameFor(versionId,contentType){
+  const v=slug(String(versionId??"").replace(/^version-/,"" )).slice(0,12)||"version";
+  return `rta-${v}-${slug(contentType?.id??contentType?.nameKey)}`.slice(0,80);
+}
+
+export function templateFlags(versionId,template,contentType){
+  return {
+    managed:true,
+    versionId:String(versionId),
+    templateId:String(template.id),
+    contentTypeId:String(contentType.id),
+    runtimeMode:template.runtimeMode??contentType.runtimeMode??"unique",
+    definitionBindings:clone(template.definitionBindings??[]),
+    relations:clone(template.relations??[]),
+    actionBindings:clone(template.actionBindings??[]),
+    choiceGroups:clone(template.choiceGroups??[]),
+    initialStateRules:clone(template.initialStateRules??[]),
+    categories:clone(template.categories??[]),
+    capabilities:clone(template.capabilities??[]),
+    tags:clone(template.tags??[]),
+    data:clone(template.data??{})
+  };
+}
+
+export class FoundryContentBridge{
+  #actorMutations=new Map();
+  async #withActorMutation(actorRef,work){
+    const key=String(actorRef);
+    const previous=this.#actorMutations.get(key)??Promise.resolve();
+    const pending=previous.catch(()=>{}).then(work);
+    this.#actorMutations.set(key,pending);
+    try{return await pending;}finally{if(this.#actorMutations.get(key)===pending)this.#actorMutations.delete(key);}
+  }
+  constructor(configurator,runtime,{hooks=globalThis.Hooks,documentTypeResolver=resolveDocumentType,grantHandlers=new ContentGrantHandlers()}={}){this.configurator=configurator;this.runtime=runtime;this.hooks=hooks;this.documentTypeResolver=documentTypeResolver;this.grantHandlers=grantHandlers;}
+  ruleset(versionId){const record=this.configurator.getRulesetVersion?.(versionId);const ruleset=record?.publishedSnapshot??record?.workingDraft;if(!ruleset)throw new Error(`Ruleset version not found: ${versionId}.`);return ruleset;}
+  label(versionId,key){try{return this.configurator.resolveLocalizedText(versionId,globalThis.game?.i18n?.lang??"en",key,k=>globalThis.game?.i18n?.localize?.(k)??k);}catch{return key;}}
+  #documentSpec(contentType){
+    if(contentType.storageKind==="actor")return {documentName:"Actor",type:this.documentTypeResolver("Actor",{requestedType:contentType.documentSubtype??null}),klass:globalThis.Actor};
+    return {documentName:"Item",type:this.documentTypeResolver("Item",{requestedType:contentType.documentSubtype??null}),klass:globalThis.Item};
+  }
+  #compendiumClass(){return globalThis.CompendiumCollection??globalThis.foundry?.documents?.collections?.CompendiumCollection;}
+  async ensurePack(versionId,contentType){
+    if(!globalThis.game?.user?.isGM)throw new Error("Only a GM can create or synchronize Rule Them'All Compendiums.");
+    const spec=this.#documentSpec(contentType),name=packNameFor(versionId,contentType),id=`world.${name}`;
+    let pack=globalThis.game?.packs?.get?.(id);
+    if(pack){if(pack.documentName!==spec.documentName)throw new Error(`Compendium ${id} contains ${pack.documentName}, expected ${spec.documentName}.`);return pack;}
+    const Compendium=this.#compendiumClass();if(!Compendium?.createCompendium)throw new Error("Foundry Compendium creation API is unavailable.");
+    pack=await Compendium.createCompendium({label:`Rule Them'All · ${this.label(versionId,contentType.nameKey)}`,name,type:spec.documentName,system:globalThis.game?.system?.id});
+    return pack;
+  }
+  documentData(versionId,template,contentType){
+    const spec=this.#documentSpec(contentType);
+    return {name:this.label(versionId,template.nameKey),type:spec.type,img:template.image||contentType.image||undefined,flags:{[MODULE_ID]:{[TEMPLATE_FLAG]:templateFlags(versionId,template,contentType)}}};
+  }
+  /** Execute only Creation steps whose effects are defined by the generic
+   * Runtime contract. The full plan is validated before Actor.create().
+   * Failure deletes ONLY the newly created Actor; an existing Actor is never
+   * silently mutated or rolled back by this method.
+   */
+  async createActorFromCreationSystem(versionId,creationSystemId,{name,actorType=null,answers={}}={}){
+    if(typeof name!=="string"||!name.trim())throw new Error("Creating an Actor requires a name.");
+    const ruleset=this.ruleset(versionId);
+    const plan=planCreationSystem(ruleset,creationSystemId,answers);
+    const type=this.documentTypeResolver("Actor",{requestedType:actorType});
+    const klass=globalThis.Actor?.implementation??globalThis.Actor;
+    if(!klass?.create)throw new Error("Foundry Actor.create API is unavailable.");
+    const actor=await klass.create({name:name.trim(),type});
+    if(!actor?.uuid||actor.documentName!=="Actor")throw new Error("Foundry did not return a created Actor.");
+    try{
+      const created=new Set(),acquisitions=[];
+      for(const operation of plan.operations){
+        if(operation.kind==="definition"){
+          if(created.has(operation.definitionId))continue;
+          await this.runtime.instantiateDefinition(versionId,actor.uuid,operation.definitionId,{initial:plan.initialByDefinition[operation.definitionId]??{}});
+          created.add(operation.definitionId);
+        }else{
+          const result=await this.acquireTemplate(versionId,actor.uuid,operation.templateId,{
+            sourceItemId:`creation:${creationSystemId}:${operation.stepId}:${operation.templateId}`,
+            selections:operation.selections
+          });
+          for(const id of result.createdDefinitionIds??[])created.add(id);
+          acquisitions.push({templateId:operation.templateId,stepId:operation.stepId,alreadyApplied:result.alreadyApplied===true});
+        }
+      }
+      const run={versionId,creationSystemId,selectedByStep:plan.selectedByStep,createdDefinitionIds:[...created],acquisitions,completedAt:Date.now()};
+      await actor.setFlag(MODULE_ID,"creationRun",run);
+      this.hooks?.callAll?.("ruleThemAllCreationCompleted",actor,clone(run));
+      return {actor,run:clone(run)};
+    }catch(error){
+      try{await actor.delete();}catch(rollbackError){
+        throw new AggregateError([error,rollbackError],"Creation failed and the new Actor could not be removed.");
+      }
+      throw error;
+    }
+  }
+  async syncContentType(versionId,contentTypeId){
+    const ruleset=this.ruleset(versionId),contentType=(ruleset.contentTypes??[]).find(x=>x.id===contentTypeId&&x.enabled!==false);if(!contentType)throw new Error(`Content Type unavailable: ${contentTypeId}.`);
+    const templates=(ruleset.contentTemplates??[]).filter(x=>x.enabled!==false&&x.contentTypeId===contentTypeId),pack=await this.ensurePack(versionId,contentType),spec=this.#documentSpec(contentType);
+    const wasLocked=Boolean(pack.locked);if(wasLocked&&pack.configure)await pack.configure({locked:false});
+    try{
+      const docs=await pack.getDocuments(),byTemplate=new Map();
+      for(const doc of docs){const flag=doc.getFlag?.(MODULE_ID,TEMPLATE_FLAG);if(flag?.managed&&flag.versionId===versionId&&flag.contentTypeId===contentTypeId)byTemplate.set(flag.templateId,doc);}
+      let created=0,updated=0,deleted=0;
+      for(const template of templates){const data=this.documentData(versionId,template,contentType),existing=byTemplate.get(template.id);if(existing){await existing.update(data);updated++;byTemplate.delete(template.id);}else{const klass=spec.klass?.implementation??spec.klass;if(!klass?.create)throw new Error(`${spec.documentName} creation API is unavailable.`);await klass.create(data,{pack:pack.collection});created++;}}
+      for(const stale of byTemplate.values()){await stale.delete();deleted++;}
+      return {packId:pack.collection,label:pack.title??pack.metadata?.label??contentType.nameKey,contentTypeId,created,updated,deleted,total:templates.length};
+    }finally{if(wasLocked&&pack.configure)await pack.configure({locked:true});}
+  }
+  async syncAll(versionId){
+    const ruleset=this.ruleset(versionId),results=[];
+    for(const type of ruleset.contentTypes??[])if(type.enabled!==false)results.push(await this.syncContentType(versionId,type.id));
+    this.hooks?.callAll?.("ruleThemAllContentLibrariesSynchronized",{versionId,results:clone(results)});return results;
+  }
+  getAcquisitionTemplate(versionId,templateId){
+    const ruleset=this.ruleset(versionId);
+    const template=(ruleset.contentTemplates??[]).find(x=>x.id===templateId&&x.enabled!==false);
+    if(!template)throw new Error(`Content Template unavailable: ${templateId}.`);
+    return template;
+  }
+  assertAcquisitionEligibility(actor,versionId,templateId){
+    const ruleset=this.ruleset(versionId),template=this.getAcquisitionTemplate(versionId,templateId);
+    const type=(ruleset.contentTypes??[]).find(x=>x.id===template.contentTypeId&&x.enabled!==false);
+    if(!type)throw new Error(`Content Type unavailable: ${template.contentTypeId}.`);
+    if((template.runtimeMode??type.runtimeMode)==='unique'){
+      const acquisitions=actor.getFlag?.(MODULE_ID,ACQUISITIONS_FLAG)??{};
+      if(Object.values(acquisitions).some(a=>a?.versionId===versionId&&a?.templateId===templateId))
+        throw new Error(`This Actor already has the unique Content Template: ${templateId}.`);
+    }
+    return {template,contentType:type};
+  }
+  /** Pure preflight: the same reference, operation and initial-state checks
+   * protect the native preCreate hook, the guided dialog and Runtime writes. */
+  preflightAcquisition(versionId,templateId,selections={}){
+    const ruleset=this.ruleset(versionId),template=this.getAcquisitionTemplate(versionId,templateId);
+    const contentType=(ruleset.contentTypes??[]).find(x=>x.id===template.contentTypeId&&x.enabled!==false);
+    if(!contentType)throw new Error(`Content Type unavailable: ${template.contentTypeId}.`);
+    const selected=resolveAcquisitionChoices(template,selections);
+    const selectedRelations=selected.filter(option=>option.targetRef).map(option=>({
+      id:`${option.groupId}:${option.id}`,operation:option.operation,targetRef:option.targetRef,config:option.config??{}
+    }));
+    const plan=this.grantHandlers.prepare(ruleset,[...(template.relations??[]),...selectedRelations]);
+    const allBindings=[...(template.definitionBindings??[]),...plan.definitionBindings,
+      ...selected.filter(o=>o.kind==='definition').map(o=>({definitionId:o.definitionId,initial:o.initial??{}}))];
+    // A definition can be granted more than once, but conflicting configured
+    // initial states may never be silently resolved by input ordering.
+    const bindings=new Map();
+    for(const binding of allBindings){
+      const id=binding?.definitionId;if(!id)continue;
+      const explicit=binding.initial??{};
+      const initial=Object.keys(explicit).length?explicit:initialForDefinition(template,id);
+      if(!initial||typeof initial!=='object'||Array.isArray(initial))throw new Error(`Invalid initial Definition state: ${id}.`);
+      const previous=bindings.get(id);
+      const keys=Object.keys(initial).sort(),oldKeys=Object.keys(previous?.initial??{}).sort();
+      if(previous&&keys.length&&oldKeys.length&&JSON.stringify(initial)!==JSON.stringify(previous.initial))
+        throw new Error(`Conflicting initial Definition states: ${id}.`);
+      if(!previous||(!oldKeys.length&&keys.length))bindings.set(id,{...binding,initial});
+    }
+    const definitionBindings=[...bindings.values()];
+    const grantedDefinitionIds=[...bindings.keys()];
+    const actionIds=[...new Set([...(template.actionBindings??[]).map(x=>x?.actionId),...plan.actionIds,
+      ...selected.filter(o=>o.kind==='action').map(o=>o.actionId)].filter(Boolean))];
+    if(Array.isArray(ruleset.definitions))for(const id of grantedDefinitionIds)
+      if(!ruleset.definitions.some(d=>d.id===id&&d.enabled!==false))throw new Error(`Acquisition Definition unavailable: ${id}.`);
+    if(Array.isArray(ruleset.actions))for(const id of actionIds)
+      if(!ruleset.actions.some(a=>a.id===id&&a.enabled!==false))throw new Error(`Acquisition Action unavailable: ${id}.`);
+    return {selected,plan,definitionBindings,grantedDefinitionIds,actionIds};
+  }
+  /** Guided Item creation. All choices and reference semantics are validated
+   * before the first Foundry document write. A failure removes only the new
+   * Item, never an existing Actor or unrelated Inventory entry.
+   */
+  async createOwnedContentItem(versionId,actorRef,templateId,{selections=null,prompt=promptAcquisitionChoices,sourceData=null}={}){
+    const ruleset=this.ruleset(versionId),template=this.getAcquisitionTemplate(versionId,templateId);
+    const contentType=(ruleset.contentTypes??[]).find(x=>x.id===template.contentTypeId&&x.enabled!==false);
+    if(!contentType)throw new Error(`Content Type unavailable: ${template.contentTypeId}.`);
+    if(contentType.storageKind==='actor')throw new Error('Actor-backed Content cannot be embedded as an Item.');
+    const actor=await this.runtime.adapter.resolveDocument(actorRef);
+    if(actor?.documentName!=='Actor'||!actor.createEmbeddedDocuments)throw new Error('An editable Foundry Actor is required.');
+    this.assertAcquisitionEligibility(actor,versionId,templateId);
+    if(this.runtime.adapter.canWrite&&!await this.runtime.adapter.canWrite(actorRef))throw new Error('Actor is not writable by the current user.');
+    let answers=selections;
+    if(answers===null){answers=(template.choiceGroups??[]).length?await prompt(ruleset,template):{};}
+    if(answers===null)return null; // The player cancelled: no Item exists.
+    this.preflightAcquisition(versionId,templateId,answers);
+    return this.#withActorMutation(actor.uuid,async()=>{
+    // A second acquisition may have completed while the dialog was open.
+    // Re-check inside the Actor's write lock before creating an Item.
+    this.assertAcquisitionEligibility(actor,versionId,templateId);
+    const canonical=this.documentData(versionId,template,contentType);
+    // A native Foundry drag can carry independent Item fields and third-party
+    // flags. Preserve the instance transparently, while refreshing ONLY RTA's
+    // provenance against the actual Ruleset and checked selections.
+    const data=sourceData?clone(sourceData):canonical;
+    if(sourceData){
+      if(data.type!==canonical.type)throw new Error(`Content Item subtype changed: expected ${canonical.type}.`);
+      delete data._id;delete data.id;
+      data.flags={...(data.flags??{}),[MODULE_ID]:{
+        ...(data.flags?.[MODULE_ID]??{}),[TEMPLATE_FLAG]:canonical.flags[MODULE_ID][TEMPLATE_FLAG]
+      }};
+    }
+    data.flags[MODULE_ID][TEMPLATE_FLAG].acquisitionSelections=clone(answers);
+    const created=await actor.createEmbeddedDocuments('Item',[data]);
+    const item=created?.[0];
+    if(!item?.id)throw new Error('Foundry did not create the acquired Item.');
+    try{
+      const acquisition=await this.#acquireTemplateUnlocked(versionId,actor.uuid,templateId,{sourceItemId:item.id,selections:answers});
+      return {item,acquisition};
+    }catch(error){
+      try{await item.delete();}catch(rollbackError){
+        throw new AggregateError([error,rollbackError],'Acquisition failed and the new Item could not be removed.');
+      }
+      throw error;
+    }
+    });
+  }
+  async acquireTemplate(versionId,actorRef,templateId,options={}){
+    const actor=await this.runtime.adapter.resolveDocument(actorRef);
+    return this.#withActorMutation(actor.uuid,()=>this.#acquireTemplateUnlocked(versionId,actor.uuid,templateId,options));
+  }
+  async #acquireTemplateUnlocked(versionId,actorRef,templateId,{sourceItemId=null,selections={}}={}){
+    const ruleset=this.ruleset(versionId),template=(ruleset.contentTemplates??[]).find(x=>x.id===templateId&&x.enabled!==false);if(!template)throw new Error(`Content Template unavailable: ${templateId}.`);
+    const contentType=(ruleset.contentTypes??[]).find(x=>x.id===template.contentTypeId&&x.enabled!==false);if(!contentType)throw new Error(`Content Type unavailable: ${template.contentTypeId}.`);
+    const actor=await this.runtime.adapter.resolveDocument(actorRef);if(actor.documentName!=="Actor")throw new Error("Content can only be acquired by an Actor RuntimeContainer.");
+    const current=clone(actor.getFlag?.(MODULE_ID,ACQUISITIONS_FLAG)??{}),key=sourceItemId??`manual:${template.id}`;
+    if(current[key])return {...clone(current[key]),alreadyApplied:true};
+    if((template.runtimeMode??contentType.runtimeMode)==="unique"){
+      const duplicate=Object.values(current).find(a=>a?.templateId===template.id&&a?.versionId===versionId);
+      if(duplicate)return {...clone(duplicate),alreadyApplied:true,duplicate:true};
+    }
+    // The same preflight is used by the dialog, preCreateItem and Runtime.
+    const {selected:selectedOptions,plan:relationPlan,definitionBindings,grantedDefinitionIds,actionIds}=
+      this.preflightAcquisition(versionId,templateId,selections);
+    if(this.runtime.adapter.canWrite&&!await this.runtime.adapter.canWrite(actorRef))throw new Error("Actor is not writable by the current user.");
+    const state=await this.runtime.getContainerState(actor.uuid,{rulesetVersionId:versionId}),createdDefinitionIds=[];
+    if(state.rulesetVersionId&&state.rulesetVersionId!==versionId)throw new Error("Actor belongs to another Ruleset version.");
+    const previousAcquisitions=clone(current);
+    const previousOrigins=clone(actor.getFlag?.(MODULE_ID,DEFINITION_ORIGINS_FLAG)??{});
+    const origins=clone(previousOrigins);
+    for(const acquisition of Object.values(current))for(const id of acquisition?.createdDefinitionIds??[])origins[originKey(acquisition.versionId,id)]=true;
+    let writtenOrigins=false,writtenAcquisitions=false;
+    try{
+      for(const binding of definitionBindings){
+        const definitionId=binding?.definitionId;
+        if(!definitionId||state.definitionStates?.[definitionId]||createdDefinitionIds.includes(definitionId))continue;
+        await this.runtime.instantiateDefinition(versionId,actor.uuid,definitionId,{initial:binding.initial??initialForDefinition(template,definitionId)});
+        createdDefinitionIds.push(definitionId);
+      }
+      for(const id of createdDefinitionIds)origins[originKey(versionId,id)]=true;
+      const acquisition={templateId:template.id,contentTypeId:template.contentTypeId,versionId,sourceItemId,createdDefinitionIds,grantedDefinitionIds,actionIds,linkedRefs:relationPlan.linkedRefs,unlockedRefs:relationPlan.unlockedRefs,grantedRefs:relationPlan.grantedRefs,selections:clone(selections),selectedOptions,appliedAt:Date.now()};
+      current[key]=acquisition;
+      await actor.setFlag(MODULE_ID,DEFINITION_ORIGINS_FLAG,origins);writtenOrigins=true;
+      await actor.setFlag(MODULE_ID,ACQUISITIONS_FLAG,current);writtenAcquisitions=true;
+      this.hooks?.callAll?.("ruleThemAllContentAcquired",actor,clone(acquisition));
+      return clone(acquisition);
+    }catch(error){
+      const rollbackFailures=[];
+      if(writtenAcquisitions)try{await actor.setFlag(MODULE_ID,ACQUISITIONS_FLAG,previousAcquisitions);}catch(failure){rollbackFailures.push(failure);}
+      if(writtenOrigins)try{await actor.setFlag(MODULE_ID,DEFINITION_ORIGINS_FLAG,previousOrigins);}catch(failure){rollbackFailures.push(failure);}
+      for(const definitionId of [...createdDefinitionIds].reverse()){
+        try{await this.runtime.removeDefinitionState(versionId,actor.uuid,definitionId);}catch(failure){rollbackFailures.push(failure);}
+      }
+      if(rollbackFailures.length)throw new AggregateError([error,...rollbackFailures],"Acquisition failed and rollback was incomplete.");
+      throw error;
+    }
+  }
+  /** Execute an Action granted by an acquired Content Template. Internal
+   * system triggers intentionally remain separate from this Actor-facing API.
+   */
+  async executeAcquiredAction(versionId,actorRef,actionId,context={},options={}){
+    const actor=await this.runtime.adapter.resolveDocument(actorRef);
+    if(actor.documentName!=="Actor")throw new Error("Acquired Actions require an Actor.");
+    if(!(await this.runtime.adapter.canWrite(actorRef)))throw new Error("Actor is not writable by the current user.");
+    const ruleset=this.ruleset(versionId);
+    if(!(ruleset.actions??[]).some(action=>action.id===actionId&&action.enabled!==false))
+      throw new Error(`Action unavailable: ${actionId}.`);
+    const grants=acquiredActionIds(actor.getFlag?.(MODULE_ID,ACQUISITIONS_FLAG),versionId);
+    if(!grants.includes(actionId))throw new Error(`Action not acquired by Actor: ${actionId}.`);
+    // The grant's owner is always the initiating Actor: callers cannot
+    // substitute a different self/source while reusing another Actor's grant.
+    const safeContext={...context,roles:{...(context.roles??{}),self:actor.uuid,source:actor.uuid}};
+    return this.runtime.executeAction(versionId,actionId,safeContext,options);
+  }
+  async listGrantedReferences(versionId,actorRef){
+    const actor=await this.runtime.adapter.resolveDocument(actorRef);
+    if(actor.documentName!=="Actor")throw new Error("Granted references require an Actor.");
+    return listAcquisitionReferences(actor.getFlag?.(MODULE_ID,ACQUISITIONS_FLAG),versionId,'grantedRefs');
+  }
+  async hasGrantedReference(versionId,actorRef,targetRef){
+    if(!targetRef?.objectKind||!targetRef?.objectId)throw new Error('Grant lookup requires a typed target reference.');
+    const granted=await this.listGrantedReferences(versionId,actorRef);
+    return granted.some(ref=>ref.objectKind===targetRef.objectKind&&ref.objectId===targetRef.objectId);
+  }
+  async listUnlockedReferences(versionId,actorRef){
+    const actor=await this.runtime.adapter.resolveDocument(actorRef);
+    if(actor.documentName!=="Actor")throw new Error("Unlocked references require an Actor.");
+    return listAcquisitionReferences(actor.getFlag?.(MODULE_ID,ACQUISITIONS_FLAG),versionId,'unlockedRefs');
+  }
+  async listLinkedReferences(versionId,actorRef){
+    const actor=await this.runtime.adapter.resolveDocument(actorRef);
+    if(actor.documentName!=="Actor")throw new Error("Linked references require an Actor.");
+    return listAcquisitionReferences(actor.getFlag?.(MODULE_ID,ACQUISITIONS_FLAG),versionId,'linkedRefs');
+  }
+  async listAcquiredActions(versionId,actorRef){
+    const actor=await this.runtime.adapter.resolveDocument(actorRef);
+    if(actor.documentName!=="Actor")throw new Error("Acquired Actions require an Actor.");
+    const allowed=new Set((this.ruleset(versionId).actions??[]).filter(a=>a.enabled!==false).map(a=>a.id));
+    return acquiredActionIds(actor.getFlag?.(MODULE_ID,ACQUISITIONS_FLAG),versionId).filter(id=>allowed.has(id));
+  }
+  async releaseAcquisition(actorRef,acquisitionKey){
+    const actor=await this.runtime.adapter.resolveDocument(actorRef);
+    return this.#withActorMutation(actor.uuid,()=>this.#releaseAcquisitionUnlocked(actor.uuid,acquisitionKey));
+  }
+  async #releaseAcquisitionUnlocked(actorRef,acquisitionKey){
+    const actor=await this.runtime.adapter.resolveDocument(actorRef);
+    if(actor.documentName!=="Actor")throw new Error("Content acquisitions require an Actor.");
+    const previous=clone(actor.getFlag?.(MODULE_ID,ACQUISITIONS_FLAG)??{}),acquisition=previous[acquisitionKey];
+    if(!acquisition)return null;
+    const current=clone(previous);delete current[acquisitionKey];
+    const origins=clone(actor.getFlag?.(MODULE_ID,DEFINITION_ORIGINS_FLAG)??{});
+    // Existing 0.1.57 records had createdDefinitionIds but no separate provenance flag.
+    for(const recorded of Object.values(previous))for(const id of recorded?.createdDefinitionIds??[])origins[originKey(recorded.versionId,id)]=true;
+    const stillGranted=new Set(Object.values(current).flatMap(record=>(record?.grantedDefinitionIds??record?.createdDefinitionIds??[]).map(id=>originKey(record.versionId,id))));
+    const ownIds=acquisition.grantedDefinitionIds??acquisition.createdDefinitionIds??[];
+    for(const definitionId of ownIds){
+      const identity=originKey(acquisition.versionId,definitionId);
+      if(stillGranted.has(identity)||!origins[identity])continue;
+      await this.runtime.removeDefinitionState(acquisition.versionId,actor.uuid,definitionId);
+      delete origins[identity];
+    }
+    await actor.setFlag(MODULE_ID,DEFINITION_ORIGINS_FLAG,origins);
+    await actor.setFlag(MODULE_ID,ACQUISITIONS_FLAG,current);
+    this.hooks?.callAll?.("ruleThemAllContentReleased",actor,clone(acquisition));
+    return clone(acquisition);
+  }
+  async releaseOwnedItem(item){
+    const actor=item?.parent;if(actor?.documentName!=="Actor")return null;
+    const flag=item.getFlag?.(MODULE_ID,TEMPLATE_FLAG);if(!flag?.managed)return null;
+    return this.releaseAcquisition(actor.uuid,item.id);
+  }
+  async handleOwnedItemCreated(item){
+    const actor=item?.parent;if(actor?.documentName!=="Actor")return null;const flag=item.getFlag?.(MODULE_ID,TEMPLATE_FLAG);if(!flag?.managed)return null;
+    return this.acquireTemplate(flag.versionId,actor.uuid,flag.templateId,{sourceItemId:item.id,selections:flag.acquisitionSelections??{}});
+  }
+}

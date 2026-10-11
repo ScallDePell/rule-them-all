@@ -1,0 +1,25 @@
+import {RuntimeEngine} from "./runtime-engine.mjs";
+import {FoundryRuntimeAdapter} from "./foundry-runtime-adapter.mjs";
+
+export function createRuntimeAPI(configurator,{adapter=new FoundryRuntimeAdapter(),hooks=globalThis.Hooks}={}){
+  const engine=new RuntimeEngine({configurator,adapter,hooks});
+  return Object.freeze({
+    getContainerState:(ref,o)=>engine.getContainerState(ref,o),
+    instantiateDefinition:(versionId,ref,definitionId,o)=>engine.instantiateDefinition(versionId,ref,definitionId,o),
+    removeDefinitionState:(versionId,ref,definitionId)=>engine.removeDefinitionState(versionId,ref,definitionId),
+    setDefinitionState:(versionId,ref,definitionId,o)=>engine.setDefinitionState(versionId,ref,definitionId,o),
+    evaluateFormula:(versionId,id,context)=>engine.evaluateFormula(versionId,id,context),
+    evaluateCondition:(versionId,id,context)=>engine.evaluateCondition(versionId,id,context),
+    resolveModifiers:(versionId,targetRef,baseValue,context)=>engine.resolveModifiers(versionId,targetRef,baseValue,context),
+    checkRestrictions:(versionId,operationKind,context)=>engine.checkRestrictions(versionId,operationKind,context),
+    roll:(formula,data)=>engine.roll(formula,data),
+    executeTest:(versionId,id,context)=>engine.executeTest(versionId,id,context),
+    createTestActors:options=>adapter.createTestActors(options),
+    initializeContainer:(versionId,ref,o)=>engine.initializeContainer(versionId,ref,o),
+    emitEvent:(versionId,eventTypeId,payload,context,options)=>engine.emitEvent(versionId,eventTypeId,payload,context,options),
+    previewAction:(versionId,id,context)=>engine.previewAction(versionId,id,context),
+    executeAction:(versionId,id,context,options)=>engine.executeAction(versionId,id,context,options),
+    describeContainer:ref=>adapter.describe(ref),
+    adapter
+  });
+}

@@ -1,0 +1,3637 @@
+/* ================================================================
+   RTA DESIGN SYSTEM — single shared scale (v0.1.55)
+   These are the only generic spacing and typography primitives.
+   Component-specific geometry (grids, icon sizes, min-width) is
+   intentionally kept out of the scale and documented separately.
+   ================================================================ */
+
+:is(.rta-configurator, .rta-config-entry) {
+  --rta-space-1: .125rem;
+  /* 2px at a 16px root */
+  --rta-space-2: .25rem;
+  /* 4px */
+  --rta-space-3: .375rem;
+  /* 6px */
+  --rta-space-4: .5rem;
+  /* 8px */
+  --rta-space-5: .625rem;
+  /* 10px */
+  --rta-space-6: .75rem;
+  /* 12px */
+  --rta-space-7: .875rem;
+  /* 14px */
+  --rta-space-8: 1rem;
+  /* 16px */
+  --rta-space-10: 1.25rem;
+  /* 20px */
+  --rta-space-12: 1.5rem;
+  /* 24px */
+  --rta-radius-rail: 2px;
+  --rta-radius-compact: 4px;
+  --rta-radius-control: 5px;
+  --rta-radius-panel: 7px;
+
+  --rta-type-micro: .5625rem;
+  /* 9px, compact markers and SVG */
+  --rta-type-xs: .625rem;
+  /* 10px, badges and icons */
+  --rta-type-sm: .75rem;
+  /* 12px, small labels */
+  --rta-type-base: .8125rem;
+  /* 13px, secondary UI */
+  --rta-type-control: .875rem;
+  /* 14px, list rows */
+  --rta-type-medium: 1rem;
+  /* 16px, card titles */
+  --rta-type-heading: 1.125rem;
+  /* 18px, section titles */
+  --rta-type-display: 1.625rem;
+  /* 26px, page titles */
+}
+
+/* Rule Them'All Configurator: Foundry-first layout refinements only. */
+
+.rta-configurator,
+.rta-config-entry {
+  display: flex;
+  flex: 1;
+  flex-direction: column;
+  min-height: 0;
+  overflow: hidden;
+}
+
+.rta-configurator__nav {
+  flex-shrink: 0;
+  flex-wrap: wrap;
+  gap: var(--rta-space-2);
+}
+
+.rta-configurator__selector {
+  flex-shrink: 0;
+  margin-block: var(--rta-space-4);
+}
+
+.rta-configurator__scroll,
+.rta-config-entry__scroll {
+  flex: 1;
+  min-height: 0;
+  overflow: auto;
+}
+
+.rta-configurator__toolbar {
+  display: flex;
+  align-items: center;
+  gap: var(--rta-space-4);
+  margin-block: var(--rta-space-3) var(--rta-space-5);
+  flex-wrap: wrap;
+}
+
+.rta-config-table {
+  min-width: 720px;
+  width: 100%;
+  table-layout: auto;
+  overflow-wrap: anywhere;
+}
+
+.rta-config-table th,
+.rta-config-table td {
+  vertical-align: middle;
+}
+
+.rta-config-table th:last-child,
+.rta-config-table td:last-child {
+  white-space: nowrap;
+}
+
+.rta-config-actions {
+  display: inline-flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: var(--rta-space-2);
+  flex-wrap: nowrap;
+  white-space: nowrap;
+}
+
+.rta-config-action {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  flex: 0 0 30px;
+  width: 30px;
+  min-width: 30px;
+  height: 30px;
+  padding: 0;
+  line-height: 1;
+}
+
+.rta-config-action > i {
+  margin: 0;
+  pointer-events: none;
+}
+
+.rta-config-action--danger {
+  margin-inline-start: var(--rta-space-1);
+}
+
+.rta-config-entry form[data-entry-form] {
+  display: flex;
+  flex: 1;
+  flex-direction: column;
+  min-height: 0;
+  overflow: hidden;
+}
+
+.rta-config-entry fieldset > fieldset {
+  margin-block: var(--rta-space-3) 0;
+}
+
+.rta-config-entry textarea {
+  resize: vertical;
+}
+
+.rta-config-entry__full-width {
+  display: flex;
+  flex-direction: column;
+  gap: var(--rta-space-3);
+  margin-block: var(--rta-space-2) var(--rta-space-5);
+}
+
+.rta-config-entry__full-width > label {
+  margin: 0;
+}
+
+.rta-config-entry__full-width > textarea {
+  width: 100%;
+  min-width: 0;
+}
+
+.rta-config-entry__footer-actions {
+  margin-inline-start: auto;
+  display: flex;
+  align-items: center;
+  gap: var(--rta-space-4);
+}
+
+.rta-config-entry dl,
+.rta-configurator dl {
+  display: grid;
+  grid-template-columns: minmax(160px, 220px) minmax(0, 1fr);
+  gap: var(--rta-space-3) var(--rta-space-6);
+}
+
+.rta-config-entry dl dt,
+.rta-config-entry dl dd,
+.rta-configurator dl dt,
+.rta-configurator dl dd {
+  margin: 0;
+}
+
+/* Mission 11-D: root Rulesets + Ruleset workspace shell. */
+
+.rta-configurator__error {
+  flex-shrink: 0;
+  white-space: pre-wrap;
+  max-height: 6em;
+  overflow: auto;
+}
+
+.rta-configurator__root-header,
+.rta-configurator__workspace-header,
+.rta-configurator__section-heading {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--rta-space-6);
+}
+
+.rta-configurator__root-header,
+.rta-configurator__workspace-header {
+  flex-shrink: 0;
+  padding-block: var(--rta-space-3) var(--rta-space-5);
+}
+
+.rta-configurator__root-header h2,
+.rta-configurator__section-heading h2 {
+  margin: 0;
+}
+
+.rta-configurator__root-header p,
+.rta-configurator__section-heading p {
+  margin: var(--rta-space-2) 0 0;
+}
+
+.rta-configurator__workspace-header > div {
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+}
+
+.rta-configurator__workspace-header > div > span {
+  opacity: 0.75;
+}
+
+.rta-configurator__workspace {
+  display: grid;
+  grid-template-columns: minmax(150px, 190px) minmax(0, 1fr);
+  flex: 1;
+  min-height: 0;
+  overflow: hidden;
+}
+
+.rta-configurator__sidebar {
+  min-height: 0;
+  overflow-y: auto;
+  padding: var(--rta-space-5) var(--rta-space-4) var(--rta-space-5) var(--rta-space-3);
+  border-right: 1px solid var(--color-border-light-primary);
+}
+
+.rta-configurator__sidebar button {
+  display: block;
+  width: 100%;
+  text-align: left;
+  margin: 0;
+  border: 0;
+  background: transparent;
+}
+
+.rta-configurator__sidebar button.active {
+  font-weight: 700;
+  background: var(--color-cool-4, rgba(0, 0, 0, 0.12));
+}
+
+.rta-configurator__nav-group {
+  margin-block-start: var(--rta-space-6);
+}
+
+.rta-configurator__nav-group > span {
+  display: block;
+  padding: var(--rta-space-2) var(--rta-space-4);
+  font-size: var(--rta-type-sm);
+  font-weight: 700;
+  text-align: center;
+  opacity: 0.7;
+}
+
+.rta-configurator__workspace-content {
+  padding: var(--rta-space-6);
+}
+
+.rta-configurator__storage {
+  margin-block-start: var(--rta-space-8);
+}
+
+.rta-config-table--rulesets {
+  min-width: 520px;
+}
+
+@media (max-width: 700px) {
+  .rta-configurator__workspace {
+    grid-template-columns: minmax(125px, 150px) minmax(0, 1fr);
+  }
+}
+
+/* Mission 11 clean rebuild: collection cards. */
+
+.rta-config-card-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, 5.25rem);
+  grid-auto-rows: 5.25rem;
+  justify-content: start;
+  align-content: start;
+  gap: var(--rta-space-4);
+}
+
+.rta-config-card__title {
+  display: -webkit-box;
+  overflow: hidden;
+  overflow-wrap: anywhere;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 3;
+  font-size: var(--rta-type-sm);
+  line-height: 1.15;
+}
+
+.rta-config-card__tags {
+  position: absolute;
+  top: 3px;
+  left: 0.2rem;
+  right: 0.2rem;
+  display: grid;
+  grid-template-columns: repeat(2, max-content);
+  justify-content: center;
+  align-content: start;
+  gap: var(--rta-space-1);
+  pointer-events: none;
+  z-index: 1;
+}
+
+.rta-config-card__tags > .rta-config-card__tag:last-child:nth-child(odd) {
+  grid-column: 1 / -1;
+  justify-self: center;
+}
+
+.rta-config-card__tag {
+  --rta-tag-color: var(--color-cool-4);
+  display: inline-block;
+  max-width: 6ch;
+  padding: 0 var(--rta-space-1);
+  overflow: hidden;
+  white-space: nowrap;
+  border: 1px solid color-mix(in srgb, var(--rta-tag-color) 70%, transparent);
+  border-radius: var(--rta-radius-compact);
+  background: color-mix(in srgb, var(--rta-tag-color) 78%, transparent);
+  color: var(--color-text-light-highlight);
+  font-size: var(--rta-type-micro);
+  font-weight: 600;
+  line-height: 1.25;
+  text-shadow: 0 1px 1px rgba(0, 0, 0, 0.45);
+}
+
+.rta-config-card__tag--capability {
+  --rta-tag-color: var(--color-warm-2);
+}
+
+.rta-config-card--disabled {
+  opacity: 0.6;
+}
+
+.rta-config-card.rta-config-card--dragging {
+  opacity: 0.35;
+}
+
+.rta-config-card.rta-config-card--drop-target {
+  background: var(--rta-card-fill-hover);
+  outline: 2px solid var(--rta-card-accent);
+  outline-offset: 2px;
+}
+
+/* Mission 11 clean rebuild: editor spacing, disclosure and selectors. */
+
+.rta-config-entry__section {
+  margin-block: var(--rta-space-3) var(--rta-space-6);
+}
+
+.rta-config-entry__section > summary {
+  cursor: pointer;
+  font-weight: 700;
+  padding-block: var(--rta-space-3);
+}
+
+.rta-config-entry__section[open] > .form-group,
+.rta-config-entry__section[open] > .rta-config-entry__check-group,
+.rta-config-entry__section[open] > .rta-config-entry__projection {
+  margin-block: var(--rta-space-5);
+}
+
+.rta-config-entry__section-summary {
+  margin-inline-start: var(--rta-space-4);
+  color: var(--color-text-light-6, var(--color-warm-1));
+  font-size: 0.82em;
+  font-weight: 400;
+  opacity: 0.82;
+  overflow: hidden;
+  white-space: nowrap;
+}
+
+.rta-config-entry__check-group {
+  display: flex;
+  flex-direction: column;
+  gap: var(--rta-space-3);
+  max-height: 12rem;
+  overflow: auto;
+  padding: var(--rta-space-4) var(--rta-space-2);
+}
+
+.rta-config-entry__check-group--inline {
+  max-height: 9rem;
+}
+
+.rta-config-entry__check-group > label {
+  display: flex;
+  align-items: center;
+  gap: var(--rta-space-4);
+}
+
+.rta-config-entry__projection {
+  display: flex;
+  flex-direction: column;
+  gap: var(--rta-space-2);
+}
+
+.rta-config-entry__empty {
+  opacity: 0.7;
+  font-style: italic;
+}
+
+.rta-config-entry__enabled {
+  margin-block-start: var(--rta-space-5);
+}
+
+@media (max-width: 700px) {
+  .rta-config-card-grid {
+    grid-template-columns: repeat(auto-fill, 4.75rem);
+    grid-auto-rows: 4.75rem;
+  }
+  .rta-configurator .rta-config-card {
+    width: 4.75rem;
+    height: 4.75rem;
+  }
+}
+
+/* v0.2.3 generic DefinitionType field editor and generated Definition data editor. */
+
+.rta-config-entry__section-heading {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--rta-space-6);
+  margin-block: var(--rta-space-3) var(--rta-space-6);
+}
+
+.rta-field-editor-list,
+.rta-definition-data-grid,
+.rta-capability-contracts {
+  display: flex;
+  flex-direction: column;
+  gap: var(--rta-space-5);
+}
+
+.rta-field-editor,
+.rta-definition-field {
+  border: 1px solid var(--color-border-light-primary);
+  border-radius: var(--rta-radius-compact);
+  padding: var(--rta-space-5);
+  background: color-mix(in srgb, var(--color-cool-5, #222) 12%, transparent);
+}
+
+.rta-field-editor > header,
+.rta-definition-field__heading {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--rta-space-4);
+  margin-block-end: var(--rta-space-4);
+}
+
+.rta-field-editor__grid {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  gap: var(--rta-space-4) var(--rta-space-6);
+}
+
+.rta-field-editor label,
+.rta-definition-field {
+  min-width: 0;
+}
+
+.rta-field-editor label:not(.rta-field-editor__check):not(.rta-form-row__label):not(.rta-form-row--nested):not([data-picker-option]) {
+  display: flex;
+  flex-direction: column;
+  gap: var(--rta-space-2);
+}
+
+.rta-field-editor input:not([type="checkbox"]):not([type="radio"]),
+.rta-field-editor select,
+.rta-field-editor textarea,
+.rta-definition-field input,
+.rta-definition-field select,
+.rta-definition-field textarea {
+  width: 100%;
+  min-width: 0;
+}
+
+.rta-field-editor__check,
+.rta-definition-field__use {
+  display: flex;
+  align-items: center;
+  gap: var(--rta-space-3);
+}
+
+.rta-field-editor__check input,
+.rta-definition-field__use input {
+  width: auto;
+}
+
+.rta-field-editor > details {
+  margin-block-start: var(--rta-space-4);
+}
+
+.rta-field-editor > details > label {
+  margin-block: var(--rta-space-4);
+}
+
+.rta-definition-field {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  gap: var(--rta-space-4);
+}
+
+.rta-definition-field__heading small {
+  opacity: 0.72;
+}
+
+.rta-config-table--compact {
+  min-width: 0;
+  font-size: 0.9em;
+}
+
+.rta-config-table--capabilities {
+  min-width: 520px;
+}
+
+.rta-capability-contracts > details {
+  padding: var(--rta-space-3) var(--rta-space-4);
+  border-left: 2px solid var(--color-border-light-primary);
+}
+
+@media (max-width: 700px) {
+  .rta-field-editor__grid {
+    grid-template-columns: 1fr;
+  }
+}
+
+/* v0.2.4 ergonomic field cards + single-line Ruleset header. */
+
+.rta-configurator__workspace-header {
+  border-bottom: 1px solid var(--color-border-light-primary);
+  flex-wrap: nowrap;
+  min-height: 3rem;
+}
+
+.rta-configurator__workspace-header > div:first-of-type {
+  flex: 1;
+  flex-direction: row;
+  align-items: baseline;
+  justify-content: center;
+  gap: var(--rta-space-4);
+}
+
+.rta-configurator__workspace-header > .rta-config-actions {
+  flex: 0 0 auto;
+  flex-direction: row;
+  align-items: center;
+  justify-content: flex-end;
+}
+
+.rta-field-editor__details > summary {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--rta-space-5);
+  padding: var(--rta-space-4) var(--rta-space-5);
+  cursor: pointer;
+  list-style: none;
+}
+
+.rta-field-editor__details > summary::-webkit-details-marker {
+  display: none;
+}
+
+.rta-field-editor__details > summary::before {
+  content: "▸";
+  flex: 0 0 auto;
+}
+
+.rta-field-editor__details[open] > summary::before {
+  content: "▾";
+}
+
+.rta-field-editor__details > summary > span {
+  flex: 1;
+  min-width: 0;
+}
+
+.rta-field-editor__details > summary small {
+  opacity: .7;
+  font-weight: normal;
+}
+
+.rta-field-editor__numeric {
+  display: grid;
+  grid-template-columns: minmax(0,1fr);
+  gap: var(--rta-space-4) var(--rta-space-6);
+  margin: var(--rta-space-5) 0;
+}
+
+.rta-field-editor__numeric label {
+  display: flex;
+  flex-direction: column;
+  gap: var(--rta-space-2);
+}
+
+.rta-config-card[draggable="true"] {
+  cursor: grab;
+}
+
+.rta-config-card[draggable="true"]:active {
+  cursor: grabbing;
+}
+
+@media (max-width:700px) {
+  .rta-configurator__workspace-header > div:first-of-type {
+    justify-content: flex-start;
+  }
+  .rta-field-editor__numeric {
+    grid-template-columns: 1fr;
+  }
+}
+
+/* v0.3.1 No IDs UI: business-first pickers and compact Definition fields. */
+
+.rta-definition-field.form-group {
+  border: 0;
+  border-radius: 0;
+  padding: 0;
+  background: transparent;
+}
+
+.rta-definition-field.form-group > label {
+  font-weight: 600;
+}
+
+.rta-picker > strong {
+  margin-bottom: var(--rta-space-1);
+}
+
+.rta-picker > label {
+  display: flex;
+  align-items: center;
+  gap: var(--rta-space-4);
+  margin: 0;
+}
+
+.rta-picker > p {
+  margin: var(--rta-space-1) 0;
+  opacity: .7;
+  font-style: italic;
+}
+
+.rta-config-entry__technical details > textarea,
+.rta-config-entry__technical > textarea {
+  width: 100%;
+  min-height: 8rem;
+}
+
+/* v0.3.2: clearer field cards, collapsible relationship pickers, visual rule builders. */
+
+.rta-field-editor {
+  padding: 0;
+  overflow: hidden;
+  margin-block: var(--rta-space-2);
+  border: 1px solid var(--color-border-light-primary);
+  border-radius: var(--rta-radius-panel);
+  box-shadow: 0 0 0 1px rgba(255,255,255,.035);
+  background: rgba(255,255,255,.018);
+}
+
+.rta-field-editor__details[open] {
+  background: rgba(255,255,255,.02);
+}
+
+.rta-field-editor__details[open] > summary {
+  border-bottom: 1px solid var(--color-border-light-primary);
+}
+
+.rta-field-editor__body {
+  background: color-mix(in srgb, var(--color-cool-5, #222) 8%, transparent);
+  border-top: 0;
+  padding: var(--rta-space-6) var(--rta-space-7) var(--rta-space-7);
+}
+
+.rta-picker {
+  flex-direction: column;
+  gap: var(--rta-space-3);
+  border: 1px solid var(--color-border-light-primary);
+  border-radius: var(--rta-radius-control);
+  background: color-mix(in srgb, var(--color-cool-5, #222) 8%, transparent);
+  display: block;
+  max-height: none;
+  overflow: visible;
+  padding: 0;
+}
+
+.rta-picker > summary {
+  position: relative;
+  display: grid;
+  grid-template-columns: minmax(8rem, 12rem) minmax(0, 1fr);
+  gap: var(--rta-space-6);
+  align-items: center;
+  padding: var(--rta-space-4) var(--rta-space-5);
+  cursor: pointer;
+  list-style: none;
+}
+
+.rta-picker > summary::-webkit-details-marker {
+  display: none;
+}
+
+.rta-picker > summary::before {
+  content: "▸";
+  grid-column: 1;
+  position: absolute;
+}
+
+.rta-picker[open] > summary::before {
+  content: "▾";
+}
+
+.rta-picker > summary > strong {
+  padding-inline-start: var(--rta-space-8);
+}
+
+.rta-picker > summary > span {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  opacity: .78;
+}
+
+.rta-picker__body {
+  display: flex;
+  flex-direction: column;
+  gap: var(--rta-space-3);
+  max-height: 14rem;
+  overflow: auto;
+  padding: var(--rta-space-4) var(--rta-space-5) var(--rta-space-6);
+  border-top: 1px solid var(--color-border-light-primary);
+}
+
+.rta-picker__body > input[type="search"] {
+  position: sticky;
+  top: 0;
+  z-index: 1;
+  width: 100%;
+}
+
+.rta-picker__body > label {
+  display: flex;
+  align-items: center;
+  gap: var(--rta-space-4);
+  margin: 0;
+}
+
+.rta-picker__body > p {
+  margin: var(--rta-space-1) 0;
+  opacity: .7;
+  font-style: italic;
+}
+
+.rta-rule-builder {
+  display: flex;
+  flex-direction: column;
+  gap: var(--rta-space-5);
+  padding: var(--rta-space-6);
+  border: 1px solid var(--color-border-light-primary);
+  border-radius: var(--rta-radius-panel);
+  background: rgba(255,255,255,.018);
+}
+
+.rta-rule-builder__heading {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: var(--rta-space-5);
+}
+
+.rta-rule-builder__heading > span {
+  opacity: .7;
+  font-size: .9em;
+}
+
+/* Formula and Condition use the SAME canonical form-row as the rest of the
+   entry editor. Only their right-hand control area is specialized (kind | value
+   | optional removal). The rule builder's own border/padding is compensated
+   so its fields start on the same vertical as Name, Description and Tags. */
+
+.rta-rule-operands {
+  display: flex;
+  flex-direction: column;
+  gap: var(--rta-space-4);
+  min-width: 0;
+}
+
+.rta-rule-builder > .rta-form-row,
+.rta-rule-builder .rta-rule-operand.rta-form-row {
+  --rta-form-column-inset: calc(1.5rem + 2px);
+}
+
+.rta-rule-operand__controls {
+  display: grid;
+  grid-template-columns: minmax(8rem, 10rem) minmax(0, 1fr) auto;
+  align-items: center;
+  gap: var(--rta-space-4);
+  min-width: 0;
+  width: 100%;
+}
+
+/* Formula/Condition right-hand controls must reach the same right edge
+   as the ordinary Name, Description and Tags controls outside Rule. The
+   builder has .7rem padding and a 1px border of its own. */
+
+:is(.rta-config-entry, .rta-configurator) .rta-rule-builder > .rta-form-row,
+:is(.rta-config-entry, .rta-configurator) .rta-rule-builder .rta-rule-operand.rta-form-row {
+  width: calc(100% + .7rem + 1px);
+}
+
+/* A Condition operand has no remove button. Do not leave an empty third
+   grid track plus its gap: the value is then the natural end of the row. */
+
+.rta-rule-operand__controls:not(:has(> [data-action="removeRuleOperand"])) {
+  grid-template-columns: minmax(8rem,10rem) minmax(0,1fr);
+}
+
+.rta-rule-operand__controls > [data-rule-operand-editor] {
+  grid-column: 2;
+  min-width: 0;
+  width: 100%;
+}
+
+.rta-rule-operand__controls > [data-rule-operand-editor] > :is(input,select,.rta-select),
+.rta-rule-operand__controls > .rta-select {
+  width: 100%;
+  min-width: 0;
+  box-sizing: border-box;
+}
+
+/* Operand controls use the SAME editor field-height token as all other
+   normal controls; never a private 32px height. */
+
+.rta-rule-builder .rta-select__trigger,
+.rta-rule-builder .rta-rule-operand__controls > [data-rule-operand-editor] > input {
+  height: var(--rta-form-control-height);
+  min-height: var(--rta-form-control-height);
+}
+
+.rta-rule-operand__controls > [data-action="removeRuleOperand"] {
+  grid-column: 3;
+}
+
+@media (max-width:620px) {
+  .rta-picker > summary {
+    grid-template-columns: 1fr;
+    gap: var(--rta-space-2);
+  }
+  .rta-picker > summary > span {
+    padding-inline-start: var(--rta-space-8);
+  }
+  .rta-rule-operand__controls {
+    grid-template-columns: minmax(0, 1fr) auto;
+  }
+  .rta-rule-operand__controls > .rta-select {
+    grid-column: 1;
+    grid-row: 1;
+  }
+  .rta-rule-operand__controls > [data-rule-operand-editor] {
+    grid-column: 1 / -1;
+    grid-row: 2;
+  }
+  .rta-rule-operand__controls > [data-action="removeRuleOperand"] {
+    grid-column: 2;
+    grid-row: 1;
+  }
+}
+
+/* Runtime Lab --------------------------------------------------------- */
+
+.rta-runtime-lab {
+  --rta-lab-column-min: 24rem;
+  display: grid;
+  gap: var(--rta-space-6);
+}
+
+.rta-runtime-lab fieldset {
+  margin: 0;
+  padding: var(--rta-space-6);
+  border: 1px solid var(--color-border-light-primary, #777);
+  border-radius: var(--rta-radius-panel);
+}
+
+.rta-runtime-lab__grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit,minmax(min(100%, var(--rta-lab-column-min)),1fr));
+  gap: var(--rta-space-6);
+  align-items: end;
+}
+
+.rta-runtime-lab__actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--rta-space-4);
+  align-items: center;
+}
+
+.rta-runtime-state-list {
+  display: grid;
+  gap: var(--rta-space-3);
+  margin-top: var(--rta-space-6);
+}
+
+.rta-runtime-state-list > div {
+  display: flex;
+  justify-content: space-between;
+  gap: var(--rta-space-8);
+  padding: var(--rta-space-4) var(--rta-space-5);
+  border: 1px solid var(--color-border-light-secondary, #999);
+  border-radius: var(--rta-radius-compact);
+}
+
+.rta-runtime-state-list span {
+  opacity: 0.8;
+  text-align: right;
+}
+
+.rta-runtime-result {
+  padding: var(--rta-space-6);
+  border: 1px solid var(--color-border-highlight, #777);
+  border-radius: var(--rta-radius-panel);
+}
+
+.rta-runtime-result h3 {
+  margin: 0 0 var(--rta-space-3);
+}
+
+/* v0.5.5 Guided Runtime Lab ------------------------------------------ */
+
+.rta-runtime-lab--guided {
+  gap: var(--rta-space-5);
+}
+
+.rta-lab-step {
+  border: 1px solid var(--color-border-light-primary,#777);
+  border-radius: var(--rta-radius-panel);
+  padding: var(--rta-space-6);
+  background: rgba(255,255,255,.015);
+}
+
+.rta-lab-step > header {
+  display: flex;
+  gap: var(--rta-space-5);
+  align-items: flex-start;
+  margin-bottom: var(--rta-space-5);
+}
+
+.rta-lab-step > header h3 {
+  margin: 0;
+  font-size: var(--rta-type-medium);
+}
+
+.rta-lab-step > header p {
+  margin: var(--rta-space-1) 0 0;
+  opacity: .72;
+}
+
+.rta-lab-step__number {
+  display: grid;
+  place-items: center;
+  flex: 0 0 1.65rem;
+  width: 1.65rem;
+  height: 1.65rem;
+  border: 1px solid currentColor;
+  border-radius: 50%;
+  font-weight: 700;
+}
+
+.rta-lab-inline-choice {
+  display: flex;
+  gap: var(--rta-space-4);
+  align-items: center;
+  margin-bottom: var(--rta-space-5);
+}
+
+.rta-lab-inline-choice select {
+  width: auto;
+  min-width: 9rem;
+}
+
+.rta-runtime-state-editor {
+  display: grid;
+  gap: var(--rta-space-3);
+  max-height: 18rem;
+  overflow: auto;
+}
+
+.rta-runtime-state-row {
+  display: grid;
+  grid-template-columns: minmax(9rem,1fr) minmax(12rem,2fr) auto;
+  gap: var(--rta-space-5);
+  align-items: center;
+  padding: var(--rta-space-4) var(--rta-space-4);
+  border: 1px solid var(--color-border-light-secondary,#666);
+  border-radius: var(--rta-radius-control);
+}
+
+.rta-runtime-state-row__values {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--rta-space-4);
+  align-items: center;
+}
+
+.rta-runtime-state-row__values label {
+  display: flex;
+  align-items: center;
+  gap: var(--rta-space-2);
+  margin: 0;
+  font-size: .9em;
+}
+
+.rta-runtime-state-row__values input[type="number"] {
+  width: 5rem;
+}
+
+.rta-runtime-state-row__check input {
+  margin: 0;
+}
+
+.rta-lab-tool-tabs {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--rta-space-3);
+  margin-bottom: var(--rta-space-4);
+}
+
+.rta-lab-tool-tabs label {
+  display: flex;
+  gap: var(--rta-space-2);
+  align-items: center;
+  margin: 0;
+  padding: var(--rta-space-3) var(--rta-space-4);
+  border: 1px solid var(--color-border-light-secondary,#777);
+  border-radius: var(--rta-radius-control);
+  cursor: pointer;
+}
+
+.rta-lab-tool-tabs input {
+  margin: 0;
+}
+
+.rta-lab-guide {
+  margin: var(--rta-space-3) 0 var(--rta-space-5);
+  opacity: .8;
+}
+
+.rta-lab-run {
+  display: grid;
+  grid-template-columns: minmax(12rem,1fr) auto auto;
+  gap: var(--rta-space-4);
+  align-items: center;
+}
+
+.rta-lab-step--result .rta-runtime-result {
+  margin: 0;
+}
+
+@media (max-width:720px) {
+  .rta-runtime-state-row {
+    grid-template-columns: 1fr;
+  }
+  .rta-lab-run {
+    grid-template-columns: 1fr;
+  }
+  .rta-lab-inline-choice {
+    align-items: flex-start;
+    flex-direction: column;
+  }
+}
+
+/* v0.6.1: reuse existing entry/field components; only align section title actions. */
+
+.rta-config-entry__section-title {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--rta-space-6);
+  margin-bottom: var(--rta-space-4);
+}
+
+.rta-configurator__section-actions {
+  display: flex;
+  gap: var(--rta-space-4);
+  align-items: center;
+  flex-wrap: wrap;
+  justify-content: flex-end;
+}
+
+/* v0.7.3 unified Content UX */
+
+.rta-content-image-editor {
+  display: flex;
+  align-items: center;
+  gap: var(--rta-space-6);
+  padding: var(--rta-space-4) var(--rta-space-5);
+  margin: var(--rta-space-3) 0 var(--rta-space-5);
+  border: 1px solid var(--color-border-light-secondary, #777);
+  border-radius: var(--rta-radius-compact);
+}
+
+.rta-content-image-editor img {
+  width: 72px;
+  height: 72px;
+  object-fit: cover;
+  border: 1px solid var(--color-border-light-primary, #999);
+  border-radius: var(--rta-radius-compact);
+  flex: 0 0 auto;
+}
+
+.rta-content-image-editor > div {
+  display: flex;
+  flex: 1;
+  min-width: 0;
+  flex-direction: column;
+  gap: var(--rta-space-4);
+}
+
+.rta-config-card__image {
+  width: 2.25rem;
+  height: 2.25rem;
+  object-fit: cover;
+  border-radius: var(--rta-radius-compact);
+  margin-bottom: var(--rta-space-2);
+  pointer-events: none;
+}
+
+/* v0.8.0 Content acquisition bindings */
+
+.rta-binding-list {
+  display: grid;
+  gap: var(--rta-space-4);
+  margin-top: var(--rta-space-4);
+}
+
+.rta-binding-card {
+  border: 1px solid var(--color-border-light-tertiary, #666);
+  border-radius: var(--rta-radius-panel);
+  padding: var(--rta-space-4) var(--rta-space-5);
+}
+
+.rta-binding-card__title {
+  display: flex;
+  align-items: center;
+  gap: var(--rta-space-4);
+  margin: 0;
+}
+
+.rta-binding-card__values {
+  display: grid;
+  grid-template-columns: repeat(auto-fit,minmax(130px,1fr));
+  gap: var(--rta-space-4);
+  margin: var(--rta-space-4) 0 0 var(--rta-space-12);
+}
+
+.rta-binding-card__values label {
+  display: grid;
+  gap: var(--rta-space-2);
+}
+
+/* v0.9.0 constrained WYSIWYG sheet builder */
+
+.rta-sheet-builder__head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--rta-space-8);
+  margin: var(--rta-space-6) 0;
+}
+
+.rta-sheet-builder__head p {
+  margin: var(--rta-space-2) 0 0;
+  opacity: .75;
+}
+
+.rta-sheet-builder__canvas {
+  display: grid;
+  grid-template-columns: repeat(2,minmax(0,1fr));
+  gap: var(--rta-space-6);
+  padding: var(--rta-space-6);
+  border: 1px dashed var(--color-border-light-2);
+  border-radius: var(--rta-radius-panel);
+  min-height: 160px;
+  background: rgba(0,0,0,.025);
+}
+
+.rta-sheet-component {
+  grid-column: 1/-1;
+  border: 1px solid var(--color-border-light-2);
+  border-radius: var(--rta-radius-panel);
+  padding: var(--rta-space-5);
+  background: var(--color-bg-option,rgba(255,255,255,.35));
+}
+
+.rta-sheet-component__toolbar {
+  display: grid;
+  grid-template-columns: 130px 1fr auto auto auto;
+  gap: var(--rta-space-3);
+  align-items: center;
+}
+
+.rta-sheet-component__config {
+  display: grid;
+  grid-template-columns: 2fr 1fr auto;
+  gap: var(--rta-space-5);
+  align-items: end;
+  margin: var(--rta-space-4) 0;
+}
+
+.rta-sheet-component__preview {
+  min-height: 42px;
+  border: 1px solid var(--color-border-light-tertiary,#aaa);
+  border-radius: var(--rta-radius-control);
+  padding: var(--rta-space-5);
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  background: rgba(0,0,0,.035);
+}
+
+.rta-sheet-component__preview small {
+  opacity: .65;
+}
+
+.rta-sheet-builder__empty {
+  grid-column: 1/-1;
+  display: grid;
+  place-items: center;
+  min-height: 120px;
+  opacity: .6;
+}
+
+/* Ruleset landing page: Foundry module-tile visual language. */
+
+.rta-configurator__import-footer {
+  flex: 0 0 auto;
+  margin-top: auto;
+  margin-bottom: 0;
+  padding: var(--rta-space-4) var(--rta-space-6) var(--rta-space-5);
+}
+
+.rta-configurator__import-footer .form-group {
+  margin: 0;
+}
+
+.rta-configurator__import-footer input[type="file"] {
+  width: 100%;
+}
+
+.rta-ruleset-list-scroll {
+  padding: var(--rta-space-4) 0 var(--rta-space-8);
+}
+
+.rta-ruleset-tile__title:hover {
+  text-decoration: underline;
+  box-shadow: none;
+}
+
+.rta-ruleset-badge.rta-ruleset-badge--version,
+.rta-ruleset-badge.rta-ruleset-badge--active {
+  background: #28570d;
+  color: #e1f4d3;
+}
+
+/* v0.1.3: fixed three-row tiles at every supported window width. */
+
+.rta-configurator__root-footer {
+  flex: 0 0 auto;
+  display: flex;
+  justify-content: flex-end;
+  padding: var(--rta-space-3) 0 0;
+}
+
+/* v0.1.4: compact Foundry-like cards, fixed footer and single-line controls. */
+
+.rta-ruleset-tiles {
+  display: grid;
+  align-content: start;
+  grid-template-columns: repeat(auto-fill, 282px);
+  gap: var(--rta-space-6);
+  justify-content: start;
+}
+
+.rta-ruleset-tile {
+  flex-direction: column;
+  justify-content: space-between;
+  min-width: 0;
+  padding: var(--rta-space-5) var(--rta-space-6) var(--rta-space-4);
+  border: 1px solid var(--color-border-light-primary, #403844);
+  border-radius: var(--rta-radius-compact);
+  background: rgba(15, 11, 23, .72);
+  display: grid;
+  overflow: hidden;
+  box-sizing: border-box;
+  width: 282px;
+  height: 94px;
+  min-height: 94px;
+  max-height: 94px;
+  grid-template-rows: 2.7rem minmax(0, 1fr);
+}
+
+.rta-ruleset-tile__title {
+  border: 0;
+  padding: 0;
+  margin: 0;
+  background: transparent;
+  box-shadow: none;
+  color: var(--color-text-light-highlight, #eee);
+  font-size: var(--rta-type-medium);
+  font-weight: 700;
+  width: 100%;
+  height: 2.7rem;
+  max-height: 2.7rem;
+  line-height: 1.35rem;
+  display: -webkit-box;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 2;
+  line-clamp: 2;
+  overflow: hidden;
+  overflow-wrap: anywhere;
+  text-align: left;
+  align-self: start;
+}
+
+.rta-ruleset-tile__actions .rta-config-action {
+  padding: var(--rta-space-1);
+  font-size: var(--rta-type-sm);
+  flex: 0 0 23px;
+  width: 21px;
+  min-width: 21px;
+  flex-basis: 21px;
+  height: 23px;
+}
+
+.rta-ruleset-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--rta-space-2);
+  min-height: 20px;
+  padding: var(--rta-space-1) var(--rta-space-2);
+  border: 1px solid rgba(255,255,255,.14);
+  border-radius: var(--rta-radius-rail);
+  font-weight: 700;
+  line-height: 1.2;
+  background: #34303d;
+  color: #ddd;
+  flex-shrink: 0;
+  white-space: nowrap;
+  font-size: var(--rta-type-xs);
+  padding-inline: var(--rta-space-1);
+}
+
+.rta-configurator__bottom-bar {
+  display: flex;
+  align-items: end;
+  gap: var(--rta-space-6);
+  flex: 0 0 auto;
+  margin-top: auto;
+  min-width: 0;
+}
+
+.rta-configurator__bottom-bar .rta-configurator__import-footer {
+  flex: 1 1 auto;
+  min-width: 0;
+  margin: 0;
+}
+
+.rta-configurator__bottom-bar .rta-configurator__root-footer {
+  flex: 0 0 auto;
+  padding: 0 0 var(--rta-space-5);
+  margin: 0;
+}
+
+.rta-configurator__bottom-bar .rta-configurator__root-footer button {
+  white-space: nowrap;
+}
+
+/* v0.1.5: independent badge and action columns, anchored to card edges. */
+
+.rta-ruleset-tile__bottom {
+  gap: var(--rta-space-2);
+  margin-top: 0;
+  justify-content: space-between;
+  flex-wrap: nowrap;
+  overflow: hidden;
+  box-sizing: border-box;
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) max-content;
+  align-items: end;
+  width: 100%;
+  min-width: 0;
+  column-gap: var(--rta-space-1);
+}
+
+.rta-ruleset-tile__badges {
+  display: flex;
+  align-items: center;
+  flex-wrap: nowrap;
+  justify-content: flex-start;
+  flex: 0 1 auto;
+  gap: var(--rta-space-1);
+  min-width: 0;
+  justify-self: start;
+  overflow: hidden;
+}
+
+.rta-ruleset-tile__actions {
+  display: flex;
+  flex-wrap: nowrap;
+  gap: var(--rta-space-1);
+  justify-content: flex-end;
+  flex: 0 0 auto;
+  justify-self: end;
+  margin-left: 0;
+  width: max-content;
+}
+
+/* v0.1.6: pin both footer groups to the card itself, not the footer layout. */
+
+.rta-configurator .rta-ruleset-tile {
+  position: relative;
+}
+
+.rta-configurator .rta-ruleset-tile__bottom {
+  position: static;
+  display: contents;
+}
+
+.rta-configurator .rta-ruleset-tile__badges {
+  position: absolute;
+  left: .7rem;
+  bottom: .5rem;
+  display: flex;
+  flex-wrap: nowrap;
+  align-items: center;
+  width: auto;
+  max-width: calc(100% - 155px);
+  margin: 0;
+  overflow: hidden;
+}
+
+.rta-configurator .rta-ruleset-tile__actions {
+  position: absolute;
+  right: .7rem;
+  bottom: .5rem;
+  display: flex;
+  flex-wrap: nowrap;
+  align-items: center;
+  justify-content: flex-end;
+  width: auto;
+  margin: 0;
+  gap: var(--rta-space-1);
+}
+
+.rta-configurator .rta-ruleset-tile__actions .rta-config-action {
+  flex: 0 0 21px;
+  min-width: 21px;
+  width: 21px;
+  height: 23px;
+  margin: 0;
+}
+
+/* v0.1.7 - Two-level Ruleset explorer, scoped to workspace */
+
+.rta-explorer__heading>i {
+  font-size: var(--rta-type-heading);
+  color: var(--rta-card-accent, #666666);
+}
+
+.rta-explorer__heading>div {
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+}
+
+.rta-explorer__columns {
+  display: grid;
+  grid-template-columns: 136px minmax(0,1fr);
+  gap: var(--rta-space-4);
+  min-height: 0;
+  flex: 1;
+  overflow: hidden;
+}
+
+.rta-explorer__groups,.rta-explorer__details,.rta-explorer__results {
+  min-height: 0;
+  overflow-y: auto;
+  overflow-x: hidden;
+  scrollbar-width: thin;
+}
+
+.rta-explorer button {
+  height: auto;
+  min-height: 32px;
+  width: 100%;
+  margin: 0;
+  border: 0;
+  box-shadow: none;
+  text-align: left;
+  background: transparent;
+  color: inherit;
+  font-size: var(--rta-type-sm);
+  line-height: 1.25;
+}
+
+.rta-explorer__group {
+  display: flex;
+  align-items: center;
+  gap: var(--rta-space-3);
+  padding: var(--rta-space-3) var(--rta-space-3);
+  border-radius: 5px !important;
+}
+
+.rta-explorer__group i {
+  flex: 0 0 16px;
+  text-align: center;
+  opacity: .85;
+}
+
+.rta-explorer__group.is-active {
+  background: color-mix(in srgb, var(--rta-nav-accent, #666666) 17%, transparent);
+  border: 1px solid var(--rta-panel-border);
+  border-radius: var(--rta-radius-compact) !important;
+  font-weight: 700;
+}
+
+.rta-explorer__detail-title {
+  font-size: var(--rta-type-sm);
+  font-weight: 700;
+  padding: var(--rta-space-4) var(--rta-space-2) var(--rta-space-5);
+  border-bottom: 1px solid var(--color-border-light-primary);
+  margin-bottom: var(--rta-space-3);
+}
+
+.rta-explorer__item {
+  display: flex;
+  align-items: center;
+  gap: var(--rta-space-3);
+  padding: var(--rta-space-3) var(--rta-space-2) !important;
+  border-radius: 4px !important;
+  overflow-wrap: anywhere;
+}
+
+.rta-explorer__item:hover,.rta-explorer__group:hover {
+  background: color-mix(in srgb, var(--rta-nav-accent, #666666) 12%, transparent);
+}
+
+.rta-explorer__item.is-active {
+  background: color-mix(in srgb, var(--rta-nav-accent, #666666) 18%, transparent);
+  font-weight: 700;
+}
+
+.rta-explorer__results {
+  grid-column: 1/-1;
+}
+
+.rta-explorer__results[hidden],.rta-explorer__details[hidden],.rta-explorer button[hidden] {
+  display: none !important;
+}
+
+@media (max-width:760px) {
+  .rta-explorer__columns {
+    grid-template-columns: 116px minmax(0,1fr);
+  }
+}
+
+/* v0.1.8 - compact overlay explorer; never changes editor width */
+
+.rta-configurator__workspace:has(> .rta-explorer) {
+  grid-template-columns: 180px minmax(0,1fr);
+}
+
+.rta-explorer {
+  display: flex;
+  flex-direction: column;
+  min-height: 0;
+  min-width: 0;
+  border-right: 1px solid var(--color-border-light-primary);
+  position: relative;
+  overflow: visible;
+  z-index: 3;
+  padding: var(--rta-space-6) var(--rta-space-4);
+  gap: var(--rta-space-8);
+}
+
+.rta-explorer__heading {
+  display: flex;
+  gap: var(--rta-space-4);
+  padding: var(--rta-space-2) var(--rta-space-3);
+  align-items: flex-start;
+  min-height: 48px;
+}
+
+.rta-explorer__heading strong {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  font-size: var(--rta-type-base);
+  white-space: normal;
+  line-height: 1.3;
+}
+
+.rta-explorer__heading small {
+  opacity: .7;
+  font-size: var(--rta-type-sm);
+}
+
+.rta-explorer__groups {
+  display: flex;
+  flex-direction: column;
+  gap: var(--rta-space-2);
+  overflow-y: auto;
+  padding: var(--rta-space-2);
+  background: rgba(125,125,125,.055);
+  border-radius: var(--rta-radius-panel);
+  flex: 1;
+}
+
+.rta-explorer .rta-explorer__group {
+  width: 100%;
+  min-height: 38px;
+  display: flex;
+  align-items: center;
+  gap: var(--rta-space-4);
+  padding: var(--rta-space-4) var(--rta-space-4);
+  font-size: var(--rta-type-control);
+  line-height: 1.3;
+  text-align: left;
+}
+
+.rta-explorer__group span {
+  flex: 1;
+  text-align: left;
+}
+
+.rta-explorer__chevron {
+  font-size: var(--rta-type-xs);
+  opacity: .5;
+}
+
+.rta-explorer__group > i:first-child {
+  color: var(--rta-nav-accent, #666666);
+}
+
+.rta-explorer__flyout[hidden],.rta-explorer__flyout-list section[hidden] {
+  display: none !important;
+}
+
+.rta-explorer__flyout-heading {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--rta-space-3);
+  font-size: var(--rta-type-control);
+}
+
+.rta-explorer .rta-explorer__flyout-heading button {
+  width: 24px;
+  min-height: 24px;
+  flex: 0 0 24px;
+  padding: var(--rta-space-1);
+  text-align: center;
+}
+
+
+
+.rta-explorer .rta-explorer__item {
+  min-height: 36px;
+  font-size: var(--rta-type-base);
+  line-height: 1.35;
+  padding: var(--rta-space-3) var(--rta-space-2) !important;
+  overflow-wrap: normal;
+  word-break: normal;
+  text-align: left;
+}
+
+.rta-explorer__item span:last-child {
+  text-align: left;
+}
+
+@media (max-width:760px) {
+  .rta-configurator__workspace:has(> .rta-explorer) {
+    grid-template-columns: 165px minmax(0,1fr);
+  }
+  .rta-explorer__flyout {
+    width: 165px;
+  }
+}
+
+/* v0.1.9 - readable overlay, special type configuration entries */
+
+.rta-explorer__flyout {
+  position: absolute;
+  left: 100%;
+  top: 60px;
+  width: 180px;
+  max-height: calc(100% - 65px);
+  display: flex;
+  flex-direction: column;
+  gap: var(--rta-space-5);
+  z-index: 20;
+  padding: var(--rta-space-5);
+  background: var(--color-cool-5,#17141e);
+  border: 1px solid var(--color-border-light-primary);
+  border-radius: var(--rta-radius-panel);
+  box-shadow: 5px 5px 18px #000a;
+  box-sizing: border-box;
+  overflow: hidden;
+  min-height: 140px;
+}
+
+.rta-explorer__flyout-list {
+  min-height: 0;
+  scrollbar-width: thin;
+  flex: 1 1 auto;
+  overflow-y: auto;
+  overflow-x: hidden;
+}
+
+.rta-explorer__flyout-list section {
+  display: flex;
+  flex-direction: column;
+  gap: var(--rta-space-1);
+  align-items: stretch;
+  width: 100%;
+}
+
+.rta-explorer .rta-explorer__flyout-list .rta-explorer__item {
+  display: flex;
+  align-items: center;
+  justify-content: flex-start;
+  width: 100%;
+  min-height: 38px;
+  gap: var(--rta-space-4);
+  padding: var(--rta-space-4) !important;
+  text-align: left !important;
+  font-size: var(--rta-type-control) !important;
+  line-height: 1.35;
+  white-space: normal;
+}
+
+.rta-configurator .rta-explorer__flyout-list .rta-explorer__item > span:first-child {
+  flex: 1 1 auto;
+  min-width: 0;
+  text-align: left !important;
+}
+
+
+
+.rta-explorer .rta-explorer__item--primary {
+  background: color-mix(in srgb, var(--rta-nav-accent, #666666) 13%, transparent);
+  border: 1px solid var(--rta-panel-border);
+  border-radius: var(--rta-radius-control);
+  font-weight: 650;
+  margin-bottom: var(--rta-space-4);
+}
+
+.rta-explorer__primary-icon {
+  color: var(--rta-nav-accent, #666666);
+  flex: 0 0 auto;
+  font-size: var(--rta-type-base);
+}
+
+/* v0.1.10: flyout card border and full-strength family accents */
+
+.rta-configurator .rta-explorer__flyout-list .rta-explorer__item {
+  color: var(--color-text-primary, inherit);
+  opacity: 1;
+  text-align: left !important;
+}
+
+/* v0.1.12: 1.5x wide flyout; use the entire sidebar height before scrolling. */
+
+@media (max-width:760px) {
+  .rta-configurator .rta-explorer__flyout {
+    width: 270px;
+  }
+}
+
+/* v0.1.14: allow the flyout to extend above the workspace without being
+   clipped by the workspace grid; keep the native Foundry title bar above it. */
+
+.rta-configurator .rta-configurator__workspace:has(> .rta-explorer) {
+  position: relative;
+  overflow: visible;
+  z-index: 5;
+}
+
+.rta-configurator .rta-configurator__workspace-header {
+  position: relative;
+  z-index: 1;
+}
+
+.rta-configurator .rta-explorer {
+  position: relative;
+  z-index: 6;
+}
+
+.rta-configurator .rta-explorer__flyout {
+  background: var(--color-cool-5, #17141e);
+  width: 270px;
+  max-height: none;
+  border: 1px solid var(--color-border-light-tertiary, #49404e);
+  border-radius: var(--rta-radius-control);
+  z-index: 30;
+}
+
+/* v0.1.15: shared Foundry Ruleset tile geometry for every collection. */
+
+.rta-configurator .rta-config-card-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, 282px);
+  grid-auto-rows: 94px;
+  justify-content: start;
+  align-content: start;
+  gap: var(--rta-space-6);
+}
+
+.rta-configurator .rta-config-card__title {
+  display: -webkit-box;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 2;
+  line-clamp: 2;
+  width: 100%;
+  height: 2.7rem;
+  max-height: 2.7rem;
+  padding: 0;
+  margin: 0;
+  border: 0;
+  border-radius: 0;
+  background: transparent;
+  box-shadow: none;
+  color: var(--color-text-light-highlight, #eee);
+  font-size: var(--rta-type-medium);
+  font-weight: 700;
+  line-height: 1.35rem;
+  text-align: left;
+  overflow: hidden;
+  overflow-wrap: anywhere;
+  cursor: pointer;
+}
+
+.rta-configurator .rta-config-card__title:hover {
+  text-decoration: underline;
+  box-shadow: none;
+}
+
+.rta-configurator .rta-config-card__bottom {
+  display: flex;
+  align-items: end;
+  justify-content: space-between;
+  gap: var(--rta-space-2);
+  min-width: 0;
+  width: 100%;
+}
+
+.rta-configurator .rta-config-card__tag {
+  display: inline-block;
+  flex: 0 1 auto;
+  min-width: 0;
+  max-width: 100%;
+  padding: var(--rta-space-1) var(--rta-space-2);
+  border: 1px solid var(--rta-tag-color, #777);
+  border-radius: var(--rta-radius-rail);
+  background: color-mix(in srgb, var(--rta-tag-color, #777) 26%, #17121e);
+  color: var(--color-text-light-highlight, #eee);
+  font-size: var(--rta-type-xs);
+  line-height: 1.2;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.rta-configurator .rta-config-card__edit {
+  flex: 0 0 23px;
+  width: 23px;
+  min-width: 23px;
+  height: 23px;
+  padding: var(--rta-space-1);
+  margin-left: auto;
+  font-size: var(--rta-type-sm);
+}
+
+.rta-configurator .rta-config-card__tags {
+  flex: 1 1 auto;
+  align-items: center;
+  flex-wrap: nowrap;
+  gap: var(--rta-space-1);
+  min-width: 0;
+  overflow: hidden;
+  position: static;
+  inset: auto;
+  display: flex;
+  justify-content: flex-start;
+  align-content: center;
+  grid-template-columns: none;
+  pointer-events: auto;
+  z-index: auto;
+}
+
+.rta-configurator .rta-config-card__tags > .rta-config-card__tag:last-child:nth-child(odd) {
+  grid-column: auto;
+  justify-self: auto;
+}
+
+/* v0.1.16: match the 12px inter-tile gap above the first collection row. */
+
+.rta-configurator .rta-configurator__section-heading:has(+ .rta-config-card-grid) {
+  margin-bottom: var(--rta-space-6);
+}
+
+/* v0.1.17: General presentation only; other views retain their styling. */
+
+.rta-configurator .rta-general {
+  display: grid;
+  gap: var(--rta-space-6);
+}
+
+.rta-configurator .rta-general__header {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  gap: var(--rta-space-8);
+  padding: var(--rta-space-2) var(--rta-space-1) var(--rta-space-7);
+  border-bottom: 1px solid var(--color-border-light-primary,#777);
+}
+
+.rta-configurator .rta-general__header h2 {
+  margin: var(--rta-space-2) 0;
+  font-size: var(--rta-type-display);
+  line-height: 1.2;
+}
+
+.rta-configurator .rta-general__header p {
+  margin: 0;
+  opacity: .75;
+}
+
+.rta-configurator .rta-general__eyebrow {
+  font-size: var(--rta-type-sm);
+  letter-spacing: .07em;
+  opacity: .7;
+}
+
+.rta-configurator .rta-general__status {
+  padding: var(--rta-space-2) var(--rta-space-5);
+  border: 1px solid var(--color-border-light-primary,#777);
+  border-radius: var(--rta-radius-control);
+  text-transform: capitalize;
+}
+
+.rta-configurator .rta-general__cards {
+  display: grid;
+  grid-template-columns: repeat(2,minmax(0,1fr));
+  gap: var(--rta-space-6);
+}
+
+.rta-configurator .rta-general__card, .rta-configurator .rta-general__storage {
+  min-width: 0;
+  padding: var(--rta-space-8);
+  border: 1px solid var(--color-border-light-primary,#777);
+  border-radius: var(--rta-radius-panel);
+  background: rgba(128,128,128,.06);
+}
+
+.rta-configurator .rta-general__card h3 {
+  margin: 0 0 var(--rta-space-8);
+  font-size: var(--rta-type-medium);
+}
+
+.rta-configurator .rta-general__card h3 i, .rta-configurator .rta-general__storage summary i {
+  margin-right: var(--rta-space-4);
+  opacity: .8;
+}
+
+.rta-configurator .rta-general__card dl, .rta-configurator .rta-general__storage dl {
+  display: grid;
+  grid-template-columns: minmax(90px,1fr) minmax(0,1.7fr);
+  gap: var(--rta-space-4) var(--rta-space-6);
+  margin: 0;
+}
+
+.rta-configurator .rta-general__card dt, .rta-configurator .rta-general__storage dt {
+  opacity: .7;
+}
+
+.rta-configurator .rta-general__card dd, .rta-configurator .rta-general__storage dd {
+  margin: 0;
+  overflow-wrap: anywhere;
+}
+
+.rta-configurator .rta-general__storage {
+  margin: 0;
+}
+
+.rta-configurator .rta-general__storage summary {
+  cursor: pointer;
+  font-weight: 700;
+}
+
+.rta-configurator .rta-general__storage[open] summary {
+  margin-bottom: var(--rta-space-8);
+}
+
+@media (max-width:850px) {
+  .rta-configurator .rta-general__cards {
+    grid-template-columns: 1fr;
+  }
+}
+
+/* v0.1.18: General lifecycle controls remain in the Version and status card. */
+
+.rta-configurator .rta-general__cards > .rta-general__card:nth-child(2) {
+  display: flex;
+  flex-direction: column;
+}
+
+.rta-configurator .rta-general__lifecycle-actions {
+  margin-top: auto;
+  padding-top: var(--rta-space-8);
+  justify-content: flex-end;
+}
+
+.rta-configurator .rta-general__storage h3 {
+  margin: 0 0 var(--rta-space-8);
+  font-size: var(--rta-type-medium);
+}
+
+.rta-configurator .rta-general__storage h3 i {
+  margin-right: var(--rta-space-4);
+  opacity: .8;
+}
+
+/* v0.1.19: understated category accent; preserve neutral borders and tile geometry. */
+
+.rta-configurator .rta-config-card:hover,
+.rta-configurator .rta-config-card:focus-visible {
+  background: color-mix(in srgb, var(--rta-card-accent, #666666) 5%, var(--color-cool-5, #17141e));
+}
+
+/* v0.1.20: two non-destructive collection display modes. */
+
+.rta-configurator .rta-display-switch {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--rta-space-1);
+  margin-right: var(--rta-space-4);
+  flex-shrink: 0;
+}
+
+.rta-configurator .rta-display-switch button {
+  width: 30px;
+  min-width: 30px;
+  height: 29px;
+  padding: 0;
+  display: grid;
+  place-items: center;
+  border: 1px solid var(--color-border-light-primary,#777);
+  border-radius: var(--rta-radius-compact);
+  background: transparent;
+}
+
+.rta-configurator .rta-display-switch button.is-active {
+  background: color-mix(in srgb, var(--rta-card-accent, #666666) 22%, transparent);
+  border-color: var(--rta-card-accent, #666666);
+}
+
+.rta-configurator .rta-config-card-grid.rta-display-lines,.rta-configurator .rta-ruleset-tiles.rta-display-lines {
+  display: flex;
+  flex-direction: column;
+  gap: var(--rta-space-6);
+  width: 100%;
+  align-items: stretch;
+}
+
+.rta-configurator .rta-config-card-grid.rta-display-lines .rta-config-card {
+  width: 100%;
+  max-width: none;
+  min-height: 36px;
+  height: auto;
+  display: grid;
+  grid-template-columns: minmax(0,1fr) minmax(120px,1fr) 32px;
+  grid-template-rows: 1fr;
+  align-items: center;
+  column-gap: var(--rta-space-6);
+  padding: var(--rta-space-2) var(--rta-space-5);
+}
+
+.rta-configurator .rta-display-lines .rta-config-card__title {
+  grid-column: 1;
+  grid-row: 1;
+  min-width: 0;
+  margin: 0;
+  max-width: none;
+  text-align: left;
+}
+
+.rta-configurator .rta-display-lines .rta-config-card__bottom {
+  display: contents;
+}
+
+.rta-configurator .rta-display-lines .rta-config-card__tags {
+  grid-column: 2;
+  grid-row: 1;
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: center;
+  gap: var(--rta-space-2);
+  min-width: 0;
+}
+
+.rta-configurator .rta-display-lines .rta-config-card__edit {
+  grid-column: 3;
+  grid-row: 1;
+  justify-self: end;
+  margin: 0;
+}
+
+.rta-configurator .rta-ruleset-tiles.rta-display-lines .rta-ruleset-tile {
+  width: 100%;
+  max-width: none;
+  min-height: 36px;
+  height: auto;
+  display: grid;
+  grid-template-columns: minmax(0,1fr) minmax(110px,1fr) max-content;
+  grid-template-rows: 1fr;
+  align-items: center;
+  gap: var(--rta-space-6);
+  padding: var(--rta-space-2) var(--rta-space-5);
+}
+
+.rta-configurator .rta-display-lines .rta-ruleset-tile__title {
+  grid-column: 1;
+  grid-row: 1;
+  min-width: 0;
+  text-align: left;
+}
+
+.rta-configurator .rta-display-lines .rta-ruleset-tile__bottom {
+  display: contents;
+}
+
+.rta-configurator .rta-display-lines .rta-ruleset-tile__badges {
+  grid-column: 2;
+  grid-row: 1;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  flex-wrap: wrap;
+}
+
+/* v0.1.22 — Canonical card geometry shared by Ruleset and collection views.
+   Keep semantic focus-visible feedback for keyboard users, never transient mouse rings. */
+
+.rta-configurator :is(.rta-ruleset-tiles, .rta-config-card-grid):not(.rta-display-lines) {
+  grid-template-columns: repeat(auto-fill, var(--rta-card-width));
+  gap: var(--rta-card-gap);
+}
+
+.rta-configurator :is(.rta-ruleset-tile, .rta-config-card) {
+  box-sizing: border-box;
+  border-radius: var(--rta-radius-compact);
+  border: 1px solid var(--color-border-light-primary, #403844);
+  background: var(--color-cool-5, #17141e);
+}
+
+.rta-configurator :is(.rta-ruleset-tiles, .rta-config-card-grid):not(.rta-display-lines) > :is(.rta-ruleset-tile, .rta-config-card) {
+  width: var(--rta-card-width);
+  height: var(--rta-card-height);
+  min-height: var(--rta-card-height);
+  max-height: var(--rta-card-height);
+  padding: var(--rta-card-padding-top) var(--rta-space-6) var(--rta-card-padding-bottom) calc(var(--rta-space-6) - var(--rta-space-1));
+}
+
+.rta-configurator :is(.rta-ruleset-tile__title, .rta-config-card__title) {
+  appearance: none;
+  outline: none !important;
+  box-shadow: none !important;
+  border: 0;
+  border-radius: 0;
+  background: transparent;
+  padding: 0;
+  margin: 0;
+  min-height: 0;
+  color: var(--color-text-light-highlight, #eee);
+  text-align: left;
+  font-size: var(--rta-type-medium);
+  font-weight: 700;
+  line-height: 1.35rem;
+}
+
+.rta-configurator :is(.rta-ruleset-tile__title, .rta-config-card__title):is(:hover, :focus, :active, :focus-visible) {
+  outline: none !important;
+  box-shadow: none !important;
+  background: transparent !important;
+}
+
+/* Keyboard navigation remains visibly accessible on the parent card only. */
+
+.rta-configurator :is(.rta-ruleset-tile, .rta-config-card):has(> :is(.rta-ruleset-tile__title, .rta-config-card__title):focus-visible) {
+  outline: 1px solid var(--rta-card-accent, #666666);
+  outline-offset: 1px;
+}
+
+.rta-configurator :is(.rta-ruleset-tile__actions .rta-config-action, .rta-config-card__edit) {
+  box-sizing: border-box;
+  flex: 0 0 var(--rta-card-action-size);
+  width: var(--rta-card-action-size);
+  min-width: var(--rta-card-action-size);
+  height: var(--rta-card-action-size);
+  min-height: var(--rta-card-action-size);
+  padding: var(--rta-space-1);
+  margin-top: 0;
+  margin-bottom: 0;
+  font-size: var(--rta-type-sm);
+  line-height: 1;
+}
+
+.rta-configurator :is(.rta-ruleset-tiles, .rta-config-card-grid).rta-display-lines {
+  gap: var(--rta-card-gap);
+}
+
+.rta-configurator .rta-display-lines :is(.rta-ruleset-tile, .rta-config-card) {
+  width: 100%;
+  max-width: none;
+  min-height: 36px;
+  height: auto;
+  padding: var(--rta-space-2) var(--rta-space-5);
+  display: grid;
+  grid-template-columns: minmax(0,1fr) minmax(120px,1fr) 32px;
+  grid-template-rows: 1fr;
+  align-items: center;
+  column-gap: var(--rta-space-6);
+}
+
+.rta-configurator .rta-display-lines :is(.rta-ruleset-tile__title, .rta-config-card__title) {
+  height: auto;
+  max-height: none;
+  display: block;
+  grid-column: 1;
+  grid-row: 1;
+  align-self: center;
+}
+
+.rta-configurator .rta-display-lines :is(.rta-ruleset-tile__badges, .rta-config-card__tags) {
+  position: static;
+  grid-column: 2;
+  grid-row: 1;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  max-width: none;
+  width: auto;
+  margin: 0;
+}
+
+.rta-configurator .rta-display-lines :is(.rta-ruleset-tile__actions, .rta-config-card__edit) {
+  position: static;
+  grid-column: 3;
+  grid-row: 1;
+  justify-self: end;
+  align-self: center;
+  margin: 0;
+}
+
+.rta-configurator .rta-display-lines .rta-ruleset-tile__actions {
+  grid-column: 3;
+  grid-row: 1;
+  justify-content: flex-end;
+  min-width: 0;
+  margin: 0;
+  display: flex;
+  align-items: center;
+  gap: var(--rta-space-1);
+}
+
+/* v0.1.23 — Canonical entry-window presentation.
+   ONE scoped editor contract, reusing Foundry form controls and the existing
+   Configurator palette. All entry kinds inherit this; no per-kind theme.
+   Preserve functional layouts (grids, pickers, sheet builder) and native focus. */
+
+.rta-config-entry__scroll {
+  padding-inline-end: var(--rta-space-3);
+  padding: var(--rta-space-2) var(--rta-space-4) var(--rta-space-4) var(--rta-space-2);
+  scrollbar-width: thin;
+}
+
+/* The fieldset, details section and dynamic field card are three native
+   structures for the same visual surface. Reuse the same geometry. */
+
+.rta-config-entry :is(fieldset, details.rta-config-entry__section, .rta-field-editor) {
+  box-sizing: border-box;
+  border: 1px solid var(--rta-editor-border);
+  border-radius: var(--rta-editor-radius);
+  background: var(--rta-editor-fill);
+  margin-block: 0 var(--rta-space-6);
+  min-width: 0;
+}
+
+.rta-config-entry fieldset {
+  margin-block: 0 var(--rta-space-6);
+  display: flex;
+  flex-direction: column;
+  padding: var(--rta-space-5) var(--rta-space-6) var(--rta-space-6);
+  gap: var(--rta-editor-gap);
+}
+
+.rta-config-entry fieldset > legend {
+  padding-inline: var(--rta-space-3);
+  font-weight: 700;
+  color: var(--color-text-primary, inherit);
+}
+
+.rta-config-entry details.rta-config-entry__section {
+  padding: 0 var(--rta-space-6);
+}
+
+.rta-config-entry details.rta-config-entry__section > summary {
+  padding: var(--rta-space-5) 0;
+  margin: 0;
+  font-weight: 700;
+  line-height: 1.3;
+}
+
+.rta-config-entry details.rta-config-entry__section[open] {
+  padding-bottom: var(--rta-space-6);
+}
+
+.rta-config-entry details.rta-config-entry__section[open] > summary {
+  border-bottom: 1px solid var(--rta-editor-border);
+  margin-bottom: var(--rta-space-5);
+}
+
+.rta-config-entry .rta-field-editor {
+  padding: 0;
+  overflow: hidden;
+}
+
+.rta-config-entry .rta-field-editor__details > summary {
+  padding: var(--rta-space-5) var(--rta-space-6);
+  min-height: 2.3rem;
+}
+
+.rta-config-entry .rta-field-editor__body {
+  padding: var(--rta-space-6) var(--rta-space-6) var(--rta-space-6);
+  background: transparent;
+}
+
+/* Canonical form-stack rhythm, reusable by nested editors. */
+
+.rta-config-entry .rta-form-stack {
+  display: flex;
+  flex-direction: column;
+  gap: var(--rta-editor-gap);
+}
+
+/* Existing Foundry controls keep their native behavior; align only their
+   geometry and use the same spacing for grid and nested-label forms. */
+
+.rta-config-entry :is(.form-group, .rta-field-editor__grid, .rta-field-editor__numeric) {
+  column-gap: var(--rta-editor-gap);
+}
+
+.rta-config-entry :is(.form-group > label, .rta-field-editor label, fieldset > label) {
+  line-height: 1.3;
+}
+
+.rta-config-entry :is(input:not([type="checkbox"]):not([type="radio"]):not([type="color"]), select, textarea) {
+  box-sizing: border-box;
+  min-width: 0;
+}
+
+.rta-config-entry :is(.form-group > input:not([type="checkbox"]):not([type="color"]), .form-group > select, .rta-field-editor__grid input:not([type="checkbox"]), .rta-field-editor__grid select) {
+  min-height: 2rem;
+}
+
+.rta-config-entry .form-footer {
+  flex-shrink: 0;
+  display: flex;
+  align-items: center;
+  gap: var(--rta-space-4);
+  padding-block-start: var(--rta-space-4);
+  border-top: 1px solid var(--rta-editor-border);
+  margin-top: var(--rta-space-2);
+  padding: var(--rta-space-5) var(--rta-space-2) var(--rta-space-2);
+}
+
+.rta-config-entry .form-footer button {
+  min-height: 2rem;
+  margin: 0;
+}
+
+/* v0.1.24 — Shared editor window contract. Reuse the same section surface for
+   collapsible pickers, technical blocks and field cards. No per-entry theme. */
+
+.rta-config-entry :is(details.rta-config-entry__section, details.rta-picker, details.rta-config-entry__technical) {
+  box-sizing: border-box;
+  display: block;
+  min-width: 0;
+  margin: 0 0 var(--rta-space-6);
+  border: 1px solid var(--rta-editor-border);
+  border-radius: var(--rta-editor-radius);
+  background: var(--rta-editor-fill);
+  padding: 0 var(--rta-space-6);
+  overflow: visible;
+}
+
+.rta-config-entry :is(details.rta-config-entry__section, details.rta-picker, details.rta-config-entry__technical) > summary {
+  display: flex;
+  align-items: center;
+  flex-wrap: nowrap;
+  gap: var(--rta-space-6);
+  position: relative;
+  min-height: 2.35rem;
+  padding: var(--rta-space-4) 0;
+  margin: 0;
+  border: 0;
+  background: transparent;
+  cursor: pointer;
+  list-style: none;
+  font-weight: 700;
+  line-height: 1.3;
+}
+
+.rta-config-entry :is(details.rta-config-entry__section, details.rta-picker, details.rta-config-entry__technical) > summary::-webkit-details-marker {
+  display: none;
+}
+
+.rta-config-entry :is(details.rta-config-entry__section, details.rta-picker, details.rta-config-entry__technical) > summary::before {
+  content: "▸";
+  position: static;
+  display: inline-block;
+  flex: 0 0 .65rem;
+}
+
+.rta-config-entry :is(details.rta-config-entry__section, details.rta-picker, details.rta-config-entry__technical)[open] > summary::before {
+  content: "▾";
+}
+
+.rta-config-entry :is(details.rta-config-entry__section, details.rta-picker, details.rta-config-entry__technical) > summary > strong {
+  padding: 0;
+  flex: 0 1 auto;
+  min-width: 0;
+}
+
+.rta-config-entry :is(details.rta-config-entry__section, details.rta-picker, details.rta-config-entry__technical) > summary > span {
+  flex: 1 1 auto;
+  min-width: 0;
+  padding: 0;
+  margin: 0;
+  opacity: .75;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  font-weight: 400;
+}
+
+.rta-config-entry :is(details.rta-config-entry__section, details.rta-picker, details.rta-config-entry__technical)[open] > summary {
+  border-bottom: 1px solid var(--rta-editor-border);
+  margin-bottom: var(--rta-space-5);
+}
+
+.rta-config-entry details.rta-picker[open] {
+  padding-bottom: var(--rta-space-5);
+}
+
+.rta-config-entry .rta-picker__body {
+  border: 0;
+  padding: 0;
+  margin: 0;
+  max-height: 14rem;
+  overflow-y: auto;
+}
+
+.rta-config-entry .rta-picker__body > label {
+  min-height: 1.8rem;
+}
+
+/* Match every textarea to the available field column, including direct labels. */
+
+.rta-config-entry :is(fieldset, details.rta-config-entry__section, details.rta-config-entry__technical) :is(textarea, input:not([type="checkbox"]):not([type="radio"]):not([type="color"]), select) {
+  box-sizing: border-box;
+  max-width: 100%;
+  min-width: 0;
+}
+
+.rta-config-entry :is(fieldset, details.rta-config-entry__section, details.rta-config-entry__technical) textarea {
+  width: 100%;
+  display: block;
+}
+
+.rta-config-entry :is(fieldset, details.rta-config-entry__section, details.rta-config-entry__technical) > label:has(> textarea) {
+  display: grid;
+  gap: var(--rta-space-3);
+  width: 100%;
+}
+
+.rta-config-entry .rta-config-entry__section-heading {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: var(--rta-space-6);
+}
+
+.rta-config-entry .rta-config-entry__section-heading > :is(p, strong) {
+  min-width: 0;
+  flex: 1 1 auto;
+  margin: 0;
+}
+
+.rta-config-entry .rta-config-entry__section-heading > button {
+  flex: 0 0 auto;
+  width: auto;
+  min-width: 0;
+  min-height: 2rem;
+  height: auto;
+  padding: var(--rta-space-3) var(--rta-space-5);
+  white-space: nowrap;
+  align-self: center;
+}
+
+/* A long grant list stays accessible without making the entire editor endless. */
+
+.rta-config-entry .rta-binding-list {
+  max-height: 17rem;
+  overflow-y: auto;
+  padding-right: var(--rta-space-2);
+}
+
+.rta-config-entry .rta-binding-card {
+  padding: var(--rta-space-3) var(--rta-space-5);
+  border: 1px solid var(--rta-editor-border);
+  border-radius: var(--rta-editor-radius);
+  background: var(--rta-editor-fill);
+}
+
+.rta-config-entry .rta-binding-card__title {
+  min-height: 1.7rem;
+}
+
+.rta-config-entry .rta-binding-card__values {
+  margin: var(--rta-space-3) 0 0 var(--rta-space-12);
+}
+
+.rta-config-entry .rta-binding-card:has(> .rta-binding-card__title > input[type="checkbox"]:not(:checked)) > .rta-binding-card__values {
+  display: none;
+}
+
+.rta-config-entry .rta-binding-card__values input {
+  width: 100%;
+  min-width: 0;
+}
+
+/* v0.1.25: shared canonical border between General panels and collection tiles. */
+
+.rta-configurator {
+  --rta-card-width: 282px;
+  --rta-card-height: 94px;
+  --rta-card-gap: 12px;
+  --rta-card-action-size: 23px;
+  --rta-card-padding-top: .65rem;
+  --rta-card-padding-bottom: .5rem;
+  --rta-panel-border: var(--color-border-light-primary, #403844);
+  --rta-panel-radius: 4px;
+  --rta-rail-width: 4px;
+}
+
+.rta-configurator .rta-general__card,
+.rta-configurator .rta-general__storage {
+  border-top-color: var(--rta-panel-border);
+  border-right-color: var(--rta-panel-border);
+  border-bottom-color: var(--rta-panel-border);
+  border-radius: var(--rta-panel-radius);
+}
+
+/* Collection cards share the neutral frame, but their left border is the type/family accent. */
+
+.rta-configurator .rta-config-card {
+  --rta-card-fill: color-mix(in srgb, var(--rta-card-accent) 18%, transparent);
+  --rta-card-fill-hover: color-mix(in srgb, var(--rta-card-accent) 32%, transparent);
+  position: relative;
+  white-space: normal;
+  transition: background-color 120ms ease, filter 120ms ease;
+  box-sizing: border-box;
+  width: 282px;
+  height: 94px;
+  min-width: 0;
+  min-height: 94px;
+  max-height: 94px;
+  display: grid;
+  grid-template-rows: 2.7rem minmax(0,1fr);
+  align-items: initial;
+  justify-content: initial;
+  padding: var(--rta-space-5) var(--rta-space-6) var(--rta-space-4);
+  margin: 0;
+  border: 1px solid var(--color-border-light-primary, #403844);
+  text-align: left;
+  overflow: hidden;
+  background: var(--color-cool-5, #17141e);
+  padding-left: calc(var(--rta-space-6) - var(--rta-space-1));
+  border-top-color: var(--rta-panel-border);
+  border-right-color: var(--rta-panel-border);
+  border-bottom-color: var(--rta-panel-border);
+  border-radius: var(--rta-panel-radius);
+}
+
+/* Dependencies: read-only two-column explorer, using the existing configurator panel language. */
+
+.rta-configurator .rta-dependencies__stats {
+  display: flex;
+  gap: var(--rta-space-6);
+  flex-wrap: wrap;
+  margin: 0 0 var(--rta-space-6);
+  color: var(--color-text-light-6,#bcb8bf);
+  font-size: var(--rta-type-base);
+}
+
+.rta-configurator .rta-dependencies {
+  display: grid;
+  grid-template-columns: minmax(210px,34%) minmax(0,1fr);
+  gap: var(--rta-space-6);
+  min-height: 360px;
+  align-items: stretch;
+}
+
+.rta-configurator .rta-dependencies__list,.rta-configurator .rta-dependencies__detail {
+  border: 1px solid var(--rta-panel-border);
+  border-radius: var(--rta-panel-radius);
+  background: rgba(128,128,128,.04);
+  min-width: 0;
+  padding: var(--rta-space-6);
+}
+
+.rta-configurator .rta-dependencies__search {
+  display: flex;
+  align-items: center;
+  gap: var(--rta-space-4);
+  margin-bottom: var(--rta-space-5);
+}
+
+.rta-configurator .rta-dependencies__search input {
+  min-width: 0;
+  flex: 1;
+}
+
+.rta-configurator .rta-dependencies__items {
+  display: flex;
+  flex-direction: column;
+  gap: var(--rta-space-2);
+  max-height: 420px;
+  overflow: auto;
+}
+
+.rta-configurator .rta-dependencies__item {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: var(--rta-space-1);
+  text-align: left;
+  min-width: 0;
+  width: 100%;
+  height: auto;
+  padding: var(--rta-space-4) var(--rta-space-5);
+  border: 1px solid transparent;
+  border-radius: var(--rta-panel-radius);
+  background: transparent;
+  box-shadow: none;
+}
+
+.rta-configurator .rta-dependencies__item:hover,.rta-configurator .rta-dependencies__item.is-active {
+  border-color: var(--rta-panel-border);
+  background: rgba(128,128,128,.14);
+}
+
+.rta-configurator .rta-dependencies__item-name {
+  font-weight: 700;
+  overflow-wrap: anywhere;
+}
+
+.rta-configurator .rta-dependencies__item small,.rta-configurator .rta-dependencies__detail header p,.rta-configurator .rta-dependencies__relation small {
+  opacity: .75;
+  font-size: var(--rta-type-sm);
+}
+
+.rta-configurator .rta-dependencies__detail header {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: var(--rta-space-6);
+  border-bottom: 1px solid var(--rta-panel-border);
+  padding-bottom: var(--rta-space-5);
+}
+
+.rta-configurator .rta-dependencies__detail header h3 {
+  margin: 0 0 var(--rta-space-2);
+  font-size: var(--rta-type-heading);
+}
+
+.rta-configurator .rta-dependencies__detail header p {
+  margin: 0;
+  overflow-wrap: anywhere;
+}
+
+.rta-configurator .rta-dependencies__detail h4 {
+  margin: var(--rta-space-8) 0 var(--rta-space-5);
+}
+
+.rta-configurator .rta-dependencies__relations {
+  display: flex;
+  flex-direction: column;
+  gap: var(--rta-space-3);
+  max-height: 380px;
+  overflow: auto;
+}
+
+.rta-configurator .rta-dependencies__relation {
+  border: 1px solid var(--rta-panel-border);
+  border-radius: var(--rta-panel-radius);
+  padding: 0;
+  background: rgba(128,128,128,.04);
+}
+
+.rta-configurator .rta-dependencies__relation summary {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--rta-space-5);
+  cursor: pointer;
+  padding: var(--rta-space-5);
+  list-style: none;
+}
+
+.rta-configurator .rta-dependencies__relation summary::-webkit-details-marker {
+  display: none;
+}
+
+.rta-configurator .rta-dependencies__relation summary span {
+  display: flex;
+  flex-direction: column;
+  gap: var(--rta-space-1);
+  min-width: 0;
+  overflow-wrap: anywhere;
+}
+
+.rta-configurator .rta-dependencies__relation[open] summary i {
+  transform: rotate(180deg);
+}
+
+.rta-configurator .rta-dependencies__relation dl {
+  display: grid;
+  grid-template-columns: 80px minmax(0,1fr);
+  gap: var(--rta-space-3);
+  padding: var(--rta-space-5);
+  margin: 0;
+  border-top: 1px solid var(--rta-panel-border);
+}
+
+.rta-configurator .rta-dependencies__relation dd {
+  margin: 0;
+  overflow-wrap: anywhere;
+}
+
+@media (max-width:750px) {
+  .rta-configurator .rta-dependencies {
+    grid-template-columns: 1fr;
+  }
+  .rta-configurator .rta-dependencies__items {
+    max-height: 200px;
+  }
+}
+
+/* Dependency graph: shared collection actions and canonical borders. */
+
+.rta-configurator .rta-dependencies__row.is-active {
+  background: rgba(128,128,128,.18);
+}
+
+.rta-configurator .rta-dependencies__row .rta-dependencies__item {
+  border: 0;
+  background: transparent;
+  padding: var(--rta-space-2) var(--rta-space-2);
+  min-height: 34px;
+}
+
+.rta-configurator .rta-dependencies__row .rta-dependencies__item:hover {
+  background: transparent;
+  border: 0;
+}
+
+.rta-configurator .rta-dependencies__row .rta-config-action {
+  width: 23px;
+  height: 23px;
+  min-width: 23px;
+  padding: 0;
+}
+
+.rta-configurator .rta-dependencies__detail {
+  display: flex;
+  flex-direction: column;
+  min-height: 0;
+}
+
+.rta-configurator .rta-dependencies__graph-tools {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--rta-space-4);
+  padding: var(--rta-space-4) 0;
+  font-size: var(--rta-type-base);
+}
+
+.rta-configurator .rta-dependencies__graph-tools>div {
+  display: flex;
+  gap: var(--rta-space-2);
+}
+
+.rta-configurator .rta-dependencies__graph-tools button {
+  width: 27px;
+  height: 26px;
+  min-width: 27px;
+  padding: 0;
+}
+
+.rta-configurator .rta-dependencies__graph {
+  display: block;
+  width: 100%;
+  height: 340px;
+  flex-shrink: 0;
+  border: 1px solid var(--rta-panel-border);
+  border-radius: var(--rta-panel-radius);
+  background: rgba(0,0,0,.13);
+  touch-action: none;
+  cursor: grab;
+  color: var(--color-text-light-6,#bbb);
+}
+
+.rta-configurator .rta-dependencies__graph:active {
+  cursor: grabbing;
+}
+
+.rta-configurator .rta-dependencies__edge {
+  fill: none;
+  stroke: #b8a06d;
+  stroke-width: 2;
+  stroke-linecap: round;
+}
+
+.rta-configurator .rta-dependencies__edge.is-unresolved {
+  stroke: #e0a05e;
+  stroke-dasharray: 6 4;
+}
+
+.rta-configurator .rta-dependencies__node {
+  cursor: pointer;
+}
+
+.rta-configurator .rta-dependencies__node>rect:first-child {
+  fill: #29252e;
+  stroke: #827a88;
+  stroke-width: 1.2;
+}
+
+.rta-configurator .rta-dependencies__node.is-center>rect:first-child {
+  stroke: #d6b76e;
+  stroke-width: 2;
+}
+
+.rta-configurator .rta-dependencies__node.is-unresolved>rect:first-child {
+  stroke: #d99255;
+  stroke-dasharray: 4 3;
+}
+
+.rta-configurator .rta-dependencies__node-bar {
+  fill: #4a4154;
+}
+
+.rta-configurator .rta-dependencies__node.is-center .rta-dependencies__node-bar {
+  fill: #6b5639;
+}
+
+.rta-configurator .rta-dependencies__node-type {
+  font-size: var(--rta-type-xs);
+  fill: #fff;
+}
+
+.rta-configurator .rta-dependencies__node-name {
+  font-size: var(--rta-type-sm);
+  font-weight: 700;
+  fill: #f1e9df;
+}
+
+.rta-configurator .rta-dependencies__node-id {
+  font-size: var(--rta-type-micro);
+  fill: #bdb3c0;
+}
+
+.rta-configurator .rta-dependencies__technical {
+  margin-top: var(--rta-space-5);
+  border: 1px solid var(--rta-panel-border);
+  border-radius: var(--rta-panel-radius);
+  padding: var(--rta-space-4);
+}
+
+.rta-configurator .rta-dependencies__technical>summary {
+  cursor: pointer;
+  font-weight: 600;
+}
+
+.rta-configurator .rta-dependencies__technical .rta-dependencies__relations {
+  margin-top: var(--rta-space-4);
+  max-height: 190px;
+}
+
+/* Dependencies: canonical collection accent and action sizing. */
+
+.rta-configurator .rta-dependencies__row {
+  display: grid;
+  grid-template-columns: minmax(0,1fr) 26px;
+  align-items: stretch;
+  gap: var(--rta-space-3);
+  min-height: 44px;
+  border: 1px solid var(--rta-panel-border);
+  border-radius: var(--rta-panel-radius);
+  padding: var(--rta-space-1) var(--rta-space-2) var(--rta-space-1) var(--rta-space-2);
+  background: rgba(128,128,128,.04);
+}
+
+.rta-configurator .rta-dependencies__row .rta-dependencies__item:is(:focus,:focus-visible,:active) {
+  outline: none !important;
+  box-shadow: none !important;
+  border: 0 !important;
+  background: transparent !important;
+}
+
+.rta-configurator .rta-dependencies__row:has(.rta-dependencies__item:focus-visible) {
+  outline: 1px solid var(--rta-card-accent,var(--rta-panel-border));
+  outline-offset: 1px;
+}
+
+/* Shared tag facet for every collection; counts and selection are rendered from the same tag data. */
+
+.rta-configurator .rta-tag-facets {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: var(--rta-space-3);
+  margin: 0 0 var(--rta-space-6);
+  padding: var(--rta-space-4) var(--rta-space-5);
+  border: 1px solid var(--rta-panel-border);
+  border-radius: var(--rta-panel-radius);
+  background: rgba(128,128,128,.035);
+}
+
+.rta-configurator .rta-tag-facets__label {
+  font-size: var(--rta-type-base);
+  opacity: .8;
+  margin-right: var(--rta-space-3);
+  white-space: nowrap;
+}
+
+.rta-configurator .rta-tag-facets__chip {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--rta-space-2);
+  min-height: 23px;
+  height: auto;
+  width: auto;
+  max-width: 100%;
+  padding: var(--rta-space-1) var(--rta-space-2);
+  border: 1px solid var(--rta-tag-color,var(--rta-panel-border));
+  border-radius: var(--rta-radius-rail);
+  background: color-mix(in srgb,var(--rta-tag-color,#777) 26%,#17121e);
+  box-shadow: none;
+  color: var(--color-text-light-highlight,#eee);
+  font-size: var(--rta-type-xs);
+  line-height: 1.2;
+  white-space: normal;
+  text-align: left;
+}
+
+.rta-configurator .rta-tag-facets__chip small {
+  opacity: .72;
+  font-size: var(--rta-type-sm);
+}
+
+.rta-configurator .rta-tag-facets__chip:hover:not(.is-active) {
+  background: color-mix(in srgb,var(--rta-tag-color, #666666) 13%,transparent);
+}
+
+.rta-configurator .rta-tag-facets__chip.is-active,
+.rta-configurator .rta-tag-facets__chip.is-active:hover {
+  background: #fff;
+  color: #000;
+  /* Keep the exact same border, dimensions and tag accent as the unselected chip. */
+}
+
+.rta-configurator .rta-tag-facets__chip.is-active small {
+  color: inherit;
+  opacity: 1;
+}
+
+.rta-configurator .rta-tag-facets__clear {
+  width: auto;
+  min-height: 27px;
+  height: auto;
+  padding: var(--rta-space-1) var(--rta-space-4);
+  font-size: var(--rta-type-sm);
+}
+
+/* Dependencies: canonical source color, actionable unresolved facet. */
+
+.rta-configurator .rta-dependencies__warning {
+  color: #dfad64;
+  display: inline-flex;
+  align-items: center;
+  gap: var(--rta-space-3);
+  width: auto;
+  height: auto;
+  min-height: 23px;
+  padding: var(--rta-space-1) var(--rta-space-3);
+  border: 1px solid currentColor;
+  border-radius: var(--rta-panel-radius);
+  background: transparent;
+  box-shadow: none;
+  cursor: pointer;
+  font: inherit;
+}
+
+.rta-configurator .rta-dependencies__warning.is-active {
+  background: rgba(223,173,100,.18);
+}
+
+.rta-configurator .rta-dependencies__row[hidden] {
+  display: none !important;
+}
+
+/* Dependencies: neutral title, secondary description, edit action at bottom right. */
+
+.rta-configurator .rta-dependencies__row .rta-dependencies__item-name {
+  color: var(--color-text-light-highlight,#f5f1ec);
+}
+
+.rta-configurator .rta-dependencies__row .rta-dependencies__item small {
+  color: #d2c39d;
+  opacity: 1;
+}
+
+.rta-configurator .rta-dependencies__row .rta-config-card__edit {
+  align-self: end;
+  justify-self: end;
+  margin: 0 0 var(--rta-space-1);
+}
+
+/* Universal multi-choice contract — one row geometry for every editor.
+   Both visible Creation lists and collapsible relation pickers use rta-choice-list.
+   Definition grants use a different *data-bearing* binding card: see exception table.
+   No selectors here depend on game system, entry kind or accordion state. */
+
+.rta-config-entry {
+  --rta-editor-border: var(--color-border-light-primary, #49404e);
+  --rta-editor-fill: color-mix(in srgb, var(--color-cool-5, #222) 9%, transparent);
+  --rta-editor-radius: 5px;
+  --rta-editor-gap: .65rem;
+  color: var(--color-text-primary, inherit);
+  --rta-choice-row-border: var(--rta-editor-border);
+  --rta-choice-row-radius: var(--rta-editor-radius);
+  --rta-choice-row-pad-block: .4rem;
+  --rta-choice-row-pad-inline: .6rem;
+  --rta-choice-row-fill: var(--rta-editor-fill);
+}
+
+/* One scroll and spacing contract for open and collapsible checkbox collections.
+   The explicit compact modifier is retained for genuinely space-constrained rows. */
+
+.rta-config-entry .rta-choice-list {
+  display: flex;
+  flex-direction: column;
+  gap: var(--rta-space-3);
+  min-width: 0;
+  max-height: 14rem;
+  overflow-y: auto;
+}
+
+.rta-config-entry .rta-choice-list.rta-config-entry__check-group--inline {
+  max-height: 9rem;
+}
+
+.rta-config-entry .rta-choice-list > label {
+  box-sizing: border-box;
+  display: flex;
+  align-items: center;
+  gap: var(--rta-space-4);
+  flex: 0 0 auto;
+  min-height: 2.35rem;
+  margin: 0;
+  padding: var(--rta-choice-row-pad-block) var(--rta-choice-row-pad-inline);
+  border: 1px solid var(--rta-choice-row-border);
+  border-radius: var(--rta-choice-row-radius);
+  background: var(--rta-choice-row-fill);
+  min-width: 0;
+  cursor: pointer;
+}
+
+.rta-config-entry .rta-choice-list > label > input[type="checkbox"] {
+  flex: 0 0 auto;
+  width: auto;
+  margin: 0;
+}
+
+.rta-config-entry .rta-choice-list > label > :is(small, span) {
+  min-width: 0;
+}
+
+/* Specific controls retain Foundry's native checked/disabled/focus appearance. */
+
+.rta-config-entry .rta-choice-list > label:focus-within {
+  outline: 1px solid var(--color-border-highlight, var(--rta-choice-row-border));
+  outline-offset: 1px;
+}
+
+/* A data-bearing Definition grant shares the choice-row frame, but keeps its
+   additional value inputs and conditional expansion; it is not a plain picker. */
+
+.rta-config-entry .rta-binding-card[data-definition-binding] {
+  border-color: var(--rta-choice-row-border);
+  border-radius: var(--rta-choice-row-radius);
+  background: var(--rta-choice-row-fill);
+  padding: var(--rta-choice-row-pad-block) var(--rta-choice-row-pad-inline);
+}
+
+/* Form and surface contracts shared across all editor kinds. */
+
+.rta-config-entry :is(.rta-field-editor__grid, .rta-field-editor__numeric) > label:not(.rta-field-editor__check) {
+  min-width: 0;
+  line-height: 1.3;
+}
+
+.rta-config-entry :is(.rta-field-editor__grid, .rta-field-editor__numeric) > label > :is(input:not([type="checkbox"]),select,textarea) {
+  box-sizing: border-box;
+  width: 100%;
+  min-width: 0;
+  margin: 0;
+}
+
+/* RTA Select v0.1.43 — ONE visual contract for every single/multi selector.
+   No item frames: only a classic collapsed field and plain checkbox rows.
+   Popover top layer avoids clipping by Foundry ApplicationV2 scroll areas.
+   Native selects/checkboxes retain form semantics and event contracts. */
+
+.rta-config-entry .rta-select,
+.rta-configurator .rta-select {
+  display: block;
+  position: relative;
+  box-sizing: border-box;
+  width: 100%;
+  min-width: 0;
+  margin: 0;
+  border: 0;
+  background: transparent;
+}
+
+.rta-select > .rta-select__trigger {
+  box-sizing: border-box;
+  width: 100%;
+  min-height: 2.1rem;
+  height: 2.1rem;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--rta-space-4);
+  padding: var(--rta-space-3) var(--rta-space-5);
+  border: 1px solid var(--color-border-light-primary, var(--rta-editor-border, #59505f));
+  border-radius: var(--rta-radius-control);
+  background: var(--color-bg-option, #2b2530);
+  color: var(--color-text-primary, inherit);
+  font: inherit;
+  font-weight: 400;
+  text-align: left;
+  cursor: pointer;
+}
+
+.rta-select > .rta-select__trigger:hover:not(:disabled),
+.rta-select > .rta-select__trigger:focus-visible {
+  border-color: var(--color-border-highlight, #947f9c);
+  outline: 1px solid var(--color-border-highlight, #947f9c);
+  outline-offset: 0;
+}
+
+.rta-select__trigger:disabled {
+  opacity: .6;
+  cursor: not-allowed;
+}
+
+.rta-select__value {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  flex: 1;
+}
+
+.rta-select__placeholder {
+  opacity: .68;
+}
+
+.rta-select__chevron {
+  flex: 0 0 auto;
+  opacity: .8;
+}
+
+.rta-select__panel,
+.rta-select__panel:popover-open {
+  box-sizing: border-box;
+  position: fixed;
+  z-index: 10000;
+  min-width: 190px;
+  max-width: min(680px, 98vw);
+  max-height: min(330px, 72vh);
+  margin: 0;
+  padding: var(--rta-space-3);
+  border: 1px solid var(--color-border-light-primary, var(--rta-editor-border, #59505f));
+  border-radius: var(--rta-radius-control);
+  background: var(--color-bg-option, #211b27);
+  color: var(--color-text-primary, inherit);
+  box-shadow: 0 8px 24px #0007;
+  overflow: hidden;
+}
+
+.rta-select__panel[hidden] {
+  display: none !important;
+}
+
+.rta-select__search {
+  width: 100%;
+  display: block;
+  box-sizing: border-box;
+  min-height: 2rem;
+  margin: 0 0 var(--rta-space-2);
+  padding: var(--rta-space-3) var(--rta-space-5);
+  border-radius: var(--rta-radius-compact);
+}
+
+.rta-select .rta-select__options,
+.rta-select__panel .rta-select__options {
+  display: flex;
+  flex-direction: column;
+  gap: 0;
+  max-height: min(240px, 54vh);
+  overflow-y: auto;
+  overscroll-behavior: contain;
+  min-width: 0;
+  padding: 0;
+  margin: 0;
+  border: 0;
+}
+
+/* Override the old .rta-choice-list border cards only inside the new selector. */
+
+.rta-config-entry .rta-select__options > label.rta-select__option,
+.rta-configurator .rta-select__options > label.rta-select__option,
+.rta-select__panel .rta-select__options > label.rta-select__option {
+  box-sizing: border-box;
+  display: flex;
+  flex-direction: row;
+  align-items: center;
+  gap: var(--rta-space-4);
+  flex: 0 0 auto;
+  width: 100%;
+  min-height: 1.9rem;
+  padding: var(--rta-space-2) var(--rta-space-3);
+  margin: 0;
+  border: none;
+  border-radius: var(--rta-radius-compact);
+  background: transparent;
+  font: inherit;
+  font-weight: 400;
+  cursor: pointer;
+}
+
+.rta-select__panel .rta-select__option:hover:not(.is-disabled) {
+  background: var(--color-cool-5, #36313c);
+}
+
+.rta-select__panel label.rta-select__option[hidden] {
+  display: none !important;
+}
+
+.rta-select__panel .rta-select__option.is-disabled {
+  opacity: .46;
+  cursor: not-allowed;
+}
+
+.rta-select__panel .rta-select__option > input[type="checkbox"] {
+  width: 17px;
+  height: 17px;
+  margin: 0;
+  flex: 0 0 auto;
+}
+
+.rta-select__native {
+  position: absolute !important;
+  width: 1px !important;
+  height: 1px !important;
+  padding: 0 !important;
+  opacity: 0 !important;
+  pointer-events: none !important;
+  overflow: hidden !important;
+}
+
+.rta-select__radio-sources {
+  display: none !important;
+}
+
+.rta-config-entry .rta-binding-card[hidden] {
+  display: none !important;
+}
+
+.rta-config-entry .rta-binding-card__title.rta-select__binding-title > .rta-select__binding-source {
+  display: none;
+}
+
+.rta-select__panel .rta-select__options > p {
+  margin: var(--rta-space-3);
+  opacity: .7;
+}
+
+/* v0.1.46: permanent context labels and clearly non-editable required capabilities. */
+
+.rta-select > .rta-select__label {
+  display: block;
+  font: inherit;
+  font-weight: 600;
+  margin: 0 0 var(--rta-space-2);
+  color: var(--color-text-primary, inherit);
+}
+
+.rta-config-entry__fixed-capabilities {
+  margin: var(--rta-space-4) 0 var(--rta-space-5);
+  padding: var(--rta-space-4) var(--rta-space-5);
+  border: 1px solid var(--color-border-light-primary, var(--rta-editor-border, #59505f));
+  border-radius: var(--rta-radius-control);
+}
+
+.rta-config-entry__fixed-capabilities-list {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--rta-space-3) var(--rta-space-7);
+  margin-top: var(--rta-space-3);
+}
+
+.rta-config-entry__fixed-capability {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--rta-space-3);
+}
+
+.rta-config-entry__fixed-capability > small {
+  opacity: .7;
+}
+
+
+/* v0.1.47 — CANONICAL FIELD ROW (all Rule Them'All entry editors).
+   All normal controls — text, numeric, checkbox, textarea, RTA Select — share
+   exactly this two-column geometry. There is no independent select layout.
+   Sections, the Sheet Builder's toolbar, checkboxes in choice menus and the
+   data-bearing acquisition cards remain specialized surface/interaction UI. */
+
+:is(.rta-config-entry, .rta-configurator) {
+  --rta-form-column-inset: 0px;
+  --rta-form-label-column-min: 160px;
+  --rta-form-label-column-max: 200px;
+  --rta-form-control-gap: .9rem;
+  --rta-form-row-gap: .65rem;
+  --rta-form-control-height: 2.1rem;
+}
+
+/* A framed section/card already has horizontal interior padding. Instead of
+   changing the shared column anchor, subtract that same padding from its label
+   track. The select, input and textarea remain on a single visual vertical. */
+
+:is(.rta-config-entry, .rta-configurator) :is(fieldset, details.rta-config-entry__section, .rta-field-editor__grid, .rta-field-editor__body, .rta-binding-card) > .rta-form-row {
+  --rta-form-column-inset: .8rem;
+}
+
+:is(.rta-config-entry, .rta-configurator) .rta-form-row[hidden] { display: none; }
+:is(.rta-config-entry, .rta-configurator) .rta-form-row {
+  box-sizing: border-box;
+  display: grid;
+  grid-template-columns: minmax(calc(var(--rta-form-label-column-min) - var(--rta-form-column-inset)), calc(var(--rta-form-label-column-max) - var(--rta-form-column-inset))) minmax(0, 1fr);
+  gap: var(--rta-form-row-gap) var(--rta-form-control-gap);
+  align-items: center;
+  min-width: 0;
+  width: 100%;
+  margin-block: var(--rta-space-1);
+}
+
+:is(.rta-config-entry, .rta-configurator) .rta-form-row > :is(label, .rta-form-row__label) {
+  min-width: 0;
+  margin: 0;
+  align-self: center;
+  line-height: 1.3;
+  font-weight: 600;
+}
+
+:is(.rta-config-entry, .rta-configurator) .rta-form-row > :is(.rta-form-row__control, .rta-select, select, textarea, input:not([type="checkbox"]):not([type="radio"]):not([type="color"])) {
+  box-sizing: border-box;
+  width: 100%;
+  min-width: 0;
+  margin: 0;
+}
+
+:is(.rta-config-entry, .rta-configurator) .rta-form-row > :is(input[type="checkbox"], input[type="radio"], input[type="color"]) {
+  justify-self: start;
+  margin: 0;
+}
+
+:is(.rta-config-entry, .rta-configurator) .rta-form-row__control > .rta-select {
+  width: 100%;
+  min-width: 0;
+  margin: 0;
+}
+
+/* The canonical height is shared by the text/number/date input AND RTA Select.
+   Textareas, color pickers, checkboxes, toolbar buttons and multi-control cards
+   remain inherently different controls; they are not given an arbitrary height. */
+
+:is(.rta-config-entry, .rta-configurator) .rta-form-row :is(input:not([type="checkbox"]):not([type="radio"]):not([type="color"]):not([type="hidden"]), .rta-select__trigger) {
+  box-sizing: border-box;
+  height: var(--rta-form-control-height);
+  min-height: var(--rta-form-control-height);
+  max-height: var(--rta-form-control-height);
+}
+
+/* Sheet Builder is a compact toolbar, not a normal form row, but its
+   editable label field still uses the SAME control height as RTA Select. */
+
+.rta-config-entry .rta-sheet-component__toolbar > input:not([type="checkbox"]),
+.rta-config-entry .rta-sheet-component__config > label > input:not([type="checkbox"]) {
+  box-sizing: border-box;
+  height: var(--rta-form-control-height);
+  min-height: var(--rta-form-control-height);
+}
+
+/* Technical fields retain their own full-width/JSON layout, never an
+   independent single-line control height. */
+
+.rta-config-entry .rta-config-entry__technical input:not([type="checkbox"]):not([type="radio"]):not([type="color"]):not([type="hidden"]) {
+  box-sizing: border-box;
+  height: var(--rta-form-control-height);
+  min-height: var(--rta-form-control-height);
+}
+
+/* The top-level Tags/Actions/etc. are not inside the framed fieldset's .8rem
+   padding. Reserve the same right inset as their sibling controls, without
+   adding a second/independent selection grid. */
+
+.rta-config-entry__scroll > .rta-form-row--picker {
+  padding-inline-end: var(--rta-space-6);
+}
+
+@media (max-width: 620px) {
+  /* On narrow windows the form grid is a single column: align standalone
+     pickers with the fields INSIDE the ordinary framed section. */
+  .rta-config-entry__scroll > .rta-form-row--picker {
+    padding-inline-start: var(--rta-space-6);
+  }
+}
+
+/* Nested-label rows retain the implicit label association and avoid redundant
+   reflow of the label's text node. Explicit body/grid label variants use the
+   same two-column layout rather than their historical vertical stacking. */
+
+:is(.rta-config-entry, .rta-configurator) label.rta-form-row--nested {
+  font-weight: 600;
+  display: grid;
+  grid-template-columns: minmax(calc(var(--rta-form-label-column-min) - var(--rta-form-column-inset)), calc(var(--rta-form-label-column-max) - var(--rta-form-column-inset))) minmax(0, 1fr);
+  gap: var(--rta-form-row-gap) var(--rta-form-control-gap);
+  align-items: center;
+}
+
+:is(.rta-config-entry, .rta-configurator) .rta-field-editor label.rta-form-row--nested {
+  display: grid;
+  grid-template-columns: minmax(calc(var(--rta-form-label-column-min) - var(--rta-form-column-inset)), calc(var(--rta-form-label-column-max) - var(--rta-form-column-inset))) minmax(0, 1fr);
+  gap: var(--rta-form-row-gap) var(--rta-form-control-gap);
+  align-items: center;
+}
+
+/* Only standalone selector rows own a flow margin. Form stacks/fieldsets own
+   their own spacing, so applying two independent margins would cause gaps. */
+
+:is(.rta-config-entry, .rta-configurator) :is(.rta-config-entry__scroll, details.rta-config-entry__section, .rta-binding-card, .rta-field-editor__body) > .rta-form-row--picker {
+  margin-block: var(--rta-space-3) var(--rta-space-6);
+}
+
+:is(.rta-config-entry, .rta-configurator) :is(fieldset, .rta-form-stack, .rta-field-editor__grid, .rta-field-editor__numeric) > .rta-form-row--picker {
+  margin-block: var(--rta-space-1);
+}
+
+/* Real selector labels sit in the left column. Only toolbar selectors with no
+   external title are allowed the fallback internal (vertical) title. */
+
+:is(.rta-config-entry, .rta-configurator) .rta-form-row .rta-select > .rta-select__label {
+  display: none;
+}
+
+@media (max-width: 620px) {
+  :is(.rta-config-entry, .rta-configurator) .rta-form-row,
+  :is(.rta-config-entry, .rta-configurator) label.rta-form-row--nested,
+  :is(.rta-config-entry, .rta-configurator) .rta-field-editor label.rta-form-row--nested {
+    grid-template-columns: minmax(0, 1fr);
+    row-gap: var(--rta-space-2);
+  }
+}
+
+/* v0.1.50: uniform color rails for ALL RTA Select adapters.
+   Use persisted colors when available, canonical #666666 otherwise.
+   Checkbox geometry and original values are unchanged. */
+
+.rta-select__panel .rta-select__accents {
+  flex: 0 0 auto;
+  display: inline-flex;
+  align-items: center;
+  gap: var(--rta-space-1);
+  align-self: center;
+  margin: 0;
+  height: 1.18rem;
+}
+
+.rta-select__panel .rta-select__accent {
+  display: block;
+  width: 3px;
+  min-width: 3px;
+  height: 100%;
+  border-radius: var(--rta-radius-rail);
+}
+
+/* Canonical full-height Ruleset rail: tile style for cards, General and navigation.
+   The existing --rta-card-accent is sourced from the Ruleset / section / collection.
+   No inset shadow, miniature bar or competing border-left width. */
+.rta-configurator :is(
+  .rta-ruleset-tile,
+  .rta-config-card,
+  .rta-general__card,
+  .rta-general__storage,
+  .rta-dependencies__row,
+  .rta-explorer__group.is-active,
+  .rta-explorer__flyout-list .rta-explorer__item
+) {
+  border-left: var(--rta-rail-width) solid var(--rta-card-accent, #666666);
+  border-top-left-radius: var(--rta-radius-compact);
+  border-bottom-left-radius: var(--rta-radius-compact);
+}
+
+/* Ruleset color hierarchy: reuse existing card and nav accent tokens. */
+.rta-configurator .rta-general__header-actions {
+  display: flex;
+  align-items: center;
+  gap: var(--rta-space-5);
+  flex-wrap: wrap;
+}
+.rta-configurator .rta-collection-color-editor {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--rta-space-3);
+}
+.rta-configurator .rta-collection-color-editor input[type="color"] {
+  width: 3rem;
+  min-height: var(--rta-form-control-height);
+}
+.rta-config-entry .rta-section-color-config {
+  border-left: var(--rta-rail-width, 4px) solid var(--rta-section-color, #666666);
+  padding-inline-start: var(--rta-space-5);
+  margin-block: var(--rta-space-5);
+}
+.rta-config-entry .rta-color-override-control {
+  display: inline-flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: var(--rta-space-6);
+}
+.rta-config-entry .rta-color-override-check {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--rta-space-3);
+}
+
+/* Declarative controls use the canonical rta-form-row; no independent grid. */
+.rta-config-entry .rta-declarative-constraint {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr)) auto;
+  align-items: end;
+  gap: var(--rta-form-control-gap);
+  margin-block: var(--rta-form-row-gap);
+}
+.rta-config-entry .rta-declarative-constraint > label { min-width: 0; display: grid; gap: var(--rta-space-1); }
+.rta-config-entry .rta-declarative-constraint > label > :is(input, select) { min-width: 0; width: 100%; }
+.rta-config-entry .rta-declarative-presentation__controls { display: flex; align-items: center; gap: var(--rta-form-control-gap); min-width: 0; }
+.rta-config-entry .rta-declarative-presentation__value { flex: 1; min-width: 0; }
+.rta-config-entry .rta-declarative-presentation__value[hidden] { display: none; }
+.rta-config-entry .rta-declarative-presentation__value > input:not([type="checkbox"]) { width: 100%; min-width: 0; }
+.rta-config-entry .rta-declarative-toggle { display: inline-flex; gap: var(--rta-space-3); align-items: center; margin: 0; white-space: nowrap; }
+@media (max-width: 620px) { .rta-config-entry .rta-declarative-constraint { grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); } .rta-config-entry .rta-declarative-presentation__controls { flex-wrap: wrap; } }
+/* Shared checkbox positioning in both Definition and DefinitionType contracts. */
+.rta-config-entry :is(.rta-form-row, .rta-capability-contracts, .rta-config-table) input[type="checkbox"] {
+  inline-size: 1rem;
+  block-size: 1rem;
+  flex: 0 0 auto;
+  vertical-align: middle;
+  margin: 0;
+}
+.rta-config-entry .rta-config-table td:has(> input[type="checkbox"]) { text-align:center; vertical-align:middle; }

@@ -1,0 +1,218 @@
+<section class="rta-configurator">
+  {{#if error}}<p class="rta-configurator__error" role="alert">{{error}}</p>{{/if}}
+
+  {{#if isRulesets}}
+    <header class="rta-configurator__root-header">
+      <div><h2>{{localize "RTA.Template.RuleThemAll"}}</h2><p>{{localize "RTA.UI.RulesetsSubtitle"}}</p></div>
+      <div class="rta-display-switch" role="group" aria-label="{{localize 'RTA.UI.DisplayMode'}}"><button type="button" data-action="setDisplayMode" data-mode="tiles" class="{{#if displayTiles}}is-active{{/if}}" aria-pressed="{{#if displayTiles}}true{{else}}false{{/if}}" aria-label="{{localize 'RTA.UI.Tiles'}}" title="{{localize 'RTA.UI.Tiles'}}"><i class="fa-solid fa-grip"></i></button><button type="button" data-action="setDisplayMode" data-mode="lines" class="{{#if displayLines}}is-active{{/if}}" aria-pressed="{{#if displayLines}}true{{else}}false{{/if}}" aria-label="{{localize 'RTA.UI.Lines'}}" title="{{localize 'RTA.UI.Lines'}}"><i class="fa-solid fa-list"></i></button></div>
+      <button type="button" data-action="addRuleset"><i class="fa-solid fa-plus" aria-hidden="true"></i> {{localize "RTA.UI.NewRuleset"}}</button>
+    </header>
+    <div data-main-scroll class="rta-configurator__scroll rta-ruleset-list-scroll">
+      <div class="rta-ruleset-tiles{{#if displayLines}} rta-display-lines{{/if}}" role="list">
+        {{#each rulesets}}
+          <article class="rta-ruleset-tile" role="listitem" style="--rta-card-accent:{{color}}">
+            <button type="button" class="rta-ruleset-tile__title" data-action="openWorkspace" data-version-id="{{versionId}}" title="{{localize 'RTA.Template.OpenRuleset'}}">{{name}}</button>
+            <div class="rta-ruleset-tile__bottom">
+              <div class="rta-ruleset-tile__badges"><span class="rta-ruleset-badge rta-ruleset-badge--status">{{status}}</span><span class="rta-ruleset-badge rta-ruleset-badge--version"><i class="fa-solid fa-code-branch" aria-hidden="true"></i> {{version}}</span>{{#if isActive}}<span class="rta-ruleset-badge rta-ruleset-badge--active">{{localize "RTA.Template.Active"}}</span>{{/if}}</div>
+              <div class="rta-config-actions rta-ruleset-tile__actions">
+                <button class="rta-config-action" type="button" data-action="openWorkspace" data-version-id="{{versionId}}" data-tooltip="Open"><i class="fa-solid fa-folder-open"></i></button>
+                {{#if canCreateVersion}}<button class="rta-config-action" type="button" data-action="createNewVersion" data-version-id="{{versionId}}" data-tooltip="Create New Version"><i class="fa-solid fa-code-branch"></i></button>{{/if}}
+                {{#if isActive}}<button class="rta-config-action" type="button" data-action="deactivate" data-tooltip="Deactivate"><i class="fa-solid fa-pause"></i></button>{{else}}<button class="rta-config-action" type="button" data-action="activate" data-version-id="{{versionId}}" data-tooltip="Activate"><i class="fa-solid fa-play"></i></button>{{/if}}
+                {{#unless isValidated}}<button class="rta-config-action" type="button" data-action="publish" data-version-id="{{versionId}}" data-tooltip="Publish"><i class="fa-solid fa-upload"></i></button>{{/unless}}
+                <button class="rta-config-action" type="button" data-action="export" data-version-id="{{versionId}}" data-tooltip="Export"><i class="fa-solid fa-download"></i></button>
+                <button class="rta-config-action rta-config-action--danger" type="button" data-action="deleteRuleset" data-version-id="{{versionId}}" data-tooltip="Delete version" {{#unless canDelete}}disabled{{/unless}}><i class="fa-solid fa-trash"></i></button>
+              </div>
+            </div>
+          </article>
+        {{else}}<p>{{localize "RTA.Template.NoRulesetCreateOneToStartWithAnEmptyConfiguration"}}</p>{{/each}}
+      </div>
+    </div>
+    <div class="rta-configurator__bottom-bar"><fieldset class="rta-configurator__import-footer"><legend>{{localize "RTA.UI.Import"}}</legend><div class="form-group"><input data-import-file type="file" accept=".json,application/json"></div></fieldset>
+    <footer class="rta-configurator__root-footer"><button type="button" data-action="closeConfigurator">{{localize "RTA.UI.Close"}}</button></footer></div>
+  {{else}}
+    <header class="rta-configurator__workspace-header">
+      <button type="button" data-action="backToRulesets"><i class="fa-solid fa-arrow-left"></i> {{localize "RTA.Template.Rulesets"}}</button>
+      <div><strong>{{selectedRulesetName}}</strong><span>v{{selectedRuleset.version}} · {{selectedRuleset.status}}</span></div>
+      <div class="rta-config-actions">
+        {{#if lifecycle.canCreateVersion}}<button class="rta-config-action" type="button" data-action="createNewVersion" data-tooltip="Create New Version"><i class="fa-solid fa-code-branch"></i></button>{{/if}}
+        {{#if lifecycle.isReady}}<button class="rta-config-action" type="button" data-action="validate" data-tooltip="Validate Version"><i class="fa-solid fa-check-double"></i></button>{{/if}}
+      </div>
+    </header>
+    <div class="rta-configurator__workspace">
+      <nav class="rta-explorer" style="--rta-card-accent:{{rulesetAccent}}" aria-label="{{localize 'RTA.Template.RuleThemAllNavigation'}}" data-explorer>
+        <div class="rta-explorer__heading"><i class="fa-solid fa-book-open"></i><div><strong>{{selectedRulesetName}}</strong><small>v{{selectedRuleset.version}}</small></div></div>
+        <div class="rta-explorer__groups">
+          {{#each navGroups}}
+            <button type="button" style="--rta-card-accent:{{color}};--rta-nav-accent:{{color}}" data-action="navGroup" data-group="{{id}}" data-nav-group class="rta-explorer__group{{#if active}} is-active{{/if}}" aria-expanded="false"><i class="fa-solid {{icon}} rta-explorer__icon--{{id}}"></i><span>{{title}}</span><i class="fa-solid fa-chevron-right rta-explorer__chevron"></i></button>
+          {{/each}}
+        </div>
+        <div class="rta-explorer__flyout" data-nav-panel hidden>
+          <div class="rta-explorer__flyout-heading"><strong data-flyout-title></strong><button type="button" data-nav-dismiss aria-label="{{localize 'RTA.Template.Close'}}"><i class="fa-solid fa-xmark"></i></button></div>
+          <div class="rta-explorer__flyout-list">
+            {{#each navGroups}}
+              <section data-flyout-group="{{id}}" hidden>
+                {{#each items}}
+                  <button type="button" style="--rta-card-accent:{{color}};--rta-nav-accent:{{color}}" data-action="navigate" data-view="{{view}}" data-nav-item class="rta-explorer__item{{#if primary}} rta-explorer__item--primary{{/if}}{{#if active}} is-active{{/if}}" {{#if active}}aria-current="page"{{/if}}><span>{{title}}</span>{{#if primary}}<i class="fa-solid fa-sliders rta-explorer__primary-icon" aria-hidden="true"></i>{{/if}}</button>
+                {{else}}
+                  <button type="button" data-action="navigate" data-view="general" data-nav-item class="rta-explorer__item">{{../title}}</button>
+                {{/each}}
+              </section>
+            {{/each}}
+          </div>
+        </div>
+      </nav>
+      <main data-main-scroll class="rta-configurator__scroll rta-configurator__workspace-content">
+        {{#if isGeneral}}
+          <section class="rta-general" style="--rta-card-accent:{{rulesetAccent}}" aria-label="{{localize 'RTA.Template.General'}}">
+            <header class="rta-general__header">
+              <div><span class="rta-general__eyebrow">{{localize "RTA.Template.RulesetGeneral"}}</span><h2>{{selectedRulesetName}}</h2><p>{{localize "RTA.Template.RulesetIdentityLifecycleAndPersistence"}}</p></div>
+              <div class="rta-general__header-actions"><span class="rta-general__status">{{selectedRuleset.status}}</span><button type="button" data-action="editRuleset" {{#unless canEditRuleset}}disabled title="{{localize 'RTA.Colors.ReadOnly'}}"{{/unless}}><i class="fa-solid fa-pen" aria-hidden="true"></i> {{localize "RTA.Colors.EditRuleset"}}</button></div>
+            </header>
+            <div class="rta-general__cards">
+              <section class="rta-general__card"><h3><i class="fa-solid fa-book-open" aria-hidden="true"></i> {{localize "RTA.Template.Identity"}}</h3>
+                <dl><dt>{{localize "RTA.Template.Name"}}</dt><dd>{{selectedRulesetName}}</dd><dt>{{localize "RTA.Template.Id"}}</dt><dd>{{selectedRuleset.id}}</dd><dt>versionId</dt><dd>{{selectedRecord.versionId}}</dd></dl>
+              </section>
+              <section class="rta-general__card"><h3><i class="fa-solid fa-sliders" aria-hidden="true"></i> {{localize "RTA.Template.VersionAndStatus"}}</h3>
+                <dl><dt>{{localize "RTA.Template.Version"}}</dt><dd>{{selectedRuleset.version}}</dd><dt>{{localize "RTA.Template.Status"}}</dt><dd>{{selectedRuleset.status}}</dd></dl>
+                {{#unless lifecycle.canMutate}}<button type="button" data-action="createNewVersion"><i class="fa-solid fa-code-branch"></i> {{localize "RTA.Template.CreateNewVersion"}}</button>{{/unless}}
+                <div class="rta-general__lifecycle-actions rta-config-actions">
+                  {{#if lifecycle.canMutate}}<button class="rta-config-action" type="button" data-action="publish" data-tooltip="Publish" aria-label="{{localize 'RTA.Template.Publish'}}"><i class="fa-solid fa-upload"></i></button>{{/if}}
+                  <button class="rta-config-action" type="button" data-action="activate" data-tooltip="Activate latest published snapshot" aria-label="{{localize 'RTA.Template.Activate'}}"><i class="fa-solid fa-play"></i></button>
+                </div>
+              </section>
+            </div>
+            <section class="rta-configurator__storage rta-general__storage"><h3><i class="fa-solid fa-database" aria-hidden="true"></i> {{localize "RTA.Template.StoragePersistence"}}</h3><dl><dt>storageRevision</dt><dd>{{storage.storageRevision}}</dd><dt>activeVersionId</dt><dd>{{storage.activeVersionId}}</dd><dt>engineContractVersion</dt><dd>{{storage.engineContractVersion}}</dd></dl></section>
+          </section>
+        {{/if}}
+
+        {{#if isCollection}}
+          <div class="rta-configurator__section-heading"><div><h2>{{currentTitle}}</h2>{{#if currentType}}{{#if isContentFamily}}<p>{{localize "RTA.Template.FoundryBackedContentsOfThisConfigurableType"}}</p>{{else}}<p>{{localize "RTA.Template.DefinitionsOfThisConfigurableType"}}</p>{{/if}}{{else}}<p>{{localize "RTA.Template.ConfigurableRuleThemAllEntries"}}</p>{{/if}}</div>
+            <div class="rta-configurator__section-actions">{{#if canOverrideCollection}}<div class="rta-collection-color-editor" title="{{localize 'RTA.Colors.CollectionOverride'}}"><label for="rta-collection-color">{{localize "RTA.Colors.SubsectionColor"}}</label><input id="rta-collection-color" type="color" data-collection-color="{{currentCollection}}" value="{{collectionAccent}}" aria-label="{{localize 'RTA.Colors.SubsectionColor'}}"><button type="button" data-action="resetCollectionColor" data-collection="{{currentCollection}}" {{#unless collectionCustomAccent}}disabled{{/unless}} title="{{localize 'RTA.Colors.ResetInheritance'}}"><i class="fa-solid fa-arrow-rotate-left"></i></button></div>{{/if}}<div class="rta-display-switch" role="group" aria-label="{{localize 'RTA.UI.DisplayMode'}}"><button type="button" data-action="setDisplayMode" data-mode="tiles" class="{{#if displayTiles}}is-active{{/if}}" aria-pressed="{{#if displayTiles}}true{{else}}false{{/if}}" aria-label="{{localize 'RTA.UI.Tiles'}}" title="{{localize 'RTA.UI.Tiles'}}"><i class="fa-solid fa-grip"></i></button><button type="button" data-action="setDisplayMode" data-mode="lines" class="{{#if displayLines}}is-active{{/if}}" aria-pressed="{{#if displayLines}}true{{else}}false{{/if}}" aria-label="{{localize 'RTA.UI.Lines'}}" title="{{localize 'RTA.UI.Lines'}}"><i class="fa-solid fa-list"></i></button></div>{{#if isContentLibraries}}<button type="button" data-action="syncContentLibraries"><i class="fa-solid fa-box-archive"></i> {{localize "RTA.Template.SyncFoundryLibraries"}}</button>{{/if}}{{#if lifecycle.canMutate}}<button type="button" data-action="addEntry" data-kind="{{currentKind}}" {{#if currentType}}{{#if isContentFamily}}data-content-type-id="{{currentType.id}}"{{else}}data-definition-type-id="{{currentType.id}}"{{/if}}{{/if}}><i class="fa-solid fa-plus"></i> {{localize "RTA.Template.Create"}}</button>{{else}}<button type="button" data-action="createNewVersion"><i class="fa-solid fa-code-branch"></i> {{localize "RTA.Template.CreateNewVersion"}}</button>{{/if}}</div>
+          </div>
+          {{#if availableTags.length}}
+          <nav class="rta-tag-facets" aria-label="{{localize 'RTA.UI.FilterByTags'}}">
+            <span class="rta-tag-facets__label"><i class="fa-solid fa-filter" aria-hidden="true"></i> {{localize "RTA.UI.FilterByTags"}}</span>
+            {{#each availableTags}}<button type="button" class="rta-tag-facets__chip{{#if selected}} is-active{{/if}}" data-action="toggleTagFilter" data-tag-id="{{id}}" aria-pressed="{{#if selected}}true{{else}}false{{/if}}" {{#if color}}style="--rta-tag-color:{{color}}"{{/if}}><span>{{name}}</span><small>{{count}}</small></button>{{/each}}
+            {{#if activeTagCount}}<button type="button" class="rta-tag-facets__clear" data-action="clearTagFilters"><i class="fa-solid fa-xmark" aria-hidden="true"></i> {{localize "RTA.UI.ClearTagFilters"}}</button>{{/if}}
+          </nav>
+          {{/if}}
+          <div class="rta-config-card-grid{{#if displayLines}} rta-display-lines{{/if}}" role="list" data-card-grid>
+            {{#each cards}}
+              <article class="rta-config-card{{#unless enabled}} rta-config-card--disabled{{/unless}}" style="--rta-card-accent: {{cardColor}}" role="listitem" draggable="{{#if ../lifecycle.canMutate}}true{{else}}false{{/if}}" data-orderable-card data-kind="{{../currentKind}}" data-entry-id="{{id}}">
+                <button class="rta-config-card__title" type="button" data-action="openEntry" data-kind="{{../currentKind}}" data-entry-id="{{id}}">{{name}}</button>
+                <div class="rta-config-card__bottom">
+                  <div class="rta-config-card__tags">{{#each displayTags}}<span class="rta-config-card__tag" {{#if color}}style="--rta-tag-color: {{color}}"{{/if}} title="{{name}}">{{name}}</span>{{/each}}</div>
+                  <button class="rta-config-action rta-config-card__edit" type="button" data-action="openEntry" data-kind="{{../currentKind}}" data-entry-id="{{id}}" aria-label="{{localize 'RTA.UI.Edit'}}" title="{{localize 'RTA.UI.Edit'}}"><i class="fa-solid fa-pen" aria-hidden="true"></i></button>
+                </div>
+              </article>
+            {{else}}<p>{{localize "RTA.Template.NoEntries"}}</p>{{/each}}
+          </div>
+        {{/if}}
+
+
+        {{#if isRuntimeLab}}
+          <div class="rta-configurator__section-heading"><div><h2>{{localize "RTA.Template.RuntimeLab"}}</h2><p>{{localize "RTA.Template.GuidedSandboxPrepareActorsSetValuesChooseOneRuleRunItReadTheResult"}}</p></div></div>
+          <section class="rta-runtime-lab rta-runtime-lab--guided">
+            <section class="rta-lab-step">
+              <header><span class="rta-lab-step__number">1</span><div><h3>{{localize "RTA.Template.PrepareTheTestActors"}}</h3><p>{{localize "RTA.Template.UseTheTwoDedicatedActorsOrSelectExistingActorsThenInitializeTheirRuntimeData"}}</p></div></header>
+              <div class="rta-runtime-lab__grid">
+                <div class="form-group rta-form-row"><label>{{localize "RTA.Template.SourceSelf"}}</label><select data-runtime-select="source">{{#each actors}}<option value="{{uuid}}" {{#if selectedSource}}selected{{/if}}>{{name}}</option>{{else}}<option value="">{{localize "RTA.Template.NoActorsInThisWorld"}}</option>{{/each}}</select></div>
+                <div class="form-group rta-form-row"><label>{{localize "RTA.Template.Target"}}</label><select data-runtime-select="target">{{#each actors}}<option value="{{uuid}}" {{#if selectedTarget}}selected{{/if}}>{{name}}</option>{{else}}<option value="">{{localize "RTA.Template.NoActorsInThisWorld"}}</option>{{/each}}</select></div>
+              </div>
+              <div class="rta-runtime-lab__grid">
+                <div class="form-group rta-form-row"><label>{{localize "RTA.DocumentSubtype.Source"}}</label><select data-runtime-select="sourceType"><option value="">{{localize "RTA.DocumentSubtype.Choose"}}</option>{{#each runtimeActorTypeOptions}}<option value="{{id}}" {{#if sourceSelected}}selected{{/if}}>{{id}}</option>{{/each}}</select></div>
+                <div class="form-group rta-form-row"><label>{{localize "RTA.DocumentSubtype.Target"}}</label><select data-runtime-select="targetType"><option value="">{{localize "RTA.DocumentSubtype.Choose"}}</option>{{#each runtimeActorTypeOptions}}<option value="{{id}}" {{#if targetSelected}}selected{{/if}}>{{id}}</option>{{/each}}</select></div>
+              </div>
+              <div class="rta-runtime-lab__actions"><button type="button" data-action="runtimeCreateActors"><i class="fa-solid fa-user-plus"></i> {{localize "RTA.Template.CreateSelectPjPnjTest"}}</button><button type="button" data-action="runtimeInitAll"><i class="fa-solid fa-layer-group"></i> {{localize "RTA.Template.InitializeBothActors"}}</button></div>
+            </section>
+
+            <section class="rta-lab-step">
+              <header><span class="rta-lab-step__number">2</span><div><h3>{{localize "RTA.Template.SetTheValuesYouWantToTest"}}</h3><p>{{localize "RTA.Template.EditRuntimeValuesDirectlyNoTechnicalIdsAndNoManualInstantiationWorkflow"}}</p></div></header>
+              <div class="rta-lab-inline-choice"><label>{{localize "RTA.Template.Editing"}}</label><select data-runtime-select="actorRole"><option value="source" {{#if runtimeModes.editSource}}selected{{/if}}>{{localize "RTA.Template.SourceSelf"}}</option><option value="target" {{#if runtimeModes.editTarget}}selected{{/if}}>{{localize "RTA.Template.Target"}}</option></select><strong>{{selectedActorName}}</strong></div>
+              <div class="rta-runtime-state-editor">
+                {{#each runtimeStateCards}}
+                  <div class="rta-runtime-state-row" data-runtime-state-row>
+                    <strong>{{name}}</strong>
+                    <div class="rta-runtime-state-row__values">
+                      {{#if hasValue}}<label>{{localize "RTA.Template.Value"}} <input name="runtimeStateBase" type="number" value="{{base}}"></label>{{/if}}
+                      {{#if hasPool}}<label>{{localize "RTA.Template.Current"}} <input name="runtimeStateCurrent" type="number" value="{{current}}"></label><label>{{localize "RTA.Template.Max"}} <input name="runtimeStateMaximum" type="number" value="{{maximum}}"></label>{{/if}}
+                      {{#if hasState}}<label class="rta-runtime-state-row__check"><input name="runtimeStateActive" type="checkbox" {{#if active}}checked{{/if}}> {{localize "RTA.Template.Active2"}}</label>{{/if}}
+                    </div>
+                    <button type="button" data-action="runtimeUpdateState" data-definition-id="{{id}}">{{localize "RTA.Template.Save"}}</button>
+                  </div>
+                {{else}}<p class="hint">{{localize "RTA.Template.NoRuntimeValuesYetCompleteStep1AndInitializeTheActors"}}</p>{{/each}}
+              </div>
+            </section>
+
+            <section class="rta-lab-step">
+              <header><span class="rta-lab-step__number">3</span><div><h3>{{localize "RTA.Template.ChooseWhatYouWantToTest"}}</h3><p>{{localize "RTA.Template.StartWithTestForNormalGameplayValidationTheOtherToolsAreDiagnostics"}}</p></div></header>
+              <div class="rta-lab-tool-tabs">
+                <label><input type="radio" name="runtimeTool" data-runtime-select="tool" value="test" {{#if runtimeModes.isTest}}checked{{/if}}> {{localize "RTA.Template.Test"}}</label>
+                <label><input type="radio" name="runtimeTool" data-runtime-select="tool" value="action" {{#if runtimeModes.isAction}}checked{{/if}}> {{localize "RTA.Template.Action"}}</label>
+                <label><input type="radio" name="runtimeTool" data-runtime-select="tool" value="formula" {{#if runtimeModes.isFormula}}checked{{/if}}> {{localize "RTA.Template.Formula"}}</label>
+                <label><input type="radio" name="runtimeTool" data-runtime-select="tool" value="condition" {{#if runtimeModes.isCondition}}checked{{/if}}> {{localize "RTA.Template.Condition"}}</label>
+                <label><input type="radio" name="runtimeTool" data-runtime-select="tool" value="event" {{#if runtimeModes.isEvent}}checked{{/if}}> {{localize "RTA.Template.Event"}}</label>
+                <label><input type="radio" name="runtimeTool" data-runtime-select="tool" value="roll" {{#if runtimeModes.isRoll}}checked{{/if}}> {{localize "RTA.Template.DiceOnly"}}</label>
+              </div>
+              <p class="rta-lab-guide">{{runtimeGuide}}</p>
+              {{#if runtimeModes.isTest}}<div class="rta-lab-run"><select data-runtime-select="testId">{{#each runtimeTests}}<option value="{{id}}" data-rta-colors="{{colors}}" {{#if selected}}selected{{/if}}>{{name}}</option>{{else}}<option value="">{{localize "RTA.Template.NoTest"}}</option>{{/each}}</select><button type="button" data-action="runtimeTest"><i class="fa-solid fa-dice-d20"></i> {{localize "RTA.Template.RunTest"}}</button></div>{{/if}}
+              {{#if runtimeModes.isAction}}<div class="rta-lab-run"><select data-runtime-select="actionId">{{#each runtimeActions}}<option value="{{id}}" data-rta-colors="{{colors}}" {{#if selected}}selected{{/if}}>{{name}}</option>{{else}}<option value="">{{localize "RTA.Template.NoAction"}}</option>{{/each}}</select><button type="button" data-action="runtimePreviewAction">{{localize "RTA.Template.Preview"}}</button><button type="button" data-action="runtimeExecuteAction">{{localize "RTA.Template.Execute"}}</button></div>{{/if}}
+              {{#if runtimeModes.isFormula}}<div class="rta-lab-run"><select data-runtime-select="formulaId">{{#each runtimeFormulas}}<option value="{{id}}" data-rta-colors="{{colors}}" {{#if selected}}selected{{/if}}>{{name}}</option>{{else}}<option value="">{{localize "RTA.Template.NoFormula"}}</option>{{/each}}</select><button type="button" data-action="runtimeFormula">{{localize "RTA.Template.Evaluate"}}</button></div>{{/if}}
+              {{#if runtimeModes.isCondition}}<div class="rta-lab-run"><select data-runtime-select="conditionId">{{#each runtimeConditions}}<option value="{{id}}" data-rta-colors="{{colors}}" {{#if selected}}selected{{/if}}>{{name}}</option>{{else}}<option value="">{{localize "RTA.Template.NoCondition"}}</option>{{/each}}</select><button type="button" data-action="runtimeCondition">{{localize "RTA.Template.Evaluate"}}</button></div>{{/if}}
+              {{#if runtimeModes.isEvent}}<div class="rta-lab-run"><select data-runtime-select="eventTypeId">{{#each runtimeEvents}}<option value="{{id}}" data-rta-colors="{{colors}}" {{#if selected}}selected{{/if}}>{{name}}</option>{{else}}<option value="">{{localize "RTA.Template.NoEventType"}}</option>{{/each}}</select><button type="button" data-action="runtimeEvent">{{localize "RTA.Template.EmitEvent"}}</button></div>{{/if}}
+              {{#if runtimeModes.isRoll}}<div class="rta-lab-run"><input name="runtimeRollFormula" data-runtime-input="rollFormula" value="{{runtimeSelection.rollFormula}}"><button type="button" data-action="runtimeRoll"><i class="fa-solid fa-dice-d20"></i> {{localize "RTA.Template.RollWithFoundry"}}</button></div>{{/if}}
+            </section>
+
+            <section class="rta-lab-step rta-lab-step--result">
+              <header><span class="rta-lab-step__number">4</span><div><h3>{{localize "RTA.Template.ReadTheResult"}}</h3><p>{{localize "RTA.Template.TheLatestOperationIsSummarizedHereRunAnotherRuleToReplaceIt"}}</p></div></header>
+              {{#if runtimeResult}}<section class="rta-runtime-result"><h3>{{runtimeResult.title}}</h3>{{#if runtimeResult.message}}<p>{{runtimeResult.message}}</p>{{/if}}{{#if runtimeResult.rollResult}}<p><strong>{{localize "RTA.Template.Result"}}</strong> {{runtimeResult.rollResult}}</p>{{/if}}{{#if runtimeResult.changes}}<table class="rta-config-table"><thead><tr><th>{{localize "RTA.Template.Effect"}}</th><th>{{localize "RTA.Template.Before"}}</th><th>{{localize "RTA.Template.After"}}</th></tr></thead><tbody>{{#each runtimeResult.changes}}<tr><td>{{effectId}}</td><td>{{before}}</td><td>{{after}}</td></tr>{{/each}}</tbody></table>{{/if}}</section>{{else}}<p class="hint">{{localize "RTA.Template.NothingRunYet"}}</p>{{/if}}
+            </section>
+          </section>
+        {{/if}}
+
+        {{#if isDependencies}}
+          <div class="rta-configurator__section-heading"><div><h2>{{localize "RTA.Dependencies.Title"}}</h2><p>{{localize "RTA.Dependencies.Subtitle"}}</p></div></div>
+          <div class="rta-dependencies__stats"><span>{{dependencyStats.consumers}} {{localize "RTA.Dependencies.Consumers"}}</span><span>{{dependencyStats.relations}} {{localize "RTA.Dependencies.Relations"}}</span>{{#if dependencyStats.unresolved}}<button type="button" class="rta-dependencies__warning{{#if dependencyUnresolvedOnly}} is-active{{/if}}" data-action="toggleDependencyUnresolved" aria-pressed="{{#if dependencyUnresolvedOnly}}true{{else}}false{{/if}}" title="{{localize 'RTA.Dependencies.FilterUnresolved'}}">{{dependencyStats.unresolved}} {{localize "RTA.Dependencies.Unresolved"}} <i class="fa-solid fa-filter" aria-hidden="true"></i></button>{{/if}}</div>
+          {{#if dependencyAvailableTags.length}}
+          <nav class="rta-tag-facets" aria-label="{{localize 'RTA.UI.FilterByTags'}}">
+            <span class="rta-tag-facets__label"><i class="fa-solid fa-filter" aria-hidden="true"></i> {{localize "RTA.UI.FilterByTags"}}</span>
+            {{#each dependencyAvailableTags}}<button type="button" class="rta-tag-facets__chip{{#if selected}} is-active{{/if}}" data-action="toggleTagFilter" data-tag-id="{{id}}" aria-pressed="{{#if selected}}true{{else}}false{{/if}}" {{#if color}}style="--rta-tag-color:{{color}}"{{/if}}><span>{{name}}</span><small>{{count}}</small></button>{{/each}}
+            {{#if dependencyActiveTagCount}}<button type="button" class="rta-tag-facets__clear" data-action="clearTagFilters"><i class="fa-solid fa-xmark" aria-hidden="true"></i> {{localize "RTA.UI.ClearTagFilters"}}</button>{{/if}}
+          </nav>
+          {{/if}}
+          <div class="rta-dependencies">
+            <aside class="rta-dependencies__list" aria-label="{{localize 'RTA.Dependencies.Consumers'}}">
+              <label class="rta-dependencies__search"><i class="fa-solid fa-magnifying-glass" aria-hidden="true"></i><input type="search" data-dependency-search placeholder="{{localize 'RTA.Dependencies.Search'}}"></label>
+              <div class="rta-dependencies__items">{{#each dependencyGroups}}
+                <div class="rta-dependencies__row{{#if selected}} is-active{{/if}}" data-dependency-item data-search="{{name}} {{type}} {{id}}" style="--rta-card-accent:{{cardColor}}">
+                  <button type="button" class="rta-dependencies__item" data-action="selectDependency" data-dependency-key="{{key}}" title="{{name}}"><span class="rta-dependencies__item-name">{{name}}</span><small>{{type}} · {{targetCount}} {{localize 'RTA.Dependencies.Targets'}}</small></button>
+                  {{#if found}}<button class="rta-config-action rta-config-card__edit" type="button" data-action="openEntry" data-kind="{{kind}}" data-entry-id="{{id}}" title="{{localize 'RTA.UI.Edit'}}" aria-label="{{localize 'RTA.UI.Edit'}}"><i class="fa-solid fa-pen" aria-hidden="true"></i></button>{{/if}}
+                </div>
+              {{else}}<p class="hint">{{localize "RTA.Dependencies.Empty"}}</p>{{/each}}</div>
+            </aside>
+            <section class="rta-dependencies__detail" aria-label="{{localize 'RTA.Dependencies.Detail'}}">
+              {{#if dependencySelected}}
+                <header><div><h3>{{dependencySelected.name}}</h3><p>{{dependencySelected.type}} · {{dependencySelected.id}}</p></div><span>{{dependencySelected.relationCount}} {{localize "RTA.Dependencies.Relations"}}</span></header>
+                <div class="rta-dependencies__graph-tools"><span>{{dependencyGraph.incomingCount}} {{localize 'RTA.Dependencies.UsedBy'}} · {{dependencyGraph.outgoingCount}} {{localize 'RTA.Dependencies.DependsOn'}}</span><div><button type="button" data-graph-zoom-out title="{{localize 'RTA.Template.Zoom'}}">−</button><button type="button" data-graph-reset title="{{localize 'RTA.Template.Recentrer'}}"><i class="fa-solid fa-arrows-to-circle"></i></button><button type="button" data-graph-zoom-in title="{{localize 'RTA.Template.Zoom2'}}">+</button></div></div>
+                <svg class="rta-dependencies__graph" data-dependency-graph viewBox="0 0 {{dependencyGraph.width}} {{dependencyGraph.height}}" role="img" aria-label="{{localize 'RTA.Dependencies.Graph'}}" xmlns="http://www.w3.org/2000/svg">
+                  <defs><pattern id="rta-dep-dots" width="18" height="18" patternUnits="userSpaceOnUse"><circle cx="2" cy="2" r="1" fill="currentColor" opacity=".16"/></pattern></defs>
+                  <rect width="100%" height="100%" fill="url(#rta-dep-dots)"/>
+                  <g data-graph-viewport>
+                    {{#each dependencyGraph.edges}}<path d="{{path}}" class="rta-dependencies__edge{{#if unresolved}} is-unresolved{{/if}}"><title>{{title}}</title></path>{{/each}}
+                    {{#each dependencyGraph.nodes}}<g class="rta-dependencies__node{{#if center}} is-center{{/if}}{{#unless found}} is-unresolved{{/unless}}" transform="translate({{x}} {{y}})" {{#if selectable}}data-action="selectDependency" data-dependency-key="{{key}}" tabindex="0" role="button"{{/if}} aria-label="{{name}}">
+                      <rect width="155" height="58" rx="5"/><rect class="rta-dependencies__node-bar" width="155" height="17" rx="5"/><text class="rta-dependencies__node-type" x="8" y="12">{{type}}</text><text class="rta-dependencies__node-name" x="8" y="37">{{shortName}}</text><text class="rta-dependencies__node-id" x="8" y="51">{{id}}</text><title>{{name}} ({{type}})</title>
+                    </g>{{/each}}
+                  </g>
+                </svg>
+                {{#if dependencyGraph.omitted}}<p class="hint">+ {{dependencyGraph.omitted}} {{localize 'RTA.Dependencies.MoreConnections'}}</p>{{/if}}
+                <details class="rta-dependencies__technical"><summary>{{localize 'RTA.Dependencies.TechnicalDetails'}} ({{dependencySelected.relationCount}})</summary>
+                  <div class="rta-dependencies__relations">{{#each dependencySelected.relations}}<details class="rta-dependencies__relation"><summary><span><strong>{{target.name}}</strong><small>{{target.type}}{{#unless target.found}} · {{localize 'RTA.Dependencies.Unresolved'}}{{/unless}}</small></span><i class="fa-solid fa-chevron-down" aria-hidden="true"></i></summary><dl><dt>{{localize "RTA.Dependencies.Relation"}}</dt><dd>{{kind}}</dd><dt>{{localize "RTA.Dependencies.Path"}}</dt><dd><code>{{path}}</code></dd><dt>{{localize "RTA.Template.Id"}}</dt><dd><code>{{target.id}}</code></dd></dl></details>{{/each}}</div>
+                </details>
+              {{else}}<p class="hint">{{localize "RTA.Dependencies.Empty"}}</p>{{/if}}
+            </section>
+          </div>
+        {{/if}}
+      </main>
+    </div>
+  {{/if}}
+</section>
