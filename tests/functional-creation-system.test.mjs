@@ -35,7 +35,7 @@ async function build(){
   {id:'review',name:'Review',kind:'review',required:false}
  ]});
  const answers={abilities:['sense'],origin:['culture']};
- const actors=new Actors(),adapter=new Adapter(actors),runtime=createRuntimeAPI(api,{adapter,hooks:null});
+ await api.publishRuleset(v);const actors=new Actors(),adapter=new Adapter(actors),runtime=createRuntimeAPI(api,{adapter,hooks:null});
  const bridge=new FoundryContentBridge(api,runtime,{hooks:null,documentTypeResolver:(_n,{requestedType})=>{if(requestedType!=='hero')throw new Error('Choose a real Actor subtype');return requestedType}});
  return {api,v,answers,actors,runtime,bridge};
 }

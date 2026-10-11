@@ -41,6 +41,8 @@ export class RuntimeEvaluator {
       case "or": {for(const n of args(node))if(Boolean(await ev(n)))return true;return false;}
       case "not": return !Boolean(await ev(node.value??node.arg));
       case "if": return Boolean(await ev(node.condition))?ev(node.then):ev(node.else);
+      case "lookup": {const key=await ev(node.key);const row=node.table.find(r=>r.key===key);if(row)return copyJSON(row.value);if(node.default!==undefined)return ev(node.default);throw new Error(`Lookup has no entry for key: ${JSON.stringify(key)}.`);}
+      case "rangeLookup": {const value=num(await ev(node.value),"rangeLookup value");const row=node.ranges.find(r=>(r.min==null||value>=r.min)&&(r.max==null||value<=r.max));if(row)return copyJSON(row.value);if(node.default!==undefined)return ev(node.default);throw new Error(`Range lookup has no range for value: ${value}.`);}
       default: throw new Error(`Runtime evaluator does not support AST node: ${node.type}.`);
     }
   }

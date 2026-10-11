@@ -29,6 +29,7 @@ export class DependencyIndex{
       if(t.bonusFormulaRef)pushRef(this.#edges,{objectKind:'test',objectId:t.id},{objectKind:'formula',objectId:t.bonusFormulaRef},'testBonus',`tests[${i}].bonusFormulaRef`);
       if(t.targetFormulaRef)pushRef(this.#edges,{objectKind:'test',objectId:t.id},{objectKind:'formula',objectId:t.targetFormulaRef},'testTarget',`tests[${i}].targetFormulaRef`);
       for(const [j,id] of (t.outcomeRefs??[]).entries())pushRef(this.#edges,{objectKind:'test',objectId:t.id},{objectKind:'outcome',objectId:id},'testOutcome',`tests[${i}].outcomeRefs[${j}]`);
+      if(t.fallbackOutcomeRef)pushRef(this.#edges,{objectKind:'test',objectId:t.id},{objectKind:'outcome',objectId:t.fallbackOutcomeRef},'testOutcome',`tests[${i}].fallbackOutcomeRef`);
     }
     for(const [i,e] of (ruleset.effects??[]).entries()){
       pushRef(this.#edges,{objectKind:'effect',objectId:e.id},e.targetRef,'effectTarget',`effects[${i}].targetRef`);

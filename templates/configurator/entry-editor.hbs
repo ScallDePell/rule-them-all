@@ -279,6 +279,7 @@
           <div class="form-group rta-form-row"><label>{{localize "RTA.Template.TargetFormula"}}</label><select name="targetFormulaRef">{{#each targetFormulaChoices}}<option value="{{id}}" data-rta-colors="{{colors}}" {{#if selected}}selected{{/if}}>{{label}}</option>{{/each}}</select></div><div class="form-group rta-form-row"><label>{{localize "RTA.Template.FixedTarget"}}</label><input name="targetValue" type="number" value="{{data.targetValue}}"></div>
           {{> rtaEnabled}}
           <details class="rta-picker rta-config-entry__section" data-picker open><summary><strong>{{localize "RTA.Template.Outcomes"}}</strong></summary><div class="rta-picker__body rta-choice-list">{{> rtaPickerSearch placeholder=(localize "RTA.Template.SearchOutcomes")}}{{#each outcomeChoices}}<label data-picker-option data-picker-label="{{label}}" data-rta-colors="{{colors}}"><input type="checkbox" name="outcomeRefs" value="{{id}}" {{#if selected}}checked{{/if}}> {{label}}</label>{{else}}<p>{{localize "RTA.Template.NoOutcomesAvailable"}}</p>{{/each}}</div></details>
+          <div class="form-group rta-form-row"><label>{{localize "RTA.Template.FallbackOutcome"}}</label><select name="fallbackOutcomeRef">{{#each fallbackOutcomeChoices}}<option value="{{id}}" data-rta-colors="{{colors}}" {{#if selected}}selected{{/if}}>{{label}}</option>{{/each}}</select></div>
           
         </fieldset>
         {{> rtaTagsPicker}}

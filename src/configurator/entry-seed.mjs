@@ -15,7 +15,7 @@ export function createEntrySeed(kind,{uid,definitionTypeId=null,contentTypeId=nu
   if(kind==="condition")return{id:uid("condition"),nameKey:"",descriptionKey:"",enabled:true,order:0,tags:[],expression:{type:"literal",value:true}};
   if(kind==="roll")return{id:uid("roll"),nameKey:"",descriptionKey:"",enabled:true,order:0,tags:[],formula:"",data:{}};
   if(kind==="outcome")return{id:uid("outcome"),nameKey:"",descriptionKey:"",enabled:true,order:0,tags:[],resultKey:"",priority:0,conditionRef:null,labelKey:""};
-  if(kind==="test")return{id:uid("test"),nameKey:"",descriptionKey:"",enabled:true,order:0,tags:[],rollRef:"",bonusFormulaRef:null,targetFormulaRef:null,targetValue:null,outcomeRefs:[]};
+  if(kind==="test")return{id:uid("test"),nameKey:"",descriptionKey:"",enabled:true,order:0,tags:[],rollRef:"",bonusFormulaRef:null,targetFormulaRef:null,targetValue:null,outcomeRefs:[],fallbackOutcomeRef:null};
   if(kind==="effect")return{id:uid("effect"),nameKey:"",descriptionKey:"",enabled:true,order:0,tags:[],targetRef:{objectKind:"definition",objectId:""},operation:"set",operand:{kind:"literal",value:0}};
   if(kind==="action")return{id:uid("action"),nameKey:"",descriptionKey:"",enabled:true,order:0,tags:[],conditionRefs:[],costEffectRefs:[],effectRefs:[],testRef:null,outcomeMappings:[]};
   if(kind==="permissionPolicy")return{id:uid("permission"),nameKey:"",descriptionKey:"",enabled:true,order:0,scope:{objectKind:"ruleset"},rules:[],defaultEffect:"DENY"};

@@ -2,8 +2,9 @@ import {RUNTIME_HOOKS} from "../core/module-contract.mjs";
 import {copyJSON} from "../configurator/configurator-schema.mjs";
 import {CONSTRAINT_KINDS,evaluateConstraints} from "../configurator/declarative-contracts.mjs";
 import {capabilityTypeRegistry} from "../configurator/capability-type-registry.mjs";
-import {createDefinitionState,normalizeRuntimeContainerRef} from "./runtime-contracts.mjs";
+import {createDefinitionState,normalizeRuntimeContainerRef,resolveRuntimeRuleset} from "./runtime-contracts.mjs";
 import {RuntimeEvaluator} from "./runtime-evaluator.mjs";
+import {assertSafeRollFormula} from "../configurator/roll-grammar.mjs";
 
 const clone=v=>copyJSON(v);
 const roleRef=(context,role)=>context?.roles?.[role]??null;
@@ -20,8 +21,8 @@ function assertDefinitionContract(ruleset,definition){
 
 
 export class RuntimeEngine{
-  constructor({configurator,adapter,hooks=globalThis.Hooks}={}){if(!configurator)throw new Error("RuntimeEngine requires configurator API.");if(!adapter)throw new Error("RuntimeEngine requires a runtime adapter.");this.configurator=configurator;this.adapter=adapter;this.hooks=hooks;}
-  ruleset(versionId){const record=this.configurator.getRulesetVersion?.(versionId);const ruleset=record?.publishedSnapshot??record?.workingDraft??this.configurator.getRuleset?.(versionId);if(!ruleset)throw new Error(`Ruleset version not found: ${versionId}.`);return ruleset;}
+  constructor({configurator,adapter,hooks=globalThis.Hooks,rulesetSource="published"}={}){if(!configurator)throw new Error("RuntimeEngine requires configurator API.");if(!adapter)throw new Error("RuntimeEngine requires a runtime adapter.");this.configurator=configurator;this.adapter=adapter;this.hooks=hooks;this.rulesetSource=rulesetSource;}
+  ruleset(versionId){return resolveRuntimeRuleset(this.configurator,versionId,{source:this.rulesetSource});}
   async getContainerState(ref,{rulesetVersionId=""}={}){return this.adapter.load(normalizeRuntimeContainerRef(ref),{rulesetVersionId});}
   async instantiateDefinition(versionId,containerRef,definitionId,{initial={}}={}){
     const ruleset=this.ruleset(versionId),definition=ruleset.definitions?.find(x=>x.id===definitionId&&x.enabled!==false);if(!definition)throw new Error(`Definition unavailable: ${definitionId}.`);
@@ -63,7 +64,7 @@ export class RuntimeEngine{
     const grouped=new Map(),selected=[];for(const row of applicable){const mode=row.modifier.stacking?.mode??'stack',group=row.modifier.stacking?.group||row.modifier.id;if(mode==='stack'){selected.push(row);continue;}const prior=grouped.get(group);if(!prior||mode==='replace'&&row.modifier.priority>=prior.modifier.priority||mode==='highest'&&row.value>prior.value||mode==='lowest'&&row.value<prior.value)grouped.set(group,row);}selected.push(...grouped.values());selected.sort((a,b)=>(a.modifier.priority??0)-(b.modifier.priority??0));let value=Number(baseValue);for(const row of selected){const n=row.value,op=row.modifier.operation;if(op==='add')value+=n;else if(op==='subtract')value-=n;else if(op==='multiply')value*=n;else if(op==='set')value=n;else if(op==='min')value=Math.min(value,n);else if(op==='max')value=Math.max(value,n);}return{base:Number(baseValue),value,applied:selected.map(row=>row.modifier.id)};
   }
   async checkRestrictions(versionId,operationKind,context={}){const ruleset=this.ruleset(versionId),evaluator=this.evaluator(versionId),matches=[];for(const restriction of ruleset.restrictions??[]){if(!enabled(restriction)||restriction.operationKinds?.length&&!restriction.operationKinds.includes(operationKind))continue;let ok=true;for(const id of restriction.conditionRefs??[])if(!await evaluator.condition(id,context)){ok=false;break;}if(ok)matches.push(restriction);}matches.sort((a,b)=>(b.priority??0)-(a.priority??0));const top=matches[0]??null;return{allowed:!top||top.effect!=='deny',restrictionId:top?.id??null,messageKey:top?.messageKey??''};}
-  async roll(formula,data={}){if(typeof this.adapter.roll!=="function")throw new Error("Runtime adapter does not provide Foundry Roll support.");return this.adapter.roll(formula,data);}
+  async roll(formula,data={}){assertSafeRollFormula(formula);if(typeof this.adapter.roll!=="function")throw new Error("Runtime adapter does not provide Foundry Roll support.");return this.adapter.roll(formula,data);}
   async executeTest(versionId,testId,context={}){
     const ruleset=this.ruleset(versionId),test=ruleset.tests?.find(x=>x.id===testId&&enabled(x));if(!test)throw new Error(`Test unavailable: ${testId}.`);
     const rollDef=ruleset.rolls?.find(x=>x.id===test.rollRef&&enabled(x));if(!rollDef)throw new Error(`Roll unavailable: ${test.rollRef}.`);
@@ -77,8 +78,14 @@ export class RuntimeEngine{
     const target=test.targetFormulaRef?Number(await this.evaluateFormula(versionId,test.targetFormulaRef,baseContext)):(test.targetValue===null?null:Number(test.targetValue));
     const margin=target===null?null:total-target;
     const testContext={...baseContext,variables:{...baseContext.variables,test:{...baseContext.variables.test,target,margin}}};
+    // CP-29: highest priority first (list order breaks ties); the first true Outcome wins,
+    // then the explicit fallback. With Outcomes configured and no match, the Test fails explicitly.
+    const candidates=(test.outcomeRefs??[]).map((id,index)=>({index,outcome:ruleset.outcomes?.find(x=>x.id===id&&enabled(x))})).filter(x=>x.outcome)
+      .sort((a,b)=>(b.outcome.priority??0)-(a.outcome.priority??0)||a.index-b.index).map(x=>x.outcome);
     let outcome=null;
-    for(const id of test.outcomeRefs??[]){const candidate=ruleset.outcomes?.find(x=>x.id===id&&enabled(x));if(!candidate)continue;if(!candidate.conditionRef||await this.evaluateCondition(versionId,candidate.conditionRef,testContext)){outcome=candidate;break;}}
+    for(const candidate of candidates){if(!candidate.conditionRef||await this.evaluateCondition(versionId,candidate.conditionRef,testContext)){outcome=candidate;break;}}
+    if(!outcome&&test.fallbackOutcomeRef){outcome=ruleset.outcomes?.find(x=>x.id===test.fallbackOutcomeRef&&enabled(x))??null;if(!outcome)throw new Error(`Fallback Outcome unavailable: ${test.fallbackOutcomeRef}.`);}
+    if(!outcome&&candidates.length)throw new Error(`Test ${test.id} matched no Outcome and has no fallback Outcome.`);
     const variables={roll:{...baseContext.variables.roll},test:{...testContext.variables.test}};
     const result={testId:test.id,roll:{formula:String(roll.formula??rollDef.formula),result:String(roll.result??roll.total??""),total:Number(roll.total),natural},bonus:Number(bonus),total:Number(total),target:target===null?null:Number(target),margin:margin===null?null:Number(margin),outcome:outcome?{id:String(outcome.id),resultKey:String(outcome.resultKey),nameKey:String(outcome.nameKey),labelKey:String(outcome.labelKey||outcome.nameKey)}:null,variables,context:{variables}};
     this.hooks?.callAll?.(RUNTIME_HOOKS.testResolved,result,{roles:{...(context.roles??{})},defaultRole:context.defaultRole??"self",userContext:{...(context.userContext??{})}});return result;

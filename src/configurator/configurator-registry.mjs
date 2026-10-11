@@ -221,6 +221,12 @@ export class ConfiguratorRegistry {
     if (mode === "NEW" && existing) throw new Error(`RulesetVersion already exists: ${next.versionId}.`);
     if (mode === "REPLACE" && !existing) throw new Error(`RulesetVersion not found: ${next.versionId}.`);
     if (existing && existing.rulesetId !== next.rulesetId) throw new Error("Cannot replace a RulesetVersion in another family.");
+    // A Validated version is immutable, including through REPLACE.
+    if (mode === "REPLACE") this.#requireMutable(next.versionId);
+    const family = this.#families.get(next.rulesetId);
+    if (family && Array.from(family.versions.values()).some(v => v.versionId !== next.versionId && v.version === next.version)) {
+      throw new Error(`Ruleset version already exists in family ${next.rulesetId}: ${next.version}.`);
+    }
     this.#installRecord(next);
     if (worldLocalizations !== undefined) this.#worldLocalizations[next.versionId] = copyJSON(worldLocalizations);
     else if (mode === "NEW") deleteVersionWorldOverrides(this.#worldLocalizations, next.versionId);

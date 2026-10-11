@@ -37,3 +37,16 @@ export function normalizeRuntimeContainerRef(ref) {
   if(typeof ref.kind!=="string"||!ref.kind.trim()||typeof ref.id!=="string"||!ref.id.trim()) throw new Error("RuntimeContainerRef requires uuid or kind/id.");
   return {kind:ref.kind.trim(),id:ref.id.trim()};
 }
+
+/** Gameplay only ever reads the published snapshot of a
+ * RulesetVersion. The "draft" source is an explicit GM sandbox (Runtime Lab)
+ * that previews the working copy; it is never used by the content bridge. */
+export const RULESET_SOURCES=Object.freeze(["published","draft"]);
+export function resolveRuntimeRuleset(configurator,versionId,{source="published"}={}){
+  if(!RULESET_SOURCES.includes(source))throw new Error(`Unknown runtime Ruleset source: ${source}.`);
+  const record=configurator.getRulesetVersion?.(versionId);
+  if(!record)throw new Error(`Ruleset version not found: ${versionId}.`);
+  const ruleset=source==="draft"?record.workingDraft:record.publishedSnapshot;
+  if(!ruleset)throw new Error(source==="draft"?`Ruleset version has no working draft: ${versionId}.`:`Ruleset version is not published: ${versionId}.`);
+  return ruleset;
+}

@@ -30,7 +30,7 @@ function setup(){
     getContainerState:async()=>({rulesetVersionId:'v',definitionStates:{}}),
     instantiateDefinition:async(_v,_actor,id,{initial})=>instantiated.push({id,initial}),
     removeDefinitionState:async()=>{}};
-  const api={getRulesetVersion:()=>({workingDraft:ruleset})};
+  const api={getRulesetVersion:()=>({publishedSnapshot:ruleset})};
   const bridge=new FoundryContentBridge(api,runtime,{hooks:null,documentTypeResolver:()=> 'equipment'});
   return {bridge,ruleset,template,actor,flags,created,removed,instantiated};
 }

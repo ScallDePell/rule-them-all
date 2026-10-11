@@ -32,7 +32,7 @@ async function system(){
   await configurator.createContentType(versionId,{id:'background',nameKey:'Background',storageKind:'item',runtimeMode:'unique'});
   await configurator.createContentTemplate(versionId,{id:'starter',nameKey:'Starter',contentTypeId:'background',definitionBindings:[{definitionId:'practised',initial:{'value.base':0}}],actionBindings:[{actionId:'use-ability'}],choiceGroups:[]});
   const actor=new ActorMock('Actor.A'),other=new ActorMock('Actor.B'),actors=new Map([[actor.uuid,actor],[other.uuid,other]]);
-  const runtime=createRuntimeAPI(configurator,{adapter:new Adapter(actors),hooks:null});
+  await configurator.publishRuleset(versionId);const runtime=createRuntimeAPI(configurator,{adapter:new Adapter(actors),hooks:null});
   const content=new FoundryContentBridge(configurator,runtime,{hooks:null});
   return {configurator,storage,versionId,actor,other,runtime,content};
 }
@@ -61,6 +61,7 @@ test('Ruleset -> Content Type -> Content Template -> Actor acquisition -> author
 test('overlapping Content grants keep a Definition until its last acquisition is removed',async()=>{
   const {configurator,versionId,actor,runtime,content}=await system();
   await configurator.createContentTemplate(versionId,{id:'second',nameKey:'Second Source',contentTypeId:'background',definitionBindings:[{definitionId:'practised'}],actionBindings:[],choiceGroups:[]});
+  await configurator.publishRuleset(versionId);
   await content.acquireTemplate(versionId,actor.uuid,'starter',{sourceItemId:'item-first'});
   await content.acquireTemplate(versionId,actor.uuid,'second',{sourceItemId:'item-second'});
   await content.releaseAcquisition(actor.uuid,'item-first');

@@ -1,6 +1,7 @@
 import {copyJSON, isRecord} from './configurator-schema.mjs';
 import {valueTypeRegistry, validateTypedValue} from './value-type-registry.mjs';
 import {prepareFieldMap} from './field-output-contracts.mjs';
+import {assertSafeRollFormula} from './roll-grammar.mjs';
 
 const nonempty=v=>typeof v==='string'&&v.trim().length>0;
 const arr=(v,label)=>{if(!Array.isArray(v))throw new Error(`${label} must be an array.`);return v;};
@@ -14,10 +15,34 @@ export function prepareParameter(data){
   bool(x.enabled,'Parameter.enabled'); arr(x.tags,'Parameter.tags'); return x;
 }
 
+const scalar=v=>v===null||['string','number','boolean'].includes(typeof v);
+const finiteOrAbsent=v=>v===undefined||v===null||(typeof v==='number'&&Number.isFinite(v));
+/** lookup: {key: AST, table: [{key: scalar, value: scalar}], default?: AST}. Exact match on key. */
+function validateLookupNode(node,label){
+  if(!isRecord(node.key))throw new Error(`${label}.key must be an AST node.`);
+  if(!Array.isArray(node.table)||!node.table.length)throw new Error(`${label}.table must be a non-empty array.`);
+  const keys=new Set();
+  node.table.forEach((row,i)=>{
+    if(!isRecord(row)||!scalar(row.key)||!scalar(row.value))throw new Error(`${label}.table[${i}] must be {key, value} with scalar values.`);
+    const k=JSON.stringify(row.key);if(keys.has(k))throw new Error(`${label}.table has a duplicate key: ${k}.`);keys.add(k);
+  });
+}
+/** rangeLookup: {value: AST, ranges: [{min?, max?, value: scalar}], default?: AST}. Bounds are inclusive; first matching range wins. */
+function validateRangeLookupNode(node,label){
+  if(!isRecord(node.value))throw new Error(`${label}.value must be an AST node.`);
+  if(!Array.isArray(node.ranges)||!node.ranges.length)throw new Error(`${label}.ranges must be a non-empty array.`);
+  node.ranges.forEach((row,i)=>{
+    if(!isRecord(row)||!scalar(row.value)||!finiteOrAbsent(row.min)||!finiteOrAbsent(row.max))throw new Error(`${label}.ranges[${i}] must be {min?, max?, value} with numeric bounds.`);
+    if(typeof row.min==='number'&&typeof row.max==='number'&&row.min>row.max)throw new Error(`${label}.ranges[${i}] has min greater than max.`);
+  });
+}
+
 function validateAstNode(node,label='expression'){
   if(!isRecord(node)||!nonempty(node.type))throw new Error(`${label} must be an AST node with a type.`);
   const allowed=['literal','reference','parameter','formula','context','add','subtract','multiply','divide','min','max','round','floor','ceil','clamp','eq','neq','gt','gte','lt','lte','and','or','not','if','lookup','rangeLookup','sum','average'];
   if(!allowed.includes(node.type))throw new Error(`${label} contains unsupported node type: ${node.type}.`);
+  if(node.type==='lookup')validateLookupNode(node,label);
+  if(node.type==='rangeLookup')validateRangeLookupNode(node,label);
   for(const [k,v] of Object.entries(node)){
     if(k==='type')continue;
     if(isRecord(v)&&nonempty(v.type))validateAstNode(v,`${label}.${k}`);
@@ -49,6 +74,7 @@ export function prepareRoll(data){
   const x={descriptionKey:'',enabled:true,order:0,tags:[],formula:'',data:{},...copyJSON(data)};
   if(!nonempty(x.id)||!nonempty(x.nameKey))throw new Error('Roll requires id and nameKey.');
   if(!nonempty(x.formula))throw new Error('Roll.formula is required.');
+  assertSafeRollFormula(x.formula);
   if(!isRecord(x.data))throw new Error('Roll.data must be an object.');
   bool(x.enabled,'Roll.enabled');arr(x.tags,'Roll.tags');return x;
 }
@@ -60,12 +86,14 @@ export function prepareOutcome(data){
   bool(x.enabled,'Outcome.enabled');arr(x.tags,'Outcome.tags');return x;
 }
 export function prepareTest(data){
-  const x={descriptionKey:'',enabled:true,order:0,tags:[],rollRef:'',bonusFormulaRef:null,targetFormulaRef:null,targetValue:null,outcomeRefs:[],...copyJSON(data)};
+  const x={descriptionKey:'',enabled:true,order:0,tags:[],rollRef:'',bonusFormulaRef:null,targetFormulaRef:null,targetValue:null,outcomeRefs:[],fallbackOutcomeRef:null,...copyJSON(data)};
   if(!nonempty(x.id)||!nonempty(x.nameKey)||!nonempty(x.rollRef))throw new Error('Test requires id, nameKey and rollRef.');
   if(x.bonusFormulaRef!==null&&!nonempty(x.bonusFormulaRef))throw new Error('Test.bonusFormulaRef must be null or a Formula id.');
   if(x.targetFormulaRef!==null&&!nonempty(x.targetFormulaRef))throw new Error('Test.targetFormulaRef must be null or a Formula id.');
   if(x.targetValue!==null&&(!Number.isFinite(Number(x.targetValue))))throw new Error('Test.targetValue must be null or numeric.');
-  arr(x.outcomeRefs,'Test.outcomeRefs');bool(x.enabled,'Test.enabled');arr(x.tags,'Test.tags');return x;
+  arr(x.outcomeRefs,'Test.outcomeRefs');
+  if(x.fallbackOutcomeRef!==null&&!nonempty(x.fallbackOutcomeRef))throw new Error('Test.fallbackOutcomeRef must be null or an Outcome id.');
+  bool(x.enabled,'Test.enabled');arr(x.tags,'Test.tags');return x;
 }
 
 export function prepareEffect(data){

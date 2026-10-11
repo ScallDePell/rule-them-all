@@ -195,6 +195,7 @@
       }
     },
     "DynamicUI": {
+      "NoFallbackOutcome": "Aucun : échec explicite",
       "StepName": "Nom de l’étape",
       "Minimum": "Minimum",
       "Maximum": "Maximum",
@@ -459,6 +460,7 @@
       "Sum": "Somme",
       "Tags": "Tags",
       "Target": "Cible",
+      "FallbackOutcome": "Résultat par défaut",
       "TargetFormula": "Formule de cible",
       "TargetOutput": "Sortie cible",
       "Technical": "Technique",

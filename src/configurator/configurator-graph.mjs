@@ -58,7 +58,19 @@ export function createGraphAPI(registry) {
     if (used.length) throwIntegrityError(kind,id,used);
     return collection.delete(rulesetId,id);
   };
-  const updateDefinitionType = (v, id, patch) => {
+  /** CP-31: removing a field never deletes stored values silently. When entries
+   * still hold a value for a removed field, the caller must pass
+   * {pruneRemovedFields:true}, i.e. an explicit, confirmed data removal. */
+  const assertExplicitFieldPrune = (removedFieldIds, entries, {pruneRemovedFields = false} = {}, kind) => {
+    if (!removedFieldIds.length || pruneRemovedFields) return;
+    const affected = entries.filter(entry => removedFieldIds.some(fieldId => Object.hasOwn(entry.data ?? {}, fieldId)));
+    if (!affected.length) return;
+    const error = new Error(`Removing field(s) ${removedFieldIds.join(", ")} would delete data from ${affected.length} ${kind}(s): ${affected.map(entry => entry.id).join(", ")}. Pass {pruneRemovedFields:true} to confirm.`);
+    error.code = "FIELD_REMOVAL_DATA_LOSS";
+    error.affected = affected.map(entry => entry.id);
+    throw error;
+  };
+  const updateDefinitionType = (v, id, patch, options = {}) => {
     const current = types.get(v, id);
     if (!current) throw new Error(`definitionTypes entry not found: ${id}.`);
     const input = copyJSON(patch);
@@ -68,6 +80,7 @@ export function createGraphAPI(registry) {
     const ruleset = types.ruleset(v);
     const next = types.prepareEntry({...current, ...input}, ruleset);
     const removedFieldIds = Object.keys(current.fields ?? {}).filter(fieldId => !Object.hasOwn(next.fields ?? {}, fieldId));
+    assertExplicitFieldPrune(removedFieldIds, (ruleset.definitions ?? []).filter(definition => definition.definitionTypeId === id), options, "Definition");
     const definitions = removedFieldIds.length ? (ruleset.definitions ?? []).map(definition => {
       if (definition.definitionTypeId !== id) return definition;
       const data = copyJSON(definition.data ?? {});
@@ -76,18 +89,19 @@ export function createGraphAPI(registry) {
     }) : (ruleset.definitions ?? []);
     const definitionTypes = (ruleset.definitionTypes ?? []).map(entry => entry.id === id ? next : entry);
     const candidate = {...ruleset, definitionTypes, definitions};
-    // Structural field removal is explicit: the removed field values are pruned from
-    // every Definition of this type in the same aggregate update. Nothing else cascades.
+    // Confirmed field removal prunes the removed values from every Definition of
+    // this type in the same aggregate update. Nothing else cascades.
     // All other contract changes remain subject to normal strict validation.
     assertValidRuleset(candidate);
     registry.update(v, {definitionTypes, definitions});
     return copyJSON(next);
   };
-  const updateContentType = (v,id,patch) => {
+  const updateContentType = (v,id,patch,options={}) => {
     const current=contentTypes.get(v,id);
     if(!current)throw new Error(`contentTypes entry not found: ${id}.`);
     const ruleset=contentTypes.ruleset(v),next=contentTypes.prepareEntry({...current,...copyJSON(patch)},ruleset);
     const removedFieldIds=Object.keys(current.fields??{}).filter(fieldId=>!Object.hasOwn(next.fields??{},fieldId));
+    assertExplicitFieldPrune(removedFieldIds,(ruleset.contentTemplates??[]).filter(template=>template.contentTypeId===id),options,"Content Template");
     const templates=(ruleset.contentTemplates??[]).map(template=>{
       if(template.contentTypeId!==id)return template;
       const data=copyJSON(template.data??{});for(const fieldId of removedFieldIds)delete data[fieldId];

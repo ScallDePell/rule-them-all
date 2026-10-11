@@ -199,6 +199,7 @@
       }
     },
     "DynamicUI": {
+      "NoFallbackOutcome": "No fallback: fail explicitly",
       "StepName": "Step name",
       "Minimum": "Minimum",
       "Maximum": "Maximum",
@@ -463,6 +464,7 @@
       "Sum": "Sum",
       "Tags": "Tags",
       "Target": "Target",
+      "FallbackOutcome": "Fallback outcome",
       "TargetFormula": "Target Formula",
       "TargetOutput": "Target output",
       "Technical": "Technical",

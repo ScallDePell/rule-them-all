@@ -1,8 +1,8 @@
 import {RuntimeEngine} from "./runtime-engine.mjs";
 import {FoundryRuntimeAdapter} from "./foundry-runtime-adapter.mjs";
 
-export function createRuntimeAPI(configurator,{adapter=new FoundryRuntimeAdapter(),hooks=globalThis.Hooks}={}){
-  const engine=new RuntimeEngine({configurator,adapter,hooks});
+export function createRuntimeAPI(configurator,{adapter=new FoundryRuntimeAdapter(),hooks=globalThis.Hooks,rulesetSource="published"}={}){
+  const engine=new RuntimeEngine({configurator,adapter,hooks,rulesetSource});
   return Object.freeze({
     getContainerState:(ref,o)=>engine.getContainerState(ref,o),
     instantiateDefinition:(versionId,ref,definitionId,o)=>engine.instantiateDefinition(versionId,ref,definitionId,o),
@@ -20,6 +20,7 @@ export function createRuntimeAPI(configurator,{adapter=new FoundryRuntimeAdapter
     previewAction:(versionId,id,context)=>engine.previewAction(versionId,id,context),
     executeAction:(versionId,id,context,options)=>engine.executeAction(versionId,id,context,options),
     describeContainer:ref=>adapter.describe(ref),
+    rulesetSource,
     adapter
   });
 }

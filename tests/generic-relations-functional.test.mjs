@@ -84,6 +84,7 @@ test('Content runtime treats link, unlock and grant as separate semantics; relea
   rel('l','link','contentTemplate','linked'),rel('u','unlock','contentTemplate','linked'),
   rel('g','grant','definition','d',{initial:{'value.base':0}}),rel('a','grant','action','a')
  ]});
+ await api.publishRuleset(v);
  const bridge=new FoundryContentBridge(api,runtime,{hooks:null});
  const acq=await bridge.acquireTemplate(v,actor.uuid,'selected',{sourceItemId:'demo'});
  assert.deepEqual(calls,[{id:'d',initial:{'value.base':0}}]);
@@ -99,6 +100,7 @@ test('grant for an arbitrary Ruleset family persists an entitlement without inve
  const {api,v}=await rules();const actor=new ActorMock(),calls=[];
  await api.updateContentTemplate(v,'selected',{...api.getContentTemplate(v,'selected'),relations:[rel('bad','grant','contentTemplate','linked')]});
  const runtime={adapter:{resolveDocument:async()=>actor,canWrite:async()=>true},getContainerState:async()=>({definitionStates:{}}),instantiateDefinition:async()=>calls.push('changed')};
+ await api.publishRuleset(v);
  const bridge=new FoundryContentBridge(api,runtime,{hooks:null});
  await bridge.acquireTemplate(v,actor.uuid,'selected',{sourceItemId:'demo'});
  assert.deepEqual(await bridge.listGrantedReferences(v,actor.uuid),[{objectKind:'contentTemplate',objectId:'linked'}]);

@@ -5,6 +5,7 @@ import {acquiredActionIds} from "./content-access.mjs";
 import {resolveAcquisitionChoices} from "./acquisition-choices.mjs";
 import {planCreationSystem} from "./creation-plan.mjs";
 import {initialForDefinition} from "./content-binding.mjs";
+import {resolveRuntimeRuleset} from "./runtime-contracts.mjs";
 import {ContentGrantHandlers,listAcquisitionReferences} from "./content-relations.mjs";
 import {promptAcquisitionChoices} from "./guided-acquisition.mjs";
 
@@ -50,7 +51,7 @@ export class FoundryContentBridge{
     try{return await pending;}finally{if(this.#actorMutations.get(key)===pending)this.#actorMutations.delete(key);}
   }
   constructor(configurator,runtime,{hooks=globalThis.Hooks,documentTypeResolver=resolveDocumentType,grantHandlers=new ContentGrantHandlers()}={}){this.configurator=configurator;this.runtime=runtime;this.hooks=hooks;this.documentTypeResolver=documentTypeResolver;this.grantHandlers=grantHandlers;}
-  ruleset(versionId){const record=this.configurator.getRulesetVersion?.(versionId);const ruleset=record?.publishedSnapshot??record?.workingDraft;if(!ruleset)throw new Error(`Ruleset version not found: ${versionId}.`);return ruleset;}
+  ruleset(versionId){return resolveRuntimeRuleset(this.configurator,versionId);}
   label(versionId,key){try{return this.configurator.resolveLocalizedText(versionId,globalThis.game?.i18n?.lang??"en",key,k=>globalThis.game?.i18n?.localize?.(k)??k);}catch{return key;}}
   #documentSpec(contentType){
     if(contentType.storageKind==="actor")return {documentName:"Actor",type:this.documentTypeResolver("Actor",{requestedType:contentType.documentSubtype??null}),klass:globalThis.Actor};

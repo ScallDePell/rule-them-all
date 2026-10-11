@@ -32,3 +32,16 @@ test('new Ruleset editor renders with no version or existing Ruleset, then a sav
   assert.equal(storedContext.creating,false);
   assert.equal(storedContext.data.nameKey,'Test Universe');
 });
+
+test('import REPLACE never overwrites a Validated version and NEW rejects a duplicate version label',async()=>{
+  const api=await createConfiguratorAPI(new Storage());
+  const {versionId}=await api.createRuleset({id:'fam',nameKey:'Family',version:'1.0.0'});
+  await api.publishRuleset(versionId);
+  const payload=api.exportRuleset(versionId);
+  await api.validateRulesetVersion(versionId);
+  await assert.rejects(()=>api.importRuleset(payload,'REPLACE'),/immutable/);
+  assert.equal(api.getRulesetVersion(versionId).status,'validated');
+  const copy=JSON.parse(typeof payload==='string'?payload:JSON.stringify(payload));
+  copy.versionId=copy.versionRecord.versionId='other-version-id';
+  await assert.rejects(()=>api.importRuleset(copy,'NEW'),/already exists in family/);
+});

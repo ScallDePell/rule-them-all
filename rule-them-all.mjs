@@ -30,6 +30,8 @@ Hooks.once("ready", () => {
   game.ruleThemAll.configuratorReady = createConfiguratorAPI(storage).then(api => {
     game.ruleThemAll.configurator = api;
     game.ruleThemAll.runtime = createRuntimeAPI(api);
+    // GM sandbox only: previews the working draft. Gameplay never uses it.
+    game.ruleThemAll.runtimeLab = createRuntimeAPI(api, {rulesetSource: "draft"});
     game.ruleThemAll.content = new FoundryContentBridge(api, game.ruleThemAll.runtime);
     api.subscribe(() => ConfiguratorApp.refreshOpen());
     Hooks.callAll("ruleThemAllReady", game.ruleThemAll);

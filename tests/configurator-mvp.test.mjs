@@ -64,6 +64,8 @@ test('Removing a Content Type field prunes stored values from templates of that 
  await api.createContentType(v,{id:'gear',nameKey:'Équipement',storageKind:'item',runtimeMode:'unique',fields:{weight:{id:'weight',name:'Poids',valueType:'number',cardinality:'one',required:false,nullable:false,defaultValue:1,editable:true}},enabled:true,order:10,tags:[]});
  await api.createContentTemplate(v,{id:'bag',nameKey:'Sac',contentTypeId:'gear',runtimeMode:'unique',data:{weight:2},definitionBindings:[],actionBindings:[],initialStateRules:[],categories:[],capabilities:[],enabled:true,order:10,tags:[]});
  const type=api.getContentType(v,'gear');
- await api.updateContentType(v,'gear',{...type,fields:{}});
+ await assert.rejects(()=>api.updateContentType(v,'gear',{...type,fields:{}}),error=>error.code==='FIELD_REMOVAL_DATA_LOSS'&&error.affected.includes('bag'));
+ assert.deepEqual(api.getContentTemplate(v,'bag').data,{weight:2},'nothing is lost without confirmation');
+ await api.updateContentType(v,'gear',{...type,fields:{}},{pruneRemovedFields:true});
  assert.deepEqual(api.getContentTemplate(v,'bag').data,{});
 });

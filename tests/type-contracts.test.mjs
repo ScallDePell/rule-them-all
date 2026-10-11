@@ -88,7 +88,9 @@ test("removing a DefinitionType field explicitly prunes stored values from Defin
   await api.registerDefinitionType(v,{id:"attribute",key:"attribute",nameKey:"Attribute",descriptionKey:"",color:null,enabled:true,order:0,allowedCapabilities:[],defaultCapabilities:[],requiredCapabilities:[],fields:{score},constraints:[]});
   await api.createDefinition(v,{id:"strength",key:"strength",definitionTypeId:"attribute",nameKey:"Strength",descriptionKey:"",data:{score:7},categories:[],enabled:true,order:0,tags:[]});
   await api.createDefinition(v,{id:"agility",key:"agility",definitionTypeId:"attribute",nameKey:"Agility",descriptionKey:"",data:{score:4},categories:[],enabled:true,order:0,tags:[]});
-  const updatedType=await api.updateDefinitionType(v,"attribute",{fields:{}});
+  await assert.rejects(()=>api.updateDefinitionType(v,"attribute",{fields:{}}),error=>error.code==="FIELD_REMOVAL_DATA_LOSS"&&error.affected.length===2);
+  assert.deepEqual(api.getDefinition(v,"strength").data,{score:7},"nothing is lost without confirmation");
+  const updatedType=await api.updateDefinitionType(v,"attribute",{fields:{}},{pruneRemovedFields:true});
   assert.deepEqual(updatedType.fields,{});
   assert.deepEqual(api.getDefinition(v,"strength").data,{});
   assert.deepEqual(api.getDefinition(v,"agility").data,{});
