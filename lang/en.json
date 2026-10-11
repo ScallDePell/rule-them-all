@@ -205,7 +205,7 @@
       }
     },
     "Template": {
-      "Allow": "ALLOW",
+      "Allow": "Allow",
       "AcquisitionChoices": "Acquisition choices",
       "Action": "Action",
       "ActionOptions": "Action options",
@@ -215,10 +215,7 @@
       "ActorRole": "Actor role",
       "Add": "Add",
       "AdvancedRawAst": "Advanced / Raw AST",
-      "AdvancedRawPayloadContract": "Advanced / Raw payload contract",
       "AdvancedRollData": "Advanced / Roll data",
-      "AdvancedFilter": "Advanced filter",
-      "AdvancedPolicyContract": "Advanced policy contract",
       "AlwaysFalse": "Always false",
       "AlwaysTrue": "Always true",
       "Apply": "Apply",
@@ -242,7 +239,7 @@
       "CostEffects": "Cost Effects",
       "CreationSteps": "Creation steps",
       "Current": "Current",
-      "Deny": "DENY",
+      "Deny": "Deny",
       "DefaultEffect": "Default effect",
       "DefaultRuntimeMode": "Default runtime mode",
       "DefaultValue": "Default value",
@@ -383,7 +380,6 @@
       "NoEffectsAvailable": "No Effects available.",
       "NoEventTypesAvailable": "No Event Types available.",
       "PermissionPolicy": "Permission Policy",
-      "PrecedenceMostSpecificScopeThenPriorityThenDenyOnTiesThenDefault": "Precedence: most specific scope, then priority, then DENY on ties, then default.",
       "NoPayloadFieldsAddOnlyDataCarriedByThisEvent": "No payload fields. Add only data carried by this Event.",
       "Trigger": "Trigger",
       "NoActionsAvailable": "No Actions available.",
@@ -501,7 +497,17 @@
       "NoFieldsYet": "No fields yet.",
       "AddOutcome": "Add an outcome",
       "OutcomeOrderHint": "Checked from top to bottom: the first outcome whose condition holds wins. Drag to reorder.",
-      "NoOutcomeYet": "No outcome yet."
+      "NoOutcomeYet": "No outcome yet.",
+      "Modifier": "Modifier",
+      "Duration": "Duration",
+      "Stacking": "Stacking",
+      "StackingGroup": "Group",
+      "StackingGroupHint": "Empty: this modifier alone",
+      "ApplicationOrder": "Application order",
+      "Mode": "Mode",
+      "Amount": "Amount",
+      "Unit": "Unit",
+      "WorldTimeSeconds": "World time (seconds)"
     },
     "EditorDisplay": {
       "NoneSelected": "None selected",
@@ -852,7 +858,7 @@
       },
       "duration": {
         "Summary": "A Duration says how long a state lasts: instant, fixed, until an Event, while a Condition holds, until removed or until a date.",
-        "Usage": "“Until a date” (absoluteTime) is measured in world-time seconds."
+        "Usage": "Pick a mode: only the fields that mode needs are shown. A world time is counted in seconds."
       },
       "creationSystem": {
         "Summary": "A creation system describes the steps of creating a character.",
@@ -886,6 +892,81 @@
       "Optional": "Optional",
       "Default": "Optional, on by default",
       "Required": "Required"
+    },
+    "ModifierOperation": {
+      "add": "Add",
+      "subtract": "Subtract",
+      "multiply": "Multiply",
+      "set": "Set",
+      "min": "At most",
+      "max": "At least"
+    },
+    "StackingMode": {
+      "stack": "Always applies",
+      "highest": "Highest of its group",
+      "lowest": "Lowest of its group",
+      "replace": "Last in order within its group",
+      "unique": "First of its group"
+    },
+    "DurationMode": {
+      "instant": "Instant",
+      "fixed": "Fixed length",
+      "untilEvent": "Until an event",
+      "whileCondition": "While a condition holds",
+      "untilRemoved": "Until removed",
+      "absoluteTime": "Until a world time"
+    },
+    "DurationUnit": {
+      "second": "Seconds",
+      "minute": "Minutes",
+      "hour": "Hours",
+      "day": "Days",
+      "round": "Rounds",
+      "turn": "Turns"
+    },
+    "Permission": {
+      "ScopeRuleset": "Whole Ruleset",
+      "ScopeAllDefinitions": "All Definitions",
+      "ScopeDefinition": "Definition: {name}",
+      "ScopeAllActions": "All Actions",
+      "ScopeAction": "Action: {name}",
+      "Effect": "Effect",
+      "Operations": "Operations",
+      "Roles": "Roles",
+      "MinimumOwnership": "Minimum ownership",
+      "AnyOwnership": "Any",
+      "DenialMessage": "Message when denied",
+      "DenialMessageHint": "Shown to the player",
+      "AddRule": "Add rule",
+      "RemoveRule": "Remove rule",
+      "NoRules": "No rules: the default effect applies.",
+      "Operation": {
+        "read": "Read",
+        "write": "Write",
+        "execute": "Execute",
+        "configure": "Configure"
+      },
+      "Role": {
+        "player": "Player",
+        "trusted": "Trusted player",
+        "assistant": "Assistant GM",
+        "gamemaster": "Game master"
+      },
+      "Ownership": {
+        "none": "None",
+        "limited": "Limited",
+        "observer": "Observer",
+        "owner": "Owner"
+      },
+      "Precedence": "The policy with the most specific scope decides. Among its matching rules the highest priority wins, and Deny wins a tie. If no rule matches, the default effect applies."
+    },
+    "Trigger": {
+      "Filter": "Only when",
+      "FilterHint": "The Trigger runs only when every listed payload field has the given value.",
+      "AddFilter": "Add condition",
+      "RemoveFilter": "Remove",
+      "PayloadField": "Payload field",
+      "EqualsValue": "Equals"
     }
   }
 }

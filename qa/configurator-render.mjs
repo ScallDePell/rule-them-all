@@ -35,6 +35,11 @@ await api.createParameter(v,{id:'p1',nameKey:'Base',valueType:'number',value:2})
 await api.createFormula(v,{id:'f1',nameKey:'Total',resultType:'number',expression:{type:'add',args:[{type:'literal',value:1},{type:'parameter',id:'p1'}]}});
 await api.createCondition(v,{id:'c1',nameKey:'Is ready',expression:{type:'literal',value:true}});
 await api.createAction(v,{id:'a1',nameKey:'Strike',conditionRefs:['c1'],costEffectRefs:[],effectRefs:[]});
+await api.createModifier(v,{id:'m1',nameKey:'Blessed',targetRef:{objectKind:'definition',objectId:'d0',capabilityId:'value',outputId:'value.final'},operation:'add',valueSource:{kind:'literal',value:2},conditionRefs:['c1'],stacking:{mode:'highest',group:'blessing'}});
+await api.createDuration(v,{id:'du1',nameKey:'Three rounds',mode:'fixed',amount:3,unit:'round'});
+await api.createEventType(v,{id:'ev1',nameKey:'Damage taken',payloadFields:{amount:{name:'Amount',valueType:'number',required:true,nullable:false},kind:{name:'Kind',valueType:'string',required:false,nullable:false}}});
+await api.createTrigger(v,{id:'tr1',nameKey:'On heavy fire damage',eventTypeId:'ev1',eventFilter:{payloadMatches:{kind:'fire'}},conditionRefs:[],actionRefs:['a1']});
+await api.createPermissionPolicy(v,{id:'pp1',nameKey:'Players act',scope:{objectKind:'action',objectId:null},defaultEffect:'DENY',rules:[{id:'r1',effect:'ALLOW',operations:['execute'],roles:['player'],minimumOwnership:'owner',priority:0,messageKey:''}]});
 await api.createRoll(v,{id:'r1',nameKey:'d20',formula:'1d20',data:{}});
 for(const [id,nameKey] of [['o-crit','Critical'],['o-hit','Hit'],['o-miss','Miss']])await api.createOutcome(v,{id,nameKey,resultKey:id,conditionRef:'c1'});
 await api.createTest(v,{id:'t1',nameKey:'Attack',rollRef:'r1',targetValue:12,outcomeRefs:['o-crit','o-hit'],fallbackOutcomeRef:'o-miss'});
@@ -61,8 +66,8 @@ console.log('rendered',views.length);
 const {ConfiguratorEntryEditor}=await imp('src/configurator/configurator-entry-editor.mjs');
 const editorTpl=Handlebars.compile(readFileSync(join(root,'templates/configurator/entry-editor.hbs'),'utf8'));
 const selectUrl=pathToFileURL(join(root,'src/ui/rta-select.mjs')).href;
-const editors=[['ruleset',v],['definitionType','stat'],['definition','d0'],['contentType','gear'],['contentTemplate','rope'],['parameter','p1'],['formula','f1'],['condition','c1'],['action','a1'],['tag','tag-a'],['category','cat-core'],['test','t1'],
- ...['formulaBinding','roll','outcome','effect','eventType','permissionPolicy','trigger','sheetDefinition','creationSystem','modifier','duration','progressionSystem'].map(kind=>[kind,null])];
+const editors=[['ruleset',v],['definitionType','stat'],['definition','d0'],['contentType','gear'],['contentTemplate','rope'],['parameter','p1'],['formula','f1'],['condition','c1'],['action','a1'],['tag','tag-a'],['category','cat-core'],['test','t1'],['modifier','m1'],['duration','du1'],['trigger','tr1'],['permissionPolicy','pp1'],['eventType','ev1'],
+ ...['formulaBinding','roll','outcome','effect','sheetDefinition','creationSystem','progressionSystem'].map(kind=>[kind,null])];
 for(const [kind,id] of editors){
   const editor=new ConfiguratorEntryEditor({api,versionId:v,kind,id,definitionTypeId:kind==='definition'?'stat':null,contentTypeId:kind==='contentTemplate'?'gear':null});
   const ctx=await editor._prepareContext({});

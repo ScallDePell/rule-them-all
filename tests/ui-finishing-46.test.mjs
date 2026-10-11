@@ -24,7 +24,7 @@ test('§46: Activate is offered only for a published version; counters and graph
   assert.match(list,/\{\{#if canActivate\}\}<button[^>]*data-action="activate"/);
   assert.match(list,/data-node-kind="\{\{kind\}\}" data-node-id="\{\{id\}\}"/);
   const editor=readFileSync(new URL('../templates/configurator/entry-editor.hbs',import.meta.url),'utf8');
-  assert.equal((editor.match(/data-live-count=/g)??[]).length,2);
+  assert.equal((editor.match(/data-live-count=/g)??[]).length,3);
   const app=readFileSync(new URL('../src/configurator/configurator-app.mjs',import.meta.url),'utf8');
   assert.match(app,/canActivate:Boolean\(record\.publishedSnapshot\)/);
 });

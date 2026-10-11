@@ -245,6 +245,10 @@ export function prepareContentTemplate(data,options={}){
 }
 
 
+/** Modifier operations: min caps the value (at most), max floors it (at least). */
+export const MODIFIER_OPERATIONS=Object.freeze(['add','subtract','multiply','set','min','max']);
+export const STACKING_MODES=Object.freeze(['stack','highest','lowest','replace','unique']);
+
 function prepareNamedGeneric(data,label,defaults={},options={}){
   const x={descriptionKey:'',enabled:true,order:0,tags:[],...copyJSON(defaults),...copyJSON(data)};
   identity(x,label,options);
@@ -254,9 +258,9 @@ export function prepareModifier(data,options={}){
   const x=prepareNamedGeneric(data,'Modifier',{targetRef:null,operation:'add',valueSource:{kind:'literal',value:0},conditionRefs:[],stacking:{mode:'stack',group:''},priority:0},options);
   if(x.targetRef!==null&&!isRecord(x.targetRef))throw new Error('Modifier.targetRef must be a logical Reference.');
   need(isRecord(x.targetRef)&&nonempty(x.targetRef.objectKind)&&nonempty(x.targetRef.objectId),'Modifier.targetRef must be a logical Reference.',options);
-  if(!['add','subtract','multiply','set','min','max'].includes(x.operation))throw new Error('Modifier.operation is unsupported.');
+  if(!MODIFIER_OPERATIONS.includes(x.operation))throw new Error('Modifier.operation is unsupported.');
   if(!isRecord(x.valueSource)||!['literal','parameter','formula','reference'].includes(x.valueSource.kind))throw new Error('Modifier.valueSource is invalid.');
-  arr(x.conditionRefs,'Modifier.conditionRefs');if(!isRecord(x.stacking)||!['stack','highest','lowest','replace','unique'].includes(x.stacking.mode))throw new Error('Modifier.stacking.mode is invalid.');
+  arr(x.conditionRefs,'Modifier.conditionRefs');if(!isRecord(x.stacking)||!STACKING_MODES.includes(x.stacking.mode))throw new Error('Modifier.stacking.mode is invalid.');
   if(!Number.isSafeInteger(x.priority))throw new Error('Modifier.priority must be a safe integer.');return x;
 }
 /** Duration modes (CP-08). absoluteTime ends at a world time, in seconds, read through the time adapter. */

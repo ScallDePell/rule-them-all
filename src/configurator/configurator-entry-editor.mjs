@@ -10,6 +10,9 @@ import {buildRuleReferenceChoices} from "./entry-reference-catalog.mjs";
 import {buildSlotFormContext,syncValueSource,syncEntryMode} from "./slot-form.mjs";
 import {slotInitialKey} from "./capability-slots.mjs";
 import {wireOrderedLists} from "../ui/ordered-list.mjs";
+import {modifierFormContext,durationFormContext} from "./modifier-duration-form.mjs";
+import {permissionFormContext} from "./permission-form.mjs";
+import {triggerFilterContext} from "./trigger-filter-form.mjs";
 import {capabilityRole,capabilityRoleFlags,capabilityLabel} from "./capability-type-registry.mjs";
 import {availableDocumentTypes} from "../core/system-document-types.mjs";
 
@@ -194,7 +197,9 @@ export class ConfiguratorEntryEditor extends ConfiguratorWindow {
         targetOptions:relationTargetChoices.map(option=>({...option,selected:currentRefs.has(option.id)}))};
     });
     const referenceChoices=this.#referenceChoices(),mutableReferenceChoices=this.#referenceChoices({mutableOnly:true});
-    const targetToken=refToken(data.targetRef??{}),operandKind=data.operand?.kind??"literal",operandRefToken=operandKind==="reference"?refToken(data.operand?.reference??{}):"";
+    // An Effect's operand and a Modifier's value source share one editor.
+    const operandSource=this.#kind==="modifier"?data.valueSource:data.operand,needsOperand=this.#kind!=="effect"||effectOperationRegistry.get(data.operation??"set")?.operand!==false;
+    const targetToken=refToken(data.targetRef??{}),operandKind=operandSource?.kind??"literal",operandRefToken=operandKind==="reference"?refToken(operandSource?.reference??{}):"";
     const referenceTargetToken=refToken(data);
     const bindingTargetToken=refToken(data.targetRef??{});
     const bindingFormulaChoices=formulas.map(x=>({id:x.id,label:x.nameKey,...withColors("formula",x),selected:x.id===data.formulaRef}));
@@ -220,13 +225,17 @@ export class ConfiguratorEntryEditor extends ConfiguratorWindow {
       referenceChoices:referenceChoices.map(x=>({...x,selected:x.token===referenceTargetToken})),
       bindingTargetChoices:referenceChoices.filter(x=>parseRefToken(x.token).capabilityId).map(x=>({...x,selected:x.token===bindingTargetToken})),
       effectTargetChoices:mutableReferenceChoices.map(x=>({...x,selected:x.token===targetToken})),
-      parameterChoices:parameters.map(x=>({id:x.id,label:x.nameKey,...withColors("parameter",x),selected:operandKind==="parameter"&&data.operand?.id===x.id})),formulaChoices:formulas.map(x=>({id:x.id,label:x.nameKey,...withColors("formula",x),selected:operandKind==="formula"&&data.operand?.id===x.id})),
-      operandReferenceChoices:referenceChoices.map(x=>({...x,selected:x.token===operandRefToken})),operandKind,isOperandLiteral:operandKind==="literal",isOperandParameter:operandKind==="parameter",isOperandFormula:operandKind==="formula",isOperandReference:operandKind==="reference",showOperand:Object.fromEntries(["literal","parameter","formula","reference"].map(kind=>[kind,operandKind===kind&&effectOperationRegistry.get(data.operation??"set")?.operand!==false])),operandLiteral:operandKind==="literal"?formatEditorValue("number","one",data.operand?.value??0):"",
+      parameterChoices:parameters.map(x=>({id:x.id,label:x.nameKey,...withColors("parameter",x),selected:operandKind==="parameter"&&operandSource?.id===x.id})),formulaChoices:formulas.map(x=>({id:x.id,label:x.nameKey,...withColors("formula",x),selected:operandKind==="formula"&&operandSource?.id===x.id})),
+      operandReferenceChoices:referenceChoices.map(x=>({...x,selected:x.token===operandRefToken})),operandKind,isOperandLiteral:operandKind==="literal",isOperandParameter:operandKind==="parameter",isOperandFormula:operandKind==="formula",isOperandReference:operandKind==="reference",showOperand:Object.fromEntries(["literal","parameter","formula","reference"].map(kind=>[kind,operandKind===kind&&needsOperand])),operandLiteral:operandKind==="literal"?formatEditorValue("number","one",operandSource?.value??0):"",
       isRuleset:this.#kind==="ruleset",isDefinitionType:this.#kind==="definitionType",isDefinition:this.#kind==="definition",
       isParameter:this.#kind==="parameter",isFormula:this.#kind==="formula",isFormulaBinding:this.#kind==="formulaBinding",isCondition:this.#kind==="condition",isRoll:this.#kind==="roll",isOutcome:this.#kind==="outcome",isTest:this.#kind==="test",isEffect:this.#kind==="effect",isAction:this.#kind==="action",
       isPermissionPolicy:this.#kind==="permissionPolicy",isSheetDefinition:this.#kind==="sheetDefinition",isTag:this.#kind==="tag",isCategory:this.#kind==="category",
       slots:this.#kind==="definition"?buildSlotFormContext({definition:data,permittedCapabilities:capabilityChoices.filter(cap=>cap.permitted).map(cap=>cap.id),formulas,contentTypes,valueTypes:this.#api.listValueTypes(),colorsOf:(kind,entry)=>withColors(kind,entry).colors,neutral:selectColorsAttribute([RTA_NEUTRAL_COLOR])}):null,testInputs:this.#kind==="test"?buildTestInputContext({inputs:data.inputBindings??[],formulas:formulas.map(x=>({id:x.id,label:x.nameKey,...withColors("formula",x)})),references:this.#referenceChoices(),neutral:selectColorsAttribute([RTA_NEUTRAL_COLOR])}):null,totalFormulaChoices,marginFormulaChoices,isEventType:this.#kind==="eventType",isTrigger:this.#kind==="trigger",isContentType:this.#kind==="contentType",isContentTemplate:this.#kind==="contentTemplate",
-      isCreationSystem:this.#kind==="creationSystem",creationStepRows:this.#kind==="creationSystem"?(data.steps??[]).map(step=>({html:this.#creationStepHTML(step)})):[],isGeneric:["modifier","duration","progressionSystem"].includes(this.#kind),dirty:this.#dirty,canPersist:!isValidated&&this.#dirty,
+      isCreationSystem:this.#kind==="creationSystem",creationStepRows:this.#kind==="creationSystem"?(data.steps??[]).map(step=>({html:this.#creationStepHTML(step)})):[],isGeneric:this.#kind==="progressionSystem",isModifier:this.#kind==="modifier",isDuration:this.#kind==="duration",
+      ...(this.#kind==="modifier"?modifierFormContext(data,{valueTargetChoices:referenceChoices.filter(x=>parseRefToken(x.token).capabilityId==="value").map(x=>({...x,selected:x.token===targetToken}))}):{}),
+      ...(this.#kind==="duration"?durationFormContext(data,{eventTypes,conditions,withColors}):{}),
+      ...(this.#kind==="trigger"?triggerFilterContext(data,{eventTypes}):{}),
+      ...(this.#kind==="permissionPolicy"?permissionFormContext(data,{definitions,actions,conditions,withColors}):{}),dirty:this.#dirty,canPersist:!isValidated&&this.#dirty,
       constraintRows:(data.constraints??[]).filter(rule=>CONSTRAINT_KINDS.includes(rule?.kind)).map(rule=>{
         const model=constraintRowModel(rule);
         const names=[...new Set([...Object.keys(data.fields??{}),'relations',model.field])].filter(Boolean);
@@ -237,9 +246,9 @@ export class ConfiguratorEntryEditor extends ConfiguratorWindow {
       presentationRows:presentationRowModel(this.#kind==="definition"?data.presentationProfile:data.presentation),
       imagePreview:data.image||"icons/svg/mystery-man.svg",
       dataJson:JSON.stringify(data.data??{},null,2),genericJson:JSON.stringify(data,null,2),
-      expressionJson:JSON.stringify(data.expression??{type:"literal",value:0},null,2),scopeJson:JSON.stringify(data.scope??{objectKind:"ruleset"},null,2),rulesJson:JSON.stringify(data.rules??[],null,2),payloadFieldsJson:JSON.stringify(data.payloadFields??{},null,2),eventFilterJson:JSON.stringify(data.eventFilter??null,null,2),
+      expressionJson:JSON.stringify(data.expression??{type:"literal",value:0},null,2),
       rollDataJson:JSON.stringify(data.data??{},null,2),initialStateRulesJson:JSON.stringify(data.initialStateRules??[],null,2),rolesText:(data.roles??[]).join("\n"),tagsText:(data.tags??[]).join("\n"),capabilitiesText:(data.capabilities??[]).join("\n"),
-      isAllow:data.defaultEffect==="ALLOW",isDeny:data.defaultEffect!=="ALLOW",isStackable:data.runtimeMode==="stackable",isUnique:data.runtimeMode!=="stackable",isStorageItem:data.storageKind!=="actor",isStorageActor:data.storageKind==="actor",effectOperationChoices:effectOperationRegistry.list().map(id=>({id,labelKey:effectOperationRegistry.get(id).labelKey,operand:effectOperationRegistry.get(id).operand,colors:selectColorsAttribute([RTA_NEUTRAL_COLOR]),selected:id===(data.operation??"set")})),effectNeedsOperand:effectOperationRegistry.get(data.operation??"set")?.operand!==false, title:editorDisplayTitle(creating,creating?this.#kind:(data.nameKey??data.key??data.id))});
+      isAllow:data.defaultEffect==="ALLOW",isDeny:data.defaultEffect!=="ALLOW",isStackable:data.runtimeMode==="stackable",isUnique:data.runtimeMode!=="stackable",isStorageItem:data.storageKind!=="actor",isStorageActor:data.storageKind==="actor",effectOperationChoices:effectOperationRegistry.list().map(id=>({id,labelKey:effectOperationRegistry.get(id).labelKey,operand:effectOperationRegistry.get(id).operand,colors:selectColorsAttribute([RTA_NEUTRAL_COLOR]),selected:id===(data.operation??"set")})),effectNeedsOperand:needsOperand, title:editorDisplayTitle(creating,creating?this.#kind:(data.nameKey??data.key??data.id))});
     return context;
     } finally { this.#renderCatalog=null; }
   }
@@ -259,7 +268,7 @@ export class ConfiguratorEntryEditor extends ConfiguratorWindow {
     const mark=()=>{if(!this.#dirty){this.#dirty=true;this.#syncFooter();}};
     wireOrderedLists(this.element,{onChange:mark});
     form.addEventListener("input",event=>{mark();const row=event.target.closest?.("[data-definition-field]");if(row&&!row.dataset.required){const use=row.querySelector("[data-field-present]");if(use&&!use.checked){use.checked=true;}}if(event.target.matches?.("[data-picker-filter]"))this.#filterPicker(event.target);});
-    form.addEventListener("change",event=>{if(event.target.matches?.("[data-step-source-family]")&&event.target.checked){const group=event.target.closest("[data-step-prop=sourceCollection]");for(const other of group?.querySelectorAll("[data-step-source-family]")??[])if(other!==event.target)other.checked=false;}this.#syncCreationSource(event.target);mark();if(event.target.matches?.("[data-presentation-override]")){const row=event.target.closest("[data-presentation-key]");const control=row?.querySelector(".rta-declarative-presentation__value");if(control)control.hidden=!event.target.checked;}this.#syncFieldRow(event.target);this.#syncOperandEditor(event.target);this.#syncRuleOperandEditor(event.target);this.#syncPickerSummary(event.target);this.#syncStorageKind(event.target);if(event.target.matches?.("[data-color-override-toggle]")){const input=event.target.closest("[data-color-override-editor]")?.querySelector("[data-custom-color-input]");if(input)input.disabled=!event.target.checked;}});
+    form.addEventListener("change",event=>{if(event.target.matches?.("[data-step-source-family]")&&event.target.checked){const group=event.target.closest("[data-step-prop=sourceCollection]");for(const other of group?.querySelectorAll("[data-step-source-family]")??[])if(other!==event.target)other.checked=false;}this.#syncCreationSource(event.target);mark();if(event.target.matches?.("[data-presentation-override]")){const row=event.target.closest("[data-presentation-key]");const control=row?.querySelector(".rta-declarative-presentation__value");if(control)control.hidden=!event.target.checked;}this.#syncFieldRow(event.target);this.#syncModeRows(event.target);this.#syncOperandEditor(event.target);this.#syncRuleOperandEditor(event.target);this.#syncPickerSummary(event.target);this.#syncStorageKind(event.target);if(event.target.matches?.("[data-color-override-toggle]")){const input=event.target.closest("[data-color-override-editor]")?.querySelector("[data-custom-color-input]");if(input)input.disabled=!event.target.checked;}});
     form.addEventListener("change",event=>{if(event.target.matches?.("[data-source-kind]"))syncValueSource(event.target);if(event.target.matches?.('[data-input-prop="sourceKind"]'))syncTestInputSource(event.target);if(event.target.matches?.('[data-slot-prop="entryMode"]'))syncEntryMode(event.target);});
     form.addEventListener("submit",event=>{event.preventDefault();this.#save(false);});
     // Section counters follow rows added or removed by script (§46).
@@ -376,6 +385,18 @@ export class ConfiguratorEntryEditor extends ConfiguratorWindow {
 
   #checkedIds(name){
     return [...this.element.querySelectorAll(`[name="${name}"]:checked`)].map(input=>input.value);
+  }
+
+  /** Modifier stacking group and Duration fields follow the selected mode. */
+  #syncModeRows(target){
+    if(target?.name==="stackingMode")this.element.querySelector("[data-stacking-group]")?.toggleAttribute("hidden",target.value==="stack");
+    // A Trigger filter offers only the payload fields of the selected Event Type.
+    if(target?.name==="eventTypeId")for(const select of this.element.querySelectorAll("[data-filter-field]")){
+      for(const option of select.options)if(option.value)option.disabled=option.dataset.eventType!==target.value;
+      if(select.selectedOptions[0]?.disabled)select.value="";
+      select.dispatchEvent(new Event("change",{bubbles:true}));
+    }
+    if(target?.name==="durationMode")for(const row of this.element.querySelectorAll("[data-duration-mode]"))row.hidden=row.dataset.durationMode!==target.value;
   }
 
   /** A field row shows numeric bounds or the reference target only for the value type that uses them. */
@@ -542,6 +563,18 @@ export class ConfiguratorEntryEditor extends ConfiguratorWindow {
     if(action==="addField"){
       const list=this.element.querySelector("[data-field-definition-list]");if(list){const row=this.#newFieldRow();row.querySelector('[data-action="removeField"]')?.addEventListener("click",event=>this.#action(event));list.append(row);this.#dirty=true;this.#syncFooter();}return;
     }
+    if(action==="addTriggerFilter"){
+      const list=this.element.querySelector("[data-trigger-filter-list]"),row=this.element.querySelector("[data-trigger-filter-template]")?.content.firstElementChild.cloneNode(true);
+      if(list&&row){row.querySelector('[data-action="removeTriggerFilter"]')?.addEventListener("click",event=>this.#action(event));list.append(row);this.#dirty=true;this.#syncFooter();}
+      return;
+    }
+    if(action==="removeTriggerFilter"){event.currentTarget.closest("[data-trigger-filter-row]")?.remove();this.#dirty=true;this.#syncFooter();return;}
+    if(action==="addPermissionRule"){
+      const list=this.element.querySelector("[data-permission-rule-list]"),row=this.element.querySelector("[data-permission-rule-template]")?.content.firstElementChild.cloneNode(true);
+      if(list&&row){row.dataset.ruleId=uid("rule");list.querySelector(":scope > .rta-config-entry__empty")?.remove();row.querySelector('[data-action="removePermissionRule"]')?.addEventListener("click",event=>this.#action(event));list.append(row);this.#dirty=true;this.#syncFooter();}
+      return;
+    }
+    if(action==="removePermissionRule"){event.currentTarget.closest("[data-permission-rule]")?.remove();this.#dirty=true;this.#syncFooter();return;}
     if(action==="removeField"){
       event.currentTarget.closest("[data-field-definition-row]")?.remove();this.#dirty=true;this.#syncFooter();return;
     }

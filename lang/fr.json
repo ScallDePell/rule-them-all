@@ -201,7 +201,7 @@
       }
     },
     "Template": {
-      "Allow": "AUTORISER",
+      "Allow": "Autoriser",
       "AcquisitionChoices": "Choix d’acquisition",
       "Action": "Action",
       "ActionOptions": "Options d’action",
@@ -211,10 +211,7 @@
       "ActorRole": "Rôle de l’acteur",
       "Add": "Additionner",
       "AdvancedRawAst": "Avancé / AST brut",
-      "AdvancedRawPayloadContract": "Avancé / contrat brut de charge utile",
       "AdvancedRollData": "Avancé / données du jet",
-      "AdvancedFilter": "Filtre avancé",
-      "AdvancedPolicyContract": "Contrat avancé de politique",
       "AlwaysFalse": "Toujours faux",
       "AlwaysTrue": "Toujours vrai",
       "Apply": "Appliquer",
@@ -238,7 +235,7 @@
       "CostEffects": "Effets de coût",
       "CreationSteps": "Étapes de création",
       "Current": "Actuel",
-      "Deny": "REFUSER",
+      "Deny": "Refuser",
       "DefaultEffect": "Effet par défaut",
       "DefaultRuntimeMode": "Mode d’exécution par défaut",
       "DefaultValue": "Valeur par défaut",
@@ -379,7 +376,6 @@
       "NoEffectsAvailable": "Aucun effet disponible.",
       "NoEventTypesAvailable": "Aucun type d’événement disponible.",
       "PermissionPolicy": "Politique de permission",
-      "PrecedenceMostSpecificScopeThenPriorityThenDenyOnTiesThenDefault": "Priorité : portée la plus spécifique, puis priorité numérique, puis REFUSER en cas d’égalité, puis valeur par défaut.",
       "NoPayloadFieldsAddOnlyDataCarriedByThisEvent": "Aucun champ de charge utile. Ajoutez uniquement les données portées par cet événement.",
       "Trigger": "Déclencheur",
       "NoActionsAvailable": "Aucune action disponible.",
@@ -497,7 +493,17 @@
       "NoFieldsYet": "Aucun champ pour l'instant.",
       "AddOutcome": "Ajouter un résultat",
       "OutcomeOrderHint": "Vérifiés de haut en bas : le premier résultat dont la condition est vraie l'emporte. Glissez pour réordonner.",
-      "NoOutcomeYet": "Aucun résultat pour l'instant."
+      "NoOutcomeYet": "Aucun résultat pour l'instant.",
+      "Modifier": "Modificateur",
+      "Duration": "Durée",
+      "Stacking": "Cumul",
+      "StackingGroup": "Groupe",
+      "StackingGroupHint": "Vide : ce modificateur seul",
+      "ApplicationOrder": "Ordre d'application",
+      "Mode": "Mode",
+      "Amount": "Quantité",
+      "Unit": "Unité",
+      "WorldTimeSeconds": "Temps du monde (secondes)"
     },
     "EditorDisplay": {
       "NoneSelected": "Aucune sélection",
@@ -848,7 +854,7 @@
       },
       "duration": {
         "Summary": "Une Duration dit combien de temps dure un état : instantané, fixe, jusqu'à un Event, tant qu'une Condition est vraie, jusqu'au retrait ou jusqu'à une date.",
-        "Usage": "« Jusqu'à une date » (absoluteTime) se mesure en secondes de temps du monde."
+        "Usage": "Choisissez un mode : seuls les champs utiles à ce mode s'affichent. Une heure du monde se compte en secondes."
       },
       "creationSystem": {
         "Summary": "Un système de création décrit les étapes de création d'un personnage.",
@@ -882,6 +888,81 @@
       "Optional": "Optionnelle",
       "Default": "Optionnelle, activée par défaut",
       "Required": "Requise"
+    },
+    "ModifierOperation": {
+      "add": "Ajouter",
+      "subtract": "Soustraire",
+      "multiply": "Multiplier",
+      "set": "Fixer",
+      "min": "Au plus",
+      "max": "Au moins"
+    },
+    "StackingMode": {
+      "stack": "S'applique toujours",
+      "highest": "Le plus élevé de son groupe",
+      "lowest": "Le plus bas de son groupe",
+      "replace": "Le dernier dans l'ordre de son groupe",
+      "unique": "Le premier de son groupe"
+    },
+    "DurationMode": {
+      "instant": "Instantanée",
+      "fixed": "Durée fixe",
+      "untilEvent": "Jusqu'à un événement",
+      "whileCondition": "Tant qu'une condition est vraie",
+      "untilRemoved": "Jusqu'à son retrait",
+      "absoluteTime": "Jusqu'à une heure du monde"
+    },
+    "DurationUnit": {
+      "second": "Secondes",
+      "minute": "Minutes",
+      "hour": "Heures",
+      "day": "Jours",
+      "round": "Rounds",
+      "turn": "Tours"
+    },
+    "Permission": {
+      "ScopeRuleset": "Tout le Ruleset",
+      "ScopeAllDefinitions": "Toutes les Définitions",
+      "ScopeDefinition": "Définition : {name}",
+      "ScopeAllActions": "Toutes les Actions",
+      "ScopeAction": "Action : {name}",
+      "Effect": "Effet",
+      "Operations": "Opérations",
+      "Roles": "Rôles",
+      "MinimumOwnership": "Propriété minimale",
+      "AnyOwnership": "Toute",
+      "DenialMessage": "Message en cas de refus",
+      "DenialMessageHint": "Affiché au joueur",
+      "AddRule": "Ajouter une règle",
+      "RemoveRule": "Retirer la règle",
+      "NoRules": "Aucune règle : l'effet par défaut s'applique.",
+      "Operation": {
+        "read": "Lire",
+        "write": "Modifier",
+        "execute": "Exécuter",
+        "configure": "Configurer"
+      },
+      "Role": {
+        "player": "Joueur",
+        "trusted": "Joueur de confiance",
+        "assistant": "MJ assistant",
+        "gamemaster": "MJ"
+      },
+      "Ownership": {
+        "none": "Aucune",
+        "limited": "Limitée",
+        "observer": "Observateur",
+        "owner": "Propriétaire"
+      },
+      "Precedence": "La politique dont la portée est la plus précise décide. Parmi ses règles applicables, la priorité la plus haute l'emporte, et Refuser l'emporte en cas d'égalité. Si aucune règle ne s'applique, l'effet par défaut s'applique."
+    },
+    "Trigger": {
+      "Filter": "Seulement si",
+      "FilterHint": "Le Déclencheur ne s'exécute que si chaque champ listé de l'événement a la valeur indiquée.",
+      "AddFilter": "Ajouter une condition",
+      "RemoveFilter": "Retirer",
+      "PayloadField": "Champ de l'événement",
+      "EqualsValue": "Vaut"
     }
   }
 }

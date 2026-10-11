@@ -79,3 +79,38 @@ test('a Test keeps its Outcomes in the dragged order and an Outcome has no prior
   const saved=collectEntryData('test',{...form({nameKey:'Check'}),queryOne:selector=>selector==='[data-ordered-list="outcomeRefs"]'?list:null,current:{id:'check'}});
   assert.deepEqual(saved.outcomeRefs,['great','plain']);
 });
+
+test('Modifier and Duration editors save plain fields instead of JSON', async () => {
+  const {refToken}=await import('../src/configurator/reference-token.mjs');
+  const ref=refToken({objectKind:'definition',objectId:'vigor',capabilityId:'value',outputId:'value.final'});
+  const modifier=collectEntryData('modifier',{...form({nameKey:'Blessed',targetRef:ref,operation:'max',operandKind:'literal',operandLiteral:'3',stackingMode:'highest',stackingGroup:'blessing',priority:'2',enabled:true},{conditionRefs:['ready']}),current:{id:'m'}});
+  assert.deepEqual({op:modifier.operation,source:modifier.valueSource,stacking:modifier.stacking,priority:modifier.priority,conditions:modifier.conditionRefs},
+    {op:'max',source:{kind:'literal',value:3},stacking:{mode:'highest',group:'blessing'},priority:2,conditions:['ready']});
+  assert.equal(modifier.targetRef.capabilityId,'value');
+  const fixed=collectEntryData('duration',{...form({nameKey:'Short',durationMode:'fixed',durationAmount:'3',durationUnit:'round',durationEventTypeRef:'turn-end'}),current:{id:'d'}});
+  assert.deepEqual([fixed.mode,fixed.amount,fixed.unit,fixed.eventTypeRef],['fixed',3,'round',null],'fields of other modes are not kept');
+  const whileReady=collectEntryData('duration',{...form({nameKey:'While',durationMode:'whileCondition',durationConditionRef:'ready',durationAmount:'3'}),current:{id:'w'}});
+  assert.deepEqual([whileReady.conditionRef,whileReady.amount,whileReady.unit],['ready',null,null]);
+});
+
+test('a Permission policy saves its scope from one select and its rules from rows', async () => {
+  const {parseScopeToken,collectPermissionRules}=await import('../src/configurator/permission-form.mjs');
+  assert.deepEqual(parseScopeToken('ruleset'),{objectKind:'ruleset'});
+  assert.deepEqual(parseScopeToken('definition:'),{objectKind:'definition',objectId:null});
+  assert.deepEqual(parseScopeToken('action:strike'),{objectKind:'action',objectId:'strike'});
+  const props={effect:'DENY',minimumOwnership:'owner',conditionRef:'',priority:'5',messageKey:' Too tired '};
+  const checked={operations:['execute'],roles:['player','trusted']};
+  const row={dataset:{ruleId:'r1',ruleOriginal:JSON.stringify({id:'r1',userIds:['u1']})},
+    querySelector:selector=>({value:props[selector.match(/data-rule-prop="(\w+)"/)[1]]}),
+    querySelectorAll:selector=>(checked[selector.match(/data-rule-prop="(\w+)"/)[1]]??[]).map(value=>({value}))};
+  assert.deepEqual(collectPermissionRules([row]),[{id:'r1',userIds:['u1'],effect:'DENY',operations:['execute'],roles:['player','trusted'],minimumOwnership:'owner',conditionRef:null,priority:5,messageKey:'Too tired'}]);
+});
+
+test('a Trigger filter is built from payload-field rows typed by the field', async () => {
+  const {collectTriggerFilter,triggerFilterContext}=await import('../src/configurator/trigger-filter-form.mjs');
+  const row=(key,valueType,value,disabled=false)=>({querySelector:selector=>selector==='[data-filter-field]'?{value:key,selectedOptions:[{disabled,dataset:{valueType}}]}:{value}});
+  assert.deepEqual(collectTriggerFilter([row('amount','number','5'),row('kind','string','fire'),row('crit','boolean','true')]),{payloadMatches:{amount:5,kind:'fire',crit:true}});
+  assert.equal(collectTriggerFilter([row('amount','number','5',true)]),null,'a field of another Event Type is dropped');
+  const context=triggerFilterContext({eventTypeId:'hit',eventFilter:{payloadMatches:{amount:5}}},{eventTypes:[{id:'hit',payloadFields:{amount:{name:'Amount',valueType:'number'}}},{id:'heal',payloadFields:{gain:{name:'Gain',valueType:'number'}}}]});
+  assert.deepEqual(context.triggerFilterRows[0].fieldChoices.map(x=>[x.id,x.selected,x.disabled]),[['amount',true,false],['gain',false,true]]);
+});

@@ -2,6 +2,9 @@
  * The controller injects a snapshot of form values and DOM query interfaces.
  * A full Ruleset never needs to be cloned by this module.
  */
+import {collectModifier,collectDuration} from './modifier-duration-form.mjs';
+import {parseScopeToken,collectPermissionRules} from './permission-form.mjs';
+import {collectTriggerFilter} from './trigger-filter-form.mjs';
 import {readConstraintRows,readPresentationRows} from './declarative-editor.mjs';
 import {parseEditorValue} from './editor-value.mjs';
 import {parseRefToken} from './reference-token.mjs';
@@ -14,6 +17,14 @@ const slug=value=>String(value??"").trim().toLowerCase().normalize("NFKD").repla
 const json=(value,fallback)=>{const text=String(value??"").trim();return text?JSON.parse(text):fallback;};
 const fieldPresent=(fd,key)=>typeof fd.has==="function"?fd.has(key):fd.get(key)!==undefined&&fd.get(key)!==null;
 const lines=value=>String(value??"").split(/\r?\n/).map(x=>x.trim()).filter(Boolean);
+
+/** The shared operand editor: a literal, a Parameter, a Formula or a Reference. */
+function readOperand(fd,queryOne){
+  const kind=String(fd.get("operandKind")??"literal");
+  if(kind==="literal")return{kind,value:Number(fd.get("operandLiteral")??0)};
+  if(kind==="parameter"||kind==="formula")return{kind,id:String(queryOne(`[data-operand-editor="${kind}"] select`)?.value??"")};
+  return{kind:"reference",reference:parseRefToken(fd.get("operandReference"))};
+}
 
 export function collectEntryData(kind,{fd,current,bool,checkedIds,queryOne,queryAll,capabilityTypes=[],
   collectFormulaExpression,collectConditionExpression,collectCreation,uid,fieldUid}={}){
@@ -47,7 +58,7 @@ export function collectEntryData(kind,{fd,current,bool,checkedIds,queryOne,query
     if(kind==="roll")return{...current,nameKey:String(fd.get("nameKey")??"").trim(),descriptionKey:String(fd.get("descriptionKey")??""),enabled:bool("enabled"),formula:String(fd.get("rollFormula")??"").trim(),data:json(fd.get("rollDataJson"),{}),tags:checkedIds("tags")};
     if(kind==="outcome")return{...current,nameKey:String(fd.get("nameKey")??"").trim(),descriptionKey:String(fd.get("descriptionKey")??""),enabled:bool("enabled"),resultKey:String(fd.get("resultKey")??"outcome").trim(),conditionRef:String(fd.get("conditionRef")??"").trim()||null,tags:checkedIds("tags")};
     if(kind==="test")return{...current,nameKey:String(fd.get("nameKey")??"").trim(),descriptionKey:String(fd.get("descriptionKey")??""),enabled:bool("enabled"),rollRef:String(fd.get("rollRef")??"").trim()||null,inputBindings:collectTestInputs(queryAll),bonusFormulaRef:String(fd.get("bonusFormulaRef")??"").trim()||null,totalFormulaRef:String(fd.get("totalFormulaRef")??"").trim()||null,marginFormulaRef:String(fd.get("marginFormulaRef")??"").trim()||null,targetFormulaRef:String(fd.get("targetFormulaRef")??"").trim()||null,targetValue:String(fd.get("targetValue")??"").trim()===""?null:Number(fd.get("targetValue")),outcomeRefs:[...(queryOne('[data-ordered-list="outcomeRefs"]')?.querySelectorAll("[data-ordered-item]:not([hidden])")??[])].map(row=>row.dataset.orderedItem),fallbackOutcomeRef:String(fd.get("fallbackOutcomeRef")??"").trim()||null,tags:checkedIds("tags")};
-    if(kind==="effect"){const kind=String(fd.get("operandKind")??"literal");let operand;if(kind==="literal")operand={kind,value:Number(fd.get("operandLiteral")??0)};else if(kind==="parameter"||kind==="formula"){const source=queryOne(`[data-operand-editor="${kind}"] select`);operand={kind,id:String(source?.value??"")};}else operand={kind:"reference",reference:parseRefToken(fd.get("operandReference"))};return{...current,nameKey:String(fd.get("nameKey")??"").trim(),descriptionKey:String(fd.get("descriptionKey")??""),enabled:bool("enabled"),targetRef:parseRefToken(fd.get("targetRef")),targetRole:String(fd.get("targetRole")??"target").trim()||"target",operation:String(fd.get("operation")??"set").trim(),operand,tags:checkedIds("tags")};}
+    if(kind==="effect"){const operand=readOperand(fd,queryOne);return{...current,nameKey:String(fd.get("nameKey")??"").trim(),descriptionKey:String(fd.get("descriptionKey")??""),enabled:bool("enabled"),targetRef:parseRefToken(fd.get("targetRef")),targetRole:String(fd.get("targetRole")??"target").trim()||"target",operation:String(fd.get("operation")??"set").trim(),operand,tags:checkedIds("tags")};}
     if(kind==="action")return{...current,nameKey:String(fd.get("nameKey")??"").trim(),descriptionKey:String(fd.get("descriptionKey")??""),enabled:bool("enabled"),conditionRefs:checkedIds("conditionRefs"),costEffectRefs:checkedIds("costEffectRefs"),effectRefs:checkedIds("effectRefs"),tags:checkedIds("tags"),outcomeMappings:current.outcomeMappings??[],eventTypeRefs:checkedIds("eventTypeRefs"),testRef:String(fd.get("testRef")??"").trim()||null,
       // Keep the role and initial values of Definitions still acquired; new ones go to "self".
       acquisitions:checkedIds("acquisitionDefinitionIds").map(definitionId=>(current.acquisitions??[]).find(a=>a?.definitionId===definitionId)??{definitionId,targetRole:"self",initial:{}}),
@@ -55,9 +66,9 @@ export function collectEntryData(kind,{fd,current,bool,checkedIds,queryOne,query
       stateRemovals:checkedIds("stateRemovalIds").map(definitionId=>(current.stateRemovals??[]).find(a=>a?.definitionId===definitionId)??{definitionId,targetRole:"target"}),
       stateApplications:checkedIds("stateApplicationIds").map(definitionId=>({...((current.stateApplications??[]).find(a=>a?.definitionId===definitionId)??{definitionId,targetRole:"target"}),durationRef:String(fd.get("stateDurationRef")??"").trim()||null})),
       modifierApplications:checkedIds("modifierApplicationIds").map(modifierRef=>({...((current.modifierApplications??[]).find(a=>a?.modifierRef===modifierRef)??{modifierRef,targetRole:"target"}),durationRef:String(fd.get("stateDurationRef")??"").trim()||null}))};
-    if(kind==="permissionPolicy")return{...current,nameKey:String(fd.get("nameKey")??"").trim(),descriptionKey:String(fd.get("descriptionKey")??""),enabled:bool("enabled"),scope:json(fd.get("scopeJson"),{objectKind:"ruleset"}),rules:json(fd.get("rulesJson"),[]),defaultEffect:String(fd.get("defaultEffect")??"DENY")};
+    if(kind==="permissionPolicy")return{...current,nameKey:String(fd.get("nameKey")??"").trim(),descriptionKey:String(fd.get("descriptionKey")??""),enabled:bool("enabled"),scope:parseScopeToken(fd.get("permissionScope")),rules:collectPermissionRules(queryAll("[data-permission-rule]")),defaultEffect:String(fd.get("defaultEffect")??"DENY")};
     if(kind==="eventType")return{...current,nameKey:String(fd.get("nameKey")??"").trim(),descriptionKey:String(fd.get("descriptionKey")??""),enabled:bool("enabled"),payloadFields:collectEventPayloadFields(queryAll("[data-event-field-row]"),{makeId:fieldUid}),roles:checkedIds("roles"),tags:checkedIds("tags")};
-    if(kind==="trigger")return{...current,nameKey:String(fd.get("nameKey")??"").trim(),descriptionKey:String(fd.get("descriptionKey")??""),enabled:bool("enabled"),eventTypeId:String(fd.get("eventTypeId")??"").trim(),eventFilter:json(fd.get("eventFilterJson"),null),conditionRefs:checkedIds("conditionRefs"),actionRefs:checkedIds("actionRefs"),tags:checkedIds("tags")};
+    if(kind==="trigger")return{...current,nameKey:String(fd.get("nameKey")??"").trim(),descriptionKey:String(fd.get("descriptionKey")??""),enabled:bool("enabled"),eventTypeId:String(fd.get("eventTypeId")??"").trim(),eventFilter:collectTriggerFilter(queryAll("[data-trigger-filter-row]")),conditionRefs:checkedIds("conditionRefs"),actionRefs:checkedIds("actionRefs"),tags:checkedIds("tags")};
     if(kind==="contentType")return{...current,nameKey:String(fd.get("nameKey")??"").trim(),descriptionKey:String(fd.get("descriptionKey")??""),image:String(fd.get("image")??"").trim(),color:fieldPresent(fd,"customColorEnabled")?(fieldPresent(fd,"color")?String(fd.get("color")??"").trim()||null:current.color??null):fieldPresent(fd,"customColorPermission")?null:current.color??null,enabled:bool("enabled"),storageKind:String(fd.get("storageKind")??"item"),documentSubtype:String(fd.get(String(fd.get("storageKind"))==="actor"?"documentSubtypeActor":"documentSubtypeItem")??"").trim(),runtimeMode:String(fd.get("runtimeMode")??"unique"),fields:collectFieldDefinitions(queryAll("[data-field-definition-row]"),{makeId:fieldUid}),tags:checkedIds("tags")};
     if(kind==="contentTemplate"){
       const relations=collectTemplateAcquisitions({current,
@@ -73,6 +84,8 @@ export function collectEntryData(kind,{fd,current,bool,checkedIds,queryOne,query
       return{...current,nameKey:String(fd.get("nameKey")??"").trim(),descriptionKey:String(fd.get("descriptionKey")??""),enabled:bool("enabled"),viewType:String(fd.get("viewType")??"actor"),renderer:"foundry",layout:{direction:String(fd.get("layoutDirection")??"column"),components}};
     }
     if(kind==="creationSystem")return collectCreation();
-    if(["modifier","duration","progressionSystem"].includes(kind)){const parsed=json(fd.get("genericJson"),current);return{...parsed,id:current.id};}
+    if(kind==="modifier")return collectModifier(fd,current,{bool,checkedIds,operand:readOperand(fd,queryOne)});
+    if(kind==="duration")return collectDuration(fd,current,{bool,checkedIds});
+    if(kind==="progressionSystem"){const parsed=json(fd.get("genericJson"),current);return{...parsed,id:current.id};}
     const payload=json(fd.get("genericJson"),{}); if(!payload.id)payload.id=current.id; return payload;
 }
