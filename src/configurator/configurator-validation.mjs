@@ -7,6 +7,7 @@ import {PREPARERS} from "./rule-contracts.mjs";
 import {DependencyIndex} from "./dependency-index.mjs";
 import {normalizeRelations} from "./generic-relations.mjs";
 import {DiagnosticCollector} from "./diagnostics.mjs";
+import {checkRulesetTypes} from "./type-checks.mjs";
 import {SLOT_CAPABILITIES, findSlot, prepareDefinitionSlots} from "./capability-slots.mjs";
 
 const nonempty = value => typeof value === "string" && value.trim().length > 0;
@@ -179,6 +180,7 @@ export function validateRuleset(ruleset, {scope = "save"} = {}) {
     if(ids && !ids.has(dep.targetRef.objectId)) { issue("DEPENDENCY_TARGET", dep.path, `Dependency target does not exist: ${dep.targetRef.objectKind}/${dep.targetRef.objectId}.`); continue; }
     checkSlotTarget(dep, definitionsById, d);
   }
+  checkRulesetTypes(ruleset, d);
   return d.result();
 }
 

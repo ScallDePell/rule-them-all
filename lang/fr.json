@@ -791,6 +791,13 @@
         "formula": "Formule",
         "reference": "Référence"
       }
+    },
+    "EffectOperation": {
+      "set": "Définir",
+      "add": "Additionner",
+      "subtract": "Soustraire",
+      "multiply": "Multiplier",
+      "toggle": "Inverser"
     }
   }
 }

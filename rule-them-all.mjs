@@ -1,4 +1,5 @@
-import {MODULE_ID} from "./src/core/module-contract.mjs";
+import {MODULE_ID, REGISTER_TYPES_HOOK} from "./src/core/module-contract.mjs";
+import {engineRegistries} from "./src/configurator/operation-registries.mjs";
 import {createConfiguratorAPI} from "./src/configurator/configurator-api.mjs";
 import {ConfiguratorApp} from "./src/configurator/configurator-app.mjs";
 import {WorldSettingStorage} from "./src/configurator/world-setting-storage.mjs";
@@ -11,6 +12,7 @@ let storage;
 
 Hooks.once("init", () => {
   game.ruleThemAll ??= {};
+  game.ruleThemAll.registries = engineRegistries();
   storage = new WorldSettingStorage(game.settings);
   storage.register();
   ConfiguratorApp.registerSettings(game.settings);
@@ -25,6 +27,9 @@ Hooks.once("init", () => {
   Hooks.callAll("ruleThemAllInit", game.ruleThemAll);
   console.log("Rule Them'All | Initialization");
 });
+
+// After every module's init, before any Ruleset is loaded or validated.
+Hooks.once("setup", () => Hooks.callAll(REGISTER_TYPES_HOOK, game.ruleThemAll.registries));
 
 Hooks.once("ready", () => {
   game.ruleThemAll.configuratorReady = createConfiguratorAPI(storage).then(api => {

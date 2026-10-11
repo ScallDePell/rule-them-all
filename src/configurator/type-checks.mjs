@@ -1,0 +1,87 @@
+/* Type checks across Ruleset objects (CP-04, CP-05, CP-24). A Formula must
+   produce its resultType, a Condition a boolean, and an Effect must write a
+   mutable output with an operation and operand of a compatible type. A draft
+   may break them (warnings); publish and activate may not. Types the checker
+   cannot infer (context paths, unknown nodes) are never reported. */
+import {isRecord} from "./configurator-schema.mjs";
+import {valueTypeRegistry} from "./value-type-registry.mjs";
+import {capabilityTypeRegistry} from "./capability-type-registry.mjs";
+import {inferFormulaType, effectOperationRegistry, UNKNOWN_TYPE} from "./operation-registries.mjs";
+
+/** Whether a value of type `source` may go where `target` is expected; unknown passes. */
+export const typeCompatible = (source, target) => source === UNKNOWN_TYPE || target === UNKNOWN_TYPE || source === target || valueTypeRegistry.isAssignable(source, target);
+
+const list = value => Array.isArray(value) ? value : [];
+const byId = value => new Map(list(value).filter(isRecord).map(entry => [entry.id, entry]));
+
+/** Type lookups over one Ruleset. */
+export function rulesetTypes(ruleset) {
+  const parameters = byId(ruleset.parameters), formulas = byId(ruleset.formulas), references = byId(ruleset.references);
+  /** Capability output contract a logical Reference designates, following named References once. */
+  const output = (reference, depth = 0) => {
+    if (!isRecord(reference)) return null;
+    if (reference.objectKind === "reference" && depth === 0) return output(references.get(reference.objectId), 1);
+    if (reference.objectKind !== "definition" || !reference.capabilityId || !reference.outputId) return null;
+    return capabilityTypeRegistry.get(reference.capabilityId)?.outputs?.[reference.outputId] ?? null;
+  };
+  const referenceType = (reference, depth = 0) => {
+    if (!isRecord(reference)) return UNKNOWN_TYPE;
+    if (reference.objectKind === "parameter") return parameters.get(reference.objectId)?.valueType ?? UNKNOWN_TYPE;
+    if (reference.objectKind === "formula") return formulas.get(reference.objectId)?.resultType ?? UNKNOWN_TYPE;
+    if (reference.objectKind === "reference" && depth === 0) return referenceType(references.get(reference.objectId), 1);
+    return output(reference)?.valueType ?? UNKNOWN_TYPE;
+  };
+  const leaf = (kind, target) => {
+    if (kind === "parameter") return parameters.get(target)?.valueType ?? UNKNOWN_TYPE;
+    if (kind === "formula") return formulas.get(target)?.resultType ?? UNKNOWN_TYPE;
+    if (kind === "reference") return referenceType(target);
+    return UNKNOWN_TYPE;
+  };
+  const infer = node => inferFormulaType(node, leaf);
+  const operandType = operand => {
+    if (!isRecord(operand)) return UNKNOWN_TYPE;
+    if (operand.kind === "literal") return infer({type: "literal", value: operand.value});
+    if (operand.kind === "parameter") return leaf("parameter", operand.id);
+    if (operand.kind === "formula") return leaf("formula", operand.id);
+    if (operand.kind === "reference") return referenceType(operand.reference);
+    return UNKNOWN_TYPE;
+  };
+  return {infer, leaf, output, referenceType, operandType};
+}
+
+/** Report type problems on a DiagnosticCollector (strict: warning in draft, error at publish). */
+export function checkRulesetTypes(ruleset, d) {
+  const types = rulesetTypes(ruleset);
+  list(ruleset.formulas).forEach((formula, index) => {
+    if (!isRecord(formula) || !valueTypeRegistry.has(formula.resultType)) return;
+    const actual = types.infer(formula.expression);
+    if (!typeCompatible(actual, formula.resultType)) d.strict("FORMULA_TYPE", `formulas[${index}].expression`, `Formula produces ${actual}, not its resultType ${formula.resultType}.`);
+  });
+  list(ruleset.conditions).forEach((condition, index) => {
+    if (!isRecord(condition)) return;
+    const actual = types.infer(condition.expression);
+    if (!typeCompatible(actual, "boolean")) d.strict("CONDITION_TYPE", `conditions[${index}].expression`, `Condition must produce a boolean, not ${actual}.`);
+  });
+  const bound = new Set(list(ruleset.formulaBindings).filter(binding => isRecord(binding?.targetRef) && binding.enabled !== false)
+    .map(binding => `${binding.targetRef.objectId}/${binding.targetRef.capabilityId}/${binding.targetRef.slotId ?? ""}/${binding.targetRef.outputId}`));
+  list(ruleset.effects).forEach((effect, index) => {
+    if (!isRecord(effect) || !isRecord(effect.targetRef)) return;
+    const path = `effects[${index}]`, target = types.output(effect.targetRef);
+    if (!target) return;
+    const ref = effect.targetRef.objectKind === "reference" ? null : effect.targetRef;
+    if (!target.mutable) d.strict("EFFECT_TARGET", `${path}.targetRef`, `Effect target is not mutable: ${target.id}.`);
+    else if (ref && bound.has(`${ref.objectId}/${ref.capabilityId}/${ref.slotId ?? ""}/${ref.outputId}`)) d.strict("EFFECT_TARGET", `${path}.targetRef`, `Effect target is computed by a FormulaBinding: ${target.id}.`);
+    const operation = effectOperationRegistry.get(effect.operation);
+    if (!operation) return;
+    if (!effectOperationRegistry.accepts(operation.id, target.valueType)) d.strict("EFFECT_OPERATION", `${path}.operation`, `Operation ${operation.id} cannot write a ${target.valueType} output.`);
+    else if (operation.operand) {
+      const actual = types.operandType(effect.operand);
+      if (!typeCompatible(actual, target.valueType)) d.strict("EFFECT_OPERAND", `${path}.operand`, `Effect operand is ${actual}, target expects ${target.valueType}.`);
+    }
+  });
+  list(ruleset.formulaBindings).forEach((binding, index) => {
+    if (!isRecord(binding)) return;
+    const target = types.output(binding.targetRef), actual = types.leaf("formula", binding.formulaRef);
+    if (target && !typeCompatible(actual, target.valueType)) d.strict("BINDING_TYPE", `formulaBindings[${index}].formulaRef`, `Formula produces ${actual}, target output expects ${target.valueType}.`);
+  });
+}

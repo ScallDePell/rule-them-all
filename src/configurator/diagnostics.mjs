@@ -62,6 +62,10 @@ export class DiagnosticCollector {
   incomplete(code, path, message, extra = {}) {
     this.add({...extra, code, path, message, severity: this.#complete ? "ERROR" : "WARNING", details: {...extra.details, incomplete: true}});
   }
+  /** Rule that only a runnable Ruleset must meet (e.g. type compatibility): a warning in a draft, an error for publish and activate. */
+  strict(code, path, message, extra = {}) {
+    this.add({...extra, code, path, message, severity: this.#complete ? "ERROR" : "WARNING"});
+  }
   /** Route an error thrown by a contract helper. */
   thrown(code, path, error) {
     if (error?.code === INCOMPLETE) this.incomplete(INCOMPLETE, path, error.message);

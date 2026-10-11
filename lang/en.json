@@ -795,6 +795,13 @@
         "formula": "Formula",
         "reference": "Reference"
       }
+    },
+    "EffectOperation": {
+      "set": "Set",
+      "add": "Add",
+      "subtract": "Subtract",
+      "multiply": "Multiply",
+      "toggle": "Toggle"
     }
   }
 }

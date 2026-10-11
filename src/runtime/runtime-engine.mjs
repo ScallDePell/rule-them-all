@@ -5,6 +5,7 @@ import {CONSTRAINT_KINDS,evaluateConstraints} from "../configurator/declarative-
 import {capabilityTypeRegistry} from "../configurator/capability-type-registry.mjs";
 import {createDefinitionState,normalizeRuntimeContainerRef,resolveRuntimeRuleset} from "./runtime-contracts.mjs";
 import {RuntimeEvaluator} from "./runtime-evaluator.mjs";
+import {effectOperationRegistry} from "../configurator/operation-registries.mjs";
 import {assertSafeRollFormula} from "../configurator/roll-grammar.mjs";
 import {findSlot, slotInitialKey} from "../configurator/capability-slots.mjs";
 import {SLOT_CAPABILITIES,requireSlot,poolSlotState,collectionSlotState,boundPoolValue,initialSlotStates,prepareCollectionEntry,assertCollectionRoom,assertCollectionMinimum} from "./capability-slot-runtime.mjs";
@@ -197,7 +198,7 @@ export class RuntimeEngine{
     else if(cap==="pool"&&id==="pool.current")current=Number(poolSlotState(ds,reference.slotId).current);
     else if(cap==="state"&&id==="state.active")current=Boolean(ds.capabilityStates.state.active);
     else throw new Error(`Mutable runtime output not implemented: ${cap}/${id}.`);
-    let next;if(operation==="set")next=operand;else if(operation==="add")next=Number(current)+Number(operand);else if(operation==="subtract")next=Number(current)-Number(operand);else if(operation==="multiply")next=Number(current)*Number(operand);else if(operation==="toggle")next=!Boolean(current);else throw new Error(`Unsupported Effect operation: ${operation}.`);
+    const op=effectOperationRegistry.get(operation);if(!op)throw new Error(`Unsupported Effect operation: ${operation}.`);let next=op.apply(clone(current),operand);
     if(cap==="pool"){next=boundPoolValue(pool.slot,next,pool.bounds,`${reference.objectId}/${pool.slot.id}`);poolSlotState(ds,reference.slotId).current=next;}
     else if(cap==="value")ds.capabilityStates.value.base=Number(next);else ds.capabilityStates.state.active=Boolean(next);return clone(next);
   }

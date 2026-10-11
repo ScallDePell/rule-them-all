@@ -9,3 +9,6 @@ export const RULESET_PACKAGE_FORMATS = Object.freeze([RULESET_PACKAGE_FORMAT]);
 export const READABLE_PACKAGE_FORMATS = Object.freeze([RULESET_PACKAGE_FORMAT, IMPORT_ONLY_PACKAGE_FORMAT]);
 // Foundry hooks, named like ruleThemAllInit / ruleThemAllReady.
 export const RUNTIME_HOOKS = Object.freeze({testResolved:"ruleThemAllTestResolved", event:"ruleThemAllEvent", actionExecuted:"ruleThemAllActionExecuted"});
+/** Fired once on Foundry "setup" with the open engine registries
+ * ({valueTypes, formulaNodes, effectOperations}); other modules register their types there. */
+export const REGISTER_TYPES_HOOK = "ruleThemAllRegisterTypes";

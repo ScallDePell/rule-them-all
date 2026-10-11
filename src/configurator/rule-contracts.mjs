@@ -3,6 +3,7 @@ import {valueTypeRegistry, validateTypedValue} from './value-type-registry.mjs';
 import {prepareFieldMap} from './field-output-contracts.mjs';
 import {assertSafeRollFormula} from './roll-grammar.mjs';
 import {need} from './diagnostics.mjs';
+import {validateFormulaAst, effectOperationRegistry} from './operation-registries.mjs';
 
 const nonempty=v=>typeof v==='string'&&v.trim().length>0;
 const arr=(v,label)=>{if(!Array.isArray(v))throw new Error(`${label} must be an array.`);return v;};
@@ -20,46 +21,11 @@ export function prepareParameter(data,options={}){
   bool(x.enabled,'Parameter.enabled'); arr(x.tags,'Parameter.tags'); return x;
 }
 
-const scalar=v=>v===null||['string','number','boolean'].includes(typeof v);
-const finiteOrAbsent=v=>v===undefined||v===null||(typeof v==='number'&&Number.isFinite(v));
-/** lookup: {key: AST, table: [{key: scalar, value: scalar}], default?: AST}. Exact match on key. */
-function validateLookupNode(node,label){
-  if(!isRecord(node.key))throw new Error(`${label}.key must be an AST node.`);
-  if(!Array.isArray(node.table)||!node.table.length)throw new Error(`${label}.table must be a non-empty array.`);
-  const keys=new Set();
-  node.table.forEach((row,i)=>{
-    if(!isRecord(row)||!scalar(row.key)||!scalar(row.value))throw new Error(`${label}.table[${i}] must be {key, value} with scalar values.`);
-    const k=JSON.stringify(row.key);if(keys.has(k))throw new Error(`${label}.table has a duplicate key: ${k}.`);keys.add(k);
-  });
-}
-/** rangeLookup: {value: AST, ranges: [{min?, max?, value: scalar}], default?: AST}. Bounds are inclusive; first matching range wins. */
-function validateRangeLookupNode(node,label){
-  if(!isRecord(node.value))throw new Error(`${label}.value must be an AST node.`);
-  if(!Array.isArray(node.ranges)||!node.ranges.length)throw new Error(`${label}.ranges must be a non-empty array.`);
-  node.ranges.forEach((row,i)=>{
-    if(!isRecord(row)||!scalar(row.value)||!finiteOrAbsent(row.min)||!finiteOrAbsent(row.max))throw new Error(`${label}.ranges[${i}] must be {min?, max?, value} with numeric bounds.`);
-    if(typeof row.min==='number'&&typeof row.max==='number'&&row.min>row.max)throw new Error(`${label}.ranges[${i}] has min greater than max.`);
-  });
-}
-
-function validateAstNode(node,label='expression'){
-  if(!isRecord(node)||!nonempty(node.type))throw new Error(`${label} must be an AST node with a type.`);
-  const allowed=['literal','reference','parameter','formula','context','add','subtract','multiply','divide','min','max','round','floor','ceil','clamp','eq','neq','gt','gte','lt','lte','and','or','not','if','lookup','rangeLookup','sum','average'];
-  if(!allowed.includes(node.type))throw new Error(`${label} contains unsupported node type: ${node.type}.`);
-  if(node.type==='lookup')validateLookupNode(node,label);
-  if(node.type==='rangeLookup')validateRangeLookupNode(node,label);
-  for(const [k,v] of Object.entries(node)){
-    if(k==='type')continue;
-    if(isRecord(v)&&nonempty(v.type))validateAstNode(v,`${label}.${k}`);
-    if(Array.isArray(v))v.forEach((n,i)=>{if(isRecord(n)&&nonempty(n.type))validateAstNode(n,`${label}.${k}[${i}]`);});
-  }
-}
-
 export function prepareFormula(data,options={}){
   const x={descriptionKey:'',enabled:true,order:0,tags:[],resultType:'number',expression:{type:'literal',value:0},...copyJSON(data)};
   identity(x,'Formula',options);
   if(!valueTypeRegistry.has(x.resultType))throw new Error(`Unknown Formula resultType: ${x.resultType}.`);
-  validateAstNode(x.expression,'Formula.expression'); bool(x.enabled,'Formula.enabled'); arr(x.tags,'Formula.tags'); return x;
+  validateFormulaAst(x.expression,'Formula.expression'); bool(x.enabled,'Formula.enabled'); arr(x.tags,'Formula.tags'); return x;
 }
 
 export function prepareFormulaBinding(data,options={}){
@@ -73,7 +39,7 @@ export function prepareFormulaBinding(data,options={}){
 export function prepareCondition(data,options={}){
   const x={descriptionKey:'',enabled:true,order:0,tags:[],expression:{type:'literal',value:true},...copyJSON(data)};
   identity(x,'Condition',options);
-  validateAstNode(x.expression,'Condition.expression'); bool(x.enabled,'Condition.enabled'); arr(x.tags,'Condition.tags'); return x;
+  validateFormulaAst(x.expression,'Condition.expression'); bool(x.enabled,'Condition.enabled'); arr(x.tags,'Condition.tags'); return x;
 }
 
 export function prepareRoll(data,options={}){
@@ -131,6 +97,7 @@ export function prepareEffect(data,options={}){
   if(x.targetRef!==null&&!isRecord(x.targetRef))throw new Error('Effect.targetRef must be a logical Reference.');
   need(isRecord(x.targetRef)&&nonempty(x.targetRef.objectKind)&&nonempty(x.targetRef.objectId),'Effect.targetRef must be a logical Reference.',options);
   need(nonempty(x.operation),'Effect.operation is required.',options);
+  if(nonempty(x.operation)&&!effectOperationRegistry.has(x.operation))throw new Error(`Unknown Effect operation: ${x.operation}.`);
   if(!isRecord(x.operand)||!['literal','parameter','formula','reference'].includes(x.operand.kind))throw new Error('Effect.operand must select literal, parameter, formula or reference.');
   bool(x.enabled,'Effect.enabled'); arr(x.tags,'Effect.tags'); return x;
 }

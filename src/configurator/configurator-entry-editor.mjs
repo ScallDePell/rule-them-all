@@ -1,3 +1,4 @@
+import {effectOperationRegistry} from "./operation-registries.mjs";
 import {collectFormulaExpression,collectConditionExpression} from "./entry-expression-serialization.mjs";
 import {collectCreationSteps} from "./creation-step-serialization.mjs";
 import {collectEntryData} from "./entry-data-collector.mjs";
@@ -220,7 +221,7 @@ export class ConfiguratorEntryEditor extends ConfiguratorWindow {
       dataJson:JSON.stringify(data.data??{},null,2),profileJson:JSON.stringify(data.presentationProfile??null,null,2),genericJson:JSON.stringify(data,null,2),
       expressionJson:JSON.stringify(data.expression??{type:"literal",value:0},null,2),scopeJson:JSON.stringify(data.scope??{objectKind:"ruleset"},null,2),rulesJson:JSON.stringify(data.rules??[],null,2),payloadFieldsJson:JSON.stringify(data.payloadFields??{},null,2),eventFilterJson:JSON.stringify(data.eventFilter??null,null,2),
       rollDataJson:JSON.stringify(data.data??{},null,2),initialStateRulesJson:JSON.stringify(data.initialStateRules??[],null,2),rolesText:(data.roles??[]).join("\n"),tagsText:(data.tags??[]).join("\n"),capabilitiesText:(data.capabilities??[]).join("\n"),
-      isAllow:data.defaultEffect==="ALLOW",isDeny:data.defaultEffect!=="ALLOW",isStackable:data.runtimeMode==="stackable",isUnique:data.runtimeMode!=="stackable",isStorageItem:data.storageKind!=="actor",isStorageActor:data.storageKind==="actor",opSet:data.operation==="set",opAdd:data.operation==="add",opSubtract:data.operation==="subtract",opMultiply:data.operation==="multiply", title:editorDisplayTitle(creating,creating?this.#kind:(data.nameKey??data.key??data.id))});
+      isAllow:data.defaultEffect==="ALLOW",isDeny:data.defaultEffect!=="ALLOW",isStackable:data.runtimeMode==="stackable",isUnique:data.runtimeMode!=="stackable",isStorageItem:data.storageKind!=="actor",isStorageActor:data.storageKind==="actor",effectOperationChoices:effectOperationRegistry.list().map(id=>({id,labelKey:effectOperationRegistry.get(id).labelKey,colors:selectColorsAttribute([RTA_NEUTRAL_COLOR]),selected:id===(data.operation??"set")})), title:editorDisplayTitle(creating,creating?this.#kind:(data.nameKey??data.key??data.id))});
     return context;
     } finally { this.#renderCatalog=null; }
   }
