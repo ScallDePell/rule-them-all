@@ -13,6 +13,7 @@ import {wireOrderedLists} from "../ui/ordered-list.mjs";
 import {modifierFormContext,durationFormContext} from "./modifier-duration-form.mjs";
 import {permissionFormContext} from "./permission-form.mjs";
 import {triggerFilterContext} from "./trigger-filter-form.mjs";
+import {outcomeMappingContext} from "./action-outcome-form.mjs";
 import {capabilityRole,capabilityRoleFlags,capabilityLabel} from "./capability-type-registry.mjs";
 import {availableDocumentTypes} from "../core/system-document-types.mjs";
 
@@ -237,6 +238,7 @@ export class ConfiguratorEntryEditor extends ConfiguratorWindow {
       isCreationSystem:this.#kind==="creationSystem",creationStepRows:this.#kind==="creationSystem"?(data.steps??[]).map(step=>({html:this.#creationStepHTML(step)})):[],isGeneric:this.#kind==="progressionSystem",isModifier:this.#kind==="modifier",isDuration:this.#kind==="duration",
       ...(this.#kind==="modifier"?modifierFormContext(data,{valueTargetChoices:referenceChoices.filter(x=>parseRefToken(x.token).capabilityId==="value").map(x=>({...x,selected:x.token===targetToken}))}):{}),
       ...(this.#kind==="duration"?durationFormContext(data,{eventTypes,conditions,withColors}):{}),
+      ...(this.#kind==="action"?outcomeMappingContext(data,{tests,outcomes,effects,withColors}):{}),
       ...(this.#kind==="trigger"?triggerFilterContext(data,{eventTypes}):{}),
       ...(this.#kind==="permissionPolicy"?permissionFormContext(data,{definitions,actions,conditions,withColors}):{}),dirty:this.#dirty,canPersist:!isValidated&&this.#dirty,
       constraintRows:(data.constraints??[]).filter(rule=>CONSTRAINT_KINDS.includes(rule?.kind)).map(rule=>{
@@ -404,6 +406,12 @@ export class ConfiguratorEntryEditor extends ConfiguratorWindow {
       const name=this.element.querySelector('[name="nameKey"]'),label=field=>this.element.querySelector(`[name="${field}"]`)?.selectedOptions?.[0]?.textContent?.trim()??"";
       if(name&&(!name.value.trim()||name.value===name.dataset.autoName)&&label("formulaRef")&&label("targetRef")){name.value=name.dataset.autoName=`${label("formulaRef")} → ${label("targetRef")}`;}
     }
+    // An Action shows what happens on each Outcome of the Test it runs.
+    if(target?.name==="testRef"){
+      let shown=false;for(const group of this.element.querySelectorAll("[data-outcome-mapping-group]")){group.hidden=group.dataset.outcomeMappingGroup!==target.value;shown||=!group.hidden;}
+      this.element.querySelector("[data-outcome-mappings]")?.toggleAttribute("hidden",!shown);
+    }
+    if(target?.matches?.("[data-mapping-mode]"))target.closest("[data-outcome-mapping]")?.querySelector("[data-mapping-effects]")?.toggleAttribute("hidden",target.value!=="effects");
     if(target?.name==="targetSource")this.element.querySelector("[data-target-fixed]")?.toggleAttribute("hidden",target.value!=="__fixed");
     if(target?.name==="durationMode")for(const row of this.element.querySelectorAll("[data-duration-mode]"))row.hidden=row.dataset.durationMode!==target.value;
   }

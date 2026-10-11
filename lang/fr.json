@@ -964,6 +964,13 @@
       "RemoveFilter": "Retirer",
       "PayloadField": "Champ de l'événement",
       "EqualsValue": "Vaut"
+    },
+    "OutcomeMapping": {
+      "Title": "Selon le résultat",
+      "Then": "Alors",
+      "default": "Appliquer les effets de l'Action",
+      "effects": "Appliquer d'autres effets",
+      "block": "Arrêter l'Action"
     }
   }
 }

@@ -43,6 +43,7 @@ await api.createPermissionPolicy(v,{id:'pp1',nameKey:'Players act',scope:{object
 await api.createRoll(v,{id:'r1',nameKey:'d20',formula:'1d20',data:{}});
 for(const [id,nameKey] of [['o-crit','Critical'],['o-hit','Hit'],['o-miss','Miss']])await api.createOutcome(v,{id,nameKey,resultKey:id,conditionRef:'c1'});
 await api.createTest(v,{id:'t1',nameKey:'Attack',rollRef:'r1',targetValue:12,outcomeRefs:['o-crit','o-hit'],fallbackOutcomeRef:'o-miss'});
+await api.createAction(v,{id:'a2',nameKey:'Swing',testRef:'t1',conditionRefs:[],costEffectRefs:[],effectRefs:[],outcomeMappings:[{outcomeId:'o-miss',block:true}]});
 // Harness-only copy exposing the private view state.
 const src=readFileSync(join(root,'src/configurator/configurator-app.mjs'),'utf8')
   .replace('#view = "general";','#view = globalThis.__qa.view;').replace('#displayMode = "tiles";','#displayMode = globalThis.__qa.mode;').replace('#selected = "";','#selected = globalThis.__qa.selected;');
@@ -66,7 +67,7 @@ console.log('rendered',views.length);
 const {ConfiguratorEntryEditor}=await imp('src/configurator/configurator-entry-editor.mjs');
 const editorTpl=Handlebars.compile(readFileSync(join(root,'templates/configurator/entry-editor.hbs'),'utf8'));
 const selectUrl=pathToFileURL(join(root,'src/ui/rta-select.mjs')).href;
-const editors=[['ruleset',v],['definitionType','stat'],['definition','d0'],['contentType','gear'],['contentTemplate','rope'],['parameter','p1'],['formula','f1'],['condition','c1'],['action','a1'],['tag','tag-a'],['category','cat-core'],['test','t1'],['modifier','m1'],['duration','du1'],['trigger','tr1'],['permissionPolicy','pp1'],['eventType','ev1'],
+const editors=[['ruleset',v],['definitionType','stat'],['definition','d0'],['contentType','gear'],['contentTemplate','rope'],['parameter','p1'],['formula','f1'],['condition','c1'],['action','a2'],['tag','tag-a'],['category','cat-core'],['test','t1'],['modifier','m1'],['duration','du1'],['trigger','tr1'],['permissionPolicy','pp1'],['eventType','ev1'],
  ...['formulaBinding','roll','outcome','effect','sheetDefinition','creationSystem','progressionSystem'].map(kind=>[kind,null])];
 for(const [kind,id] of editors){
   const editor=new ConfiguratorEntryEditor({api,versionId:v,kind,id,definitionTypeId:kind==='definition'?'stat':null,contentTypeId:kind==='contentTemplate'?'gear':null});

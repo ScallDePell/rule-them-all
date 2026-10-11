@@ -5,6 +5,7 @@
 import {collectModifier,collectDuration} from './modifier-duration-form.mjs';
 import {parseScopeToken,collectPermissionRules} from './permission-form.mjs';
 import {collectTriggerFilter} from './trigger-filter-form.mjs';
+import {collectOutcomeMappings} from './action-outcome-form.mjs';
 import {readConstraintRows,readPresentationRows} from './declarative-editor.mjs';
 import {parseEditorValue} from './editor-value.mjs';
 import {parseRefToken} from './reference-token.mjs';
@@ -66,7 +67,7 @@ export function collectEntryData(kind,{fd,current,bool,checkedIds,queryOne,query
     if(kind==="outcome")return{...current,nameKey:String(fd.get("nameKey")??"").trim(),descriptionKey:String(fd.get("descriptionKey")??""),enabled:bool("enabled"),resultKey:String(fd.get("resultKey")??"outcome").trim(),conditionRef:String(fd.get("conditionRef")??"").trim()||null,tags:checkedIds("tags")};
     if(kind==="test")return{...current,nameKey:String(fd.get("nameKey")??"").trim(),descriptionKey:String(fd.get("descriptionKey")??""),enabled:bool("enabled"),rollRef:String(fd.get("rollRef")??"").trim()||null,inputBindings:collectTestInputs(queryAll),bonusFormulaRef:String(fd.get("bonusFormulaRef")??"").trim()||null,totalFormulaRef:String(fd.get("totalFormulaRef")??"").trim()||null,marginFormulaRef:String(fd.get("marginFormulaRef")??"").trim()||null,...readTestTarget(fd),outcomeRefs:[...(queryOne('[data-ordered-list="outcomeRefs"]')?.querySelectorAll("[data-ordered-item]:not([hidden])")??[])].map(row=>row.dataset.orderedItem),fallbackOutcomeRef:String(fd.get("fallbackOutcomeRef")??"").trim()||null,tags:checkedIds("tags")};
     if(kind==="effect"){const operand=readOperand(fd,queryOne);return{...current,nameKey:String(fd.get("nameKey")??"").trim(),descriptionKey:String(fd.get("descriptionKey")??""),enabled:bool("enabled"),targetRef:parseRefToken(fd.get("targetRef")),targetRole:String(fd.get("targetRole")??"target").trim()||"target",operation:String(fd.get("operation")??"set").trim(),operand,tags:checkedIds("tags")};}
-    if(kind==="action")return{...current,nameKey:String(fd.get("nameKey")??"").trim(),descriptionKey:String(fd.get("descriptionKey")??""),enabled:bool("enabled"),conditionRefs:checkedIds("conditionRefs"),costEffectRefs:checkedIds("costEffectRefs"),effectRefs:checkedIds("effectRefs"),tags:checkedIds("tags"),outcomeMappings:current.outcomeMappings??[],eventTypeRefs:checkedIds("eventTypeRefs"),testRef:String(fd.get("testRef")??"").trim()||null,
+    if(kind==="action")return{...current,nameKey:String(fd.get("nameKey")??"").trim(),descriptionKey:String(fd.get("descriptionKey")??""),enabled:bool("enabled"),conditionRefs:checkedIds("conditionRefs"),costEffectRefs:checkedIds("costEffectRefs"),effectRefs:checkedIds("effectRefs"),tags:checkedIds("tags"),outcomeMappings:collectOutcomeMappings(queryAll("[data-outcome-mapping-group]:not([hidden]) [data-outcome-mapping]")),eventTypeRefs:checkedIds("eventTypeRefs"),testRef:String(fd.get("testRef")??"").trim()||null,
       // Keep the role and initial values of Definitions still acquired; new ones go to "self".
       acquisitions:checkedIds("acquisitionDefinitionIds").map(definitionId=>(current.acquisitions??[]).find(a=>a?.definitionId===definitionId)??{definitionId,targetRole:"self",initial:{}}),
       // The editor sets one Duration for every state and Modifier the Action applies.

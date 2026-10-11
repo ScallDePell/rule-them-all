@@ -968,6 +968,13 @@
       "RemoveFilter": "Remove",
       "PayloadField": "Payload field",
       "EqualsValue": "Equals"
+    },
+    "OutcomeMapping": {
+      "Title": "On each outcome",
+      "Then": "Then",
+      "default": "Run the Action's effects",
+      "effects": "Run other effects",
+      "block": "Stop the Action"
     }
   }
 }
