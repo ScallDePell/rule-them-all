@@ -147,6 +147,7 @@ return {controls:controls.map(e=>({tag:e.classList.contains('rta-select__trigger
 }'''
 
 if __name__=='__main__':
+ STYLE_DUMP='''() => [...document.querySelectorAll('body *')].map((el,i)=>{const s=getComputedStyle(el);const o={};for(const k of s)o[k]=s.getPropertyValue(k);return [i+':'+el.tagName+'.'+[...el.classList].join('.'),o]})'''
  results={};total=0
  with sync_playwright() as p:
   b=p.chromium.launch(headless=True,executable_path=os.environ.get('RTA_CHROMIUM','/usr/bin/chromium'),args=['--no-sandbox'])
@@ -158,6 +159,7 @@ if __name__=='__main__':
     page.set_content(markup,wait_until='load');page.wait_for_function('window.__qaReady===true',timeout=10000)
     page.evaluate('''() => [...document.querySelectorAll('details')].forEach(el=>el.open=true)''')
     data=page.evaluate(MEASURE);data['errors']=err;results[f'{kind}-{width}']=data
+    if os.environ.get('RTA_QA_STYLES'):(OUT/f'{kind}-{width}.styles.json').write_text(json.dumps(page.evaluate(STYLE_DUMP)))
     page.screenshot(path=str(OUT/f'{kind}-{width}.png'),full_page=True)
     total+=len(data['controls'])
     print(kind,width,'controls',len(data['controls']),'rows',len(data['rows']),'overflow',len(data['overflow']),'errors',err[:1],flush=True)

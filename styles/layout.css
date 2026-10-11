@@ -1,0 +1,229 @@
+/* Rule Them'All — layout.css : Coquille du configurateur et éléments transverses.
+   L'ordre de chargement (module.json "styles") fait partie de la cascade. */
+
+.rta-configurator__selector {
+  flex-shrink: 0;
+  margin-block: var(--rta-space-4);
+}
+
+.rta-configurator__toolbar {
+  display: flex;
+  align-items: center;
+  gap: var(--rta-space-4);
+  margin-block: var(--rta-space-3) var(--rta-space-5);
+  flex-wrap: wrap;
+}
+
+.rta-config-table {
+  min-width: 720px;
+  width: 100%;
+  table-layout: auto;
+  overflow-wrap: anywhere;
+}
+
+.rta-config-table th,
+.rta-config-table td {
+  vertical-align: middle;
+}
+
+.rta-config-table th:last-child,
+.rta-config-table td:last-child {
+  white-space: nowrap;
+}
+
+.rta-config-actions {
+  display: inline-flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: var(--rta-space-2);
+  flex-wrap: nowrap;
+  white-space: nowrap;
+}
+
+.rta-config-action {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  flex: 0 0 30px;
+  width: 30px;
+  min-width: 30px;
+  height: 30px;
+  padding: 0;
+  line-height: 1;
+}
+
+.rta-config-action > i {
+  margin: 0;
+  pointer-events: none;
+}
+
+.rta-config-action--danger {
+  margin-inline-start: var(--rta-space-1);
+}
+
+/* Mission 11-D: root Rulesets + Ruleset workspace shell. */
+.rta-configurator__error {
+  flex-shrink: 0;
+  white-space: pre-wrap;
+  max-height: 6em;
+  overflow: auto;
+}
+
+.rta-configurator__workspace-header > div {
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+}
+
+.rta-configurator__workspace-header > div > span {
+  opacity: 0.75;
+}
+
+.rta-configurator__workspace {
+  display: grid;
+  grid-template-columns: minmax(150px, 190px) minmax(0, 1fr);
+  flex: 1;
+  min-height: 0;
+  overflow: hidden;
+}
+
+.rta-configurator__sidebar {
+  min-height: 0;
+  overflow-y: auto;
+  padding: var(--rta-space-5) var(--rta-space-4) var(--rta-space-5) var(--rta-space-3);
+  border-right: 1px solid var(--color-border-light-primary);
+}
+
+.rta-configurator__sidebar button {
+  display: block;
+  width: 100%;
+  text-align: left;
+  margin: 0;
+  border: 0;
+  background: transparent;
+}
+
+.rta-configurator__sidebar button.active {
+  font-weight: 700;
+  background: var(--color-cool-4, rgba(0, 0, 0, 0.12));
+}
+
+.rta-configurator__workspace-content {
+  padding: var(--rta-space-6);
+}
+
+.rta-configurator__storage {
+  margin-block-start: var(--rta-space-8);
+}
+
+@media (max-width: 700px) {
+  .rta-configurator__workspace {
+    grid-template-columns: minmax(125px, 150px) minmax(0, 1fr);
+  }
+}
+
+.rta-config-table--compact {
+  min-width: 0;
+  font-size: 0.9em;
+}
+
+.rta-config-table--capabilities {
+  min-width: 520px;
+}
+
+/* v0.2.4 ergonomic field cards + single-line Ruleset header. */
+.rta-configurator__workspace-header {
+  border-bottom: 1px solid var(--color-border-light-primary);
+  flex-wrap: nowrap;
+  min-height: 3rem;
+}
+
+.rta-configurator__workspace-header > div:first-of-type {
+  flex: 1;
+  flex-direction: row;
+  align-items: baseline;
+  justify-content: center;
+  gap: var(--rta-space-4);
+}
+
+.rta-configurator__workspace-header > .rta-config-actions {
+  flex: 0 0 auto;
+  flex-direction: row;
+  align-items: center;
+  justify-content: flex-end;
+}
+
+.rta-configurator__section-actions {
+  display: flex;
+  gap: var(--rta-space-4);
+  align-items: center;
+  flex-wrap: wrap;
+  justify-content: flex-end;
+}
+
+/* Ruleset landing page: Foundry module-tile visual language. */
+.rta-configurator__import-footer {
+  flex: 0 0 auto;
+  margin-top: auto;
+  margin-bottom: 0;
+  padding: var(--rta-space-4) var(--rta-space-6) var(--rta-space-5);
+}
+
+.rta-configurator__import-footer .form-group {
+  margin: 0;
+}
+
+.rta-configurator__import-footer input[type="file"] {
+  width: 100%;
+}
+
+/* v0.1.3: fixed three-row tiles at every supported window width. */
+.rta-configurator__root-footer {
+  flex: 0 0 auto;
+  display: flex;
+  justify-content: flex-end;
+  padding: var(--rta-space-3) 0 0;
+}
+
+.rta-configurator__bottom-bar {
+  display: flex;
+  align-items: end;
+  gap: var(--rta-space-6);
+  flex: 0 0 auto;
+  margin-top: auto;
+  min-width: 0;
+}
+
+.rta-configurator__bottom-bar .rta-configurator__import-footer {
+  flex: 1 1 auto;
+  min-width: 0;
+  margin: 0;
+}
+
+.rta-configurator__bottom-bar .rta-configurator__root-footer {
+  flex: 0 0 auto;
+  padding: 0 0 var(--rta-space-5);
+  margin: 0;
+}
+
+.rta-configurator__bottom-bar .rta-configurator__root-footer button {
+  white-space: nowrap;
+}
+
+.rta-configurator .rta-configurator__workspace-header {
+  position: relative;
+  z-index: 1;
+}
+
+/* v0.1.25: shared canonical border between General panels and collection tiles. */
+.rta-configurator {
+  --rta-card-width: 282px;
+  --rta-card-height: 94px;
+  --rta-card-gap: 12px;
+  --rta-card-action-size: 23px;
+  --rta-card-padding-top: .65rem;
+  --rta-card-padding-bottom: .5rem;
+  --rta-panel-border: var(--color-border-light-primary, #403844);
+  --rta-panel-radius: 4px;
+  --rta-rail-width: 4px;
+}

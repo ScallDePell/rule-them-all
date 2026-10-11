@@ -30,7 +30,7 @@ Ce document doit être lu **avant** toute modification de RTA. Les changelogs d�
 | Modèles et sérialisation | `src/configurator/entry-field-models.mjs`, `entry-field-serialization.mjs`, `entry-data-collector.mjs`, `entry-expression-serialization.mjs`, `creation-step-serialization.mjs`, `entry-reference-catalog.mjs` | Modèles de champs, collecte des données et références sans couplage à Foundry |
 | Présentation HTML | `src/ui/entry-editor-markup.mjs`, `picker-markup.mjs`, `html-utils.mjs` | Génération de markup sans règles métier et sans accès Foundry |
 | Sélection | `src/ui/rta-select.mjs`, `select-option-presentation.mjs` | Sélecteur unique/multiple, libellés, rails de couleur |
-| Styles | `styles/configurator.css`, `RTA-DESIGN-SYSTEM-v0.1.55.md`, `RTA-FORM-ROW-CONTRAT-v0.1.47.md` | Tokens et grille `[libellé][contrôle]` |
+| Styles | `styles/*.css` (ordre fixé par `module.json` « styles »), `RTA-DESIGN-SYSTEM-v0.1.55.md`, `RTA-FORM-ROW-CONTRAT-v0.1.47.md` | Tokens et grille `[libellé][contrôle]` |
 | Runtime | `src/runtime/runtime-engine.mjs`, `runtime-evaluator.mjs`, `runtime-contracts.mjs` | Exécution générique du Ruleset |
 | Exemples de test | `src/runtime/runtime-demo-profile.mjs`, `runtime-lab-fixtures.mjs` | Valeurs fictives uniquement pour Runtime Lab, injectables |
 

@@ -1,0 +1,371 @@
+/* Rule Them'All — rulesets.css : Page d'accueil : tuiles et liste des Rulesets.
+   L'ordre de chargement (module.json "styles") fait partie de la cascade. */
+
+.rta-configurator__root-header,
+.rta-configurator__workspace-header,
+.rta-configurator__section-heading {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--rta-space-6);
+}
+
+.rta-configurator__root-header,
+.rta-configurator__workspace-header {
+  flex-shrink: 0;
+  padding-block: var(--rta-space-3) var(--rta-space-5);
+}
+
+.rta-configurator__root-header h2,
+.rta-configurator__section-heading h2 {
+  margin: 0;
+}
+
+.rta-configurator__root-header p,
+.rta-configurator__section-heading p {
+  margin: var(--rta-space-2) 0 0;
+}
+
+.rta-config-table--rulesets {
+  min-width: 520px;
+}
+
+.rta-ruleset-list-scroll {
+  padding: var(--rta-space-4) 0 var(--rta-space-8);
+}
+
+.rta-ruleset-tile__title:hover {
+  text-decoration: underline;
+  box-shadow: none;
+}
+
+.rta-ruleset-badge.rta-ruleset-badge--version,
+.rta-ruleset-badge.rta-ruleset-badge--active {
+  background: #28570d;
+  color: #e1f4d3;
+}
+
+/* v0.1.4: compact Foundry-like cards, fixed footer and single-line controls. */
+.rta-ruleset-tiles {
+  display: grid;
+  align-content: start;
+  grid-template-columns: repeat(auto-fill, 282px);
+  gap: var(--rta-space-6);
+  justify-content: start;
+}
+
+.rta-ruleset-tile {
+  flex-direction: column;
+  justify-content: space-between;
+  min-width: 0;
+  padding: var(--rta-space-5) var(--rta-space-6) var(--rta-space-4);
+  border: 1px solid var(--color-border-light-primary, #403844);
+  border-radius: var(--rta-radius-compact);
+  background: rgba(15, 11, 23, .72);
+  display: grid;
+  overflow: hidden;
+  box-sizing: border-box;
+  width: 282px;
+  height: 94px;
+  min-height: 94px;
+  max-height: 94px;
+  grid-template-rows: 2.7rem minmax(0, 1fr);
+}
+
+.rta-ruleset-tile__title {
+  border: 0;
+  padding: 0;
+  margin: 0;
+  background: transparent;
+  box-shadow: none;
+  color: var(--color-text-light-highlight, #eee);
+  font-size: var(--rta-type-medium);
+  font-weight: 700;
+  width: 100%;
+  height: 2.7rem;
+  max-height: 2.7rem;
+  line-height: 1.35rem;
+  display: -webkit-box;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 2;
+  line-clamp: 2;
+  overflow: hidden;
+  overflow-wrap: anywhere;
+  text-align: left;
+  align-self: start;
+}
+
+.rta-ruleset-tile__actions .rta-config-action {
+  padding: var(--rta-space-1);
+  font-size: var(--rta-type-sm);
+  flex: 0 0 23px;
+  width: 21px;
+  min-width: 21px;
+  flex-basis: 21px;
+  height: 23px;
+}
+
+.rta-ruleset-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--rta-space-2);
+  min-height: 20px;
+  padding: var(--rta-space-1) var(--rta-space-2);
+  border: 1px solid rgba(255,255,255,.14);
+  border-radius: var(--rta-radius-rail);
+  font-weight: 700;
+  line-height: 1.2;
+  background: #34303d;
+  color: #ddd;
+  flex-shrink: 0;
+  white-space: nowrap;
+  font-size: var(--rta-type-xs);
+  padding-inline: var(--rta-space-1);
+}
+
+/* v0.1.5: independent badge and action columns, anchored to card edges. */
+.rta-ruleset-tile__bottom {
+  gap: var(--rta-space-2);
+  margin-top: 0;
+  justify-content: space-between;
+  flex-wrap: nowrap;
+  overflow: hidden;
+  box-sizing: border-box;
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) max-content;
+  align-items: end;
+  width: 100%;
+  min-width: 0;
+  column-gap: var(--rta-space-1);
+}
+
+.rta-ruleset-tile__badges {
+  display: flex;
+  align-items: center;
+  flex-wrap: nowrap;
+  justify-content: flex-start;
+  flex: 0 1 auto;
+  gap: var(--rta-space-1);
+  min-width: 0;
+  justify-self: start;
+  overflow: hidden;
+}
+
+.rta-ruleset-tile__actions {
+  display: flex;
+  flex-wrap: nowrap;
+  gap: var(--rta-space-1);
+  justify-content: flex-end;
+  flex: 0 0 auto;
+  justify-self: end;
+  margin-left: 0;
+  width: max-content;
+}
+
+/* v0.1.6: pin both footer groups to the card itself, not the footer layout. */
+.rta-configurator .rta-ruleset-tile {
+  position: relative;
+}
+
+.rta-configurator .rta-ruleset-tile__bottom {
+  position: static;
+  display: contents;
+}
+
+.rta-configurator .rta-ruleset-tile__badges {
+  position: absolute;
+  left: .7rem;
+  bottom: .5rem;
+  display: flex;
+  flex-wrap: nowrap;
+  align-items: center;
+  width: auto;
+  max-width: calc(100% - 155px);
+  margin: 0;
+  overflow: hidden;
+}
+
+.rta-configurator .rta-ruleset-tile__actions {
+  position: absolute;
+  right: .7rem;
+  bottom: .5rem;
+  display: flex;
+  flex-wrap: nowrap;
+  align-items: center;
+  justify-content: flex-end;
+  width: auto;
+  margin: 0;
+  gap: var(--rta-space-1);
+}
+
+.rta-configurator .rta-ruleset-tile__actions .rta-config-action {
+  flex: 0 0 21px;
+  min-width: 21px;
+  width: 21px;
+  height: 23px;
+  margin: 0;
+}
+
+.rta-configurator .rta-config-card-grid.rta-display-lines,.rta-configurator .rta-ruleset-tiles.rta-display-lines {
+  display: flex;
+  flex-direction: column;
+  gap: var(--rta-space-6);
+  width: 100%;
+  align-items: stretch;
+}
+
+.rta-configurator .rta-ruleset-tiles.rta-display-lines .rta-ruleset-tile {
+  width: 100%;
+  max-width: none;
+  min-height: 36px;
+  height: auto;
+  display: grid;
+  grid-template-columns: minmax(0,1fr) minmax(110px,1fr) max-content;
+  grid-template-rows: 1fr;
+  align-items: center;
+  gap: var(--rta-space-6);
+  padding: var(--rta-space-2) var(--rta-space-5);
+}
+
+.rta-configurator .rta-display-lines .rta-ruleset-tile__title {
+  grid-column: 1;
+  grid-row: 1;
+  min-width: 0;
+  text-align: left;
+}
+
+.rta-configurator .rta-display-lines .rta-ruleset-tile__bottom {
+  display: contents;
+}
+
+.rta-configurator .rta-display-lines .rta-ruleset-tile__badges {
+  grid-column: 2;
+  grid-row: 1;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  flex-wrap: wrap;
+}
+
+/* v0.1.22 — Canonical card geometry shared by Ruleset and collection views.
+   Keep semantic focus-visible feedback for keyboard users, never transient mouse rings. */
+.rta-configurator :is(.rta-ruleset-tiles, .rta-config-card-grid):not(.rta-display-lines) {
+  grid-template-columns: repeat(auto-fill, var(--rta-card-width));
+  gap: var(--rta-card-gap);
+}
+
+.rta-configurator :is(.rta-ruleset-tile, .rta-config-card) {
+  box-sizing: border-box;
+  border-radius: var(--rta-radius-compact);
+  border: 1px solid var(--color-border-light-primary, #403844);
+  background: var(--color-cool-5, #17141e);
+}
+
+.rta-configurator :is(.rta-ruleset-tiles, .rta-config-card-grid):not(.rta-display-lines) > :is(.rta-ruleset-tile, .rta-config-card) {
+  width: var(--rta-card-width);
+  height: var(--rta-card-height);
+  min-height: var(--rta-card-height);
+  max-height: var(--rta-card-height);
+  padding: var(--rta-card-padding-top) var(--rta-space-6) var(--rta-card-padding-bottom) calc(var(--rta-space-6) - var(--rta-space-1));
+}
+
+.rta-configurator :is(.rta-ruleset-tile__title, .rta-config-card__title) {
+  appearance: none;
+  outline: none !important;
+  box-shadow: none !important;
+  border: 0;
+  border-radius: 0;
+  background: transparent;
+  padding: 0;
+  margin: 0;
+  min-height: 0;
+  color: var(--color-text-light-highlight, #eee);
+  text-align: left;
+  font-size: var(--rta-type-medium);
+  font-weight: 700;
+  line-height: 1.35rem;
+}
+
+.rta-configurator :is(.rta-ruleset-tile__title, .rta-config-card__title):is(:hover, :focus, :active, :focus-visible) {
+  outline: none !important;
+  box-shadow: none !important;
+  background: transparent !important;
+}
+
+/* Keyboard navigation remains visibly accessible on the parent card only. */
+.rta-configurator :is(.rta-ruleset-tile, .rta-config-card):has(> :is(.rta-ruleset-tile__title, .rta-config-card__title):focus-visible) {
+  outline: 1px solid var(--rta-card-accent, #666666);
+  outline-offset: 1px;
+}
+
+.rta-configurator :is(.rta-ruleset-tile__actions .rta-config-action, .rta-config-card__edit) {
+  box-sizing: border-box;
+  flex: 0 0 var(--rta-card-action-size);
+  width: var(--rta-card-action-size);
+  min-width: var(--rta-card-action-size);
+  height: var(--rta-card-action-size);
+  min-height: var(--rta-card-action-size);
+  padding: var(--rta-space-1);
+  margin-top: 0;
+  margin-bottom: 0;
+  font-size: var(--rta-type-sm);
+  line-height: 1;
+}
+
+.rta-configurator :is(.rta-ruleset-tiles, .rta-config-card-grid).rta-display-lines {
+  gap: var(--rta-card-gap);
+}
+
+.rta-configurator .rta-display-lines :is(.rta-ruleset-tile, .rta-config-card) {
+  width: 100%;
+  max-width: none;
+  min-height: 36px;
+  height: auto;
+  padding: var(--rta-space-2) var(--rta-space-5);
+  display: grid;
+  grid-template-columns: minmax(0,1fr) minmax(120px,1fr) 32px;
+  grid-template-rows: 1fr;
+  align-items: center;
+  column-gap: var(--rta-space-6);
+}
+
+.rta-configurator .rta-display-lines :is(.rta-ruleset-tile__title, .rta-config-card__title) {
+  height: auto;
+  max-height: none;
+  display: block;
+  grid-column: 1;
+  grid-row: 1;
+  align-self: center;
+}
+
+.rta-configurator .rta-display-lines :is(.rta-ruleset-tile__badges, .rta-config-card__tags) {
+  position: static;
+  grid-column: 2;
+  grid-row: 1;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  max-width: none;
+  width: auto;
+  margin: 0;
+}
+
+.rta-configurator .rta-display-lines :is(.rta-ruleset-tile__actions, .rta-config-card__edit) {
+  position: static;
+  grid-column: 3;
+  grid-row: 1;
+  justify-self: end;
+  align-self: center;
+  margin: 0;
+}
+
+.rta-configurator .rta-display-lines .rta-ruleset-tile__actions {
+  grid-column: 3;
+  grid-row: 1;
+  justify-content: flex-end;
+  min-width: 0;
+  margin: 0;
+  display: flex;
+  align-items: center;
+  gap: var(--rta-space-1);
+}

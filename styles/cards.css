@@ -1,0 +1,409 @@
+/* Rule Them'All — cards.css : Cartes de collection, modes tuiles/lignes, filtres par tags.
+   L'ordre de chargement (module.json "styles") fait partie de la cascade. */
+
+/* Mission 11 clean rebuild: collection cards. */
+.rta-config-card-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, 5.25rem);
+  grid-auto-rows: 5.25rem;
+  justify-content: start;
+  align-content: start;
+  gap: var(--rta-space-4);
+}
+
+.rta-config-card__title {
+  display: -webkit-box;
+  overflow: hidden;
+  overflow-wrap: anywhere;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 3;
+  font-size: var(--rta-type-sm);
+  line-height: 1.15;
+}
+
+.rta-config-card__tags {
+  position: absolute;
+  top: 3px;
+  left: 0.2rem;
+  right: 0.2rem;
+  display: grid;
+  grid-template-columns: repeat(2, max-content);
+  justify-content: center;
+  align-content: start;
+  gap: var(--rta-space-1);
+  pointer-events: none;
+  z-index: 1;
+}
+
+.rta-config-card__tags > .rta-config-card__tag:last-child:nth-child(odd) {
+  grid-column: 1 / -1;
+  justify-self: center;
+}
+
+.rta-config-card__tag {
+  --rta-tag-color: var(--color-cool-4);
+  display: inline-block;
+  max-width: 6ch;
+  padding: 0 var(--rta-space-1);
+  overflow: hidden;
+  white-space: nowrap;
+  border: 1px solid color-mix(in srgb, var(--rta-tag-color) 70%, transparent);
+  border-radius: var(--rta-radius-compact);
+  background: color-mix(in srgb, var(--rta-tag-color) 78%, transparent);
+  color: var(--color-text-light-highlight);
+  font-size: var(--rta-type-micro);
+  font-weight: 600;
+  line-height: 1.25;
+  text-shadow: 0 1px 1px rgba(0, 0, 0, 0.45);
+}
+
+.rta-config-card__tag--capability {
+  --rta-tag-color: var(--color-warm-2);
+}
+
+.rta-config-card--disabled {
+  opacity: 0.6;
+}
+
+.rta-config-card.rta-config-card--dragging {
+  opacity: 0.35;
+}
+
+.rta-config-card.rta-config-card--drop-target {
+  background: var(--rta-card-fill-hover);
+  outline: 2px solid var(--rta-card-accent);
+  outline-offset: 2px;
+}
+
+@media (max-width: 700px) {
+  .rta-config-card-grid {
+    grid-template-columns: repeat(auto-fill, 4.75rem);
+    grid-auto-rows: 4.75rem;
+  }
+  .rta-configurator .rta-config-card {
+    width: 4.75rem;
+    height: 4.75rem;
+  }
+}
+
+.rta-config-card[draggable="true"] {
+  cursor: grab;
+}
+
+.rta-config-card[draggable="true"]:active {
+  cursor: grabbing;
+}
+
+/* v0.7.3 unified Content UX */
+.rta-content-image-editor {
+  display: flex;
+  align-items: center;
+  gap: var(--rta-space-6);
+  padding: var(--rta-space-4) var(--rta-space-5);
+  margin: var(--rta-space-3) 0 var(--rta-space-5);
+  border: 1px solid var(--color-border-light-secondary, #777);
+  border-radius: var(--rta-radius-compact);
+}
+
+.rta-content-image-editor img {
+  width: 72px;
+  height: 72px;
+  object-fit: cover;
+  border: 1px solid var(--color-border-light-primary, #999);
+  border-radius: var(--rta-radius-compact);
+  flex: 0 0 auto;
+}
+
+.rta-content-image-editor > div {
+  display: flex;
+  flex: 1;
+  min-width: 0;
+  flex-direction: column;
+  gap: var(--rta-space-4);
+}
+
+.rta-config-card__image {
+  width: 2.25rem;
+  height: 2.25rem;
+  object-fit: cover;
+  border-radius: var(--rta-radius-compact);
+  margin-bottom: var(--rta-space-2);
+  pointer-events: none;
+}
+
+/* v0.1.15: shared Foundry Ruleset tile geometry for every collection. */
+.rta-configurator .rta-config-card-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, 282px);
+  grid-auto-rows: 94px;
+  justify-content: start;
+  align-content: start;
+  gap: var(--rta-space-6);
+}
+
+.rta-configurator .rta-config-card__title {
+  display: -webkit-box;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 2;
+  line-clamp: 2;
+  width: 100%;
+  height: 2.7rem;
+  max-height: 2.7rem;
+  padding: 0;
+  margin: 0;
+  border: 0;
+  border-radius: 0;
+  background: transparent;
+  box-shadow: none;
+  color: var(--color-text-light-highlight, #eee);
+  font-size: var(--rta-type-medium);
+  font-weight: 700;
+  line-height: 1.35rem;
+  text-align: left;
+  overflow: hidden;
+  overflow-wrap: anywhere;
+  cursor: pointer;
+}
+
+.rta-configurator .rta-config-card__title:hover {
+  text-decoration: underline;
+  box-shadow: none;
+}
+
+.rta-configurator .rta-config-card__bottom {
+  display: flex;
+  align-items: end;
+  justify-content: space-between;
+  gap: var(--rta-space-2);
+  min-width: 0;
+  width: 100%;
+}
+
+.rta-configurator .rta-config-card__tag {
+  display: inline-block;
+  flex: 0 1 auto;
+  min-width: 0;
+  max-width: 100%;
+  padding: var(--rta-space-1) var(--rta-space-2);
+  border: 1px solid var(--rta-tag-color, #777);
+  border-radius: var(--rta-radius-rail);
+  background: color-mix(in srgb, var(--rta-tag-color, #777) 26%, #17121e);
+  color: var(--color-text-light-highlight, #eee);
+  font-size: var(--rta-type-xs);
+  line-height: 1.2;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.rta-configurator .rta-config-card__edit {
+  flex: 0 0 23px;
+  width: 23px;
+  min-width: 23px;
+  height: 23px;
+  padding: var(--rta-space-1);
+  margin-left: auto;
+  font-size: var(--rta-type-sm);
+}
+
+.rta-configurator .rta-config-card__tags {
+  flex: 1 1 auto;
+  align-items: center;
+  flex-wrap: nowrap;
+  gap: var(--rta-space-1);
+  min-width: 0;
+  overflow: hidden;
+  position: static;
+  inset: auto;
+  display: flex;
+  justify-content: flex-start;
+  align-content: center;
+  grid-template-columns: none;
+  pointer-events: auto;
+  z-index: auto;
+}
+
+.rta-configurator .rta-config-card__tags > .rta-config-card__tag:last-child:nth-child(odd) {
+  grid-column: auto;
+  justify-self: auto;
+}
+
+/* v0.1.16: match the 12px inter-tile gap above the first collection row. */
+.rta-configurator .rta-configurator__section-heading:has(+ .rta-config-card-grid) {
+  margin-bottom: var(--rta-space-6);
+}
+
+/* v0.1.19: understated category accent; preserve neutral borders and tile geometry. */
+.rta-configurator .rta-config-card:hover,
+.rta-configurator .rta-config-card:focus-visible {
+  background: color-mix(in srgb, var(--rta-card-accent, #666666) 5%, var(--color-cool-5, #17141e));
+}
+
+/* v0.1.20: two non-destructive collection display modes. */
+.rta-configurator .rta-display-switch {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--rta-space-1);
+  margin-right: var(--rta-space-4);
+  flex-shrink: 0;
+}
+
+.rta-configurator .rta-display-switch button {
+  width: 30px;
+  min-width: 30px;
+  height: 29px;
+  padding: 0;
+  display: grid;
+  place-items: center;
+  border: 1px solid var(--color-border-light-primary,#777);
+  border-radius: var(--rta-radius-compact);
+  background: transparent;
+}
+
+.rta-configurator .rta-display-switch button.is-active {
+  background: color-mix(in srgb, var(--rta-card-accent, #666666) 22%, transparent);
+  border-color: var(--rta-card-accent, #666666);
+}
+
+.rta-configurator .rta-config-card-grid.rta-display-lines .rta-config-card {
+  width: 100%;
+  max-width: none;
+  min-height: 36px;
+  height: auto;
+  display: grid;
+  grid-template-columns: minmax(0,1fr) minmax(120px,1fr) 32px;
+  grid-template-rows: 1fr;
+  align-items: center;
+  column-gap: var(--rta-space-6);
+  padding: var(--rta-space-2) var(--rta-space-5);
+}
+
+.rta-configurator .rta-display-lines .rta-config-card__title {
+  grid-column: 1;
+  grid-row: 1;
+  min-width: 0;
+  margin: 0;
+  max-width: none;
+  text-align: left;
+}
+
+.rta-configurator .rta-display-lines .rta-config-card__bottom {
+  display: contents;
+}
+
+.rta-configurator .rta-display-lines .rta-config-card__tags {
+  grid-column: 2;
+  grid-row: 1;
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: center;
+  gap: var(--rta-space-2);
+  min-width: 0;
+}
+
+.rta-configurator .rta-display-lines .rta-config-card__edit {
+  grid-column: 3;
+  grid-row: 1;
+  justify-self: end;
+  margin: 0;
+}
+
+/* Collection cards share the neutral frame, but their left border is the type/family accent. */
+.rta-configurator .rta-config-card {
+  --rta-card-fill: color-mix(in srgb, var(--rta-card-accent) 18%, transparent);
+  --rta-card-fill-hover: color-mix(in srgb, var(--rta-card-accent) 32%, transparent);
+  position: relative;
+  white-space: normal;
+  transition: background-color 120ms ease, filter 120ms ease;
+  box-sizing: border-box;
+  width: 282px;
+  height: 94px;
+  min-width: 0;
+  min-height: 94px;
+  max-height: 94px;
+  display: grid;
+  grid-template-rows: 2.7rem minmax(0,1fr);
+  align-items: initial;
+  justify-content: initial;
+  padding: var(--rta-space-5) var(--rta-space-6) var(--rta-space-4);
+  margin: 0;
+  border: 1px solid var(--color-border-light-primary, #403844);
+  text-align: left;
+  overflow: hidden;
+  background: var(--color-cool-5, #17141e);
+  padding-left: calc(var(--rta-space-6) - var(--rta-space-1));
+  border-top-color: var(--rta-panel-border);
+  border-right-color: var(--rta-panel-border);
+  border-bottom-color: var(--rta-panel-border);
+  border-radius: var(--rta-panel-radius);
+}
+
+/* Shared tag facet for every collection; counts and selection are rendered from the same tag data. */
+.rta-configurator .rta-tag-facets {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: var(--rta-space-3);
+  margin: 0 0 var(--rta-space-6);
+  padding: var(--rta-space-4) var(--rta-space-5);
+  border: 1px solid var(--rta-panel-border);
+  border-radius: var(--rta-panel-radius);
+  background: rgba(128,128,128,.035);
+}
+
+.rta-configurator .rta-tag-facets__label {
+  font-size: var(--rta-type-base);
+  opacity: .8;
+  margin-right: var(--rta-space-3);
+  white-space: nowrap;
+}
+
+.rta-configurator .rta-tag-facets__chip {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--rta-space-2);
+  min-height: 23px;
+  height: auto;
+  width: auto;
+  max-width: 100%;
+  padding: var(--rta-space-1) var(--rta-space-2);
+  border: 1px solid var(--rta-tag-color,var(--rta-panel-border));
+  border-radius: var(--rta-radius-rail);
+  background: color-mix(in srgb,var(--rta-tag-color,#777) 26%,#17121e);
+  box-shadow: none;
+  color: var(--color-text-light-highlight,#eee);
+  font-size: var(--rta-type-xs);
+  line-height: 1.2;
+  white-space: normal;
+  text-align: left;
+}
+
+.rta-configurator .rta-tag-facets__chip small {
+  opacity: .72;
+  font-size: var(--rta-type-sm);
+}
+
+.rta-configurator .rta-tag-facets__chip:hover:not(.is-active) {
+  background: color-mix(in srgb,var(--rta-tag-color, #666666) 13%,transparent);
+}
+
+.rta-configurator .rta-tag-facets__chip.is-active,
+.rta-configurator .rta-tag-facets__chip.is-active:hover {
+  background: #fff;
+  color: #000;
+  /* Keep the exact same border, dimensions and tag accent as the unselected chip. */
+}
+
+.rta-configurator .rta-tag-facets__chip.is-active small {
+  color: inherit;
+  opacity: 1;
+}
+
+.rta-configurator .rta-tag-facets__clear {
+  width: auto;
+  min-height: 27px;
+  height: auto;
+  padding: var(--rta-space-1) var(--rta-space-4);
+  font-size: var(--rta-type-sm);
+}

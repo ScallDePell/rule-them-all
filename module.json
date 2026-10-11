@@ -12,7 +12,19 @@
     "rule-them-all.mjs"
   ],
   "styles": [
-    "styles/configurator.css"
+    "styles/tokens.css",
+    "styles/layout.css",
+    "styles/explorer.css",
+    "styles/rulesets.css",
+    "styles/cards.css",
+    "styles/general.css",
+    "styles/dependencies.css",
+    "styles/runtime-lab.css",
+    "styles/sheet-builder.css",
+    "styles/editor.css",
+    "styles/choices.css",
+    "styles/rule-builder.css",
+    "styles/select.css"
   ],
   "languages": [
     {

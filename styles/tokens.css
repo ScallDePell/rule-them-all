@@ -1,0 +1,52 @@
+/* Rule Them'All — tokens.css : Échelle partagée : espacements, rayons, typographie.
+   L'ordre de chargement (module.json "styles") fait partie de la cascade. */
+
+/* ================================================================
+   RTA DESIGN SYSTEM — single shared scale (v0.1.55)
+   These are the only generic spacing and typography primitives.
+   Component-specific geometry (grids, icon sizes, min-width) is
+   intentionally kept out of the scale and documented separately.
+   ================================================================ */
+:is(.rta-configurator, .rta-config-entry) {
+  --rta-space-1: .125rem;
+  /* 2px at a 16px root */
+  --rta-space-2: .25rem;
+  /* 4px */
+  --rta-space-3: .375rem;
+  /* 6px */
+  --rta-space-4: .5rem;
+  /* 8px */
+  --rta-space-5: .625rem;
+  /* 10px */
+  --rta-space-6: .75rem;
+  /* 12px */
+  --rta-space-7: .875rem;
+  /* 14px */
+  --rta-space-8: 1rem;
+  /* 16px */
+  --rta-space-10: 1.25rem;
+  /* 20px */
+  --rta-space-12: 1.5rem;
+  /* 24px */
+  --rta-radius-rail: 2px;
+  --rta-radius-compact: 4px;
+  --rta-radius-control: 5px;
+  --rta-radius-panel: 7px;
+
+  --rta-type-micro: .5625rem;
+  /* 9px, compact markers and SVG */
+  --rta-type-xs: .625rem;
+  /* 10px, badges and icons */
+  --rta-type-sm: .75rem;
+  /* 12px, small labels */
+  --rta-type-base: .8125rem;
+  /* 13px, secondary UI */
+  --rta-type-control: .875rem;
+  /* 14px, list rows */
+  --rta-type-medium: 1rem;
+  /* 16px, card titles */
+  --rta-type-heading: 1.125rem;
+  /* 18px, section titles */
+  --rta-type-display: 1.625rem;
+  /* 26px, page titles */
+}

@@ -1,0 +1,138 @@
+/* Rule Them'All — general.css : Vue Général du Ruleset.
+   L'ordre de chargement (module.json "styles") fait partie de la cascade. */
+
+/* v0.1.17: General presentation only; other views retain their styling. */
+.rta-configurator .rta-general {
+  display: grid;
+  gap: var(--rta-space-6);
+}
+
+.rta-configurator .rta-general__header {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  gap: var(--rta-space-8);
+  padding: var(--rta-space-2) var(--rta-space-1) var(--rta-space-7);
+  border-bottom: 1px solid var(--color-border-light-primary,#777);
+}
+
+.rta-configurator .rta-general__header h2 {
+  margin: var(--rta-space-2) 0;
+  font-size: var(--rta-type-display);
+  line-height: 1.2;
+}
+
+.rta-configurator .rta-general__header p {
+  margin: 0;
+  opacity: .75;
+}
+
+.rta-configurator .rta-general__eyebrow {
+  font-size: var(--rta-type-sm);
+  letter-spacing: .07em;
+  opacity: .7;
+}
+
+.rta-configurator .rta-general__status {
+  padding: var(--rta-space-2) var(--rta-space-5);
+  border: 1px solid var(--color-border-light-primary,#777);
+  border-radius: var(--rta-radius-control);
+  text-transform: capitalize;
+}
+
+.rta-configurator .rta-general__cards {
+  display: grid;
+  grid-template-columns: repeat(2,minmax(0,1fr));
+  gap: var(--rta-space-6);
+}
+
+.rta-configurator .rta-general__card, .rta-configurator .rta-general__storage {
+  min-width: 0;
+  padding: var(--rta-space-8);
+  border: 1px solid var(--color-border-light-primary,#777);
+  border-radius: var(--rta-radius-panel);
+  background: rgba(128,128,128,.06);
+}
+
+.rta-configurator .rta-general__card h3 {
+  margin: 0 0 var(--rta-space-8);
+  font-size: var(--rta-type-medium);
+}
+
+.rta-configurator .rta-general__card h3 i, .rta-configurator .rta-general__storage summary i {
+  margin-right: var(--rta-space-4);
+  opacity: .8;
+}
+
+.rta-configurator .rta-general__card dl, .rta-configurator .rta-general__storage dl {
+  display: grid;
+  grid-template-columns: minmax(90px,1fr) minmax(0,1.7fr);
+  gap: var(--rta-space-4) var(--rta-space-6);
+  margin: 0;
+}
+
+.rta-configurator .rta-general__card dt, .rta-configurator .rta-general__storage dt {
+  opacity: .7;
+}
+
+.rta-configurator .rta-general__card dd, .rta-configurator .rta-general__storage dd {
+  margin: 0;
+  overflow-wrap: anywhere;
+}
+
+.rta-configurator .rta-general__storage {
+  margin: 0;
+}
+
+.rta-configurator .rta-general__storage summary {
+  cursor: pointer;
+  font-weight: 700;
+}
+
+.rta-configurator .rta-general__storage[open] summary {
+  margin-bottom: var(--rta-space-8);
+}
+
+@media (max-width:850px) {
+  .rta-configurator .rta-general__cards {
+    grid-template-columns: 1fr;
+  }
+}
+
+/* v0.1.18: General lifecycle controls remain in the Version and status card. */
+.rta-configurator .rta-general__cards > .rta-general__card:nth-child(2) {
+  display: flex;
+  flex-direction: column;
+}
+
+.rta-configurator .rta-general__lifecycle-actions {
+  margin-top: auto;
+  padding-top: var(--rta-space-8);
+  justify-content: flex-end;
+}
+
+.rta-configurator .rta-general__storage h3 {
+  margin: 0 0 var(--rta-space-8);
+  font-size: var(--rta-type-medium);
+}
+
+.rta-configurator .rta-general__storage h3 i {
+  margin-right: var(--rta-space-4);
+  opacity: .8;
+}
+
+.rta-configurator .rta-general__card,
+.rta-configurator .rta-general__storage {
+  border-top-color: var(--rta-panel-border);
+  border-right-color: var(--rta-panel-border);
+  border-bottom-color: var(--rta-panel-border);
+  border-radius: var(--rta-panel-radius);
+}
+
+/* Ruleset color hierarchy: reuse existing card and nav accent tokens. */
+.rta-configurator .rta-general__header-actions {
+  display: flex;
+  align-items: center;
+  gap: var(--rta-space-5);
+  flex-wrap: wrap;
+}

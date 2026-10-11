@@ -1,0 +1,367 @@
+/* Rule Them'All — explorer.css : Navigation à deux niveaux et panneau flottant.
+   L'ordre de chargement (module.json "styles") fait partie de la cascade. */
+
+.rta-configurator__nav {
+  flex-shrink: 0;
+  flex-wrap: wrap;
+  gap: var(--rta-space-2);
+}
+
+.rta-configurator__nav-group {
+  margin-block-start: var(--rta-space-6);
+}
+
+.rta-configurator__nav-group > span {
+  display: block;
+  padding: var(--rta-space-2) var(--rta-space-4);
+  font-size: var(--rta-type-sm);
+  font-weight: 700;
+  text-align: center;
+  opacity: 0.7;
+}
+
+/* v0.1.7 - Two-level Ruleset explorer, scoped to workspace */
+.rta-explorer__heading>i {
+  font-size: var(--rta-type-heading);
+  color: var(--rta-card-accent, #666666);
+}
+
+.rta-explorer__heading>div {
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+}
+
+.rta-explorer__columns {
+  display: grid;
+  grid-template-columns: 136px minmax(0,1fr);
+  gap: var(--rta-space-4);
+  min-height: 0;
+  flex: 1;
+  overflow: hidden;
+}
+
+.rta-explorer__groups,.rta-explorer__details,.rta-explorer__results {
+  min-height: 0;
+  overflow-y: auto;
+  overflow-x: hidden;
+  scrollbar-width: thin;
+}
+
+.rta-explorer button {
+  height: auto;
+  min-height: 32px;
+  width: 100%;
+  margin: 0;
+  border: 0;
+  box-shadow: none;
+  text-align: left;
+  background: transparent;
+  color: inherit;
+  font-size: var(--rta-type-sm);
+  line-height: 1.25;
+}
+
+.rta-explorer__group {
+  display: flex;
+  align-items: center;
+  gap: var(--rta-space-3);
+  padding: var(--rta-space-3) var(--rta-space-3);
+  border-radius: 5px !important;
+}
+
+.rta-explorer__group i {
+  flex: 0 0 16px;
+  text-align: center;
+  opacity: .85;
+}
+
+.rta-explorer__group.is-active {
+  background: color-mix(in srgb, var(--rta-nav-accent, #666666) 17%, transparent);
+  border: 1px solid var(--rta-panel-border);
+  border-radius: var(--rta-radius-compact) !important;
+  font-weight: 700;
+}
+
+.rta-explorer__detail-title {
+  font-size: var(--rta-type-sm);
+  font-weight: 700;
+  padding: var(--rta-space-4) var(--rta-space-2) var(--rta-space-5);
+  border-bottom: 1px solid var(--color-border-light-primary);
+  margin-bottom: var(--rta-space-3);
+}
+
+.rta-explorer__item {
+  display: flex;
+  align-items: center;
+  gap: var(--rta-space-3);
+  padding: var(--rta-space-3) var(--rta-space-2) !important;
+  border-radius: 4px !important;
+  overflow-wrap: anywhere;
+}
+
+.rta-explorer__item:hover,.rta-explorer__group:hover {
+  background: color-mix(in srgb, var(--rta-nav-accent, #666666) 12%, transparent);
+}
+
+.rta-explorer__item.is-active {
+  background: color-mix(in srgb, var(--rta-nav-accent, #666666) 18%, transparent);
+  font-weight: 700;
+}
+
+.rta-explorer__results {
+  grid-column: 1/-1;
+}
+
+.rta-explorer__results[hidden],.rta-explorer__details[hidden],.rta-explorer button[hidden] {
+  display: none !important;
+}
+
+@media (max-width:760px) {
+  .rta-explorer__columns {
+    grid-template-columns: 116px minmax(0,1fr);
+  }
+}
+
+/* v0.1.8 - compact overlay explorer; never changes editor width */
+.rta-configurator__workspace:has(> .rta-explorer) {
+  grid-template-columns: 180px minmax(0,1fr);
+}
+
+.rta-explorer {
+  display: flex;
+  flex-direction: column;
+  min-height: 0;
+  min-width: 0;
+  border-right: 1px solid var(--color-border-light-primary);
+  position: relative;
+  overflow: visible;
+  z-index: 3;
+  padding: var(--rta-space-6) var(--rta-space-4);
+  gap: var(--rta-space-8);
+}
+
+.rta-explorer__heading {
+  display: flex;
+  gap: var(--rta-space-4);
+  padding: var(--rta-space-2) var(--rta-space-3);
+  align-items: flex-start;
+  min-height: 48px;
+}
+
+.rta-explorer__heading strong {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  font-size: var(--rta-type-base);
+  white-space: normal;
+  line-height: 1.3;
+}
+
+.rta-explorer__heading small {
+  opacity: .7;
+  font-size: var(--rta-type-sm);
+}
+
+.rta-explorer__groups {
+  display: flex;
+  flex-direction: column;
+  gap: var(--rta-space-2);
+  overflow-y: auto;
+  padding: var(--rta-space-2);
+  background: rgba(125,125,125,.055);
+  border-radius: var(--rta-radius-panel);
+  flex: 1;
+}
+
+.rta-explorer .rta-explorer__group {
+  width: 100%;
+  min-height: 38px;
+  display: flex;
+  align-items: center;
+  gap: var(--rta-space-4);
+  padding: var(--rta-space-4) var(--rta-space-4);
+  font-size: var(--rta-type-control);
+  line-height: 1.3;
+  text-align: left;
+}
+
+.rta-explorer__group span {
+  flex: 1;
+  text-align: left;
+}
+
+.rta-explorer__chevron {
+  font-size: var(--rta-type-xs);
+  opacity: .5;
+}
+
+.rta-explorer__group > i:first-child {
+  color: var(--rta-nav-accent, #666666);
+}
+
+.rta-explorer__flyout[hidden],.rta-explorer__flyout-list section[hidden] {
+  display: none !important;
+}
+
+.rta-explorer__flyout-heading {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--rta-space-3);
+  font-size: var(--rta-type-control);
+}
+
+.rta-explorer .rta-explorer__flyout-heading button {
+  width: 24px;
+  min-height: 24px;
+  flex: 0 0 24px;
+  padding: var(--rta-space-1);
+  text-align: center;
+}
+
+.rta-explorer .rta-explorer__item {
+  min-height: 36px;
+  font-size: var(--rta-type-base);
+  line-height: 1.35;
+  padding: var(--rta-space-3) var(--rta-space-2) !important;
+  overflow-wrap: normal;
+  word-break: normal;
+  text-align: left;
+}
+
+.rta-explorer__item span:last-child {
+  text-align: left;
+}
+
+@media (max-width:760px) {
+  .rta-configurator__workspace:has(> .rta-explorer) {
+    grid-template-columns: 165px minmax(0,1fr);
+  }
+  .rta-explorer__flyout {
+    width: 165px;
+  }
+}
+
+/* v0.1.9 - readable overlay, special type configuration entries */
+.rta-explorer__flyout {
+  position: absolute;
+  left: 100%;
+  top: 60px;
+  width: 180px;
+  max-height: calc(100% - 65px);
+  display: flex;
+  flex-direction: column;
+  gap: var(--rta-space-5);
+  z-index: 20;
+  padding: var(--rta-space-5);
+  background: var(--color-cool-5,#17141e);
+  border: 1px solid var(--color-border-light-primary);
+  border-radius: var(--rta-radius-panel);
+  box-shadow: 5px 5px 18px #000a;
+  box-sizing: border-box;
+  overflow: hidden;
+  min-height: 140px;
+}
+
+.rta-explorer__flyout-list {
+  min-height: 0;
+  scrollbar-width: thin;
+  flex: 1 1 auto;
+  overflow-y: auto;
+  overflow-x: hidden;
+}
+
+.rta-explorer__flyout-list section {
+  display: flex;
+  flex-direction: column;
+  gap: var(--rta-space-1);
+  align-items: stretch;
+  width: 100%;
+}
+
+.rta-explorer .rta-explorer__flyout-list .rta-explorer__item {
+  display: flex;
+  align-items: center;
+  justify-content: flex-start;
+  width: 100%;
+  min-height: 38px;
+  gap: var(--rta-space-4);
+  padding: var(--rta-space-4) !important;
+  text-align: left !important;
+  font-size: var(--rta-type-control) !important;
+  line-height: 1.35;
+  white-space: normal;
+}
+
+.rta-configurator .rta-explorer__flyout-list .rta-explorer__item > span:first-child {
+  flex: 1 1 auto;
+  min-width: 0;
+  text-align: left !important;
+}
+
+.rta-explorer .rta-explorer__item--primary {
+  background: color-mix(in srgb, var(--rta-nav-accent, #666666) 13%, transparent);
+  border: 1px solid var(--rta-panel-border);
+  border-radius: var(--rta-radius-control);
+  font-weight: 650;
+  margin-bottom: var(--rta-space-4);
+}
+
+.rta-explorer__primary-icon {
+  color: var(--rta-nav-accent, #666666);
+  flex: 0 0 auto;
+  font-size: var(--rta-type-base);
+}
+
+/* v0.1.10: flyout card border and full-strength family accents */
+.rta-configurator .rta-explorer__flyout-list .rta-explorer__item {
+  color: var(--color-text-primary, inherit);
+  opacity: 1;
+  text-align: left !important;
+}
+
+/* v0.1.12: 1.5x wide flyout; use the entire sidebar height before scrolling. */
+@media (max-width:760px) {
+  .rta-configurator .rta-explorer__flyout {
+    width: 270px;
+  }
+}
+
+/* v0.1.14: allow the flyout to extend above the workspace without being
+   clipped by the workspace grid; keep the native Foundry title bar above it. */
+.rta-configurator .rta-configurator__workspace:has(> .rta-explorer) {
+  position: relative;
+  overflow: visible;
+  z-index: 5;
+}
+
+.rta-configurator .rta-explorer {
+  position: relative;
+  z-index: 6;
+}
+
+.rta-configurator .rta-explorer__flyout {
+  background: var(--color-cool-5, #17141e);
+  width: 270px;
+  max-height: none;
+  border: 1px solid var(--color-border-light-tertiary, #49404e);
+  border-radius: var(--rta-radius-control);
+  z-index: 30;
+}
+
+/* Canonical full-height Ruleset rail: tile style for cards, General and navigation.
+   The existing --rta-card-accent is sourced from the Ruleset / section / collection.
+   No inset shadow, miniature bar or competing border-left width. */
+.rta-configurator :is(
+  .rta-ruleset-tile,
+  .rta-config-card,
+  .rta-general__card,
+  .rta-general__storage,
+  .rta-dependencies__row,
+  .rta-explorer__group.is-active,
+  .rta-explorer__flyout-list .rta-explorer__item
+) {
+  border-left: var(--rta-rail-width) solid var(--rta-card-accent, #666666);
+  border-top-left-radius: var(--rta-radius-compact);
+  border-bottom-left-radius: var(--rta-radius-compact);
+}

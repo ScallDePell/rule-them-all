@@ -1,0 +1,73 @@
+/* Rule Them'All — rule-builder.css : Éditeurs de Formule et de Condition.
+   L'ordre de chargement (module.json "styles") fait partie de la cascade. */
+
+.rta-rule-builder {
+  display: flex;
+  flex-direction: column;
+  gap: var(--rta-space-5);
+  padding: var(--rta-space-6);
+  border: 1px solid var(--color-border-light-primary);
+  border-radius: var(--rta-radius-panel);
+  background: rgba(255,255,255,.018);
+}
+
+.rta-rule-builder__heading {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: var(--rta-space-5);
+}
+
+.rta-rule-builder__heading > span {
+  opacity: .7;
+  font-size: .9em;
+}
+
+/* Formula and Condition use the SAME canonical form-row as the rest of the
+   entry editor. Only their right-hand control area is specialized (kind | value
+   | optional removal). The rule builder's own border/padding is compensated
+   so its fields start on the same vertical as Name, Description and Tags. */
+.rta-rule-operands {
+  display: flex;
+  flex-direction: column;
+  gap: var(--rta-space-4);
+  min-width: 0;
+}
+
+.rta-rule-builder > .rta-form-row,
+.rta-rule-builder .rta-rule-operand.rta-form-row {
+  --rta-form-column-inset: calc(1.5rem + 2px);
+}
+
+.rta-rule-operand__controls {
+  display: grid;
+  grid-template-columns: minmax(8rem, 10rem) minmax(0, 1fr) auto;
+  align-items: center;
+  gap: var(--rta-space-4);
+  min-width: 0;
+  width: 100%;
+}
+
+/* Formula/Condition right-hand controls must reach the same right edge
+   as the ordinary Name, Description and Tags controls outside Rule. The
+   builder has .7rem padding and a 1px border of its own. */
+:is(.rta-config-entry, .rta-configurator) .rta-rule-builder > .rta-form-row,
+:is(.rta-config-entry, .rta-configurator) .rta-rule-builder .rta-rule-operand.rta-form-row {
+  width: calc(100% + .7rem + 1px);
+}
+
+/* A Condition operand has no remove button. Do not leave an empty third
+   grid track plus its gap: the value is then the natural end of the row. */
+.rta-rule-operand__controls:not(:has(> [data-action="removeRuleOperand"])) {
+  grid-template-columns: minmax(8rem,10rem) minmax(0,1fr);
+}
+
+.rta-rule-operand__controls > [data-rule-operand-editor] {
+  grid-column: 2;
+  min-width: 0;
+  width: 100%;
+}
+
+.rta-rule-operand__controls > [data-action="removeRuleOperand"] {
+  grid-column: 3;
+}

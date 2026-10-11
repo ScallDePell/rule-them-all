@@ -1,0 +1,701 @@
+/* Rule Them'All — editor.css : Fenêtres d'édition : sections, form-row canonique, champs.
+   L'ordre de chargement (module.json "styles") fait partie de la cascade. */
+
+/* Rule Them'All Configurator: Foundry-first layout refinements only. */
+.rta-configurator,
+.rta-config-entry {
+  display: flex;
+  flex: 1;
+  flex-direction: column;
+  min-height: 0;
+  overflow: hidden;
+}
+
+.rta-configurator__scroll,
+.rta-config-entry__scroll {
+  flex: 1;
+  min-height: 0;
+  overflow: auto;
+}
+
+.rta-config-entry form[data-entry-form] {
+  display: flex;
+  flex: 1;
+  flex-direction: column;
+  min-height: 0;
+  overflow: hidden;
+}
+
+.rta-config-entry fieldset > fieldset {
+  margin-block: var(--rta-space-3) 0;
+}
+
+.rta-config-entry textarea {
+  resize: vertical;
+}
+
+.rta-config-entry__full-width {
+  display: flex;
+  flex-direction: column;
+  gap: var(--rta-space-3);
+  margin-block: var(--rta-space-2) var(--rta-space-5);
+}
+
+.rta-config-entry__full-width > label {
+  margin: 0;
+}
+
+.rta-config-entry__full-width > textarea {
+  width: 100%;
+  min-width: 0;
+}
+
+.rta-config-entry__footer-actions {
+  margin-inline-start: auto;
+  display: flex;
+  align-items: center;
+  gap: var(--rta-space-4);
+}
+
+.rta-config-entry dl,
+.rta-configurator dl {
+  display: grid;
+  grid-template-columns: minmax(160px, 220px) minmax(0, 1fr);
+  gap: var(--rta-space-3) var(--rta-space-6);
+}
+
+.rta-config-entry dl dt,
+.rta-config-entry dl dd,
+.rta-configurator dl dt,
+.rta-configurator dl dd {
+  margin: 0;
+}
+
+/* Mission 11 clean rebuild: editor spacing, disclosure and selectors. */
+.rta-config-entry__section {
+  margin-block: var(--rta-space-3) var(--rta-space-6);
+}
+
+.rta-config-entry__section > summary {
+  cursor: pointer;
+  font-weight: 700;
+  padding-block: var(--rta-space-3);
+}
+
+.rta-config-entry__section[open] > .form-group,
+.rta-config-entry__section[open] > .rta-config-entry__check-group,
+.rta-config-entry__section[open] > .rta-config-entry__projection {
+  margin-block: var(--rta-space-5);
+}
+
+.rta-config-entry__section-summary {
+  margin-inline-start: var(--rta-space-4);
+  color: var(--color-text-light-6, var(--color-warm-1));
+  font-size: 0.82em;
+  font-weight: 400;
+  opacity: 0.82;
+  overflow: hidden;
+  white-space: nowrap;
+}
+
+.rta-config-entry__check-group {
+  display: flex;
+  flex-direction: column;
+  gap: var(--rta-space-3);
+  max-height: 12rem;
+  overflow: auto;
+  padding: var(--rta-space-4) var(--rta-space-2);
+}
+
+.rta-config-entry__check-group--inline {
+  max-height: 9rem;
+}
+
+.rta-config-entry__check-group > label {
+  display: flex;
+  align-items: center;
+  gap: var(--rta-space-4);
+}
+
+.rta-config-entry__projection {
+  display: flex;
+  flex-direction: column;
+  gap: var(--rta-space-2);
+}
+
+.rta-config-entry__empty {
+  opacity: 0.7;
+  font-style: italic;
+}
+
+.rta-config-entry__enabled {
+  margin-block-start: var(--rta-space-5);
+}
+
+/* v0.2.3 generic DefinitionType field editor and generated Definition data editor. */
+.rta-config-entry__section-heading {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--rta-space-6);
+  margin-block: var(--rta-space-3) var(--rta-space-6);
+}
+
+.rta-field-editor-list,
+.rta-definition-data-grid,
+.rta-capability-contracts {
+  display: flex;
+  flex-direction: column;
+  gap: var(--rta-space-5);
+}
+
+.rta-field-editor,
+.rta-definition-field {
+  border: 1px solid var(--color-border-light-primary);
+  border-radius: var(--rta-radius-compact);
+  padding: var(--rta-space-5);
+  background: color-mix(in srgb, var(--color-cool-5, #222) 12%, transparent);
+}
+
+.rta-field-editor > header,
+.rta-definition-field__heading {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--rta-space-4);
+  margin-block-end: var(--rta-space-4);
+}
+
+.rta-field-editor__grid {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  gap: var(--rta-space-4) var(--rta-space-6);
+}
+
+.rta-field-editor label,
+.rta-definition-field {
+  min-width: 0;
+}
+
+.rta-field-editor label:not(.rta-field-editor__check):not(.rta-form-row__label):not(.rta-form-row--nested):not([data-picker-option]) {
+  display: flex;
+  flex-direction: column;
+  gap: var(--rta-space-2);
+}
+
+.rta-field-editor input:not([type="checkbox"]):not([type="radio"]),
+.rta-field-editor select,
+.rta-field-editor textarea,
+.rta-definition-field input,
+.rta-definition-field select,
+.rta-definition-field textarea {
+  width: 100%;
+  min-width: 0;
+}
+
+.rta-field-editor__check,
+.rta-definition-field__use {
+  display: flex;
+  align-items: center;
+  gap: var(--rta-space-3);
+}
+
+.rta-field-editor__check input,
+.rta-definition-field__use input {
+  width: auto;
+}
+
+.rta-field-editor > details {
+  margin-block-start: var(--rta-space-4);
+}
+
+.rta-field-editor > details > label {
+  margin-block: var(--rta-space-4);
+}
+
+.rta-definition-field {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  gap: var(--rta-space-4);
+}
+
+.rta-definition-field__heading small {
+  opacity: 0.72;
+}
+
+.rta-capability-contracts > details {
+  padding: var(--rta-space-3) var(--rta-space-4);
+  border-left: 2px solid var(--color-border-light-primary);
+}
+
+@media (max-width: 700px) {
+  .rta-field-editor__grid {
+    grid-template-columns: 1fr;
+  }
+}
+
+.rta-field-editor__details > summary {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--rta-space-5);
+  padding: var(--rta-space-4) var(--rta-space-5);
+  cursor: pointer;
+  list-style: none;
+}
+
+.rta-field-editor__details > summary::-webkit-details-marker {
+  display: none;
+}
+
+.rta-field-editor__details > summary::before {
+  content: "▸";
+  flex: 0 0 auto;
+}
+
+.rta-field-editor__details[open] > summary::before {
+  content: "▾";
+}
+
+.rta-field-editor__details > summary > span {
+  flex: 1;
+  min-width: 0;
+}
+
+.rta-field-editor__details > summary small {
+  opacity: .7;
+  font-weight: normal;
+}
+
+.rta-field-editor__numeric {
+  display: grid;
+  grid-template-columns: minmax(0,1fr);
+  gap: var(--rta-space-4) var(--rta-space-6);
+  margin: var(--rta-space-5) 0;
+}
+
+.rta-field-editor__numeric label {
+  display: flex;
+  flex-direction: column;
+  gap: var(--rta-space-2);
+}
+
+@media (max-width:700px) {
+  .rta-configurator__workspace-header > div:first-of-type {
+    justify-content: flex-start;
+  }
+  .rta-field-editor__numeric {
+    grid-template-columns: 1fr;
+  }
+}
+
+/* v0.3.1 No IDs UI: business-first pickers and compact Definition fields. */
+.rta-definition-field.form-group {
+  border: 0;
+  border-radius: 0;
+  padding: 0;
+  background: transparent;
+}
+
+.rta-definition-field.form-group > label {
+  font-weight: 600;
+}
+
+.rta-config-entry__technical details > textarea,
+.rta-config-entry__technical > textarea {
+  width: 100%;
+  min-height: 8rem;
+}
+
+/* v0.3.2: clearer field cards, collapsible relationship pickers, visual rule builders. */
+.rta-field-editor {
+  padding: 0;
+  overflow: hidden;
+  margin-block: var(--rta-space-2);
+  border: 1px solid var(--color-border-light-primary);
+  border-radius: var(--rta-radius-panel);
+  box-shadow: 0 0 0 1px rgba(255,255,255,.035);
+  background: rgba(255,255,255,.018);
+}
+
+.rta-field-editor__details[open] {
+  background: rgba(255,255,255,.02);
+}
+
+.rta-field-editor__details[open] > summary {
+  border-bottom: 1px solid var(--color-border-light-primary);
+}
+
+.rta-field-editor__body {
+  background: color-mix(in srgb, var(--color-cool-5, #222) 8%, transparent);
+  border-top: 0;
+  padding: var(--rta-space-6) var(--rta-space-7) var(--rta-space-7);
+}
+
+/* v0.6.1: reuse existing entry/field components; only align section title actions. */
+.rta-config-entry__section-title {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--rta-space-6);
+  margin-bottom: var(--rta-space-4);
+}
+
+/* v0.1.23 — Canonical entry-window presentation.
+   ONE scoped editor contract, reusing Foundry form controls and the existing
+   Configurator palette. All entry kinds inherit this; no per-kind theme.
+   Preserve functional layouts (grids, pickers, sheet builder) and native focus. */
+.rta-config-entry__scroll {
+  padding-inline-end: var(--rta-space-3);
+  padding: var(--rta-space-2) var(--rta-space-4) var(--rta-space-4) var(--rta-space-2);
+  scrollbar-width: thin;
+}
+
+/* The fieldset, details section and dynamic field card are three native
+   structures for the same visual surface. Reuse the same geometry. */
+.rta-config-entry :is(fieldset, details.rta-config-entry__section, .rta-field-editor) {
+  box-sizing: border-box;
+  border: 1px solid var(--rta-editor-border);
+  border-radius: var(--rta-editor-radius);
+  background: var(--rta-editor-fill);
+  margin-block: 0 var(--rta-space-6);
+  min-width: 0;
+}
+
+.rta-config-entry fieldset {
+  margin-block: 0 var(--rta-space-6);
+  display: flex;
+  flex-direction: column;
+  padding: var(--rta-space-5) var(--rta-space-6) var(--rta-space-6);
+  gap: var(--rta-editor-gap);
+}
+
+.rta-config-entry fieldset > legend {
+  padding-inline: var(--rta-space-3);
+  font-weight: 700;
+  color: var(--color-text-primary, inherit);
+}
+
+.rta-config-entry details.rta-config-entry__section {
+  padding: 0 var(--rta-space-6);
+}
+
+.rta-config-entry details.rta-config-entry__section > summary {
+  padding: var(--rta-space-5) 0;
+  margin: 0;
+  font-weight: 700;
+  line-height: 1.3;
+}
+
+.rta-config-entry details.rta-config-entry__section[open] {
+  padding-bottom: var(--rta-space-6);
+}
+
+.rta-config-entry details.rta-config-entry__section[open] > summary {
+  border-bottom: 1px solid var(--rta-editor-border);
+  margin-bottom: var(--rta-space-5);
+}
+
+.rta-config-entry .rta-field-editor {
+  padding: 0;
+  overflow: hidden;
+}
+
+.rta-config-entry .rta-field-editor__details > summary {
+  padding: var(--rta-space-5) var(--rta-space-6);
+  min-height: 2.3rem;
+}
+
+.rta-config-entry .rta-field-editor__body {
+  padding: var(--rta-space-6) var(--rta-space-6) var(--rta-space-6);
+  background: transparent;
+}
+
+/* Canonical form-stack rhythm, reusable by nested editors. */
+.rta-config-entry .rta-form-stack {
+  display: flex;
+  flex-direction: column;
+  gap: var(--rta-editor-gap);
+}
+
+/* Existing Foundry controls keep their native behavior; align only their
+   geometry and use the same spacing for grid and nested-label forms. */
+.rta-config-entry :is(.form-group, .rta-field-editor__grid, .rta-field-editor__numeric) {
+  column-gap: var(--rta-editor-gap);
+}
+
+.rta-config-entry :is(.form-group > label, .rta-field-editor label, fieldset > label) {
+  line-height: 1.3;
+}
+
+.rta-config-entry :is(input:not([type="checkbox"]):not([type="radio"]):not([type="color"]), select, textarea) {
+  box-sizing: border-box;
+  min-width: 0;
+}
+
+.rta-config-entry :is(.form-group > input:not([type="checkbox"]):not([type="color"]), .form-group > select, .rta-field-editor__grid input:not([type="checkbox"]), .rta-field-editor__grid select) {
+  min-height: 2rem;
+}
+
+.rta-config-entry .form-footer {
+  flex-shrink: 0;
+  display: flex;
+  align-items: center;
+  gap: var(--rta-space-4);
+  padding-block-start: var(--rta-space-4);
+  border-top: 1px solid var(--rta-editor-border);
+  margin-top: var(--rta-space-2);
+  padding: var(--rta-space-5) var(--rta-space-2) var(--rta-space-2);
+}
+
+.rta-config-entry .form-footer button {
+  min-height: 2rem;
+  margin: 0;
+}
+
+/* Match every textarea to the available field column, including direct labels. */
+.rta-config-entry :is(fieldset, details.rta-config-entry__section, details.rta-config-entry__technical) :is(textarea, input:not([type="checkbox"]):not([type="radio"]):not([type="color"]), select) {
+  box-sizing: border-box;
+  max-width: 100%;
+  min-width: 0;
+}
+
+.rta-config-entry :is(fieldset, details.rta-config-entry__section, details.rta-config-entry__technical) textarea {
+  width: 100%;
+  display: block;
+}
+
+.rta-config-entry :is(fieldset, details.rta-config-entry__section, details.rta-config-entry__technical) > label:has(> textarea) {
+  display: grid;
+  gap: var(--rta-space-3);
+  width: 100%;
+}
+
+.rta-config-entry .rta-config-entry__section-heading {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: var(--rta-space-6);
+}
+
+.rta-config-entry .rta-config-entry__section-heading > :is(p, strong) {
+  min-width: 0;
+  flex: 1 1 auto;
+  margin: 0;
+}
+
+.rta-config-entry .rta-config-entry__section-heading > button {
+  flex: 0 0 auto;
+  width: auto;
+  min-width: 0;
+  min-height: 2rem;
+  height: auto;
+  padding: var(--rta-space-3) var(--rta-space-5);
+  white-space: nowrap;
+  align-self: center;
+}
+
+/* Universal multi-choice contract — one row geometry for every editor.
+   Both visible Creation lists and collapsible relation pickers use rta-choice-list.
+   Definition grants use a different *data-bearing* binding card: see exception table.
+   No selectors here depend on game system, entry kind or accordion state. */
+.rta-config-entry {
+  --rta-editor-border: var(--color-border-light-primary, #49404e);
+  --rta-editor-fill: color-mix(in srgb, var(--color-cool-5, #222) 9%, transparent);
+  --rta-editor-radius: 5px;
+  --rta-editor-gap: .65rem;
+  color: var(--color-text-primary, inherit);
+  --rta-choice-row-border: var(--rta-editor-border);
+  --rta-choice-row-radius: var(--rta-editor-radius);
+  --rta-choice-row-pad-block: .4rem;
+  --rta-choice-row-pad-inline: .6rem;
+  --rta-choice-row-fill: var(--rta-editor-fill);
+}
+
+/* Form and surface contracts shared across all editor kinds. */
+.rta-config-entry :is(.rta-field-editor__grid, .rta-field-editor__numeric) > label:not(.rta-field-editor__check) {
+  min-width: 0;
+  line-height: 1.3;
+}
+
+.rta-config-entry :is(.rta-field-editor__grid, .rta-field-editor__numeric) > label > :is(input:not([type="checkbox"]),select,textarea) {
+  box-sizing: border-box;
+  width: 100%;
+  min-width: 0;
+  margin: 0;
+}
+
+.rta-config-entry__fixed-capabilities {
+  margin: var(--rta-space-4) 0 var(--rta-space-5);
+  padding: var(--rta-space-4) var(--rta-space-5);
+  border: 1px solid var(--color-border-light-primary, var(--rta-editor-border, #59505f));
+  border-radius: var(--rta-radius-control);
+}
+
+.rta-config-entry__fixed-capabilities-list {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--rta-space-3) var(--rta-space-7);
+  margin-top: var(--rta-space-3);
+}
+
+.rta-config-entry__fixed-capability {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--rta-space-3);
+}
+
+.rta-config-entry__fixed-capability > small {
+  opacity: .7;
+}
+
+/* v0.1.47 — CANONICAL FIELD ROW (all Rule Them'All entry editors).
+   All normal controls — text, numeric, checkbox, textarea, RTA Select — share
+   exactly this two-column geometry. There is no independent select layout.
+   Sections, the Sheet Builder's toolbar, checkboxes in choice menus and the
+   data-bearing acquisition cards remain specialized surface/interaction UI. */
+:is(.rta-config-entry, .rta-configurator) {
+  --rta-form-column-inset: 0px;
+  --rta-form-label-column-min: 160px;
+  --rta-form-label-column-max: 200px;
+  --rta-form-control-gap: .9rem;
+  --rta-form-row-gap: .65rem;
+  --rta-form-control-height: 2.1rem;
+}
+
+:is(.rta-config-entry, .rta-configurator) .rta-form-row[hidden] { display: none; }
+
+:is(.rta-config-entry, .rta-configurator) .rta-form-row {
+  box-sizing: border-box;
+  display: grid;
+  grid-template-columns: minmax(calc(var(--rta-form-label-column-min) - var(--rta-form-column-inset)), calc(var(--rta-form-label-column-max) - var(--rta-form-column-inset))) minmax(0, 1fr);
+  gap: var(--rta-form-row-gap) var(--rta-form-control-gap);
+  align-items: center;
+  min-width: 0;
+  width: 100%;
+  margin-block: var(--rta-space-1);
+}
+
+:is(.rta-config-entry, .rta-configurator) .rta-form-row > :is(label, .rta-form-row__label) {
+  min-width: 0;
+  margin: 0;
+  align-self: center;
+  line-height: 1.3;
+  font-weight: 600;
+}
+
+:is(.rta-config-entry, .rta-configurator) .rta-form-row > :is(input[type="checkbox"], input[type="radio"], input[type="color"]) {
+  justify-self: start;
+  margin: 0;
+}
+
+/* Technical fields retain their own full-width/JSON layout, never an
+   independent single-line control height. */
+.rta-config-entry .rta-config-entry__technical input:not([type="checkbox"]):not([type="radio"]):not([type="color"]):not([type="hidden"]) {
+  box-sizing: border-box;
+  height: var(--rta-form-control-height);
+  min-height: var(--rta-form-control-height);
+}
+
+/* The top-level Tags/Actions/etc. are not inside the framed fieldset's .8rem
+   padding. Reserve the same right inset as their sibling controls, without
+   adding a second/independent selection grid. */
+.rta-config-entry__scroll > .rta-form-row--picker {
+  padding-inline-end: var(--rta-space-6);
+}
+
+@media (max-width: 620px) {
+  /* On narrow windows the form grid is a single column: align standalone
+     pickers with the fields INSIDE the ordinary framed section. */
+  .rta-config-entry__scroll > .rta-form-row--picker {
+    padding-inline-start: var(--rta-space-6);
+  }
+}
+
+/* Nested-label rows retain the implicit label association and avoid redundant
+   reflow of the label's text node. Explicit body/grid label variants use the
+   same two-column layout rather than their historical vertical stacking. */
+:is(.rta-config-entry, .rta-configurator) label.rta-form-row--nested {
+  font-weight: 600;
+  display: grid;
+  grid-template-columns: minmax(calc(var(--rta-form-label-column-min) - var(--rta-form-column-inset)), calc(var(--rta-form-label-column-max) - var(--rta-form-column-inset))) minmax(0, 1fr);
+  gap: var(--rta-form-row-gap) var(--rta-form-control-gap);
+  align-items: center;
+}
+
+:is(.rta-config-entry, .rta-configurator) .rta-field-editor label.rta-form-row--nested {
+  display: grid;
+  grid-template-columns: minmax(calc(var(--rta-form-label-column-min) - var(--rta-form-column-inset)), calc(var(--rta-form-label-column-max) - var(--rta-form-column-inset))) minmax(0, 1fr);
+  gap: var(--rta-form-row-gap) var(--rta-form-control-gap);
+  align-items: center;
+}
+
+:is(.rta-config-entry, .rta-configurator) :is(fieldset, .rta-form-stack, .rta-field-editor__grid, .rta-field-editor__numeric) > .rta-form-row--picker {
+  margin-block: var(--rta-space-1);
+}
+
+@media (max-width: 620px) {
+  :is(.rta-config-entry, .rta-configurator) .rta-form-row,
+  :is(.rta-config-entry, .rta-configurator) label.rta-form-row--nested,
+  :is(.rta-config-entry, .rta-configurator) .rta-field-editor label.rta-form-row--nested {
+    grid-template-columns: minmax(0, 1fr);
+    row-gap: var(--rta-space-2);
+  }
+}
+
+.rta-configurator .rta-collection-color-editor {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--rta-space-3);
+}
+
+.rta-configurator .rta-collection-color-editor input[type="color"] {
+  width: 3rem;
+  min-height: var(--rta-form-control-height);
+}
+
+.rta-config-entry .rta-section-color-config {
+  border-left: var(--rta-rail-width, 4px) solid var(--rta-section-color, #666666);
+  padding-inline-start: var(--rta-space-5);
+  margin-block: var(--rta-space-5);
+}
+
+.rta-config-entry .rta-color-override-control {
+  display: inline-flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: var(--rta-space-6);
+}
+
+.rta-config-entry .rta-color-override-check {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--rta-space-3);
+}
+
+/* Declarative controls use the canonical rta-form-row; no independent grid. */
+.rta-config-entry .rta-declarative-constraint {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr)) auto;
+  align-items: end;
+  gap: var(--rta-form-control-gap);
+  margin-block: var(--rta-form-row-gap);
+}
+
+.rta-config-entry .rta-declarative-constraint > label { min-width: 0; display: grid; gap: var(--rta-space-1); }
+
+.rta-config-entry .rta-declarative-constraint > label > :is(input, select) { min-width: 0; width: 100%; }
+
+.rta-config-entry .rta-declarative-presentation__controls { display: flex; align-items: center; gap: var(--rta-form-control-gap); min-width: 0; }
+
+.rta-config-entry .rta-declarative-presentation__value { flex: 1; min-width: 0; }
+
+.rta-config-entry .rta-declarative-presentation__value[hidden] { display: none; }
+
+.rta-config-entry .rta-declarative-presentation__value > input:not([type="checkbox"]) { width: 100%; min-width: 0; }
+
+.rta-config-entry .rta-declarative-toggle { display: inline-flex; gap: var(--rta-space-3); align-items: center; margin: 0; white-space: nowrap; }
+
+@media (max-width: 620px) { .rta-config-entry .rta-declarative-constraint { grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); } .rta-config-entry .rta-declarative-presentation__controls { flex-wrap: wrap; } }
+
+.rta-config-entry .rta-config-table td:has(> input[type="checkbox"]) { text-align:center; vertical-align:middle; }

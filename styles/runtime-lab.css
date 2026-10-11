@@ -1,0 +1,203 @@
+/* Rule Them'All — runtime-lab.css : Runtime Lab.
+   L'ordre de chargement (module.json "styles") fait partie de la cascade. */
+
+/* Runtime Lab --------------------------------------------------------- */
+.rta-runtime-lab {
+  --rta-lab-column-min: 24rem;
+  display: grid;
+  gap: var(--rta-space-6);
+}
+
+.rta-runtime-lab fieldset {
+  margin: 0;
+  padding: var(--rta-space-6);
+  border: 1px solid var(--color-border-light-primary, #777);
+  border-radius: var(--rta-radius-panel);
+}
+
+.rta-runtime-lab__grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit,minmax(min(100%, var(--rta-lab-column-min)),1fr));
+  gap: var(--rta-space-6);
+  align-items: end;
+}
+
+.rta-runtime-lab__actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--rta-space-4);
+  align-items: center;
+}
+
+.rta-runtime-state-list {
+  display: grid;
+  gap: var(--rta-space-3);
+  margin-top: var(--rta-space-6);
+}
+
+.rta-runtime-state-list > div {
+  display: flex;
+  justify-content: space-between;
+  gap: var(--rta-space-8);
+  padding: var(--rta-space-4) var(--rta-space-5);
+  border: 1px solid var(--color-border-light-secondary, #999);
+  border-radius: var(--rta-radius-compact);
+}
+
+.rta-runtime-state-list span {
+  opacity: 0.8;
+  text-align: right;
+}
+
+.rta-runtime-result {
+  padding: var(--rta-space-6);
+  border: 1px solid var(--color-border-highlight, #777);
+  border-radius: var(--rta-radius-panel);
+}
+
+.rta-runtime-result h3 {
+  margin: 0 0 var(--rta-space-3);
+}
+
+/* v0.5.5 Guided Runtime Lab ------------------------------------------ */
+.rta-runtime-lab--guided {
+  gap: var(--rta-space-5);
+}
+
+.rta-lab-step {
+  border: 1px solid var(--color-border-light-primary,#777);
+  border-radius: var(--rta-radius-panel);
+  padding: var(--rta-space-6);
+  background: rgba(255,255,255,.015);
+}
+
+.rta-lab-step > header {
+  display: flex;
+  gap: var(--rta-space-5);
+  align-items: flex-start;
+  margin-bottom: var(--rta-space-5);
+}
+
+.rta-lab-step > header h3 {
+  margin: 0;
+  font-size: var(--rta-type-medium);
+}
+
+.rta-lab-step > header p {
+  margin: var(--rta-space-1) 0 0;
+  opacity: .72;
+}
+
+.rta-lab-step__number {
+  display: grid;
+  place-items: center;
+  flex: 0 0 1.65rem;
+  width: 1.65rem;
+  height: 1.65rem;
+  border: 1px solid currentColor;
+  border-radius: 50%;
+  font-weight: 700;
+}
+
+.rta-lab-inline-choice {
+  display: flex;
+  gap: var(--rta-space-4);
+  align-items: center;
+  margin-bottom: var(--rta-space-5);
+}
+
+.rta-lab-inline-choice select {
+  width: auto;
+  min-width: 9rem;
+}
+
+.rta-runtime-state-editor {
+  display: grid;
+  gap: var(--rta-space-3);
+  max-height: 18rem;
+  overflow: auto;
+}
+
+.rta-runtime-state-row {
+  display: grid;
+  grid-template-columns: minmax(9rem,1fr) minmax(12rem,2fr) auto;
+  gap: var(--rta-space-5);
+  align-items: center;
+  padding: var(--rta-space-4) var(--rta-space-4);
+  border: 1px solid var(--color-border-light-secondary,#666);
+  border-radius: var(--rta-radius-control);
+}
+
+.rta-runtime-state-row__values {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--rta-space-4);
+  align-items: center;
+}
+
+.rta-runtime-state-row__values label {
+  display: flex;
+  align-items: center;
+  gap: var(--rta-space-2);
+  margin: 0;
+  font-size: .9em;
+}
+
+.rta-runtime-state-row__values input[type="number"] {
+  width: 5rem;
+}
+
+.rta-runtime-state-row__check input {
+  margin: 0;
+}
+
+.rta-lab-tool-tabs {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--rta-space-3);
+  margin-bottom: var(--rta-space-4);
+}
+
+.rta-lab-tool-tabs label {
+  display: flex;
+  gap: var(--rta-space-2);
+  align-items: center;
+  margin: 0;
+  padding: var(--rta-space-3) var(--rta-space-4);
+  border: 1px solid var(--color-border-light-secondary,#777);
+  border-radius: var(--rta-radius-control);
+  cursor: pointer;
+}
+
+.rta-lab-tool-tabs input {
+  margin: 0;
+}
+
+.rta-lab-guide {
+  margin: var(--rta-space-3) 0 var(--rta-space-5);
+  opacity: .8;
+}
+
+.rta-lab-run {
+  display: grid;
+  grid-template-columns: minmax(12rem,1fr) auto auto;
+  gap: var(--rta-space-4);
+  align-items: center;
+}
+
+.rta-lab-step--result .rta-runtime-result {
+  margin: 0;
+}
+
+@media (max-width:720px) {
+  .rta-runtime-state-row {
+    grid-template-columns: 1fr;
+  }
+  .rta-lab-run {
+    grid-template-columns: 1fr;
+  }
+  .rta-lab-inline-choice {
+    align-items: flex-start;
+    flex-direction: column;
+  }
+}

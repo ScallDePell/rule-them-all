@@ -1,0 +1,286 @@
+/* Rule Them'All — select.css : Composant RTA Select.
+   L'ordre de chargement (module.json "styles") fait partie de la cascade. */
+
+.rta-rule-operand__controls > [data-rule-operand-editor] > :is(input,select,.rta-select),
+.rta-rule-operand__controls > .rta-select {
+  width: 100%;
+  min-width: 0;
+  box-sizing: border-box;
+}
+
+/* Operand controls use the SAME editor field-height token as all other
+   normal controls; never a private 32px height. */
+.rta-rule-builder .rta-select__trigger,
+.rta-rule-builder .rta-rule-operand__controls > [data-rule-operand-editor] > input {
+  height: var(--rta-form-control-height);
+  min-height: var(--rta-form-control-height);
+}
+
+@media (max-width:620px) {
+  .rta-picker > summary {
+    grid-template-columns: 1fr;
+    gap: var(--rta-space-2);
+  }
+  .rta-picker > summary > span {
+    padding-inline-start: var(--rta-space-8);
+  }
+  .rta-rule-operand__controls {
+    grid-template-columns: minmax(0, 1fr) auto;
+  }
+  .rta-rule-operand__controls > .rta-select {
+    grid-column: 1;
+    grid-row: 1;
+  }
+  .rta-rule-operand__controls > [data-rule-operand-editor] {
+    grid-column: 1 / -1;
+    grid-row: 2;
+  }
+  .rta-rule-operand__controls > [data-action="removeRuleOperand"] {
+    grid-column: 2;
+    grid-row: 1;
+  }
+}
+
+/* RTA Select v0.1.43 — ONE visual contract for every single/multi selector.
+   No item frames: only a classic collapsed field and plain checkbox rows.
+   Popover top layer avoids clipping by Foundry ApplicationV2 scroll areas.
+   Native selects/checkboxes retain form semantics and event contracts. */
+.rta-config-entry .rta-select,
+.rta-configurator .rta-select {
+  display: block;
+  position: relative;
+  box-sizing: border-box;
+  width: 100%;
+  min-width: 0;
+  margin: 0;
+  border: 0;
+  background: transparent;
+}
+
+.rta-select > .rta-select__trigger {
+  box-sizing: border-box;
+  width: 100%;
+  min-height: 2.1rem;
+  height: 2.1rem;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--rta-space-4);
+  padding: var(--rta-space-3) var(--rta-space-5);
+  border: 1px solid var(--color-border-light-primary, var(--rta-editor-border, #59505f));
+  border-radius: var(--rta-radius-control);
+  background: var(--color-bg-option, #2b2530);
+  color: var(--color-text-primary, inherit);
+  font: inherit;
+  font-weight: 400;
+  text-align: left;
+  cursor: pointer;
+}
+
+.rta-select > .rta-select__trigger:hover:not(:disabled),
+.rta-select > .rta-select__trigger:focus-visible {
+  border-color: var(--color-border-highlight, #947f9c);
+  outline: 1px solid var(--color-border-highlight, #947f9c);
+  outline-offset: 0;
+}
+
+.rta-select__trigger:disabled {
+  opacity: .6;
+  cursor: not-allowed;
+}
+
+.rta-select__value {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  flex: 1;
+}
+
+.rta-select__placeholder {
+  opacity: .68;
+}
+
+.rta-select__chevron {
+  flex: 0 0 auto;
+  opacity: .8;
+}
+
+.rta-select__panel,
+.rta-select__panel:popover-open {
+  box-sizing: border-box;
+  position: fixed;
+  z-index: 10000;
+  min-width: 190px;
+  max-width: min(680px, 98vw);
+  max-height: min(330px, 72vh);
+  margin: 0;
+  padding: var(--rta-space-3);
+  border: 1px solid var(--color-border-light-primary, var(--rta-editor-border, #59505f));
+  border-radius: var(--rta-radius-control);
+  background: var(--color-bg-option, #211b27);
+  color: var(--color-text-primary, inherit);
+  box-shadow: 0 8px 24px #0007;
+  overflow: hidden;
+}
+
+.rta-select__panel[hidden] {
+  display: none !important;
+}
+
+.rta-select__search {
+  width: 100%;
+  display: block;
+  box-sizing: border-box;
+  min-height: 2rem;
+  margin: 0 0 var(--rta-space-2);
+  padding: var(--rta-space-3) var(--rta-space-5);
+  border-radius: var(--rta-radius-compact);
+}
+
+.rta-select .rta-select__options,
+.rta-select__panel .rta-select__options {
+  display: flex;
+  flex-direction: column;
+  gap: 0;
+  max-height: min(240px, 54vh);
+  overflow-y: auto;
+  overscroll-behavior: contain;
+  min-width: 0;
+  padding: 0;
+  margin: 0;
+  border: 0;
+}
+
+/* Override the old .rta-choice-list border cards only inside the new selector. */
+.rta-config-entry .rta-select__options > label.rta-select__option,
+.rta-configurator .rta-select__options > label.rta-select__option,
+.rta-select__panel .rta-select__options > label.rta-select__option {
+  box-sizing: border-box;
+  display: flex;
+  flex-direction: row;
+  align-items: center;
+  gap: var(--rta-space-4);
+  flex: 0 0 auto;
+  width: 100%;
+  min-height: 1.9rem;
+  padding: var(--rta-space-2) var(--rta-space-3);
+  margin: 0;
+  border: none;
+  border-radius: var(--rta-radius-compact);
+  background: transparent;
+  font: inherit;
+  font-weight: 400;
+  cursor: pointer;
+}
+
+.rta-select__panel .rta-select__option:hover:not(.is-disabled) {
+  background: var(--color-cool-5, #36313c);
+}
+
+.rta-select__panel label.rta-select__option[hidden] {
+  display: none !important;
+}
+
+.rta-select__panel .rta-select__option.is-disabled {
+  opacity: .46;
+  cursor: not-allowed;
+}
+
+.rta-select__panel .rta-select__option > input[type="checkbox"] {
+  width: 17px;
+  height: 17px;
+  margin: 0;
+  flex: 0 0 auto;
+}
+
+.rta-select__native {
+  position: absolute !important;
+  width: 1px !important;
+  height: 1px !important;
+  padding: 0 !important;
+  opacity: 0 !important;
+  pointer-events: none !important;
+  overflow: hidden !important;
+}
+
+.rta-select__radio-sources {
+  display: none !important;
+}
+
+.rta-config-entry .rta-binding-card__title.rta-select__binding-title > .rta-select__binding-source {
+  display: none;
+}
+
+.rta-select__panel .rta-select__options > p {
+  margin: var(--rta-space-3);
+  opacity: .7;
+}
+
+/* v0.1.46: permanent context labels and clearly non-editable required capabilities. */
+.rta-select > .rta-select__label {
+  display: block;
+  font: inherit;
+  font-weight: 600;
+  margin: 0 0 var(--rta-space-2);
+  color: var(--color-text-primary, inherit);
+}
+
+:is(.rta-config-entry, .rta-configurator) .rta-form-row > :is(.rta-form-row__control, .rta-select, select, textarea, input:not([type="checkbox"]):not([type="radio"]):not([type="color"])) {
+  box-sizing: border-box;
+  width: 100%;
+  min-width: 0;
+  margin: 0;
+}
+
+:is(.rta-config-entry, .rta-configurator) .rta-form-row__control > .rta-select {
+  width: 100%;
+  min-width: 0;
+  margin: 0;
+}
+
+/* The canonical height is shared by the text/number/date input AND RTA Select.
+   Textareas, color pickers, checkboxes, toolbar buttons and multi-control cards
+   remain inherently different controls; they are not given an arbitrary height. */
+:is(.rta-config-entry, .rta-configurator) .rta-form-row :is(input:not([type="checkbox"]):not([type="radio"]):not([type="color"]):not([type="hidden"]), .rta-select__trigger) {
+  box-sizing: border-box;
+  height: var(--rta-form-control-height);
+  min-height: var(--rta-form-control-height);
+  max-height: var(--rta-form-control-height);
+}
+
+/* Real selector labels sit in the left column. Only toolbar selectors with no
+   external title are allowed the fallback internal (vertical) title. */
+:is(.rta-config-entry, .rta-configurator) .rta-form-row .rta-select > .rta-select__label {
+  display: none;
+}
+
+/* v0.1.50: uniform color rails for ALL RTA Select adapters.
+   Use persisted colors when available, canonical #666666 otherwise.
+   Checkbox geometry and original values are unchanged. */
+.rta-select__panel .rta-select__accents {
+  flex: 0 0 auto;
+  display: inline-flex;
+  align-items: center;
+  gap: var(--rta-space-1);
+  align-self: center;
+  margin: 0;
+  height: 1.18rem;
+}
+
+.rta-select__panel .rta-select__accent {
+  display: block;
+  width: 3px;
+  min-width: 3px;
+  height: 100%;
+  border-radius: var(--rta-radius-rail);
+}
+
+/* Shared checkbox positioning in both Definition and DefinitionType contracts. */
+.rta-config-entry :is(.rta-form-row, .rta-capability-contracts, .rta-config-table) input[type="checkbox"] {
+  inline-size: 1rem;
+  block-size: 1rem;
+  flex: 0 0 auto;
+  vertical-align: middle;
+  margin: 0;
+}
