@@ -6,10 +6,10 @@ export function createRuntimeAPI(configurator,{adapter=new FoundryRuntimeAdapter
   return Object.freeze({
     getContainerState:(ref,o)=>engine.getContainerState(ref,o),
     instantiateDefinition:(versionId,ref,definitionId,o)=>engine.instantiateDefinition(versionId,ref,definitionId,o),
-    removeDefinitionState:(versionId,ref,definitionId)=>engine.removeDefinitionState(versionId,ref,definitionId),
+    removeDefinitionState:(versionId,ref,definitionId,o)=>engine.removeDefinitionState(versionId,ref,definitionId,o),
     setDefinitionState:(versionId,ref,definitionId,o)=>engine.setDefinitionState(versionId,ref,definitionId,o),
-    addCollectionEntry:(versionId,ref,definitionId,slotId,entry)=>engine.addCollectionEntry(versionId,ref,definitionId,slotId,entry),
-    removeCollectionEntry:(versionId,ref,definitionId,slotId,entryId)=>engine.removeCollectionEntry(versionId,ref,definitionId,slotId,entryId),
+    addCollectionEntry:(versionId,ref,definitionId,slotId,entry,o)=>engine.addCollectionEntry(versionId,ref,definitionId,slotId,entry,o),
+    removeCollectionEntry:(versionId,ref,definitionId,slotId,entryId,o)=>engine.removeCollectionEntry(versionId,ref,definitionId,slotId,entryId,o),
     transferCollectionEntry:(versionId,options)=>engine.transferCollectionEntry(versionId,options),
     evaluateFormula:(versionId,id,context)=>engine.evaluateFormula(versionId,id,context),
     evaluateCondition:(versionId,id,context)=>engine.evaluateCondition(versionId,id,context),
@@ -24,6 +24,8 @@ export function createRuntimeAPI(configurator,{adapter=new FoundryRuntimeAdapter
     previewAction:(versionId,id,context)=>engine.previewAction(versionId,id,context),
     executeAction:(versionId,id,context,options)=>engine.executeAction(versionId,id,context,options),
     describeContainer:ref=>adapter.describe(ref),
+    getLedger:ref=>engine.getLedger(ref),
+    compensate:(versionId,ref,entryId,o)=>engine.compensate(versionId,ref,entryId,o),
     rulesetSource,
     adapter
   });

@@ -5,6 +5,9 @@ import {createRuntimeState,normalizeRuntimeContainerRef,prepareRuntimeState} fro
 
 
 const FLAG_KEY="runtimeState";
+const LEDGER_KEY="runtimeLedger";
+/** Foundry v14 forced replacement of an object value inside an update. */
+const replaced=value=>{const operator=globalThis.foundry?.data?.operators?.ForcedReplacement;if(typeof operator?.create!=="function")throw new Error("Foundry ForcedReplacement operator is unavailable.");return operator.create(value);};
 
 export class FoundryRuntimeAdapter{
   async resolveDocument(ref){
@@ -15,14 +18,16 @@ export class FoundryRuntimeAdapter{
   }
   async load(ref,{rulesetVersionId=""}={}){const doc=await this.resolveDocument(ref);const stored=doc.getFlag?.(MODULE_ID,FLAG_KEY);return prepareRuntimeState(stored??createRuntimeState({rulesetVersionId}),{rulesetVersionId});}
   async canWrite(ref,user=game.user){const doc=await this.resolveDocument(ref);if(typeof doc.canUserModify==="function")return doc.canUserModify(user,"update");if(typeof doc.testUserPermission==="function"&&globalThis.CONST?.DOCUMENT_OWNERSHIP_LEVELS)return doc.testUserPermission(user,CONST.DOCUMENT_OWNERSHIP_LEVELS.OWNER);return Boolean(user?.isGM);}
-  async save(ref,state){const doc=await this.resolveDocument(ref);if(!await this.canWrite(ref))throw new Error(`User cannot update Foundry Document ${doc.name??doc.id}.`);await doc.setFlag(MODULE_ID,FLAG_KEY,copyJSON(state));return copyJSON(state);}
-  async saveMany(entries){
-    // Foundry-first: use native Document updates. If all operations can be represented as a batch,
-    // later adapters may use foundry.documents.modifyBatch without changing the Core contract.
-    const out=[];for(const entry of entries)out.push(await this.save(entry.ref,entry.state));return out;
+  async loadLedger(ref){const doc=await this.resolveDocument(ref);const stored=doc.getFlag?.(MODULE_ID,LEDGER_KEY);return Array.isArray(stored)?copyJSON(stored):[];}
+  /** One Document update carries the state and its ledger, so each container is written atomically.
+   * The state replaces the stored object: a merge would keep removed DefinitionStates. */
+  async write(ref,{state,ledger}){
+    const doc=await this.resolveDocument(ref);if(!await this.canWrite(ref))throw new Error(`User cannot update Foundry Document ${doc.name??doc.id}.`);
+    await doc.update({[`flags.${MODULE_ID}.${FLAG_KEY}`]:replaced(copyJSON(state)),[`flags.${MODULE_ID}.${LEDGER_KEY}`]:copyJSON(ledger)});
+    return copyJSON(state);
   }
   /** Remove a container's runtime data (e.g. stale or unreadable state); the next initialization starts fresh. */
-  async reset(ref){const doc=await this.resolveDocument(ref);if(!await this.canWrite(ref))throw new Error(`User cannot update Foundry Document ${doc.name??doc.id}.`);await doc.unsetFlag?.(MODULE_ID,FLAG_KEY);}
+  async reset(ref){const doc=await this.resolveDocument(ref);if(!await this.canWrite(ref))throw new Error(`User cannot update Foundry Document ${doc.name??doc.id}.`);await doc.unsetFlag?.(MODULE_ID,FLAG_KEY);await doc.unsetFlag?.(MODULE_ID,LEDGER_KEY);}
   async describe(ref){const doc=await this.resolveDocument(ref);return {ref:normalizeRuntimeContainerRef(ref),uuid:doc.uuid,id:doc.id,name:doc.name,documentName:doc.documentName,type:doc.type};}
 
 

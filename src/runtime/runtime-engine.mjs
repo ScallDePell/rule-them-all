@@ -5,6 +5,7 @@ import {CONSTRAINT_KINDS,evaluateConstraints} from "../configurator/declarative-
 import {capabilityTypeRegistry} from "../configurator/capability-type-registry.mjs";
 import {createDefinitionState,normalizeRuntimeContainerRef,resolveRuntimeRuleset} from "./runtime-contracts.mjs";
 import {RuntimeEvaluator} from "./runtime-evaluator.mjs";
+import {RuntimeTransaction,RuntimeTransactionError,TRANSACTION_ERRORS,applyLedgerChanges} from "./runtime-transaction.mjs";
 import {toRuntimeReference,resolveContainer} from "./runtime-reference.mjs";
 import {effectOperationRegistry} from "../configurator/operation-registries.mjs";
 import {assertSafeRollFormula} from "../configurator/roll-grammar.mjs";
@@ -29,16 +30,20 @@ export class RuntimeEngine{
   constructor({configurator,adapter,hooks=globalThis.Hooks,rulesetSource="published"}={}){if(!configurator)throw new Error("RuntimeEngine requires configurator API.");if(!adapter)throw new Error("RuntimeEngine requires a runtime adapter.");this.configurator=configurator;this.adapter=adapter;this.hooks=hooks;this.rulesetSource=rulesetSource;}
   ruleset(versionId){return resolveRuntimeRuleset(this.configurator,versionId,{source:this.rulesetSource});}
   async getContainerState(ref,{rulesetVersionId=""}={}){return this.adapter.load(normalizeRuntimeContainerRef(ref),{rulesetVersionId});}
-  async instantiateDefinition(versionId,containerRef,definitionId,{initial={}}={}){
+  /** Every persistent runtime write goes through one transaction (CP-08, CP-18). */
+  transaction(versionId,kind,{transactionId=null,summary=null,corrects=null}={}){return new RuntimeTransaction(this.adapter,{kind,rulesetVersionId:versionId,transactionId,summary,corrects});}
+  async getLedger(containerRef){return this.adapter.loadLedger(normalizeRuntimeContainerRef(containerRef));}
+  async #commit(tx){const committed=await tx.commit();if(!committed.duplicate)for(const entry of committed.entries)this.hooks?.callAll?.(RUNTIME_HOOKS.ledgerEntry,clone(entry));return committed;}
+  async instantiateDefinition(versionId,containerRef,definitionId,{initial={},transactionId=null}={}){
     const ruleset=this.ruleset(versionId),definition=ruleset.definitions?.find(x=>x.id===definitionId&&x.enabled!==false);if(!definition)throw new Error(`Definition unavailable: ${definitionId}.`);
     assertDefinitionContract(ruleset,definition);
-    const ref=normalizeRuntimeContainerRef(containerRef),state=await this.adapter.load(ref,{rulesetVersionId:versionId});
+    const tx=this.transaction(versionId,"instantiate",{transactionId,summary:{definitionId}}),ref=normalizeRuntimeContainerRef(containerRef),state=await tx.load(ref);
     if(state.rulesetVersionId&&state.rulesetVersionId!==versionId)throw new Error(`Runtime container is bound to another Ruleset version: ${state.rulesetVersionId}.`);
     if(state.definitionStates[definitionId])throw new Error(`Definition is already instantiated: ${definitionId}.`);
-    state.rulesetVersionId=versionId;state.definitionStates[definitionId]=await this.#newDefinitionState(versionId,definition,ref,state,initial);state.runtimeRevision++;
-    await this.adapter.save(ref,state);return clone(state.definitionStates[definitionId]);
+    state.rulesetVersionId=versionId;state.definitionStates[definitionId]=await this.#newDefinitionState(versionId,definition,ref,state,initial);
+    await this.#commit(tx);return clone(state.definitionStates[definitionId]);
   }
-  async removeDefinitionState(versionId,containerRef,definitionId){const ref=normalizeRuntimeContainerRef(containerRef),state=await this.adapter.load(ref,{rulesetVersionId:versionId});if(!state.definitionStates[definitionId])return false;delete state.definitionStates[definitionId];state.runtimeRevision++;await this.adapter.save(ref,state);return true;}
+  async removeDefinitionState(versionId,containerRef,definitionId,{transactionId=null}={}){const tx=this.transaction(versionId,"remove",{transactionId,summary:{definitionId}}),state=await tx.load(containerRef);if(!state.definitionStates[definitionId])return false;delete state.definitionStates[definitionId];await this.#commit(tx);return true;}
   /** Evaluate starting pool values (explicit initial, else the slot's initial, else maximum, else minimum, else 0). */
   async #newDefinitionState(versionId,definition,ref,state,initial={}){
     const context={roles:{self:ref},defaultRole:"self"},evaluator=this.evaluator(versionId,new Map([[this.#refKey(ref),state]])),resolved={pool:{}};
@@ -52,34 +57,33 @@ export class RuntimeEngine{
   async #valueSource(source,context,evaluator){if(!source)return null;if(Object.hasOwn(source,"literal"))return Number(source.literal);return Number(await evaluator.formula(source.formulaRef,context));}
   async #poolBounds(slot,context,evaluator){return {minimum:await this.#valueSource(slot.minimum,context,evaluator),maximum:await this.#valueSource(slot.maximum,context,evaluator)};}
   /** Load one slot of an instantiated Definition on a container. */
-  async #slotTarget(versionId,containerRef,definitionId,capabilityId,slotId){
+  async #slotTarget(tx,versionId,containerRef,definitionId,capabilityId,slotId){
     const ruleset=this.ruleset(versionId),definition=ruleset.definitions?.find(x=>x.id===definitionId&&x.enabled!==false);if(!definition)throw new Error(`Definition unavailable: ${definitionId}.`);
     const slot=findSlot(definition,capabilityId,slotId);if(!slot)throw new Error(`Slot not found: ${definitionId}/${capabilityId}/${slotId}.`);
-    const ref=normalizeRuntimeContainerRef(containerRef),state=await this.adapter.load(ref,{rulesetVersionId:versionId});
+    const ref=normalizeRuntimeContainerRef(containerRef),state=await tx.load(ref);
     const ds=state.definitionStates?.[definitionId];if(!ds)throw new Error(`Definition is not instantiated on RuntimeContainer: ${definitionId}.`);
     return {definition,slot,ref,state,ds};
   }
   async #collectionCapacity(versionId,slot,ref,state){if(!slot.capacityFormulaRef)return null;return Number(await this.evaluator(versionId,new Map([[this.#refKey(ref),state]])).formula(slot.capacityFormulaRef,{roles:{self:ref},defaultRole:"self"}));}
   /** CP-27: add an entry to a collection slot (no implicit creation of runtime entities). */
-  async addCollectionEntry(versionId,containerRef,definitionId,slotId,entry){
-    const {slot,ref,state,ds}=await this.#slotTarget(versionId,containerRef,definitionId,"collection",slotId),entries=collectionSlotState(ds,slotId).entries;
+  async addCollectionEntry(versionId,containerRef,definitionId,slotId,entry,{transactionId=null}={}){
+    const tx=this.transaction(versionId,"collection.add",{transactionId,summary:{definitionId,slotId}}),{slot,ref,state,ds}=await this.#slotTarget(tx,versionId,containerRef,definitionId,"collection",slotId),entries=collectionSlotState(ds,slotId).entries;
     assertCollectionRoom(slot,entries,await this.#collectionCapacity(versionId,slot,ref,state));
-    const next=prepareCollectionEntry(slot,entry,entries);entries.push(next);state.runtimeRevision++;await this.adapter.save(ref,state);return clone(next);
+    const next=prepareCollectionEntry(slot,entry,entries);entries.push(next);await this.#commit(tx);return clone(next);
   }
   /** Remove only the entry; an owned or referenced entity is never destroyed here. */
-  async removeCollectionEntry(versionId,containerRef,definitionId,slotId,entryId){
-    const {slot,ref,state,ds}=await this.#slotTarget(versionId,containerRef,definitionId,"collection",slotId),entries=collectionSlotState(ds,slotId).entries;
+  async removeCollectionEntry(versionId,containerRef,definitionId,slotId,entryId,{transactionId=null}={}){
+    const tx=this.transaction(versionId,"collection.remove",{transactionId,summary:{definitionId,slotId,entryId}}),{slot,ds}=await this.#slotTarget(tx,versionId,containerRef,definitionId,"collection",slotId),entries=collectionSlotState(ds,slotId).entries;
     const index=entries.findIndex(entry=>entry.id===entryId);if(index<0)throw new Error(`Collection entry not found: ${entryId}.`);
-    assertCollectionMinimum(slot,entries.length-1);const [removed]=entries.splice(index,1);state.runtimeRevision++;await this.adapter.save(ref,state);return clone(removed);
+    assertCollectionMinimum(slot,entries.length-1);const [removed]=entries.splice(index,1);await this.#commit(tx);return clone(removed);
   }
   /** Move an owned entry to another owned collection: ownership changes, nothing is cloned. */
-  async transferCollectionEntry(versionId,{from,to,entryId}){
-    const source=await this.#slotTarget(versionId,from.containerRef,from.definitionId,"collection",from.slotId);
+  async transferCollectionEntry(versionId,{from,to,entryId,transactionId=null}){
+    const tx=this.transaction(versionId,"collection.transfer",{transactionId,summary:{entryId,from:{definitionId:from.definitionId,slotId:from.slotId},to:{definitionId:to.definitionId,slotId:to.slotId}}});
+    const source=await this.#slotTarget(tx,versionId,from.containerRef,from.definitionId,"collection",from.slotId);
     if(source.slot.entryMode!=="owned")throw new Error(`Only owned collection entries can be transferred (${source.slot.id} is ${source.slot.entryMode}).`);
-    const target=await this.#slotTarget(versionId,to.containerRef,to.definitionId,"collection",to.slotId);
-    // Within one container both slots must live in the same loaded state.
-    const same=this.#refKey(source.ref)===this.#refKey(target.ref);
-    if(same){target.state=source.state;target.ds=source.state.definitionStates[to.definitionId];}
+    // The transaction loads each container once, so both slots of one container share a state.
+    const target=await this.#slotTarget(tx,versionId,to.containerRef,to.definitionId,"collection",to.slotId);
     if(target.slot.entryMode!=="owned")throw new Error(`Transfer target ${target.slot.id} must be an owned collection.`);
     const fromEntries=collectionSlotState(source.ds,from.slotId).entries,toEntries=collectionSlotState(target.ds,to.slotId).entries;
     const index=fromEntries.findIndex(entry=>entry.id===entryId);if(index<0)throw new Error(`Collection entry not found: ${entryId}.`);
@@ -88,19 +92,17 @@ export class RuntimeEngine{
     assertCollectionRoom(target.slot,toEntries,await this.#collectionCapacity(versionId,target.slot,target.ref,target.state));
     const moved=prepareCollectionEntry(target.slot,fromEntries[index],toEntries);
     fromEntries.splice(index,1);toEntries.push(moved);
-    source.state.runtimeRevision++;await this.adapter.save(source.ref,source.state);
-    if(!same){target.state.runtimeRevision++;await this.adapter.save(target.ref,target.state);}
-    return clone(moved);
+    await this.#commit(tx);return clone(moved);
   }
-  async setDefinitionState(versionId,containerRef,definitionId,{base,active,pools}={}){
+  async setDefinitionState(versionId,containerRef,definitionId,{base,active,pools,transactionId=null}={}){
     const ruleset=this.ruleset(versionId),definition=ruleset.definitions?.find(x=>x.id===definitionId&&x.enabled!==false);if(!definition)throw new Error(`Definition unavailable: ${definitionId}.`);
-    const ref=normalizeRuntimeContainerRef(containerRef),state=await this.adapter.load(ref,{rulesetVersionId:versionId});
+    const tx=this.transaction(versionId,"set",{transactionId,summary:{definitionId}}),ref=normalizeRuntimeContainerRef(containerRef),state=await tx.load(ref);
     const ds=state.definitionStates?.[definitionId];if(!ds)throw new Error(`Definition is not instantiated on RuntimeContainer: ${definitionId}.`);
     if(ds.capabilityStates?.value&&base!==undefined)ds.capabilityStates.value.base=Number(base);
     if(pools!==undefined){const context={roles:{self:ref},defaultRole:"self"},evaluator=this.evaluator(versionId,new Map([[this.#refKey(ref),state]]));
       for(const [slotId,current] of Object.entries(pools)){const slot=findSlot(definition,"pool",slotId);if(!slot)throw new Error(`Slot not found: ${definitionId}/pool/${slotId}.`);poolSlotState(ds,slotId).current=boundPoolValue(slot,current,await this.#poolBounds(slot,context,evaluator),`${definitionId}/${slotId}`);}}
     if(ds.capabilityStates?.state&&active!==undefined)ds.capabilityStates.state.active=Boolean(active);
-    state.runtimeRevision++;await this.adapter.save(ref,state);return clone(ds);
+    await this.#commit(tx);return clone(ds);
   }
 
   async #stateForRole(versionId,context,role){const ref=roleRef(context,role);if(!ref)throw new Error(`EvaluationContext role is missing: ${role}.`);return {ref:normalizeRuntimeContainerRef(ref),state:await this.adapter.load(ref,{rulesetVersionId:versionId})};}
@@ -175,15 +177,27 @@ export class RuntimeEngine{
     if(!check.valid)throw new Error(`Test ${test.id} input ${input.id}: ${check.message}`);
     return value;
   }
-  async initializeContainer(versionId,containerRef,{definitionIds=null,initialByDefinition={}}={}){
+  async initializeContainer(versionId,containerRef,{definitionIds=null,initialByDefinition={},transactionId=null}={}){
     const ruleset=this.ruleset(versionId),wanted=definitionIds?new Set(definitionIds):null,ref=normalizeRuntimeContainerRef(containerRef);
-    const state=await this.adapter.load(ref,{rulesetVersionId:versionId});
+    const tx=this.transaction(versionId,"initialize",{transactionId}),state=await tx.load(ref);
     if(state.rulesetVersionId&&state.rulesetVersionId!==versionId)throw new Error(`Runtime container is bound to another Ruleset version: ${state.rulesetVersionId}.`);
     state.rulesetVersionId=versionId;let created=0;
     // Pools last: their bounds may be Formulas over the container's other Definitions.
     const ordered=[...(ruleset.definitions??[])].sort((a,b)=>Number(Boolean(a.slots?.pool?.length))-Number(Boolean(b.slots?.pool?.length)));
     for(const definition of ordered){if(definition.enabled===false||wanted&&!wanted.has(definition.id)||state.definitionStates[definition.id])continue;assertDefinitionContract(ruleset,definition);state.definitionStates[definition.id]=await this.#newDefinitionState(versionId,definition,ref,state,initialByDefinition?.[definition.id]??{});created++;}
-    if(created){state.runtimeRevision++;await this.adapter.save(ref,state);}return {created,state:clone(state)};
+    if(created)await this.#commit(tx);return {created,state:clone(state)};
+  }
+  /** A correction is a new compensating entry: the ledger is never rewritten. It applies only
+   * when the container still holds what the entry wrote; otherwise the later history wins. */
+  async compensate(versionId,containerRef,entryId,{transactionId=null}={}){
+    const ref=normalizeRuntimeContainerRef(containerRef),ledger=await this.adapter.loadLedger(ref),entry=ledger.find(item=>item.id===entryId);
+    if(!entry)throw new RuntimeTransactionError(TRANSACTION_ERRORS.compensation,`Ledger entry not found: ${entryId}.`,{entryId});
+    if(ledger.some(item=>item.corrects===entryId))throw new RuntimeTransactionError(TRANSACTION_ERRORS.compensation,`Ledger entry is already compensated: ${entryId}.`,{entryId});
+    const tx=this.transaction(versionId,"compensation",{transactionId,corrects:entryId,summary:{entryId,kind:entry.kind}}),state=await tx.load(ref);
+    const current=applyLedgerChanges(clone(state),entry.changes,"after");
+    if(JSON.stringify(current)!==JSON.stringify(state))throw new RuntimeTransactionError(TRANSACTION_ERRORS.compensation,`Runtime container changed after ledger entry ${entryId}; compensate the later entries first.`,{entryId});
+    applyLedgerChanges(state,entry.changes,"before");
+    const committed=await this.#commit(tx);return committed.entries[0]??null;
   }
   async emitEvent(versionId,eventTypeId,payload={},context={},options={}){
     const ruleset=this.ruleset(versionId),eventType=ruleset.eventTypes?.find(x=>x.id===eventTypeId&&enabled(x));if(!eventType)throw new Error(`EventType unavailable: ${eventTypeId}.`);
@@ -216,9 +230,15 @@ export class RuntimeEngine{
     if(action.testRef){testResult=await this.executeTest(versionId,action.testRef,context);const mapping=(action.outcomeMappings??[]).find(m=>m?.outcomeId===testResult.outcome?.id||m?.resultKey===testResult.outcome?.resultKey);if(mapping){if(Array.isArray(mapping.effectRefs))effectRefs=mapping.effectRefs;if(mapping.block===true)return {actionId,allowed:false,reason:"outcome",testResult,changes:[]};}}
     for(const effectId of effectRefs)changes.push(await this.previewEffect(versionId,effectId,context,staged));return {actionId,allowed:true,testResult,changes,staged};
   }
-  async executeAction(versionId,actionId,context={},{preview=false,eventDepth=0}={}){
-    const plan=await this.previewAction(versionId,actionId,context);if(preview||!plan.allowed)return {...plan,staged:undefined};const entries=[];for(const [key,state] of plan.staged){state.runtimeRevision++;const change=plan.changes.find(x=>this.#refKey(x.containerRef)===key);if(change)entries.push({ref:change.containerRef,state});}
-    for(const {ref} of entries)if(!await this.adapter.canWrite(ref))throw new Error("Runtime target is not writable by the current user.");if(entries.length)await this.adapter.saveMany(entries);const result={actionId,allowed:true,testResult:plan.testResult??null,changes:plan.changes,committed:true,events:[]};this.hooks?.callAll?.(RUNTIME_HOOKS.actionExecuted,clone(result),context);
+  async executeAction(versionId,actionId,context={},{preview=false,eventDepth=0,transactionId=null}={}){
+    const plan=await this.previewAction(versionId,actionId,context);if(preview||!plan.allowed)return {...plan,staged:undefined};
+    // Staged states were read once by the preview: the commit expects their revision unchanged.
+    const tx=this.transaction(versionId,"action",{transactionId,summary:{actionId,outcomeKey:plan.testResult?.outcome?.resultKey??null}});
+    for(const [key,state] of plan.staged){const change=plan.changes.find(x=>this.#refKey(x.containerRef)===key);if(change)tx.stage(change.containerRef,state);}
+    const committed=await this.#commit(tx);
+    const result={actionId,allowed:true,testResult:plan.testResult??null,changes:plan.changes,committed:true,duplicate:committed.duplicate,transactionId:committed.transactionId,ledgerEntryIds:committed.entries.map(entry=>entry.id),events:[]};
+    if(committed.duplicate)return result;
+    this.hooks?.callAll?.(RUNTIME_HOOKS.actionExecuted,clone(result),context);
     const action=this.ruleset(versionId).actions?.find(x=>x.id===actionId);for(const eventTypeId of action?.eventTypeRefs??[]){const emitted=await this.emitEvent(versionId,eventTypeId,{actionId,outcomeKey:plan.testResult?.outcome?.resultKey??null},context,{depth:eventDepth+1});result.events.push({eventTypeId,triggered:emitted.triggered});}return result;
   }
 }

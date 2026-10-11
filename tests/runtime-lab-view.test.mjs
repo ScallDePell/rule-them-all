@@ -53,7 +53,7 @@ test("Runtime Lab: every Lab translation key exists in English and French", () =
 
 test("Runtime Lab: resetting a container drops its runtime data", async () => {
   const adapter = new MemoryRuntimeAdapter(), ref = {kind: "actor", id: "a"};
-  await adapter.save(ref, {...(await adapter.load(ref, {rulesetVersionId: "v1"})), runtimeRevision: 4});
+  await adapter.write(ref, {state: {...(await adapter.load(ref, {rulesetVersionId: "v1"})), runtimeRevision: 4}, ledger: []});
   await adapter.reset(ref);
   assert.equal((await adapter.load(ref, {rulesetVersionId: "v2"})).runtimeRevision, 0);
 });

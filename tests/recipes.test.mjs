@@ -63,7 +63,7 @@ test('§8 recipe XP progression: the level follows experience', async () => {
 test('§8 recipe encumbrance: overloaded when the load exceeds strength × 10', async () => {
   const {engine,v,actor,context}=await withRecipe('encumbrance');
   const adapter=engine.adapter;
-  const set=async(id,value)=>{const state=await engine.getContainerState(actor);state.definitionStates[id].capabilityStates.value.base=value;await adapter.saveMany([{ref:actor,state}]);};
+  const set=async(id,value)=>{const state=await engine.getContainerState(actor);state.definitionStates[id].capabilityStates.value.base=value;await adapter.write(actor,{state,ledger:[]});};
   await set('encumbrance-strength',3);await set('encumbrance-load',25);
   assert.equal(await engine.evaluator(v).condition('encumbrance-overloaded',context),false);
   await set('encumbrance-load',31);
