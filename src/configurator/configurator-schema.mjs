@@ -38,35 +38,6 @@ export function normalizeRulesetCollections(data) {
   for (const key of COLLECTION_FIELDS) {
     if (!Object.hasOwn(result, key)) result[key] = [];
   }
-  // Tags became a first-class Ruleset catalog in 0.6.1. Existing 0.6.x data used
-  // the same stable strings directly on entries, so adopt those strings once as
-  // catalog identities instead of invalidating the current World.
-  const knownTags=new Set((result.tags??[]).map(tag=>tag?.id).filter(Boolean));
-  const referenced=[];
-  for(const collection of COLLECTION_FIELDS){
-    if(collection==="tags")continue;
-    for(const entry of result[collection]??[])for(const id of entry?.tags??[])if(typeof id==="string"&&id.trim()&&!knownTags.has(id)){knownTags.add(id);referenced.push(id);}
-  }
-  for(const [index,id] of referenced.entries())result.tags.push({id,nameKey:id,descriptionKey:"",order:(result.tags.length+index+1)*10,color:null});
-  // Categories became a GM-managed catalog (architecture §47). Free category
-  // strings already stored on entries are adopted once as catalog identities,
-  // exactly like Tags above, so existing Worlds keep loading.
-  const knownCategories=new Set((result.categories??[]).map(entry=>entry?.id).filter(Boolean));
-  const adoptedCategories=[];
-  for(const collection of ["definitions","contentTemplates"])for(const entry of result[collection]??[])for(const id of entry?.categories??[]){
-    if(typeof id==="string"&&id.trim()&&!knownCategories.has(id)){knownCategories.add(id);adoptedCategories.push(id);}
-  }
-  const firstCategory=result.categories.length;
-  for(const [index,id] of adoptedCategories.entries())result.categories.push({id,nameKey:id,descriptionKey:"",order:(firstCategory+index+1)*10});
-  // ContentTypeDefinition became first-class in 0.7.0. Adopt legacy template
-  // contentTypeId strings as neutral catalog entries so current Worlds remain editable.
-  const knownContentTypes=new Set((result.contentTypes??[]).map(entry=>entry?.id).filter(Boolean));
-  for(const template of result.contentTemplates??[]){
-    const id=template?.contentTypeId;
-    if(typeof id!=="string"||!id.trim()||knownContentTypes.has(id))continue;
-    knownContentTypes.add(id);
-    result.contentTypes.push({id,nameKey:id,descriptionKey:"",image:"",color:null,enabled:true,order:(result.contentTypes.length+1)*10,storageKind:"item",documentSubtype:"",runtimeMode:"unique",fields:{},tags:[]});
-  }
   return result;
 }
 

@@ -35,10 +35,9 @@ test('Consumers store catalog ids only, and a used Category cannot be deleted',a
   assert.equal(await api.deleteCategory(v,'magic'),true);
 });
 
-test('Free category strings from existing Worlds are adopted once as catalog entries',()=>{
-  const ruleset=normalizeRulesetCollections({id:'old',nameKey:'Old',version:'1',definitions:[{id:'a',categories:['melee','melee']}],contentTemplates:[{id:'t',categories:['loot']}]});
-  assert.deepEqual(ruleset.categories,[{id:'melee',nameKey:'melee',descriptionKey:'',order:10},{id:'loot',nameKey:'loot',descriptionKey:'',order:20}]);
-  assert.deepEqual(normalizeRulesetCollections(ruleset).categories,ruleset.categories);
+test('Loading a Ruleset never invents Tags, Categories or Content Types from entry strings',()=>{
+  const ruleset=normalizeRulesetCollections({id:'old',nameKey:'Old',version:'1',definitions:[{id:'a',tags:['x'],categories:['melee']}],contentTemplates:[{id:'t',contentTypeId:'gear',categories:['loot']}]});
+  assert.deepEqual([ruleset.tags,ruleset.categories,ruleset.contentTypes],[[],[],[]]);
 });
 
 test('Card facets count the full collection and combine facets with AND',()=>{
