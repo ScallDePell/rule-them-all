@@ -3,3 +3,4 @@ Thumbs.db
 *.log
 node_modules/
 src/configurator/.qa-configurator-app.mjs
+.claude/worktrees/
