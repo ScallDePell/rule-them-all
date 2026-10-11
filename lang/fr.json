@@ -228,7 +228,8 @@
       "PurposeAdvancement": "Progression",
       "PurposeUse": "Utilisation",
       "PurposeRecovery": "Récupération",
-      "NoAcquisitionAction": "Aucune Action : ajout direct"
+      "NoAcquisitionAction": "Aucune Action : ajout direct",
+      "UntilRemoved": "Jusqu'au retrait"
     },
     "FamilyColor": {
       "parameters": "Paramètres",
@@ -635,7 +636,14 @@
       "NoCategoriesYet": "Aucune catégorie pour le moment. Créez-en dans la section Catégories.",
       "ActionPurpose": "Rôle",
       "AcquiredDefinitions": "Definitions acquises",
-      "AcquisitionAction": "Action d’acquisition"
+      "AcquisitionAction": "Action d’acquisition",
+      "StatesRemoved": "États retirés",
+      "StatesApplied": "États appliqués",
+      "ModifiersApplied": "Modificateurs appliqués",
+      "StateDuration": "Durée des états",
+      "NoStateDefinitions": "Aucune Definition avec la capacité État.",
+      "NoModifiersAvailable": "Aucun Modifier disponible.",
+      "SearchModifiers": "Rechercher des Modifiers…"
     },
     "EditorDisplay": {
       "NoneSelected": "Aucune sélection",

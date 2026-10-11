@@ -10,6 +10,10 @@ export class MemoryRuntimeAdapter{
   async loadLedger(ref){return copyJSON(this.ledgers.get(key(ref))??[]);}
   /** One container write: state and ledger together (a Document update in Foundry). */
   async write(ref,{state,ledger}){const k=key(ref);this.states.set(k,copyJSON(state));this.ledgers.set(k,copyJSON(ledger));return copyJSON(state);}
+  /** World clock for Durations, in seconds; tests move it by hand. */
+  worldTime(){return this.clock??0;}
+  roundSeconds(){return 6;}
+  async listContainers(){return [...this.states.keys()].map(k=>k.includes(":")&&!k.includes(".")?{kind:k.slice(0,k.indexOf(":")),id:k.slice(k.indexOf(":")+1)}:{uuid:k});}
   async canWrite(ref){const subject=await this.subject(ref);return subject.isGM||subject.ownership==="owner";}
   async reset(ref){this.states.delete(key(ref));this.ledgers.delete(key(ref));}
   async roll(formula,data={}){const n=Number(String(formula??"").trim());if(Number.isFinite(n))return {formula:String(formula),result:String(n),total:n,natural:n};throw new Error("MemoryRuntimeAdapter only supports a numeric literal roll expression in tests.");}

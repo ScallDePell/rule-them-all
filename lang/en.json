@@ -232,7 +232,8 @@
       "PurposeAdvancement": "Advancement",
       "PurposeUse": "Use",
       "PurposeRecovery": "Recovery",
-      "NoAcquisitionAction": "No Action: grant directly"
+      "NoAcquisitionAction": "No Action: grant directly",
+      "UntilRemoved": "Until removed"
     },
     "FamilyColor": {
       "parameters": "Parameters",
@@ -639,7 +640,14 @@
       "NoCategoriesYet": "No Categories yet. Create them from the Categories section.",
       "ActionPurpose": "Purpose",
       "AcquiredDefinitions": "Acquired Definitions",
-      "AcquisitionAction": "Acquisition Action"
+      "AcquisitionAction": "Acquisition Action",
+      "StatesRemoved": "States removed",
+      "StatesApplied": "States applied",
+      "ModifiersApplied": "Modifiers applied",
+      "StateDuration": "State duration",
+      "NoStateDefinitions": "No Definition has the State capability.",
+      "NoModifiersAvailable": "No Modifiers available.",
+      "SearchModifiers": "Search Modifiers…"
     },
     "EditorDisplay": {
       "NoneSelected": "None selected",

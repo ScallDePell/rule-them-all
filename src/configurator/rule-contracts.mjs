@@ -102,22 +102,51 @@ export function prepareEffect(data,options={}){
   if(!isRecord(x.operand)||!['literal','parameter','formula','reference'].includes(x.operand.kind))throw new Error('Effect.operand must select literal, parameter, formula or reference.');
   bool(x.enabled,'Effect.enabled'); arr(x.tags,'Effect.tags'); return x;
 }
+const ROLE_NAME=/^[A-Za-z][A-Za-z0-9_-]*$/;
 /** CP-16 semantic purpose of an Action; it classifies, it adds no engine primitive. */
 export const ACTION_PURPOSES=Object.freeze(['acquisition','advancement','use','recovery']);
 /** Acquisition: the Action instantiates absent DefinitionStates on a role's container. */
 function prepareActionAcquisition(data,index){
   if(!isRecord(data)||!nonempty(data.definitionId))throw new Error(`Action.acquisitions[${index}] requires definitionId.`);
   const x={targetRole:'self',initial:{},...copyJSON(data)};
-  if(!/^[A-Za-z][A-Za-z0-9_-]*$/.test(String(x.targetRole)))throw new Error(`Action.acquisitions[${index}].targetRole must be a role name.`);
+  if(!ROLE_NAME.test(String(x.targetRole)))throw new Error(`Action.acquisitions[${index}].targetRole must be a role name.`);
   if(!isRecord(x.initial))throw new Error(`Action.acquisitions[${index}].initial must be an object.`);
   return x;
 }
+/** How a state applied again on a container behaves: renew the duration, add a stack,
+ * add a separate StateInstance, or do nothing. */
+export const STATE_STACKING=Object.freeze(['refresh','stack','separate','ignore']);
+function prepareStateApplication(data,index){
+  if(!isRecord(data)||!nonempty(data.definitionId))throw new Error(`Action.stateApplications[${index}] requires definitionId.`);
+  const x={targetRole:'target',durationRef:null,stacking:'refresh',stacks:1,severity:null,modifierRefs:[],...copyJSON(data)};
+  if(!ROLE_NAME.test(String(x.targetRole)))throw new Error(`Action.stateApplications[${index}].targetRole must be a role name.`);
+  if(!(x.durationRef===null||nonempty(x.durationRef)))throw new Error(`Action.stateApplications[${index}].durationRef must be a Duration id or null.`);
+  if(!STATE_STACKING.includes(x.stacking))throw new Error(`Action.stateApplications[${index}].stacking must be one of ${STATE_STACKING.join(', ')}.`);
+  if(!Number.isSafeInteger(x.stacks)||x.stacks<1)throw new Error(`Action.stateApplications[${index}].stacks must be a positive integer.`);
+  if(!(x.severity===null||Number.isFinite(x.severity)))throw new Error(`Action.stateApplications[${index}].severity must be a number or null.`);
+  arr(x.modifierRefs,`Action.stateApplications[${index}].modifierRefs`);
+  return x;
+}
+function prepareStateRemoval(data,index){
+  if(!isRecord(data)||!nonempty(data.definitionId))throw new Error(`Action.stateRemovals[${index}] requires definitionId.`);
+  const x={targetRole:'target',...copyJSON(data)};
+  if(!ROLE_NAME.test(String(x.targetRole)))throw new Error(`Action.stateRemovals[${index}].targetRole must be a role name.`);
+  return x;
+}
+function prepareModifierApplication(data,index){
+  if(!isRecord(data)||!nonempty(data.modifierRef))throw new Error(`Action.modifierApplications[${index}] requires modifierRef.`);
+  const x={targetRole:'target',durationRef:null,...copyJSON(data)};
+  if(!ROLE_NAME.test(String(x.targetRole)))throw new Error(`Action.modifierApplications[${index}].targetRole must be a role name.`);
+  if(!(x.durationRef===null||nonempty(x.durationRef)))throw new Error(`Action.modifierApplications[${index}].durationRef must be a Duration id or null.`);
+  return x;
+}
 export function prepareAction(data,options={}){
-  const x={descriptionKey:'',enabled:true,order:0,tags:[],purpose:null,conditionRefs:[],costEffectRefs:[],acquisitions:[],effectRefs:[],testRef:null,outcomeMappings:[],eventTypeRefs:[],...copyJSON(data)};
+  const x={descriptionKey:'',enabled:true,order:0,tags:[],purpose:null,conditionRefs:[],costEffectRefs:[],acquisitions:[],stateRemovals:[],stateApplications:[],modifierApplications:[],effectRefs:[],testRef:null,outcomeMappings:[],eventTypeRefs:[],...copyJSON(data)};
   identity(x,'Action',options);
   if(x.purpose!==null&&!ACTION_PURPOSES.includes(x.purpose))throw new Error(`Action.purpose must be null or one of ${ACTION_PURPOSES.join(', ')}.`);
-  for(const k of ['conditionRefs','costEffectRefs','acquisitions','effectRefs','outcomeMappings','eventTypeRefs'])arr(x[k],`Action.${k}`);
+  for(const k of ['conditionRefs','costEffectRefs','acquisitions','stateRemovals','stateApplications','modifierApplications','effectRefs','outcomeMappings','eventTypeRefs'])arr(x[k],`Action.${k}`);
   x.acquisitions=x.acquisitions.map(prepareActionAcquisition);
+  x.stateRemovals=x.stateRemovals.map(prepareStateRemoval);x.stateApplications=x.stateApplications.map(prepareStateApplication);x.modifierApplications=x.modifierApplications.map(prepareModifierApplication);
   if(new Set(x.acquisitions.map(a=>`${a.targetRole}/${a.definitionId}`)).size!==x.acquisitions.length)throw new Error('Action.acquisitions lists a Definition twice for the same role.');
   bool(x.enabled,'Action.enabled'); return x;
 }
@@ -235,11 +264,14 @@ export function prepareRestriction(data,options={}){
 }
 /** Duration modes (CP-08). absoluteTime ends at a world time, in seconds, read through the time adapter. */
 export const DURATION_MODES=Object.freeze(['instant','fixed','untilEvent','whileCondition','untilRemoved','absoluteTime']);
+/** Fixed Duration units; a round or a turn lasts the world's round time. */
+export const DURATION_UNITS=Object.freeze(['second','minute','hour','day','round','turn']);
 export function prepareDuration(data,options={}){
   const x=prepareNamedGeneric(data,'Duration',{mode:'untilRemoved',amount:null,unit:null,eventTypeRef:null,conditionRef:null,at:null},options);
   if(!DURATION_MODES.includes(x.mode))throw new Error(`Duration.mode is invalid: ${x.mode}. Expected one of ${DURATION_MODES.join(', ')}.`);
   if(x.mode==='fixed'&&x.amount!==null&&(!Number.isFinite(Number(x.amount))||Number(x.amount)<0))throw new Error('Fixed Duration requires a non-negative amount.');
   if(x.mode==='fixed')need(x.amount!==null&&nonempty(x.unit),'Fixed Duration requires amount and unit.',options);
+  if(x.unit!==null&&!DURATION_UNITS.includes(x.unit))throw new Error(`Duration.unit must be one of ${DURATION_UNITS.join(', ')}.`);
   if(x.mode==='untilEvent')need(nonempty(x.eventTypeRef),'untilEvent Duration requires eventTypeRef.',options);
   if(x.mode==='whileCondition')need(nonempty(x.conditionRef),'whileCondition Duration requires conditionRef.',options);
   if(x.at!==null&&!(typeof x.at==='number'&&Number.isFinite(x.at)&&x.at>=0))throw new Error('Duration.at must be a non-negative world time in seconds.');

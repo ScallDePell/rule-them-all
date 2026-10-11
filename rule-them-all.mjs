@@ -49,6 +49,11 @@ Hooks.once("ready", () => {
   });
   game.ruleThemAll.configuratorReady.catch(error => console.error("Rule Them'All | Configurator initialization failed", error));
 
+  // CP-28: timed states end when the world clock passes them; the active GM writes the change once.
+  Hooks.on("updateWorldTime", worldTime => {
+    if (!game.users.activeGM?.isSelf) return;
+    Promise.resolve(game.ruleThemAll?.runtime?.expireAll({worldTime})).catch(error => console.error("Rule Them'All | State expiry failed", error));
+  });
   Hooks.on("preCreateItem", (item, _data, _options, userId) => {
     return guardOwnedContentCreation(item,userId,game.user?.id,game.ruleThemAll?.content,{
       requestGuided:({versionId,actorRef,templateId,sourceData})=>queueMicrotask(()=>{

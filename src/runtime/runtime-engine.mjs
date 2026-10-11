@@ -7,6 +7,7 @@ import {createDefinitionState,normalizeRuntimeContainerRef,resolveRuntimeRuleset
 import {RuntimeEvaluator} from "./runtime-evaluator.mjs";
 import {RuntimeTransaction,RuntimeTransactionError,TRANSACTION_ERRORS,applyLedgerChanges} from "./runtime-transaction.mjs";
 import {resolvePermission} from "./permission-policy.mjs";
+import {applyModifierStack,createModifierState,createStateInstance,durationEnded,hasDurations,removeModifierStates,removeStateInstance,startDuration} from "./runtime-states.mjs";
 import {toRuntimeReference,resolveContainer} from "./runtime-reference.mjs";
 import {effectOperationRegistry} from "../configurator/operation-registries.mjs";
 import {assertSafeRollFormula} from "../configurator/roll-grammar.mjs";
@@ -49,9 +50,11 @@ export class RuntimeEngine{
   async getContainerState(ref,{rulesetVersionId=""}={}){
     const n=normalizeRuntimeContainerRef(ref),state=await this.adapter.load(n,{rulesetVersionId});
     if(!state.rulesetVersionId||!this.#hasRuleset(state.rulesetVersionId))return state;
-    for(const definitionId of Object.keys(state.definitionStates))if(!(await this.authorize(state.rulesetVersionId,"read",{objectKind:"definition",objectId:definitionId},n)).allowed)delete state.definitionStates[definitionId];
-    const readable=new Set(Object.keys(state.definitionStates));
-    state.stateInstances=state.stateInstances.filter(instance=>!instance.definitionId||readable.has(instance.definitionId));
+    const readable=new Map();
+    const canRead=async definitionId=>{if(!readable.has(definitionId))readable.set(definitionId,(await this.authorize(state.rulesetVersionId,"read",{objectKind:"definition",objectId:definitionId},n)).allowed);return readable.get(definitionId);};
+    for(const definitionId of Object.keys(state.definitionStates))if(!await canRead(definitionId))delete state.definitionStates[definitionId];
+    const instances=[];for(const instance of state.stateInstances)if(await canRead(instance.definitionId))instances.push(instance);
+    state.stateInstances=instances;
     return state;
   }
   #hasRuleset(versionId){try{this.ruleset(versionId);return true;}catch{return false;}}
@@ -162,12 +165,14 @@ export class RuntimeEngine{
 
   async #stateForRole(versionId,context,role){const ref=roleRef(context,role);if(!ref)throw new Error(`EvaluationContext role is missing: ${role}.`);return {ref:normalizeRuntimeContainerRef(ref),state:await this.adapter.load(ref,{rulesetVersionId:versionId})};}
   #outputContract(ruleset,reference){const def=ruleset.definitions?.find(x=>x.id===reference.objectId);if(!def)throw new Error(`Definition not found: ${reference.objectId}.`);if(reference.objectKind!=="definition")throw new Error(`Runtime Reference must target a Definition output, got ${reference.objectKind}.`);if(!reference.capabilityId||!reference.outputId)throw new Error("Runtime Reference requires capabilityId and outputId.");if(!(def.capabilities??[]).includes(reference.capabilityId))throw new Error(`Definition ${def.id} does not have capability ${reference.capabilityId}.`);const cap=capabilityTypeRegistry.get(reference.capabilityId);const output=cap?.outputs?.[reference.outputId];if(!output)throw new Error(`Output not found: ${reference.capabilityId}/${reference.outputId}.`);const slot=SLOT_CAPABILITIES.includes(reference.capabilityId)?requireSlot(def,reference):null;return {definition:def,output,slot};}
-  #readOutput(ruleset,containerState,reference){const {definition,output}=this.#outputContract(ruleset,reference);const ds=containerState.definitionStates?.[definition.id];if(!ds)throw new Error(`Definition is not instantiated on RuntimeContainer: ${definition.id}.`);const cap=reference.capabilityId;
-    if(cap==="value"){const base=Number(ds.capabilityStates?.value?.base??0);if(reference.outputId==="value.base")return base;if(reference.outputId==="value.final"){let value=base;for(const m of ds.modifiers??[]){if(m?.active===false)continue;const operand=Number(m.operand??0);if(m.operation==="add")value+=operand;else if(m.operation==="subtract")value-=operand;else if(m.operation==="multiply")value*=operand;else if(m.operation==="set")value=operand;}return value;}}
+  #readOutput(ruleset,containerState,reference){const {definition,output}=this.#outputContract(ruleset,reference);const cap=reference.capabilityId;
+    // A state Definition is active through its own DefinitionState or through active StateInstances (CP-28).
+    if(cap==="state"){const instances=containerState.stateInstances.filter(instance=>instance.definitionId===definition.id&&instance.active!==false);if(reference.outputId==="state.stacks")return instances.reduce((sum,instance)=>sum+Number(instance.stacks??1),0);if(reference.outputId==="state.active")return Boolean(containerState.definitionStates?.[definition.id]?.capabilityStates?.state?.active)||instances.length>0;}
+    const ds=containerState.definitionStates?.[definition.id];if(!ds)throw new Error(`Definition is not instantiated on RuntimeContainer: ${definition.id}.`);
+    if(cap==="value"){const base=Number(ds.capabilityStates?.value?.base??0);if(reference.outputId==="value.base")return base;if(reference.outputId==="value.final")return applyModifierStack(base,(ds.modifiers??[]).filter(m=>m?.active!==false&&(m.targetRef?.outputId??"value.final")==="value.final").map(m=>({id:m.id,operation:m.operation,value:Number(m.operand??0),priority:Number(m.priority??0),stacking:m.stackingPolicy}))).value;}
     if(cap==="pool"&&reference.outputId==="pool.current")return Number(poolSlotState(ds,reference.slotId).current);
     if(cap==="pool")throw new Error(`Pool bounds are derived; resolve ${reference.outputId} through resolveReference.`);
     if(cap==="collection"&&reference.outputId==="collection.count")return collectionSlotState(ds,reference.slotId).entries.length;
-    if(cap==="state"&&reference.outputId==="state.active")return Boolean(ds.capabilityStates?.state?.active);
     const source=output.source?.split(".")??[];let value=ds.capabilityStates?.[cap];for(const part of source.slice(1))value=value?.[part];return clone(value);
   }
   /** Read (or prepare a write of) a RuntimeReference {container, reference}; a bare logical Reference is read on `role`, else on the context's default role. */
@@ -181,7 +186,7 @@ export class RuntimeEngine{
   async resolveModifiers(versionId,targetRef,baseValue,context={}){
     const ruleset=this.ruleset(versionId),evaluator=this.evaluator(versionId),applicable=[];
     for(const modifier of ruleset.modifiers??[]){if(!enabled(modifier))continue;const t=modifier.targetRef??{};if(t.objectKind!==targetRef.objectKind||t.objectId!==targetRef.objectId||String(t.capabilityId??'')!==String(targetRef.capabilityId??'')||String(t.outputId??'')!==String(targetRef.outputId??''))continue;let ok=true;for(const id of modifier.conditionRefs??[])if(!await evaluator.condition(id,context)){ok=false;break;}if(!ok)continue;let value;if(modifier.valueSource.kind==='literal')value=modifier.valueSource.value;else if(modifier.valueSource.kind==='parameter')value=evaluator.parameter(modifier.valueSource.id);else if(modifier.valueSource.kind==='formula')value=await evaluator.formula(modifier.valueSource.id,context);else value=await this.resolveReference(versionId,modifier.valueSource.reference,context);applicable.push({modifier,value:Number(value)});}
-    const grouped=new Map(),selected=[];for(const row of applicable){const mode=row.modifier.stacking?.mode??'stack',group=row.modifier.stacking?.group||row.modifier.id;if(mode==='stack'){selected.push(row);continue;}const prior=grouped.get(group);if(!prior||mode==='replace'&&row.modifier.priority>=prior.modifier.priority||mode==='highest'&&row.value>prior.value||mode==='lowest'&&row.value<prior.value)grouped.set(group,row);}selected.push(...grouped.values());selected.sort((a,b)=>(a.modifier.priority??0)-(b.modifier.priority??0));let value=Number(baseValue);for(const row of selected){const n=row.value,op=row.modifier.operation;if(op==='add')value+=n;else if(op==='subtract')value-=n;else if(op==='multiply')value*=n;else if(op==='set')value=n;else if(op==='min')value=Math.min(value,n);else if(op==='max')value=Math.max(value,n);}return{base:Number(baseValue),value,applied:selected.map(row=>row.modifier.id)};
+    const {value,applied}=applyModifierStack(baseValue,applicable.map(row=>({id:row.modifier.id,operation:row.modifier.operation,value:row.value,priority:row.modifier.priority??0,stacking:row.modifier.stacking})));return{base:Number(baseValue),value,applied};
   }
   async checkRestrictions(versionId,operationKind,context={}){const ruleset=this.ruleset(versionId),evaluator=this.evaluator(versionId),matches=[];for(const restriction of ruleset.restrictions??[]){if(!enabled(restriction)||restriction.operationKinds?.length&&!restriction.operationKinds.includes(operationKind))continue;let ok=true;for(const id of restriction.conditionRefs??[])if(!await evaluator.condition(id,context)){ok=false;break;}if(ok)matches.push(restriction);}matches.sort((a,b)=>(b.priority??0)-(a.priority??0));const top=matches[0]??null;return{allowed:!top||top.effect!=='deny',restrictionId:top?.id??null,messageKey:top?.messageKey??''};}
   async roll(formula,data={}){assertSafeRollFormula(formula);if(typeof this.adapter.roll!=="function")throw new Error("Runtime adapter does not provide Foundry Roll support.");return this.adapter.roll(formula,data);}
@@ -274,7 +279,9 @@ export class RuntimeEngine{
     const event={id:globalThis.crypto?.randomUUID?.()??`evt-${Date.now()}-${Math.random().toString(36).slice(2)}`,eventTypeId,rulesetVersionId:versionId,occurredAt:Date.now(),payload:clone(payload),chainId:options.chainId??null,parentEventId:options.parentEventId??null,depth};event.chainId??=event.id;
     const eventContext={...context,event};const triggered=[];
     for(const trigger of ruleset.triggers??[]){if(!enabled(trigger)||trigger.eventTypeId!==eventTypeId)continue;if(!this.#eventFilterMatches(trigger.eventFilter,event,eventContext))continue;let ok=true;for(const conditionId of trigger.conditionRefs??[])if(!await this.evaluateCondition(versionId,conditionId,eventContext)){ok=false;break;}if(!ok)continue;const actions=[];for(const actionId of trigger.actionRefs??[]){actions.push(await this.executeAction(versionId,actionId,eventContext,{eventDepth:depth,triggered:true}));}triggered.push({triggerId:trigger.id,actions});}
-    this.hooks?.callAll?.(RUNTIME_HOOKS.event,event,clone(triggered));return {event,triggered};
+    // untilEvent Durations end on the containers the event concerns.
+    const expired=[];for(const ref of new Map(Object.values(context.roles??{}).filter(Boolean).map(ref=>{const n=normalizeRuntimeContainerRef(ref);return [this.#refKey(n),n];})).values()){const state=await this.adapter.load(ref);if(state.rulesetVersionId===versionId&&hasDurations(state)){const result=await this.expireStates(versionId,ref,{eventTypeId});if(result.stateInstanceIds.length||result.modifierStateIds.length)expired.push({ref,...result});}}
+    this.hooks?.callAll?.(RUNTIME_HOOKS.event,event,clone(triggered));return {event,triggered,expired};
   }
   #eventFilterMatches(filter,event,context){if(!filter)return true;const matches=filter.payloadMatches??{};for(const [key,value] of Object.entries(matches))if(event.payload?.[key]!==value)return false;return true;}
   async #operand(versionId,operand,context,evaluator){if(operand.kind==="literal")return clone(operand.value);if(operand.kind==="parameter")return evaluator.parameter(operand.id);if(operand.kind==="formula")return await evaluator.formula(operand.id,context);if(operand.kind==="reference")return await this.resolveReference(versionId,operand.reference,context,{staged:evaluator.__staged});throw new Error(`Unsupported Effect operand: ${operand.kind}.`);}
@@ -301,6 +308,80 @@ export class RuntimeEngine{
     state.rulesetVersionId=versionId;state.definitionStates[definition.id]=await this.#newDefinitionState(versionId,definition,ref,state,acquisition.initial??{});
     return state.definitionStates[definition.id];
   }
+  async #stagedState(versionId,context,role,staged){
+    const target=roleRef(context,role);if(!target)throw new Error(`EvaluationContext role is missing: ${role}.`);
+    const ref=normalizeRuntimeContainerRef(target),key=this.#refKey(ref);
+    if(!staged.has(key))staged.set(key,await this.adapter.load(ref,{rulesetVersionId:versionId}));
+    return {ref,state:staged.get(key)};
+  }
+  #duration(ruleset,durationRef){if(!durationRef)return null;const duration=ruleset.durations?.find(x=>x.id===durationRef&&enabled(x));if(!duration)throw new Error(`Duration unavailable: ${durationRef}.`);return startDuration(duration,{worldTime:this.adapter.worldTime(),roundSeconds:this.adapter.roundSeconds()});}
+  async #modifierState(versionId,ruleset,modifierRef,context,evaluator,state,{sourceRef,durationState}){
+    const modifier=ruleset.modifiers?.find(x=>x.id===modifierRef&&enabled(x));if(!modifier)throw new Error(`Modifier unavailable: ${modifierRef}.`);
+    if(modifier.targetRef?.capabilityId!=="value")throw new Error(`Modifier ${modifier.id} must target a value output to be applied persistently.`);
+    for(const id of modifier.conditionRefs??[])if(!await evaluator.condition(id,context))return null;
+    const source=modifier.valueSource,operand=source.kind==="literal"?source.value:source.kind==="parameter"?evaluator.parameter(source.id):source.kind==="formula"?await evaluator.formula(source.id,context):await this.resolveReference(versionId,source.reference,context,{staged:evaluator.__staged});
+    const ds=state.definitionStates[modifier.targetRef.objectId];if(!ds)throw new Error(`Definition is not instantiated on RuntimeContainer: ${modifier.targetRef.objectId}.`);
+    const created=createModifierState(modifier,{operand,sourceRef,durationState});(ds.modifiers??=[]).push(created);return created;
+  }
+  /** CP-28 Action steps after acquisitions: remove states, apply states (with the ModifierStates
+   * they own), then apply standalone ModifierStates. Each row joins the Action's changes. */
+  async #stageStates(versionId,ruleset,action,context,staged,evaluator,changes){
+    const sourceRef={kind:"action",id:action.id};
+    for(const removal of action.stateRemovals??[]){
+      const {ref,state}=await this.#stagedState(versionId,context,removal.targetRole,staged);
+      for(const instance of state.stateInstances.filter(x=>x.definitionId===removal.definitionId))changes.push({stateRemoved:removeStateInstance(state,instance.id).id,definitionId:removal.definitionId,containerRef:ref});
+    }
+    for(const application of action.stateApplications??[]){
+      const definition=ruleset.definitions?.find(x=>x.id===application.definitionId&&enabled(x));if(!definition)throw new Error(`Definition unavailable: ${application.definitionId}.`);
+      const {ref,state}=await this.#stagedState(versionId,context,application.targetRole,staged),durationState=this.#duration(ruleset,application.durationRef);
+      const existing=state.stateInstances.find(x=>x.definitionId===definition.id&&x.active!==false);
+      if(existing&&application.stacking==="ignore")continue;
+      if(existing&&["refresh","stack"].includes(application.stacking)){
+        if(application.stacking==="stack")existing.stacks+=application.stacks;
+        existing.durationState=durationState;
+        for(const modifier of Object.values(state.definitionStates).flatMap(ds=>ds.modifiers??[]))if(modifier.sourceRef?.kind==="stateInstance"&&modifier.sourceRef.id===existing.id)modifier.durationState=durationState;
+        changes.push({stateApplied:existing.id,definitionId:definition.id,containerRef:ref});continue;
+      }
+      state.rulesetVersionId||=versionId;
+      const instance=createStateInstance({definitionId:definition.id,sourceRef,durationState,stacks:application.stacks,severity:application.severity,worldTime:this.adapter.worldTime()});
+      const targetContext={...context,defaultRole:application.targetRole};
+      for(const modifierRef of application.modifierRefs??[]){const created=await this.#modifierState(versionId,ruleset,modifierRef,targetContext,evaluator,state,{sourceRef:{kind:"stateInstance",id:instance.id},durationState});if(created)instance.modifierIds.push(created.id);}
+      state.stateInstances.push(instance);changes.push({stateApplied:instance.id,definitionId:definition.id,containerRef:ref});
+    }
+    for(const application of action.modifierApplications??[]){
+      const {ref,state}=await this.#stagedState(versionId,context,application.targetRole,staged);
+      const created=await this.#modifierState(versionId,ruleset,application.modifierRef,{...context,defaultRole:application.targetRole},evaluator,state,{sourceRef,durationState:this.#duration(ruleset,application.durationRef)});
+      if(created)changes.push({modifierApplied:created.id,modifierId:application.modifierRef,containerRef:ref});
+    }
+  }
+  /** Remove one StateInstance (and the ModifierStates it owns) from a container. */
+  async removeStateInstance(versionId,containerRef,instanceId,{transactionId=null}={}){
+    const tx=this.transaction(versionId,"state.remove",{transactionId,summary:{instanceId}}),state=await tx.load(containerRef);
+    const removed=removeStateInstance(state,instanceId);if(!removed)return null;await this.#commit(tx);return clone(removed);
+  }
+  /** End the StateInstances and ModifierStates of a container whose Duration is over:
+   * world time reached, the awaited event happened, or a whileCondition turned false. */
+  async expireStates(versionId,containerRef,{worldTime=this.adapter.worldTime(),eventTypeId=null,transactionId=null}={}){
+    const ref=normalizeRuntimeContainerRef(containerRef),tx=this.transaction(versionId,"expire",{transactionId,summary:{worldTime,eventTypeId}}),state=await tx.load(ref);
+    const context={roles:{self:ref},defaultRole:"self"},evaluator=this.evaluator(versionId,new Map([[this.#refKey(ref),state]]));
+    const ended=async durationState=>durationEnded(durationState,{worldTime,eventTypeId})||durationState?.mode==="whileCondition"&&!await evaluator.condition(durationState.conditionRef,context);
+    const instances=[];for(const instance of [...state.stateInstances])if(await ended(instance.durationState))instances.push(removeStateInstance(state,instance.id).id);
+    const endedModifiers=new Set();for(const ds of Object.values(state.definitionStates))for(const modifier of ds.modifiers??[])if(await ended(modifier.durationState))endedModifiers.add(modifier.id);
+    const modifiers=removeModifierStates(state,modifier=>endedModifiers.has(modifier.id)).map(modifier=>modifier.id);
+    if(instances.length||modifiers.length)await this.#commit(tx);
+    return {stateInstanceIds:instances,modifierStateIds:modifiers};
+  }
+  /** GM clock: expire states on every container that has timed states (Foundry updateWorldTime). */
+  async expireAll({worldTime=this.adapter.worldTime(),eventTypeId=null}={}){
+    const results=[];
+    for(const ref of await this.adapter.listContainers()){
+      const state=await this.adapter.load(ref);
+      if(!state.rulesetVersionId||!hasDurations(state)||!this.#hasRuleset(state.rulesetVersionId))continue;
+      const result=await this.expireStates(state.rulesetVersionId,ref,{worldTime,eventTypeId});
+      if(result.stateInstanceIds.length||result.modifierStateIds.length)results.push({ref,...result});
+    }
+    return results;
+  }
   /** previewAction options.acquisitions: extra grants run with the Action's own (a Content's bindings). */
   async previewAction(versionId,actionId,context={},{acquisitions=[]}={}){
     const ruleset=this.ruleset(versionId),action=ruleset.actions?.find(x=>x.id===actionId&&enabled(x));if(!action)throw new Error(`Action unavailable: ${actionId}.`);const staged=new Map(),evaluator=this.evaluator(versionId,staged);evaluator.__staged=staged;
@@ -318,6 +399,7 @@ export class RuntimeEngine{
       if(created==="present")return {actionId,allowed:false,reason:"acquired",definitionId:acquisition.definitionId,testResult,changes:[]};
       if(created){changes.push({acquisition:acquisition.definitionId,before:null,after:clone(created),containerRef:ref});acquired.push(acquisition.definitionId);}
     }
+    await this.#stageStates(versionId,ruleset,action,context,staged,evaluator,changes);
     for(const effectId of effectRefs)changes.push(await this.previewEffect(versionId,effectId,context,staged));return {actionId,allowed:true,testResult,changes,acquired,staged};
   }
   /** triggered: run by a Trigger, so no user chose it and only write permissions apply. */

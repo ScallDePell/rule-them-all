@@ -53,6 +53,16 @@ export class DependencyIndex{
       for(const [j,id] of (a.conditionRefs??[]).entries())pushRef(this.#edges,{objectKind:'action',objectId:a.id},{objectKind:'condition',objectId:id},'actionCondition',`actions[${i}].conditionRefs[${j}]`);
       for(const k of ['costEffectRefs','effectRefs'])for(const [j,id] of (a[k]??[]).entries())pushRef(this.#edges,{objectKind:'action',objectId:a.id},{objectKind:'effect',objectId:id},k,`actions[${i}].${k}[${j}]`);
       for(const [j,id] of (a.eventTypeRefs??[]).entries())pushRef(this.#edges,{objectKind:'action',objectId:a.id},{objectKind:'eventType',objectId:id},'actionEvent',`actions[${i}].eventTypeRefs[${j}]`);
+      for(const [j,application] of (a.stateApplications??[]).entries()){
+        pushRef(this.#edges,{objectKind:'action',objectId:a.id},{objectKind:'definition',objectId:application?.definitionId},'actionState',`actions[${i}].stateApplications[${j}].definitionId`);
+        if(application?.durationRef)pushRef(this.#edges,{objectKind:'action',objectId:a.id},{objectKind:'duration',objectId:application.durationRef},'actionDuration',`actions[${i}].stateApplications[${j}].durationRef`);
+        for(const [k,id] of (application?.modifierRefs??[]).entries())pushRef(this.#edges,{objectKind:'action',objectId:a.id},{objectKind:'modifier',objectId:id},'actionModifier',`actions[${i}].stateApplications[${j}].modifierRefs[${k}]`);
+      }
+      for(const [j,removal] of (a.stateRemovals??[]).entries())pushRef(this.#edges,{objectKind:'action',objectId:a.id},{objectKind:'definition',objectId:removal?.definitionId},'actionState',`actions[${i}].stateRemovals[${j}].definitionId`);
+      for(const [j,application] of (a.modifierApplications??[]).entries()){
+        pushRef(this.#edges,{objectKind:'action',objectId:a.id},{objectKind:'modifier',objectId:application?.modifierRef},'actionModifier',`actions[${i}].modifierApplications[${j}].modifierRef`);
+        if(application?.durationRef)pushRef(this.#edges,{objectKind:'action',objectId:a.id},{objectKind:'duration',objectId:application.durationRef},'actionDuration',`actions[${i}].modifierApplications[${j}].durationRef`);
+      }
       for(const [j,acquisition] of (a.acquisitions??[]).entries())pushRef(this.#edges,{objectKind:'action',objectId:a.id},{objectKind:'definition',objectId:acquisition?.definitionId},'actionAcquisition',`actions[${i}].acquisitions[${j}].definitionId`);
     }
     for(const [i,t] of (ruleset.triggers??[]).entries()){

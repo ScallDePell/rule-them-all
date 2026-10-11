@@ -26,6 +26,10 @@ export class FoundryRuntimeAdapter{
     const doc=ref?await this.resolveDocument(ref):null,level=Number(doc?.getUserLevel?.(user)??(user.isGM?3:0));
     return {userId:user.id,role:PERMISSION_ROLES[Math.min(Math.max(Number(user.role)-1,0),PERMISSION_ROLES.length-1)],isGM:Boolean(user.isGM),ownership:OWNERSHIP_LEVELS[Math.min(Math.max(level,0),OWNERSHIP_LEVELS.length-1)]};
   }
+  worldTime(){return Number(game.time?.worldTime??0);}
+  roundSeconds(){return Number(CONFIG.time?.roundTime??6);}
+  /** World Actors, their Items and world Items that hold runtime data. */
+  async listContainers(){return [...(game.actors??[]).flatMap(actor=>[actor,...(actor.items??[])]),...(game.items??[])].filter(doc=>doc.getFlag?.(MODULE_ID,FLAG_KEY)).map(doc=>({uuid:doc.uuid}));}
   async loadLedger(ref){const doc=await this.resolveDocument(ref);const stored=doc.getFlag?.(MODULE_ID,LEDGER_KEY);return Array.isArray(stored)?copyJSON(stored):[];}
   /** One Document update carries the state and its ledger, so each container is written atomically.
    * The state replaces the stored object: a merge would keep removed DefinitionStates. */

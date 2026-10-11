@@ -47,7 +47,9 @@ export const capabilityTypeRegistry = new CapabilityTypeRegistry()
     "collection.count":{id:"collection.count",valueType:"integer",cardinality:"one",nullable:false,source:"collection.count",readable:true,mutable:false,derived:true}
   },presentationHints:{renderer:"collection"}})
   .register({id:"state", category:"structural", fields:{}, outputs:{
-    "state.active":{id:"state.active",valueType:"boolean",cardinality:"one",nullable:false,source:"state.active",readable:true,mutable:true,derived:false}
+    "state.active":{id:"state.active",valueType:"boolean",cardinality:"one",nullable:false,source:"state.active",readable:true,mutable:true,derived:false},
+    // CP-28: active StateInstances of the Definition on the container (sum of their stacks).
+    "state.stacks":{id:"state.stacks",valueType:"integer",cardinality:"one",nullable:false,source:"state.stacks",readable:true,mutable:false,derived:true}
   },presentationHints:{renderer:"state"}})
   .register({id:"tests", category:"association", fields:{}, outputs:{}})
   .register({id:"actions", category:"association", fields:{}, outputs:{}})

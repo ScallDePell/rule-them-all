@@ -31,6 +31,9 @@ export function createRuntimeAPI(configurator,{adapter=new FoundryRuntimeAdapter
     getLedger:ref=>engine.getLedger(ref),
     compensate:write("compensate"),
     acquire:write("acquire"),
+    removeStateInstance:write("removeStateInstance"),
+    expireStates:write("expireStates"),
+    expireAll:options=>engine.expireAll(options),
     authorize:(versionId,operation,target,ref,context)=>engine.authorize(versionId,operation,target,ref,context),
     /** GM client: serve a relayed request from another user. */
     serveRelay:message=>serveRuntimeRelay(engine,message),

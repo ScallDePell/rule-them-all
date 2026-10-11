@@ -55,6 +55,17 @@ export function checkRulesetTypes(ruleset, d) {
   // CP-16: an acquisition Action must instantiate something.
   list(ruleset.actions).forEach((action, index) => {
     if (isRecord(action) && action.purpose === "acquisition" && !list(action.acquisitions).length) d.strict("ACTION_ACQUISITION", `actions[${index}].acquisitions`, "An acquisition Action must acquire at least one Definition.");
+    // CP-28: a StateInstance is a state Definition; a persistent ModifierState changes a value.
+    const definitions = new Map(list(ruleset.definitions).map(definition => [definition?.id, definition])), modifiers = new Map(list(ruleset.modifiers).map(modifier => [modifier?.id, modifier]));
+    for (const [key, rows] of [["stateApplications", list(action?.stateApplications)], ["stateRemovals", list(action?.stateRemovals)]]) rows.forEach((row, at) => {
+      const definition = definitions.get(row?.definitionId);
+      if (definition && !list(definition.capabilities).includes("state")) d.strict("STATE_DEFINITION", `actions[${index}].${key}[${at}].definitionId`, `Definition ${definition.id} has no state capability.`);
+    });
+    const persistent = [...list(action?.modifierApplications).map(row => row?.modifierRef), ...list(action?.stateApplications).flatMap(row => list(row?.modifierRefs))];
+    for (const id of persistent) {
+      const modifier = modifiers.get(id);
+      if (modifier && modifier.targetRef?.capabilityId !== "value") d.strict("MODIFIER_PERSISTENT", `actions[${index}]`, `Modifier ${modifier.id} must target a value output to be applied persistently.`);
+    }
   });
   list(ruleset.formulas).forEach((formula, index) => {
     if (!isRecord(formula) || !valueTypeRegistry.has(formula.resultType)) return;
