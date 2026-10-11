@@ -20,7 +20,7 @@
                 {{#if isActive}}<button class="rta-config-action" type="button" data-action="deactivate" data-tooltip="Deactivate"><i class="fa-solid fa-pause"></i></button>{{else}}<button class="rta-config-action" type="button" data-action="activate" data-version-id="{{versionId}}" data-tooltip="Activate"><i class="fa-solid fa-play"></i></button>{{/if}}
                 {{#unless isValidated}}<button class="rta-config-action" type="button" data-action="publish" data-version-id="{{versionId}}" data-tooltip="Publish"><i class="fa-solid fa-upload"></i></button>{{/unless}}
                 <button class="rta-config-action" type="button" data-action="export" data-version-id="{{versionId}}" data-tooltip="Export"><i class="fa-solid fa-download"></i></button>
-                <button class="rta-config-action rta-config-action--danger" type="button" data-action="deleteRuleset" data-version-id="{{versionId}}" data-tooltip="Delete version" {{#unless canDelete}}disabled{{/unless}}><i class="fa-solid fa-trash"></i></button>
+                <button class="rta-config-action rta-config-action--danger" type="button" data-action="deleteRuleset" data-version-id="{{versionId}}" data-tooltip="{{#if canDelete}}Delete version{{else}}{{localize 'RTA.UI.DeleteActiveVersion'}}{{/if}}" {{#unless canDelete}}disabled{{/unless}}><i class="fa-solid fa-trash"></i></button>
               </div>
             </div>
           </article>

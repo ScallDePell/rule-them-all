@@ -485,7 +485,7 @@
     </div>
 
     <footer class="form-footer rta-config-entry__footer">
-      {{#unless creating}}{{#unless readOnly}}<button type="button" data-action="delete"><i class="fa-solid fa-trash"></i> {{localize "RTA.Template.Delete"}}</button>{{/unless}}{{/unless}}
+      {{#unless creating}}{{#unless readOnly}}<span class="rta-delete-guard" {{#if deletion.blocked}}data-tooltip="{{deletion.reason}}" aria-label="{{deletion.reason}}"{{/if}}><button type="button" data-action="delete" {{#if deletion.blocked}}disabled{{/if}}><i class="fa-solid fa-trash"></i> {{localize "RTA.Template.Delete"}}</button></span>{{/unless}}{{/unless}}
       <div class="rta-config-entry__footer-actions">
         <button type="button" data-action="close" data-footer-action="close" {{#if dirty}}hidden{{/if}}>{{localize "RTA.Template.Close"}}</button>
         {{#unless readOnly}}<button type="button" data-action="cancel" data-footer-action="cancel" {{#unless dirty}}hidden{{/unless}}><i class="fa-solid fa-arrow-rotate-left"></i> {{localize "RTA.Template.Cancel"}}</button>{{/unless}}

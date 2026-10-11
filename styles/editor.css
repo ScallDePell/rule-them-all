@@ -435,6 +435,20 @@
   margin: 0;
 }
 
+/* Delete stays in the footer flow; when the Core would refuse it, the wrapper carries the reason tooltip. */
+.rta-config-entry .form-footer .rta-delete-guard {
+  display: flex;
+  flex: 1;
+}
+
+.rta-config-entry .form-footer .rta-delete-guard > button {
+  flex: 1;
+}
+
+.rta-config-entry .form-footer .rta-delete-guard > button:disabled {
+  pointer-events: none;
+}
+
 /* Match every textarea to the available field column, including direct labels. */
 .rta-config-entry :is(fieldset, details.rta-config-entry__section, details.rta-config-entry__technical) :is(textarea, input:not([type="checkbox"]):not([type="radio"]):not([type="color"]), select) {
   box-sizing: border-box;

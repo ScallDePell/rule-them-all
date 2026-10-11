@@ -38,7 +38,9 @@
       "NoOptionalCapabilities": "Aucune capacité facultative disponible.",
       "FilterByCategories": "Filtrer par catégories",
       "ClearCategoryFilters": "Effacer",
-      "ClearOptionalReferences": "Ces éléments y font référence de façon facultative : {list}. Leur référence sera retirée. Continuer ?"
+      "ClearOptionalReferences": "Ces éléments y font référence de façon facultative : {list}. Leur référence sera retirée. Continuer ?",
+      "DeleteBlocked": "Utilisé par : {list}. Retirez ces références avant de supprimer.",
+      "DeleteActiveVersion": "Version active : désactivez-la avant de la supprimer."
     },
     "Nav": {
       "General": "Général",

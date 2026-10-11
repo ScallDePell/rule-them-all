@@ -55,3 +55,13 @@ test('CP-31: analyzeChangeImpact reports incompatible consumers and runtime impa
   assert.deepEqual(drop.blockingDiagnostics.map(d=>[d.code,d.objectId]),[['REFERENCE_CAPABILITY','raise']]);
   assert.equal(drop.blocking,true);
 });
+
+test('§46: the editor knows in advance that Delete would be refused, and why', async () => {
+  const {describeDeletion, rulesetObjectName} = await import('../src/configurator/deletion-view.mjs');
+  const {api,v}=await setup();
+  const name=(kind,id)=>rulesetObjectName(api.getRuleset(v),kind,id);
+  const used=describeDeletion(api.getDeletionStatus(v,'total','formula'),{nameOf:name,format:(key,data)=>`${key}:${data.list}`});
+  assert.deepEqual(used,{blocked:true,reason:'RTA.UI.DeleteBlocked:Check'});
+  assert.deepEqual(describeDeletion(api.getDeletionStatus(v,'bonus','formula')),{blocked:false,reason:''});
+  assert.equal(describeDeletion(api.getDeletionStatus(v,'strength','definition'),{nameOf:name,format:(key,data)=>data.list}).reason,'Total, Raise');
+});

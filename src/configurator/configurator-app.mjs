@@ -137,7 +137,7 @@ export class ConfiguratorApp extends ConfiguratorWindow {
       versionId:record.versionId, rulesetId:record.rulesetId, version:record.version, status:record.status,
       name:localize(api,record.versionId,record.workingDraft.nameKey), color:rulesetColor(record.workingDraft), isActive:record.versionId===activeId,
       isValidated:record.status==="validated", isReady:record.status==="ready", isDraft:record.status==="draft",
-      canDelete:true, canCreateVersion:record.status==="validated"
+      canDelete:record.versionId!==activeId, canCreateVersion:record.status==="validated"
     }));
 
     const definitionTypes = ruleset ? api.listDefinitionTypes(this.#selected).map(type => ({
