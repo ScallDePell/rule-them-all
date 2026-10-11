@@ -1,6 +1,11 @@
 import {copyJSON,isRecord} from './configurator-schema.mjs';
 import {collectCrossFamilyRelations} from './relation-contract.mjs';
 
+/* Dependency strength (CP-31): `required` blocks deleting the target;
+   `optional` means the consumer contract accepts the reference being absent,
+   so the target may go once the caller explicitly clears that reference;
+   `metadata` (tags, categories) blocks like required. */
+export const DEPENDENCY_STRENGTHS=Object.freeze(['required','optional','metadata']);
 const pushRef=(edges,consumerRef,targetRef,kind,path,strength='required')=>{
   if(!targetRef?.objectKind||!targetRef?.objectId)return;
   edges.push({consumerRef:copyJSON(consumerRef),targetRef:copyJSON(targetRef),kind,path,strength});
@@ -26,16 +31,16 @@ export class DependencyIndex{
     for(const [i,o] of (ruleset.outcomes??[]).entries())if(o.conditionRef)pushRef(this.#edges,{objectKind:'outcome',objectId:o.id},{objectKind:'condition',objectId:o.conditionRef},'outcomeCondition',`outcomes[${i}].conditionRef`);
     for(const [i,t] of (ruleset.tests??[]).entries()){
       pushRef(this.#edges,{objectKind:'test',objectId:t.id},{objectKind:'roll',objectId:t.rollRef},'testRoll',`tests[${i}].rollRef`);
-      if(t.bonusFormulaRef)pushRef(this.#edges,{objectKind:'test',objectId:t.id},{objectKind:'formula',objectId:t.bonusFormulaRef},'testBonus',`tests[${i}].bonusFormulaRef`);
-      if(t.targetFormulaRef)pushRef(this.#edges,{objectKind:'test',objectId:t.id},{objectKind:'formula',objectId:t.targetFormulaRef},'testTarget',`tests[${i}].targetFormulaRef`);
+      if(t.bonusFormulaRef)pushRef(this.#edges,{objectKind:'test',objectId:t.id},{objectKind:'formula',objectId:t.bonusFormulaRef},'testBonus',`tests[${i}].bonusFormulaRef`,'optional');
+      if(t.targetFormulaRef)pushRef(this.#edges,{objectKind:'test',objectId:t.id},{objectKind:'formula',objectId:t.targetFormulaRef},'testTarget',`tests[${i}].targetFormulaRef`,'optional');
       if(t.totalFormulaRef)pushRef(this.#edges,{objectKind:'test',objectId:t.id},{objectKind:'formula',objectId:t.totalFormulaRef},'testTotal',`tests[${i}].totalFormulaRef`);
-      if(t.marginFormulaRef)pushRef(this.#edges,{objectKind:'test',objectId:t.id},{objectKind:'formula',objectId:t.marginFormulaRef},'testMargin',`tests[${i}].marginFormulaRef`);
+      if(t.marginFormulaRef)pushRef(this.#edges,{objectKind:'test',objectId:t.id},{objectKind:'formula',objectId:t.marginFormulaRef},'testMargin',`tests[${i}].marginFormulaRef`,'optional');
       for(const [j,input] of (t.inputBindings??[]).entries()){
         if(input?.source?.formulaRef)pushRef(this.#edges,{objectKind:'test',objectId:t.id},{objectKind:'formula',objectId:input.source.formulaRef},'testInput',`tests[${i}].inputBindings[${j}].source.formulaRef`);
         if(isRecord(input?.source?.reference))pushRef(this.#edges,{objectKind:'test',objectId:t.id},input.source.reference,'testInput',`tests[${i}].inputBindings[${j}].source.reference`);
       }
       for(const [j,id] of (t.outcomeRefs??[]).entries())pushRef(this.#edges,{objectKind:'test',objectId:t.id},{objectKind:'outcome',objectId:id},'testOutcome',`tests[${i}].outcomeRefs[${j}]`);
-      if(t.fallbackOutcomeRef)pushRef(this.#edges,{objectKind:'test',objectId:t.id},{objectKind:'outcome',objectId:t.fallbackOutcomeRef},'testOutcome',`tests[${i}].fallbackOutcomeRef`);
+      if(t.fallbackOutcomeRef)pushRef(this.#edges,{objectKind:'test',objectId:t.id},{objectKind:'outcome',objectId:t.fallbackOutcomeRef},'testFallback',`tests[${i}].fallbackOutcomeRef`,'optional');
     }
     for(const [i,e] of (ruleset.effects??[]).entries()){
       pushRef(this.#edges,{objectKind:'effect',objectId:e.id},e.targetRef,'effectTarget',`effects[${i}].targetRef`);

@@ -7,6 +7,7 @@ import {applyFieldContract} from "./field-output-contracts.mjs";
 import {assertValidRuleset} from "./configurator-validation.mjs";
 import {PREPARERS} from "./rule-contracts.mjs";
 import {prepareDefinitionSlots} from "./capability-slots.mjs";
+import {analyzeChangeImpact, rulesetWithout, collectionOfKind} from "./change-impact.mjs";
 
 /** Draft writes accept incomplete entries; validation reports what publish still needs. */
 const DRAFT = Object.freeze({get incomplete() { return []; }});
@@ -57,11 +58,39 @@ export function createGraphAPI(registry) {
     if (prepare) collection.prepareEntry = data => prepare(data, DRAFT);
   }
   const consumers = (rulesetId, id, kind) => new DependencyIndex(definitions.ruleset(rulesetId)).getConsumers(id, kind);
-  const protectedDelete = (collection, kind) => (rulesetId, id) => {
+  /** CP-31: required (and metadata) consumers block the deletion. Optional
+   * consumers allow it only with {clearOptionalReferences:true}: the caller
+   * confirms that those references are cleared in the same write. */
+  const protectedDelete = (collection, kind) => (rulesetId, id, {clearOptionalReferences = false} = {}) => {
     if (!collection.get(rulesetId,id)) throw new Error(`${kind} not found: ${id}.`);
     const used = consumers(rulesetId,id,kind);
-    if (used.length) throwIntegrityError(kind,id,used);
-    return collection.delete(rulesetId,id);
+    if (used.some(edge => edge.strength !== "optional")) throwIntegrityError(kind,id,used);
+    if (!used.length) return collection.delete(rulesetId,id);
+    if (!clearOptionalReferences) {
+      const error = new Error(`Deleting ${kind} ${id} clears ${used.length} optional reference(s): ${used.map(edge => edge.path).join(", ")}. Pass {clearOptionalReferences:true} to confirm.`);
+      error.code = "OPTIONAL_REFERENCES";
+      error.consumers = copyJSON(used);
+      throw error;
+    }
+    const candidate = rulesetWithout(collection.ruleset(rulesetId), kind, id, {clearOptionalReferences:true});
+    assertValidRuleset(candidate);
+    const changed = new Set([collection.collectionName, ...used.map(edge => collectionOfKind(edge.consumerRef.objectKind))]);
+    registry.update(rulesetId, Object.fromEntries([...changed].map(name => [name, candidate[name]])));
+    return true;
+  };
+  /** ChangeImpactReport for {delete:{kind,id}, clearOptionalReferences?}, {update:{kind,id,patch}} or {ruleset}. */
+  const analyzeImpact = (rulesetId, change = {}) => {
+    const current = definitions.ruleset(rulesetId);
+    let candidate;
+    if (change.delete) candidate = rulesetWithout(current, change.delete.kind, change.delete.id, {clearOptionalReferences: change.clearOptionalReferences === true});
+    else if (change.update) {
+      const collection = collectionOfKind(change.update.kind);
+      if (!collection || !(current[collection] ?? []).some(entry => entry.id === change.update.id)) throw new Error(`${change.update.kind} not found: ${change.update.id}.`);
+      candidate = copyJSON(current);
+      candidate[collection] = candidate[collection].map(entry => entry.id === change.update.id ? {...entry, ...copyJSON(change.update.patch ?? {}), id: entry.id} : entry);
+    } else if (change.ruleset) candidate = copyJSON(change.ruleset);
+    else throw new Error("analyzeChangeImpact requires delete, update or ruleset.");
+    return analyzeChangeImpact(current, candidate);
   };
   /** CP-31: removing a field never deletes stored values silently. When entries
    * still hold a value for a removed field, the caller must pass
@@ -121,7 +150,8 @@ export function createGraphAPI(registry) {
     createDefinition:(v,d)=>definitions.create(v,d), getDefinition:(v,id)=>definitions.get(v,id), listDefinitions:v=>definitions.list(v), updateDefinition:(v,id,p)=>definitions.update(v,id,p), deleteDefinition:protectedDelete(definitions,"definition"),
     getConsumers: consumers,
     listDependencies: v => new DependencyIndex(definitions.ruleset(v)).list(),
-    getDeletionStatus:(v,id,kind="definition")=>{ const used=consumers(v,id,kind); return {canDelete:used.length===0,kind,id,code:used.length?"REFERENTIAL_INTEGRITY":null,consumers:copyJSON(used)}; }
+    analyzeChangeImpact: analyzeImpact,
+    getDeletionStatus:(v,id,kind="definition")=>{ const used=consumers(v,id,kind), blocking=used.filter(edge=>edge.strength!=="optional"), optional=used.filter(edge=>edge.strength==="optional"); return {canDelete:blocking.length===0,kind,id,code:blocking.length?"REFERENTIAL_INTEGRITY":optional.length?"OPTIONAL_REFERENCES":null,consumers:copyJSON(used),optionalReferences:copyJSON(optional)}; }
   };
   const singular = {parameters:"Parameter",formulas:"Formula",formulaBindings:"FormulaBinding",conditions:"Condition",rolls:"Roll",outcomes:"Outcome",tests:"Test",effects:"Effect",actions:"Action",permissionPolicies:"PermissionPolicy",eventTypes:"EventType",triggers:"Trigger",contentTypes:"ContentType",contentTemplates:"ContentTemplate",modifiers:"Modifier",restrictions:"Restriction",durations:"Duration",creationSystems:"CreationSystem",progressionSystems:"ProgressionSystem",sheetDefinitions:"SheetDefinition",categories:"Category",tags:"Tag",references:"Reference"};
   for (const [name, collection] of Object.entries(collections)) {

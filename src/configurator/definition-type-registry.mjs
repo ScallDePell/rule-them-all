@@ -18,6 +18,7 @@ export class RulesetCollectionRegistry {
     this.#immutable = immutable;
   }
 
+  get collectionName() { return this.#collection; }
   ruleset(id) {
     const ruleset = this.#registry.get(id);
     if (!ruleset) throw new Error(`Ruleset not found: ${id}.`);

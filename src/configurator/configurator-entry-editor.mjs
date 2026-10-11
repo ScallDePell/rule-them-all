@@ -536,8 +536,19 @@ export class ConfiguratorEntryEditor extends ConfiguratorWindow {
     if(action==="cancel"){if(this.#dirty&&!await confirmRTA("RTA.UI.DiscardChanges"))return;return this.close();}
     if(action==="delete"){
       if(!this.#id||!await confirmRTA("RTA.UI.DeleteEntry"))return;
-      try{if(this.#kind==="ruleset")await this.#api.deleteRulesetVersion(this.#versionId);else await this.#api[ENTRY_OPERATIONS[this.#kind].delete](this.#versionId,this.#id);await this.#onSaved();return this.close();}
+      try{if(this.#kind==="ruleset")await this.#api.deleteRulesetVersion(this.#versionId);else if(await this.#deleteEntry()===false)return;await this.#onSaved();return this.close();}
       catch(error){this.#error=error?.message??String(error);return this.render(false);}
+    }
+  }
+  /** CP-31: optional references to the entry are cleared only after the GM confirms which ones. */
+  async #deleteEntry(){
+    const remove=ENTRY_OPERATIONS[this.#kind].delete;
+    try{return await this.#api[remove](this.#versionId,this.#id);}
+    catch(error){
+      if(error?.code!=="OPTIONAL_REFERENCES")throw error;
+      const list=(error.consumers??[]).map(edge=>`${edge.consumerRef.objectKind} ${edge.consumerRef.objectId}`).join(", ");
+      if(!await confirmRTA("RTA.UI.ClearOptionalReferences",{list}))return false;
+      return this.#api[remove](this.#versionId,this.#id,{clearOptionalReferences:true});
     }
   }
 }

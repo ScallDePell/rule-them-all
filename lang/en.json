@@ -41,7 +41,8 @@
       "OptionalCapabilities": "Optional capabilities",
       "NoOptionalCapabilities": "No optional capabilities available.",
       "FilterByCategories": "Filter by categories",
-      "ClearCategoryFilters": "Clear"
+      "ClearCategoryFilters": "Clear",
+      "ClearOptionalReferences": "These entries reference it optionally: {list}. Their reference will be removed. Continue?"
     },
     "Nav": {
       "General": "General",

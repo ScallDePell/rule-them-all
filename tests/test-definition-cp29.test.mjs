@@ -71,7 +71,11 @@ test('CP-29: Test and InputBinding contracts', () => {
 test('CP-29: Formulas used by a Test are protected dependencies', async () => {
   const {api,v}=await setup();
   await api.createTest(v,{id:'knowledge',nameKey:'Knowledge',inputBindings:[{id:'rank',source:{formulaRef:'double-level'},valueType:'number',required:true},{id:'edge',source:{literal:1},valueType:'number',required:true}],totalFormulaRef:'skill-total',marginFormulaRef:'half-margin',outcomeRefs:[],enabled:true,order:10,tags:[]});
-  for(const id of ['double-level','skill-total','half-margin'])await assert.rejects(()=>api.deleteFormula(v,id),/referenced/,id);
+  for(const id of ['double-level','skill-total'])await assert.rejects(()=>api.deleteFormula(v,id),/referenced/,id);
+  // The margin Formula is optional (CP-31): deleting it needs an explicit clear.
+  await assert.rejects(()=>api.deleteFormula(v,'half-margin'),error=>error.code==='OPTIONAL_REFERENCES');
+  await api.deleteFormula(v,'half-margin',{clearOptionalReferences:true});
+  assert.equal(api.getTest(v,'knowledge').marginFormulaRef,null);
 });
 
 test('CP-29 editor: input rows mirror the stored source and parse typed text', async () => {

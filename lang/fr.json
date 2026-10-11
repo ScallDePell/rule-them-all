@@ -37,7 +37,8 @@
       "OptionalCapabilities": "Capacités facultatives",
       "NoOptionalCapabilities": "Aucune capacité facultative disponible.",
       "FilterByCategories": "Filtrer par catégories",
-      "ClearCategoryFilters": "Effacer"
+      "ClearCategoryFilters": "Effacer",
+      "ClearOptionalReferences": "Ces éléments y font référence de façon facultative : {list}. Leur référence sera retirée. Continuer ?"
     },
     "Nav": {
       "General": "Général",
