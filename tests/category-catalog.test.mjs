@@ -9,17 +9,17 @@ class Storage{constructor(){this.value=emptyStorageSnapshot();}async load(){retu
 async function setup(){
   const storage=new Storage(),api=await createConfiguratorAPI(storage);
   const v=(await api.createRuleset({id:'catalog',nameKey:'Catalog',version:'1'})).versionId;
-  await api.registerDefinitionType(v,{id:'kind',key:'kind',nameKey:'Kind',descriptionKey:'',color:null,enabled:true,order:10,allowedCapabilities:[],defaultCapabilities:[],requiredCapabilities:[],fields:{},constraints:[]});
+  await api.registerDefinitionType(v,{id:'kind',key:'kind',nameKey:'Kind',descriptionKey:'',color:null,order:10,allowedCapabilities:[],defaultCapabilities:[],requiredCapabilities:[],fields:{},constraints:[]});
   return {api,v,storage};
 }
 
 test('Categories are a GM-managed catalog persisted with the Ruleset',async()=>{
   const {api,v,storage}=await setup();
   const created=await api.createCategory(v,{id:'combat',nameKey:'Combat'});
-  assert.deepEqual(created,{descriptionKey:'',enabled:true,order:10,id:'combat',nameKey:'Combat'});
-  await api.updateCategory(v,'combat',{order:20,enabled:false});
+  assert.deepEqual(created,{descriptionKey:'',order:10,id:'combat',nameKey:'Combat'});
+  await api.updateCategory(v,'combat',{order:20});
   const reloaded=await createConfiguratorAPI(storage);
-  assert.deepEqual(reloaded.listCategories(v).map(entry=>[entry.id,entry.order,entry.enabled]),[['combat',20,false]]);
+  assert.deepEqual(reloaded.listCategories(v).map(entry=>[entry.id,entry.order]),[['combat',20]]);
   await assert.rejects(()=>api.createCategory(v,{id:'combat',nameKey:'Again'}),/already exists/);
   await assert.rejects(()=>api.createCategory(v,{id:'colored',nameKey:'Colored',color:'#ff0000'}),/Unsupported Category field: color/);
 });
@@ -31,16 +31,13 @@ test('Consumers store catalog ids only, and a used Category cannot be deleted',a
   await api.createDefinition(v,{id:'spell',key:'spell',definitionTypeId:'kind',nameKey:'Spell',descriptionKey:'',data:{},categories:['magic'],enabled:true,order:0,tags:[]});
   assert.deepEqual(api.getConsumers(v,'magic','category').map(edge=>edge.consumerRef?.objectId??edge.source),['spell']);
   await assert.rejects(()=>api.deleteCategory(v,'magic'),error=>error.code==='REFERENTIAL_INTEGRITY');
-  // Disabling keeps the dependency and its protection.
-  await api.updateCategory(v,'magic',{enabled:false});
-  await assert.rejects(()=>api.deleteCategory(v,'magic'),error=>error.code==='REFERENTIAL_INTEGRITY');
   await api.updateDefinition(v,'spell',{categories:[]});
   assert.equal(await api.deleteCategory(v,'magic'),true);
 });
 
 test('Free category strings from existing Worlds are adopted once as catalog entries',()=>{
   const ruleset=normalizeRulesetCollections({id:'old',nameKey:'Old',version:'1',definitions:[{id:'a',categories:['melee','melee']}],contentTemplates:[{id:'t',categories:['loot']}]});
-  assert.deepEqual(ruleset.categories,[{id:'melee',nameKey:'melee',descriptionKey:'',enabled:true,order:10},{id:'loot',nameKey:'loot',descriptionKey:'',enabled:true,order:20}]);
+  assert.deepEqual(ruleset.categories,[{id:'melee',nameKey:'melee',descriptionKey:'',order:10},{id:'loot',nameKey:'loot',descriptionKey:'',order:20}]);
   assert.deepEqual(normalizeRulesetCollections(ruleset).categories,ruleset.categories);
 });
 

@@ -389,10 +389,6 @@
       "ValidatedVersionReadOnly": "Validated version: read-only.",
       "General": "General",
       "OneColorPerCoreFamilyEveryCardInThatFamilyUsesTheSameColorNeutralGrayIsTheFallback": "One color per Core family. Every card in that family uses the same color; neutral gray is the fallback.",
-      "DefinitionTypesChooseEnginePluginCapabilitiesExecutableCapabilityBehaviorIsNotAuthoredHere": "Definition Types choose engine/plugin capabilities; executable capability behavior is not authored here.",
-      "Capability": "Capability",
-      "Allowed": "Allowed",
-      "Default": "Default",
       "Required": "Required",
       "Type": "Type",
       "Read": "Read",
@@ -524,7 +520,8 @@
       "StatusReady": "Published",
       "StatusValidated": "Validated",
       "AppliesTo": "Applies to",
-      "Notes": "Notes and tags"
+      "Notes": "Notes and tags",
+      "NotesOnly": "Notes"
     },
     "EditorDisplay": {
       "NoneSelected": "None selected",
@@ -807,7 +804,7 @@
       },
       "definitionType": {
         "Summary": "A Definition type describes a family of game elements (attribute, skill, resource…): its capabilities and fields.",
-        "Usage": "Pick allowed, default and required capabilities. This type's description serves as help in the editor of its Definitions."
+        "Usage": "For each capability, choose whether it is unavailable, optional, on by default or required. This type's description serves as help in the editor of its Definitions."
       },
       "definition": {
         "Summary": "A Definition is a concrete game element of a type: Strength, Bow, Vitality…",
@@ -897,6 +894,18 @@
         "Summary": "A tag freely marks any Ruleset object.",
         "Usage": "List filters use it."
       }
+    },
+    "CapabilityType": {
+      "value": "Value",
+      "pool": "Pool",
+      "collection": "Collection",
+      "state": "State"
+    },
+    "CapabilityRole": {
+      "Off": "Unavailable",
+      "Optional": "Optional",
+      "Default": "Optional, on by default",
+      "Required": "Required"
     }
   }
 }

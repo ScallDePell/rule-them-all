@@ -9,11 +9,11 @@ class Storage{constructor(){this.value=emptyStorageSnapshot();this.listeners=new
 
 async function setup(){
  const api=await createConfiguratorAPI(new Storage());const v=(await api.createRuleset({id:'r',nameKey:'R',version:'1'})).versionId;
- await api.registerDefinitionType(v,{id:'attribute',key:'attribute',nameKey:'Attribute',descriptionKey:'',color:null,enabled:true,order:10,allowedCapabilities:['value'],defaultCapabilities:['value'],requiredCapabilities:['value'],fields:{},constraints:[]});
- await api.registerDefinitionType(v,{id:'resource',key:'resource',nameKey:'Resource',descriptionKey:'',color:null,enabled:true,order:20,allowedCapabilities:['pool'],defaultCapabilities:['pool'],requiredCapabilities:['pool'],fields:{},constraints:[]});
+ await api.registerDefinitionType(v,{id:'attribute',key:'attribute',nameKey:'Attribute',descriptionKey:'',color:null,order:10,allowedCapabilities:['value'],defaultCapabilities:['value'],requiredCapabilities:['value'],fields:{},constraints:[]});
+ await api.registerDefinitionType(v,{id:'resource',key:'resource',nameKey:'Resource',descriptionKey:'',color:null,order:20,allowedCapabilities:['pool'],defaultCapabilities:['pool'],requiredCapabilities:['pool'],fields:{},constraints:[]});
  await api.createDefinition(v,{id:'strength',key:'strength',definitionTypeId:'attribute',nameKey:'Strength',descriptionKey:'',data:{},categories:[],capabilities:['value'],enabled:true,order:10,tags:[]});
  await api.createDefinition(v,{id:'vitality',key:'vitality',definitionTypeId:'resource',nameKey:'Vitality',descriptionKey:'',data:{},categories:[],capabilities:['pool'],slots:{pool:[{id:'hp',minimum:{literal:0},maximum:{literal:12}}]},enabled:true,order:20,tags:[]});
- await api.createParameter(v,{id:'base',nameKey:'Base',valueType:'integer',nullable:false,value:7,scope:'ruleset',enabled:true,order:10,tags:[]});
+ await api.createParameter(v,{id:'base',nameKey:'Base',valueType:'integer',value:7,scope:'ruleset',enabled:true,order:10,tags:[]});
  await api.createFormula(v,{id:'max',nameKey:'Maximum',resultType:'number',expression:{type:'add',args:[{type:'parameter',id:'base'},{type:'reference',reference:{objectKind:'definition',objectId:'strength',capabilityId:'value',outputId:'value.final'}}]},enabled:true,order:10,tags:[]});
  await api.createCondition(v,{id:'alive',nameKey:'Alive',expression:{type:'gt',left:{type:'reference',reference:{objectKind:'definition',objectId:'vitality',capabilityId:'pool',slotId:'hp',outputId:'pool.current'}},right:{type:'literal',value:0}},enabled:true,order:10,tags:[]});
  await api.createEffect(v,{id:'damage',nameKey:'Damage',targetRef:{objectKind:'definition',objectId:'vitality',capabilityId:'pool',slotId:'hp',outputId:'pool.current'},operation:'subtract',operand:{kind:'literal',value:2},enabled:true,order:10,tags:[]});
@@ -101,7 +101,7 @@ test('Runtime reads only the published snapshot; the draft source is an explicit
  const lab=new RuntimeEngine({configurator:api,adapter,hooks:null,rulesetSource:'draft'});
  await lab.instantiateDefinition(v,actor,'strength');
  await api.publishRuleset(v);
- await api.createParameter(v,{id:'draft-only',nameKey:'Draft only',valueType:'integer',nullable:false,value:1,scope:'ruleset',enabled:true,order:30,tags:[]});
+ await api.createParameter(v,{id:'draft-only',nameKey:'Draft only',valueType:'integer',value:1,scope:'ruleset',enabled:true,order:30,tags:[]});
  assert.equal(engine.ruleset(v).parameters.some(p=>p.id==='draft-only'),false,'unpublished edits never reach gameplay');
  assert.equal(lab.ruleset(v).parameters.some(p=>p.id==='draft-only'),true);
  assert.throws(()=>new RuntimeEngine({configurator:api,adapter,rulesetSource:'latest'}).ruleset(v),/Unknown runtime Ruleset source/);

@@ -385,10 +385,6 @@
       "ValidatedVersionReadOnly": "Version validée : lecture seule.",
       "General": "Général",
       "OneColorPerCoreFamilyEveryCardInThatFamilyUsesTheSameColorNeutralGrayIsTheFallback": "Une couleur par famille du moteur. Toutes les cartes de cette famille utilisent cette couleur ; le gris neutre est utilisé par défaut.",
-      "DefinitionTypesChooseEnginePluginCapabilitiesExecutableCapabilityBehaviorIsNotAuthoredHere": "Les types de définitions choisissent les capacités du moteur ou des plugins ; leur comportement exécutable ne se définit pas ici.",
-      "Capability": "Capacité",
-      "Allowed": "Autorisé",
-      "Default": "Par défaut",
       "Required": "Obligatoire",
       "Type": "Type",
       "Read": "Lecture",
@@ -520,7 +516,8 @@
       "StatusReady": "Publiée",
       "StatusValidated": "Validée",
       "AppliesTo": "S'applique à",
-      "Notes": "Notes et étiquettes"
+      "Notes": "Notes et étiquettes",
+      "NotesOnly": "Notes"
     },
     "EditorDisplay": {
       "NoneSelected": "Aucune sélection",
@@ -803,7 +800,7 @@
       },
       "definitionType": {
         "Summary": "Un type de Definition décrit une famille d'éléments de jeu (attribut, compétence, ressource…) : ses capacités et ses champs.",
-        "Usage": "Choisissez les capacités autorisées, par défaut et obligatoires. La description de ce type sert d'aide dans l'éditeur de ses Definitions."
+        "Usage": "Pour chaque capacité, choisissez si elle est indisponible, optionnelle, activée par défaut ou requise. La description de ce type sert d'aide dans l'éditeur de ses Definitions."
       },
       "definition": {
         "Summary": "Une Definition est un élément de jeu concret d'un type : la Force, l'Arc, la Vitalité…",
@@ -893,6 +890,18 @@
         "Summary": "Une étiquette marque librement n'importe quel objet du Ruleset.",
         "Usage": "Les filtres des listes s'en servent."
       }
+    },
+    "CapabilityType": {
+      "value": "Valeur",
+      "pool": "Réserve",
+      "collection": "Collection",
+      "state": "État"
+    },
+    "CapabilityRole": {
+      "Off": "Indisponible",
+      "Optional": "Optionnelle",
+      "Default": "Optionnelle, activée par défaut",
+      "Required": "Requise"
     }
   }
 }

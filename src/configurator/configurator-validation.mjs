@@ -39,12 +39,11 @@ function collecting(d, code, path, run) {
 function checkDefinitionType(entry, path, d) {
   const issue = d.issue;
   if (!checkIdentity(entry, path, issue)) return;
-  exactFields(entry, ["id","key","nameKey","descriptionKey","color","enabled","order","allowedCapabilities","defaultCapabilities","requiredCapabilities","fields","constraints","presentation","relations"], path, issue);
+  exactFields(entry, ["id","key","nameKey","descriptionKey","color","order","allowedCapabilities","defaultCapabilities","requiredCapabilities","fields","constraints","presentation","relations"], path, issue);
   if (!nonempty(entry.key)) issue("REQUIRED_STRING", `${path}.key`, "key must be a non-empty string.");
   if (!nonempty(entry.nameKey)) d.incomplete("REQUIRED_STRING", `${path}.nameKey`, "nameKey must be a non-empty string.");
   if (typeof entry.descriptionKey !== "string") issue("STRING_TYPE", `${path}.descriptionKey`, "descriptionKey must be a string.");
   if (!(entry.color === null || nonempty(entry.color))) issue("COLOR", `${path}.color`, "color must be null or a non-empty string.");
-  if (typeof entry.enabled !== "boolean") issue("BOOLEAN_TYPE", `${path}.enabled`, "enabled must be boolean.");
   if (!Number.isSafeInteger(entry.order)) issue("ORDER", `${path}.order`, "order must be a safe integer.");
   for (const key of ["allowedCapabilities","defaultCapabilities","requiredCapabilities","constraints"]) if (!Array.isArray(entry[key] ?? [])) issue("ARRAY_TYPE", `${path}.${key}`, `${key} must be an array.`);
   for (const key of ["allowedCapabilities","defaultCapabilities","requiredCapabilities"]) {

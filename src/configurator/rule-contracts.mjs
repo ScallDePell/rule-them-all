@@ -15,10 +15,10 @@ const bool=(v,label)=>{if(typeof v!=='boolean')throw new Error(`${label} must be
 const identity=(x,label,options)=>{if(!nonempty(x.id))throw new Error(`${label} requires id.`);need(nonempty(x.nameKey),`${label} requires nameKey.`,options);};
 
 export function prepareParameter(data,options={}){
-  const x={descriptionKey:'',enabled:true,order:0,tags:[],valueType:'number',nullable:false,value:0,scope:'ruleset',...copyJSON(data)};
+  const x={descriptionKey:'',enabled:true,order:0,tags:[],valueType:'number',value:0,scope:'ruleset',...copyJSON(data)};
   identity(x,'Parameter',options);
   if(!valueTypeRegistry.has(x.valueType))throw new Error(`Unknown Parameter valueType: ${x.valueType}.`);
-  const check=validateTypedValue(x.valueType,'one',x.nullable,x.value); if(!check.valid)throw new Error(`Invalid Parameter value: ${check.message}`);
+  const check=validateTypedValue(x.valueType,'one',false,x.value); if(!check.valid)throw new Error(`Invalid Parameter value: ${check.message}`);
   bool(x.enabled,'Parameter.enabled'); arr(x.tags,'Parameter.tags'); return x;
 }
 
@@ -160,19 +160,19 @@ export function preparePermissionPolicy(data,options={}){
   x.rules=preparePermissionRules(x.rules); bool(x.enabled,'PermissionPolicy.enabled'); return x;
 }
 export function prepareTag(data,options={}){
-  const x={descriptionKey:'',enabled:true,order:0,color:null,...copyJSON(data)};
+  const x={descriptionKey:'',order:0,color:null,...copyJSON(data)};
   identity(x,'Tag',options);
   if(!(x.color===null||nonempty(x.color)))throw new Error('Tag.color must be null or a non-empty string.');
-  bool(x.enabled,'Tag.enabled');return x;
+  return x;
 }
 /** CatalogEntry (§47): a GM-managed Category; consumers store only its id. */
 export function prepareCategory(data,options={}){
-  const x={descriptionKey:'',enabled:true,order:0,...copyJSON(data)};
+  const x={descriptionKey:'',order:0,...copyJSON(data)};
   identity(x,'Category',options);
   if(typeof x.descriptionKey!=='string')throw new Error('Category.descriptionKey must be a string.');
   if(!Number.isSafeInteger(x.order))throw new Error('Category.order must be a safe integer.');
-  for(const key of Object.keys(x))if(!['id','nameKey','descriptionKey','enabled','order','relations'].includes(key))throw new Error(`Unsupported Category field: ${key}.`);
-  bool(x.enabled,'Category.enabled');return x;
+  for(const key of Object.keys(x))if(!['id','nameKey','descriptionKey','order','relations'].includes(key))throw new Error(`Unsupported Category field: ${key}.`);
+  return x;
 }
 export function prepareEventType(data,options={}){
   const x={descriptionKey:'',enabled:true,order:0,tags:[],payloadFields:{},roles:[],...copyJSON(data)};

@@ -50,13 +50,7 @@ export const capabilityTypeRegistry = new CapabilityTypeRegistry()
     "state.active":{id:"state.active",valueType:"boolean",cardinality:"one",nullable:false,source:"state.active",readable:true,mutable:true,derived:false},
     // CP-28: active StateInstances of the Definition on the container (sum of their stacks).
     "state.stacks":{id:"state.stacks",valueType:"integer",cardinality:"one",nullable:false,source:"state.stacks",readable:true,mutable:false,derived:true}
-  },presentationHints:{renderer:"state"}})
-  .register({id:"tests", category:"association", fields:{}, outputs:{}})
-  .register({id:"actions", category:"association", fields:{}, outputs:{}})
-  .register({id:"progression", category:"association", fields:{}, outputs:{}})
-  .register({id:"formulaSource", category:"compatibility", fields:{}, outputs:{}})
-  .register({id:"conditionSource", category:"compatibility", fields:{}, outputs:{}})
-  .register({id:"effectTarget", category:"compatibility", fields:{}, outputs:{}});
+  },presentationHints:{renderer:"state"}});
 
 export function resolveFieldContract(definitionType, capabilityIds = []) {
   const merged = {};
@@ -76,3 +70,18 @@ export function resolveFieldContract(definitionType, capabilityIds = []) {
 }
 
 export const CAPABILITY_CATEGORIES = CATEGORIES;
+
+/** The single role a DefinitionType gives a capability: off, optional, default (optional, on at creation) or required. */
+export function capabilityRole(definitionType, capabilityId) {
+  const has = key => (definitionType?.[key] ?? []).includes(capabilityId);
+  if (!has("allowedCapabilities")) return "off";
+  if (has("requiredCapabilities")) return "required";
+  return has("defaultCapabilities") ? "default" : "optional";
+}
+
+export const capabilityRoleFlags = role => ({isOff: role === "off", isOptional: role === "optional", isDefault: role === "default", isRequired: role === "required"});
+
+export const capabilityLabel = id => {
+  const key = `RTA.CapabilityType.${id}`, text = globalThis.game?.i18n?.localize?.(key);
+  return text && text !== key ? text : id;
+};

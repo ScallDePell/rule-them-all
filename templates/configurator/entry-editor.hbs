@@ -7,7 +7,7 @@
         <label class="rta-declarative-toggle"><input type="checkbox" data-presentation-override {{#if active}}checked{{/if}} {{#if ../readOnly}}disabled{{/if}}> {{localize "RTA.Declarative.Override"}}</label>
         <span class="rta-declarative-presentation__value" {{#unless active}}hidden{{/unless}}>
           {{#if isBoolean}}<label class="rta-declarative-toggle"><input type="checkbox" data-presentation-value {{#if checked}}checked{{/if}} {{#if ../readOnly}}disabled{{/if}}> {{key}}</label>{{else}}
-            <input data-presentation-value {{#if isNumber}}type="number" step="1"{{else}}type="text"{{/if}} value="{{value}}" {{#if ../readOnly}}readonly{{/if}}>
+            <input data-presentation-value type="text" value="{{value}}" {{#if ../readOnly}}readonly{{/if}}>
           {{/if}}
         </span>
       </div>
@@ -17,7 +17,7 @@
 {{#*inline "rtaPickerSearch"}}<input type="search" data-picker-filter placeholder="{{placeholder}}">{{/inline}}
 {{#*inline "rtaIdentityName"}}<div class="form-group rta-form-row"><label>{{localize "RTA.Template.Name"}}</label><input name="nameKey" value="{{data.nameKey}}" required {{#if readOnly}}readonly{{/if}}></div>{{/inline}}
 {{#*inline "rtaIdentityDescription"}}<div class="form-group rta-form-row"><label>{{localize "RTA.Template.Description"}}</label><input name="descriptionKey" value="{{data.descriptionKey}}" {{#if readOnly}}readonly{{/if}}></div>{{/inline}}
-{{#*inline "rtaNotesSection"}}<details class="rta-config-entry__section" data-notes><summary><strong>{{localize "RTA.Template.Notes"}}</strong></summary>{{> rtaIdentityDescription}}{{> rtaTagsPicker}}</details>{{/inline}}
+{{#*inline "rtaNotesSection"}}<details class="rta-config-entry__section" data-notes><summary><strong>{{#if noTags}}{{localize "RTA.Template.NotesOnly"}}{{else}}{{localize "RTA.Template.Notes"}}{{/if}}</strong></summary>{{> rtaIdentityDescription}}{{#unless noTags}}{{> rtaTagsPicker}}{{/unless}}</details>{{/inline}}
 {{#*inline "rtaEnabled"}}<div class="form-group rta-form-row"><label>{{localize "RTA.Template.Enabled"}}</label><input name="enabled" type="checkbox" {{#if data.enabled}}checked{{/if}} {{#if readOnly}}disabled{{/if}}></div>{{/inline}}
 {{#*inline "rtaValueSource"}}<div class="form-group rta-form-row"><label class="rta-form-row__label">{{label}}</label><div class="rta-value-source" data-slot-source="{{bound}}"><select data-source-kind {{#if @root.readOnly}}disabled{{/if}}>{{#each source.kinds}}<option value="{{id}}" data-rta-colors="{{colors}}" {{#if selected}}selected{{/if}}>{{localize labelKey}}</option>{{/each}}</select><span class="rta-value-source__input" data-source-box="literal" {{#unless source.isLiteral}}hidden{{/unless}}><input type="number" step="any" data-source-literal value="{{source.literal}}" {{#if @root.readOnly}}readonly{{/if}}></span><span class="rta-value-source__input" data-source-box="formula" {{#unless source.isFormula}}hidden{{/unless}}><select data-source-formula {{#if @root.readOnly}}disabled{{/if}}><option value="">—</option>{{#each source.formulas}}<option value="{{id}}" data-rta-colors="{{colors}}" {{#if selected}}selected{{/if}}>{{label}}</option>{{/each}}</select></span></div></div>{{/inline}}
 {{#*inline "rtaTestInputCard"}}<article class="rta-binding-card" data-test-input><div class="rta-config-entry__section-heading"><strong>{{#if id}}{{id}}{{else}}{{localize "RTA.TestInput.New"}}{{/if}}</strong><button type="button" class="rta-config-action" data-action="removeTestInput" title="{{localize 'RTA.TestInput.Remove'}}" aria-label="{{localize 'RTA.TestInput.Remove'}}" {{#if @root.readOnly}}disabled{{/if}}><i class="fa-solid fa-trash"></i></button></div><div class="form-group rta-form-row"><label class="rta-form-row__label">{{localize "RTA.TestInput.Id"}}</label><input data-input-prop="id" value="{{id}}" {{#if @root.readOnly}}readonly{{/if}}></div><div class="form-group rta-form-row"><label class="rta-form-row__label">{{localize "RTA.Slots.ValueType"}}</label><select data-input-prop="valueType" {{#if @root.readOnly}}disabled{{/if}}>{{#each valueTypes}}<option value="{{id}}" data-rta-colors="{{colors}}" {{#if selected}}selected{{/if}}>{{id}}</option>{{/each}}</select></div><div class="form-group rta-form-row"><label class="rta-form-row__label">{{localize "RTA.TestInput.SourceLabel"}}</label><div class="rta-value-source"><select data-input-prop="sourceKind" {{#if @root.readOnly}}disabled{{/if}}>{{#each sourceKinds}}<option value="{{id}}" data-rta-colors="{{colors}}" {{#if selected}}selected{{/if}}>{{localize labelKey}}</option>{{/each}}</select><span class="rta-value-source__input" data-input-source-box="literal" {{#unless isLiteral}}hidden{{/unless}}><input data-input-prop="literal" value="{{literal}}" {{#if @root.readOnly}}readonly{{/if}}></span><span class="rta-value-source__input" data-input-source-box="formula" {{#unless isFormula}}hidden{{/unless}}><select data-input-prop="formulaRef" {{#if @root.readOnly}}disabled{{/if}}><option value="">—</option>{{#each formulas}}<option value="{{id}}" data-rta-colors="{{colors}}" {{#if selected}}selected{{/if}}>{{label}}</option>{{/each}}</select></span><span class="rta-value-source__input" data-input-source-box="reference" {{#unless isReference}}hidden{{/unless}}><select data-input-prop="reference" {{#if @root.readOnly}}disabled{{/if}}><option value="">—</option>{{#each references}}<option value="{{token}}" data-rta-colors="{{colors}}" {{#if selected}}selected{{/if}}>{{label}}</option>{{/each}}</select></span></div></div><div class="form-group rta-form-row"><label class="rta-form-row__label">{{localize "RTA.TestInput.Required"}}</label><input type="checkbox" data-input-prop="required" {{#if required}}checked{{/if}} {{#if @root.readOnly}}disabled{{/if}}></div><div class="form-group rta-form-row"><label class="rta-form-row__label">{{localize "RTA.TestInput.Default"}}</label><input data-input-prop="defaultValue" value="{{defaultValue}}" {{#if @root.readOnly}}readonly{{/if}}></div></article>{{/inline}}
@@ -60,19 +60,15 @@
           <div data-color-override-editor>
             <div class="form-group rta-form-row"><label>{{#if isTag}}{{localize "RTA.Template.Color"}}{{else}}{{localize "RTA.Colors.SubsectionColor"}}{{/if}}</label><span class="rta-color-override-control">{{#if allowTypeColor}}<input type="hidden" name="customColorPermission" value="1"><label class="rta-color-override-check"><input data-color-override-toggle type="checkbox" name="customColorEnabled" {{#if hasCustomColor}}checked{{/if}} {{#if readOnly}}disabled{{/if}}> {{localize "RTA.Colors.UseCustomColor"}}</label>{{/if}}<input data-custom-color-input name="color" type="color" value="{{#if data.color}}{{data.color}}{{else}}{{inheritedTypeColor}}{{/if}}" {{#unless allowTypeColor}}disabled{{else}}{{#unless hasCustomColor}}disabled{{/unless}}{{/unless}} {{#if readOnly}}disabled{{/if}}></span></div>
           </div>
-          {{> rtaEnabled}}
         </fieldset>
 
         <details class="rta-config-entry__section" open><summary>{{localize "RTA.Template.Capabilities"}}</summary>
-          <p>{{localize "RTA.Template.DefinitionTypesChooseEnginePluginCapabilitiesExecutableCapabilityBehaviorIsNotAuthoredHere"}}</p>
-          <table class="rta-config-table rta-config-table--capabilities"><thead><tr><th>{{localize "RTA.Template.Capability"}}</th><th>{{localize "RTA.Template.Allowed"}}</th><th>{{localize "RTA.Template.Default"}}</th><th>{{localize "RTA.Template.Required"}}</th></tr></thead><tbody>
-            {{#each capabilityChoices}}<tr><td>{{id}} <small>({{category}})</small></td><td><input type="checkbox" name="allowed:{{id}}" {{#if allowed}}checked{{/if}} {{#if ../readOnly}}disabled{{/if}}></td><td><input type="checkbox" name="default:{{id}}" {{#if default}}checked{{/if}} {{#if ../readOnly}}disabled{{/if}}></td><td><input type="checkbox" name="required:{{id}}" {{#if required}}checked{{/if}} {{#if ../readOnly}}disabled{{/if}}></td></tr>{{/each}}
-          </tbody></table>
+          {{#each capabilityChoices}}<div class="form-group rta-form-row"><label>{{label}}</label><select name="capability:{{id}}" {{#if ../readOnly}}disabled{{/if}}><option value="off" {{#if isOff}}selected{{/if}}>{{localize "RTA.CapabilityRole.Off"}}</option><option value="optional" {{#if isOptional}}selected{{/if}}>{{localize "RTA.CapabilityRole.Optional"}}</option><option value="default" {{#if isDefault}}selected{{/if}}>{{localize "RTA.CapabilityRole.Default"}}</option><option value="required" {{#if isRequired}}selected{{/if}}>{{localize "RTA.CapabilityRole.Required"}}</option></select></div>{{/each}}
           <div class="rta-capability-contracts">
             {{#each capabilityChoices}}{{#if hasContract}}
-              <details><summary>{{id}} {{localize "RTA.Template.ContractLower"}}</summary>
-                {{#if fieldItems.length}}<h4>{{localize "RTA.Template.InjectedFields"}}</h4><table class="rta-config-table rta-config-table--compact"><thead><tr><th>{{localize "RTA.Template.Id"}}</th><th>{{localize "RTA.Template.Type"}}</th><th>{{localize "RTA.Template.Cardinality"}}</th><th>{{localize "RTA.Template.Required"}}</th></tr></thead><tbody>{{#each fieldItems}}<tr><td>{{id}}</td><td>{{valueType}}</td><td>{{cardinality}}</td><td>{{#if required}}{{localize "RTA.Template.Yes"}}{{else}}{{localize "RTA.Template.No"}}{{/if}}</td></tr>{{/each}}</tbody></table>{{/if}}
-                {{#if outputItems.length}}<h4>{{localize "RTA.Template.Outputs"}}</h4><table class="rta-config-table rta-config-table--compact"><thead><tr><th>{{localize "RTA.Template.Id"}}</th><th>{{localize "RTA.Template.Type"}}</th><th>{{localize "RTA.Template.Source"}}</th><th>{{localize "RTA.Template.Read"}}</th><th>{{localize "RTA.Template.Mutable"}}</th></tr></thead><tbody>{{#each outputItems}}<tr><td>{{id}}</td><td>{{valueType}} / {{cardinality}}</td><td>{{source}}</td><td>{{#if readable}}{{localize "RTA.Template.Yes"}}{{else}}{{localize "RTA.Template.No"}}{{/if}}</td><td>{{#if mutable}}{{localize "RTA.Template.Yes"}}{{else}}{{localize "RTA.Template.No"}}{{/if}}</td></tr>{{/each}}</tbody></table>{{/if}}
+              <details><summary>{{label}} · {{localize "RTA.Template.ContractLower"}}</summary>
+                {{#if fieldItems.length}}<strong>{{localize "RTA.Template.InjectedFields"}}</strong><table class="rta-config-table rta-config-table--compact"><thead><tr><th>{{localize "RTA.Template.Id"}}</th><th>{{localize "RTA.Template.Type"}}</th><th>{{localize "RTA.Template.Cardinality"}}</th><th>{{localize "RTA.Template.Required"}}</th></tr></thead><tbody>{{#each fieldItems}}<tr><td>{{id}}</td><td>{{valueType}}</td><td>{{cardinality}}</td><td>{{#if required}}{{localize "RTA.Template.Yes"}}{{else}}{{localize "RTA.Template.No"}}{{/if}}</td></tr>{{/each}}</tbody></table>{{/if}}
+                {{#if outputItems.length}}<strong>{{localize "RTA.Template.Outputs"}}</strong><table class="rta-config-table rta-config-table--compact"><thead><tr><th>{{localize "RTA.Template.Id"}}</th><th>{{localize "RTA.Template.Type"}}</th><th>{{localize "RTA.Template.Source"}}</th><th>{{localize "RTA.Template.Read"}}</th><th>{{localize "RTA.Template.Mutable"}}</th></tr></thead><tbody>{{#each outputItems}}<tr><td>{{id}}</td><td>{{valueType}} / {{cardinality}}</td><td>{{source}}</td><td>{{#if readable}}{{localize "RTA.Template.Yes"}}{{else}}{{localize "RTA.Template.No"}}{{/if}}</td><td>{{#if mutable}}{{localize "RTA.Template.Yes"}}{{else}}{{localize "RTA.Template.No"}}{{/if}}</td></tr>{{/each}}</tbody></table>{{/if}}
               </details>
             {{/if}}{{/each}}
           </div>
@@ -131,7 +127,6 @@
       {{#if isDefinition}}
         <fieldset><legend>{{localize "RTA.Template.Definition"}}</legend>
           {{> rtaIdentityName}}
-          {{> rtaIdentityDescription}}
           <div class="form-group rta-form-row"><label>{{localize "RTA.Template.DefinitionType"}}</label><input value="{{type.nameKey}}" readonly></div>
           {{> rtaEnabled}}
           {{#each fieldContract}}
@@ -146,35 +141,33 @@
           {{/each}}
         </fieldset>
         <details class="rta-config-entry__section" open><summary>{{localize "RTA.Template.Capabilities"}}</summary>
-          {{#if hasForcedCapabilities}}<div class="rta-config-entry__fixed-capabilities"><strong>{{localize "RTA.UI.RequiredCapabilities"}}</strong><div class="rta-config-entry__fixed-capabilities-list">{{#each capabilityChoices}}{{#if forced}}{{#if permitted}}<label class="rta-config-entry__fixed-capability"><input type="checkbox" name="cap:{{id}}" checked disabled> <span>{{id}} <small>({{category}})</small></span></label>{{/if}}{{/if}}{{/each}}</div></div>{{/if}}
-          {{#if hasOptionalCapabilities}}<div class="rta-config-entry__check-group rta-choice-list" data-rta-select-label="{{localize 'RTA.UI.OptionalCapabilities'}}">{{#each capabilityChoices}}{{#if permitted}}{{#unless forced}}<label><input type="checkbox" name="cap:{{id}}" {{#if selected}}checked{{/if}} {{#if ../readOnly}}disabled{{/if}}> {{id}} <small>({{category}})</small></label>{{/unless}}{{/if}}{{/each}}</div>{{else}}<p class="rta-config-entry__empty">{{localize "RTA.UI.NoOptionalCapabilities"}}</p>{{/if}}
+          {{#if hasForcedCapabilities}}<div class="rta-config-entry__fixed-capabilities"><strong>{{localize "RTA.UI.RequiredCapabilities"}}</strong><div class="rta-config-entry__fixed-capabilities-list">{{#each capabilityChoices}}{{#if forced}}{{#if permitted}}<label class="rta-config-entry__fixed-capability"><input type="checkbox" name="cap:{{id}}" checked disabled> <span>{{label}}</span></label>{{/if}}{{/if}}{{/each}}</div></div>{{/if}}
+          {{#if hasOptionalCapabilities}}<div class="rta-config-entry__check-group rta-choice-list" data-rta-select-label="{{localize 'RTA.UI.OptionalCapabilities'}}">{{#each capabilityChoices}}{{#if permitted}}{{#unless forced}}<label><input type="checkbox" name="cap:{{id}}" {{#if selected}}checked{{/if}} {{#if ../readOnly}}disabled{{/if}}> {{label}}</label>{{/unless}}{{/if}}{{/each}}</div>{{else}}<p class="rta-config-entry__empty">{{localize "RTA.UI.NoOptionalCapabilities"}}</p>{{/if}}
         </details>
         {{#if slots.showPools}}<details class="rta-config-entry__section" open><summary><strong>{{localize "RTA.Slots.Pools"}}</strong><span class="rta-config-entry__section-summary">{{slots.poolRows.length}}</span></summary><div class="rta-config-entry__section-heading"><p>{{localize "RTA.Slots.PoolsHelp"}}</p><button type="button" data-action="addSlot" data-slot-capability="pool" {{#if readOnly}}disabled{{/if}}><i class="fa-solid fa-plus"></i> {{localize "RTA.Slots.AddPool"}}</button></div><div data-slot-list="pool">{{#each slots.poolRows}}{{> rtaPoolCard}}{{/each}}</div><template data-slot-template="pool">{{#with slots.blankPool}}{{> rtaPoolCard}}{{/with}}</template></details>{{/if}}
         {{#if slots.showCollections}}<details class="rta-config-entry__section" open><summary><strong>{{localize "RTA.Slots.Collections"}}</strong><span class="rta-config-entry__section-summary">{{slots.collectionRows.length}}</span></summary><div class="rta-config-entry__section-heading"><p>{{localize "RTA.Slots.CollectionsHelp"}}</p><button type="button" data-action="addSlot" data-slot-capability="collection" {{#if readOnly}}disabled{{/if}}><i class="fa-solid fa-plus"></i> {{localize "RTA.Slots.AddCollection"}}</button></div><div data-slot-list="collection">{{#each slots.collectionRows}}{{> rtaCollectionCard}}{{/each}}</div><template data-slot-template="collection">{{#with slots.blankCollection}}{{> rtaCollectionCard}}{{/with}}</template></details>{{/if}}
         <details class="rta-config-entry__section"><summary>{{localize "RTA.Template.Presentation"}}</summary>{{> rtaPresentationEditor}}</details>
         {{> rtaCategoriesPicker}}
-        {{> rtaTagsPicker}}
+        {{> rtaNotesSection}}
         <details class="rta-config-entry__section rta-config-entry__technical"><summary>{{localize "RTA.Template.Technical"}}</summary><div class="form-group rta-form-row"><label>{{localize "RTA.Template.Id"}}</label><input value="{{data.id}}" readonly></div><div class="form-group rta-form-row"><label>{{localize "RTA.Template.Order"}}</label><input value="{{data.order}}" readonly></div><details><summary>{{localize "RTA.Template.RawDataJson"}}</summary><textarea rows="8" readonly>{{dataJson}}</textarea></details></details>
       {{/if}}
 
       {{#if isCategory}}
         <fieldset><legend>{{localize "RTA.Template.Category"}}</legend>
           {{> rtaIdentityName}}
-          {{> rtaIdentityDescription}}
-          {{> rtaEnabled}}
         </fieldset>
+        {{> rtaNotesSection noTags=true}}
         {{#unless creating}}<details class="rta-config-entry__section rta-config-entry__technical"><summary>{{localize "RTA.Template.Technical"}}</summary><div class="form-group rta-form-row"><label>{{localize "RTA.Template.Id"}}</label><input value="{{data.id}}" readonly></div></details>{{/unless}}
       {{/if}}
 
       {{#if isTag}}
         <fieldset><legend>{{localize "RTA.Template.Tag"}}</legend>
           {{> rtaIdentityName}}
-          {{> rtaIdentityDescription}}
           <div data-color-override-editor>
             <div class="form-group rta-form-row"><label>{{#if isTag}}{{localize "RTA.Template.Color"}}{{else}}{{localize "RTA.Colors.SubsectionColor"}}{{/if}}</label><span class="rta-color-override-control">{{#if allowTypeColor}}<input type="hidden" name="customColorPermission" value="1"><label class="rta-color-override-check"><input data-color-override-toggle type="checkbox" name="customColorEnabled" {{#if hasCustomColor}}checked{{/if}} {{#if readOnly}}disabled{{/if}}> {{localize "RTA.Colors.UseCustomColor"}}</label>{{/if}}<input data-custom-color-input name="color" type="color" value="{{#if data.color}}{{data.color}}{{else}}{{inheritedTypeColor}}{{/if}}" {{#unless allowTypeColor}}disabled{{else}}{{#unless hasCustomColor}}disabled{{/unless}}{{/unless}} {{#if readOnly}}disabled{{/if}}></span></div>
           </div>
-          {{> rtaEnabled}}
         </fieldset>
+        {{> rtaNotesSection noTags=true}}
         <details class="rta-config-entry__section rta-config-entry__technical"><summary>{{localize "RTA.Template.Technical"}}</summary><div class="form-group rta-form-row"><label>{{localize "RTA.Template.Id"}}</label><input value="{{data.id}}" readonly></div></details>
       {{/if}}
 
@@ -184,7 +177,6 @@
           {{> rtaIdentityName}}
           <div class="form-group rta-form-row"><label>{{localize "RTA.Template.ValueType"}}</label><select name="valueType">{{#each valueTypes}}<option value="{{id}}" data-rta-colors="{{colors}}" {{#if selected}}selected{{/if}}>{{id}}</option>{{/each}}</select></div>
           <div class="form-group rta-form-row"><label>{{localize "RTA.Template.Value"}}</label><input name="value" value="{{data.value}}"></div>
-          <div class="form-group rta-form-row"><label>{{localize "RTA.Template.Nullable"}}</label><input name="nullable" type="checkbox" {{#if data.nullable}}checked{{/if}}></div>
           {{> rtaEnabled}}
           
         </fieldset>
@@ -333,17 +325,16 @@
       {{#if isPermissionPolicy}}
         <fieldset><legend>{{localize "RTA.Template.PermissionPolicy"}}</legend>
           {{> rtaIdentityName}}
-          {{> rtaIdentityDescription}}
           <div class="form-group rta-form-row"><label>{{localize "RTA.Template.DefaultEffect"}}</label><select name="defaultEffect"><option value="DENY" {{#if isDeny}}selected{{/if}}>{{localize "RTA.Template.Deny"}}</option><option value="ALLOW" {{#if isAllow}}selected{{/if}}>{{localize "RTA.Template.Allow"}}</option></select></div>
           {{> rtaEnabled}}
           <details class="rta-config-entry__section"><summary>{{localize "RTA.Template.AdvancedPolicyContract"}}</summary><div class="rta-config-entry__full-width"><label>{{localize "RTA.Template.Scope"}}</label><textarea name="scopeJson" rows="6">{{scopeJson}}</textarea></div><div class="rta-config-entry__full-width"><label>{{localize "RTA.Template.Rules"}}</label><textarea name="rulesJson" rows="14">{{rulesJson}}</textarea><small>{{localize "RTA.Template.PrecedenceMostSpecificScopeThenPriorityThenDenyOnTiesThenDefault"}}</small></div></details>
         </fieldset>
+        {{> rtaNotesSection noTags=true}}
       {{/if}}
 
       {{#if isEventType}}
         <fieldset><legend>{{localize "RTA.Template.EventType"}}</legend>
           {{> rtaIdentityName}}
-          {{> rtaIdentityDescription}}
           {{> rtaEnabled}}
           <section class="rta-config-entry__section">
             <div class="rta-config-entry__section-title"><strong>{{localize "RTA.Template.PayloadFields"}}</strong><button type="button" data-action="addEventField"><i class="fa-solid fa-plus"></i> {{localize "RTA.Template.AddField"}}</button></div>
@@ -355,13 +346,12 @@
           
           <details class="rta-config-entry__section rta-config-entry__technical"><summary>{{localize "RTA.Template.AdvancedRawPayloadContract"}}</summary><textarea rows="10" readonly>{{payloadFieldsJson}}</textarea></details>
         </fieldset>
-        {{> rtaTagsPicker}}
+        {{> rtaNotesSection}}
       {{/if}}
 
       {{#if isTrigger}}
         <fieldset><legend>{{localize "RTA.Template.Trigger"}}</legend>
           {{> rtaIdentityName}}
-          {{> rtaIdentityDescription}}
           <div class="form-group rta-form-row"><label>{{localize "RTA.Template.EventType"}}</label><select name="eventTypeId" required>{{#each eventTypeChoices}}<option value="{{id}}" data-rta-colors="{{colors}}" {{#if selected}}selected{{/if}}>{{label}}</option>{{/each}}</select></div>
           {{> rtaEnabled}}
           <details class="rta-picker rta-config-entry__section" data-picker><summary><strong>{{localize "RTA.Template.Conditions"}}</strong><span data-picker-summary>{{conditionSummary}}</span></summary><div class="rta-picker__body rta-choice-list">{{> rtaPickerSearch placeholder=(localize "RTA.Template.SearchConditions")}}{{#each conditionChoices}}<label data-picker-option data-picker-label="{{label}}" data-rta-colors="{{colors}}"><input type="checkbox" name="conditionRefs" value="{{id}}" {{#if selected}}checked{{/if}}> {{label}}</label>{{else}}<p>{{localize "RTA.Template.NoConditionsAvailable"}}</p>{{/each}}</div></details>
@@ -369,13 +359,12 @@
           <details class="rta-config-entry__section"><summary>{{localize "RTA.Template.AdvancedFilter"}}</summary><textarea name="eventFilterJson" rows="6">{{eventFilterJson}}</textarea></details>
           
         </fieldset>
-        {{> rtaTagsPicker}}
+        {{> rtaNotesSection}}
       {{/if}}
 
       {{#if isContentType}}
         <fieldset><legend>{{localize "RTA.Template.ContentType"}}</legend>
           {{> rtaIdentityName}}
-          {{> rtaIdentityDescription}}
           <div class="rta-content-image-editor"><img data-image-preview src="{{imagePreview}}" alt=""><input name="image" type="hidden" value="{{data.image}}"><div><strong>{{localize "RTA.Template.Image"}}</strong><div class="rta-config-actions">{{#unless readOnly}}<button type="button" data-action="chooseImage"><i class="fa-solid fa-image"></i> {{localize "RTA.Template.ChooseReplace"}}</button><button type="button" data-action="removeImage"><i class="fa-solid fa-trash"></i> {{localize "RTA.Template.Remove"}}</button>{{/unless}}</div></div></div>
           <div data-color-override-editor>
             <div class="form-group rta-form-row"><label>{{#if isTag}}{{localize "RTA.Template.Color"}}{{else}}{{localize "RTA.Colors.SubsectionColor"}}{{/if}}</label><span class="rta-color-override-control">{{#if allowTypeColor}}<input type="hidden" name="customColorPermission" value="1"><label class="rta-color-override-check"><input data-color-override-toggle type="checkbox" name="customColorEnabled" {{#if hasCustomColor}}checked{{/if}} {{#if readOnly}}disabled{{/if}}> {{localize "RTA.Colors.UseCustomColor"}}</label>{{/if}}<input data-custom-color-input name="color" type="color" value="{{#if data.color}}{{data.color}}{{else}}{{inheritedTypeColor}}{{/if}}" {{#unless allowTypeColor}}disabled{{else}}{{#unless hasCustomColor}}disabled{{/unless}}{{/unless}} {{#if readOnly}}disabled{{/if}}></span></div>
@@ -398,7 +387,7 @@
             {{else}}<p class="rta-config-entry__empty">{{localize "RTA.Template.NoFieldsYetAddTheDataThisContentFamilyNeedsSuchAsDamageRangeOrMagazine"}}</p>{{/each}}
           </div>
         </details>
-        {{> rtaTagsPicker}}
+        {{> rtaNotesSection}}
         <details class="rta-config-entry__technical"><summary>{{localize "RTA.Template.Technical"}}</summary><label>{{localize "RTA.Template.Id"}}<input value="{{data.id}}" readonly></label></details>
       {{/if}}
 

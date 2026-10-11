@@ -8,12 +8,12 @@ const css=readCssBundle();
 for(const [partial,field,minimum] of [
   ['rtaIdentityName','nameKey',18],
   ['rtaIdentityDescription','descriptionKey',18],
-  ['rtaEnabled','enabled',18]
+  ['rtaEnabled','enabled',16]
 ]){
   test(`${field}: a single canonical markup implementation is reused`,()=>{
     assert.equal((hbs.match(new RegExp(`#\\*inline "${partial}"`,'g'))||[]).length,1);
     // Rule editors reach the description through the shared Notes section.
-    const viaNotes=partial==='rtaIdentityDescription'?(hbs.match(/{{> rtaNotesSection}}/g)||[]).length:0;
+    const viaNotes=partial==='rtaIdentityDescription'?(hbs.match(/{{> rtaNotesSection[ }]/g)||[]).length:0;
     assert.ok((hbs.match(new RegExp(`{{> ${partial}}`,'g'))||[]).length+viaNotes>=minimum);
   });
 }

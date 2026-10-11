@@ -43,3 +43,30 @@ test('rule editors show the description only once, inside the folded Notes secti
   assert.doesNotMatch(rules,/rtaIdentityDescription/);
   assert.equal(rules.match(/{{> rtaNotesSection}}/g).length,9);
 });
+
+test('a Definition type sets each capability with one role select', async () => {
+  const {capabilityTypeRegistry,capabilityRole}=await import('../src/configurator/capability-type-registry.mjs');
+  const capabilityTypes=capabilityTypeRegistry.list();
+  assert.deepEqual(capabilityTypes.map(cap=>cap.id),['value','pool','collection','state']);
+  const values={nameKey:'Skill','capability:value':'required','capability:pool':'default','capability:collection':'optional','capability:state':'off'};
+  const saved=collectEntryData('definitionType',{...form(values),capabilityTypes,current:{id:'skill'}});
+  assert.deepEqual(saved.allowedCapabilities,['value','pool','collection']);
+  assert.deepEqual(saved.defaultCapabilities,['pool']);
+  assert.deepEqual(saved.requiredCapabilities,['value']);
+  assert.deepEqual(['value','pool','collection','state'].map(id=>capabilityRole(saved,id)),['required','default','optional','off']);
+});
+
+test('a Content Template description becomes the Item description where the Game System has one', async () => {
+  const {descriptionPath}=await import('../src/core/system-document-types.mjs');
+  const {FoundryContentBridge}=await import('../src/runtime/foundry-content-bridge.mjs');
+  const config=fields=>({Item:{dataModels:{gear:{schema:{fields}}}}});
+  assert.equal(descriptionPath('Item','gear',{config:config({description:{}})}),'system.description');
+  assert.equal(descriptionPath('Item','gear',{config:config({description:{fields:{value:{}}}})}),'system.description.value');
+  assert.equal(descriptionPath('Item','gear',{config:config({}),model:{}}),null);
+  assert.equal(descriptionPath('Item','gear',{config:{},model:{Item:{gear:{description:{value:''}}}}}),'system.description.value');
+  const bridge=new FoundryContentBridge({},{},{hooks:null,documentTypeResolver:()=>'gear',descriptionPath:()=>'system.description.value'});
+  const data=bridge.documentData('v1',{id:'rope',nameKey:'Rope',descriptionKey:'Fifteen metres.'},{id:'gear',storageKind:'item',runtimeMode:'unique'});
+  assert.equal(data.system.description.value,'Fifteen metres.');
+  const none=new FoundryContentBridge({},{},{hooks:null,documentTypeResolver:()=>'gear',descriptionPath:()=>null});
+  assert.equal(none.documentData('v1',{id:'rope',nameKey:'Rope',descriptionKey:'x'},{id:'gear',storageKind:'item'}).system,undefined);
+});

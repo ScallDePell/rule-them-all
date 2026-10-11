@@ -47,7 +47,7 @@ export function normalizeRulesetCollections(data) {
     if(collection==="tags")continue;
     for(const entry of result[collection]??[])for(const id of entry?.tags??[])if(typeof id==="string"&&id.trim()&&!knownTags.has(id)){knownTags.add(id);referenced.push(id);}
   }
-  for(const [index,id] of referenced.entries())result.tags.push({id,nameKey:id,descriptionKey:"",enabled:true,order:(result.tags.length+index+1)*10,color:null});
+  for(const [index,id] of referenced.entries())result.tags.push({id,nameKey:id,descriptionKey:"",order:(result.tags.length+index+1)*10,color:null});
   // Categories became a GM-managed catalog (architecture §47). Free category
   // strings already stored on entries are adopted once as catalog identities,
   // exactly like Tags above, so existing Worlds keep loading.
@@ -57,7 +57,7 @@ export function normalizeRulesetCollections(data) {
     if(typeof id==="string"&&id.trim()&&!knownCategories.has(id)){knownCategories.add(id);adoptedCategories.push(id);}
   }
   const firstCategory=result.categories.length;
-  for(const [index,id] of adoptedCategories.entries())result.categories.push({id,nameKey:id,descriptionKey:"",enabled:true,order:(firstCategory+index+1)*10});
+  for(const [index,id] of adoptedCategories.entries())result.categories.push({id,nameKey:id,descriptionKey:"",order:(firstCategory+index+1)*10});
   // ContentTypeDefinition became first-class in 0.7.0. Adopt legacy template
   // contentTypeId strings as neutral catalog entries so current Worlds remain editable.
   const knownContentTypes=new Set((result.contentTypes??[]).map(entry=>entry?.id).filter(Boolean));

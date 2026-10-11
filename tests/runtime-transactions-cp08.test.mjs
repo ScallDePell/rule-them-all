@@ -13,7 +13,7 @@ const context={roles:{self:A,target:B},defaultRole:'self'};
 async function setup(adapter=new MemoryRuntimeAdapter()){
   const api=await createConfiguratorAPI(new Storage());
   const v=(await api.createRuleset({id:'tx',nameKey:'Tx',version:'1'})).versionId;
-  await api.registerDefinitionType(v,{id:'body',key:'body',nameKey:'Body',descriptionKey:'',color:null,enabled:true,allowedCapabilities:['pool'],defaultCapabilities:['pool'],requiredCapabilities:[],fields:{},constraints:[]});
+  await api.registerDefinitionType(v,{id:'body',key:'body',nameKey:'Body',descriptionKey:'',color:null,allowedCapabilities:['pool'],defaultCapabilities:['pool'],requiredCapabilities:[],fields:{},constraints:[]});
   await api.createDefinition(v,{id:'hero',key:'hero',definitionTypeId:'body',nameKey:'Hero',descriptionKey:'',data:{},capabilities:['pool'],slots:{pool:[{id:'hp',minimum:{literal:0},maximum:{literal:10}},{id:'stamina',minimum:{literal:0},maximum:{literal:3}}]},enabled:true,tags:[]});
   await api.createEffect(v,{id:'tire',nameKey:'Tire',targetRole:'self',targetRef:ref('hero','stamina'),operation:'subtract',operand:{kind:'literal',value:1},enabled:true,tags:[]});
   await api.createEffect(v,{id:'hurt',nameKey:'Hurt',targetRole:'target',targetRef:ref('hero','hp'),operation:'subtract',operand:{kind:'literal',value:4},enabled:true,tags:[]});

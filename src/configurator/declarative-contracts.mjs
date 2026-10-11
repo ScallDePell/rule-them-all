@@ -1,7 +1,7 @@
 /** Generic, deterministic configuration contracts. No game-specific terms, eval or side effects. */
 const record = value => value !== null && typeof value === 'object' && !Array.isArray(value);
 const own = (obj, key) => Object.prototype.hasOwnProperty.call(obj, key);
-export const PRESENTATION_KEYS = Object.freeze(['visible','label','order','group','format','color']);
+export const PRESENTATION_KEYS = Object.freeze(['visible','label','group','format','color']);
 export const CONSTRAINT_KINDS = Object.freeze(['required','min','max','lengthMin','lengthMax','equals','notEquals','fieldEquals','fieldNotEquals','relationCount']);
 const pathValue = (data, path) => String(path ?? '').split('.').reduce((value, key) => record(value) && own(value,key) ? value[key] : undefined, data);
 const validHex = value => /^#[0-9a-f]{6}$/i.test(value);
@@ -51,7 +51,7 @@ export function validatePresentationContract(value,{path='presentation'}={}) {
   if (value===null || value===undefined) return [];
   if (!record(value)) return [{code:'PRESENTATION_TYPE',path,message:'Presentation must be an object or null.'}];
   const errors=[];
-  const checks={visible:v=>typeof v==='boolean',label:v=>typeof v==='string',order:v=>Number.isSafeInteger(v),group:v=>typeof v==='string',format:v=>typeof v==='string',color:v=>v===null||validHex(v)};
+  const checks={visible:v=>typeof v==='boolean',label:v=>typeof v==='string',group:v=>typeof v==='string',format:v=>typeof v==='string',color:v=>v===null||validHex(v)};
   for (const key of PRESENTATION_KEYS) if (own(value,key)&&!checks[key](value[key])) errors.push({code:'PRESENTATION_VALUE',path:`${path}.${key}`,message:`Invalid presentation ${key}.`});
   // Unknown keys survive round trips for compatibility; they cannot affect executable presentation.
   return errors;

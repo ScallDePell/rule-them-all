@@ -31,7 +31,7 @@ test("FieldDefinition and OutputDefinition enforce CP-22/23 structural contracts
 test("DefinitionType fields apply defaults, required checks and reject undeclared data",async()=>{
   const api=await createConfiguratorAPI(new MemoryStorage());
   const v=(await api.createRuleset(base())).versionId;
-  await api.registerDefinitionType(v,{id:"attribute",key:"attribute",nameKey:"Attribute",descriptionKey:"",color:null,enabled:true,order:0,allowedCapabilities:[],defaultCapabilities:[],requiredCapabilities:[],fields:{
+  await api.registerDefinitionType(v,{id:"attribute",key:"attribute",nameKey:"Attribute",descriptionKey:"",color:null,order:0,allowedCapabilities:[],defaultCapabilities:[],requiredCapabilities:[],fields:{
     rating:field("rating","integer",{required:true,defaultValue:1}),
     label:field("label","string",{nullable:true})
   },constraints:[]});
@@ -47,7 +47,7 @@ test("DefinitionType default and required capabilities are applied without busin
   const api=await createConfiguratorAPI(new MemoryStorage());
   assert.ok(api.getCapabilityType(id));
   const v=(await api.createRuleset(base())).versionId;
-  await api.registerDefinitionType(v,{id:"meter",key:"meter",nameKey:"Meter",descriptionKey:"",color:null,enabled:true,order:0,allowedCapabilities:[id],defaultCapabilities:[id],requiredCapabilities:[id],fields:{},constraints:[]});
+  await api.registerDefinitionType(v,{id:"meter",key:"meter",nameKey:"Meter",descriptionKey:"",color:null,order:0,allowedCapabilities:[id],defaultCapabilities:[id],requiredCapabilities:[id],fields:{},constraints:[]});
   const created=await api.createDefinition(v,{id:"m",key:"m",definitionTypeId:"meter",nameKey:"M",descriptionKey:"",data:{},categories:[],enabled:true,order:0,tags:[]});
   assert.deepEqual(created.capabilities,[id]);
   assert.deepEqual(created.data,{metric:0});
@@ -65,14 +65,14 @@ test("Capability field collisions are rejected at DefinitionType authoring time"
   if(!capabilityTypeRegistry.has(id)) capabilityTypeRegistry.register({id,category:"structural",fields:{rating:field("rating","integer")},outputs:{}});
   const api=await createConfiguratorAPI(new MemoryStorage());
   const v=(await api.createRuleset(base())).versionId;
-  await assert.rejects(()=>api.registerDefinitionType(v,{id:"collision",key:"collision",nameKey:"Collision",descriptionKey:"",color:null,enabled:true,order:0,allowedCapabilities:[id],defaultCapabilities:[],requiredCapabilities:[],fields:{rating:field("rating","integer")},constraints:[]}),/FieldDefinition collision/);
+  await assert.rejects(()=>api.registerDefinitionType(v,{id:"collision",key:"collision",nameKey:"Collision",descriptionKey:"",color:null,order:0,allowedCapabilities:[id],defaultCapabilities:[],requiredCapabilities:[],fields:{rating:field("rating","integer")},constraints:[]}),/FieldDefinition collision/);
 });
 
 test("numeric FieldDefinition constraints validate defaults and Definition data", async()=>{
   const api=await createConfiguratorAPI(new MemoryStorage());
   const v=(await api.createRuleset(base())).versionId;
   const score=field("score","integer",{required:true,defaultValue:1,constraints:[{kind:"min",value:0},{kind:"max",value:10},{kind:"step",value:1}]});
-  await api.registerDefinitionType(v,{id:"attribute",key:"attribute",nameKey:"Attribute",descriptionKey:"",color:null,enabled:true,order:0,allowedCapabilities:[],defaultCapabilities:[],requiredCapabilities:[],fields:{score},constraints:[]});
+  await api.registerDefinitionType(v,{id:"attribute",key:"attribute",nameKey:"Attribute",descriptionKey:"",color:null,order:0,allowedCapabilities:[],defaultCapabilities:[],requiredCapabilities:[],fields:{score},constraints:[]});
   const created=await api.createDefinition(v,{id:"strength",key:"strength",definitionTypeId:"attribute",nameKey:"Strength",descriptionKey:"",data:{},categories:[],enabled:true,order:0,tags:[]});
   assert.equal(created.data.score,1);
   await assert.rejects(()=>api.updateDefinition(v,"strength",{data:{score:-1}}),/greater than or equal to 0/);
@@ -92,7 +92,7 @@ test("removing a DefinitionType field explicitly prunes stored values from Defin
   const api=await createConfiguratorAPI(new MemoryStorage());
   const v=(await api.createRuleset(base())).versionId;
   const score=field("score","integer",{required:true,defaultValue:1});
-  await api.registerDefinitionType(v,{id:"attribute",key:"attribute",nameKey:"Attribute",descriptionKey:"",color:null,enabled:true,order:0,allowedCapabilities:[],defaultCapabilities:[],requiredCapabilities:[],fields:{score},constraints:[]});
+  await api.registerDefinitionType(v,{id:"attribute",key:"attribute",nameKey:"Attribute",descriptionKey:"",color:null,order:0,allowedCapabilities:[],defaultCapabilities:[],requiredCapabilities:[],fields:{score},constraints:[]});
   await api.createDefinition(v,{id:"strength",key:"strength",definitionTypeId:"attribute",nameKey:"Strength",descriptionKey:"",data:{score:7},categories:[],enabled:true,order:0,tags:[]});
   await api.createDefinition(v,{id:"agility",key:"agility",definitionTypeId:"attribute",nameKey:"Agility",descriptionKey:"",data:{score:4},categories:[],enabled:true,order:0,tags:[]});
   await assert.rejects(()=>api.updateDefinitionType(v,"attribute",{fields:{}}),error=>error.code==="FIELD_REMOVAL_DATA_LOSS"&&error.affected.length===2);

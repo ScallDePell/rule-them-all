@@ -13,9 +13,9 @@ const ref=(outputId,capabilityId='value',extra={})=>({objectKind:'definition',ob
 
 async function setup(){
   const api=await createConfiguratorAPI(new Storage());const v=(await api.createRuleset({id:'r',nameKey:'R',version:'1'})).versionId;
-  await api.registerDefinitionType(v,{id:'attribute',key:'attribute',nameKey:'Attribute',descriptionKey:'',color:null,enabled:true,order:10,allowedCapabilities:['value'],defaultCapabilities:['value'],requiredCapabilities:['value'],fields:{},constraints:[]});
+  await api.registerDefinitionType(v,{id:'attribute',key:'attribute',nameKey:'Attribute',descriptionKey:'',color:null,order:10,allowedCapabilities:['value'],defaultCapabilities:['value'],requiredCapabilities:['value'],fields:{},constraints:[]});
   await api.createDefinition(v,{id:'strength',key:'strength',definitionTypeId:'attribute',nameKey:'Strength',descriptionKey:'',data:{},categories:[],capabilities:['value'],...meta});
-  await api.createParameter(v,{id:'level',nameKey:'Level',valueType:'integer',nullable:false,value:3,scope:'ruleset',...meta});
+  await api.createParameter(v,{id:'level',nameKey:'Level',valueType:'integer',value:3,scope:'ruleset',...meta});
   return {api,v};
 }
 const formula=(id,reference)=>({id,nameKey:id,resultType:'number',expression:{type:'reference',reference},...meta});
@@ -45,7 +45,7 @@ test('CP-24: a value consumer must reach an output; an unset operand blocks only
 
 test('CP-24: Reference types must match their consumer', async () => {
   const {api,v}=await setup();
-  await api.createParameter(v,{id:'label',nameKey:'Label',valueType:'string',nullable:false,value:'x',scope:'ruleset',...meta});
+  await api.createParameter(v,{id:'label',nameKey:'Label',valueType:'string',value:'x',scope:'ruleset',...meta});
   await api.createFormula(v,{id:'text',nameKey:'Text',resultType:'string',expression:{type:'parameter',id:'label'},...meta});
   await api.createTest(v,{id:'check',nameKey:'Check',rollRef:null,totalFormulaRef:'text',inputBindings:[{id:'flag',valueType:'boolean',source:{reference:ref('value.final')},required:true}],targetValue:0,outcomeRefs:[],fallbackOutcomeRef:null,...meta});
   const result=api.diagnoseRuleset(v,{scope:'publish'});

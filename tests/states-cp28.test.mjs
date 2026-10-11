@@ -14,7 +14,7 @@ const hero={kind:'actor',id:'hero'},context={roles:{self:hero,target:hero},defau
 async function setup({publish=true}={}){
   const api=await createConfiguratorAPI(new Storage());
   const v=(await api.createRuleset({id:'st',nameKey:'States',version:'1'})).versionId;
-  await api.registerDefinitionType(v,{id:'trait',key:'trait',nameKey:'Trait',descriptionKey:'',color:null,enabled:true,allowedCapabilities:['value','state'],defaultCapabilities:['value'],requiredCapabilities:[],fields:{},constraints:[]});
+  await api.registerDefinitionType(v,{id:'trait',key:'trait',nameKey:'Trait',descriptionKey:'',color:null,allowedCapabilities:['value','state'],defaultCapabilities:['value'],requiredCapabilities:[],fields:{},constraints:[]});
   await api.createDefinition(v,{id:'might',key:'might',definitionTypeId:'trait',nameKey:'Might',descriptionKey:'',data:{},capabilities:['value'],enabled:true,tags:[]});
   await api.createDefinition(v,{id:'poisoned',key:'poisoned',definitionTypeId:'trait',nameKey:'Poisoned',descriptionKey:'',data:{},capabilities:['state'],enabled:true,tags:[]});
   await api.createEventType(v,{id:'rest',nameKey:'Rest',descriptionKey:'',payloadFields:{},roles:[],enabled:true});

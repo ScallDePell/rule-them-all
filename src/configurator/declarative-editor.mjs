@@ -8,7 +8,7 @@ export function constraintRowModel(rule={}) {
 }
 export function presentationRowModel(value) {
  const source=record(value)?value:{};
- return PRESENTATION_KEYS.map(key=>({key,active:Object.hasOwn(source,key),isBoolean:key==='visible',isColor:key==='color',isNumber:key==='order',value:source[key]===undefined||source[key]===null?'':String(source[key]),checked:source[key]===true}));
+ return PRESENTATION_KEYS.map(key=>({key,active:Object.hasOwn(source,key),isBoolean:key==='visible',isColor:key==='color',value:source[key]===undefined||source[key]===null?'':String(source[key]),checked:source[key]===true}));
 }
 export function readConstraintRows(rows) {
  const result=[];
@@ -36,7 +36,7 @@ export function readPresentationRows(rows) {
   const active=row.querySelector('[data-presentation-override]')?.checked;
   if(!active){delete result[key];continue;}
   const control=row.querySelector('[data-presentation-value]');
-  result[key]=key==='visible'?control.checked:key==='order'?Number(control.value):key==='color'?(control.value||null):control.value;
+  result[key]=key==='visible'?control.checked:key==='color'?(control.value||null):control.value;
  }
  return Object.keys(result).length?result:null;
 }

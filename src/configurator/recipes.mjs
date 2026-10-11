@@ -11,7 +11,7 @@ import {COLLECTION_FIELDS} from "./configurator-schema.mjs";
 const lit = value => ({type: "literal", value});
 const ref = (objectId, capabilityId, outputId, slotId) => ({type: "reference", reference: {objectKind: "definition", objectId, capabilityId, ...(slotId ? {slotId} : {}), outputId}});
 const meta = (order, nameKey) => ({nameKey, descriptionKey: "", enabled: true, order, tags: []});
-const type = (id, nameKey, capabilities) => ({id, key: id, nameKey, descriptionKey: "", color: null, enabled: true, order: 10, allowedCapabilities: capabilities, defaultCapabilities: capabilities, requiredCapabilities: capabilities, fields: {}, constraints: []});
+const type = (id, nameKey, capabilities) => ({id, key: id, nameKey, descriptionKey: "", color: null, order: 10, allowedCapabilities: capabilities, defaultCapabilities: capabilities, requiredCapabilities: capabilities, fields: {}, constraints: []});
 const definition = (id, typeId, nameKey, capabilities, slots) => ({id, key: id, definitionTypeId: typeId, nameKey, descriptionKey: "", data: {}, categories: [], capabilities, ...(slots ? {slots} : {}), enabled: true, order: 10, tags: []});
 const pool = (id, maximum, initial = maximum) => ({id, minimum: {literal: 0}, maximum: {literal: maximum}, initial: {literal: initial}});
 const poolCurrent = (objectId, slotId) => ({objectKind: "definition", objectId, capabilityId: "pool", slotId, outputId: "pool.current"});
@@ -42,7 +42,7 @@ export const RECIPES = Object.freeze([
   {id: "xpProgression", steps: ["Type", "Experience", "Level", "Gain", "Action"], build: (id, text) => ({
     definitionTypes: [type(id("progress"), text("Xp.Type"), ["value"])],
     definitions: [definition(id("experience"), id("progress"), text("Xp.Experience"), ["value"])],
-    parameters: [{id: id("xp-per-level"), ...meta(10, text("Xp.PerLevel")), valueType: "integer", nullable: false, value: 1000, scope: "ruleset"}],
+    parameters: [{id: id("xp-per-level"), ...meta(10, text("Xp.PerLevel")), valueType: "integer", value: 1000, scope: "ruleset"}],
     formulas: [{id: id("level"), ...meta(10, text("Xp.Level")), resultType: "integer", expression: {type: "add", args: [{type: "floor", value: {type: "divide", args: [ref(id("experience"), "value", "value.final"), {type: "parameter", id: id("xp-per-level")}]}}, lit(1)]}}],
     effects: [{id: id("gain-xp"), ...meta(10, text("Xp.Gain")), targetRef: valueBase(id("experience")), targetRole: "self", operation: "add", operand: {kind: "literal", value: 250}}],
     actions: [{id: id("award-xp"), ...meta(10, text("Xp.Award")), conditionRefs: [], costEffectRefs: [], effectRefs: [id("gain-xp")], testRef: null, outcomeMappings: [], eventTypeRefs: []}]
@@ -53,7 +53,7 @@ export const RECIPES = Object.freeze([
       definition(id("strength"), id("attribute"), text("Encumbrance.Strength"), ["value"]),
       definition(id("load"), id("attribute"), text("Encumbrance.Load"), ["value"])
     ],
-    parameters: [{id: id("capacity-per-strength"), ...meta(10, text("Encumbrance.PerStrength")), valueType: "integer", nullable: false, value: 10, scope: "ruleset"}],
+    parameters: [{id: id("capacity-per-strength"), ...meta(10, text("Encumbrance.PerStrength")), valueType: "integer", value: 10, scope: "ruleset"}],
     formulas: [{id: id("capacity"), ...meta(10, text("Encumbrance.Capacity")), resultType: "number", expression: {type: "multiply", args: [ref(id("strength"), "value", "value.final"), {type: "parameter", id: id("capacity-per-strength")}]}}],
     conditions: [{id: id("overloaded"), ...meta(10, text("Encumbrance.Overloaded")), expression: {type: "gt", left: ref(id("load"), "value", "value.final"), right: {type: "formula", id: id("capacity")}}}]
   })}

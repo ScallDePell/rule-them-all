@@ -58,7 +58,7 @@ test('Structural problems block even a draft save',async()=>{
 
 test('A missing required Definition value is incomplete; an out-of-range value is invalid',async()=>{
   const {api,v}=await setup();
-  await api.registerDefinitionType(v,{id:'gauge',key:'gauge',nameKey:'Gauge',descriptionKey:'',color:null,enabled:true,order:10,allowedCapabilities:[],defaultCapabilities:[],requiredCapabilities:[],fields:{size:{id:'size',name:'Size',valueType:'number',cardinality:'one',required:true,nullable:false,editable:true}},constraints:[{kind:'min',field:'size',value:1}]});
+  await api.registerDefinitionType(v,{id:'gauge',key:'gauge',nameKey:'Gauge',descriptionKey:'',color:null,order:10,allowedCapabilities:[],defaultCapabilities:[],requiredCapabilities:[],fields:{size:{id:'size',name:'Size',valueType:'number',cardinality:'one',required:true,nullable:false,editable:true}},constraints:[{kind:'min',field:'size',value:1}]});
   await api.createDefinition(v,{id:'empty',key:'empty',definitionTypeId:'gauge',nameKey:'Empty',descriptionKey:'',data:{},categories:[],capabilities:[],enabled:true,order:10,tags:[]});
   assert.match(api.diagnoseRuleset(v).errors.map(entry=>entry.message).join(),/Required field is missing: size/);
   await assert.rejects(()=>api.updateDefinition(v,'empty',{data:{size:0}}),/Constraint min failed/);

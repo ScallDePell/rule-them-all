@@ -11,8 +11,8 @@ const ref=(objectId,capabilityId,outputId,slotId)=>({objectKind:'definition',obj
 async function setup(){
   const api=await createConfiguratorAPI(new Storage());
   const v=(await api.createRuleset({id:'slots',nameKey:'Slots',version:'1'})).versionId;
-  await api.registerDefinitionType(v,{id:'trait',key:'trait',nameKey:'Trait',descriptionKey:'',color:null,enabled:true,order:10,allowedCapabilities:['value'],defaultCapabilities:['value'],requiredCapabilities:[],fields:{},constraints:[]});
-  await api.registerDefinitionType(v,{id:'body',key:'body',nameKey:'Body',descriptionKey:'',color:null,enabled:true,order:20,allowedCapabilities:['pool','collection'],defaultCapabilities:['pool'],requiredCapabilities:[],fields:{},constraints:[]});
+  await api.registerDefinitionType(v,{id:'trait',key:'trait',nameKey:'Trait',descriptionKey:'',color:null,order:10,allowedCapabilities:['value'],defaultCapabilities:['value'],requiredCapabilities:[],fields:{},constraints:[]});
+  await api.registerDefinitionType(v,{id:'body',key:'body',nameKey:'Body',descriptionKey:'',color:null,order:20,allowedCapabilities:['pool','collection'],defaultCapabilities:['pool'],requiredCapabilities:[],fields:{},constraints:[]});
   await api.createContentType(v,{id:'gear',nameKey:'Gear',storageKind:'item',documentSubtype:'gear',runtimeMode:'stackable'});
   await api.createDefinition(v,{id:'might',key:'might',definitionTypeId:'trait',nameKey:'Might',descriptionKey:'',data:{},capabilities:['value'],enabled:true,order:10,tags:[]});
   await api.createFormula(v,{id:'twice-might',nameKey:'Twice might',resultType:'number',expression:{type:'multiply',args:[{type:'literal',value:2},{type:'reference',reference:ref('might','value','value.final')}]}});

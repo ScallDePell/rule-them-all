@@ -17,7 +17,7 @@ function setup(){
       ref('association-option','link','action','act')
     ]}],definitionBindings:[],actionBindings:[]};
   const ruleset={contentTypes:[{id:'type',enabled:true,storageKind:'item'}],contentTemplates:[template,{id:'other',enabled:true}],
-    definitions:[{id:'def',enabled:true}],actions:[{id:'act',enabled:true}],tags:[{id:'tag',enabled:true}],familyColors:{}};
+    definitions:[{id:'def',enabled:true}],actions:[{id:'act',enabled:true}],tags:[{id:'tag'}],familyColors:{}};
   const flags={},created=[],removed=[],instantiated=[];
   const actor={uuid:'Actor.guided',documentName:'Actor',getFlag:(_s,k)=>flags[k],
     async setFlag(_s,k,v){flags[k]=structuredClone(v);},

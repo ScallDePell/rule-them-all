@@ -10,7 +10,7 @@ const ctx=path=>({type:'context',path:`variables.test.${path}`});
 
 async function setup(){
   const api=await createConfiguratorAPI(new Storage());const v=(await api.createRuleset({id:'r',nameKey:'R',version:'1'})).versionId;
-  await api.createParameter(v,{id:'level',nameKey:'Level',valueType:'integer',nullable:false,value:3,scope:'ruleset',enabled:true,order:10,tags:[]});
+  await api.createParameter(v,{id:'level',nameKey:'Level',valueType:'integer',value:3,scope:'ruleset',enabled:true,order:10,tags:[]});
   await api.createFormula(v,{id:'double-level',nameKey:'Double level',resultType:'number',expression:{type:'multiply',args:[{type:'parameter',id:'level'},{type:'literal',value:2}]},enabled:true,order:10,tags:[]});
   await api.createFormula(v,{id:'skill-total',nameKey:'Skill total',resultType:'number',expression:{type:'add',args:[ctx('inputs.rank'),ctx('inputs.edge')]},enabled:true,order:20,tags:[]});
   await api.createFormula(v,{id:'half-margin',nameKey:'Half margin',resultType:'number',expression:{type:'divide',args:[{type:'subtract',args:[ctx('total'),ctx('target')]},{type:'literal',value:2}]},enabled:true,order:30,tags:[]});

@@ -1,4 +1,4 @@
-import {resolveDocumentType} from "../core/system-document-types.mjs";
+import {resolveDocumentType,descriptionPath as findDescriptionPath} from "../core/system-document-types.mjs";
 import {MODULE_ID} from "../core/module-contract.mjs";
 import {copyJSON} from "../configurator/configurator-schema.mjs";
 import {acquiredActionIds} from "./content-access.mjs";
@@ -50,7 +50,7 @@ export class FoundryContentBridge{
     this.#actorMutations.set(key,pending);
     try{return await pending;}finally{if(this.#actorMutations.get(key)===pending)this.#actorMutations.delete(key);}
   }
-  constructor(configurator,runtime,{hooks=globalThis.Hooks,documentTypeResolver=resolveDocumentType,grantHandlers=new ContentGrantHandlers()}={}){this.configurator=configurator;this.runtime=runtime;this.hooks=hooks;this.documentTypeResolver=documentTypeResolver;this.grantHandlers=grantHandlers;}
+  constructor(configurator,runtime,{hooks=globalThis.Hooks,documentTypeResolver=resolveDocumentType,descriptionPath=findDescriptionPath,grantHandlers=new ContentGrantHandlers()}={}){this.configurator=configurator;this.runtime=runtime;this.hooks=hooks;this.documentTypeResolver=documentTypeResolver;this.descriptionPath=descriptionPath;this.grantHandlers=grantHandlers;}
   ruleset(versionId){return resolveRuntimeRuleset(this.configurator,versionId);}
   label(versionId,key){try{return this.configurator.resolveLocalizedText(versionId,globalThis.game?.i18n?.lang??"en",key,k=>globalThis.game?.i18n?.localize?.(k)??k);}catch{return key;}}
   #documentSpec(contentType){
@@ -69,7 +69,11 @@ export class FoundryContentBridge{
   }
   documentData(versionId,template,contentType){
     const spec=this.#documentSpec(contentType);
-    return {name:this.label(versionId,template.nameKey),type:spec.type,img:template.image||contentType.image||undefined,flags:{[MODULE_ID]:{[TEMPLATE_FLAG]:templateFlags(versionId,template,contentType)}}};
+    const data={name:this.label(versionId,template.nameKey),type:spec.type,img:template.image||contentType.image||undefined,flags:{[MODULE_ID]:{[TEMPLATE_FLAG]:templateFlags(versionId,template,contentType)}}};
+    // The template's description becomes the document's own, where the Game System has one.
+    const path=template.descriptionKey?this.descriptionPath(spec.documentName,spec.type):null;
+    if(path){const keys=path.split("."),last=keys.pop();keys.reduce((node,key)=>node[key]??={},data)[last]=this.label(versionId,template.descriptionKey);}
+    return data;
   }
   /** Execute only Creation steps whose effects are defined by the generic
    * Runtime contract. The full plan is validated before Actor.create().

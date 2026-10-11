@@ -74,7 +74,7 @@ export class RulesetCollectionRegistry {
 export class DefinitionTypeRegistry extends RulesetCollectionRegistry {
   constructor(registry) {
     super(registry, "definitionTypes", {
-      descriptionKey: "", color: null, enabled: true, order: 0, allowedCapabilities: [], defaultCapabilities: [], requiredCapabilities: [], fields: {}, constraints: []
+      descriptionKey: "", color: null, order: 0, allowedCapabilities: [], defaultCapabilities: [], requiredCapabilities: [], fields: {}, constraints: []
     }, ["id","key"]);
   }
   prepareEntry(data) {

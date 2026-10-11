@@ -10,6 +10,7 @@ import {buildFieldRow,buildEventFieldRow,buildDefinitionFieldModel} from "./entr
 import {buildRuleReferenceChoices} from "./entry-reference-catalog.mjs";
 import {buildSlotFormContext,syncValueSource,syncEntryMode} from "./slot-form.mjs";
 import {slotInitialKey} from "./capability-slots.mjs";
+import {capabilityRole,capabilityRoleFlags,capabilityLabel} from "./capability-type-registry.mjs";
 import {availableDocumentTypes} from "../core/system-document-types.mjs";
 
 import {pickerSummary,missingTargetLabel,editorDisplayTitle} from "../ui/editor-display-text.mjs";
@@ -116,7 +117,6 @@ export class ConfiguratorEntryEditor extends ConfiguratorWindow {
     this.#optionColors=createSelectColorResolver({definitionTypes:selectableDefinitionTypes,contentTypes:this.#renderList("contentTypes","listContentTypes"),familyColors:colorContext.familyColors??{},ruleset:colorContext});
     const withColors=(kind,entry)=>({colors:selectColorsAttribute(this.#optionColors(kind,entry))});
     const capabilityTypes=this.#api.listCapabilityTypes();
-    const selected=id=>Array.isArray(data?.[id])?data[id]:[];
     let type=null,fieldContract=[];
     if(this.#kind==="definition"){
       type=this.#renderGet("definitionTypes",data.definitionTypeId,"getDefinitionType");
@@ -130,7 +130,7 @@ export class ConfiguratorEntryEditor extends ConfiguratorWindow {
       fieldContract=Object.entries(type?.fields??{}).map(([id,field])=>this.#editorFieldModel(id,field,data.data??{},creating,"contentType"));
     }
     const capabilityChoices=capabilityTypes.map(cap=>({
-      ...cap,allowed:selected("allowedCapabilities").includes(cap.id),default:selected("defaultCapabilities").includes(cap.id),required:selected("requiredCapabilities").includes(cap.id),
+      ...cap,label:capabilityLabel(cap.id),...capabilityRoleFlags(capabilityRole(data,cap.id)),
       selected:(data.capabilities??[]).includes(cap.id),permitted:!type||(type.allowedCapabilities??[]).includes(cap.id),forced:!!type&&(type.requiredCapabilities??[]).includes(cap.id),
       fieldItems:Object.values(cap.fields??{}),outputItems:Object.values(cap.outputs??{}),hasContract:Object.keys(cap.fields??{}).length>0||Object.keys(cap.outputs??{}).length>0
     }));
@@ -255,7 +255,7 @@ export class ConfiguratorEntryEditor extends ConfiguratorWindow {
     if(!form)return;
     const mark=()=>{if(!this.#dirty){this.#dirty=true;this.#syncFooter();}};
     form.addEventListener("input",event=>{mark();const row=event.target.closest?.("[data-definition-field]");if(row&&!row.dataset.required){const use=row.querySelector("[data-field-present]");if(use&&!use.checked){use.checked=true;}}if(event.target.matches?.("[data-picker-filter]"))this.#filterPicker(event.target);});
-    form.addEventListener("change",event=>{if(event.target.matches?.("[data-step-source-family]")&&event.target.checked){const group=event.target.closest("[data-step-prop=sourceCollection]");for(const other of group?.querySelectorAll("[data-step-source-family]")??[])if(other!==event.target)other.checked=false;}this.#syncCreationSource(event.target);mark();if(event.target.matches?.("[data-presentation-override]")){const row=event.target.closest("[data-presentation-key]");const control=row?.querySelector(".rta-declarative-presentation__value");if(control)control.hidden=!event.target.checked;}this.#syncCapabilityCheckboxes(event.target);this.#syncOperandEditor(event.target);this.#syncRuleOperandEditor(event.target);this.#syncPickerSummary(event.target);this.#syncStorageKind(event.target);if(event.target.matches?.("[data-color-override-toggle]")){const input=event.target.closest("[data-color-override-editor]")?.querySelector("[data-custom-color-input]");if(input)input.disabled=!event.target.checked;}});
+    form.addEventListener("change",event=>{if(event.target.matches?.("[data-step-source-family]")&&event.target.checked){const group=event.target.closest("[data-step-prop=sourceCollection]");for(const other of group?.querySelectorAll("[data-step-source-family]")??[])if(other!==event.target)other.checked=false;}this.#syncCreationSource(event.target);mark();if(event.target.matches?.("[data-presentation-override]")){const row=event.target.closest("[data-presentation-key]");const control=row?.querySelector(".rta-declarative-presentation__value");if(control)control.hidden=!event.target.checked;}this.#syncOperandEditor(event.target);this.#syncRuleOperandEditor(event.target);this.#syncPickerSummary(event.target);this.#syncStorageKind(event.target);if(event.target.matches?.("[data-color-override-toggle]")){const input=event.target.closest("[data-color-override-editor]")?.querySelector("[data-custom-color-input]");if(input)input.disabled=!event.target.checked;}});
     form.addEventListener("change",event=>{if(event.target.matches?.("[data-source-kind]"))syncValueSource(event.target);if(event.target.matches?.('[data-input-prop="sourceKind"]'))syncTestInputSource(event.target);if(event.target.matches?.('[data-slot-prop="entryMode"]'))syncEntryMode(event.target);});
     form.addEventListener("submit",event=>{event.preventDefault();this.#save(false);});
     // Section counters follow rows added or removed by script (§46).
@@ -372,15 +372,6 @@ export class ConfiguratorEntryEditor extends ConfiguratorWindow {
 
   #checkedIds(name){
     return [...this.element.querySelectorAll(`[name="${name}"]:checked`)].map(input=>input.value);
-  }
-
-  #syncCapabilityCheckboxes(target){
-    const name=target?.name??"";if(!name.includes(":"))return;
-    const [role,id]=name.split(":");if(!["allowed","default","required"].includes(role))return;
-    const form=this.element.querySelector("[data-entry-form]");
-    const allowed=form.querySelector(`[name="allowed:${CSS.escape(id)}"]`),def=form.querySelector(`[name="default:${CSS.escape(id)}"]`),req=form.querySelector(`[name="required:${CSS.escape(id)}"]`);
-    if((role==="default"||role==="required")&&target.checked&&allowed)allowed.checked=true;
-    if(role==="allowed"&&!target.checked){if(def)def.checked=false;if(req)req.checked=false;}
   }
 
   #syncFooter(){

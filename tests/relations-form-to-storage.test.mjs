@@ -52,7 +52,7 @@ test('cross-family collection-kind mapping follows the actual schema',()=>{
 test('form selection -> API save -> storage reload -> saved selection -> dependencies -> deletion protection',async()=>{
   const storage=new Storage();let api=await createConfiguratorAPI(storage);
   const v=(await api.createRuleset({id:'generic-world',nameKey:'Generic World',version:'1.0.0'})).versionId;
-  await api.registerDefinitionType(v,{id:'type',key:'type',nameKey:'Type',enabled:true,order:0,allowedCapabilities:[],defaultCapabilities:[],requiredCapabilities:[],fields:{},constraints:[]});
+  await api.registerDefinitionType(v,{id:'type',key:'type',nameKey:'Type',order:0,allowedCapabilities:[],defaultCapabilities:[],requiredCapabilities:[],fields:{},constraints:[]});
   await api.createDefinition(v,{id:'def-1',key:'def-1',definitionTypeId:'type',nameKey:'Definition One',data:{},capabilities:[],enabled:true,order:1,tags:[]});
   await api.createAction(v,{id:'act-1',nameKey:'Action One',conditionRefs:[],costEffectRefs:[],effectRefs:[],enabled:true,order:1,tags:[]});
   await api.createContentType(v,{id:'type-content',nameKey:'Content Type',storageKind:'item',runtimeMode:'unique',fields:{},enabled:true,order:1,tags:[]});
@@ -94,7 +94,7 @@ test('form selection -> API save -> storage reload -> saved selection -> depende
 test('saved nested logical reference protects its target even inside an extensible generic collection',async()=>{
   const storage=new Storage();const api=await createConfiguratorAPI(storage);
   const v=(await api.createRuleset({id:'portable',nameKey:'Portable',version:'1.0.0'})).versionId;
-  await api.createParameter(v,{id:'p',nameKey:'P',valueType:'number',value:12,nullable:false,enabled:true,order:0,tags:[]});
+  await api.createParameter(v,{id:'p',nameKey:'P',valueType:'number',value:12,enabled:true,order:0,tags:[]});
   await api.createPermissionPolicy(v,{id:'policy',nameKey:'Policy',scope:{objectKind:'parameter',objectId:'p'},rules:[],defaultEffect:'DENY',enabled:true,order:0,tags:[]});
   const edges=collectCrossFamilyRelations(api.getRuleset(v));
   assert.ok(edges.some(x=>x.consumerRef.objectId==='policy'&&x.targetRef.objectId==='p'));

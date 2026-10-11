@@ -57,7 +57,7 @@ test('CP-11: PermissionPolicy rules are a closed contract', () => {
 async function world(){
   const api=await createConfiguratorAPI(new Storage());
   const v=(await api.createRuleset({id:'perm',nameKey:'Perm',version:'1'})).versionId;
-  await api.registerDefinitionType(v,{id:'body',key:'body',nameKey:'Body',descriptionKey:'',color:null,enabled:true,allowedCapabilities:['pool','value'],defaultCapabilities:['pool'],requiredCapabilities:[],fields:{},constraints:[]});
+  await api.registerDefinitionType(v,{id:'body',key:'body',nameKey:'Body',descriptionKey:'',color:null,allowedCapabilities:['pool','value'],defaultCapabilities:['pool'],requiredCapabilities:[],fields:{},constraints:[]});
   await api.createDefinition(v,{id:'hero',key:'hero',definitionTypeId:'body',nameKey:'Hero',descriptionKey:'',data:{},capabilities:['pool'],slots:{pool:[{id:'hp',minimum:{literal:0},maximum:{literal:10}}]},enabled:true,tags:[]});
   await api.createDefinition(v,{id:'secret',key:'secret',definitionTypeId:'body',nameKey:'Secret',descriptionKey:'',data:{},capabilities:['value'],enabled:true,tags:[]});
   await api.createCondition(v,{id:'always',nameKey:'Always',expression:{type:'literal',value:true},enabled:true,tags:[]});

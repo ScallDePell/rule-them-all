@@ -12,7 +12,7 @@ const self={kind:'actor',id:'hero'},context={roles:{self},defaultRole:'self'};
 async function setup({publish=true}={}){
   const api=await createConfiguratorAPI(new Storage());
   const v=(await api.createRuleset({id:'acq',nameKey:'Acq',version:'1'})).versionId;
-  await api.registerDefinitionType(v,{id:'trait',key:'trait',nameKey:'Trait',descriptionKey:'',color:null,enabled:true,allowedCapabilities:['value'],defaultCapabilities:['value'],requiredCapabilities:[],fields:{},constraints:[]});
+  await api.registerDefinitionType(v,{id:'trait',key:'trait',nameKey:'Trait',descriptionKey:'',color:null,allowedCapabilities:['value'],defaultCapabilities:['value'],requiredCapabilities:[],fields:{},constraints:[]});
   for(const id of ['xp','swordplay','riding'])await api.createDefinition(v,{id,key:id,definitionTypeId:'trait',nameKey:id,descriptionKey:'',data:{},capabilities:['value'],enabled:true,tags:[]});
   await api.createCondition(v,{id:'has-xp',nameKey:'Has XP',expression:{type:'gte',left:{type:'reference',reference:value('xp')},right:{type:'literal',value:5}},enabled:true,tags:[]});
   await api.createEffect(v,{id:'spend-xp',nameKey:'Spend XP',targetRole:'self',targetRef:value('xp'),operation:'subtract',operand:{kind:'literal',value:5},enabled:true,tags:[]});

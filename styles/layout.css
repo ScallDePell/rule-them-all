@@ -138,10 +138,6 @@
   font-size: 0.9em;
 }
 
-.rta-config-table--capabilities {
-  min-width: 520px;
-}
-
 /* ergonomic field cards + single-line Ruleset header. */
 .rta-configurator__workspace-header {
   border-bottom: 1px solid var(--rta-color-border);

@@ -14,7 +14,7 @@ const strength={objectKind:'definition',objectId:'strength',capabilityId:'value'
 
 async function setup(){
   const api=await createConfiguratorAPI(new Storage());const v=(await api.createRuleset({id:'r',nameKey:'R',version:'1'})).versionId;
-  await api.registerDefinitionType(v,{id:'attribute',key:'attribute',nameKey:'Attribute',descriptionKey:'',color:null,enabled:true,order:10,allowedCapabilities:['value','state'],defaultCapabilities:['value'],requiredCapabilities:['value'],fields:{},constraints:[]});
+  await api.registerDefinitionType(v,{id:'attribute',key:'attribute',nameKey:'Attribute',descriptionKey:'',color:null,order:10,allowedCapabilities:['value','state'],defaultCapabilities:['value'],requiredCapabilities:['value'],fields:{},constraints:[]});
   await api.createDefinition(v,{id:'strength',key:'strength',definitionTypeId:'attribute',nameKey:'Strength',descriptionKey:'',data:{},categories:[],capabilities:['value','state'],...meta});
   return {api,v};
 }
@@ -58,7 +58,7 @@ test('a module-registered Effect operation runs in the engine', async () => {
 
 test('a Formula must produce its resultType and a Condition a boolean: warning in draft, error at publish', async () => {
   const {api,v}=await setup();
-  await api.createParameter(v,{id:'name',nameKey:'Name',valueType:'string',nullable:false,value:'x',scope:'ruleset',...meta});
+  await api.createParameter(v,{id:'name',nameKey:'Name',valueType:'string',value:'x',scope:'ruleset',...meta});
   await api.createFormula(v,{id:'bad',nameKey:'Bad',resultType:'number',expression:{type:'parameter',id:'name'},...meta});
   await api.createFormula(v,{id:'ok',nameKey:'Ok',resultType:'number',expression:{type:'add',args:[{type:'literal',value:1},{type:'reference',reference:strength}]},...meta});
   await api.createCondition(v,{id:'not-bool',nameKey:'Not bool',expression:{type:'formula',id:'ok'},...meta});
