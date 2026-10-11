@@ -320,10 +320,10 @@
 }
 
 .rta-configurator .rta-dependencies__row .rta-dependencies__item:is(:focus,:focus-visible,:active) {
-  outline: none !important;
-  box-shadow: none !important;
-  border: 0 !important;
-  background: transparent !important;
+  outline: none;
+  box-shadow: none;
+  border: 0;
+  background: transparent;
 }
 
 .rta-configurator .rta-dependencies__row:has(.rta-dependencies__item:focus-visible) {
@@ -354,7 +354,7 @@
 }
 
 .rta-configurator .rta-dependencies__row[hidden] {
-  display: none !important;
+  display: none;
 }
 
 /* Dependencies: neutral title, secondary description, edit action at bottom right. */

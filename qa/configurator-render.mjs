@@ -40,13 +40,14 @@ const tmp=join(root,'src/configurator/.qa-configurator-app.mjs');writeFileSync(t
 let ConfiguratorApp;try{({ConfiguratorApp}=await import(pathToFileURL(tmp).href));}finally{rmSync(tmp);}
 Handlebars.registerHelper('localize',(k,o)=>{const t=lookup(String(k));return o?.hash&&Object.keys(o.hash).length?t.replace(/\{(\w+)\}/g,(_,n)=>o.hash[n]??''):t;});
 const tpl=Handlebars.compile(readFileSync(join(root,'templates/configurator/configurator.hbs'),'utf8'));
-const css=JSON.parse(readFileSync(join(root,'module.json'),'utf8')).styles.map(p=>readFileSync(join(root,p),'utf8')).join('\n');
+const foundryCss=process.env.RTA_FOUNDRY_CSS?readFileSync(process.env.RTA_FOUNDRY_CSS,'utf8')+'\n':'';
+const css=foundryCss+JSON.parse(readFileSync(join(root,'module.json'),'utf8')).styles.map(p=>readFileSync(join(root,p),'utf8')).join('\n');
 const views=[['rulesets','',''],['general',v,'general'],['definitionTypes',v,'definitionTypes'],['definitions-tiles',v,'definitions:stat'],['definitions-lines',v,'definitions:stat','lines'],
  ['contentTypes',v,'contentTypes'],['content',v,'content:gear'],['formulas',v,'formulas'],['actions',v,'actions'],['tags',v,'tags'],['dependencies',v,'dependencies'],['runtimeLab',v,'runtimeLab'],['sheets',v,'sheetDefinitions']];
 for(const [name,selected,view,mode='tiles'] of views){
   globalThis.__qa={selected,view:view||'general',mode};
   const app=new ConfiguratorApp();const ctx=await app._prepareContext({});
-  const html=`<!doctype html><html lang="en"><meta charset="utf-8"><style>${css}\nbody{margin:0;font-family:sans-serif;font-size:14px}#rta-configurator{height:860px;display:flex;flex-direction:column}</style><body><div id="rta-configurator" class="application"><div class="window-content" style="display:flex;flex-direction:column;min-height:0;overflow:hidden;height:100%">${tpl(ctx)}</div></div></body></html>`;
+  const html=`<!doctype html><html lang="en"><meta charset="utf-8"><style>${css}\nbody{margin:0;font-family:sans-serif;font-size:14px}#rta-configurator{height:860px;display:flex;flex-direction:column}</style><body class="theme-dark"><div id="rta-configurator" class="application theme-dark"><div class="window-content" style="display:flex;flex-direction:column;min-height:0;overflow:hidden;height:100%">${tpl(ctx)}</div></div></body></html>`;
   writeFileSync(join(out,name+'.html'),html);
 }
 console.log('rendered',views.length);

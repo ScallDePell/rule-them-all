@@ -128,6 +128,19 @@ input[type=color]{padding:0}
 button{cursor:pointer} [hidden]{display:none !important}
 '''
 
+# RTA_FOUNDRY_CSS=<chemin de foundry2.css> : rend avec le vrai CSS du cœur Foundry
+# (thème sombre) au lieu de l'imitation BASE ci-dessus.
+FOUNDRY_CSS_PATH=os.environ.get('RTA_FOUNDRY_CSS')
+if FOUNDRY_CSS_PATH:
+ BASE='''
+html,body{margin:0;padding:0}
+.qa-root{margin:auto;padding:12px 14px;max-width:850px;box-sizing:border-box}
+.rta-config-entry{height:auto;min-height:0;display:block;overflow:visible}
+.rta-config-entry form[data-entry-form]{display:block;overflow:visible}
+.rta-config-entry__scroll{display:block;overflow:visible}
+'''
+ CSS=Path(FOUNDRY_CSS_PATH).read_text()+'\n'+CSS
+
 def sample(kind):
  ctx=copy.deepcopy(context_default)
  if kind=='CreationSystem':ctx['creationStepRows']=json.loads((Path(__file__).resolve().parent/'fixtures/creation-steps.json').read_text())
@@ -135,7 +148,7 @@ def sample(kind):
  if kind in ('Modifier','Restriction','Duration','ProgressionSystem'):ctx['isGeneric']=True
  # Additional allowed local branch flags for exercising nested controls.
  ctx.update({'isUnique':True,'isOne':True,'isStorageActor':True,'isFull':True})
- s=render(TREE,[ctx]);return '<!doctype html><html lang="fr"><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1"><style>'+CSS+'\n'+BASE+'</style><body><main class="qa-root">'+s+'</main><script>'+COLORS+'\n'+SELECT_TEXT+'\n'+SELECT+'\nwindow.__qaEnhanced=RTASelect.enhance(document.querySelector(".rta-config-entry"));window.__qaReady=true;</script></body></html>'
+ s=render(TREE,[ctx]);return '<!doctype html><html lang="fr"><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1"><style>'+CSS+'\n'+BASE+'</style><body class="theme-dark"><div class="application theme-dark"><main class="qa-root window-content">'+s+'</main></div><script>'+COLORS+'\n'+SELECT_TEXT+'\n'+SELECT+'\nwindow.__qaEnhanced=RTASelect.enhance(document.querySelector(".rta-config-entry"));window.__qaReady=true;</script></body></html>'
 
 MEASURE='''() => {
 const rect=n=>{const r=n.getBoundingClientRect();return {x:+r.x.toFixed(1),y:+r.y.toFixed(1),w:+r.width.toFixed(1),h:+r.height.toFixed(1),right:+r.right.toFixed(1)}};

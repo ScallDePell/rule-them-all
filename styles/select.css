@@ -125,7 +125,7 @@
 }
 
 .rta-select__panel[hidden] {
-  display: none !important;
+  display: none;
 }
 
 .rta-select__search {
@@ -179,7 +179,7 @@
 }
 
 .rta-select__panel label.rta-select__option[hidden] {
-  display: none !important;
+  display: none;
 }
 
 .rta-select__panel .rta-select__option.is-disabled {
@@ -194,6 +194,8 @@
   flex: 0 0 auto;
 }
 
+/* Seule exception aux !important : le <select> natif reste dans le DOM pour le
+   formulaire mais doit être masqué quelles que soient les règles de largeur. */
 .rta-select__native {
   position: absolute !important;
   width: 1px !important;
@@ -205,7 +207,7 @@
 }
 
 .rta-select__radio-sources {
-  display: none !important;
+  display: none;
 }
 
 .rta-config-entry .rta-binding-card__title.rta-select__binding-title > .rta-select__binding-source {

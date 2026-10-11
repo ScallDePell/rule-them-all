@@ -271,8 +271,8 @@
 
 .rta-configurator :is(.rta-ruleset-tile__title, .rta-config-card__title) {
   appearance: none;
-  outline: none !important;
-  box-shadow: none !important;
+  outline: none;
+  box-shadow: none;
   border: 0;
   border-radius: 0;
   background: transparent;
@@ -287,9 +287,9 @@
 }
 
 .rta-configurator :is(.rta-ruleset-tile__title, .rta-config-card__title):is(:hover, :focus, :active, :focus-visible) {
-  outline: none !important;
-  box-shadow: none !important;
-  background: transparent !important;
+  outline: none;
+  box-shadow: none;
+  background: transparent;
 }
 
 /* Keyboard navigation remains visibly accessible on the parent card only. */

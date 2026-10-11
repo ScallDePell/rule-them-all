@@ -67,7 +67,7 @@
   align-items: center;
   gap: var(--rta-space-3);
   padding: var(--rta-space-3) var(--rta-space-3);
-  border-radius: 5px !important;
+  border-radius: 5px;
 }
 
 .rta-explorer__group i {
@@ -79,7 +79,7 @@
 .rta-explorer__group.is-active {
   background: color-mix(in srgb, var(--rta-nav-accent, var(--rta-color-neutral)) 17%, transparent);
   border: 1px solid var(--rta-panel-border);
-  border-radius: var(--rta-radius-compact) !important;
+  border-radius: var(--rta-radius-compact);
   font-weight: 700;
 }
 
@@ -95,8 +95,8 @@
   display: flex;
   align-items: center;
   gap: var(--rta-space-3);
-  padding: var(--rta-space-3) var(--rta-space-2) !important;
-  border-radius: 4px !important;
+  padding: var(--rta-space-3) var(--rta-space-2);
+  border-radius: 4px;
   overflow-wrap: anywhere;
 }
 
@@ -114,7 +114,7 @@
 }
 
 .rta-explorer__results[hidden],.rta-explorer__details[hidden],.rta-explorer button[hidden] {
-  display: none !important;
+  display: none;
 }
 
 @media (max-width:760px) {
@@ -200,7 +200,7 @@
 }
 
 .rta-explorer__flyout[hidden],.rta-explorer__flyout-list section[hidden] {
-  display: none !important;
+  display: none;
 }
 
 .rta-explorer__flyout-heading {
@@ -223,7 +223,7 @@
   min-height: 36px;
   font-size: var(--rta-type-base);
   line-height: 1.35;
-  padding: var(--rta-space-3) var(--rta-space-2) !important;
+  padding: var(--rta-space-3) var(--rta-space-2);
   overflow-wrap: normal;
   word-break: normal;
   text-align: left;
@@ -286,9 +286,9 @@
   width: 100%;
   min-height: 38px;
   gap: var(--rta-space-4);
-  padding: var(--rta-space-4) !important;
-  text-align: left !important;
-  font-size: var(--rta-type-control) !important;
+  padding: var(--rta-space-4);
+  text-align: left;
+  font-size: var(--rta-type-control);
   line-height: 1.35;
   white-space: normal;
 }
@@ -296,13 +296,12 @@
 .rta-configurator .rta-explorer__flyout-list .rta-explorer__item > span:first-child {
   flex: 1 1 auto;
   min-width: 0;
-  text-align: left !important;
+  text-align: left;
 }
 
 .rta-explorer .rta-explorer__item--primary {
   background: color-mix(in srgb, var(--rta-nav-accent, var(--rta-color-neutral)) 13%, transparent);
   border: 1px solid var(--rta-panel-border);
-  border-radius: var(--rta-radius-control);
   font-weight: 650;
   margin-bottom: var(--rta-space-4);
 }
@@ -317,7 +316,7 @@
 .rta-configurator .rta-explorer__flyout-list .rta-explorer__item {
   color: var(--color-text-primary, inherit);
   opacity: 1;
-  text-align: left !important;
+  text-align: left;
 }
 
 /* 1.5x wide flyout; use the entire sidebar height before scrolling. */

@@ -302,7 +302,7 @@
 }
 
 .rta-config-entry .rta-binding-card[hidden] {
-  display: none !important;
+  display: none;
 }
 
 /* A framed section/card already has horizontal interior padding. Instead of

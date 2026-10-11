@@ -62,3 +62,9 @@ test('hard-coded colors live only in tokens.css', () => {
     assert.doesNotMatch(text, /#[0-9a-fA-F]{3,8}\b/, `${path} contains a literal hex color`);
   }
 });
+
+test('!important is reserved to the visually hidden native select', () => {
+  const text = readCssBundle().replace(/\/\*[\s\S]*?\*\//g, '');
+  const offenders = [...text.matchAll(/([^{}]+)\{([^{}]*!important[^{}]*)\}/g)].map(match => match[1].trim()).filter(selector => selector !== '.rta-select__native');
+  assert.deepEqual(offenders, []);
+});
