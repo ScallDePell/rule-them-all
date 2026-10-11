@@ -36,7 +36,7 @@ export function collectEntryData(kind,{fd,current,bool,checkedIds,queryOne,query
     if(kind==="definition"){
       const name=String(fd.get("nameKey")??"").trim(),key=current.key||slug(name)||uid("definition"),capabilities=[];
       for(const cap of capabilityTypes)if(bool(`cap:${cap.id}`))capabilities.push(cap.id);
-      return{...current,key,nameKey:name,descriptionKey:String(fd.get("descriptionKey")??""),enabled:bool("enabled"),capabilities,data:collectDefinitionData(queryAll("[data-definition-field]")),categories:lines(fd.get("categories")),tags:checkedIds("tags"),presentationProfile:readPresentationRows(queryAll("[data-presentation-key]"),json(fd.get("profileJson"),null))};
+      return{...current,key,nameKey:name,descriptionKey:String(fd.get("descriptionKey")??""),enabled:bool("enabled"),capabilities,data:collectDefinitionData(queryAll("[data-definition-field]")),categories:checkedIds("categories"),tags:checkedIds("tags"),presentationProfile:readPresentationRows(queryAll("[data-presentation-key]"),json(fd.get("profileJson"),null))};
     }
     if(kind==="parameter"){const vt=String(fd.get("valueType")??"number"),nullable=bool("nullable"),value=parseEditorValue(vt,"one",nullable,fd.get("value")??"");return{...current,nameKey:String(fd.get("nameKey")??"").trim(),descriptionKey:String(fd.get("descriptionKey")??""),enabled:bool("enabled"),valueType:vt,nullable,value,scope:"ruleset",tags:checkedIds("tags")};}
     if(kind==="formula"){const fallback=json(fd.get("expressionJson"),{type:"literal",value:0});return{...current,nameKey:String(fd.get("nameKey")??"").trim(),descriptionKey:String(fd.get("descriptionKey")??""),enabled:bool("enabled"),resultType:String(fd.get("resultType")??"number"),expression:collectFormulaExpression(fallback),tags:checkedIds("tags")};}
@@ -56,8 +56,9 @@ export function collectEntryData(kind,{fd,current,bool,checkedIds,queryOne,query
         definitionRows:queryAll('[data-definition-binding]'),
         choiceRows:queryAll('[data-choice-group]'),
         actionIds:checkedIds('templateActionRefs'),uid});
-      return{...current,nameKey:String(fd.get('nameKey')??'').trim(),descriptionKey:String(fd.get('descriptionKey')??''),image:String(fd.get('image')??'').trim(),data:collectDefinitionData(queryAll('[data-definition-field]')),enabled:bool('enabled'),contentTypeId:String(fd.get('contentTypeId')??current.contentTypeId??'').trim(),runtimeMode:String(fd.get('runtimeMode')??'unique'),...relations,categories:lines(fd.get('categories')),capabilities:checkedIds('templateCapabilities'),tags:checkedIds('tags')};
+      return{...current,nameKey:String(fd.get('nameKey')??'').trim(),descriptionKey:String(fd.get('descriptionKey')??''),image:String(fd.get('image')??'').trim(),data:collectDefinitionData(queryAll('[data-definition-field]')),enabled:bool('enabled'),contentTypeId:String(fd.get('contentTypeId')??current.contentTypeId??'').trim(),runtimeMode:String(fd.get('runtimeMode')??'unique'),...relations,categories:checkedIds('categories'),capabilities:checkedIds('templateCapabilities'),tags:checkedIds('tags')};
     }
+    if(kind==="category")return{...current,nameKey:String(fd.get("nameKey")??"").trim(),descriptionKey:String(fd.get("descriptionKey")??""),enabled:bool("enabled")};
     if(kind==="tag")return{...current,nameKey:String(fd.get("nameKey")??"").trim(),descriptionKey:String(fd.get("descriptionKey")??""),enabled:bool("enabled"),color:fieldPresent(fd,"customColorEnabled")?(String(fd.get("color")??"").trim()||current.color||null):fieldPresent(fd,"customColorPermission")?null:current.color??null};
     if(kind==="reference")return{...current,...parseRefToken(fd.get("referenceTarget"))};
     if(kind==="sheetDefinition"){

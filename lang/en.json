@@ -12,7 +12,6 @@
       "Override": "Override",
       "HistoricalPresentation": "Legacy presentation data (read-only)"
     },
-    
     "Settings": {
       "Configurator": {
         "Name": "Rule Them'All Configurator",
@@ -40,7 +39,9 @@
       "ClearTagFilters": "Clear",
       "RequiredCapabilities": "Required capabilities (from the type)",
       "OptionalCapabilities": "Optional capabilities",
-      "NoOptionalCapabilities": "No optional capabilities available."
+      "NoOptionalCapabilities": "No optional capabilities available.",
+      "FilterByCategories": "Filter by categories",
+      "ClearCategoryFilters": "Clear"
     },
     "Nav": {
       "General": "General",
@@ -187,6 +188,11 @@
         "Allowed": "Allowed sheet definitions",
         "Help": "Choose configured Ruleset entries. No game effect is executed without an explicit Runtime handler."
       },
+      "categories": {
+        "Label": "Categories",
+        "Allowed": "Allowed categories",
+        "Help": "Choose configured Ruleset entries. No game effect is executed without an explicit Runtime handler."
+      },
       "tags": {
         "Label": "Tags",
         "Allowed": "Allowed tags",
@@ -237,6 +243,7 @@
       "creationSystems": "Creation Systems",
       "progressionSystems": "Progression Systems",
       "sheetDefinitions": "Sheets",
+      "categories": "Categories",
       "tags": "Tags",
       "references": "References"
     },
@@ -608,7 +615,10 @@
       "Selected": "selected",
       "NoneSelected": "None selected",
       "GroupsCount": "group(s)",
-      "RollFormulaPlaceholder": "Foundry dice expression"
+      "RollFormulaPlaceholder": "Foundry dice expression",
+      "Category": "Category",
+      "SearchCategories": "Search categories…",
+      "NoCategoriesYet": "No Categories yet. Create them from the Categories section."
     },
     "EditorDisplay": {
       "NoneSelected": "None selected",

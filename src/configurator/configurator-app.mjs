@@ -1,4 +1,5 @@
 import {resolvePresentation} from "./declarative-contracts.mjs";
+import {buildFacet, matchesFacet, toggleFacet} from "./card-facets.mjs";
 import {availableDocumentTypes} from "../core/system-document-types.mjs";
 import {escapeHTML} from "../ui/html-utils.mjs";
 import {RTA_NEUTRAL_COLOR} from "../ui/theme-tokens.mjs";
@@ -38,6 +39,7 @@ const TOP_LEVEL = Object.freeze([
   {view:"progressionSystems", kind:"progressionSystem", title:"Progression Systems", list:"listProgressionSystems", collection:"progressionSystems"},
   {view:"sheetDefinitions", kind:"sheetDefinition", title:"Sheet Builder", list:"listSheetDefinitions", collection:"sheetDefinitions"},
   {view:"contentTypes", kind:"contentType", title:"Content Types", list:"listContentTypes", collection:"contentTypes"},
+  {view:"categories", kind:"category", title:"Categories", list:"listCategories", collection:"categories"},
   {view:"tags", kind:"tag", title:"Tags", list:"listTags", collection:"tags"},
   {view:"references", kind:"reference", title:"References", list:"listReferences", collection:"references"}
 ]);
@@ -71,6 +73,7 @@ export class ConfiguratorApp extends ConfiguratorWindow {
   #displayMode = "tiles";
   #dependencySelected = "";
   #tagFilters = new Map();
+  #categoryFilters = new Map();
   #dependencySearch = "";
   #dependencyListScroll = 0;
   #dependencyUnresolvedOnly = false;
@@ -231,20 +234,19 @@ export class ConfiguratorApp extends ConfiguratorWindow {
       }).filter(Boolean)
     }));
 
-    // Canonical, view-local tag facet: counts are based on the full current collection,
-    // never on the already filtered subset. Multiple selections use OR semantics.
     const activeTagIds = this.#tagFilters.get(this.#view) ?? new Set();
-    const tagCounts = new Map();
-    for (const card of cards) for (const tag of card.displayTags) {
-      tagCounts.set(tag.id, (tagCounts.get(tag.id) ?? 0) + 1);
-    }
-    const availableTags = [...tagCounts].map(([id,count])=>{
+    const availableTags = buildFacet(cards, card => card.displayTags.map(tag => tag.id), id => {
       const tag=tagIndex.get(id);
-      return {id,count,name:localize(api,this.#selected,tag?.nameKey??tag?.key??id),color:objectColor(ruleset,"tags",tag),selected:activeTagIds.has(id)};
-    }).sort((a,b)=>b.count-a.count||a.name.localeCompare(b.name));
-    const filteredCards=activeTagIds.size
-      ? cards.filter(card=>[...activeTagIds].some(id=>(card.tags??[]).includes(id)))
-      : cards;
+      return {name:localize(api,this.#selected,tag?.nameKey??tag?.key??id),color:objectColor(ruleset,"tags",tag)};
+    }, activeTagIds);
+    // Category catalog facet (§47); ids that no longer resolve are not offered.
+    const categoryIndex = new Map((ruleset?.categories ?? []).map(entry => [entry.id, entry]));
+    const activeCategoryIds = this.#categoryFilters.get(this.#view) ?? new Set();
+    const availableCategories = buildFacet(cards, card => Array.isArray(card.categories) ? card.categories : [], id => {
+      const category=categoryIndex.get(id);
+      return category ? {name:localize(api,this.#selected,category.nameKey||id)} : null;
+    }, activeCategoryIds);
+    const filteredCards=cards.filter(card=>matchesFacet(card.tags??[],activeTagIds)&&matchesFacet(card.categories??[],activeCategoryIds));
 
     const dependencyGroups = ruleset && this.#view === "dependencies"
       ? buildDependencyExplorer(ruleset,api.listDependencies(this.#selected),(entry)=>localize(api,this.#selected,entry.nameKey)||entry.name||entry.id)
@@ -316,7 +318,7 @@ export class ConfiguratorApp extends ConfiguratorWindow {
       error:this.#error,displayLines:this.#displayMode==="lines",displayTiles:this.#displayMode==="tiles",isWorkspace:!!ruleset,isRulesets:!ruleset,view:this.#view,rulesets,navigation,navGroups,currentNavGroup,definitionTypes,contentTypes,
       selectedRuleset:ruleset,selectedRecord:record,rulesetAccent:rulesetColor(ruleset),canOverrideCollection,currentCollection,collectionAccent,collectionCustomAccent,canEditRuleset:record?.status!=="validated",selectedRulesetName:ruleset?localize(api,this.#selected,ruleset.nameKey):"",
       isGeneral:!!ruleset&&this.#view==="general",isCollection:!!ruleset&&Boolean(currentKind),isContentFamily:currentKind==="contentTemplate",isDependencies:!!ruleset&&this.#view==="dependencies",isRuntimeLab:!!ruleset&&this.#view==="runtimeLab",isContentTypes,isContentTemplates,isContentLibraries,
-      currentTitle,currentKind,currentType,cards:filteredCards,availableTags,activeTagCount:activeTagIds.size,dependencyGroups:dependencyVisibleGroups,dependencySelected,dependencyGraph,dependencyStats,dependencyAvailableTags,dependencyActiveTagCount:dependencyActiveTags.size,dependencyUnresolvedOnly,actors,runtimeDefinitions,runtimeActions,runtimeFormulas,runtimeConditions,runtimeTests,runtimeEvents,runtimeResult:this.#runtimeResult,runtimeStateCards,runtimeSelection:this.#runtimeSelection,runtimeActorTypeOptions:availableDocumentTypes("Actor").map(id=>({id,sourceSelected:id===this.#runtimeSelection.sourceType,targetSelected:id===this.#runtimeSelection.targetType})),runtimeTool,runtimeModes,runtimeGuide,selectedActorName,
+      currentTitle,currentKind,currentType,cards:filteredCards,availableTags,activeTagCount:activeTagIds.size,availableCategories,activeCategoryCount:activeCategoryIds.size,dependencyGroups:dependencyVisibleGroups,dependencySelected,dependencyGraph,dependencyStats,dependencyAvailableTags,dependencyActiveTagCount:dependencyActiveTags.size,dependencyUnresolvedOnly,actors,runtimeDefinitions,runtimeActions,runtimeFormulas,runtimeConditions,runtimeTests,runtimeEvents,runtimeResult:this.#runtimeResult,runtimeStateCards,runtimeSelection:this.#runtimeSelection,runtimeActorTypeOptions:availableDocumentTypes("Actor").map(id=>({id,sourceSelected:id===this.#runtimeSelection.sourceType,targetSelected:id===this.#runtimeSelection.targetType})),runtimeTool,runtimeModes,runtimeGuide,selectedActorName,
       publishReadiness:this.#view==='general'&&record?.status==='draft'?this.#publishReadiness(api,ruleset):null,
       lifecycle:record?{isValidated:record.status==="validated",isReady:record.status==="ready",isDraft:record.status==="draft",canMutate:record.status!=="validated",canCreateVersion:record.status==="validated",canDelete:true}:null,
       storage:ruleset?{storageRevision:api.getStorageRevision(),activeVersionId:activeId,engineContractVersion:ruleset.engineContractVersion}:null
@@ -467,11 +469,14 @@ export class ConfiguratorApp extends ConfiguratorWindow {
     const button=event.currentTarget, action=button.dataset.action; this.#error="";
     try {
       const api=await this.#api();
-      if (action==="toggleTagFilter") {
-        const tagId=button.dataset.tagId;
-        const selected=new Set(this.#tagFilters.get(this.#view)??[]);
-        if(selected.has(tagId))selected.delete(tagId);else selected.add(tagId);
-        this.#tagFilters.set(this.#view,selected);
+      if (action==="toggleTagFilter"||action==="toggleCategoryFilter") {
+        const isTag=action==="toggleTagFilter";
+        toggleFacet(isTag?this.#tagFilters:this.#categoryFilters,this.#view,isTag?button.dataset.tagId:button.dataset.categoryId);
+        this.#rememberScroll();this.#restoreScroll=true;
+        return this.render(false);
+      }
+      if (action==="clearCategoryFilters") {
+        this.#categoryFilters.delete(this.#view);
         this.#rememberScroll();this.#restoreScroll=true;
         return this.render(false);
       }

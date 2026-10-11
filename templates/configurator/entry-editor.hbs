@@ -18,6 +18,7 @@
 {{#*inline "rtaIdentityName"}}<div class="form-group rta-form-row"><label>{{localize "RTA.Template.Name"}}</label><input name="nameKey" value="{{data.nameKey}}" required {{#if readOnly}}readonly{{/if}}></div>{{/inline}}
 {{#*inline "rtaIdentityDescription"}}<div class="form-group rta-form-row"><label>{{localize "RTA.Template.Description"}}</label><input name="descriptionKey" value="{{data.descriptionKey}}" {{#if readOnly}}readonly{{/if}}></div>{{/inline}}
 {{#*inline "rtaEnabled"}}<div class="form-group rta-form-row"><label>{{localize "RTA.Template.Enabled"}}</label><input name="enabled" type="checkbox" {{#if data.enabled}}checked{{/if}} {{#if readOnly}}disabled{{/if}}></div>{{/inline}}
+{{#*inline "rtaCategoriesPicker"}}<details class="rta-picker rta-config-entry__section" data-picker><summary><strong>{{localize "RTA.Template.Categories"}}</strong><span data-picker-summary>{{categorySummary}}</span></summary><div class="rta-picker__body rta-choice-list">{{> rtaPickerSearch placeholder=(localize "RTA.Template.SearchCategories")}}{{#each categoryChoices}}<label data-picker-option data-picker-label="{{label}}" data-rta-colors="{{colors}}"><input type="checkbox" name="categories" value="{{id}}" {{#if selected}}checked{{/if}} {{#if ../readOnly}}disabled{{/if}}> {{label}}</label>{{else}}<p>{{localize "RTA.Template.NoCategoriesYet"}}</p>{{/each}}</div></details>{{/inline}}
 {{#*inline "rtaTagsPicker"}}<details class="rta-picker rta-config-entry__section" data-picker><summary><strong>{{localize "RTA.Template.Tags"}}</strong><span data-picker-summary>{{tagSummary}}</span></summary><div class="rta-picker__body rta-choice-list">{{> rtaPickerSearch placeholder=(localize "RTA.Template.SearchTags")}}{{#each tagChoices}}<label data-picker-option data-picker-label="{{label}}" data-rta-colors="{{colors}}"><input type="checkbox" name="tags" value="{{id}}" {{#if selected}}checked{{/if}} {{#if ../readOnly}}disabled{{/if}}> {{label}}</label>{{else}}<p>{{localize "RTA.Template.NoTagsYetCreateThemFromTheTagsSection"}}</p>{{/each}}</div></details>{{/inline}}
 <section class="rta-config-entry">
   {{#if error}}<p class="rta-configurator__error" role="alert">{{error}}</p>{{/if}}
@@ -143,11 +144,20 @@
           {{#if hasForcedCapabilities}}<div class="rta-config-entry__fixed-capabilities"><strong>{{localize "RTA.UI.RequiredCapabilities"}}</strong><div class="rta-config-entry__fixed-capabilities-list">{{#each capabilityChoices}}{{#if forced}}{{#if permitted}}<label class="rta-config-entry__fixed-capability"><input type="checkbox" name="cap:{{id}}" checked disabled> <span>{{id}} <small>({{category}})</small></span></label>{{/if}}{{/if}}{{/each}}</div></div>{{/if}}
           {{#if hasOptionalCapabilities}}<div class="rta-config-entry__check-group rta-choice-list" data-rta-select-label="{{localize 'RTA.UI.OptionalCapabilities'}}">{{#each capabilityChoices}}{{#if permitted}}{{#unless forced}}<label><input type="checkbox" name="cap:{{id}}" {{#if selected}}checked{{/if}} {{#if ../readOnly}}disabled{{/if}}> {{id}} <small>({{category}})</small></label>{{/unless}}{{/if}}{{/each}}</div>{{else}}<p class="rta-config-entry__empty">{{localize "RTA.UI.NoOptionalCapabilities"}}</p>{{/if}}
         </details>
-        <details class="rta-config-entry__section"><summary>{{localize "RTA.Template.Classification"}}</summary><div class="rta-config-entry__full-width"><label>{{localize "RTA.Template.Categories"}}</label><textarea name="categories" rows="4" {{#if readOnly}}readonly{{/if}}>{{categoriesText}}</textarea></div></details>
+        {{> rtaCategoriesPicker}}
         <details class="rta-config-entry__section"><summary>{{localize "RTA.Template.Presentation"}}</summary>{{> rtaPresentationEditor}}<details class="rta-config-entry__technical"><summary>{{localize "RTA.Declarative.HistoricalPresentation"}}</summary><textarea name="profileJson" rows="4" readonly>{{profileJson}}</textarea></details></details>
         <details class="rta-config-entry__section rta-config-entry__technical"><summary>{{localize "RTA.Template.AdvancedTechnical"}}</summary><div class="form-group rta-form-row"><label>{{localize "RTA.Template.Id"}}</label><input value="{{data.id}}" readonly></div><div class="form-group rta-form-row"><label>{{localize "RTA.Template.Key"}}</label><input value="{{data.key}}" readonly></div><div class="form-group rta-form-row"><label>{{localize "RTA.Template.Order"}}</label><input value="{{data.order}}" readonly></div><details><summary>{{localize "RTA.Template.RawDataJson"}}</summary><textarea rows="8" readonly>{{dataJson}}</textarea></details></details>
       
+        {{> rtaCategoriesPicker}}
         {{> rtaTagsPicker}}
+      {{/if}}
+
+      {{#if isCategory}}
+        <fieldset><legend>{{localize "RTA.Template.Category"}}</legend>
+          {{> rtaIdentityName}}
+          {{> rtaIdentityDescription}}
+          {{> rtaEnabled}}
+        </fieldset>
       {{/if}}
 
       {{#if isTag}}
@@ -407,7 +417,7 @@
         <details class="rta-picker rta-config-entry__section" data-picker><summary><strong>{{localize "RTA.Template.ActionsGranted"}}</strong><span data-picker-summary>{{templateActionSummary}}</span></summary><div class="rta-picker__body rta-choice-list">{{> rtaPickerSearch placeholder=(localize "RTA.Template.SearchActions")}}{{#each templateActionChoices}}<label data-picker-option data-picker-label="{{label}}" data-rta-colors="{{colors}}"><input type="checkbox" name="templateActionRefs" value="{{id}}" {{#if selected}}checked{{/if}}> {{label}}</label>{{else}}<p>{{localize "RTA.Template.NoActionsAvailable"}}</p>{{/each}}</div></details>
         {{/if}}
         <details class="rta-picker rta-config-entry__section" data-picker><summary><strong>{{localize "RTA.Template.Capabilities"}}</strong><span data-picker-summary>{{contentCapabilitySummary}}</span></summary><div class="rta-picker__body rta-choice-list">{{> rtaPickerSearch placeholder=(localize "RTA.Template.SearchCapabilities")}}{{#each contentCapabilityChoices}}<label data-picker-option data-picker-label="{{label}}" data-rta-colors="{{colors}}"><input type="checkbox" name="templateCapabilities" value="{{id}}" {{#if selected}}checked{{/if}}> {{label}}</label>{{else}}<p>{{localize "RTA.Template.NoCapabilitiesAvailable"}}</p>{{/each}}</div></details>
-        <details class="rta-config-entry__technical"><summary>{{localize "RTA.Template.AdvancedClassification"}}</summary><label>{{localize "RTA.Template.Categories"}}<textarea name="categories" rows="3">{{categoriesText}}</textarea></label><label>{{localize "RTA.Template.ImagePath"}}<input value="{{data.image}}" readonly></label><details><summary>{{localize "RTA.Template.RawFieldData"}}</summary><textarea rows="8" readonly>{{dataJson}}</textarea></details></details>
+        <details class="rta-config-entry__technical"><summary>{{localize "RTA.Template.AdvancedClassification"}}</summary><label>{{localize "RTA.Template.ImagePath"}}<input value="{{data.image}}" readonly></label><details><summary>{{localize "RTA.Template.RawFieldData"}}</summary><textarea rows="8" readonly>{{dataJson}}</textarea></details></details>
         {{> rtaTagsPicker}}
       {{/if}}
 

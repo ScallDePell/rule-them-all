@@ -23,6 +23,7 @@ export function createEntrySeed(kind,{uid,definitionTypeId=null,contentTypeId=nu
   if(kind==="trigger")return{id:uid("trigger"),nameKey:"",descriptionKey:"",enabled:true,order:0,tags:[],eventTypeId:"",eventFilter:null,conditionRefs:[],actionRefs:[]};
   if(kind==="contentType")return{id:uid("content-type"),nameKey:"",descriptionKey:"",image:"",color:null,enabled:true,order:0,tags:[],storageKind:"item",documentSubtype:"",runtimeMode:"unique",fields:{}};
   if(kind==="contentTemplate")return{id:uid("template"),nameKey:"",descriptionKey:"",image:"",data:{},enabled:true,order:0,tags:[],contentTypeId:contentTypeId??listContentTypes()[0]?.id??"",definitionBindings:[],actionBindings:[],initialStateRules:[],categories:[],capabilities:[],runtimeMode:"unique"};
+  if(kind==="category")return{id:uid("category"),nameKey:"",descriptionKey:"",enabled:true,order:0};
   if(kind==="tag")return{id:uid("tag"),nameKey:"",descriptionKey:"",enabled:true,order:0,color:null};
   if(kind==="reference")return{id:uid("reference"),objectKind:"definition",objectId:""};
   if(kind==="modifier")return{id:uid("modifier"),nameKey:"",descriptionKey:"",enabled:true,order:0,tags:[],targetRef:{objectKind:"definition",objectId:""},operation:"add",valueSource:{kind:"literal",value:0},conditionRefs:[],stacking:{mode:"stack",group:""},priority:0};

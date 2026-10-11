@@ -128,6 +128,15 @@ export function prepareTag(data,options={}){
   if(!(x.color===null||nonempty(x.color)))throw new Error('Tag.color must be null or a non-empty string.');
   bool(x.enabled,'Tag.enabled');return x;
 }
+/** CatalogEntry (§47): a GM-managed Category; consumers store only its id. */
+export function prepareCategory(data,options={}){
+  const x={descriptionKey:'',enabled:true,order:0,...copyJSON(data)};
+  identity(x,'Category',options);
+  if(typeof x.descriptionKey!=='string')throw new Error('Category.descriptionKey must be a string.');
+  if(!Number.isSafeInteger(x.order))throw new Error('Category.order must be a safe integer.');
+  for(const key of Object.keys(x))if(!['id','nameKey','descriptionKey','enabled','order','relations'].includes(key))throw new Error(`Unsupported Category field: ${key}.`);
+  bool(x.enabled,'Category.enabled');return x;
+}
 export function prepareEventType(data,options={}){
   const x={descriptionKey:'',enabled:true,order:0,tags:[],payloadFields:{},roles:[],...copyJSON(data)};
   identity(x,'EventType',options);
@@ -238,4 +247,4 @@ export function prepareSheetDefinition(data,options={}){
   x.layout.components=x.layout.components.map((component,i)=>{if(!isRecord(component)||!nonempty(component.id)||!kinds.has(component.kind))throw new Error(`SheetDefinition.layout.components[${i}] is invalid.`);return {label:'',source:null,editable:false,width:'full',...copyJSON(component)};});return x;
 }
 
-export const PREPARERS={parameters:prepareParameter,formulas:prepareFormula,formulaBindings:prepareFormulaBinding,conditions:prepareCondition,rolls:prepareRoll,outcomes:prepareOutcome,tests:prepareTest,effects:prepareEffect,actions:prepareAction,permissionPolicies:preparePermissionPolicy,eventTypes:prepareEventType,triggers:prepareTrigger,contentTypes:prepareContentType,contentTemplates:prepareContentTemplate,modifiers:prepareModifier,restrictions:prepareRestriction,durations:prepareDuration,creationSystems:prepareCreationSystem,progressionSystems:prepareProgressionSystem,sheetDefinitions:prepareSheetDefinition,tags:prepareTag};
+export const PREPARERS={parameters:prepareParameter,formulas:prepareFormula,formulaBindings:prepareFormulaBinding,conditions:prepareCondition,rolls:prepareRoll,outcomes:prepareOutcome,tests:prepareTest,effects:prepareEffect,actions:prepareAction,permissionPolicies:preparePermissionPolicy,eventTypes:prepareEventType,triggers:prepareTrigger,contentTypes:prepareContentType,contentTemplates:prepareContentTemplate,modifiers:prepareModifier,restrictions:prepareRestriction,durations:prepareDuration,creationSystems:prepareCreationSystem,progressionSystems:prepareProgressionSystem,sheetDefinitions:prepareSheetDefinition,categories:prepareCategory,tags:prepareTag};

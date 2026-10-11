@@ -97,6 +97,13 @@
             {{#if activeTagCount}}<button type="button" class="rta-tag-facets__clear" data-action="clearTagFilters"><i class="fa-solid fa-xmark" aria-hidden="true"></i> {{localize "RTA.UI.ClearTagFilters"}}</button>{{/if}}
           </nav>
           {{/if}}
+          {{#if availableCategories.length}}
+          <nav class="rta-tag-facets" aria-label="{{localize 'RTA.UI.FilterByCategories'}}">
+            <span class="rta-tag-facets__label"><i class="fa-solid fa-folder-tree" aria-hidden="true"></i> {{localize "RTA.UI.FilterByCategories"}}</span>
+            {{#each availableCategories}}<button type="button" class="rta-tag-facets__chip{{#if selected}} is-active{{/if}}" data-action="toggleCategoryFilter" data-category-id="{{id}}" aria-pressed="{{#if selected}}true{{else}}false{{/if}}"><span>{{name}}</span><small>{{count}}</small></button>{{/each}}
+            {{#if activeCategoryCount}}<button type="button" class="rta-tag-facets__clear" data-action="clearCategoryFilters"><i class="fa-solid fa-xmark" aria-hidden="true"></i> {{localize "RTA.UI.ClearCategoryFilters"}}</button>{{/if}}
+          </nav>
+          {{/if}}
           <div class="rta-config-card-grid{{#if displayLines}} rta-display-lines{{/if}}" role="list" data-card-grid>
             {{#each cards}}
               <article class="rta-config-card{{#unless enabled}} rta-config-card--disabled{{/unless}}" style="--rta-card-accent: {{cardColor}}" role="listitem" draggable="{{#if ../lifecycle.canMutate}}true{{else}}false{{/if}}" data-orderable-card data-kind="{{../currentKind}}" data-entry-id="{{id}}">

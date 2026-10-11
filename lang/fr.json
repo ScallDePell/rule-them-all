@@ -15,7 +15,6 @@
       "Override": "Surcharger",
       "HistoricalPresentation": "Données historiques de présentation (lecture seule)"
     },
-    
     "UI": {
       "NewRuleset": "Nouveau Ruleset",
       "RulesetsSubtitle": "Rulesets et versions publiées.",
@@ -36,7 +35,9 @@
       "ClearTagFilters": "Effacer",
       "RequiredCapabilities": "Capacités obligatoires (imposées par le type)",
       "OptionalCapabilities": "Capacités facultatives",
-      "NoOptionalCapabilities": "Aucune capacité facultative disponible."
+      "NoOptionalCapabilities": "Aucune capacité facultative disponible.",
+      "FilterByCategories": "Filtrer par catégories",
+      "ClearCategoryFilters": "Effacer"
     },
     "Nav": {
       "General": "Général",
@@ -183,6 +184,11 @@
         "Allowed": "Définitions de feuilles autorisées",
         "Help": "Vous choisissez des entrées configurées du Ruleset ; aucune opération de jeu n’est exécutée sans gestionnaire Runtime explicite."
       },
+      "categories": {
+        "Label": "Catégories",
+        "Allowed": "Catégories autorisées",
+        "Help": "Vous choisissez des entrées configurées du Ruleset ; aucune opération de jeu n’est exécutée sans gestionnaire Runtime explicite."
+      },
       "tags": {
         "Label": "Tags",
         "Allowed": "Tags autorisés",
@@ -233,6 +239,7 @@
       "creationSystems": "Systèmes de création",
       "progressionSystems": "Systèmes de progression",
       "sheetDefinitions": "Fiches",
+      "categories": "Catégories",
       "tags": "Tags",
       "references": "Références"
     },
@@ -604,7 +611,10 @@
       "Selected": "sélectionné(s)",
       "NoneSelected": "Aucune sélection",
       "GroupsCount": "groupe(s)",
-      "RollFormulaPlaceholder": "Expression de dés Foundry"
+      "RollFormulaPlaceholder": "Expression de dés Foundry",
+      "Category": "Catégorie",
+      "SearchCategories": "Rechercher des catégories…",
+      "NoCategoriesYet": "Aucune catégorie pour le moment. Créez-en dans la section Catégories."
     },
     "EditorDisplay": {
       "NoneSelected": "Aucune sélection",

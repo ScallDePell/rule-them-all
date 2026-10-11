@@ -13,7 +13,7 @@ export const RULESET_SECTIONS = Object.freeze([
   {id:'orchestration', titleKey:'RTA.Nav.Orchestration', collections:['permissionPolicies','eventTypes','triggers']},
   {id:'systems', titleKey:'RTA.Nav.Systems', collections:['creationSystems','progressionSystems','sheetDefinitions']},
   {id:'runtime', titleKey:'RTA.Nav.Runtime', collections:[]},
-  {id:'advanced', titleKey:'RTA.Nav.Advanced', collections:['tags','references']}
+  {id:'advanced', titleKey:'RTA.Nav.Advanced', collections:['categories','tags','references']}
 ]);
 const sectionByCollection = new Map(RULESET_SECTIONS.flatMap(section => section.collections.map(collection => [collection, section.id])));
 if (sectionByCollection.size !== COLLECTION_FIELDS.length || COLLECTION_FIELDS.some(c=>!sectionByCollection.has(c))) {

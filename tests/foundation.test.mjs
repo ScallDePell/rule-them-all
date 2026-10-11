@@ -16,7 +16,7 @@ test("legacy storageVersion 2 is refused",async()=>{const s=new MemoryStorage();
 
 test("DefinitionType cannot be deleted while used",async()=>{const api=await createConfiguratorAPI(new MemoryStorage());const v=(await api.createRuleset(base())).versionId;await api.registerDefinitionType(v,{id:"x",key:"x",nameKey:"X",descriptionKey:"",color:null,enabled:true,order:0,allowedCapabilities:[],defaultCapabilities:[],requiredCapabilities:[],fields:{},constraints:[]});await api.createDefinition(v,{id:"d",key:"d",definitionTypeId:"x",nameKey:"D",descriptionKey:"",data:{},categories:[],capabilities:[],enabled:true,order:0,tags:[]});await assert.rejects(()=>api.deleteDefinitionType(v,"x"),e=>e.code==="REFERENTIAL_INTEGRITY");});
 
-test("legacy specialized APIs are absent",async()=>{const api=await createConfiguratorAPI(new MemoryStorage());for(const name of ["createCharacteristic","createSkill","createResource","createPool","createRelation","createCategory","createCapability"])assert.equal(api[name],undefined,name);});
+test("legacy specialized APIs are absent",async()=>{const api=await createConfiguratorAPI(new MemoryStorage());for(const name of ["createCharacteristic","createSkill","createResource","createPool","createRelation","createCapability"])assert.equal(api[name],undefined,name);});
 
 test("publication then activation uses a published snapshot",async()=>{const api=await createConfiguratorAPI(new MemoryStorage());const v=(await api.createRuleset(base())).versionId;await assert.rejects(()=>api.setActiveVersionId(v),e=>e.code==="VERSION_NOT_ACTIVABLE");await api.publishRuleset(v);await api.setActiveVersionId(v);assert.equal(api.getActiveVersionId(),v);assert.ok(api.getPublishedRuleset(v));});
 

@@ -47,7 +47,7 @@ export function createGraphAPI(registry) {
   }
   const contentTypes=new ContentTypeRegistry();
   const contentTemplates=new ContentTemplateRegistry();
-  const collections = Object.fromEntries(["parameters","formulas","formulaBindings","conditions","rolls","outcomes","tests","effects","actions","permissionPolicies","eventTypes","triggers","modifiers","restrictions","durations","creationSystems","progressionSystems","sheetDefinitions","tags","references"]
+  const collections = Object.fromEntries(["parameters","formulas","formulaBindings","conditions","rolls","outcomes","tests","effects","actions","permissionPolicies","eventTypes","triggers","modifiers","restrictions","durations","creationSystems","progressionSystems","sheetDefinitions","categories","tags","references"]
     .map(name => [name, new RulesetCollectionRegistry(registry, name, {})]));
   collections.contentTypes=contentTypes; collections.contentTemplates=contentTemplates;
   for (const [name, collection] of Object.entries(collections)) {
@@ -121,7 +121,7 @@ export function createGraphAPI(registry) {
     listDependencies: v => new DependencyIndex(definitions.ruleset(v)).list(),
     getDeletionStatus:(v,id,kind="definition")=>{ const used=consumers(v,id,kind); return {canDelete:used.length===0,kind,id,code:used.length?"REFERENTIAL_INTEGRITY":null,consumers:copyJSON(used)}; }
   };
-  const singular = {parameters:"Parameter",formulas:"Formula",formulaBindings:"FormulaBinding",conditions:"Condition",rolls:"Roll",outcomes:"Outcome",tests:"Test",effects:"Effect",actions:"Action",permissionPolicies:"PermissionPolicy",eventTypes:"EventType",triggers:"Trigger",contentTypes:"ContentType",contentTemplates:"ContentTemplate",modifiers:"Modifier",restrictions:"Restriction",durations:"Duration",creationSystems:"CreationSystem",progressionSystems:"ProgressionSystem",sheetDefinitions:"SheetDefinition",tags:"Tag",references:"Reference"};
+  const singular = {parameters:"Parameter",formulas:"Formula",formulaBindings:"FormulaBinding",conditions:"Condition",rolls:"Roll",outcomes:"Outcome",tests:"Test",effects:"Effect",actions:"Action",permissionPolicies:"PermissionPolicy",eventTypes:"EventType",triggers:"Trigger",contentTypes:"ContentType",contentTemplates:"ContentTemplate",modifiers:"Modifier",restrictions:"Restriction",durations:"Duration",creationSystems:"CreationSystem",progressionSystems:"ProgressionSystem",sheetDefinitions:"SheetDefinition",categories:"Category",tags:"Tag",references:"Reference"};
   for (const [name, collection] of Object.entries(collections)) {
     const label=singular[name];
     api[`create${label}`]=(v,d)=>collection.create(v,d); api[`get${label}`]=(v,id)=>collection.get(v,id); api[`list${label}s`]=v=>collection.list(v); if(label.endsWith("y"))api[`list${label.slice(0,-1)}ies`]=api[`list${label}s`]; api[`update${label}`]=(v,id,p)=>collection.update(v,id,p); api[`delete${label}`]=protectedDelete(collection,label.charAt(0).toLowerCase()+label.slice(1));
