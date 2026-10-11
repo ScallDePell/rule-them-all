@@ -1,4 +1,4 @@
-import {RULESET_PACKAGE_FORMAT, LEGACY_RULESET_PACKAGE_FORMAT, RULESET_PACKAGE_FORMAT_VERSION, RULESET_PACKAGE_FORMATS} from "../core/module-contract.mjs";
+import {RULESET_PACKAGE_FORMAT, RULESET_PACKAGE_FORMAT_VERSION, RULESET_PACKAGE_FORMATS, READABLE_PACKAGE_FORMATS} from "../core/module-contract.mjs";
 import {copyJSON, ENGINE_CONTRACT_VERSION, isRecord, normalizeRulesetCollections} from "./configurator-schema.mjs";
 import {assertValidRuleset, assertValidRulesetSchema} from "./configurator-validation.mjs";
 import {storageFingerprint} from "./configurator-storage.mjs";
@@ -37,7 +37,7 @@ function validateVersionRecord(record) {
   return record;
 }
 
-export function exportRulesetData(record, {worldLocalizations, format=LEGACY_RULESET_PACKAGE_FORMAT} = {}) {
+export function exportRulesetData(record, {worldLocalizations, format=RULESET_PACKAGE_FORMAT} = {}) {
   if(!RULESET_PACKAGE_FORMATS.includes(format))throw new Error("Unsupported Ruleset package format.");
   const versionRecord = validateVersionRecord(copyJSON(record));
   const data = {
@@ -55,7 +55,7 @@ export function exportRulesetData(record, {worldLocalizations, format=LEGACY_RUL
 
 export function readRulesetPayload(payload) {
   const data = copyJSON(typeof payload === "string" ? JSON.parse(payload) : payload);
-  if (!isRecord(data) || !RULESET_PACKAGE_FORMATS.includes(data.format) || data.formatVersion !== RULESET_PACKAGE_FORMAT_VERSION) {
+  if (!isRecord(data) || !READABLE_PACKAGE_FORMATS.includes(data.format) || data.formatVersion !== RULESET_PACKAGE_FORMAT_VERSION) {
     throw new Error("Unsupported Ruleset package format.");
   }
   const allowed = ["format", "formatVersion", "engineContractVersion", "rulesetId", "versionId", "version", "versionRecord", "worldLocalizations"];

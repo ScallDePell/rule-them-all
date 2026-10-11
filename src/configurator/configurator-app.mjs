@@ -527,7 +527,7 @@ export class ConfiguratorApp extends ConfiguratorWindow {
       if (action==="runtimeCreateActors") {
         if(typeof game.ruleThemAll.runtimeLab.createTestActors!=="function")throw new Error("Test Actor creation is unavailable.");
         const result=await game.ruleThemAll.runtimeLab.createTestActors({sourceType:this.#runtimeSelection.sourceType||null,targetType:this.#runtimeSelection.targetType||null});
-        const source=result.source??result.pj,target=result.target??result.pnj;
+        const {source,target}=result;
         this.#runtimeSelection.source=source.uuid;this.#runtimeSelection.target=target.uuid;
         let created=0;
         const record=api.getRulesetVersion(this.#selected),ruleset=record?.workingDraft??record?.publishedSnapshot;

@@ -5,7 +5,7 @@ import {RUNTIME_LAB_SAMPLE_PRESETS} from "./runtime-lab-fixtures.mjs";
  * A caller may supply presets for any Ruleset instead of RTA guessing game stats.
  */
 export function buildRuntimeLabDemoProfile(ruleset,role="source",{presets=RUNTIME_LAB_SAMPLE_PRESETS}={}) {
-  const canonicalRole=role==="pnj"?"target":role==="pj"?"source":role; // legacy caller compatibility
+  const canonicalRole=role;
   const preset=presets?.[canonicalRole];
   if(!preset)throw new Error(`No Runtime Lab sample preset configured for role ${canonicalRole}.`);
   const sequence=preset.valueSequence;

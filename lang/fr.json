@@ -574,7 +574,7 @@
       "NoEntries": "Aucune entrée.",
       "GuidedSandboxPrepareActorsSetValuesChooseOneRuleRunItReadTheResult": "Banc d’essai guidé : préparez les acteurs, définissez leurs valeurs, choisissez une règle, exécutez-la et consultez le résultat.",
       "UseTheTwoDedicatedActorsOrSelectExistingActorsThenInitializeTheirRuntimeData": "Utilisez les deux acteurs de test ou choisissez des acteurs existants, puis initialisez leurs données d’exécution.",
-      "CreateSelectPjPnjTest": "Créer / choisir les acteurs de test source et cible",
+      "CreateSelectTestActors": "Créer / choisir les acteurs de test source et cible",
       "InitializeBothActors": "Initialiser les deux acteurs",
       "EditRuntimeValuesDirectlyNoTechnicalIdsAndNoManualInstantiationWorkflow": "Modifiez directement les valeurs d’exécution, sans identifiants techniques ni instanciation manuelle.",
       "Active2": "Actif",

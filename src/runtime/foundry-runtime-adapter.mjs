@@ -41,9 +41,7 @@ export class FoundryRuntimeAdapter{
     const source=await ensure("Rule Them'All - Source Test",selectedSourceType,"source");
     const target=await ensure("Rule Them'All - Target Test",selectedTargetType,"target");
     const describe=actor=>({uuid:actor.uuid,id:actor.id,name:actor.name,type:actor.type});
-    const result={source:describe(source),target:describe(target)};
-    // Backward-compatible aliases for third-party Runtime Lab integrations.
-    return {...result,pj:result.source,pnj:result.target};
+    return {source:describe(source),target:describe(target)};
   }
 
   async roll(formula,data={}){

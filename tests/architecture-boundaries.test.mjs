@@ -4,7 +4,7 @@ import {readFileSync,readdirSync} from "node:fs";
 import {fileURLToPath} from "node:url";
 import path from "node:path";
 import {availableDocumentTypes,resolveDocumentType} from "../src/core/system-document-types.mjs";
-import {MODULE_ID,LEGACY_RULESET_PACKAGE_FORMAT,RULESET_PACKAGE_FORMAT,RUNTIME_HOOKS} from "../src/core/module-contract.mjs";
+import {MODULE_ID,IMPORT_ONLY_PACKAGE_FORMAT,RULESET_PACKAGE_FORMAT,RUNTIME_HOOKS} from "../src/core/module-contract.mjs";
 import {FoundryRuntimeAdapter} from "../src/runtime/foundry-runtime-adapter.mjs";
 import {FoundryContentBridge} from "../src/runtime/foundry-content-bridge.mjs";
 import {exportRulesetData,readRulesetPayload} from "../src/configurator/configurator-serialization.mjs";
@@ -44,7 +44,7 @@ test("Runtime Lab creates source/target with system-defined subtypes and keeps d
   await assert.rejects(()=>adapter.createTestActors(),/Select a subtype for Actor documents/);
   const normal=await adapter.createTestActors({sourceType:"pilot",targetType:"pilot"});
   assert.equal(normal.source.type,"pilot");assert.equal(normal.target.type,"pilot");
-  assert.deepEqual(normal.pj,normal.source);assert.deepEqual(normal.pnj,normal.target);
+  assert.deepEqual(Object.keys(normal).sort(),["source","target"]);
   assert.equal((await adapter.createTestActors({sourceType:"pilot",targetType:"pilot"})).source.uuid,normal.source.uuid);
   assert.equal(actors.length,2);
   await assert.rejects(()=>adapter.createTestActors({sourceType:"mech",targetType:"pilot"}),/already has type/);
@@ -63,19 +63,19 @@ test("content type documentation follows an unrelated Game System without a buil
  }finally{globalThis.game=before;globalThis.Actor=oldActor;globalThis.Item=oldItem;}
 });
 
-test("new package readers accept both RTA and historical RWF envelopes without changing domain data",async()=>{
+test("RTA always exports rta-ruleset and still reads packages exported by the original system",async()=>{
  class MemoryStorage{constructor(){this.value=emptyStorageSnapshot();this.listeners=new Set();}async load(){return structuredClone(this.value)}async save(v){this.value=structuredClone(v)}subscribe(fn){this.listeners.add(fn);return()=>this.listeners.delete(fn)}}
  const api=await createConfiguratorAPI(new MemoryStorage());
  const record=await api.createRuleset({id:"alien-setting",nameKey:"Alien World",version:"1"});
  const value=api.getRulesetVersion(record.versionId);
- const old=exportRulesetData(value),modern=exportRulesetData(value,{format:RULESET_PACKAGE_FORMAT});
- assert.equal(old.format,LEGACY_RULESET_PACKAGE_FORMAT);assert.equal(modern.format,RULESET_PACKAGE_FORMAT);
+ const modern=exportRulesetData(value),old={...modern,format:IMPORT_ONLY_PACKAGE_FORMAT};
+ assert.equal(modern.format,RULESET_PACKAGE_FORMAT);
+ assert.throws(()=>exportRulesetData(value,{format:IMPORT_ONLY_PACKAGE_FORMAT}),/Unsupported/);
  assert.deepEqual(readRulesetPayload(old).record,readRulesetPayload(modern).record);
  assert.throws(()=>exportRulesetData(value,{format:"unknown"}),/Unsupported/);
  assert.throws(()=>readRulesetPayload({...old,format:"unknown"}),/Unsupported/);
  assert.equal(MODULE_ID,"rule-them-all");
- assert.equal(RUNTIME_HOOKS.event,"rwfEvent"); // external integration: deliberately stable
- assert.equal(RUNTIME_HOOKS.actionExecuted,"rwfActionExecuted");
+ assert.deepEqual(RUNTIME_HOOKS,{testResolved:"ruleThemAllTestResolved",event:"ruleThemAllEvent",actionExecuted:"ruleThemAllActionExecuted"});
 });
 
 test("Runtime Lab numeric presets are isolated, injectable TEST DATA rather than game rules",()=>{
@@ -83,7 +83,7 @@ test("Runtime Lab numeric presets are isolated, injectable TEST DATA rather than
  const presets={source:{valueSequence:[7,9],poolMaximum:42},target:{valueSequence:[5],poolMaximum:8}};
  const result=buildRuntimeLabDemoProfile(ruleset,"source",{presets});
  assert.deepEqual(result,{alpha:{base:7,maximum:42,current:42,active:false},beta:{base:9}});
- assert.deepEqual(buildRuntimeLabDemoProfile(ruleset,"pj",{presets}),result);
+ assert.throws(()=>buildRuntimeLabDemoProfile(ruleset,"pj",{presets}),/No Runtime Lab sample preset/);
  assert.throws(()=>buildRuntimeLabDemoProfile(ruleset,"source",{presets:{source:{valueSequence:[],poolMaximum:0}}}),/Invalid Runtime Lab sample/);
  const engine=read("src/runtime/runtime-engine.mjs");
  assert.doesNotMatch(engine,/RUNTIME_LAB_SAMPLE_PRESETS|runtime-lab-fixtures/);
@@ -144,5 +144,5 @@ test("no transient legacy RWF UI hooks or CSS classes remain, except explicit co
  const exceptions=files.filter(f=>f.endsWith("module-contract.mjs"));
  assert.equal(exceptions.length,1);
  for(const file of files.filter(f=>!exceptions.includes(f)))assert.doesNotMatch(readFileSync(file,"utf8"),/rwf-/i,file);
- assert.match(read("src/core/module-contract.mjs"),/LEGACY_RULESET_PACKAGE_FORMAT = "rwf-ruleset"/);
+ assert.match(read("src/core/module-contract.mjs"),/IMPORT_ONLY_PACKAGE_FORMAT = "rwf-ruleset"/);
 });

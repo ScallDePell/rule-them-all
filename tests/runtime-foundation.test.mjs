@@ -30,7 +30,7 @@ test('Runtime blocks Action when Condition fails',async()=>{const {api,v}=await 
 
 test('Runtime initializes all enabled Definitions without duplicating existing state',async()=>{const {api,v}=await setup();await api.publishRuleset(v);const adapter=new MemoryRuntimeAdapter(),engine=new RuntimeEngine({configurator:api,adapter,hooks:null});const actor={kind:'actor',id:'a'};await engine.instantiateDefinition(v,actor,'strength',{initial:{'value.base':3}});const result=await engine.initializeContainer(v,actor);assert.equal(result.created,1);assert.ok(result.state.definitionStates.strength);assert.ok(result.state.definitionStates.vitality);});
 
-test('Runtime emits configured EventTypes and executes matching Triggers',async()=>{const {api,v}=await setup();await api.createEventType(v,{id:'impact',nameKey:'Impact',descriptionKey:'',payloadFields:{},roles:[],enabled:true,order:10});await api.createTrigger(v,{id:'on-impact',nameKey:'On Impact',descriptionKey:'',eventTypeId:'impact',eventFilter:null,conditionRefs:[],actionRefs:['hit'],enabled:true,order:10,tags:[]});await api.publishRuleset(v);const adapter=new MemoryRuntimeAdapter(),calls=[],engine=new RuntimeEngine({configurator:api,adapter,hooks:{callAll:(...a)=>calls.push(a)}});const actor={kind:'actor',id:'a'};await engine.instantiateDefinition(v,actor,'vitality',{initial:{'pool.current':8,'pool.minimum':0,'pool.maximum':12}});const result=await engine.emitEvent(v,'impact',{}, {roles:{self:actor,target:actor}});assert.equal(result.triggered.length,1);assert.equal((await engine.getContainerState(actor)).definitionStates.vitality.capabilityStates.pool.current,6);assert.equal(calls.at(-1)[0],'rwfEvent');});
+test('Runtime emits configured EventTypes and executes matching Triggers',async()=>{const {api,v}=await setup();await api.createEventType(v,{id:'impact',nameKey:'Impact',descriptionKey:'',payloadFields:{},roles:[],enabled:true,order:10});await api.createTrigger(v,{id:'on-impact',nameKey:'On Impact',descriptionKey:'',eventTypeId:'impact',eventFilter:null,conditionRefs:[],actionRefs:['hit'],enabled:true,order:10,tags:[]});await api.publishRuleset(v);const adapter=new MemoryRuntimeAdapter(),calls=[],engine=new RuntimeEngine({configurator:api,adapter,hooks:{callAll:(...a)=>calls.push(a)}});const actor={kind:'actor',id:'a'};await engine.instantiateDefinition(v,actor,'vitality',{initial:{'pool.current':8,'pool.minimum':0,'pool.maximum':12}});const result=await engine.emitEvent(v,'impact',{}, {roles:{self:actor,target:actor}});assert.equal(result.triggered.length,1);assert.equal((await engine.getContainerState(actor)).definitionStates.vitality.capabilityStates.pool.current,6);assert.equal(calls.at(-1)[0],'ruleThemAllEvent');});
 
 test('Runtime delegates rolls to the adapter',async()=>{const {api,v}=await setup();await api.publishRuleset(v);const adapter=new MemoryRuntimeAdapter(),engine=new RuntimeEngine({configurator:api,adapter,hooks:null});const result=await engine.roll('17');assert.equal(result.total,17);});
 
@@ -83,7 +83,7 @@ test('v0.6.1 Test result stays plain even when adapter roll contains a Foundry-l
  assert.equal(result.roll.total,20);
  assert.equal('roll' in result.roll,false);
  assert.doesNotThrow(()=>structuredClone(result));
- assert.equal(calls[0][0],'rwfTestResolved');
+ assert.equal(calls[0][0],'ruleThemAllTestResolved');
 });
 
 // v0.6.2 regression: context-dependent conditions must not crash when the Lab

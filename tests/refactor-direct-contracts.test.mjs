@@ -138,7 +138,7 @@ import {createConfiguratorAPI} from '../src/configurator/configurator-api.mjs';
 import {emptyStorageSnapshot} from '../src/configurator/configurator-storage.mjs';
 import {exportRulesetData,readRulesetPayload} from '../src/configurator/configurator-serialization.mjs';
 
-test('Actor/Item mapping persists through save/reload and legacy+RTA export envelopes',async()=>{
+test('Actor/Item mapping persists through save/reload and RTA export (and the import-only historical format)',async()=>{
   class Storage{
     snapshot=emptyStorageSnapshot(); listeners=new Set();
     async load(){return structuredClone(this.snapshot);}
@@ -153,9 +153,9 @@ test('Actor/Item mapping persists through save/reload and legacy+RTA export enve
   api=await createConfiguratorAPI(storage);
   assert.equal(api.getContentType(v,'pilot-gear').documentSubtype,'augment');
   const version=api.getRulesetVersion(v);
+  const exported=exportRulesetData(version);
   for(const format of ['rwf-ruleset','rta-ruleset']){
-    const payload=exportRulesetData(version,{format});
-    const record=readRulesetPayload(payload).record;
+    const record=readRulesetPayload({...exported,format}).record;
     assert.equal(record.workingDraft.contentTypes.find(t=>t.id==='pilot-gear').documentSubtype,'augment');
   }
 });

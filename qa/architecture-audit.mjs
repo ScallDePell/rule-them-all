@@ -27,8 +27,7 @@ for(const file of files){
  }
 }
 const contract=data(join(root,'src/core/module-contract.mjs'));
-if(!contract.includes('LEGACY_RULESET_PACKAGE_FORMAT = "rwf-ruleset"'))add('legacy-serialization-compat',join(root,'src/core/module-contract.mjs'),'the historical package format must remain explicitly readable');
-if(!contract.includes('testResolved:"rwfTestResolved"')||!contract.includes('event:"rwfEvent"'))add('public-hook-compat',join(root,'src/core/module-contract.mjs'),'historical Foundry hooks must remain readable/callable until an explicit migration');
+if(/RULESET_PACKAGE_FORMATS = Object\.freeze\(\[[^\]]*rwf/.test(contract)||/["']rwf[A-Z]/.test(contract))add('rwf-identifiers',join(root,'src/core/module-contract.mjs'),'RTA writes only RTA package formats and ruleThemAll* hooks');
 for(const locale of ['fr','en']){
  const file=join(root,'lang',locale+'.json');const dict=JSON.parse(data(file));
  if('RWF' in dict)add('game-specific-locales',file,'RWF root localization leaks into the generic module');

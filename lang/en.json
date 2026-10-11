@@ -578,7 +578,7 @@
       "NoEntries": "No entries.",
       "GuidedSandboxPrepareActorsSetValuesChooseOneRuleRunItReadTheResult": "Guided sandbox: prepare Actors, set values, choose one rule, run it, read the result.",
       "UseTheTwoDedicatedActorsOrSelectExistingActorsThenInitializeTheirRuntimeData": "Use the two dedicated Actors or select existing Actors, then initialize their runtime data.",
-      "CreateSelectPjPnjTest": "Create / select Source & Target test Actors",
+      "CreateSelectTestActors": "Create / select Source & Target test Actors",
       "InitializeBothActors": "Initialize both Actors",
       "EditRuntimeValuesDirectlyNoTechnicalIdsAndNoManualInstantiationWorkflow": "Edit runtime values directly. No technical IDs and no manual instantiation workflow.",
       "Active2": "Active",
