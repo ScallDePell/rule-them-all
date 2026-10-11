@@ -16,7 +16,7 @@
   min-height: var(--rta-form-control-height);
 }
 
-@media (max-width:620px) {
+@container rta-window (max-width: 586px) {
   .rta-picker > summary {
     grid-template-columns: 1fr;
     gap: var(--rta-space-2);

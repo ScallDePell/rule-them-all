@@ -93,7 +93,7 @@
   margin-bottom: var(--rta-space-8);
 }
 
-@media (max-width:850px) {
+@container rta-window (max-width: 816px) {
   .rta-configurator .rta-general__cards {
     grid-template-columns: 1fr;
   }

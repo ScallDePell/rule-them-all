@@ -117,7 +117,7 @@
   display: none;
 }
 
-@media (max-width:760px) {
+@container rta-window (max-width: 726px) {
   .rta-explorer__columns {
     grid-template-columns: 116px minmax(0,1fr);
   }
@@ -233,7 +233,7 @@
   text-align: left;
 }
 
-@media (max-width:760px) {
+@container rta-window (max-width: 726px) {
   .rta-configurator__workspace:has(> .rta-explorer) {
     grid-template-columns: 165px minmax(0,1fr);
   }

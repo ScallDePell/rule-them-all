@@ -38,7 +38,7 @@ test('one canonical label/control geometry and specialized right-hand operand la
   assert.match(css,/\.rta-rule-operand__controls\s*\{\s*display:\s*grid;\s*grid-template-columns:\s*minmax\(8rem, 10rem\) minmax\(0, 1fr\) auto;/);
   assert.match(css,/\.rta-rule-operand__controls > \[data-rule-operand-editor\]\s*\{\s*grid-column:\s*2;/);
   assert.match(css,/\.rta-rule-operand__controls > \[data-action="removeRuleOperand"\]\s*\{\s*grid-column:\s*3;\s*\}/);
-  assert.match(css,/@media \(max-width:620px\)[\s\S]*\.rta-rule-operand__controls > \[data-rule-operand-editor\] \{\s*grid-column:\s*1 \/ -1;\s*grid-row:\s*2;\s*\}/);
+  assert.match(css,/@container rta-window \(max-width: 586px\)[\s\S]*\.rta-rule-operand__controls > \[data-rule-operand-editor\] \{\s*grid-column:\s*1 \/ -1;\s*grid-row:\s*2;\s*\}/);
   assert.match(css,/\.rta-rule-builder \.rta-select__trigger,[\s\S]*?height:\s*var\(--rta-form-control-height\);/);
   assert.doesNotMatch(css,/\.rta-rule-operand > \.rta-select \{ grid-column:/);
 });

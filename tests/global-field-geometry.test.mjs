@@ -20,7 +20,7 @@ test('normal selectors share the framed fieldset right edge and compact operands
   assert.match(css,/\.rta-config-entry__scroll > \.rta-form-row--picker\s*\{[\s\S]*?padding-inline-end:\s*var\(--rta-space-6\)/);
   assert.match(css,/\.rta-rule-builder > \.rta-form-row,[\s\S]*?width:\s*calc\(100% \+ \.7rem \+ 1px\)/);
   assert.match(css,/\.rta-rule-operand__controls:not\(:has\(> \[data-action="removeRuleOperand"\]\)\)/);
-  assert.match(css,/@media \(max-width:\s*620px\)[\s\S]*?\.rta-config-entry__scroll > \.rta-form-row--picker/);
+  assert.match(css,/@container rta-window \(max-width:\s*586px\)[\s\S]*?\.rta-config-entry__scroll > \.rta-form-row--picker/);
   assert.match(select,/const formRow=\(control,label\)=>/);
 });
 

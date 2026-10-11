@@ -47,7 +47,7 @@ test('one shared CSS grid, nested-inset compensation and responsive behavior',()
   assert.match(block,/--rta-form-label-column-max:\s*200px/);
   assert.match(block,/\.rta-form-row\s*\{[\s\S]*?grid-template-columns:\s*minmax\(calc\(var\(--rta-form-label-column-min\)/);
   assert.match(block,/--rta-form-column-inset:\s*\.8rem/);
-  assert.match(block,/@media\s*\(max-width:\s*620px\)/);
+  assert.match(block,/@container rta-window\s*\(max-width:\s*586px\)/);
   assert.match(block,/label\.rta-form-row--nested/);
 });
 test('specialized compact builders and technical panels stay explicitly excluded',()=>{

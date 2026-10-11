@@ -134,7 +134,9 @@ FOUNDRY_CSS_PATH=os.environ.get('RTA_FOUNDRY_CSS')
 if FOUNDRY_CSS_PATH:
  BASE='''
 html,body{margin:0;padding:0}
-.qa-root{margin:auto;padding:12px 14px;max-width:850px;box-sizing:border-box}
+/* La fenêtre occupe toute la largeur : largeur de fenêtre = largeur de vue. */
+.application{position:relative;width:100%;box-sizing:border-box}
+.qa-root{padding:16px;box-sizing:border-box}
 .rta-config-entry{height:auto;min-height:0;display:block;overflow:visible}
 .rta-config-entry form[data-entry-form]{display:block;overflow:visible}
 .rta-config-entry__scroll{display:block;overflow:visible}

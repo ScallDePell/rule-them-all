@@ -1,6 +1,17 @@
 /* Rule Them'All — layout.css : Coquille du configurateur et éléments transverses.
    L'ordre de chargement (module.json "styles") fait partie de la cascade. */
 
+/* Les règles responsives suivent la fenêtre Foundry, pas le navigateur.
+   Seuil @container = largeur de fenêtre visée − 34 px (bordure 2 px +
+   marge intérieure 32 px de .window-content). */
+.rta-configurator, .rta-config-entry {
+  container: rta-window / inline-size;
+  /* La containment inline-size annule la largeur intrinsèque : on force la
+     largeur pleine pour ne pas dépendre du display du parent. */
+  inline-size: 100%;
+}
+
+
 .rta-configurator__selector {
   flex-shrink: 0;
   margin-block: var(--rta-space-4);
@@ -116,7 +127,7 @@
   margin-block-start: var(--rta-space-8);
 }
 
-@media (max-width:700px) {
+@container rta-window (max-width: 666px) {
   .rta-configurator__workspace {
     grid-template-columns: minmax(125px, 150px) minmax(0, 1fr);
   }

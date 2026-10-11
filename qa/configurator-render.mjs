@@ -47,7 +47,7 @@ const views=[['rulesets','',''],['general',v,'general'],['definitionTypes',v,'de
 for(const [name,selected,view,mode='tiles'] of views){
   globalThis.__qa={selected,view:view||'general',mode};
   const app=new ConfiguratorApp();const ctx=await app._prepareContext({});
-  const html=`<!doctype html><html lang="en"><meta charset="utf-8"><style>${css}\nbody{margin:0;font-family:sans-serif;font-size:14px}#rta-configurator{height:860px;display:flex;flex-direction:column}</style><body class="theme-dark"><div id="rta-configurator" class="application theme-dark"><div class="window-content" style="display:flex;flex-direction:column;min-height:0;overflow:hidden;height:100%">${tpl(ctx)}</div></div></body></html>`;
+  const html=`<!doctype html><html lang="en"><meta charset="utf-8"><style>${css}\nbody{margin:0;font-family:sans-serif;font-size:14px}#rta-configurator{position:relative;width:100%;max-width:none;box-sizing:border-box;height:860px;display:flex;flex-direction:column}</style><body class="theme-dark"><div id="rta-configurator" class="application theme-dark"><div class="window-content" style="display:flex;flex-direction:column;min-height:0;overflow:hidden;height:100%">${tpl(ctx)}</div></div></body></html>`;
   writeFileSync(join(out,name+'.html'),html);
 }
 console.log('rendered',views.length);

@@ -189,7 +189,7 @@
   margin: 0;
 }
 
-@media (max-width:720px) {
+@container rta-window (max-width: 686px) {
   .rta-runtime-state-row {
     grid-template-columns: 1fr;
   }

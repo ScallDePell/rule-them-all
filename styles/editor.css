@@ -228,7 +228,7 @@
   border-left: 2px solid var(--color-border-light-primary);
 }
 
-@media (max-width:700px) {
+@container rta-window (max-width: 666px) {
   .rta-field-editor__grid {
     grid-template-columns: 1fr;
   }
@@ -280,7 +280,7 @@
   gap: var(--rta-space-2);
 }
 
-@media (max-width:700px) {
+@container rta-window (max-width: 666px) {
   .rta-configurator__workspace-header > div:first-of-type {
     justify-content: flex-start;
   }
@@ -604,7 +604,7 @@
   padding-inline-end: var(--rta-space-6);
 }
 
-@media (max-width:620px) {
+@container rta-window (max-width: 586px) {
   /* On narrow windows the form grid is a single column: align standalone
      pickers with the fields INSIDE the ordinary framed section. */
   .rta-config-entry__scroll > .rta-form-row--picker {
@@ -634,7 +634,7 @@
   margin-block: var(--rta-space-1);
 }
 
-@media (max-width:620px) {
+@container rta-window (max-width: 586px) {
   :is(.rta-config-entry, .rta-configurator) .rta-form-row,
   :is(.rta-config-entry, .rta-configurator) label.rta-form-row--nested,
   :is(.rta-config-entry, .rta-configurator) .rta-field-editor label.rta-form-row--nested {
@@ -696,6 +696,6 @@
 
 .rta-config-entry .rta-declarative-toggle { display: inline-flex; gap: var(--rta-space-3); align-items: center; margin: 0; white-space: nowrap; }
 
-@media (max-width:620px) { .rta-config-entry .rta-declarative-constraint { grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); } .rta-config-entry .rta-declarative-presentation__controls { flex-wrap: wrap; } }
+@container rta-window (max-width: 586px) { .rta-config-entry .rta-declarative-constraint { grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); } .rta-config-entry .rta-declarative-presentation__controls { flex-wrap: wrap; } }
 
 .rta-config-entry .rta-config-table td:has(> input[type="checkbox"]) { text-align:center; vertical-align:middle; }

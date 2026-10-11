@@ -33,8 +33,8 @@ test('cards use persisted Ruleset colors, never CSS colors assigned to game obje
   assert.doesNotMatch(source, /\.rta-config-card\.rta-config-card--(?:characteristic|skill|resource|pool|parameter|formula|condition|effect|action|category|capability)\s*\{/);
 });
 
-test('CSS has one unconditional rule per selector; responsive exceptions stay in media queries', () => {
-  // Count only unconditional selectors at depth zero, never @media branches.
+test('CSS has one unconditional rule per selector; responsive exceptions stay in container queries', () => {
+  // Count only unconditional selectors at depth zero, never @media or @container branches.
   let depth = 0;
   let start = 0;
   const selectors = [];
