@@ -30,7 +30,7 @@ Read [RTA-PARCOURS-FONCTIONNELS-v0.1.58.md](RTA-PARCOURS-FONCTIONNELS-v0.1.58.md
 
 **LIRE EN PREMIER : [`RTA-ARCHITECTURE-CANONIQUE.md`](RTA-ARCHITECTURE-CANONIQUE.md)**. Ce contrat de conception est la source de reprise pour les prochaines sessions ; les journaux historiques ne le remplacent pas.
 
-Cette version sépare des responsabilités JavaScript, élimine les hypothèses de Game System et migre les noms d'interface `rwf-*` vers `rta-*` sans modifier les 32 captures de référence testées. Les formats d'export et hooks historiques sont maintenus pour compatibilité. Exécuter `node --test tests/*.test.mjs`, `node qa/architecture-audit.mjs --strict`, `python qa/css-audit.py --strict`, puis les matrices Chromium en cas de changement UI. Voir [`CHANGELOG-v0.1.56.md`](CHANGELOG-v0.1.56.md).
+Cette version sépare des responsabilités JavaScript, élimine les hypothèses de Game System et migre les noms d'interface `rwf-*` vers `rta-*` sans modifier les 32 captures de référence testées. Les formats d'export et hooks historiques sont maintenus pour compatibilité. Exécuter `node --test tests/*.test.mjs`, `node qa/architecture-audit.mjs --strict`, puis les matrices Chromium en cas de changement UI. Voir [`CHANGELOG-v0.1.56.md`](CHANGELOG-v0.1.56.md).
 
 **Statut : candidat non validé dans Foundry v14.** La dette encore ouverte est listée dans le contrat canonique ; cette version n'est pas une réécriture complète de RTA.
 

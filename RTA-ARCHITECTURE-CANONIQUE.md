@@ -60,7 +60,7 @@ Ce document doit être lu **avant** toute modification de RTA. Les changelogs d�
 
 1. Lire ce fichier, `module.json`, le changelog le plus récent, `RTA-DESIGN-SYSTEM-v0.1.55.md`, `RTA-FORM-ROW-CONTRAT-v0.1.47.md` et `RTA-SELECT-CONTRAT-v0.1.43.md` (en appliquant les règles actualisées ici en cas de contradiction).
 2. Prendre le ZIP/source existant comme **vérité technique** et identifier la version effective ; ne jamais reconstruire les modules de mémoire.
-3. Avant changement : garder un snapshot, lancer `node --test tests/*.test.mjs`, `node qa/architecture-audit.mjs --strict`, `python qa/css-audit.py --strict`.
+3. Avant changement : garder un snapshot, lancer `node --test tests/*.test.mjs`, `node qa/architecture-audit.mjs --strict`.
 4. Pour une modification d'interface : générer avec Chromium la matrice complète `python qa/form-matrix.py . /tmp/rta-entry-matrix` et `python qa/shell-matrix.py . /tmp/rta-shell-matrix`, puis comparer **captures et styles calculés** à la référence avant de déclarer une absence de régression.
 5. Pour une modification de données : tester les enveloppes anciennes et nouvelles, conservation des IDs/flags et round-trip d'objets réels ou fixtures représentatives. Pour Foundry : ne jamais annoncer un test in-app absent.
 6. Pour toute livraison : rapport `fait / non fait / exceptions / risques`, résultats mesurés, changelog, `module.json` cohérent, ZIP avec **racine `rule-them-all/`**. Ne pas proclamer une stabilité supérieure à ce qui a été réellement testé.

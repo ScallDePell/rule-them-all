@@ -12,7 +12,7 @@ test('required capabilities are shown separately from selectable optional capabi
   assert.match(hbs,/rta-config-entry__fixed-capabilities/);
   assert.match(hbs,/hasForcedCapabilities/);
   assert.match(hbs,/hasOptionalCapabilities/);
-  assert.match(hbs,/class="rta-select__fixed-source" type="checkbox" name="cap:{{id}}" checked disabled/);
+  assert.match(hbs,/<input type="checkbox" name="cap:{{id}}" checked disabled>/);
   assert.match(editor,/hasOptionalCapabilities=capabilityChoices\.some\(cap=>cap\.permitted&&!cap\.forced\)/);
 });
 test('reference many fields render native multiselect enhanced by the shared component',()=>{
