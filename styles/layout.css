@@ -20,7 +20,7 @@
 .rta-configurator__toolbar {
   display: flex;
   align-items: center;
-  gap: var(--rta-space-4);
+  gap: var(--rta-gap-row);
   margin-block: var(--rta-space-3) var(--rta-space-5);
   flex-wrap: wrap;
 }
@@ -46,7 +46,7 @@
   display: inline-flex;
   align-items: center;
   justify-content: flex-end;
-  gap: var(--rta-space-2);
+  gap: var(--rta-gap-tight);
   flex-wrap: nowrap;
   white-space: nowrap;
 }
@@ -102,7 +102,7 @@
   min-height: 0;
   overflow-y: auto;
   padding: var(--rta-space-5) var(--rta-space-4) var(--rta-space-5) var(--rta-space-3);
-  border-right: 1px solid var(--color-border-light-primary);
+  border-right: 1px solid var(--rta-color-border);
 }
 
 .rta-configurator__sidebar button {
@@ -116,7 +116,7 @@
 
 .rta-configurator__sidebar button.active {
   font-weight: 700;
-  background: var(--color-cool-4, rgba(0, 0, 0, 0.12));
+  background: var(--rta-color-surface-raised);
 }
 
 .rta-configurator__workspace-content {
@@ -144,7 +144,7 @@
 
 /* ergonomic field cards + single-line Ruleset header. */
 .rta-configurator__workspace-header {
-  border-bottom: 1px solid var(--color-border-light-primary);
+  border-bottom: 1px solid var(--rta-color-border);
   flex-wrap: nowrap;
   min-height: 3rem;
 }
@@ -154,7 +154,7 @@
   flex-direction: row;
   align-items: baseline;
   justify-content: center;
-  gap: var(--rta-space-4);
+  gap: var(--rta-gap-row);
 }
 
 .rta-configurator__workspace-header > .rta-config-actions {
@@ -166,7 +166,7 @@
 
 .rta-configurator__section-actions {
   display: flex;
-  gap: var(--rta-space-4);
+  gap: var(--rta-gap-row);
   align-items: center;
   flex-wrap: wrap;
   justify-content: flex-end;
@@ -199,7 +199,7 @@
 .rta-configurator__bottom-bar {
   display: flex;
   align-items: end;
-  gap: var(--rta-space-6);
+  gap: var(--rta-gap-block);
   flex: 0 0 auto;
   margin-top: auto;
   min-width: 0;
@@ -230,11 +230,27 @@
 .rta-configurator {
   --rta-card-width: 282px;
   --rta-card-height: 94px;
-  --rta-card-gap: 12px;
+  --rta-card-gap: var(--rta-gap-block);
   --rta-card-action-size: 23px;
   --rta-card-padding-top: .65rem;
   --rta-card-padding-bottom: .5rem;
   --rta-panel-border: var(--rta-color-border);
   --rta-panel-radius: 4px;
   --rta-rail-width: 4px;
+}
+
+/* VERTICAL RHYTHM — same contract as the entry editors (editor.css):
+   --rta-gap-block between the main blocks of a view, --rta-gap-row inside a
+   card, panel or Runtime Lab step. */
+.rta-configurator :is(.rta-configurator__scroll, .rta-runtime-lab, .rta-lab-step, nav.rta-explorer, .rta-dependencies__list, .rta-dependencies__detail, .rta-general__card, .rta-configurator__storage) {
+  row-gap: 0;
+}
+.rta-configurator :is(.rta-configurator__scroll, .rta-runtime-lab, .rta-lab-step, nav.rta-explorer, .rta-dependencies__list, .rta-dependencies__detail, .rta-general__card, .rta-configurator__storage) > * {
+  margin-block: 0;
+}
+.rta-configurator :is(.rta-lab-step, .rta-dependencies__list, .rta-dependencies__detail, .rta-general__card, .rta-configurator__storage) > :not([hidden]) ~ :not([hidden]) {
+  margin-block-start: var(--rta-gap-row);
+}
+.rta-configurator :is(.rta-configurator__scroll, .rta-runtime-lab, nav.rta-explorer) > :not([hidden]) ~ :not([hidden]) {
+  margin-block-start: var(--rta-gap-block);
 }

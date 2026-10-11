@@ -4,14 +4,14 @@
 /* General presentation only; other views retain their styling. */
 .rta-configurator .rta-general {
   display: grid;
-  gap: var(--rta-space-6);
+  gap: var(--rta-gap-block);
 }
 
 .rta-configurator .rta-general__header {
   display: flex;
   justify-content: space-between;
   align-items: flex-start;
-  gap: var(--rta-space-8);
+  gap: var(--rta-gap-block);
   padding: var(--rta-space-2) var(--rta-space-1) var(--rta-space-7);
   border-bottom: 1px solid var(--rta-color-border);
 }
@@ -43,7 +43,7 @@
 .rta-configurator .rta-general__cards {
   display: grid;
   grid-template-columns: repeat(2,minmax(0,1fr));
-  gap: var(--rta-space-6);
+  gap: var(--rta-gap-block);
 }
 
 .rta-configurator .rta-general__card, .rta-configurator .rta-general__storage {
@@ -55,7 +55,7 @@
 }
 
 .rta-configurator .rta-general__card h3 {
-  margin: 0 0 var(--rta-space-8);
+  margin: 0;
   font-size: var(--rta-type-medium);
 }
 
@@ -67,7 +67,7 @@
 .rta-configurator .rta-general__card dl, .rta-configurator .rta-general__storage dl {
   display: grid;
   grid-template-columns: minmax(90px,1fr) minmax(0,1.7fr);
-  gap: var(--rta-space-4) var(--rta-space-6);
+  gap: var(--rta-gap-row) var(--rta-gap-block);
   margin: 0;
 }
 
@@ -90,7 +90,7 @@
 }
 
 .rta-configurator .rta-general__storage[open] summary {
-  margin-bottom: var(--rta-space-8);
+  margin-bottom: var(--rta-gap-row);
 }
 
 @container rta-window (max-width: 816px) {
@@ -112,7 +112,7 @@
 }
 
 .rta-configurator .rta-general__storage h3 {
-  margin: 0 0 var(--rta-space-8);
+  margin: 0;
   font-size: var(--rta-type-medium);
 }
 
@@ -133,6 +133,6 @@
 .rta-configurator .rta-general__header-actions {
   display: flex;
   align-items: center;
-  gap: var(--rta-space-5);
+  gap: var(--rta-gap-row);
   flex-wrap: wrap;
 }

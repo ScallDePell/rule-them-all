@@ -4,9 +4,9 @@
 .rta-rule-builder {
   display: flex;
   flex-direction: column;
-  gap: var(--rta-space-5);
-  padding: var(--rta-space-6);
-  border: 1px solid var(--color-border-light-primary);
+  gap: var(--rta-gap-row);
+  padding: var(--rta-frame-pad);
+  border: var(--rta-frame-border) solid var(--rta-color-border);
   border-radius: var(--rta-radius-panel);
   background: rgba(255,255,255,.018);
 }
@@ -15,7 +15,7 @@
   display: flex;
   align-items: baseline;
   justify-content: space-between;
-  gap: var(--rta-space-5);
+  gap: var(--rta-gap-row);
 }
 
 .rta-rule-builder__heading > span {
@@ -30,20 +30,15 @@
 .rta-rule-operands {
   display: flex;
   flex-direction: column;
-  gap: var(--rta-space-4);
+  gap: var(--rta-gap-row);
   min-width: 0;
-}
-
-.rta-rule-builder > .rta-form-row,
-.rta-rule-builder .rta-rule-operand.rta-form-row {
-  --rta-form-column-inset: calc(1.5rem + 2px);
 }
 
 .rta-rule-operand__controls {
   display: grid;
   grid-template-columns: minmax(8rem, 10rem) minmax(0, 1fr) auto;
   align-items: center;
-  gap: var(--rta-space-4);
+  gap: var(--rta-gap-row);
   min-width: 0;
   width: 100%;
 }

@@ -4,7 +4,7 @@
 /* Dependencies: read-only two-column explorer, using the existing configurator panel language. */
 .rta-configurator .rta-dependencies__stats {
   display: flex;
-  gap: var(--rta-space-6);
+  gap: var(--rta-gap-block);
   flex-wrap: wrap;
   margin: 0 0 var(--rta-space-6);
   color: var(--rta-color-text-secondary);
@@ -14,7 +14,7 @@
 .rta-configurator .rta-dependencies {
   display: grid;
   grid-template-columns: minmax(210px,34%) minmax(0,1fr);
-  gap: var(--rta-space-6);
+  gap: var(--rta-gap-block);
   min-height: 360px;
   align-items: stretch;
 }
@@ -30,7 +30,7 @@
 .rta-configurator .rta-dependencies__search {
   display: flex;
   align-items: center;
-  gap: var(--rta-space-4);
+  gap: var(--rta-gap-row);
   margin-bottom: var(--rta-space-5);
 }
 
@@ -42,7 +42,7 @@
 .rta-configurator .rta-dependencies__items {
   display: flex;
   flex-direction: column;
-  gap: var(--rta-space-2);
+  gap: var(--rta-gap-tight);
   max-height: 420px;
   overflow: auto;
 }
@@ -51,7 +51,7 @@
   display: flex;
   flex-direction: column;
   align-items: flex-start;
-  gap: var(--rta-space-1);
+  gap: var(--rta-gap-tight);
   text-align: left;
   min-width: 0;
   width: 100%;
@@ -82,7 +82,7 @@
   display: flex;
   align-items: flex-start;
   justify-content: space-between;
-  gap: var(--rta-space-6);
+  gap: var(--rta-gap-block);
   border-bottom: 1px solid var(--rta-panel-border);
   padding-bottom: var(--rta-space-5);
 }
@@ -104,7 +104,7 @@
 .rta-configurator .rta-dependencies__relations {
   display: flex;
   flex-direction: column;
-  gap: var(--rta-space-3);
+  gap: var(--rta-gap-row);
   max-height: 380px;
   overflow: auto;
 }
@@ -120,7 +120,7 @@
   display: flex;
   align-items: center;
   justify-content: space-between;
-  gap: var(--rta-space-5);
+  gap: var(--rta-gap-row);
   cursor: pointer;
   padding: var(--rta-space-5);
   list-style: none;
@@ -133,7 +133,7 @@
 .rta-configurator .rta-dependencies__relation summary span {
   display: flex;
   flex-direction: column;
-  gap: var(--rta-space-1);
+  gap: var(--rta-gap-tight);
   min-width: 0;
   overflow-wrap: anywhere;
 }
@@ -145,7 +145,7 @@
 .rta-configurator .rta-dependencies__relation dl {
   display: grid;
   grid-template-columns: 80px minmax(0,1fr);
-  gap: var(--rta-space-3);
+  gap: var(--rta-gap-row);
   padding: var(--rta-space-5);
   margin: 0;
   border-top: 1px solid var(--rta-panel-border);
@@ -199,14 +199,14 @@
   display: flex;
   align-items: center;
   justify-content: space-between;
-  gap: var(--rta-space-4);
+  gap: var(--rta-gap-row);
   padding: var(--rta-space-4) 0;
   font-size: var(--rta-type-base);
 }
 
 .rta-configurator .rta-dependencies__graph-tools>div {
   display: flex;
-  gap: var(--rta-space-2);
+  gap: var(--rta-gap-tight);
 }
 
 .rta-configurator .rta-dependencies__graph-tools button {
@@ -311,7 +311,7 @@
   display: grid;
   grid-template-columns: minmax(0,1fr) 26px;
   align-items: stretch;
-  gap: var(--rta-space-3);
+  gap: var(--rta-gap-row);
   min-height: 44px;
   border: 1px solid var(--rta-panel-border);
   border-radius: var(--rta-panel-radius);
@@ -336,7 +336,7 @@
   color: var(--rta-color-warning);
   display: inline-flex;
   align-items: center;
-  gap: var(--rta-space-3);
+  gap: var(--rta-gap-row);
   width: auto;
   height: auto;
   min-height: 23px;

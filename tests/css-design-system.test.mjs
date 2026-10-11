@@ -14,7 +14,8 @@ test('canonical spacing tokens are declared once and used by all gap declaration
   // Unknown, hand-written dimensions must not silently proliferate inside gap rules.
   for (const declaration of cssWithoutComments.matchAll(/(?:^|\s)(?:row-gap|column-gap|gap)\s*:\s*([^;]+);/gm)) {
     const value = declaration[1].trim();
-    assert.ok(value === '0' || /^var\(--rta-(?:space-|form-|card-|editor-)/.test(value),
+    // Only the three gap tokens (or aliases defined from them) are allowed.
+    assert.ok(/^(?:0|var\(--rta-(?:gap-(?:tight|row|block)|form-row-gap|form-control-gap|card-gap|editor-gap)\))(?:\s+(?:0|var\(--rta-(?:gap-(?:tight|row|block)|form-row-gap|form-control-gap|card-gap|editor-gap)\)))?$/.test(value),
       `Noncanonical spacing declaration: ${value}`);
   }
 });
@@ -60,6 +61,7 @@ test('hard-coded colors live only in tokens.css', () => {
   for (const path of stylesheetPaths().filter(path => !path.endsWith('/tokens.css'))) {
     const text = readFileSync(new URL(`../${path}`, import.meta.url), 'utf8').replace(/\/\*[\s\S]*?\*\//g, '');
     assert.doesNotMatch(text, /#[0-9a-fA-F]{3,8}\b/, `${path} contains a literal hex color`);
+    assert.doesNotMatch(text, /var\(--color-/, `${path} reads a Foundry color variable directly instead of a --rta-color-* token`);
   }
 });
 
@@ -67,4 +69,36 @@ test('!important is reserved to the visually hidden native select', () => {
   const text = readCssBundle().replace(/\/\*[\s\S]*?\*\//g, '');
   const offenders = [...text.matchAll(/([^{}]+)\{([^{}]*!important[^{}]*)\}/g)].map(match => match[1].trim()).filter(selector => selector !== '.rta-select__native');
   assert.deepEqual(offenders, []);
+});
+
+test('gap aliases resolve to the three gap tokens (4 / 8 / 12 px)', () => {
+  assert.match(source, /--rta-gap-tight:\s*var\(--rta-space-2\)/);
+  assert.match(source, /--rta-gap-row:\s*var\(--rta-space-4\)/);
+  assert.match(source, /--rta-gap-block:\s*var\(--rta-space-6\)/);
+  for (const alias of ['form-row-gap','form-control-gap','card-gap','editor-gap']) {
+    for (const m of cssWithoutComments.matchAll(new RegExp(`--rta-${alias}:\\s*([^;]+);`, 'g'))) {
+      assert.match(m[1].trim(), /^var\(--rta-gap-(?:tight|row|block)\)$/, `${alias} = ${m[1]}`);
+    }
+  }
+});
+
+test('checkboxes have exactly Foundry --checkbox-size so its two icon layers overlap', () => {
+  assert.match(cssWithoutComments, /input\[type="checkbox"\]\s*{[^}]*inline-size:\s*var\(--checkbox-size[^}]*block-size:\s*var\(--checkbox-size/);
+  for (const rule of cssWithoutComments.matchAll(/([^{}]*input\[type="checkbox"\][^{}]*){([^}]*)}/g)) {
+    assert.doesNotMatch(rule[2], /(?:^|[;\s])(?:width|height)\s*:/, `Checkbox resized outside the canonical rule: ${rule[1].trim()}`);
+  }
+});
+
+test('frames share one padding/border step used as the column inset', () => {
+  assert.match(source, /--rta-frame-step:\s*calc\(var\(--rta-frame-pad\)\s*\+\s*var\(--rta-frame-border\)\)/);
+  assert.match(cssWithoutComments, /--rta-form-column-inset:\s*calc\(2 \* var\(--rta-frame-step\)\)/);
+  // Only 0 (no frame) or multiples of --rta-frame-step: no hand-tuned insets.
+  for (const m of cssWithoutComments.matchAll(/--rta-form-column-inset:\s*([^;]+);/g)) {
+    assert.match(m[1].trim(), /^(?:0px|var\(--rta-frame-step\)|calc\([23] \* var\(--rta-frame-step\)\))$/, m[1]);
+  }
+});
+
+test('vertical rhythm: siblings are spaced by a single gap token, never stacked margins', () => {
+  assert.match(cssWithoutComments, /> :not\(\[hidden\]\) ~ :not\(\[hidden\]\)\s*{\s*margin-block-start:\s*var\(--rta-gap-row\)/);
+  assert.match(cssWithoutComments, /> :not\(\[hidden\]\) ~ :not\(\[hidden\]\)\s*{\s*margin-block-start:\s*var\(--rta-gap-block\)/);
 });

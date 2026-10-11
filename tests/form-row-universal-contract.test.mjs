@@ -46,7 +46,7 @@ test('one shared CSS grid, nested-inset compensation and responsive behavior',()
   assert.ok(block);
   assert.match(block,/--rta-form-label-column-max:\s*200px/);
   assert.match(block,/\.rta-form-row\s*\{[\s\S]*?grid-template-columns:\s*minmax\(calc\(var\(--rta-form-label-column-min\)/);
-  assert.match(block,/--rta-form-column-inset:\s*\.8rem/);
+  assert.match(block,/--rta-form-column-inset:\s*var\(--rta-frame-step\)/);
   assert.match(block,/@container rta-window\s*\(max-width:\s*586px\)/);
   assert.match(block,/label\.rta-form-row--nested/);
 });

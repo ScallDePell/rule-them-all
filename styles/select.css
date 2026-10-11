@@ -19,7 +19,7 @@
 @container rta-window (max-width: 586px) {
   .rta-picker > summary {
     grid-template-columns: 1fr;
-    gap: var(--rta-space-2);
+    gap: var(--rta-gap-tight);
   }
   .rta-picker > summary > span {
     padding-inline-start: var(--rta-space-8);
@@ -65,12 +65,12 @@
   display: flex;
   align-items: center;
   justify-content: space-between;
-  gap: var(--rta-space-4);
+  gap: var(--rta-gap-row);
   padding: var(--rta-space-3) var(--rta-space-5);
   border: 1px solid var(--rta-color-border);
   border-radius: var(--rta-radius-control);
   background: var(--rta-color-surface-option);
-  color: var(--color-text-primary, inherit);
+  color: var(--rta-color-text, inherit);
   font: inherit;
   font-weight: 400;
   text-align: left;
@@ -119,7 +119,7 @@
   border: 1px solid var(--rta-color-border);
   border-radius: var(--rta-radius-control);
   background: var(--rta-color-surface-option);
-  color: var(--color-text-primary, inherit);
+  color: var(--rta-color-text, inherit);
   box-shadow: 0 8px 24px var(--rta-shadow-color);
   overflow: hidden;
 }
@@ -160,7 +160,7 @@
   display: flex;
   flex-direction: row;
   align-items: center;
-  gap: var(--rta-space-4);
+  gap: var(--rta-gap-row);
   flex: 0 0 auto;
   width: 100%;
   min-height: 1.9rem;
@@ -185,13 +185,6 @@
 .rta-select__panel .rta-select__option.is-disabled {
   opacity: .46;
   cursor: not-allowed;
-}
-
-.rta-select__panel .rta-select__option > input[type="checkbox"] {
-  width: 17px;
-  height: 17px;
-  margin: 0;
-  flex: 0 0 auto;
 }
 
 /* Seule exception aux !important : le <select> natif reste dans le DOM pour le
@@ -225,7 +218,7 @@
   font: inherit;
   font-weight: 600;
   margin: 0 0 var(--rta-space-2);
-  color: var(--color-text-primary, inherit);
+  color: var(--rta-color-text, inherit);
 }
 
 :is(.rta-config-entry, .rta-configurator) .rta-form-row > :is(.rta-form-row__control, .rta-select, select, textarea, input:not([type="checkbox"]):not([type="radio"]):not([type="color"])) {
@@ -264,7 +257,7 @@
   flex: 0 0 auto;
   display: inline-flex;
   align-items: center;
-  gap: var(--rta-space-1);
+  gap: var(--rta-gap-tight);
   align-self: center;
   margin: 0;
   height: 1.18rem;
@@ -278,10 +271,12 @@
   border-radius: var(--rta-radius-rail);
 }
 
-/* Shared checkbox positioning in both Definition and DefinitionType contracts. */
-.rta-config-entry :is(.rta-form-row, .rta-capability-contracts, .rta-config-table) input[type="checkbox"] {
-  inline-size: 1rem;
-  block-size: 1rem;
+/* ONE checkbox geometry for the whole module. Foundry draws the box and the
+   check mark as ::before/::after icons of --checkbox-size: the input must be
+   exactly that size, otherwise the two icon layers drift apart. */
+:is(.rta-config-entry, .rta-configurator, .rta-select__panel) input[type="checkbox"] {
+  inline-size: var(--checkbox-size, 1.25rem);
+  block-size: var(--checkbox-size, 1.25rem);
   flex: 0 0 auto;
   vertical-align: middle;
   margin: 0;

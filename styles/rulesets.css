@@ -7,7 +7,7 @@
   display: flex;
   align-items: center;
   justify-content: space-between;
-  gap: var(--rta-space-6);
+  gap: var(--rta-gap-block);
 }
 
 .rta-configurator__root-header,
@@ -50,7 +50,7 @@
   display: grid;
   align-content: start;
   grid-template-columns: repeat(auto-fill, 282px);
-  gap: var(--rta-space-6);
+  gap: var(--rta-gap-block);
   justify-content: start;
 }
 
@@ -108,7 +108,7 @@
 .rta-ruleset-badge {
   display: inline-flex;
   align-items: center;
-  gap: var(--rta-space-2);
+  gap: var(--rta-gap-tight);
   min-height: 20px;
   padding: var(--rta-space-1) var(--rta-space-2);
   border: 1px solid rgba(255,255,255,.14);
@@ -125,7 +125,7 @@
 
 /* independent badge and action columns, anchored to card edges. */
 .rta-ruleset-tile__bottom {
-  gap: var(--rta-space-2);
+  gap: var(--rta-gap-tight);
   margin-top: 0;
   justify-content: space-between;
   flex-wrap: nowrap;
@@ -136,7 +136,7 @@
   align-items: end;
   width: 100%;
   min-width: 0;
-  column-gap: var(--rta-space-1);
+  column-gap: var(--rta-gap-tight);
 }
 
 .rta-ruleset-tile__badges {
@@ -145,7 +145,7 @@
   flex-wrap: nowrap;
   justify-content: flex-start;
   flex: 0 1 auto;
-  gap: var(--rta-space-1);
+  gap: var(--rta-gap-tight);
   min-width: 0;
   justify-self: start;
   overflow: hidden;
@@ -154,7 +154,7 @@
 .rta-ruleset-tile__actions {
   display: flex;
   flex-wrap: nowrap;
-  gap: var(--rta-space-1);
+  gap: var(--rta-gap-tight);
   justify-content: flex-end;
   flex: 0 0 auto;
   justify-self: end;
@@ -195,7 +195,7 @@
   justify-content: flex-end;
   width: auto;
   margin: 0;
-  gap: var(--rta-space-1);
+  gap: var(--rta-gap-tight);
 }
 
 .rta-configurator .rta-ruleset-tile__actions .rta-config-action {
@@ -209,7 +209,7 @@
 .rta-configurator .rta-config-card-grid.rta-display-lines,.rta-configurator .rta-ruleset-tiles.rta-display-lines {
   display: flex;
   flex-direction: column;
-  gap: var(--rta-space-6);
+  gap: var(--rta-gap-block);
   width: 100%;
   align-items: stretch;
 }
@@ -223,7 +223,7 @@
   grid-template-columns: minmax(0,1fr) minmax(110px,1fr) max-content;
   grid-template-rows: 1fr;
   align-items: center;
-  gap: var(--rta-space-6);
+  gap: var(--rta-gap-block);
   padding: var(--rta-space-2) var(--rta-space-5);
 }
 
@@ -326,7 +326,7 @@
   grid-template-columns: minmax(0,1fr) minmax(120px,1fr) 32px;
   grid-template-rows: 1fr;
   align-items: center;
-  column-gap: var(--rta-space-6);
+  column-gap: var(--rta-gap-block);
 }
 
 .rta-configurator .rta-display-lines :is(.rta-ruleset-tile__title, .rta-config-card__title) {
@@ -367,5 +367,5 @@
   margin: 0;
   display: flex;
   align-items: center;
-  gap: var(--rta-space-1);
+  gap: var(--rta-gap-tight);
 }

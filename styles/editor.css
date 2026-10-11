@@ -26,9 +26,6 @@
   overflow: hidden;
 }
 
-.rta-config-entry fieldset > fieldset {
-  margin-block: var(--rta-space-3) 0;
-}
 
 .rta-config-entry textarea {
   resize: vertical;
@@ -37,8 +34,6 @@
 .rta-config-entry__full-width {
   display: flex;
   flex-direction: column;
-  gap: var(--rta-space-3);
-  margin-block: var(--rta-space-2) var(--rta-space-5);
 }
 
 .rta-config-entry__full-width > label {
@@ -54,14 +49,14 @@
   margin-inline-start: auto;
   display: flex;
   align-items: center;
-  gap: var(--rta-space-4);
+  gap: var(--rta-gap-row);
 }
 
 .rta-config-entry dl,
 .rta-configurator dl {
   display: grid;
   grid-template-columns: minmax(160px, 220px) minmax(0, 1fr);
-  gap: var(--rta-space-3) var(--rta-space-6);
+  gap: var(--rta-gap-row) var(--rta-gap-block);
 }
 
 .rta-config-entry dl dt,
@@ -72,20 +67,11 @@
 }
 
 /* editor spacing, disclosure and selectors. */
-.rta-config-entry__section {
-  margin-block: var(--rta-space-3) var(--rta-space-6);
-}
 
 .rta-config-entry__section > summary {
   cursor: pointer;
   font-weight: 700;
   padding-block: var(--rta-space-3);
-}
-
-.rta-config-entry__section[open] > .form-group,
-.rta-config-entry__section[open] > .rta-config-entry__check-group,
-.rta-config-entry__section[open] > .rta-config-entry__projection {
-  margin-block: var(--rta-space-5);
 }
 
 .rta-config-entry__section-summary {
@@ -101,7 +87,7 @@
 .rta-config-entry__check-group {
   display: flex;
   flex-direction: column;
-  gap: var(--rta-space-3);
+  gap: var(--rta-gap-row);
   max-height: 12rem;
   overflow: auto;
   padding: var(--rta-space-4) var(--rta-space-2);
@@ -114,13 +100,13 @@
 .rta-config-entry__check-group > label {
   display: flex;
   align-items: center;
-  gap: var(--rta-space-4);
+  gap: var(--rta-gap-row);
 }
 
 .rta-config-entry__projection {
   display: flex;
   flex-direction: column;
-  gap: var(--rta-space-2);
+  gap: var(--rta-gap-tight);
 }
 
 .rta-config-entry__empty {
@@ -137,8 +123,7 @@
   display: flex;
   align-items: center;
   justify-content: space-between;
-  gap: var(--rta-space-6);
-  margin-block: var(--rta-space-3) var(--rta-space-6);
+  gap: var(--rta-gap-block);
 }
 
 .rta-field-editor-list,
@@ -146,12 +131,12 @@
 .rta-capability-contracts {
   display: flex;
   flex-direction: column;
-  gap: var(--rta-space-5);
+  gap: var(--rta-gap-row);
 }
 
 .rta-field-editor,
 .rta-definition-field {
-  border: 1px solid var(--color-border-light-primary);
+  border: 1px solid var(--rta-color-border);
   border-radius: var(--rta-radius-compact);
   padding: var(--rta-space-5);
   background: color-mix(in srgb, var(--rta-color-surface) 12%, transparent);
@@ -162,14 +147,14 @@
   display: flex;
   align-items: center;
   justify-content: space-between;
-  gap: var(--rta-space-4);
+  gap: var(--rta-gap-row);
   margin-block-end: var(--rta-space-4);
 }
 
 .rta-field-editor__grid {
   display: grid;
   grid-template-columns: minmax(0, 1fr);
-  gap: var(--rta-space-4) var(--rta-space-6);
+  gap: var(--rta-gap-row) var(--rta-gap-block);
 }
 
 .rta-field-editor label,
@@ -180,7 +165,7 @@
 .rta-field-editor label:not(.rta-field-editor__check):not(.rta-form-row__label):not(.rta-form-row--nested):not([data-picker-option]) {
   display: flex;
   flex-direction: column;
-  gap: var(--rta-space-2);
+  gap: var(--rta-gap-tight);
 }
 
 .rta-field-editor input:not([type="checkbox"]):not([type="radio"]),
@@ -197,7 +182,7 @@
 .rta-definition-field__use {
   display: flex;
   align-items: center;
-  gap: var(--rta-space-3);
+  gap: var(--rta-gap-row);
 }
 
 .rta-field-editor__check input,
@@ -216,7 +201,7 @@
 .rta-definition-field {
   display: grid;
   grid-template-columns: minmax(0, 1fr);
-  gap: var(--rta-space-4);
+  gap: var(--rta-gap-row);
 }
 
 .rta-definition-field__heading small {
@@ -225,7 +210,7 @@
 
 .rta-capability-contracts > details {
   padding: var(--rta-space-3) var(--rta-space-4);
-  border-left: 2px solid var(--color-border-light-primary);
+  border-left: 2px solid var(--rta-color-border);
 }
 
 @container rta-window (max-width: 666px) {
@@ -238,7 +223,7 @@
   display: flex;
   align-items: center;
   justify-content: space-between;
-  gap: var(--rta-space-5);
+  gap: var(--rta-gap-row);
   padding: var(--rta-space-4) var(--rta-space-5);
   cursor: pointer;
   list-style: none;
@@ -270,14 +255,14 @@
 .rta-field-editor__numeric {
   display: grid;
   grid-template-columns: minmax(0,1fr);
-  gap: var(--rta-space-4) var(--rta-space-6);
+  gap: var(--rta-gap-row) var(--rta-gap-block);
   margin: var(--rta-space-5) 0;
 }
 
 .rta-field-editor__numeric label {
   display: flex;
   flex-direction: column;
-  gap: var(--rta-space-2);
+  gap: var(--rta-gap-tight);
 }
 
 @container rta-window (max-width: 666px) {
@@ -312,7 +297,7 @@
   padding: 0;
   overflow: hidden;
   margin-block: var(--rta-space-2);
-  border: 1px solid var(--color-border-light-primary);
+  border: 1px solid var(--rta-color-border);
   border-radius: var(--rta-radius-panel);
   box-shadow: 0 0 0 1px rgba(255,255,255,.035);
   background: rgba(255,255,255,.018);
@@ -323,7 +308,7 @@
 }
 
 .rta-field-editor__details[open] > summary {
-  border-bottom: 1px solid var(--color-border-light-primary);
+  border-bottom: 1px solid var(--rta-color-border);
 }
 
 .rta-field-editor__body {
@@ -337,8 +322,7 @@
   display: flex;
   align-items: center;
   justify-content: space-between;
-  gap: var(--rta-space-6);
-  margin-bottom: var(--rta-space-4);
+  gap: var(--rta-gap-block);
 }
 
 /* Canonical entry-window presentation.
@@ -358,26 +342,24 @@
   border: 1px solid var(--rta-editor-border);
   border-radius: var(--rta-editor-radius);
   background: var(--rta-editor-fill);
-  margin-block: 0 var(--rta-space-6);
   min-width: 0;
 }
 
 .rta-config-entry fieldset {
-  margin-block: 0 var(--rta-space-6);
+  margin: 0;
   display: flex;
   flex-direction: column;
-  padding: var(--rta-space-5) var(--rta-space-6) var(--rta-space-6);
-  gap: var(--rta-editor-gap);
+  padding: 0 var(--rta-frame-pad) var(--rta-frame-pad);
 }
 
 .rta-config-entry fieldset > legend {
   padding-inline: var(--rta-space-3);
   font-weight: 700;
-  color: var(--color-text-primary, inherit);
+  color: var(--rta-color-text, inherit);
 }
 
 .rta-config-entry details.rta-config-entry__section {
-  padding: 0 var(--rta-space-6);
+  padding: 0 var(--rta-frame-pad);
 }
 
 .rta-config-entry details.rta-config-entry__section > summary {
@@ -393,7 +375,6 @@
 
 .rta-config-entry details.rta-config-entry__section[open] > summary {
   border-bottom: 1px solid var(--rta-editor-border);
-  margin-bottom: var(--rta-space-5);
 }
 
 .rta-config-entry .rta-field-editor {
@@ -415,13 +396,13 @@
 .rta-config-entry .rta-form-stack {
   display: flex;
   flex-direction: column;
-  gap: var(--rta-editor-gap);
+  gap: var(--rta-gap-row);
 }
 
 /* Existing Foundry controls keep their native behavior; align only their
    geometry and use the same spacing for grid and nested-label forms. */
 .rta-config-entry :is(.form-group, .rta-field-editor__grid, .rta-field-editor__numeric) {
-  column-gap: var(--rta-editor-gap);
+  column-gap: var(--rta-gap-row);
 }
 
 .rta-config-entry :is(.form-group > label, .rta-field-editor label, fieldset > label) {
@@ -441,7 +422,7 @@
   flex-shrink: 0;
   display: flex;
   align-items: center;
-  gap: var(--rta-space-4);
+  gap: var(--rta-gap-row);
   padding-block-start: var(--rta-space-4);
   border-top: 1px solid var(--rta-editor-border);
   margin-top: var(--rta-space-2);
@@ -465,9 +446,10 @@
   display: block;
 }
 
-.rta-config-entry :is(fieldset, details.rta-config-entry__section, details.rta-config-entry__technical) > label:has(> textarea) {
+/* A label wrapping its own control (technical fields, JSON) stacks text over control. */
+.rta-config-entry :is(fieldset, details.rta-config-entry__section, details.rta-config-entry__technical) > label:has(> :is(textarea, select, input:not([type="checkbox"]):not([type="radio"]):not([type="hidden"]))) {
   display: grid;
-  gap: var(--rta-space-3);
+  gap: var(--rta-gap-tight);
   width: 100%;
 }
 
@@ -475,7 +457,7 @@
   display: flex;
   align-items: flex-start;
   justify-content: space-between;
-  gap: var(--rta-space-6);
+  gap: var(--rta-gap-block);
 }
 
 .rta-config-entry .rta-config-entry__section-heading > :is(p, strong) {
@@ -503,8 +485,8 @@
   --rta-editor-border: var(--rta-color-border);
   --rta-editor-fill: color-mix(in srgb, var(--rta-color-surface) 9%, transparent);
   --rta-editor-radius: 5px;
-  --rta-editor-gap: .65rem;
-  color: var(--color-text-primary, inherit);
+  --rta-editor-gap: var(--rta-gap-row);
+  color: var(--rta-color-text, inherit);
   --rta-choice-row-border: var(--rta-editor-border);
   --rta-choice-row-radius: var(--rta-editor-radius);
   --rta-choice-row-pad-block: .4rem;
@@ -526,7 +508,6 @@
 }
 
 .rta-config-entry__fixed-capabilities {
-  margin: var(--rta-space-4) 0 var(--rta-space-5);
   padding: var(--rta-space-4) var(--rta-space-5);
   border: 1px solid var(--rta-color-border);
   border-radius: var(--rta-radius-control);
@@ -535,14 +516,14 @@
 .rta-config-entry__fixed-capabilities-list {
   display: flex;
   flex-wrap: wrap;
-  gap: var(--rta-space-3) var(--rta-space-7);
+  gap: var(--rta-gap-row) var(--rta-gap-block);
   margin-top: var(--rta-space-3);
 }
 
 .rta-config-entry__fixed-capability {
   display: inline-flex;
   align-items: center;
-  gap: var(--rta-space-3);
+  gap: var(--rta-gap-row);
 }
 
 .rta-config-entry__fixed-capability > small {
@@ -558,8 +539,8 @@
   --rta-form-column-inset: 0px;
   --rta-form-label-column-min: 160px;
   --rta-form-label-column-max: 200px;
-  --rta-form-control-gap: .9rem;
-  --rta-form-row-gap: .65rem;
+  --rta-form-control-gap: var(--rta-gap-block);
+  --rta-form-row-gap: var(--rta-gap-row);
   --rta-form-control-height: 2.1rem;
 }
 
@@ -573,7 +554,6 @@
   align-items: center;
   min-width: 0;
   width: 100%;
-  margin-block: var(--rta-space-1);
 }
 
 :is(.rta-config-entry, .rta-configurator) .rta-form-row > :is(label, .rta-form-row__label) {
@@ -630,23 +610,20 @@
   align-items: center;
 }
 
-:is(.rta-config-entry, .rta-configurator) :is(fieldset, .rta-form-stack, .rta-field-editor__grid, .rta-field-editor__numeric) > .rta-form-row--picker {
-  margin-block: var(--rta-space-1);
-}
 
 @container rta-window (max-width: 586px) {
   :is(.rta-config-entry, .rta-configurator) .rta-form-row,
   :is(.rta-config-entry, .rta-configurator) label.rta-form-row--nested,
   :is(.rta-config-entry, .rta-configurator) .rta-field-editor label.rta-form-row--nested {
     grid-template-columns: minmax(0, 1fr);
-    row-gap: var(--rta-space-2);
+    row-gap: var(--rta-gap-tight);
   }
 }
 
 .rta-configurator .rta-collection-color-editor {
   display: inline-flex;
   align-items: center;
-  gap: var(--rta-space-3);
+  gap: var(--rta-gap-row);
 }
 
 .rta-configurator .rta-collection-color-editor input[type="color"] {
@@ -656,21 +633,20 @@
 
 .rta-config-entry .rta-section-color-config {
   border-left: var(--rta-rail-width, 4px) solid var(--rta-section-color, var(--rta-color-neutral));
-  padding-inline-start: var(--rta-space-5);
-  margin-block: var(--rta-space-5);
+  padding-inline-start: calc(var(--rta-frame-step) - var(--rta-rail-width, 4px));
 }
 
 .rta-config-entry .rta-color-override-control {
   display: inline-flex;
   align-items: center;
   flex-wrap: wrap;
-  gap: var(--rta-space-6);
+  gap: var(--rta-gap-block);
 }
 
 .rta-config-entry .rta-color-override-check {
   display: inline-flex;
   align-items: center;
-  gap: var(--rta-space-3);
+  gap: var(--rta-gap-row);
 }
 
 /* Declarative controls use the canonical rta-form-row; no independent grid. */
@@ -679,10 +655,9 @@
   grid-template-columns: repeat(3, minmax(0, 1fr)) auto;
   align-items: end;
   gap: var(--rta-form-control-gap);
-  margin-block: var(--rta-form-row-gap);
 }
 
-.rta-config-entry .rta-declarative-constraint > label { min-width: 0; display: grid; gap: var(--rta-space-1); }
+.rta-config-entry .rta-declarative-constraint > label { min-width: 0; display: grid; gap: var(--rta-gap-tight); }
 
 .rta-config-entry .rta-declarative-constraint > label > :is(input, select) { min-width: 0; width: 100%; height: var(--rta-form-control-height); min-height: var(--rta-form-control-height); }
 
@@ -694,8 +669,25 @@
 
 .rta-config-entry .rta-declarative-presentation__value > input:not([type="checkbox"]) { width: 100%; min-width: 0; }
 
-.rta-config-entry .rta-declarative-toggle { display: inline-flex; gap: var(--rta-space-3); align-items: center; margin: 0; white-space: nowrap; }
+.rta-config-entry .rta-declarative-toggle { display: inline-flex; gap: var(--rta-gap-row); align-items: center; margin: 0; white-space: nowrap; }
 
 @container rta-window (max-width: 586px) { .rta-config-entry .rta-declarative-constraint { grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); } .rta-config-entry .rta-declarative-presentation__controls { flex-wrap: wrap; } }
 
 .rta-config-entry .rta-config-table td:has(> input[type="checkbox"]) { text-align:center; vertical-align:middle; }
+
+/* VERTICAL RHYTHM — one contract for every editor container.
+   Children carry no vertical margin of their own; the container spaces them:
+   --rta-gap-row between the rows/controls of a frame (header included),
+   --rta-gap-block between the top-level frames of the window. */
+.rta-config-entry :is(.rta-config-entry__scroll, fieldset, details[open], section.rta-config-entry__section, .rta-rule-builder, .rta-rule-operands, .rta-section-color-config, .rta-field-editor__body, .rta-config-entry__full-width, .rta-capability-contracts) {
+  row-gap: 0;
+}
+.rta-config-entry :is(.rta-config-entry__scroll, fieldset, details[open], section.rta-config-entry__section, .rta-rule-builder, .rta-rule-operands, .rta-section-color-config, .rta-field-editor__body, .rta-config-entry__full-width, .rta-capability-contracts) > * {
+  margin-block: 0;
+}
+.rta-config-entry :is(fieldset, details[open], section.rta-config-entry__section, .rta-rule-builder, .rta-rule-operands, .rta-section-color-config, .rta-field-editor__body, .rta-config-entry__full-width, .rta-capability-contracts) > :not([hidden]) ~ :not([hidden]) {
+  margin-block-start: var(--rta-gap-row);
+}
+.rta-config-entry .rta-config-entry__scroll > :not([hidden]) ~ :not([hidden]) {
+  margin-block-start: var(--rta-gap-block);
+}

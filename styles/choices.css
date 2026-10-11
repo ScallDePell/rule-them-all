@@ -8,20 +8,20 @@
 .rta-picker > label {
   display: flex;
   align-items: center;
-  gap: var(--rta-space-4);
+  gap: var(--rta-gap-row);
   margin: 0;
 }
 
 .rta-picker > p {
-  margin: var(--rta-space-1) 0;
+  margin: 0;
   opacity: .7;
   font-style: italic;
 }
 
 .rta-picker {
   flex-direction: column;
-  gap: var(--rta-space-3);
-  border: 1px solid var(--color-border-light-primary);
+  gap: var(--rta-gap-row);
+  border: 1px solid var(--rta-color-border);
   border-radius: var(--rta-radius-control);
   background: color-mix(in srgb, var(--rta-color-surface) 8%, transparent);
   display: block;
@@ -34,7 +34,7 @@
   position: relative;
   display: grid;
   grid-template-columns: minmax(8rem, 12rem) minmax(0, 1fr);
-  gap: var(--rta-space-6);
+  gap: var(--rta-gap-block);
   align-items: center;
   padding: var(--rta-space-4) var(--rta-space-5);
   cursor: pointer;
@@ -70,11 +70,11 @@
 .rta-picker__body {
   display: flex;
   flex-direction: column;
-  gap: var(--rta-space-3);
+  gap: var(--rta-gap-row);
   max-height: 14rem;
   overflow: auto;
   padding: var(--rta-space-4) var(--rta-space-5) var(--rta-space-6);
-  border-top: 1px solid var(--color-border-light-primary);
+  border-top: 1px solid var(--rta-color-border);
 }
 
 .rta-picker__body > input[type="search"] {
@@ -87,12 +87,12 @@
 .rta-picker__body > label {
   display: flex;
   align-items: center;
-  gap: var(--rta-space-4);
+  gap: var(--rta-gap-row);
   margin: 0;
 }
 
 .rta-picker__body > p {
-  margin: var(--rta-space-1) 0;
+  margin: 0;
   opacity: .7;
   font-style: italic;
 }
@@ -100,7 +100,7 @@
 /* Content acquisition bindings */
 .rta-binding-list {
   display: grid;
-  gap: var(--rta-space-4);
+  gap: var(--rta-gap-row);
   margin-top: var(--rta-space-4);
 }
 
@@ -113,20 +113,20 @@
 .rta-binding-card__title {
   display: flex;
   align-items: center;
-  gap: var(--rta-space-4);
+  gap: var(--rta-gap-row);
   margin: 0;
 }
 
 .rta-binding-card__values {
   display: grid;
   grid-template-columns: repeat(auto-fit,minmax(130px,1fr));
-  gap: var(--rta-space-4);
+  gap: var(--rta-gap-row);
   margin: var(--rta-space-4) 0 0 var(--rta-space-12);
 }
 
 .rta-binding-card__values label {
   display: grid;
-  gap: var(--rta-space-2);
+  gap: var(--rta-gap-tight);
 }
 
 /* Shared editor window contract. Reuse the same section surface for
@@ -135,11 +135,11 @@
   box-sizing: border-box;
   display: block;
   min-width: 0;
-  margin: 0 0 var(--rta-space-6);
+  margin: 0;
   border: 1px solid var(--rta-editor-border);
   border-radius: var(--rta-editor-radius);
   background: var(--rta-editor-fill);
-  padding: 0 var(--rta-space-6);
+  padding: 0 var(--rta-frame-pad);
   overflow: visible;
 }
 
@@ -147,7 +147,7 @@
   display: flex;
   align-items: center;
   flex-wrap: nowrap;
-  gap: var(--rta-space-6);
+  gap: var(--rta-gap-block);
   position: relative;
   min-height: 2.35rem;
   padding: var(--rta-space-4) 0;
@@ -195,7 +195,6 @@
 
 .rta-config-entry :is(details.rta-config-entry__section, details.rta-picker, details.rta-config-entry__technical)[open] > summary {
   border-bottom: 1px solid var(--rta-editor-border);
-  margin-bottom: var(--rta-space-5);
 }
 
 .rta-config-entry details.rta-picker[open] {
@@ -250,7 +249,7 @@
 .rta-config-entry .rta-choice-list {
   display: flex;
   flex-direction: column;
-  gap: var(--rta-space-3);
+  gap: var(--rta-gap-tight);
   min-width: 0;
   max-height: 14rem;
   overflow-y: auto;
@@ -264,7 +263,7 @@
   box-sizing: border-box;
   display: flex;
   align-items: center;
-  gap: var(--rta-space-4);
+  gap: var(--rta-gap-row);
   flex: 0 0 auto;
   min-height: 2.35rem;
   margin: 0;
@@ -278,7 +277,6 @@
 
 .rta-config-entry .rta-choice-list > label > input[type="checkbox"] {
   flex: 0 0 auto;
-  width: auto;
   margin: 0;
 }
 
@@ -308,12 +306,17 @@
 /* A framed section/card already has horizontal interior padding. Instead of
    changing the shared column anchor, subtract that same padding from its label
    track. The select, input and textarea remain on a single visual vertical. */
-:is(.rta-config-entry, .rta-configurator) :is(fieldset, details.rta-config-entry__section, .rta-field-editor__grid, .rta-field-editor__body, .rta-binding-card) > .rta-form-row {
-  --rta-form-column-inset: .8rem;
+/* The inset is inherited, so a row wrapped in an unframed <div> keeps its
+   frame's compensation. Each nested frame adds exactly one --rta-frame-step. */
+:is(.rta-config-entry, .rta-configurator) :is(fieldset, details.rta-config-entry__section, details.rta-config-entry__technical, .rta-rule-builder, .rta-section-color-config, .rta-field-editor__grid, .rta-field-editor__body, .rta-binding-card) {
+  --rta-form-column-inset: var(--rta-frame-step);
+}
+:is(.rta-config-entry, .rta-configurator) :is(fieldset, details.rta-config-entry__section, details.rta-config-entry__technical, .rta-rule-builder, .rta-section-color-config, .rta-field-editor__grid, .rta-field-editor__body, .rta-binding-card) :is(fieldset, details.rta-config-entry__section, details.rta-config-entry__technical, .rta-rule-builder, .rta-section-color-config, .rta-field-editor__grid, .rta-field-editor__body, .rta-binding-card) {
+  --rta-form-column-inset: calc(2 * var(--rta-frame-step));
+}
+:is(.rta-config-entry, .rta-configurator) :is(fieldset, details.rta-config-entry__section, details.rta-config-entry__technical, .rta-rule-builder, .rta-section-color-config, .rta-field-editor__grid, .rta-field-editor__body, .rta-binding-card) :is(fieldset, details.rta-config-entry__section, details.rta-config-entry__technical, .rta-rule-builder, .rta-section-color-config, .rta-field-editor__grid, .rta-field-editor__body, .rta-binding-card) :is(fieldset, details.rta-config-entry__section, details.rta-config-entry__technical, .rta-rule-builder, .rta-section-color-config, .rta-field-editor__grid, .rta-field-editor__body, .rta-binding-card) {
+  --rta-form-column-inset: calc(3 * var(--rta-frame-step));
 }
 
 /* Only standalone selector rows own a flow margin. Form stacks/fieldsets own
    their own spacing, so applying two independent margins would cause gaps. */
-:is(.rta-config-entry, .rta-configurator) :is(.rta-config-entry__scroll, details.rta-config-entry__section, .rta-binding-card, .rta-field-editor__body) > .rta-form-row--picker {
-  margin-block: var(--rta-space-3) var(--rta-space-6);
-}

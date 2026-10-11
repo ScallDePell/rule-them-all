@@ -34,7 +34,7 @@ test('dynamic Add operand uses the same structure as existing Formula and Condit
 });
 
 test('one canonical label/control geometry and specialized right-hand operand layout',()=>{
-  assert.match(css,/\.rta-rule-builder > \.rta-form-row,\s*\.rta-rule-builder \.rta-rule-operand\.rta-form-row\s*\{\s*--rta-form-column-inset:/);
+  assert.match(css,/:is\([^)]*\.rta-rule-builder[^)]*\)\s*\{\s*--rta-form-column-inset:\s*var\(--rta-frame-step\)/);
   assert.match(css,/\.rta-rule-operand__controls\s*\{\s*display:\s*grid;\s*grid-template-columns:\s*minmax\(8rem, 10rem\) minmax\(0, 1fr\) auto;/);
   assert.match(css,/\.rta-rule-operand__controls > \[data-rule-operand-editor\]\s*\{\s*grid-column:\s*2;/);
   assert.match(css,/\.rta-rule-operand__controls > \[data-action="removeRuleOperand"\]\s*\{\s*grid-column:\s*3;\s*\}/);

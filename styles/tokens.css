@@ -28,6 +28,15 @@
   /* 20px */
   --rta-space-12: 1.5rem;
   /* 24px */
+  /* Cadres (fieldset, sections repliables, constructeurs) : un seul retrait
+     horizontal, pour que tous les contrôles d'une fenêtre restent alignés. */
+  --rta-frame-pad: .75rem;
+  --rta-frame-border: 1px;
+  --rta-frame-step: calc(var(--rta-frame-pad) + var(--rta-frame-border));
+  /* Rythme : trois espacements seulement, horizontaux comme verticaux. */
+  --rta-gap-tight: var(--rta-space-2);  /* 4px : listes compactes, icône + texte */
+  --rta-gap-row: var(--rta-space-4);    /* 8px : entre lignes et contrôles d'un même cadre */
+  --rta-gap-block: var(--rta-space-6);  /* 12px : entre cadres et sections */
   --rta-radius-rail: 2px;
   --rta-radius-compact: 4px;
   --rta-radius-control: 5px;
@@ -60,9 +69,14 @@
   --rta-color-border: var(--color-border-light-primary, #777);
   --rta-color-border-secondary: var(--color-border-light-secondary, #777);
   --rta-color-border-tertiary: var(--color-border-light-tertiary, #666);
+  --rta-color-border-subtle: var(--color-border-light-2);
   --rta-color-border-highlight: var(--color-border-highlight, #947f9c);
   --rta-color-surface: var(--color-cool-5, #17141e);
+  --rta-color-surface-raised: var(--color-cool-4, rgba(0, 0, 0, 0.12));
+  --rta-color-surface-option-light: var(--color-bg-option, rgba(255, 255, 255, .35));
   --rta-color-surface-option: var(--color-bg-option, #2b2530);
+  --rta-color-text: var(--color-text-primary);
+  --rta-color-accent-warm: var(--color-warm-2);
   --rta-color-text-highlight: var(--color-text-light-highlight, #eee);
   --rta-color-text-secondary: var(--color-text-light-6, #bcb8bf);
   --rta-color-inverse-fill: #fff;

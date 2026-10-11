@@ -23,7 +23,7 @@ const v=(await api.createRuleset({id:'qa',nameKey:'QA Ruleset',descriptionKey:'F
 await api.createRuleset({id:'qa2',nameKey:'Second Ruleset',version:'2.0.0'});
 await api.createTag(v,{id:'tag-a',nameKey:'Tag Alpha',color:'#3a7bd5'});
 await api.createTag(v,{id:'tag-b',nameKey:'Tag Beta'});
-await api.registerDefinitionType(v,{id:'stat',key:'stat',nameKey:'Stat',color:'#b8572e',allowedCapabilities:['value','pool'],defaultCapabilities:['value'],requiredCapabilities:[],fields:{}});
+await api.registerDefinitionType(v,{id:'stat',key:'stat',nameKey:'Stat',color:'#b8572e',allowedCapabilities:['value','pool'],defaultCapabilities:['value','pool'],requiredCapabilities:['value'],fields:{abbreviation:{id:'abbreviation',name:'Abbreviation',valueType:'string',cardinality:'one',required:true,defaultValue:'STR'}},constraints:[{kind:'required',field:'abbreviation'}]});
 await api.registerDefinitionType(v,{id:'skill',key:'skill',nameKey:'Skill',allowedCapabilities:['value'],defaultCapabilities:['value'],requiredCapabilities:[],fields:{}});
 for(const [i,n] of ['Vigor','Focus','Grace','Wits','Resolve'].entries())await api.createDefinition(v,{id:'d'+i,key:'d'+i,nameKey:n,descriptionKey:'A sample definition with a description long enough to wrap on narrow tiles.',definitionTypeId:'stat',capabilities:['value'],tags:i%2?['tag-a']:['tag-b'],data:{}});
 await api.createDefinition(v,{id:'s1',key:'s1',nameKey:'Climb',definitionTypeId:'skill',capabilities:['value'],data:{}});
@@ -51,3 +51,17 @@ for(const [name,selected,view,mode='tiles'] of views){
   writeFileSync(join(out,name+'.html'),html);
 }
 console.log('rendered',views.length);
+
+// Entry editors: existing entries where the fixture has one, blank editors otherwise.
+const {ConfiguratorEntryEditor}=await imp('src/configurator/configurator-entry-editor.mjs');
+const editorTpl=Handlebars.compile(readFileSync(join(root,'templates/configurator/entry-editor.hbs'),'utf8'));
+const selectUrl=pathToFileURL(join(root,'src/ui/rta-select.mjs')).href;
+const editors=[['ruleset',v],['definitionType','stat'],['definition','d0'],['contentType','gear'],['contentTemplate','rope'],['parameter','p1'],['formula','f1'],['condition','c1'],['action','a1'],['tag','tag-a'],
+ ...['formulaBinding','roll','outcome','test','effect','eventType','permissionPolicy','trigger','sheetDefinition','creationSystem','reference','modifier','restriction','duration','progressionSystem'].map(kind=>[kind,null])];
+for(const [kind,id] of editors){
+  const editor=new ConfiguratorEntryEditor({api,versionId:v,kind,id,definitionTypeId:kind==='definition'?'stat':null,contentTypeId:kind==='contentTemplate'?'gear':null});
+  const ctx=await editor._prepareContext({});
+  const html=`<!doctype html><html lang="en"><meta charset="utf-8"><style>${css}\nbody{margin:0;font-family:sans-serif;font-size:14px}.application{position:relative;width:100%;max-width:none;box-sizing:border-box}</style><body class="theme-dark"><div class="application theme-dark"><section class="window-content">${editorTpl(ctx)}</section></div><script type="module">for(const d of document.querySelectorAll('details'))d.open=true;import('${selectUrl}').then(({RTASelect})=>RTASelect.enhance(document.body));</script></body></html>`;
+  writeFileSync(join(out,'editor-'+kind+'.html'),html);
+}
+console.log('rendered editors',editors.length);
