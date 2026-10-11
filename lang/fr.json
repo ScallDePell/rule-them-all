@@ -34,10 +34,10 @@
       "RequiredCapabilities": "Capacités obligatoires (imposées par le type)",
       "OptionalCapabilities": "Capacités facultatives",
       "NoOptionalCapabilities": "Aucune capacité facultative disponible.",
-      "FilterByCategories": "Filtrer par catégories",
-      "ClearCategoryFilters": "Effacer",
       "ClearOptionalReferences": "Ces éléments y font référence de façon facultative : {list}. Leur référence sera retirée. Continuer ?",
-      "DeleteBlocked": "Utilisé par : {list}. Retirez ces références avant de supprimer."
+      "DeleteBlocked": "Utilisé par : {list}. Retirez ces références avant de supprimer.",
+      "Filter": "Filtrer",
+      "ClearFilters": "Effacer les filtres"
     },
     "Nav": {
       "General": "Général",
@@ -422,9 +422,6 @@
       "VersionAndStatus": "Version et statut",
       "Status": "Statut",
       "CreateNewVersion": "Créer une nouvelle version",
-      "FoundryBackedContentsOfThisConfigurableType": "Contenus de ce type configurable enregistrés dans Foundry.",
-      "DefinitionsOfThisConfigurableType": "Définitions de ce type configurable.",
-      "ConfigurableRuleThemAllEntries": "Entrées configurables de Rule Them’All.",
       "SyncFoundryLibraries": "Synchroniser les bibliothèques Foundry",
       "Create": "Créer",
       "NoEntries": "Aucune entrée.",

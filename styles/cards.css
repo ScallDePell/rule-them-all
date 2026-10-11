@@ -186,16 +186,6 @@
   white-space: nowrap;
 }
 
-.rta-configurator .rta-config-card__edit {
-  flex: 0 0 23px;
-  width: 23px;
-  min-width: 23px;
-  height: 23px;
-  padding: var(--rta-space-1);
-  margin-left: auto;
-  font-size: var(--rta-type-sm);
-}
-
 .rta-configurator .rta-config-card__tags {
   flex: 1 1 auto;
   align-items: center;
@@ -261,7 +251,7 @@
   min-height: 36px;
   height: auto;
   display: grid;
-  grid-template-columns: minmax(0,1fr) minmax(120px,1fr) 32px;
+  grid-template-columns: minmax(0,1fr) minmax(120px,1fr);
   grid-template-rows: 1fr;
   align-items: center;
   column-gap: var(--rta-gap-block);
@@ -292,12 +282,6 @@
   min-width: 0;
 }
 
-.rta-configurator .rta-display-lines .rta-config-card__edit {
-  grid-column: 3;
-  grid-row: 1;
-  justify-self: end;
-  margin: 0;
-}
 
 /* Collection cards share the neutral frame, but their left border is the type/family accent. */
 .rta-configurator .rta-config-card {

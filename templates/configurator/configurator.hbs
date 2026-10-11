@@ -4,8 +4,11 @@
   {{#if isRulesets}}
     <header class="rta-configurator__root-header">
       <div><h2>{{localize "RTA.Template.RuleThemAll"}}</h2><p>{{localize "RTA.UI.RulesetsSubtitle"}}</p></div>
-      <div class="rta-display-switch" role="group" aria-label="{{localize 'RTA.UI.DisplayMode'}}"><button type="button" data-action="setDisplayMode" data-mode="tiles" class="{{#if displayTiles}}is-active{{/if}}" aria-pressed="{{#if displayTiles}}true{{else}}false{{/if}}" aria-label="{{localize 'RTA.UI.Tiles'}}" title="{{localize 'RTA.UI.Tiles'}}"><i class="fa-solid fa-grip"></i></button><button type="button" data-action="setDisplayMode" data-mode="lines" class="{{#if displayLines}}is-active{{/if}}" aria-pressed="{{#if displayLines}}true{{else}}false{{/if}}" aria-label="{{localize 'RTA.UI.Lines'}}" title="{{localize 'RTA.UI.Lines'}}"><i class="fa-solid fa-list"></i></button></div>
-      <button type="button" data-action="addRuleset"><i class="fa-solid fa-plus" aria-hidden="true"></i> {{localize "RTA.UI.NewRuleset"}}</button>
+      <div class="rta-configurator__section-actions">
+        <div class="rta-display-switch" role="group" aria-label="{{localize 'RTA.UI.DisplayMode'}}"><button type="button" data-action="setDisplayMode" data-mode="tiles" class="{{#if displayTiles}}is-active{{/if}}" aria-pressed="{{#if displayTiles}}true{{else}}false{{/if}}" aria-label="{{localize 'RTA.UI.Tiles'}}" title="{{localize 'RTA.UI.Tiles'}}"><i class="fa-solid fa-grip"></i></button><button type="button" data-action="setDisplayMode" data-mode="lines" class="{{#if displayLines}}is-active{{/if}}" aria-pressed="{{#if displayLines}}true{{else}}false{{/if}}" aria-label="{{localize 'RTA.UI.Lines'}}" title="{{localize 'RTA.UI.Lines'}}"><i class="fa-solid fa-list"></i></button></div>
+        <button type="button" data-action="importRuleset"><i class="fa-solid fa-file-import" aria-hidden="true"></i> {{localize "RTA.UI.Import"}}</button><input data-import-file type="file" accept=".json,application/json" hidden>
+        <button type="button" data-action="addRuleset"><i class="fa-solid fa-plus" aria-hidden="true"></i> {{localize "RTA.UI.NewRuleset"}}</button>
+      </div>
     </header>
     <div data-main-scroll class="rta-configurator__scroll rta-ruleset-list-scroll">
       <div class="rta-ruleset-tiles{{#if displayLines}} rta-display-lines{{/if}}" role="list">
@@ -25,8 +28,7 @@
         {{else}}<p>{{localize "RTA.Template.NoRulesetCreateOneToStartWithAnEmptyConfiguration"}}</p>{{/each}}
       </div>
     </div>
-    <div class="rta-configurator__bottom-bar"><fieldset class="rta-configurator__import-footer"><legend>{{localize "RTA.UI.Import"}}</legend><div class="form-group"><input data-import-file type="file" accept=".json,application/json"></div></fieldset>
-    <footer class="rta-configurator__root-footer"><button type="button" data-action="closeConfigurator">{{localize "RTA.UI.Close"}}</button></footer></div>
+    <footer class="rta-configurator__root-footer"><button type="button" data-action="closeConfigurator">{{localize "RTA.UI.Close"}}</button></footer>
   {{else}}
     <header class="rta-configurator__workspace-header">
       <button type="button" data-action="backToRulesets"><i class="fa-solid fa-arrow-left"></i> {{localize "RTA.Template.Rulesets"}}</button>
@@ -78,21 +80,15 @@
         {{/if}}
 
         {{#if isCollection}}
-          <div class="rta-configurator__section-heading"><div><h2>{{currentTitle}}</h2>{{#if currentType}}{{#if isContentFamily}}<p>{{localize "RTA.Template.FoundryBackedContentsOfThisConfigurableType"}}</p>{{else}}<p>{{localize "RTA.Template.DefinitionsOfThisConfigurableType"}}</p>{{/if}}{{else}}<p>{{localize "RTA.Template.ConfigurableRuleThemAllEntries"}}</p>{{/if}}</div>
+          <div class="rta-configurator__section-heading"><div><h2>{{currentTitle}}</h2></div>
             <div class="rta-configurator__section-actions">{{#if canOverrideCollection}}<div class="rta-collection-color-editor" title="{{localize 'RTA.Colors.CollectionOverride'}}"><label for="rta-collection-color">{{localize "RTA.Colors.SubsectionColor"}}</label><input id="rta-collection-color" type="color" data-collection-color="{{currentCollection}}" value="{{collectionAccent}}" aria-label="{{localize 'RTA.Colors.SubsectionColor'}}"><button type="button" data-action="resetCollectionColor" data-collection="{{currentCollection}}" {{#unless collectionCustomAccent}}disabled{{/unless}} title="{{localize 'RTA.Colors.ResetInheritance'}}"><i class="fa-solid fa-arrow-rotate-left"></i></button></div>{{/if}}<div class="rta-display-switch" role="group" aria-label="{{localize 'RTA.UI.DisplayMode'}}"><button type="button" data-action="setDisplayMode" data-mode="tiles" class="{{#if displayTiles}}is-active{{/if}}" aria-pressed="{{#if displayTiles}}true{{else}}false{{/if}}" aria-label="{{localize 'RTA.UI.Tiles'}}" title="{{localize 'RTA.UI.Tiles'}}"><i class="fa-solid fa-grip"></i></button><button type="button" data-action="setDisplayMode" data-mode="lines" class="{{#if displayLines}}is-active{{/if}}" aria-pressed="{{#if displayLines}}true{{else}}false{{/if}}" aria-label="{{localize 'RTA.UI.Lines'}}" title="{{localize 'RTA.UI.Lines'}}"><i class="fa-solid fa-list"></i></button></div>{{#if isContentLibraries}}<button type="button" data-action="syncContentLibraries"><i class="fa-solid fa-box-archive"></i> {{localize "RTA.Template.SyncFoundryLibraries"}}</button>{{/if}}{{#if lifecycle.canMutate}}<button type="button" data-action="addEntry" data-kind="{{currentKind}}" {{#if currentType}}{{#if isContentFamily}}data-content-type-id="{{currentType.id}}"{{else}}data-definition-type-id="{{currentType.id}}"{{/if}}{{/if}}><i class="fa-solid fa-plus"></i> {{localize "RTA.Template.Create"}}</button>{{else}}<button type="button" data-action="createNewVersion"><i class="fa-solid fa-code-branch"></i> {{localize "RTA.Template.CreateNewVersion"}}</button>{{/if}}</div>
           </div>
-          {{#if availableTags.length}}
-          <nav class="rta-tag-facets" aria-label="{{localize 'RTA.UI.FilterByTags'}}">
-            <span class="rta-tag-facets__label"><i class="fa-solid fa-filter" aria-hidden="true"></i> {{localize "RTA.UI.FilterByTags"}}</span>
+          {{#if hasFacets}}
+          <nav class="rta-tag-facets" aria-label="{{localize 'RTA.UI.Filter'}}">
+            <span class="rta-tag-facets__label"><i class="fa-solid fa-filter" aria-hidden="true"></i> {{localize "RTA.UI.Filter"}}</span>
+            {{#each availableCategories}}<button type="button" class="rta-tag-facets__chip{{#if selected}} is-active{{/if}}" data-action="toggleCategoryFilter" data-category-id="{{id}}" aria-pressed="{{#if selected}}true{{else}}false{{/if}}"><i class="fa-solid fa-folder" aria-hidden="true"></i><span>{{name}}</span><small>{{count}}</small></button>{{/each}}
             {{#each availableTags}}<button type="button" class="rta-tag-facets__chip{{#if selected}} is-active{{/if}}" data-action="toggleTagFilter" data-tag-id="{{id}}" aria-pressed="{{#if selected}}true{{else}}false{{/if}}" {{#if color}}style="--rta-tag-color:{{color}}"{{/if}}><span>{{name}}</span><small>{{count}}</small></button>{{/each}}
-            {{#if activeTagCount}}<button type="button" class="rta-tag-facets__clear" data-action="clearTagFilters"><i class="fa-solid fa-xmark" aria-hidden="true"></i> {{localize "RTA.UI.ClearTagFilters"}}</button>{{/if}}
-          </nav>
-          {{/if}}
-          {{#if availableCategories.length}}
-          <nav class="rta-tag-facets" aria-label="{{localize 'RTA.UI.FilterByCategories'}}">
-            <span class="rta-tag-facets__label"><i class="fa-solid fa-folder-tree" aria-hidden="true"></i> {{localize "RTA.UI.FilterByCategories"}}</span>
-            {{#each availableCategories}}<button type="button" class="rta-tag-facets__chip{{#if selected}} is-active{{/if}}" data-action="toggleCategoryFilter" data-category-id="{{id}}" aria-pressed="{{#if selected}}true{{else}}false{{/if}}"><span>{{name}}</span><small>{{count}}</small></button>{{/each}}
-            {{#if activeCategoryCount}}<button type="button" class="rta-tag-facets__clear" data-action="clearCategoryFilters"><i class="fa-solid fa-xmark" aria-hidden="true"></i> {{localize "RTA.UI.ClearCategoryFilters"}}</button>{{/if}}
+            {{#if hasActiveFilters}}<button type="button" class="rta-tag-facets__clear" data-action="clearFilters"><i class="fa-solid fa-xmark" aria-hidden="true"></i> {{localize "RTA.UI.ClearFilters"}}</button>{{/if}}
           </nav>
           {{/if}}
           <div class="rta-config-card-grid{{#if displayLines}} rta-display-lines{{/if}}" role="list" data-card-grid>
@@ -101,7 +97,6 @@
                 <button class="rta-config-card__title" type="button" data-action="openEntry" data-kind="{{../currentKind}}" data-entry-id="{{id}}">{{name}}</button>
                 <div class="rta-config-card__bottom">
                   <div class="rta-config-card__tags">{{#each displayTags}}<span class="rta-config-card__tag" {{#if color}}style="--rta-tag-color: {{color}}"{{/if}} title="{{name}}">{{name}}</span>{{/each}}</div>
-                  <button class="rta-config-action rta-config-card__edit" type="button" data-action="openEntry" data-kind="{{../currentKind}}" data-entry-id="{{id}}" aria-label="{{localize 'RTA.UI.Edit'}}" title="{{localize 'RTA.UI.Edit'}}"><i class="fa-solid fa-pen" aria-hidden="true"></i></button>
                 </div>
               </article>
             {{else}}<p>{{localize "RTA.Template.NoEntries"}}</p>{{/each}}

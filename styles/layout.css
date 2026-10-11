@@ -168,53 +168,13 @@
   justify-content: flex-end;
 }
 
-/* Ruleset landing page: Foundry module-tile visual language. */
-.rta-configurator__import-footer {
-  flex: 0 0 auto;
-  margin-top: auto;
-  margin-bottom: 0;
-  padding: var(--rta-space-4) var(--rta-space-6) var(--rta-space-5);
-}
-
-.rta-configurator__import-footer .form-group {
-  margin: 0;
-}
-
-.rta-configurator__import-footer input[type="file"] {
-  width: 100%;
-}
-
 /* fixed three-row tiles at every supported window width. */
 .rta-configurator__root-footer {
   flex: 0 0 auto;
   display: flex;
   justify-content: flex-end;
-  padding: var(--rta-space-3) 0 0;
-}
-
-.rta-configurator__bottom-bar {
-  display: flex;
-  align-items: end;
-  gap: var(--rta-gap-block);
-  flex: 0 0 auto;
   margin-top: auto;
-  min-width: 0;
-}
-
-.rta-configurator__bottom-bar .rta-configurator__import-footer {
-  flex: 1 1 auto;
-  min-width: 0;
-  margin: 0;
-}
-
-.rta-configurator__bottom-bar .rta-configurator__root-footer {
-  flex: 0 0 auto;
-  padding: 0 0 var(--rta-space-5);
-  margin: 0;
-}
-
-.rta-configurator__bottom-bar .rta-configurator__root-footer button {
-  white-space: nowrap;
+  padding: var(--rta-space-3) 0 var(--rta-space-5);
 }
 
 .rta-configurator .rta-configurator__workspace-header {

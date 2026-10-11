@@ -38,10 +38,10 @@
       "RequiredCapabilities": "Required capabilities (from the type)",
       "OptionalCapabilities": "Optional capabilities",
       "NoOptionalCapabilities": "No optional capabilities available.",
-      "FilterByCategories": "Filter by categories",
-      "ClearCategoryFilters": "Clear",
       "ClearOptionalReferences": "These entries reference it optionally: {list}. Their reference will be removed. Continue?",
-      "DeleteBlocked": "Used by: {list}. Remove these references before deleting."
+      "DeleteBlocked": "Used by: {list}. Remove these references before deleting.",
+      "Filter": "Filter",
+      "ClearFilters": "Clear filters"
     },
     "Nav": {
       "General": "General",
@@ -426,9 +426,6 @@
       "VersionAndStatus": "Version and status",
       "Status": "Status",
       "CreateNewVersion": "Create New Version",
-      "FoundryBackedContentsOfThisConfigurableType": "Foundry-backed contents of this configurable type.",
-      "DefinitionsOfThisConfigurableType": "Definitions of this configurable type.",
-      "ConfigurableRuleThemAllEntries": "Configurable Rule Them'All entries.",
       "SyncFoundryLibraries": "Sync Foundry Libraries",
       "Create": "Create",
       "NoEntries": "No entries.",
