@@ -74,7 +74,7 @@ test('Creation System creates real Actor through injected Foundry API and persis
 });
 test('when creation fails AFTER Foundry Actor.create, newly created Actor is deleted',async()=>{
  const {api,v,answers,actors,runtime}=await build();
- const bridge=new FoundryContentBridge(api,{...runtime,instantiateDefinition:async()=>{throw new Error('Runtime write failed')}},{hooks:null,documentTypeResolver:()=> 'hero'});
+ const bridge=new FoundryContentBridge(api,{...runtime,acquire:async()=>{throw new Error('Runtime write failed')}},{hooks:null,documentTypeResolver:()=> 'hero'});
  const previous=globalThis.Actor;globalThis.Actor={create:data=>actors.create(data)};
  try{await assert.rejects(()=>bridge.createActorFromCreationSystem(v,'creation',{name:'Failing character',actorType:'hero',answers}),/Runtime write failed/);
  assert.equal(actors.created.length,1);assert.equal(actors.created[0].deleted,true);assert.equal(actors.map.size,0);

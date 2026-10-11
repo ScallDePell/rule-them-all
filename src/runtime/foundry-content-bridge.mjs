@@ -76,32 +76,34 @@ export class FoundryContentBridge{
    * Failure deletes ONLY the newly created Actor; an existing Actor is never
    * silently mutated or rolled back by this method.
    */
-  async createActorFromCreationSystem(versionId,creationSystemId,{name,actorType=null,answers={}}={}){
+  async createActorFromCreationSystem(versionId,creationSystemId,{name,actorType=null,answers={},sessionId=null}={}){
     if(typeof name!=="string"||!name.trim())throw new Error("Creating an Actor requires a name.");
+    // A CreationSession finalized again after an interruption gets the Actor it completed,
+    // or replaces the Actor it left half built.
+    const existing=sessionId?globalThis.game?.actors?.find?.(actor=>actor.getFlag?.(MODULE_ID,"creationSessionId")===sessionId):null;
+    if(existing?.getFlag(MODULE_ID,"creationRun"))return {actor:existing,run:clone(existing.getFlag(MODULE_ID,"creationRun"))};
+    if(existing)await existing.delete();
     const ruleset=this.ruleset(versionId);
     const plan=planCreationSystem(ruleset,creationSystemId,answers);
     const type=this.documentTypeResolver("Actor",{requestedType:actorType});
     const klass=globalThis.Actor?.implementation??globalThis.Actor;
     if(!klass?.create)throw new Error("Foundry Actor.create API is unavailable.");
-    const actor=await klass.create({name:name.trim(),type});
+    const actor=await klass.create({name:name.trim(),type,...(sessionId?{flags:{[MODULE_ID]:{creationSessionId:sessionId}}}:{})});
     if(!actor?.uuid||actor.documentName!=="Actor")throw new Error("Foundry did not return a created Actor.");
     try{
       const created=new Set(),acquisitions=[];
-      for(const operation of plan.operations){
-        if(operation.kind==="definition"){
-          if(created.has(operation.definitionId))continue;
-          await this.runtime.instantiateDefinition(versionId,actor.uuid,operation.definitionId,{initial:plan.initialByDefinition[operation.definitionId]??{}});
-          created.add(operation.definitionId);
-        }else{
-          const result=await this.acquireTemplate(versionId,actor.uuid,operation.templateId,{
-            sourceItemId:`creation:${creationSystemId}:${operation.stepId}:${operation.templateId}`,
-            selections:operation.selections
-          });
-          for(const id of result.createdDefinitionIds??[])created.add(id);
-          acquisitions.push({templateId:operation.templateId,stepId:operation.stepId,alreadyApplied:result.alreadyApplied===true});
-        }
+      // Every Definition chosen in the steps is instantiated in one runtime transaction.
+      const chosen=[...new Set(plan.operations.filter(operation=>operation.kind==="definition").map(operation=>operation.definitionId))];
+      if(chosen.length){const result=await this.runtime.acquire(versionId,actor.uuid,{definitionBindings:chosen.map(definitionId=>({definitionId,initial:plan.initialByDefinition[definitionId]??{}})),summary:{creationSystemId}});for(const id of result.acquiredDefinitionIds)created.add(id);}
+      for(const operation of plan.operations.filter(operation=>operation.kind==="content")){
+        const result=await this.acquireTemplate(versionId,actor.uuid,operation.templateId,{
+          sourceItemId:`creation:${creationSystemId}:${operation.stepId}:${operation.templateId}`,
+          selections:operation.selections
+        });
+        for(const id of result.createdDefinitionIds??[])created.add(id);
+        acquisitions.push({templateId:operation.templateId,stepId:operation.stepId,alreadyApplied:result.alreadyApplied===true});
       }
-      const run={versionId,creationSystemId,selectedByStep:plan.selectedByStep,createdDefinitionIds:[...created],acquisitions,completedAt:Date.now()};
+      const run={versionId,creationSystemId,sessionId,selectedByStep:plan.selectedByStep,createdDefinitionIds:[...created],acquisitions,completedAt:Date.now()};
       await actor.setFlag(MODULE_ID,"creationRun",run);
       this.hooks?.callAll?.("ruleThemAllCreationCompleted",actor,clone(run));
       return {actor,run:clone(run)};

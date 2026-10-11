@@ -10,6 +10,15 @@ const SUPPORTED=new Set(['definitions','contentTemplates']);
  * Unsupported step contracts fail BEFORE any document or flag is changed.
  */
 export function planCreationSystem(ruleset,creationSystemId,answers={}){
+  const analysis=analyzeCreationSystem(ruleset,creationSystemId,answers);
+  const failed=analysis.steps.find(step=>step.errors.length);
+  if(failed)throw new Error(failed.errors[0]);
+  const {steps:_steps,complete:_complete,...plan}=analysis;return plan;
+}
+
+/** CP-15 CreationContext projection: every step is checked on its own, so an answer made
+ * invalid by an upstream change stays stored and is reported on its step, never dropped. */
+export function analyzeCreationSystem(ruleset,creationSystemId,answers={}){
   const system=(ruleset.creationSystems??[]).find(entry=>entry.id===creationSystemId&&entry.enabled!==false);
   if(!system)throw new Error(`Creation System unavailable: ${creationSystemId}.`);
   if(!answers || typeof answers!=='object'||Array.isArray(answers))throw new TypeError('Creation answers must be an object.');
@@ -22,13 +31,20 @@ export function planCreationSystem(ruleset,creationSystemId,answers={}){
       throw new Error(`Conflicting initial values for Definition ${definitionId} across selected content.`);
     initialByDefinition[definitionId]=copyJSON(initial);
   };
+  const report=[];
   for(const step of steps){
+    const errors=[],mark=operations.length;
+    try{analyzeStep(step);}catch(error){errors.push(error.message);operations.length=mark;delete selectionSummary[step.id];}
+    report.push({id:step.id,name:step.name,kind:step.kind,answered:Object.hasOwn(answers,step.id),errors});
+  }
+  return {creationSystemId:system.id,selectedByStep:selectionSummary,operations,initialByDefinition,steps:report,complete:report.every(step=>!step.errors.length)};
+  function analyzeStep(step){
     const answer=answers[step.id]??{},selected=Array.isArray(answer)?answer:answer?.selectedIds??[];
     if(!Array.isArray(selected))throw new Error(`Creation step ${step.id} requires selectedIds[].`);
     if(new Set(selected).size!==selected.length)throw new Error(`Duplicate selection in Creation step: ${step.id}.`);
     if(step.kind==='review'){
       if(selected.length)throw new Error(`Review step ${step.id} cannot acquire objects.`);
-      selectionSummary[step.id]=[];continue;
+      selectionSummary[step.id]=[];return;
     }
     if(step.kind==='allocation')throw new Error(`Creation allocation step ${step.id} needs an explicit allocation contract; no Actor has been changed.`);
     if(!['choice','content'].includes(step.kind))throw new Error(`Unsupported Creation step kind: ${step.kind}.`);
@@ -55,5 +71,4 @@ export function planCreationSystem(ruleset,creationSystemId,answers={}){
     }
     selectionSummary[step.id]=copyJSON(selected);
   }
-  return {creationSystemId:system.id,selectedByStep:selectionSummary,operations,initialByDefinition};
 }
