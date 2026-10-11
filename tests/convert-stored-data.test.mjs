@@ -25,3 +25,12 @@ test('a World saved before the UI simplification is refused as is and loads once
   assert.deepEqual(r.sectionColors,{organization:'#445566'});
   assert.ok(notes.some(note=>note.includes('Restriction')));
 });
+
+test('FormulaBindings copied per role become one binding without a role', () => {
+  const source=old(),r=source.rulesetFamilies[0].versions[0].workingDraft;
+  const target={objectKind:'definition',objectId:'str',capabilityId:'value',outputId:'value.final'};
+  r.formulaBindings=[{id:'b-target',nameKey:'B',formulaRef:'f',targetRef:target,targetRole:'target'},{id:'b-self',nameKey:'B',formulaRef:'f',targetRef:target,targetRole:'self'}];
+  const {snapshot,notes}=convertSnapshot(source);
+  assert.deepEqual(snapshot.rulesetFamilies[0].versions[0].workingDraft.formulaBindings.map(b=>[b.id,Object.hasOwn(b,'targetRole')]),[['b-self',false]]);
+  assert.ok(notes.some(note=>note.includes('b-target')));
+});

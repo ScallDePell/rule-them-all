@@ -10,6 +10,8 @@ import {need} from "./diagnostics.mjs";
 export const SLOT_CAPABILITIES = Object.freeze(["pool", "collection"]);
 export const POOL_BOUND_POLICIES = Object.freeze(["clamp", "reject", "allow"]);
 export const POOL_VALUE_TYPES = Object.freeze(["number", "integer"]);
+/** When a pool's maximum changes: keep what is missing (11/11 becomes 13/13, 9/11 becomes 11/13) or keep the current value. */
+export const POOL_MAXIMUM_POLICIES = Object.freeze(["keepMissing", "keepCurrent"]);
 export const COLLECTION_ENTRY_MODES = Object.freeze(["owned", "reference", "value"]);
 export const COLLECTION_ORDERINGS = Object.freeze(["insertion", "manual"]);
 const SLOT_ID = /^[A-Za-z][A-Za-z0-9_-]*$/;
@@ -44,8 +46,11 @@ function slotIdentity(slot, label) {
 /** PoolDefinition (CP-26). */
 export function preparePoolSlot(data, options = {}, label = "PoolDefinition") {
   slotIdentity(data, label);
-  const slot = {valueType: "number", underflowPolicy: "clamp", overflowPolicy: "clamp", order: 0, ...copyJSON(data)};
-  onlyFields(slot, ["id", "valueType", "minimum", "maximum", "initial", "underflowPolicy", "overflowPolicy", "presentationRole", "order"], label);
+  const slot = {valueType: "number", underflowPolicy: "clamp", overflowPolicy: "clamp", maximumPolicy: "keepMissing", order: 0, ...copyJSON(data)};
+  onlyFields(slot, ["id", "name", "valueType", "minimum", "maximum", "initial", "underflowPolicy", "overflowPolicy", "maximumPolicy", "presentationRole", "order"], label);
+  if (slot.name !== undefined && typeof slot.name !== "string") throw new Error(`${label}.name must be text.`);
+  if (!slot.name?.trim()) delete slot.name;
+  if (!POOL_MAXIMUM_POLICIES.includes(slot.maximumPolicy)) throw new Error(`${label}.maximumPolicy must be keepMissing or keepCurrent.`);
   if (!POOL_VALUE_TYPES.includes(slot.valueType)) throw new Error(`${label}.valueType must be number or integer.`);
   for (const key of ["underflowPolicy", "overflowPolicy"]) if (!POOL_BOUND_POLICIES.includes(slot[key])) throw new Error(`${label}.${key} must be clamp, reject or allow.`);
   if (slot.presentationRole !== undefined && typeof slot.presentationRole !== "string") throw new Error(`${label}.presentationRole must be a string.`);

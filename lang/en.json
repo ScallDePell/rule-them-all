@@ -609,7 +609,13 @@
       "NoContentTypes": "No Content Types yet.",
       "MinimumEntries": "Minimum entries",
       "MaximumEntries": "Maximum entries",
-      "Capacity": "Capacity Formula"
+      "Capacity": "Capacity Formula",
+      "Name": "Label",
+      "WhenMaximumChanges": "When the maximum changes",
+      "MaximumPolicy": {
+        "keepMissing": "Keep what is missing",
+        "keepCurrent": "Keep the current value"
+      }
     },
     "Lab": {
       "Choose": "Choose…",
@@ -871,7 +877,7 @@
       },
       "modifier": {
         "Summary": "A Modifier adjusts a final value (bonus, penalty, cap) while its Conditions are true.",
-        "Usage": "Stacking rules decide whether several Modifiers add up or the best one wins."
+        "Usage": "A Modifier that no Action applies works everywhere, while its Conditions are true. A Modifier applied by an Action only works on the Actor that received it, for its duration. Stacking rules decide whether several Modifiers add up or the best one wins."
       },
       "duration": {
         "Summary": "A Duration says how long a state lasts: instant, fixed, until an Event, while a Condition holds, until removed or until a date.",

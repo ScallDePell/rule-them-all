@@ -11,7 +11,7 @@ export function createEntrySeed(kind,{uid,definitionTypeId=null,contentTypeId=nu
     }
   if(kind==="parameter")return{id:uid("parameter"),nameKey:"",descriptionKey:"",enabled:true,tags:[],valueType:"number",value:0,scope:"ruleset"};
   if(kind==="formula")return{id:uid("formula"),nameKey:"",descriptionKey:"",enabled:true,tags:[],resultType:"number",expression:{type:"literal",value:0}};
-  if(kind==="formulaBinding")return{id:uid("binding"),nameKey:"",descriptionKey:"",enabled:true,tags:[],formulaRef:"",targetRef:{objectKind:"definition",objectId:"",capabilityId:"",outputId:""},targetRole:"self"};
+  if(kind==="formulaBinding")return{id:uid("binding"),nameKey:"",descriptionKey:"",enabled:true,tags:[],formulaRef:"",targetRef:{objectKind:"definition",objectId:"",capabilityId:"",outputId:""}};
   if(kind==="condition")return{id:uid("condition"),nameKey:"",descriptionKey:"",enabled:true,tags:[],expression:{type:"literal",value:true}};
   if(kind==="roll")return{id:uid("roll"),nameKey:"",descriptionKey:"",enabled:true,tags:[],formula:"",data:{}};
   if(kind==="outcome")return{id:uid("outcome"),nameKey:"",descriptionKey:"",enabled:true,tags:[],resultKey:"",conditionRef:null,labelKey:""};

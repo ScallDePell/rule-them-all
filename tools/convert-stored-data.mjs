@@ -1,4 +1,4 @@
-/** One-shot conversion of a World saved before the 2026-10-11 UI simplification.
+/** One-shot conversion of a World saved before the 2026-10-11 UI simplification or the RWF gap fixes.
  * The module itself reads only the current format; this tool rewrites stored data once.
  * In the Foundry console, as GM:
  *   const {convertWorld}=await import("/modules/rule-them-all/tools/convert-stored-data.mjs");
@@ -140,6 +140,15 @@ export function convertRuleset(source) {
     .sort((a, b) => (priority.get(b.id) ?? 0) - (priority.get(a.id) ?? 0) || a.index - b.index).map(x => x.id)}));
   r.outcomes = (r.outcomes ?? []).map(o => without(o, ["priority"]));
   r.contentTemplates = (r.contentTemplates ?? []).map(convertTemplate);
+
+  // 2026-10-11 (RWF gaps): a FormulaBinding holds for every role. Of the copies made per role, the self one stays.
+  const bindings = new Map();
+  for (const b of [...(r.formulaBindings ?? [])].sort((a, b) => Number((b?.targetRole ?? "self") === "self") - Number((a?.targetRole ?? "self") === "self"))) {
+    const key = JSON.stringify(pick(b?.targetRef ?? {}, ["objectId", "capabilityId", "slotId", "outputId"]));
+    if (bindings.has(key)) { notes.push(`formulaBindings.${b.id}: duplicate of ${bindings.get(key).id} for another role, removed.`); continue; }
+    bindings.set(key, without(b, ["targetRole"]));
+  }
+  if (r.formulaBindings) r.formulaBindings = r.formulaBindings.map(b => [...bindings.values()].find(x => x.id === b?.id)).filter(Boolean);
 
   const policy = restrictionPolicy(restrictions, notes);
   if (policy) r.permissionPolicies = [...(r.permissionPolicies ?? []), policy];

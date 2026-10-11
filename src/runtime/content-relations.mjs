@@ -14,7 +14,7 @@ export class ContentGrantHandlers {
   #handlers=new Map();
   constructor(){
     this.register('definition',(relation,plan)=>{
-      plan.definitionBindings.push({definitionId:relation.targetRef.objectId,initial:copyJSON(relation.config?.initial??{})});
+      plan.definitionBindings.push({definitionId:relation.targetRef.objectId,initial:copyJSON(relation.config?.initial??{}),add:copyJSON(relation.config?.add??{})});
     });
     this.register('action',(relation,plan)=>{
       plan.actionIds.push(relation.targetRef.objectId);

@@ -17,6 +17,16 @@ import {SLOT_CAPABILITIES,requireSlot,poolSlotState,collectionSlotState,boundPoo
 const clone=v=>copyJSON(v);
 const roleRef=(context,role)=>context?.roles?.[role]??null;
 const enabled=(entry)=>entry&&entry.enabled!==false;
+const appliedByActions=new WeakMap();
+/** A Modifier that no Action applies is passive: it changes value.final wherever its Conditions are true.
+ * A Modifier an Action applies only lives as the ModifierStates that Action creates. */
+function passiveModifiers(ruleset,reference){
+  if(!appliedByActions.has(ruleset))appliedByActions.set(ruleset,new Set((ruleset.actions??[]).flatMap(action=>[...(action.modifierApplications??[]).map(row=>row?.modifierRef),...(action.stateApplications??[]).flatMap(row=>row?.modifierRefs??[])])));
+  const applied=appliedByActions.get(ruleset);
+  return (ruleset.modifiers??[]).filter(modifier=>{if(!enabled(modifier)||applied.has(modifier.id))return false;const t=modifier.targetRef??{};return t.objectKind===reference.objectKind&&t.objectId===reference.objectId&&(t.capabilityId??"value")==="value"&&(t.outputId??"value.final")==="value.final";});
+}
+const stackRow=m=>({id:m.id,operation:m.operation,value:Number(m.operand??0),priority:Number(m.priority??0),stacking:m.stackingPolicy});
+const activeStates=ds=>(ds?.modifiers??[]).filter(m=>m?.active!==false&&(m.targetRef?.outputId??"value.final")==="value.final");
 /** Before instantiation, validate the source definition's configured contract.
  * Unknown legacy rules remain inert and reported by configurator validation. */
 function assertDefinitionContract(ruleset,definition){
@@ -61,7 +71,8 @@ export class RuntimeEngine{
   /** Every persistent runtime write goes through one transaction (CP-08, CP-18). */
   transaction(versionId,kind,{transactionId=null,summary=null,corrects=null}={}){
     const authorize=async(ref,changes)=>{for(const change of changes)await this.#require(versionId,"write",{objectKind:"definition",objectId:change.scope==="definition"?change.id:(change.after??change.before)?.definitionId},ref);};
-    return new RuntimeTransaction(this.adapter,{kind,rulesetVersionId:versionId,transactionId,summary,corrects,authorize,...(this.userId?{userId:this.userId}:{})});
+    const prepare=(ref,state)=>this.#followMaxima(versionId,ref,state);
+    return new RuntimeTransaction(this.adapter,{kind,rulesetVersionId:versionId,transactionId,summary,corrects,authorize,prepare,...(this.userId?{userId:this.userId}:{})});
   }
   /** Ledger entries of a container, keeping only the changes this user may read. */
   async getLedger(containerRef){
@@ -110,7 +121,28 @@ export class RuntimeEngine{
       const start=given!==undefined?given:slot.initial?await this.#valueSource(slot.initial,context,evaluator):bounds.maximum??bounds.minimum??0;
       resolved.pool[slot.id]=boundPoolValue(slot,start,bounds,`${definition.id}/${slot.id}`);
     }
-    return createDefinitionState(definition,{initial,slotStates:initialSlotStates(definition,initial,resolved)});
+    const ds=createDefinitionState(definition,{initial,slotStates:initialSlotStates(definition,initial,resolved)});
+    for(const slot of definition.slots?.pool??[]){const bounds=await this.#poolBounds(slot,context,evaluator);if(bounds.maximum!==null)poolSlotState(ds,slot.id).lastMaximum=bounds.maximum;}
+    return ds;
+  }
+  /** A pool whose maximum changed since it was last written follows it (slot.maximumPolicy):
+   * keepMissing moves current by the same amount, keepCurrent leaves it; both then respect the bounds. */
+  async #followMaxima(versionId,ref,state){
+    if(state.rulesetVersionId!==versionId)return;
+    const ruleset=this.ruleset(versionId),context={roles:{self:ref},defaultRole:"self"};let evaluator=null;
+    for(const ds of Object.values(state.definitionStates??{})){
+      const definition=ruleset.definitions?.find(x=>x.id===ds.definitionId);
+      for(const slot of definition?.slots?.pool??[]){
+        const pool=ds.capabilityStates?.pool?.[slot.id];if(!pool||!slot.maximum)continue;
+        evaluator??=this.evaluator(versionId,new Map([[this.#refKey(ref),state]]));
+        const bounds=await this.#poolBounds(slot,context,evaluator);if(bounds.maximum===null||bounds.maximum===pool.lastMaximum)continue;
+        let current=Number(pool.current);
+        if((slot.maximumPolicy??"keepMissing")==="keepMissing"&&Number.isFinite(pool.lastMaximum))current+=bounds.maximum-pool.lastMaximum;
+        if(slot.overflowPolicy!=="allow"&&current>bounds.maximum)current=bounds.maximum;
+        if(slot.underflowPolicy!=="allow"&&bounds.minimum!==null&&current<bounds.minimum)current=bounds.minimum;
+        pool.current=current;pool.lastMaximum=bounds.maximum;
+      }
+    }
   }
   async #valueSource(source,context,evaluator){if(!source)return null;if(Object.hasOwn(source,"literal"))return Number(source.literal);return Number(await evaluator.formula(source.formulaRef,context));}
   async #poolBounds(slot,context,evaluator){return {minimum:await this.#valueSource(slot.minimum,context,evaluator),maximum:await this.#valueSource(slot.maximum,context,evaluator)};}
@@ -165,20 +197,36 @@ export class RuntimeEngine{
 
   async #stateForRole(versionId,context,role){const ref=roleRef(context,role);if(!ref)throw new Error(`EvaluationContext role is missing: ${role}.`);return {ref:normalizeRuntimeContainerRef(ref),state:await this.adapter.load(ref,{rulesetVersionId:versionId})};}
   #outputContract(ruleset,reference){const def=ruleset.definitions?.find(x=>x.id===reference.objectId);if(!def)throw new Error(`Definition not found: ${reference.objectId}.`);if(reference.objectKind!=="definition")throw new Error(`Runtime Reference must target a Definition output, got ${reference.objectKind}.`);if(!reference.capabilityId||!reference.outputId)throw new Error("Runtime Reference requires capabilityId and outputId.");if(!(def.capabilities??[]).includes(reference.capabilityId))throw new Error(`Definition ${def.id} does not have capability ${reference.capabilityId}.`);const cap=capabilityTypeRegistry.get(reference.capabilityId);const output=cap?.outputs?.[reference.outputId];if(!output)throw new Error(`Output not found: ${reference.capabilityId}/${reference.outputId}.`);const slot=SLOT_CAPABILITIES.includes(reference.capabilityId)?requireSlot(def,reference):null;return {definition:def,output,slot};}
-  #readOutput(ruleset,containerState,reference){const {definition,output}=this.#outputContract(ruleset,reference);const cap=reference.capabilityId;
+  #readOutput(ruleset,containerState,reference,passiveRows=[]){const {definition,output}=this.#outputContract(ruleset,reference);const cap=reference.capabilityId;
     // A state Definition is active through its own DefinitionState or through active StateInstances (CP-28).
     if(cap==="state"){const instances=containerState.stateInstances.filter(instance=>instance.definitionId===definition.id&&instance.active!==false);if(reference.outputId==="state.stacks")return instances.reduce((sum,instance)=>sum+Number(instance.stacks??1),0);if(reference.outputId==="state.active")return Boolean(containerState.definitionStates?.[definition.id]?.capabilityStates?.state?.active)||instances.length>0;}
     const ds=containerState.definitionStates?.[definition.id];if(!ds)throw new Error(`Definition is not instantiated on RuntimeContainer: ${definition.id}.`);
-    if(cap==="value"){const base=Number(ds.capabilityStates?.value?.base??0);if(reference.outputId==="value.base")return base;if(reference.outputId==="value.final")return applyModifierStack(base,(ds.modifiers??[]).filter(m=>m?.active!==false&&(m.targetRef?.outputId??"value.final")==="value.final").map(m=>({id:m.id,operation:m.operation,value:Number(m.operand??0),priority:Number(m.priority??0),stacking:m.stackingPolicy}))).value;}
+    if(cap==="value"){const base=Number(ds.capabilityStates?.value?.base??0);if(reference.outputId==="value.base")return base;if(reference.outputId==="value.final")return applyModifierStack(base,[...activeStates(ds).map(stackRow),...passiveRows]).value;}
     if(cap==="pool"&&reference.outputId==="pool.current")return Number(poolSlotState(ds,reference.slotId).current);
     if(cap==="pool")throw new Error(`Pool bounds are derived; resolve ${reference.outputId} through resolveReference.`);
     if(cap==="collection"&&reference.outputId==="collection.count")return collectionSlotState(ds,reference.slotId).entries.length;
     const source=output.source?.split(".")??[];let value=ds.capabilityStates?.[cap];for(const part of source.slice(1))value=value?.[part];return clone(value);
   }
   /** Read (or prepare a write of) a RuntimeReference {container, reference}; a bare logical Reference is read on `role`, else on the context's default role. */
-  async resolveReference(versionId,target,context,{forWrite=false,role=null,staged=null,skipBinding=false}={}){const ruleset=this.ruleset(versionId);const runtime=toRuntimeReference(target,role??context?.defaultRole??"self"),reference=runtime.reference;const resolved=resolveContainer(runtime,context);context=resolved.context;const selectedRole=resolved.role,n=resolved.containerRef;const state=staged?.get(this.#refKey(n))??await this.adapter.load(n,{rulesetVersionId:versionId});const binding=(ruleset.formulaBindings??[]).find(b=>enabled(b)&&b.targetRef?.objectKind===reference.objectKind&&b.targetRef?.objectId===reference.objectId&&b.targetRef?.capabilityId===reference.capabilityId&&b.targetRef?.outputId===reference.outputId&&(b.targetRef?.slotId??null)===(reference.slotId??null)&&(b.targetRole??"self")===selectedRole);if(forWrite){const {output}=this.#outputContract(ruleset,reference);if(binding)throw new Error(`Output is derived and read-only: ${reference.outputId}.`);if(!output.mutable)throw new Error(`Output is not mutable: ${reference.outputId}.`);return {containerRef:n,state,reference,output};}if(binding&&!skipBinding){const derivedContext={...context,defaultRole:selectedRole};return await this.evaluator(versionId,staged).formula(binding.formulaRef,derivedContext);}
+  async resolveReference(versionId,target,context,{forWrite=false,role=null,staged=null,skipBinding=false}={}){const ruleset=this.ruleset(versionId);const runtime=toRuntimeReference(target,role??context?.defaultRole??"self"),reference=runtime.reference;const resolved=resolveContainer(runtime,context);context=resolved.context;const selectedRole=resolved.role,n=resolved.containerRef;const state=staged?.get(this.#refKey(n))??await this.adapter.load(n,{rulesetVersionId:versionId});const binding=(ruleset.formulaBindings??[]).find(b=>enabled(b)&&b.targetRef?.objectKind===reference.objectKind&&b.targetRef?.objectId===reference.objectId&&b.targetRef?.capabilityId===reference.capabilityId&&b.targetRef?.outputId===reference.outputId&&(b.targetRef?.slotId??null)===(reference.slotId??null));if(forWrite){const {output}=this.#outputContract(ruleset,reference);if(binding)throw new Error(`Output is derived and read-only: ${reference.outputId}.`);if(!output.mutable)throw new Error(`Output is not mutable: ${reference.outputId}.`);return {containerRef:n,state,reference,output};}const finalValue=reference.capabilityId==="value"&&reference.outputId==="value.final";
+    const passiveRows=finalValue?await this.#passiveRows(versionId,ruleset,reference,{...context,defaultRole:selectedRole},staged):[];
+    if(binding&&!skipBinding){const derivedContext={...context,defaultRole:selectedRole},value=await this.evaluator(versionId,staged).formula(binding.formulaRef,derivedContext);if(!finalValue)return value;
+      // A derived value.final takes the same ModifierStates and passive Modifiers as a stored one.
+      return applyModifierStack(Number(value),[...activeStates(state.definitionStates?.[reference.objectId]).map(stackRow),...passiveRows]).value;}
     if(reference.capabilityId==="pool"&&reference.outputId!=="pool.current"){const {slot}=this.#outputContract(ruleset,reference);const bounds=await this.#poolBounds(slot,{...context,defaultRole:selectedRole},this.evaluator(versionId,staged));return reference.outputId==="pool.minimum"?bounds.minimum:bounds.maximum;}
-    return this.#readOutput(ruleset,state,reference);}
+    return this.#readOutput(ruleset,state,reference,passiveRows);}
+  /** Stack rows of the passive Modifiers on a value.final whose Conditions are true for the read role. */
+  async #passiveRows(versionId,ruleset,reference,context,staged){
+    const modifiers=passiveModifiers(ruleset,reference);if(!modifiers.length)return [];
+    const evaluator=this.evaluator(versionId,staged);evaluator.__staged=staged;const rows=[];
+    for(const modifier of modifiers){
+      let active=true;for(const id of modifier.conditionRefs??[])if(!await evaluator.condition(id,context)){active=false;break;}
+      if(!active)continue;
+      const source=modifier.valueSource,value=source.kind==="literal"?source.value:source.kind==="parameter"?evaluator.parameter(source.id):source.kind==="formula"?await evaluator.formula(source.id,context):await this.resolveReference(versionId,source.reference,context,{staged});
+      rows.push({id:modifier.id,operation:modifier.operation,value:Number(value),priority:Number(modifier.priority??0),stacking:modifier.stacking});
+    }
+    return rows;
+  }
   #refKey(ref){return ref.uuid??`${ref.kind}:${ref.id}`;}
   evaluator(versionId,staged=null){const ruleset=this.ruleset(versionId);return new RuntimeEvaluator({ruleset,resolveReference:(reference,context,opts)=>this.resolveReference(versionId,reference,context,{...opts,staged})});}
   async evaluateFormula(versionId,formulaId,context={}){return await this.evaluator(versionId).formula(formulaId,context);}
@@ -248,7 +296,7 @@ export class RuntimeEngine{
   /** CP-16 acquisition: the Content's Definition grants (only the absent ones) and, when given,
    * the acquisition Action's Conditions, Costs and Effects commit as one transaction. */
   async acquire(versionId,containerRef,{actionId=null,definitionBindings=[],context={},transactionId=null,summary=null}={}){
-    const ref=normalizeRuntimeContainerRef(containerRef),grants=definitionBindings.map(binding=>({definitionId:binding.definitionId,initial:binding.initial??{},targetRole:"self",ifAbsent:true}));
+    const ref=normalizeRuntimeContainerRef(containerRef),grants=definitionBindings.map(binding=>({definitionId:binding.definitionId,initial:binding.initial??{},add:binding.add??{},targetRole:"self",ifAbsent:true}));
     if(actionId){
       const roles={...(context.roles??{}),self:ref,source:ref};
       const result=await this.executeAction(versionId,actionId,{...context,roles,defaultRole:context.defaultRole??"self"},{acquisitions:grants,transactionId});
@@ -301,10 +349,19 @@ export class RuntimeEngine{
   async #acquireInto(versionId,ruleset,ref,state,acquisition){
     const definition=ruleset.definitions?.find(x=>x.id===acquisition.definitionId&&enabled(x));if(!definition)throw new Error(`Definition unavailable: ${acquisition.definitionId}.`);
     if(state.rulesetVersionId&&state.rulesetVersionId!==versionId)throw new Error(`Runtime container is bound to another Ruleset version: ${state.rulesetVersionId}.`);
-    if(state.definitionStates[definition.id])return acquisition.ifAbsent?null:"present";
+    if(state.definitionStates[definition.id]){if(!acquisition.ifAbsent)return "present";this.#addToState(definition,state.definitionStates[definition.id],acquisition.add);return null;}
     assertDefinitionContract(ruleset,definition);
     state.rulesetVersionId=versionId;state.definitionStates[definition.id]=await this.#newDefinitionState(versionId,definition,ref,state,acquisition.initial??{});
+    this.#addToState(definition,state.definitionStates[definition.id],acquisition.add);
     return state.definitionStates[definition.id];
+  }
+  /** A grant's config.add raises the base value, whether the Definition was there or not. */
+  #addToState(definition,ds,add){
+    for(const [key,amount] of Object.entries(add??{})){
+      if(key!=="value.base"||!ds.capabilityStates?.value)throw new Error(`Acquisition can only add to value.base of a value Definition: ${definition.id} ${key}.`);
+      const value=Number(amount);if(!Number.isFinite(value))throw new Error(`Acquisition add for ${definition.id} is not a number.`);
+      ds.capabilityStates.value.base=Number(ds.capabilityStates.value.base??0)+value;
+    }
   }
   async #stagedState(versionId,context,role,staged){
     const target=roleRef(context,role);if(!target)throw new Error(`EvaluationContext role is missing: ${role}.`);
@@ -396,6 +453,7 @@ export class RuntimeEngine{
       const created=await this.#acquireInto(versionId,ruleset,ref,staged.get(key),acquisition);
       if(created==="present")return {actionId,allowed:false,reason:"acquired",definitionId:acquisition.definitionId,testResult,changes:[]};
       if(created){changes.push({acquisition:acquisition.definitionId,before:null,after:clone(created),containerRef:ref});acquired.push(acquisition.definitionId);}
+      else if(Object.keys(acquisition.add??{}).length)changes.push({acquisitionAdd:acquisition.definitionId,add:clone(acquisition.add),containerRef:ref});
     }
     await this.#stageStates(versionId,ruleset,action,context,staged,evaluator,changes);
     for(const effectId of effectRefs)changes.push(await this.previewEffect(versionId,effectId,context,staged));return {actionId,allowed:true,testResult,changes,acquired,staged};

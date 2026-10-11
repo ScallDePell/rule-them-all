@@ -173,7 +173,9 @@ export class FoundryContentBridge{
       const keys=Object.keys(initial).sort(),oldKeys=Object.keys(previous?.initial??{}).sort();
       if(previous&&keys.length&&oldKeys.length&&JSON.stringify(initial)!==JSON.stringify(previous.initial))
         throw new Error(`Conflicting initial Definition states: ${id}.`);
-      if(!previous||(!oldKeys.length&&keys.length))bindings.set(id,{...binding,initial});
+      // config.add values sum up, whichever grant brings them (a +1 from a Parcours and one from a background).
+      const add={...(previous?.add??{})};for(const [key,value] of Object.entries(binding.add??{}))add[key]=Number(add[key]??0)+Number(value);
+      if(!previous||(!oldKeys.length&&keys.length))bindings.set(id,{...binding,initial,add});else previous.add=add;
     }
     const definitionBindings=[...bindings.values()];
     const grantedDefinitionIds=[...bindings.keys()];
@@ -255,7 +257,7 @@ export class FoundryContentBridge{
     const origins=clone(previousOrigins);
     for(const acquisition of Object.values(current))for(const id of acquisition?.createdDefinitionIds??[])origins[originKey(acquisition.versionId,id)]=true;
     // CP-16: the Content's grants and its acquisition Action (Conditions, Costs, Effects) are one transaction.
-    const bindings=definitionBindings.filter(binding=>binding?.definitionId).map(binding=>({definitionId:binding.definitionId,initial:binding.initial??initialForDefinition(template,binding.definitionId)}));
+    const bindings=definitionBindings.filter(binding=>binding?.definitionId).map(binding=>({definitionId:binding.definitionId,initial:binding.initial??initialForDefinition(template,binding.definitionId),add:binding.add??{}}));
     const runtimeResult=await this.runtime.acquire(versionId,actor.uuid,{actionId:template.acquisitionActionRef??null,definitionBindings:bindings,summary:{templateId:template.id,sourceItemId}});
     if(!runtimeResult.allowed)throw new Error(`Acquisition refused by Action ${template.acquisitionActionRef}: ${runtimeResult.reason}.`);
     const createdDefinitionIds=[...runtimeResult.acquiredDefinitionIds];

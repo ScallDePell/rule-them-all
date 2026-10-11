@@ -605,7 +605,13 @@
       "NoContentTypes": "Aucun Content Type pour le moment.",
       "MinimumEntries": "Entrées minimum",
       "MaximumEntries": "Entrées maximum",
-      "Capacity": "Formula de capacité"
+      "Capacity": "Formula de capacité",
+      "Name": "Libellé",
+      "WhenMaximumChanges": "Quand le maximum change",
+      "MaximumPolicy": {
+        "keepMissing": "Garder ce qui manque",
+        "keepCurrent": "Garder la valeur actuelle"
+      }
     },
     "Lab": {
       "Choose": "Choisir…",
@@ -867,7 +873,7 @@
       },
       "modifier": {
         "Summary": "Un Modifier ajuste une valeur finale (bonus, malus, plafond) tant que ses Conditions sont vraies.",
-        "Usage": "Les règles d'empilement décident si plusieurs Modifiers se cumulent ou si le meilleur l'emporte."
+        "Usage": "Un Modifier qu'aucune Action n'applique vaut partout, tant que ses Conditions sont vraies. Un Modifier appliqué par une Action ne vaut que sur l'Actor qui l'a reçu, pour sa durée. Les règles d'empilement décident si plusieurs Modifiers se cumulent ou si le meilleur l'emporte."
       },
       "duration": {
         "Summary": "Une Duration dit combien de temps dure un état : instantané, fixe, jusqu'à un Event, tant qu'une Condition est vraie, jusqu'au retrait ou jusqu'à une date.",

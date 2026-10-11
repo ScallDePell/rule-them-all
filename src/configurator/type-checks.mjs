@@ -63,6 +63,20 @@ export function checkRulesetTypes(ruleset, d) {
       if (modifier && modifier.targetRef?.capabilityId !== "value") d.strict("MODIFIER_PERSISTENT", `actions[${index}]`, `Modifier ${modifier.id} must target a value output to be applied persistently.`);
     }
   });
+  // A grant's config.add raises value.base (RWF: a +1 from several Contents adds up).
+  const definitionsById = new Map(list(ruleset.definitions).map(definition => [definition?.id, definition]));
+  list(ruleset.contentTemplates).forEach((template, index) => {
+    const rows = [...list(template?.relations).map((row, at) => [row, `contentTemplates[${index}].relations[${at}].config.add`]),
+      ...list(template?.choiceGroups).flatMap((group, g) => list(group?.options).map((row, at) => [row, `contentTemplates[${index}].choiceGroups[${g}].options[${at}].config.add`]))];
+    for (const [row, path] of rows) {
+      const add = row?.config?.add;
+      if (add === undefined) continue;
+      const definition = definitionsById.get(row?.targetRef?.objectId);
+      const valid = isRecord(add) && row?.operation === "grant" && row?.targetRef?.objectKind === "definition" && list(definition?.capabilities).includes("value")
+        && Object.entries(add).every(([key, value]) => key === "value.base" && Number.isFinite(Number(value)));
+      if (!valid) d.strict("GRANT_ADD", path, "config.add only adds numbers to value.base of a granted value Definition.");
+    }
+  });
   list(ruleset.formulas).forEach((formula, index) => {
     if (!isRecord(formula) || !valueTypeRegistry.has(formula.resultType)) return;
     const actual = types.infer(formula.expression);

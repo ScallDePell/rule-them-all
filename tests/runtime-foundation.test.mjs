@@ -49,7 +49,7 @@ test('Runtime resolves declarative Test Roll and Outcome with typed context vari
 });
 
 test('v0.6.0 FormulaBinding exposes live derived outputs and makes them read-only',async()=>{
- const {api,v}=await setup();await api.createFormulaBinding(v,{id:'vitality-max-binding',nameKey:'Vitality max binding',formulaRef:'max',targetRef:{objectKind:'definition',objectId:'vitality',capabilityId:'pool',slotId:'hp',outputId:'pool.maximum'},targetRole:'self',enabled:true,order:10,tags:[]});
+ const {api,v}=await setup();await api.createFormulaBinding(v,{id:'vitality-max-binding',nameKey:'Vitality max binding',formulaRef:'max',targetRef:{objectKind:'definition',objectId:'vitality',capabilityId:'pool',slotId:'hp',outputId:'pool.maximum'},enabled:true,order:10,tags:[]});
  await api.publishRuleset(v);const adapter=new MemoryRuntimeAdapter(),engine=new RuntimeEngine({configurator:api,adapter,hooks:null}),actor={kind:'actor',id:'a'};
  await engine.instantiateDefinition(v,actor,'strength',{initial:{'value.base':3}});await engine.instantiateDefinition(v,actor,'vitality',{initial:{'pool.hp.current':8}});
  const ref={objectKind:'definition',objectId:'vitality',capabilityId:'pool',slotId:'hp',outputId:'pool.maximum'};

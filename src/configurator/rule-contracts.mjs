@@ -30,11 +30,12 @@ export function prepareFormula(data,options={}){
 }
 
 export function prepareFormulaBinding(data,options={}){
-  const x={descriptionKey:'',enabled:true,order:0,tags:[],formulaRef:'',targetRef:null,targetRole:'self',...copyJSON(data)};
+  const x={descriptionKey:'',enabled:true,order:0,tags:[],formulaRef:'',targetRef:null,...copyJSON(data)};
+  // A derived output is the same rule on every Actor, whatever role reads it.
+  if(Object.hasOwn(x,'targetRole'))throw new Error('Unsupported FormulaBinding field: targetRole.');
   identity(x,'FormulaBinding',options);need(nonempty(x.formulaRef),'FormulaBinding requires formulaRef.',options);
   if(x.targetRef!==null&&(!isRecord(x.targetRef)||x.targetRef.objectKind!=='definition'))throw new Error('FormulaBinding.targetRef must target a Definition output.');
   need(isRecord(x.targetRef)&&nonempty(x.targetRef.objectId)&&nonempty(x.targetRef.capabilityId)&&nonempty(x.targetRef.outputId),'FormulaBinding.targetRef must target a Definition output.',options);
-  need(nonempty(x.targetRole),'FormulaBinding.targetRole is required.',options);
   bool(x.enabled,'FormulaBinding.enabled');arr(x.tags,'FormulaBinding.tags');return x;
 }
 export function prepareCondition(data,options={}){

@@ -43,12 +43,12 @@ export function applyLedgerChanges(state,changes,side="before"){
  * Foundry has no multi-document ACID: each container is written in one Document update
  * (state + ledger), and a failed write compensates the containers already written. */
 export class RuntimeTransaction{
-  #adapter;#authorize;#staged=new Map();
+  #adapter;#authorize;#prepare;#staged=new Map();
   /** authorize(ref, changes) throws when the business permission (CP-11) refuses a change. */
-  constructor(adapter,{kind,rulesetVersionId,transactionId=null,summary=null,corrects=null,userId=globalThis.game?.user?.id??null,authorize=null}={}){
+  constructor(adapter,{kind,rulesetVersionId,transactionId=null,summary=null,corrects=null,userId=globalThis.game?.user?.id??null,authorize=null,prepare=null}={}){
     if(!kind)throw new Error("RuntimeTransaction requires a kind.");
     this.#adapter=adapter;this.kind=String(kind);this.rulesetVersionId=String(rulesetVersionId??"");
-    this.id=transactionId?String(transactionId):newId("tx");this.summary=summary;this.corrects=corrects;this.userId=userId;this.#authorize=authorize;
+    this.id=transactionId?String(transactionId):newId("tx");this.summary=summary;this.corrects=corrects;this.userId=userId;this.#authorize=authorize;this.#prepare=prepare;
   }
   /** Working copy of a container; the revision read here is the one the commit expects. */
   async load(containerRef){
@@ -68,6 +68,8 @@ export class RuntimeTransaction{
       const done=ledger.filter(entry=>entry.transactionId===this.id);
       if(done.length)return {transactionId:this.id,duplicate:true,entries:copyJSON(done)};
       if(current.runtimeRevision!==expected)throw new RuntimeTransactionError(TRANSACTION_ERRORS.conflict,`Runtime container changed since it was read (revision ${current.runtimeRevision}, expected ${expected}).`,{ref,expected,actual:current.runtimeRevision});
+      // prepare(ref, state): last derived bookkeeping on the state about to be written (pools following their maximum).
+      await this.#prepare?.(ref,state);
       const changes=diffRuntimeStates(current,state);
       if(!changes.length&&current.rulesetVersionId===state.rulesetVersionId)continue;
       await this.#authorize?.(ref,changes);

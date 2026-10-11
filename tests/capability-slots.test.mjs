@@ -80,7 +80,7 @@ test('Pool bounds are recomputed from their ValueSource and the policies apply o
   await engine.executeAction(v,'do-hurt',context);await engine.executeAction(v,'do-hurt',context);
   assert.equal(await current(),0,'clamped at the minimum');
   const state=await engine.getContainerState(actor);
-  assert.deepEqual(state.definitionStates.hero.capabilityStates.pool,{hp:{current:0}},'only current is stored');
+  assert.deepEqual(state.definitionStates.hero.capabilityStates.pool,{hp:{current:0,lastMaximum:8}},'current and the maximum it was last written against');
   await assert.rejects(()=>engine.resolveReference(v,ref('hero','pool','pool.current'),context),/requires slotId/);
 });
 
@@ -147,6 +147,23 @@ test('Slot editor round-trips pool and collection slots through the form',async(
   const bag={dataset:{slotOriginal:'bag'},querySelector(sel){const prop=sel.match(/data-slot-prop="([^"]+)"/)?.[1];return field({id:'sack',entryMode:'value',minimumEntries:'',maximumEntries:'2',capacityFormulaRef:'',unique:''}[prop]??'',prop==='unique');},
     querySelectorAll:sel=>sel.includes('slotValueKind')?[field('string',true)]:[]};
   const slots=collectDefinitionSlots(sel=>sel.includes('pool')?[pool]:[bag],definition);
-  assert.deepEqual(slots.pool,[{id:'hp',minimum:{literal:1},maximum:{formulaRef:'f'},overflowPolicy:'clamp',order:5,valueType:'integer',underflowPolicy:'allow'}]);
+  assert.deepEqual(slots.pool,[{id:'hp',minimum:{literal:1},maximum:{formulaRef:'f'},overflowPolicy:'clamp',order:5,valueType:'integer',underflowPolicy:'allow',maximumPolicy:'keepMissing'}]);
   assert.deepEqual(slots.collection,[{id:'sack',entryMode:'value',allowedKinds:['string'],unique:true,maximumEntries:2}]);
+});
+
+test('A pool follows its maximum: keepMissing keeps the gap, keepCurrent keeps the value',async()=>{
+  const follow=await runtime({});
+  await follow.engine.executeAction(follow.v,'do-hurt',follow.context);
+  assert.equal(await follow.current(),3,'8 - 5');
+  await follow.engine.setDefinitionState(follow.v,follow.actor,'might',{base:5});
+  assert.equal(await follow.current(),5,'the maximum went from 8 to 10, still 5 missing');
+  await follow.engine.setDefinitionState(follow.v,follow.actor,'might',{base:1});
+  assert.equal(await follow.current(),0,'the maximum went down to 2: clamped at the minimum');
+  const keep=await runtime({maximumPolicy:'keepCurrent'});
+  await keep.engine.setDefinitionState(keep.v,keep.actor,'might',{base:5});
+  assert.equal(await keep.current(),8);
+  await keep.engine.setDefinitionState(keep.v,keep.actor,'might',{base:2});
+  assert.equal(await keep.current(),4,'above the new maximum: clamped');
+  assert.throws(()=>preparePoolSlot({id:'hp',minimum:{literal:0},maximum:{literal:3},maximumPolicy:'reset'}),/keepMissing or keepCurrent/);
+  assert.equal(preparePoolSlot({id:'hp',name:'Points de vie',minimum:{literal:0},maximum:{literal:3}}).name,'Points de vie');
 });

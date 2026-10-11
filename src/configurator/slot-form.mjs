@@ -1,6 +1,6 @@
 /* Definition editor <-> Definition.slots (pool and collection slots, CP-26/27).
    Context building is pure; collection reads the rendered slot cards. */
-import {COLLECTION_ENTRY_MODES, POOL_BOUND_POLICIES} from "./capability-slots.mjs";
+import {COLLECTION_ENTRY_MODES, POOL_BOUND_POLICIES, POOL_MAXIMUM_POLICIES} from "./capability-slots.mjs";
 
 const SOURCE_KINDS = ["none", "literal", "formula"];
 
@@ -21,7 +21,8 @@ const options = (ids, selected, prefix, neutral) => ids.map(id => ({id, selected
 export function buildSlotFormContext({definition = {}, permittedCapabilities = [], formulas = [], contentTypes = [], valueTypes = [], colorsOf = () => "", neutral = ""} = {}) {
   formulas = formulas.map(formula => ({id: formula.id, choice: {id: formula.id, label: formula.nameKey || formula.id, colors: colorsOf("formula", formula)}}));
   const poolRow = slot => ({
-    id: slot.id ?? "",
+    id: slot.id ?? "", name: slot.name ?? "",
+    maximumPolicies: options(POOL_MAXIMUM_POLICIES, slot.maximumPolicy ?? "keepMissing", "RTA.Slots.MaximumPolicy", neutral),
     minimum: sourceModel(slot.minimum, formulas, {neutral}), maximum: sourceModel(slot.maximum, formulas, {neutral}), initial: sourceModel(slot.initial, formulas, {optional: true, neutral}),
     valueTypes: options(["number", "integer"], slot.valueType ?? "number", null, neutral),
     underflow: options(POOL_BOUND_POLICIES, slot.underflowPolicy ?? "clamp", "RTA.Slots.Policy", neutral), overflow: options(POOL_BOUND_POLICIES, slot.overflowPolicy ?? "clamp", "RTA.Slots.Policy", neutral)
@@ -74,7 +75,10 @@ export function collectDefinitionSlots(queryAll, current = {}) {
     const slot = {...(pools.get(card.dataset.slotOriginal) ?? {}), id,
       valueType: card.querySelector('[data-slot-prop="valueType"]')?.value ?? "number",
       underflowPolicy: card.querySelector('[data-slot-prop="underflowPolicy"]')?.value ?? "clamp",
-      overflowPolicy: card.querySelector('[data-slot-prop="overflowPolicy"]')?.value ?? "clamp"};
+      overflowPolicy: card.querySelector('[data-slot-prop="overflowPolicy"]')?.value ?? "clamp",
+      maximumPolicy: card.querySelector('[data-slot-prop="maximumPolicy"]')?.value ?? "keepMissing"};
+    const name = String(card.querySelector('[data-slot-prop="name"]')?.value ?? "").trim();
+    if (name) slot.name = name; else delete slot.name;
     for (const bound of ["minimum", "maximum", "initial"]) {
       const source = readSource(card, bound);
       if (source === undefined || source === null) delete slot[bound]; else slot[bound] = source;
