@@ -229,6 +229,42 @@
   background: var(--rta-editor-fill);
 }
 
+/* Script-built lists and cards (slots, choice groups, relations, constraints):
+   one row gap between children, however many rows a script appends. */
+.rta-config-entry :is([data-slot-list], [data-choice-group-list], [data-relation-list], [data-declarative-constraints], .rta-generic-relation, .rta-generic-relation__fields),
+.rta-config-entry .rta-binding-card:not([data-definition-binding]) {
+  display: flex;
+  flex-direction: column;
+  gap: var(--rta-gap-row);
+}
+
+/* An empty list takes no room: unlike a block, a flex box does not let the
+   margins around it collapse. */
+.rta-config-entry :is([data-slot-list], [data-choice-group-list], [data-relation-list], [data-declarative-constraints]):not(:has(> *)) {
+  display: none;
+}
+
+/* An empty-state line sits in the list's rhythm and leaves once a script adds a row. */
+.rta-config-entry :is(.rta-field-editor-list, [data-slot-list], [data-choice-group-list], [data-relation-list]) > p {
+  margin: 0;
+}
+
+.rta-config-entry :is(.rta-field-editor-list, [data-slot-list], [data-choice-group-list], [data-relation-list]) > p:has(~ article) {
+  display: none;
+}
+
+/* A relation is a frame of rows, like a slot card. */
+.rta-config-entry .rta-generic-relation {
+  padding: var(--rta-frame-pad);
+  border: var(--rta-frame-border) solid var(--rta-editor-border);
+  border-radius: var(--rta-editor-radius);
+  background: var(--rta-editor-fill);
+}
+
+.rta-config-entry .rta-generic-relation > [data-action="removeRelation"] {
+  align-self: flex-end;
+}
+
 .rta-config-entry .rta-binding-card__title {
   min-height: 1.7rem;
 }
@@ -310,13 +346,13 @@
    track. The select, input and textarea remain on a single visual vertical. */
 /* The inset is inherited, so a row wrapped in an unframed <div> keeps its
    frame's compensation. Each nested frame adds exactly one --rta-frame-step. */
-:is(.rta-config-entry, .rta-configurator) :is(fieldset, details.rta-config-entry__section, details.rta-config-entry__technical, .rta-rule-builder, .rta-section-color-config, .rta-field-editor, .rta-binding-card) {
+:is(.rta-config-entry, .rta-configurator) :is(fieldset, details.rta-config-entry__section, details.rta-config-entry__technical, .rta-rule-builder, .rta-section-color-config, .rta-field-editor, .rta-binding-card, .rta-generic-relation) {
   --rta-form-column-inset: var(--rta-frame-step);
 }
-:is(.rta-config-entry, .rta-configurator) :is(fieldset, details.rta-config-entry__section, details.rta-config-entry__technical, .rta-rule-builder, .rta-section-color-config, .rta-field-editor, .rta-binding-card) :is(fieldset, details.rta-config-entry__section, details.rta-config-entry__technical, .rta-rule-builder, .rta-section-color-config, .rta-field-editor, .rta-binding-card) {
+:is(.rta-config-entry, .rta-configurator) :is(fieldset, details.rta-config-entry__section, details.rta-config-entry__technical, .rta-rule-builder, .rta-section-color-config, .rta-field-editor, .rta-binding-card, .rta-generic-relation) :is(fieldset, details.rta-config-entry__section, details.rta-config-entry__technical, .rta-rule-builder, .rta-section-color-config, .rta-field-editor, .rta-binding-card, .rta-generic-relation) {
   --rta-form-column-inset: calc(2 * var(--rta-frame-step));
 }
-:is(.rta-config-entry, .rta-configurator) :is(fieldset, details.rta-config-entry__section, details.rta-config-entry__technical, .rta-rule-builder, .rta-section-color-config, .rta-field-editor, .rta-binding-card) :is(fieldset, details.rta-config-entry__section, details.rta-config-entry__technical, .rta-rule-builder, .rta-section-color-config, .rta-field-editor, .rta-binding-card) :is(fieldset, details.rta-config-entry__section, details.rta-config-entry__technical, .rta-rule-builder, .rta-section-color-config, .rta-field-editor, .rta-binding-card) {
+:is(.rta-config-entry, .rta-configurator) :is(fieldset, details.rta-config-entry__section, details.rta-config-entry__technical, .rta-rule-builder, .rta-section-color-config, .rta-field-editor, .rta-binding-card, .rta-generic-relation) :is(fieldset, details.rta-config-entry__section, details.rta-config-entry__technical, .rta-rule-builder, .rta-section-color-config, .rta-field-editor, .rta-binding-card, .rta-generic-relation) :is(fieldset, details.rta-config-entry__section, details.rta-config-entry__technical, .rta-rule-builder, .rta-section-color-config, .rta-field-editor, .rta-binding-card, .rta-generic-relation) {
   --rta-form-column-inset: calc(3 * var(--rta-frame-step));
 }
 

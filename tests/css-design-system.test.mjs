@@ -104,7 +104,7 @@ test('vertical rhythm: siblings are spaced by a single gap token, never stacked 
 });
 
 test('field cards count as one frame step and open frames keep their bottom padding',()=>{
-  assert.match(cssWithoutComments,/\.rta-field-editor, \.rta-binding-card\)\s*{\s*--rta-form-column-inset:\s*var\(--rta-frame-step\)/);
+  assert.match(cssWithoutComments,/\.rta-field-editor, \.rta-binding-card, \.rta-generic-relation\)\s*{\s*--rta-form-column-inset:\s*var\(--rta-frame-step\)/);
   assert.doesNotMatch(cssWithoutComments,/rta-field-editor__(?:grid|body), [^{]*{\s*--rta-form-column-inset/,'grid/body add no inset of their own');
   assert.match(cssWithoutComments,/\.rta-field-editor__body\s*{\s*padding:\s*var\(--rta-frame-pad\)/);
   assert.match(cssWithoutComments,/details\.rta-config-entry__technical\)\[open\]\s*{\s*padding-bottom:\s*var\(--rta-frame-pad\)/);

@@ -17,7 +17,7 @@ const imp=rel=>import(pathToFileURL(join(root,rel)).href);
 const {createConfiguratorAPI}=await imp('src/configurator/configurator-api.mjs');
 const {emptyStorageSnapshot}=await imp('src/configurator/configurator-storage.mjs');
 class Storage{snapshot=emptyStorageSnapshot();async load(){return structuredClone(this.snapshot)}async save(d){this.snapshot=structuredClone(d)}}
-const api=await createConfiguratorAPI(new Storage());
+const storage=new Storage(),api=await createConfiguratorAPI(storage);
 globalThis.game.ruleThemAll={configurator:api};
 const v=(await api.createRuleset({id:'qa',nameKey:'QA Ruleset',descriptionKey:'Fixture used for visual regression only.',version:'1.0.0'})).versionId;
 await api.createRuleset({id:'qa2',nameKey:'Second Ruleset',version:'2.0.0'});
@@ -67,3 +67,5 @@ for(const [kind,id] of editors){
   writeFileSync(join(out,'editor-'+kind+'.html'),html);
 }
 console.log('rendered editors',editors.length);
+// Fixture for qa/dynamic-markup-audit.mjs, which replays the editors' own scripts in a browser.
+writeFileSync(join(out,'fixture.json'),JSON.stringify({versionId:v,snapshot:storage.snapshot,editors:editors.map(([kind,id])=>({kind,id,definitionTypeId:kind==='definition'?'stat':null,contentTypeId:kind==='contentTemplate'?'gear':null}))}));
