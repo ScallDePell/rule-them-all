@@ -1,7 +1,7 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import {readFileSync} from 'node:fs';
-import {renderNewFieldInnerHTML,renderNewSheetComponentHTML,renderRuleOperandHTML} from '../src/ui/entry-editor-markup.mjs';
+import {renderNewSheetComponentHTML,renderRuleOperandHTML} from '../src/ui/entry-editor-markup.mjs';
 import {localizedMarkup} from '../src/ui/ui-localization.mjs';
 const locales={
  fr:JSON.parse(readFileSync(new URL('../lang/fr.json',import.meta.url))),
@@ -17,20 +17,12 @@ function chooseLocale(locale){
 test('dynamic builders localize visible labels without mutating field IDs or select values',()=>{
  try{
   chooseLocale('fr');
-  const field=renderNewFieldInnerHTML('id-42','<option value="integer">integer</option>');
-  assert.match(field,/>Nouveau champ</);
-  assert.match(field,/>Nom<input/);
-  assert.match(field,/value="integer"/);
-  assert.match(field,/data-field-prop="valueType"/);
-  assert.match(field,/data-field-prop="required"/);
   const sheet=renderNewSheetComponentHTML('s42','<option value="">none</option>');
   assert.match(sheet,/title="Supprimer le composant"/);
   assert.match(sheet,/value="repeater"/);
   const operand=renderRuleOperandHTML({index:0,parameters:'',formulas:'',references:''});
   assert.match(operand,/>Op\u00e9rande 1</);
   assert.match(operand,/value="parameter"/);
-  chooseLocale('en');
-  assert.match(renderNewFieldInnerHTML('id-42',''),/>New field</);
  }finally{globalThis.game=previousGame;}
 });
 test('translated values are HTML-escaped even when a third-party locale is malformed',()=>{

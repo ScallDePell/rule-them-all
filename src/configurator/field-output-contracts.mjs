@@ -3,7 +3,8 @@ import {VALUE_CARDINALITIES, validateTypedValue, valueTypeRegistry} from "./valu
 import {need} from "./diagnostics.mjs";
 
 const nonempty = value => typeof value === "string" && value.trim().length > 0;
-const FIELD_KEYS = Object.freeze(["id","name","valueType","cardinality","required","nullable","defaultValue","constraints","editable","referenceTarget","presentation","description"]);
+const FIELD_KEYS = Object.freeze(["id","name","valueType","cardinality","required","nullable","defaultValue","constraints","referenceTarget"]);
+const REFERENCE_TARGET_KEYS = Object.freeze(["objectKind","definitionTypeId"]);
 const OUTPUT_KEYS = Object.freeze(["id","valueType","cardinality","nullable","source","readable","mutable","derived","description"]);
 
 function exactFields(value, allowed, label) {
@@ -18,14 +19,12 @@ function normalizeConstraints(field) {
   const constraints = copyJSON(field.constraints ?? []);
   const seen = new Set();
   for (const [index, constraint] of constraints.entries()) {
-    if (!isRecord(constraint) || !nonempty(constraint.kind)) throw new Error(`FieldDefinition ${field.id} constraint ${index} is invalid.`);
-    if (NUMERIC_CONSTRAINTS.has(constraint.kind)) {
-      if (!["integer", "number"].includes(field.valueType)) throw new Error(`FieldDefinition ${field.id} ${constraint.kind} is only valid for numeric value types.`);
-      if (typeof constraint.value !== "number" || !Number.isFinite(constraint.value)) throw new Error(`FieldDefinition ${field.id} ${constraint.kind} must be a finite number.`);
-      if (constraint.kind === "step" && constraint.value <= 0) throw new Error(`FieldDefinition ${field.id} step must be greater than zero.`);
-      if (seen.has(constraint.kind)) throw new Error(`FieldDefinition ${field.id} contains duplicate ${constraint.kind} constraints.`);
-      seen.add(constraint.kind);
-    }
+    if (!isRecord(constraint) || !NUMERIC_CONSTRAINTS.has(constraint.kind)) throw new Error(`FieldDefinition ${field.id} constraint ${index} must be min, max or step.`);
+    if (!["integer", "number"].includes(field.valueType)) throw new Error(`FieldDefinition ${field.id} ${constraint.kind} is only valid for numeric value types.`);
+    if (typeof constraint.value !== "number" || !Number.isFinite(constraint.value)) throw new Error(`FieldDefinition ${field.id} ${constraint.kind} must be a finite number.`);
+    if (constraint.kind === "step" && constraint.value <= 0) throw new Error(`FieldDefinition ${field.id} step must be greater than zero.`);
+    if (seen.has(constraint.kind)) throw new Error(`FieldDefinition ${field.id} contains duplicate ${constraint.kind} constraints.`);
+    seen.add(constraint.kind);
   }
   const min = constraints.find(c => c.kind === "min")?.value;
   const max = constraints.find(c => c.kind === "max")?.value;
@@ -48,19 +47,20 @@ function validateConstraints(field, value) {
 
 export function prepareFieldDefinition(data, expectedId = null) {
   if (!isRecord(data)) throw new TypeError("FieldDefinition must be a plain object.");
-  const field = {cardinality:"one", required:false, nullable:false, constraints:[], editable:true, ...copyJSON(data)};
+  const field = {cardinality:"one", required:false, nullable:false, constraints:[], ...copyJSON(data)};
   exactFields(field, FIELD_KEYS, "FieldDefinition");
   if (!nonempty(field.id)) throw new Error("FieldDefinition id must be a non-empty string.");
   if (Object.hasOwn(field,"name") && !nonempty(field.name)) throw new Error(`FieldDefinition ${field.id} name must be a non-empty string.`);
   if (expectedId !== null && field.id !== expectedId) throw new Error(`FieldDefinition id must match its key: ${expectedId}.`);
   assertValueType(field.valueType, `FieldDefinition ${field.id}`);
   assertCardinality(field.cardinality, `FieldDefinition ${field.id}`);
-  if (typeof field.required !== "boolean" || typeof field.nullable !== "boolean" || typeof field.editable !== "boolean") throw new Error(`FieldDefinition ${field.id} boolean contract is invalid.`);
+  if (typeof field.required !== "boolean" || typeof field.nullable !== "boolean") throw new Error(`FieldDefinition ${field.id} boolean contract is invalid.`);
   if (!Array.isArray(field.constraints)) throw new Error(`FieldDefinition ${field.id} constraints must be an array.`);
   field.constraints = normalizeConstraints(field);
-  if (Object.hasOwn(field,"referenceTarget") && field.referenceTarget !== null && !isRecord(field.referenceTarget)) throw new Error(`FieldDefinition ${field.id} referenceTarget must be an object or null.`);
-  if (Object.hasOwn(field,"presentation") && field.presentation !== null && !isRecord(field.presentation)) throw new Error(`FieldDefinition ${field.id} presentation must be an object or null.`);
-  if (Object.hasOwn(field,"description") && typeof field.description !== "string") throw new Error(`FieldDefinition ${field.id} description must be a string.`);
+  if (Object.hasOwn(field,"referenceTarget") && field.referenceTarget !== null) {
+    if (!isRecord(field.referenceTarget)) throw new Error(`FieldDefinition ${field.id} referenceTarget must be an object or null.`);
+    exactFields(field.referenceTarget, REFERENCE_TARGET_KEYS, `FieldDefinition ${field.id} referenceTarget`);
+  }
   if (Object.hasOwn(field,"defaultValue")) {
     const result = validateTypedValue(field.valueType, field.cardinality, field.nullable, field.defaultValue);
     if (!result.valid) throw new Error(`FieldDefinition ${field.id} defaultValue invalid: ${result.message}`);

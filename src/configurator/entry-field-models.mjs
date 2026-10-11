@@ -2,7 +2,8 @@
 import {refToken} from './reference-token.mjs';
 import {formatEditorValue} from './editor-value.mjs';
 
-export function buildFieldRow(id,field,valueTypes=[]){
+export function buildFieldRow(id,field,valueTypes=[],definitionTypes=[]){
+  const kind=field.referenceTarget?.objectKind??"";
   return {
     id,name:field.name??id,...field,
     valueTypes:valueTypes.map(type=>({id:type.id,selected:type.id===field.valueType})),
@@ -10,17 +11,18 @@ export function buildFieldRow(id,field,valueTypes=[]){
     hasDefault:Object.hasOwn(field,"defaultValue"),
     defaultText:Object.hasOwn(field,"defaultValue")?formatEditorValue(field.valueType,field.cardinality,field.defaultValue):"",
     min:field.constraints?.find?.(c=>c?.kind==="min")?.value??"",max:field.constraints?.find?.(c=>c?.kind==="max")?.value??"",step:field.constraints?.find?.(c=>c?.kind==="step")?.value??"",
-    isNumeric:["integer","number"].includes(field.valueType),
-    constraintsJson:JSON.stringify((field.constraints??[]).filter(c=>!["min","max","step"].includes(c?.kind)),null,2),
-    referenceTargetJson:field.referenceTarget?JSON.stringify(field.referenceTarget,null,2):"",
-    referenceTargetKind:field.referenceTarget?.objectKind??"",
-    refRoll:field.referenceTarget?.objectKind==="roll",refFormula:field.referenceTarget?.objectKind==="formula",refDefinition:field.referenceTarget?.objectKind==="definition",refParameter:field.referenceTarget?.objectKind==="parameter",refTest:field.referenceTarget?.objectKind==="test",refAction:field.referenceTarget?.objectKind==="action",refContent:field.referenceTarget?.objectKind==="contentTemplate",
-    presentationJson:field.presentation?JSON.stringify(field.presentation,null,2):""
+    isNumeric:["integer","number"].includes(field.valueType),isReference:field.valueType==="reference",
+    refRoll:kind==="roll",refFormula:kind==="formula",refDefinition:kind==="definition",refParameter:kind==="parameter",refTest:kind==="test",refAction:kind==="action",refContent:kind==="contentTemplate",
+    definitionTypeChoices:definitionTypes.map(type=>({id:type.id,label:type.nameKey||type.id,colors:type.colors??"",selected:type.id===field.referenceTarget?.definitionTypeId}))
   };
 }
 
+/** The blank row cloned by "Add field"; its id placeholder is replaced on insertion. */
+export const NEW_FIELD_ID="__rta-new-field__";
+export const buildNewFieldRow=(valueTypes=[],definitionTypes=[])=>({...buildFieldRow(NEW_FIELD_ID,{name:"",valueType:"integer",cardinality:"one"},valueTypes,definitionTypes),isNew:true});
+
 export function buildEventFieldRow(id,field,valueTypes=[]){
-  return {id,name:field?.name??id,valueType:field?.valueType??"string",required:field?.required===true,nullable:field?.nullable===true,description:field?.description??"",
+  return {id,name:field?.name??id,valueType:field?.valueType??"string",required:field?.required===true,nullable:field?.nullable===true,
     valueTypes:valueTypes.map(type=>({id:type.id,selected:type.id===(field?.valueType??"string")}))};
 }
 

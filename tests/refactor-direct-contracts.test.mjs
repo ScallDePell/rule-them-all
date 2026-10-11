@@ -39,14 +39,19 @@ test('field view models preserve existing values, missing references and require
   assert.equal(buildEventFieldRow('event',{valueType:'boolean',required:true},[{id:'boolean'}]).valueTypes[0].selected,true);
 });
 
-test('field serializer retains advanced JSON constraints and rejects duplicate ids',()=>{
-  const props={name:input('Reference'),valueType:input('reference'),cardinality:input('one'),referenceTarget:input('{"objectKind":"definition","definitionTypeId":"type-1"}'),referenceTargetKind:input('definition'),constraints:input('[]'),nullable:input('',false),editable:input('',true),required:input('',true)};
+test('field serializer writes the reference target from its selects and rejects duplicate ids',()=>{
+  const props={name:input('Reference'),valueType:input('reference'),cardinality:input('one'),referenceTargetKind:input('definition'),referenceDefinitionTypeId:input('type-1'),nullable:input('',false),required:input('',true),defaultValue:input('')};
   const serialized=collectFieldDefinitions([field('ref',props)]);
   assert.deepEqual(serialized.ref.referenceTarget,{objectKind:'definition',definitionTypeId:'type-1'});
   assert.equal(serialized.ref.required,true);
   assert.throws(()=>collectFieldDefinitions([field('ref',props),field('ref',props)]),/Duplicate FieldDefinition/);
   const incompatible=structuredClone(props);incompatible.referenceTargetKind=input('formula');
   assert.deepEqual(collectFieldDefinitions([field('ref',incompatible)]).ref.referenceTarget,{objectKind:'formula'});
+  const ref=collectFieldDefinitions([field('ref',props)]).ref;
+  assert.equal(Object.hasOwn(ref,'defaultValue'),false,'an empty default value means no default');
+  const scored=collectFieldDefinitions([field('score',{name:input('Score'),valueType:input('integer'),cardinality:input('one'),defaultValue:input('3'),min:input('1')})]).score;
+  assert.equal(scored.defaultValue,3);
+  assert.deepEqual(scored.constraints,[{kind:'min',value:1}]);
 });
 
 test('definition data serializer preserves structured many-references and absent optional fields',()=>{

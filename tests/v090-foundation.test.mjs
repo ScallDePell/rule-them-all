@@ -11,7 +11,7 @@ test('v0.9.0 creates gameplay foundations and a constrained SheetDefinition',asy
  await api.createDuration(v,{id:'d',nameKey:'Round',mode:'fixed',amount:1,unit:'round'});
  await api.createCreationSystem(v,{id:'c',nameKey:'Create',steps:[{id:'s',name:'Choose',kind:'choice',options:[],min:0,max:1}]});
  await api.createProgressionSystem(v,{id:'p',nameKey:'Progress',tracks:[{id:'xp',name:'XP',thresholds:[5,10]}]});
- const sheet=await api.createSheetDefinition(v,{id:'sheet',nameKey:'Character',viewType:'actor',renderer:'foundry',layout:{direction:'column',components:[{id:'head',kind:'section',label:'Identity',source:null,editable:false,width:'full'}]}});
+ const sheet=await api.createSheetDefinition(v,{id:'sheet',nameKey:'Character',viewType:'actor',renderer:'foundry',layout:{direction:'column',components:[{id:'head',kind:'section',label:'Identity',source:null,width:'full'}]}});
  assert.equal(sheet.layout.components[0].kind,'section');assert.equal(api.listModifiers(v).length,1);assert.equal(api.listCreationSystems(v).length,1);
 });
 test('v0.9.0 runtime resolves modifier stacking; restrictions are Permission rules',async()=>{const {api,v}=await setup();

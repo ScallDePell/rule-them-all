@@ -9,7 +9,7 @@ import {prepareFieldDefinition, prepareOutputDefinition} from "../src/configurat
 class MemoryStorage { constructor(){this.value=emptyStorageSnapshot();this.listeners=new Set();} async load(){return structuredClone(this.value);} async save(v){this.value=structuredClone(v);for(const f of this.listeners)f(this.value);} subscribe(f){this.listeners.add(f);return()=>this.listeners.delete(f);} }
 const base=()=>({id:"rules",nameKey:"Rules",version:"1.0.0"});
 
-function field(id,valueType,extra={}) { return {id,valueType,cardinality:"one",required:false,nullable:false,constraints:[],editable:true,...extra}; }
+function field(id,valueType,extra={}) { return {id,valueType,cardinality:"one",required:false,nullable:false,constraints:[],...extra}; }
 
 test("ValueTypeRegistry exposes safe built-ins and only explicit integer to number widening", async()=>{
   const api=await createConfiguratorAPI(new MemoryStorage());

@@ -7,7 +7,7 @@ const base=()=>({id:'rta-demo',nameKey:'RWF Demo',version:'1.0.0'});
 
 test('Configurator MVP supports Parameter Formula Condition Effect Action chain',async()=>{
  const api=await createConfiguratorAPI(new MemoryStorage()); const v=(await api.createRuleset(base())).versionId;
- await api.registerDefinitionType(v,{id:'attribute',key:'attribute',nameKey:'Caractéristique',descriptionKey:'',color:'#808080',order:10,allowedCapabilities:['value'],defaultCapabilities:['value'],requiredCapabilities:[],fields:{score:{id:'score',name:'Score',valueType:'integer',cardinality:'one',required:true,nullable:false,defaultValue:1,constraints:[{kind:'min',value:0},{kind:'max',value:5},{kind:'step',value:1}],editable:true}},constraints:[]});
+ await api.registerDefinitionType(v,{id:'attribute',key:'attribute',nameKey:'Caractéristique',descriptionKey:'',color:'#808080',order:10,allowedCapabilities:['value'],defaultCapabilities:['value'],requiredCapabilities:[],fields:{score:{id:'score',name:'Score',valueType:'integer',cardinality:'one',required:true,nullable:false,defaultValue:1,constraints:[{kind:'min',value:0},{kind:'max',value:5},{kind:'step',value:1}]}},constraints:[]});
  await api.createDefinition(v,{id:'strength',key:'strength',definitionTypeId:'attribute',nameKey:'Force',descriptionKey:'',data:{score:3},categories:[],enabled:true,order:10,tags:[]});
  await api.createParameter(v,{id:'vitality-base',nameKey:'Vitalité de base',valueType:'integer',value:7,scope:'ruleset',enabled:true,order:10,tags:[]});
  await api.createFormula(v,{id:'vitality-max',nameKey:'Vitalité max',resultType:'number',expression:{type:'add',args:[{type:'parameter',id:'vitality-base'},{type:'reference',reference:{objectKind:'definition',objectId:'strength',capabilityId:'value',outputId:'value.final'}}]},enabled:true,order:10,tags:[]});
@@ -50,7 +50,7 @@ test('Content Types are first-class and protect referenced templates',async()=>{
 test('Content Type Fields validate template data and referenced rules are dependency-protected',async()=>{
  const api=await createConfiguratorAPI(new MemoryStorage()); const v=(await api.createRuleset(base())).versionId;
  await api.createRoll(v,{id:'damage-roll',nameKey:'Dégâts 9mm',formula:'1d8',data:{},enabled:true,order:10,tags:[]});
- await api.createContentType(v,{id:'weapon',nameKey:'Arme',descriptionKey:'',image:'icons/svg/sword.svg',color:'#884433',storageKind:'item',runtimeMode:'unique',fields:{damage:{id:'damage',name:'Dégâts',valueType:'reference',cardinality:'one',required:true,nullable:false,editable:true,referenceTarget:{objectKind:'roll'}},range:{id:'range',name:'Portée',valueType:'number',cardinality:'one',required:false,nullable:false,defaultValue:0,constraints:[{kind:'min',value:0}],editable:true}},enabled:true,order:10,tags:[]});
+ await api.createContentType(v,{id:'weapon',nameKey:'Arme',descriptionKey:'',image:'icons/svg/sword.svg',color:'#884433',storageKind:'item',runtimeMode:'unique',fields:{damage:{id:'damage',name:'Dégâts',valueType:'reference',cardinality:'one',required:true,nullable:false,referenceTarget:{objectKind:'roll'}},range:{id:'range',name:'Portée',valueType:'number',cardinality:'one',required:false,nullable:false,defaultValue:0,constraints:[{kind:'min',value:0}]}},enabled:true,order:10,tags:[]});
  await api.createContentTemplate(v,{id:'pistol',nameKey:'Pistolet',descriptionKey:'',image:'icons/svg/item-bag.svg',contentTypeId:'weapon',runtimeMode:'unique',data:{damage:{objectKind:'roll',objectId:'damage-roll'},range:25},definitionBindings:[],actionBindings:[],initialStateRules:[],categories:[],capabilities:[],enabled:true,order:10,tags:[]});
  assert.equal(api.getContentTemplate(v,'pistol').data.range,25);
  assert.equal(api.getContentType(v,'weapon').color,'#884433');
@@ -61,7 +61,7 @@ test('Content Type Fields validate template data and referenced rules are depend
 
 test('Removing a Content Type field prunes stored values from templates of that type',async()=>{
  const api=await createConfiguratorAPI(new MemoryStorage()); const v=(await api.createRuleset(base())).versionId;
- await api.createContentType(v,{id:'gear',nameKey:'Équipement',storageKind:'item',runtimeMode:'unique',fields:{weight:{id:'weight',name:'Poids',valueType:'number',cardinality:'one',required:false,nullable:false,defaultValue:1,editable:true}},enabled:true,order:10,tags:[]});
+ await api.createContentType(v,{id:'gear',nameKey:'Équipement',storageKind:'item',runtimeMode:'unique',fields:{weight:{id:'weight',name:'Poids',valueType:'number',cardinality:'one',required:false,nullable:false,defaultValue:1}},enabled:true,order:10,tags:[]});
  await api.createContentTemplate(v,{id:'bag',nameKey:'Sac',contentTypeId:'gear',runtimeMode:'unique',data:{weight:2},definitionBindings:[],actionBindings:[],initialStateRules:[],categories:[],capabilities:[],enabled:true,order:10,tags:[]});
  const type=api.getContentType(v,'gear');
  await assert.rejects(()=>api.updateContentType(v,'gear',{...type,fields:{}}),error=>error.code==='FIELD_REMOVAL_DATA_LOSS'&&error.affected.includes('bag'));

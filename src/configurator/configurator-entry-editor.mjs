@@ -6,7 +6,7 @@ import {collectEntryData} from "./entry-data-collector.mjs";
 import {constraintRowModel,presentationRowModel} from "./declarative-editor.mjs";
 import {CONSTRAINT_KINDS} from "./declarative-contracts.mjs";
 import {assertPersistedRelations} from "./relation-persistence.mjs";
-import {buildFieldRow,buildEventFieldRow,buildDefinitionFieldModel} from "./entry-field-models.mjs";
+import {buildFieldRow,buildNewFieldRow,buildEventFieldRow,buildDefinitionFieldModel} from "./entry-field-models.mjs";
 import {buildRuleReferenceChoices} from "./entry-reference-catalog.mjs";
 import {buildSlotFormContext,syncValueSource,syncEntryMode} from "./slot-form.mjs";
 import {slotInitialKey} from "./capability-slots.mjs";
@@ -25,7 +25,7 @@ export {renderPickerOptions,renderChoiceListBody} from "../ui/picker-markup.mjs"
 import {renderChoiceGroupHTML,renderRuleOperandHTML,renderCreationStepHTML} from "../ui/entry-editor-markup.mjs";
 import {renderDeclarativeConstraintRow} from "../ui/declarative-editor-markup.mjs";
 import {escapeHTML as escape} from "../ui/html-utils.mjs";
-import {renderNewFieldInnerHTML,renderNewEventFieldInnerHTML,renderNewSheetComponentHTML} from "../ui/entry-editor-markup.mjs";
+import {renderNewEventFieldInnerHTML,renderNewSheetComponentHTML} from "../ui/entry-editor-markup.mjs";
 import {RULESET_SECTIONS,rulesetColor,sectionColor,mayOverrideSection,sectionForCollection,objectColor} from "./ruleset-colors.mjs";
 import {RTA_NEUTRAL_COLOR} from "../ui/theme-tokens.mjs";
 import {MODULE_ID} from "../core/module-contract.mjs";
@@ -140,7 +140,9 @@ export class ConfiguratorEntryEditor extends ConfiguratorWindow {
     const typeCollection=this.#kind==='definitionType'?'definitionTypes':this.#kind==='contentType'?'contentTypes':this.#kind==='tag'?'tags':null;
     const allowTypeColor=!!typeCollection && mayOverrideSection(colorContext,sectionForCollection(typeCollection));
     const inheritedTypeColor=typeCollection?objectColor(colorContext,typeCollection,null):RTA_NEUTRAL_COLOR;
-    const fieldRows=["definitionType","contentType"].includes(this.#kind)?Object.entries(data.fields??{}).map(([id,field])=>buildFieldRow(id,field,this.#api.listValueTypes())):[];
+    const fieldKinds=["definitionType","contentType"].includes(this.#kind),fieldDefinitionTypes=fieldKinds?selectableDefinitionTypes.map(type=>({...type,colors:selectColorsAttribute(this.#optionColors("definitionType",type))})):[];
+    const fieldRows=fieldKinds?Object.entries(data.fields??{}).map(([id,field])=>buildFieldRow(id,field,this.#api.listValueTypes(),fieldDefinitionTypes)):[];
+    const newFieldRow=fieldKinds?buildNewFieldRow(this.#api.listValueTypes(),fieldDefinitionTypes):null;
     const lists={listParameters:"parameters",listFormulas:"formulas",listFormulaBindings:"formulaBindings",listConditions:"conditions",listRolls:"rolls",listOutcomes:"outcomes",listTests:"tests",listEffects:"effects",listActions:"actions",listEventTypes:"eventTypes",listContentTypes:"contentTypes",listDefinitions:"definitions",listCategories:"categories",listTags:"tags",listModifiers:"modifiers",listDurations:"durations"};
     const list=method=>(this.#kind==="ruleset" && !this.#id)?[]:this.#renderList(lists[method],method);
     const parameters=list("listParameters"), formulas=list("listFormulas"), formulaBindings=list("listFormulaBindings"), conditions=list("listConditions"), rolls=list("listRolls"), outcomes=list("listOutcomes"), tests=list("listTests"), effects=list("listEffects"), actions=list("listActions"), eventTypes=list("listEventTypes"), contentTypes=list("listContentTypes"), definitions=list("listDefinitions"), categories=list("listCategories"), tags=list("listTags");
@@ -211,7 +213,7 @@ export class ConfiguratorEntryEditor extends ConfiguratorWindow {
     const role=data.targetRole||(this.#kind==="effect"?"target":"self"),roleSelf=role==="self",roleSource=role==="source",roleTarget=role==="target",roleSubject=role==="subject",roleOwner=role==="owner";
     const conditionSummary=pickerSummary(conditionChoices),costEffectSummary=pickerSummary(effectChoices,"costSelected"),effectSummary=pickerSummary(effectChoices,"effectSelected"),actionSummary=pickerSummary(actionChoices),definitionSummary=pickerSummary(definitionChoices),templateActionSummary=pickerSummary(templateActionChoices);
     const sheetComponentRows=this.#kind==="sheetDefinition"?(data.layout?.components??[]).map((c,index)=>({...c,index,sourceToken:c.source?refToken(c.source):"",sourceChoices:[{token:"",label:"— none —"},...referenceChoices].map(x=>({...x,selected:x.token===(c.source?refToken(c.source):"")})),isSection:c.kind==="section",isText:c.kind==="text",isField:c.kind==="field",isRepeater:c.kind==="repeater",isActions:c.kind==="actions",isContent:c.kind==="content",isSpacer:c.kind==="spacer",isHalf:c.width==="half",isFull:c.width!=="half"})):[];
-    Object.assign(context,{error:this.#error,kind:this.#kind,creating,readOnly:isValidated,deletion:creating?{blocked:false,reason:""}:this.#deletionView(),help:entryHelp(this.#kind,{definitionType:type}),data,type,fieldContract,fieldRows,capabilityChoices,colorSectionChoices,rulesetMainColor:rulesetColor(data),allowTypeColor,inheritedTypeColor,hasCustomColor:!!data.color,valueTypes:this.#api.listValueTypes().map(v=>({...v,selected:v.id===(data.valueType??data.resultType)})),
+    Object.assign(context,{error:this.#error,kind:this.#kind,creating,readOnly:isValidated,deletion:creating?{blocked:false,reason:""}:this.#deletionView(),help:entryHelp(this.#kind,{definitionType:type}),data,type,fieldContract,fieldRows,newFieldRow,capabilityChoices,colorSectionChoices,rulesetMainColor:rulesetColor(data),allowTypeColor,inheritedTypeColor,hasCustomColor:!!data.color,valueTypes:this.#api.listValueTypes().map(v=>({...v,selected:v.id===(data.valueType??data.resultType)})),
       documentActorTypes:availableDocumentTypes("Actor").map(id=>({id,selected:data.storageKind==="actor"&&data.documentSubtype===id})),documentItemTypes:availableDocumentTypes("Item").map(id=>({id,selected:data.storageKind!=="actor"&&data.documentSubtype===id})),
       hasForcedCapabilities,hasOptionalCapabilities,conditionChoices,actionPurposeChoices,acquiredDefinitionChoices,acquisitionActionChoices,appliedStateChoices,removedStateChoices,appliedModifierChoices,stateDurationChoices,rollChoices,outcomeChoices,fallbackOutcomeChoices,testChoices,bindingFormulaChoices,tagChoices,tagSummary,categoryChoices,categorySummary,eventFieldRows,roleChoices,contentTypeChoices,relationRows,hasRelations:RELATION_KINDS.includes(this.#kind),roleSelf,roleSource,roleTarget,roleSubject,roleOwner,outcomeConditionChoices,bonusFormulaChoices,targetFormulaChoices,effectChoices,actionChoices,eventTypeChoices,definitionChoices,definitionBindingRows,templateActionChoices,choiceGroupRows,hasLegacyAcquisitions:!!((data.definitionBindings??[]).length||(data.actionBindings??[]).length),conditionSummary,costEffectSummary,effectSummary,actionSummary,definitionSummary,templateActionSummary,formulaModel,conditionModel,conditionOperands:[conditionModel.left,conditionModel.right],sheetComponentRows,sheetViewActor:data.viewType==="actor"||!data.viewType,sheetViewItem:data.viewType==="item",sheetViewContent:data.viewType==="content",sheetViewRuntime:data.viewType==="runtime",
       referenceChoices:referenceChoices.map(x=>({...x,selected:x.token===referenceTargetToken})),
@@ -255,7 +257,7 @@ export class ConfiguratorEntryEditor extends ConfiguratorWindow {
     if(!form)return;
     const mark=()=>{if(!this.#dirty){this.#dirty=true;this.#syncFooter();}};
     form.addEventListener("input",event=>{mark();const row=event.target.closest?.("[data-definition-field]");if(row&&!row.dataset.required){const use=row.querySelector("[data-field-present]");if(use&&!use.checked){use.checked=true;}}if(event.target.matches?.("[data-picker-filter]"))this.#filterPicker(event.target);});
-    form.addEventListener("change",event=>{if(event.target.matches?.("[data-step-source-family]")&&event.target.checked){const group=event.target.closest("[data-step-prop=sourceCollection]");for(const other of group?.querySelectorAll("[data-step-source-family]")??[])if(other!==event.target)other.checked=false;}this.#syncCreationSource(event.target);mark();if(event.target.matches?.("[data-presentation-override]")){const row=event.target.closest("[data-presentation-key]");const control=row?.querySelector(".rta-declarative-presentation__value");if(control)control.hidden=!event.target.checked;}this.#syncOperandEditor(event.target);this.#syncRuleOperandEditor(event.target);this.#syncPickerSummary(event.target);this.#syncStorageKind(event.target);if(event.target.matches?.("[data-color-override-toggle]")){const input=event.target.closest("[data-color-override-editor]")?.querySelector("[data-custom-color-input]");if(input)input.disabled=!event.target.checked;}});
+    form.addEventListener("change",event=>{if(event.target.matches?.("[data-step-source-family]")&&event.target.checked){const group=event.target.closest("[data-step-prop=sourceCollection]");for(const other of group?.querySelectorAll("[data-step-source-family]")??[])if(other!==event.target)other.checked=false;}this.#syncCreationSource(event.target);mark();if(event.target.matches?.("[data-presentation-override]")){const row=event.target.closest("[data-presentation-key]");const control=row?.querySelector(".rta-declarative-presentation__value");if(control)control.hidden=!event.target.checked;}this.#syncFieldRow(event.target);this.#syncOperandEditor(event.target);this.#syncRuleOperandEditor(event.target);this.#syncPickerSummary(event.target);this.#syncStorageKind(event.target);if(event.target.matches?.("[data-color-override-toggle]")){const input=event.target.closest("[data-color-override-editor]")?.querySelector("[data-custom-color-input]");if(input)input.disabled=!event.target.checked;}});
     form.addEventListener("change",event=>{if(event.target.matches?.("[data-source-kind]"))syncValueSource(event.target);if(event.target.matches?.('[data-input-prop="sourceKind"]'))syncTestInputSource(event.target);if(event.target.matches?.('[data-slot-prop="entryMode"]'))syncEntryMode(event.target);});
     form.addEventListener("submit",event=>{event.preventDefault();this.#save(false);});
     // Section counters follow rows added or removed by script (§46).
@@ -374,6 +376,16 @@ export class ConfiguratorEntryEditor extends ConfiguratorWindow {
     return [...this.element.querySelectorAll(`[name="${name}"]:checked`)].map(input=>input.value);
   }
 
+  /** A field row shows numeric bounds or the reference target only for the value type that uses them. */
+  #syncFieldRow(target){
+    const row=target?.closest?.("[data-field-definition-row]");if(!row)return;
+    const prop=name=>row.querySelector(`[data-field-prop="${name}"]`)?.value;
+    const valueType=prop("valueType");
+    row.querySelector("[data-field-numeric]")?.toggleAttribute("hidden",!["integer","number"].includes(valueType));
+    row.querySelector("[data-field-reference]")?.toggleAttribute("hidden",valueType!=="reference");
+    row.querySelector("[data-field-definition-type]")?.toggleAttribute("hidden",prop("referenceTargetKind")!=="definition");
+  }
+
   #syncFooter(){
     const root=this.element;if(!root)return;
     root.querySelector('[data-footer-action="close"]')?.toggleAttribute("hidden",this.#dirty);
@@ -411,9 +423,9 @@ export class ConfiguratorEntryEditor extends ConfiguratorWindow {
   }
 
   #newFieldRow(){
-    const id=fieldUid(),row=document.createElement("article");row.className="rta-field-editor";row.dataset.fieldDefinitionRow="";row.dataset.fieldId=id;
-    const options=renderSelectOptions(this.#api.listValueTypes(),{labelKey:"id"});
-    row.innerHTML=renderNewFieldInnerHTML(id,options);
+    const template=this.element.querySelector("[data-field-row-template]");
+    const row=template.content.firstElementChild.cloneNode(true),id=fieldUid();
+    row.dataset.fieldId=id;row.querySelector('[data-field-prop="id"]').value=id;
     return row;
   }
 

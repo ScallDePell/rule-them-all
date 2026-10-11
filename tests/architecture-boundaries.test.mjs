@@ -12,7 +12,7 @@ import {createConfiguratorAPI} from "../src/configurator/configurator-api.mjs";
 import {emptyStorageSnapshot} from "../src/configurator/configurator-storage.mjs";
 import {buildRuntimeLabDemoProfile} from "../src/runtime/runtime-demo-profile.mjs";
 import {getCreationSourceDescriptor,getCreationSources} from "../src/configurator/creation-source-catalog.mjs";
-import {renderNewFieldInnerHTML,renderNewEventFieldInnerHTML,renderNewSheetComponentHTML} from "../src/ui/entry-editor-markup.mjs";
+import {renderNewEventFieldInnerHTML,renderNewSheetComponentHTML} from "../src/ui/entry-editor-markup.mjs";
 
 const base=path.resolve(fileURLToPath(new URL("..",import.meta.url)));
 function read(rel){return readFileSync(path.join(base,rel),"utf8");}
@@ -101,9 +101,6 @@ test("Creation System sources localize via FR/EN while retaining stable collecti
 });
 
 test("dynamic editor markup lives in pure generators and preserves data-* contracts",()=>{
- const field=renderNewFieldInnerHTML("f123",'<option value="integer">integer</option>');
- assert.match(field,/data-field-prop="valueType"/);assert.match(field,/data-field-prop="constraints"/);
- assert.match(field,/value="f123"/);assert.match(field,/integer/);
  const event=renderNewEventFieldInnerHTML("e123",'<option>boolean</option>');
  assert.match(event,/data-event-field-prop="name"/);assert.match(event,/data-action="removeEventField"/);
  const sheet=renderNewSheetComponentHTML("s123",'<option value="">— none —</option>');

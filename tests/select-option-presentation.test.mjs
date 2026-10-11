@@ -124,9 +124,8 @@ test("all data-fed editor options and pickers carry a metadata color hook; world
   const dynamic=file("src/configurator/configurator-entry-editor.mjs");
   assert.match(dynamic,/colors:selectColorsAttribute\(this\.#optionColors\(x\.objectKind,x\.entry\)\)/);
 });
-test("Reference Target advanced JSON constraints are retained when selecting a reference kind",()=>{
+test("a reference field targets a kind, and a Definition type when the kind is Definition",()=>{
   const editor=file("src/configurator/entry-field-serialization.mjs");
-  assert.match(editor,/const advancedTarget=referenceText\?json\(referenceText,null\):null/);
-  assert.match(editor,/const target=\{\.\.\.\(advancedTarget\?\?\{\}\)\}/);
-  assert.match(editor,/if\(referenceKind\)target\.objectKind=referenceKind/);
+  assert.match(editor,/objectKind==="definition"&&definitionTypeId\?\{objectKind,definitionTypeId\}:\{objectKind\}/);
+  assert.doesNotMatch(file("templates/configurator/entry-editor.hbs"),/data-field-prop="(referenceTarget|constraints|presentation|editable|hasDefault|description)"/);
 });
