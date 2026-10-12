@@ -112,6 +112,12 @@ const result = await page.evaluate(async ({fixture, en, urls}) => {
   await set('[data-layout-properties] [data-layout-prop="display"]', 'gauge');
   check('showing a value as a gauge', find(layout(), tabs.children[0].id).children[0].display === 'gauge' && element.querySelector('[data-layout-canvas] .rta-sheet-gauge'));
   await click('[data-layout-command="undo"]');
+  // A Definition family adds the list of its Definitions.
+  await click('[data-layout-canvas] [data-layout-node="derived"]');
+  const familyCount = find(layout(), 'derived').children.length;
+  await click('[data-layout-palette-host] [data-layout-palette*="definitionTypeId"]');
+  check('clicking a family adds its list', find(layout(), 'derived').children.length === familyCount + 1 && find(layout(), 'derived').children.at(-1).kind === 'repeater');
+  await click('[data-layout-command="undo"]');
   // Style: colors, opacity, font, emphasis, spacing, then an image block.
   await click('[data-layout-canvas] [data-layout-node="derived"]');
   check('the Style group is offered, folded', element.querySelector('[data-layout-style-group]') && !element.querySelector('[data-layout-style-group]').open);

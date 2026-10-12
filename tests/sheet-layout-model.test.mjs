@@ -78,7 +78,9 @@ test('The palette offers layout blocks, fields, Definition families as lists and
   assert.deepEqual(groups[2].items.map(item=>[item.kind,item.label]),[['repeater','Skills']],'one item per family, never each Definition');
   assert.deepEqual(groups[3].items[0].spec,{kind:'value',source:{kind:'content',contentTypeId:'origin'}});
   const root=tree(),list=paletteNode(groups[2].items[0].spec,root,ruleset);
-  assert.deepEqual(list.query,{definitionTypeId:'skill'});assert.equal(list.children[0].source.kind,'each','a new list shows each row\'s value');
+  assert.deepEqual(list.query,{definitionTypeId:'skill'});
+  assert.equal(canPlace(root,list,'root'),true,'a new list goes on the sheet with its row value');
+  assert.equal(canPlace(root,list,'list'),true,'and next to another list');assert.equal(list.children[0].source.kind,'each','a new list shows each row\'s value');
   const gauge=paletteNode({kind:'value',display:'gauge'},root,ruleset,{parentId:'s'});
   assert.equal(gauge.display,'gauge');assert.equal(gauge.source.reference.outputId,'pool.current','a gauge starts on a pool');
   assert.equal(locate(root,gauge.id),null,'a fresh id');

@@ -177,8 +177,10 @@ export function canPlace(root, node, targetId, {beside = false} = {}) {
   if (!holder || !childKinds(holder).includes(node.kind)) return false;
   // An "each" value only exists in a repeater; held Contents are never once per row.
   const inRepeater = [...(holder === target.node ? target.path : target.path.slice(0, -1))].some(entry => entry.kind === "repeater");
-  for (const entry of nodes(node)) if (entry.source?.kind === "each" && !inRepeater || entry.kind === "contents" && inRepeater) return false;
-  return true;
+  // Inside the node itself, a list it holds counts too: a new list's row value is in that list.
+  const fits = (entry, listed) => !(entry.source?.kind === "each" && !listed || entry.kind === "contents" && listed)
+    && (entry.children ?? []).every(child => fits(child, listed || entry.kind === "repeater"));
+  return fits(node, inRepeater);
 }
 /** Whether a block may be dragged onto another: not into itself, and only where its kind is accepted. */
 export function canMoveInto(root, id, targetId, {beside = false} = {}) {
