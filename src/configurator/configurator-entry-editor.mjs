@@ -240,6 +240,7 @@ export class ConfiguratorEntryEditor extends ConfiguratorWindow {
       ...(this.#kind==="action"?actionInputContext(data,{definitionTypes:selectableDefinitionTypes,withColors,neutral:selectColorsAttribute([RTA_NEUTRAL_COLOR])}):{}),
       ...(this.#kind==="table"?{...tableRowContext(data,{actions,withColors}),tableRollChoices:rolls.map(x=>({id:x.id,label:x.nameKey,...withColors("roll",x),selected:x.id===data.rollRef})),tableBonusChoices:optionalFormula(data.bonusFormulaRef,"NoBonus","No bonus")}:{}),
       ...(this.#kind==="trigger"?{triggerActingChoices:["self","target"].map(id=>({id,labelKey:`RTA.Trigger.Acting.${id}`,colors:selectColorsAttribute([RTA_NEUTRAL_COLOR]),selected:id===(data.actingRole??"self")})),triggerModeChoices:["automatic","offer"].map(id=>({id,labelKey:`RTA.Trigger.Modes.${id}`,colors:selectColorsAttribute([RTA_NEUTRAL_COLOR]),selected:id===(data.mode??"automatic")}))}:{}),
+      ...(this.#kind==="action"?(()=>{const raise=(data.acquisitions??[]).find(a=>a?.ifAbsent);return {acquisitionRaises:Boolean(raise),acquisitionRaise:String(raise?.add?.["value.base"]??1),acquisitionRepeatChoices:["refuse","raise"].map(id=>({id,labelKey:`RTA.Template.AcquisitionRepeats.${id}`,colors:selectColorsAttribute([RTA_NEUTRAL_COLOR]),selected:id===(raise?"raise":"refuse")}))};})():{}),
       ...(this.#kind==="action"?{isReroll:Boolean(data.reroll),rerollKeepDice:data.reroll?.keepDice===true,rerollActionChoices:actions.filter(x=>x.id!==data.id).map(x=>({id:x.id,label:x.nameKey,...withColors("action",x),selected:(data.reroll?.actionRefs??[]).includes(x.id)})),targetingChoices:["one","each","shared"].map(id=>({id,labelKey:`RTA.Action.Targeting.${id}`,colors:selectColorsAttribute([RTA_NEUTRAL_COLOR]),selected:id===(data.targeting??"one")})),tableChoices:[{id:"",label:uiText("NoTable","No Table"),selected:!data.tableRef},...list("listTables").map(x=>({id:x.id,label:x.nameKey,...withColors("table",x),selected:x.id===data.tableRef}))]}:{}),
       ...(this.#kind==="effect"?{targetDefinitionFormulaChoices:optionalFormula(data.targetDefinitionFormulaRef,"FixedTargetDefinition","The target above")}:{}),
       ...(this.#kind==="action"?outcomeMappingContext(data,{tests,outcomes,effects,actions:actions.filter(x=>x.id!==data.id),withColors}):{}),
@@ -363,7 +364,10 @@ export class ConfiguratorEntryEditor extends ConfiguratorWindow {
     // Bounds may be Formulas over the earlier steps; options may be filtered by a Condition.
     const pick=(collection,method,kind,selected,noneLabel)=>renderSelectOptions([{id:"",label:noneLabel,colors:RTA_NEUTRAL_COLOR},...this.#renderList(collection,method).map(entry=>({id:entry.id,label:entry.nameKey||entry.id,colors:selectColorsAttribute(this.#optionColors(kind,entry))}))],{selectedValue:selected??"",colorize:true});
     const computed={min:pick("formulas","listFormulas","formula",value.minFormulaRef,uiText("FixedValue","Fixed value")),max:pick("formulas","listFormulas","formula",value.maxFormulaRef,uiText("FixedValue","Fixed value")),
-      perTarget:pick("formulas","listFormulas","formula",value.perTargetMaxFormulaRef,uiText("FixedValue","Fixed value")),condition:pick("conditions","listConditions","condition",value.optionConditionRef,uiText("EveryOption","Every option"))};
+      perTarget:pick("formulas","listFormulas","formula",value.perTargetMaxFormulaRef,uiText("FixedValue","Fixed value")),condition:pick("conditions","listConditions","condition",value.optionConditionRef,uiText("EveryOption","Every option")),
+      // A random draw: optional (the player may change it) or final; its weight field or Roll.
+      draw:renderSelectOptions([["","DrawNo","Chosen by the player"],["optional","DrawOptional","Drawn, can be changed"],["locked","DrawLocked","Drawn, final"]].map(([id,key,fallback])=>({id,label:uiText(key,fallback),colors:RTA_NEUTRAL_COLOR})),{selectedValue:value.draw?(value.draw.locked?"locked":"optional"):"",colorize:true}),
+      drawRoll:pick("rolls","listRolls","roll",value.draw?.rollRef,"—")};
     const source=value.source??{};
     const sourceFamily=String(source.collection??"");
     const selectedIds=Array.isArray(source.objectIds)?source.objectIds:[];
@@ -375,8 +379,10 @@ export class ConfiguratorEntryEditor extends ConfiguratorWindow {
 
   /** Rows that only make sense for some step kinds follow the kind select. */
   #syncCreationKind(target){
-    if(!target?.matches?.('[data-step-prop="kind"]'))return;
-    for(const row of target.closest("[data-creation-step]")?.querySelectorAll("[data-step-kind-only]")??[])row.hidden=!row.dataset.stepKindOnly.split(" ").includes(target.value);
+    if(!target?.matches?.('[data-step-prop="kind"], [data-step-prop="draw"]'))return;
+    const step=target.closest("[data-creation-step]"),kind=step?.querySelector('[data-step-prop="kind"]')?.value,drawn=Boolean(step?.querySelector('[data-step-prop="draw"]')?.value);
+    // Draw settings show only once the step is drawn.
+    for(const row of step?.querySelectorAll("[data-step-kind-only]")??[])row.hidden=!row.dataset.stepKindOnly.split(" ").includes(kind)||(row.dataset.stepDrawOnly!==undefined&&!drawn);
   }
   #syncCreationSource(target){
     if(!target?.matches?.("[data-step-source-family]"))return;
@@ -423,6 +429,7 @@ export class ConfiguratorEntryEditor extends ConfiguratorWindow {
       let shown=false;for(const group of this.element.querySelectorAll("[data-outcome-mapping-group]")){group.hidden=group.dataset.outcomeMappingGroup!==target.value;shown||=!group.hidden;}
       this.element.querySelector("[data-outcome-mappings]")?.toggleAttribute("hidden",!shown);
     }
+    if(target?.matches?.('[name="acquisitionRepeat"]'))this.element.querySelector("[data-acquisition-raise]")?.toggleAttribute("hidden",target.value!=="raise");
     if(target?.matches?.("[data-mapping-mode]")){const row=target.closest("[data-outcome-mapping]");row?.querySelector("[data-mapping-effects]")?.toggleAttribute("hidden",target.value!=="effects");row?.querySelector("[data-mapping-actions]")?.toggleAttribute("hidden",target.value==="block");}
     if(target?.name==="targetSource")this.element.querySelector("[data-target-fixed]")?.toggleAttribute("hidden",target.value!=="__fixed");
     if(target?.name==="durationMode")for(const row of this.element.querySelectorAll("[data-duration-mode]"))row.hidden=row.dataset.durationMode!==target.value;

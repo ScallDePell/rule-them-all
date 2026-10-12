@@ -17,6 +17,13 @@ export function collectCreationSteps(rows,{sources=[],uid}={}){
     if(perTarget===''||next.kind!=='allocation')delete next.perTargetMax;else{const value=Number(perTarget);if(!Number.isInteger(value)||value<0)throw new Error(`Invalid points per target for step ${name}.`);next.perTargetMax=value;}
     if(next.kind!=='allocation')delete next.perTargetMaxFormulaRef;
     if(!['choice','content'].includes(next.kind))delete next.optionConditionRef;
+    // Random draw: none, optional or final; options weighted by a data field, or an allocation rolled per Definition.
+    const draw=String(row.querySelector('[data-step-prop="draw"]')?.value??'');
+    if(!draw||next.kind==='review')delete next.draw;
+    else{
+      const weightField=String(row.querySelector('[data-step-prop="drawWeightField"]')?.value??'').trim(),rollRef=String(row.querySelector('[data-step-prop="drawRollRef"]')?.value??'').trim();
+      next.draw={locked:draw==='locked',...(next.kind!=='allocation'&&weightField?{weightField}:{}),...(next.kind==='allocation'&&rollRef?{rollRef}:{})};
+    }
     if(family){
       const source=choices.get(family);
       if(!source)throw new Error(`Unknown Ruleset source: ${family}`);

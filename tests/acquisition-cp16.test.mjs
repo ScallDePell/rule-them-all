@@ -79,3 +79,18 @@ test('CP-16: Action acquisitions are validated and protect their Definitions; no
   const {api,v}=await setup({publish:false});
   await assert.rejects(()=>api.deleteDefinition(v,'swordplay'),/referenced/);
 });
+
+test('An acquisition that raises instead of refusing: a talent taken again gains a rank', async () => {
+  const {api,v}=await setup({publish:false});
+  await api.deleteAction(v,'train');
+  await api.createAction(v,{id:'take-talent',nameKey:'Take a talent',conditionRefs:['has-xp'],costEffectRefs:['spend-xp'],acquisitions:[{definitionId:'riding',ifAbsent:true,add:{'value.base':1}}]});
+  await assert.rejects(api.createAction(v,{id:'bad',nameKey:'Bad',acquisitions:[{definitionId:'riding',add:{'value.final':1}}]}),/only raises value.base/);
+  await api.publishRuleset(v);
+  const engine=new RuntimeEngine({configurator:api,adapter:new MemoryRuntimeAdapter(),hooks:null});
+  await engine.initializeContainer(v,self,{definitionIds:['xp'],initialByDefinition:{xp:{'value.base':12}}});
+  assert.deepEqual((await engine.executeAction(v,'take-talent',context)).acquired,['riding']);
+  const again=await engine.executeAction(v,'take-talent',context);
+  assert.equal(again.allowed,true);assert.deepEqual(again.acquired,[]);
+  const defs=await states(engine);
+  assert.equal(defs.riding.capabilityStates.value.base,2);assert.equal(defs.xp.capabilityStates.value.base,2);
+});

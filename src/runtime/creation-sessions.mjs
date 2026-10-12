@@ -1,7 +1,7 @@
 import {MODULE_ID} from "../core/module-contract.mjs";
 import {copyJSON,isRecord} from "../configurator/configurator-schema.mjs";
 import {resolveRuntimeRuleset} from "./runtime-contracts.mjs";
-import {analyzeCreationSystem} from "./creation-plan.mjs";
+import {analyzeCreationSystem,drawCreationStep} from "./creation-plan.mjs";
 
 /** CP-15: a CreationSession keeps a player's creation decisions until the character exists.
  * It can be left and resumed; finalizing builds the character in one go and only then
@@ -28,7 +28,8 @@ export class MemoryCreationSessionStore{
 
 export class CreationSessions{
   /** finalize(session, {name, actorType}) builds the character and returns {actor, run}. */
-  constructor({configurator,store,finalize,userId=()=>globalThis.game?.user?.id??null,now=()=>Date.now()}){this.configurator=configurator;this.store=store;this.finalizer=finalize;this.userId=userId;this.now=now;}
+  /** random: [0, 1) source (Foundry's CONFIG.Dice.randomUniform); roll(formula): {total, result}, a Foundry Roll by default. */
+  constructor({configurator,store,finalize,userId=()=>globalThis.game?.user?.id??null,now=()=>Date.now(),random=()=>globalThis.CONFIG?.Dice?.randomUniform?.()??Math.random(),roll=async formula=>{const result=await new globalThis.Roll(formula).evaluate();return {total:result.total,result:result.result};}}){this.configurator=configurator;this.store=store;this.finalizer=finalize;this.userId=userId;this.now=now;this.random=random;this.roll=roll;}
   #ruleset(versionId){return resolveRuntimeRuleset(this.configurator,versionId);}
   async #load(id,{revision=null,draft=true}={}){
     const session=await this.store.get(this.userId(),id);
@@ -57,10 +58,22 @@ export class CreationSessions{
     const session=await this.#load(id,{revision});
     const steps=this.#steps(session);if(!steps.some(step=>step.id===stepId))throw new Error(`Unknown Creation System step: ${stepId}.`);
     if(!(Array.isArray(answer)||isRecord(answer)))throw new TypeError("A creation answer is a list of ids or an object.");
-    session.answers[stepId]=copyJSON(answer);
+    if(this.#locked(session,steps.find(step=>step.id===stepId)))throw new Error(`Creation step ${stepId} was drawn and cannot be changed.`);
+    session.answers[stepId]=copyJSON(answer);delete session.rolls[stepId];
     const index=steps.findIndex(step=>step.id===stepId);session.currentStepId=steps[index+1]?.id??stepId;
     return this.#save(session);
   }
+  /** Draw a step at random (its draw settings); the answer is marked drawn and its dice kept under session.rolls. */
+  async draw(id,stepId,{revision=null}={}){
+    const session=await this.#load(id,{revision}),steps=this.#steps(session),step=steps.find(entry=>entry.id===stepId);
+    if(!step)throw new Error(`Unknown Creation System step: ${stepId}.`);
+    if(this.#locked(session,step))throw new Error(`Creation step ${stepId} was already drawn.`);
+    const {answer,rolls}=await drawCreationStep(this.#ruleset(session.rulesetVersionId),session.creationSystemId,session.answers,stepId,{random:this.random,roll:this.roll});
+    session.answers[stepId]=answer;session.rolls[stepId]=rolls;
+    const index=steps.findIndex(entry=>entry.id===stepId);session.currentStepId=steps[index+1]?.id??stepId;
+    return this.#save(session);
+  }
+  #locked(session,step){return step?.draw?.locked===true&&session.answers[step.id]?.drawn===true;}
   async goTo(id,stepId,{revision=null}={}){
     const session=await this.#load(id,{revision});
     if(!this.#steps(session).some(step=>step.id===stepId))throw new Error(`Unknown Creation System step: ${stepId}.`);

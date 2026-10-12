@@ -72,7 +72,13 @@ export function collectEntryData(kind,{fd,current,bool,checkedIds,queryOne,query
     if(kind==="effect"){const operand=readOperand(fd,queryOne);return{...current,nameKey:String(fd.get("nameKey")??"").trim(),descriptionKey:String(fd.get("descriptionKey")??""),enabled:bool("enabled"),targetRef:parseRefToken(fd.get("targetRef")),targetRole:String(fd.get("targetRole")??"target").trim()||"target",targetDefinitionFormulaRef:String(fd.get("targetDefinitionFormulaRef")??"").trim()||null,operation:String(fd.get("operation")??"set").trim(),operand,tags:checkedIds("tags")};}
     if(kind==="action")return{...current,nameKey:String(fd.get("nameKey")??"").trim(),descriptionKey:String(fd.get("descriptionKey")??""),enabled:bool("enabled"),inputs:collectActionInputs(queryAll),conditionRefs:checkedIds("conditionRefs"),costEffectRefs:checkedIds("costEffectRefs"),effectRefs:checkedIds("effectRefs"),tableRef:String(fd.get("tableRef")??"").trim()||null,targeting:String(fd.get("targeting")??"one")||"one",reroll:bool("isReroll")?{actionRefs:checkedIds("rerollActionRefs"),keepDice:bool("rerollKeepDice")}:null,tags:checkedIds("tags"),outcomeMappings:collectOutcomeMappings(queryAll("[data-outcome-mapping-group]:not([hidden]) [data-outcome-mapping]")),eventTypeRefs:checkedIds("eventTypeRefs"),testRef:String(fd.get("testRef")??"").trim()||null,
       // Keep the role and initial values of Definitions still acquired; new ones go to "self".
-      acquisitions:checkedIds("acquisitionDefinitionIds").map(definitionId=>(current.acquisitions??[]).find(a=>a?.definitionId===definitionId)??{definitionId,targetRole:"self",initial:{}}),
+      // Already held: refuse the Action, or raise the Definition's value (a talent taken again gains a rank).
+      acquisitions:checkedIds("acquisitionDefinitionIds").map(definitionId=>{
+        const {ifAbsent:_ifAbsent,add:_add,...base}=(current.acquisitions??[]).find(a=>a?.definitionId===definitionId)??{definitionId,targetRole:"self",initial:{}};
+        if(String(fd.get("acquisitionRepeat")??"refuse")!=="raise")return base;
+        const amount=Number(String(fd.get("acquisitionRaise")??"").trim()||1);if(!Number.isFinite(amount))throw new Error("The raise of an acquired Definition must be a number.");
+        return {...base,ifAbsent:true,add:{"value.base":amount}};
+      }),
       // The editor sets one Duration for every state and Modifier the Action applies.
       stateRemovals:checkedIds("stateRemovalIds").map(definitionId=>(current.stateRemovals??[]).find(a=>a?.definitionId===definitionId)??{definitionId,targetRole:"target"}),
       stateApplications:checkedIds("stateApplicationIds").map(definitionId=>({...((current.stateApplications??[]).find(a=>a?.definitionId===definitionId)??{definitionId,targetRole:"target"}),durationRef:String(fd.get("stateDurationRef")??"").trim()||null})),

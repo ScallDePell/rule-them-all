@@ -53,7 +53,7 @@ Hooks.once("ready", () => {
     game.ruleThemAll.runtimeLab = createRuntimeAPI(api, {rulesetSource: "draft"});
     game.ruleThemAll.content = new FoundryContentBridge(api, game.ruleThemAll.runtime);
     // CP-15: resumable character creation, stored in each user's flags until finalized.
-    game.ruleThemAll.creation = new CreationSessions({configurator: api, store: new FoundryCreationSessionStore(),
+    game.ruleThemAll.creation = new CreationSessions({configurator: api, store: new FoundryCreationSessionStore(), roll: formula => game.ruleThemAll.runtime.roll(formula),
       finalize: (session, {name, actorType}) => game.ruleThemAll.content.createActorFromCreationSystem(session.rulesetVersionId, session.creationSystemId, {name, actorType, answers: session.answers, sessionId: session.id})});
     api.subscribe(() => ConfiguratorApp.refreshOpen());
     Hooks.callAll("ruleThemAllReady", game.ruleThemAll);

@@ -138,6 +138,9 @@ function prepareActionAcquisition(data,index){
   const x={targetRole:'self',initial:{},...copyJSON(data)};
   if(!ROLE_NAME.test(String(x.targetRole)))throw new Error(`Action.acquisitions[${index}].targetRole must be a role name.`);
   if(!isRecord(x.initial))throw new Error(`Action.acquisitions[${index}].initial must be an object.`);
+  // ifAbsent: a Definition already held does not refuse the Action; add (value.base) raises it instead (a talent rank).
+  if(x.ifAbsent!==undefined&&typeof x.ifAbsent!=='boolean')throw new Error(`Action.acquisitions[${index}].ifAbsent must be true or false.`);
+  if(x.add!==undefined){if(!isRecord(x.add))throw new Error(`Action.acquisitions[${index}].add must be an object.`);for(const [key,amount] of Object.entries(x.add))if(key!=='value.base'||!Number.isFinite(amount))throw new Error(`Action.acquisitions[${index}].add only raises value.base by a number.`);}
   return x;
 }
 /** How a state applied again on a container behaves: renew the duration, add a stack,
@@ -363,6 +366,16 @@ export function prepareCreationSystem(data,options={}){
   const x=prepareNamedGeneric(data,'CreationSystem',{steps:[]},options);arr(x.steps,'CreationSystem.steps');x.steps=x.steps.map((step,i)=>{if(!isRecord(step)||!nonempty(step.id))throw new Error(`CreationSystem.steps[${i}] requires id.`);need(nonempty(step.name),`CreationSystem.steps[${i}] requires name.`,options);const n={kind:'choice',required:true,options:[],min:0,max:1,...copyJSON(step)};if(!['choice','allocation','content','review'].includes(n.kind))throw new Error(`CreationSystem.steps[${i}].kind is invalid.`);arr(n.options,`CreationSystem.steps[${i}].options`);
     // Computed bounds and option filter (Formulas and a Condition over the earlier steps); allocation: points per Definition.
     for(const key of ['minFormulaRef','maxFormulaRef','perTargetMaxFormulaRef','optionConditionRef'])if(n[key]===null||n[key]==='')delete n[key];else if(n[key]!==undefined&&!nonempty(n[key]))throw new Error(`CreationSystem.steps[${i}].${key} must be an id.`);
+    // draw: the step can be drawn at random (choice/content: by an option data field as weight, or evenly;
+    // allocation: a Roll per Definition); locked: the drawn answer cannot be changed.
+    if(n.draw===undefined||n.draw===null)delete n.draw;else{
+      if(!isRecord(n.draw))throw new Error(`CreationSystem.steps[${i}].draw must be an object.`);
+      n.draw={locked:false,...n.draw};for(const key of Object.keys(n.draw))if(!['locked','weightField','rollRef'].includes(key))throw new Error(`CreationSystem.steps[${i}].draw contains unsupported field: ${key}.`);
+      bool(n.draw.locked,`CreationSystem.steps[${i}].draw.locked`);
+      for(const key of ['weightField','rollRef'])if(n.draw[key]===''||n.draw[key]===null)delete n.draw[key];else if(n.draw[key]!==undefined&&!nonempty(n.draw[key]))throw new Error(`CreationSystem.steps[${i}].draw.${key} must be a name.`);
+      if(n.kind==='allocation')need(Boolean(n.draw.rollRef),`CreationSystem.steps[${i}]: a drawn allocation needs a Roll.`,options);
+      if(n.kind==='review')throw new Error(`CreationSystem.steps[${i}]: a review step cannot be drawn.`);
+    }
     if(n.perTargetMax===null||n.perTargetMax==='')delete n.perTargetMax;else if(n.perTargetMax!==undefined&&!(Number.isSafeInteger(n.perTargetMax)&&n.perTargetMax>=0))throw new Error(`CreationSystem.steps[${i}].perTargetMax must be a whole number of 0 or more.`);
     return n;});return x;
 }

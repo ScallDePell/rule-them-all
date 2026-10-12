@@ -145,7 +145,14 @@
       "OpposedBy": "En opposition à {test}",
       "NoFactor": "×1",
       "FixedTargetDefinition": "La cible ci-dessus",
-      "NoTable": "Aucune Table"
+      "NoTable": "Aucune Table",
+      "RandomDraw": "Tirage aléatoire",
+      "DrawNo": "Choisi par le joueur",
+      "DrawOptional": "Tiré, modifiable",
+      "DrawLocked": "Tiré, définitif",
+      "DrawWeightField": "Chance selon le champ",
+      "DrawEvenly": "Vide : chaque option a la même chance",
+      "DrawRoll": "Jet pour chaque Definition"
     },
     "FamilyColor": {
       "parameters": "Paramètres",
@@ -550,7 +557,13 @@
       "RerollHelp": "Cette Action annule une utilisation d'une autre Action et la rejoue avec de nouveaux dés. Ses coûts sont payés dans la même étape. Aucune Action cochée : toute Action avec un Test. Les Conditions peuvent lire variables.reroll.count (1 pour la première relance).",
       "IsReroll": "Relance une autre Action",
       "RerollOf": "Actions qu'elle peut relancer",
-      "KeepDice": "Garder les mêmes dés"
+      "KeepDice": "Garder les mêmes dés",
+      "AcquisitionRepeat": "Si déjà possédée",
+      "AcquisitionRepeats": {
+        "refuse": "Refuser l'Action",
+        "raise": "Augmenter sa valeur"
+      },
+      "AcquisitionRaiseBy": "Augmenter de"
     },
     "EditorDisplay": {
       "NoneSelected": "Aucune sélection",
