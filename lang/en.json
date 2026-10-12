@@ -1210,6 +1210,18 @@
       "Help": "Definitions held once for the whole table, outside the characters: a GM reserve, clocks, a die every combat shares. Effects and Formulas reach them with the World and Combat roles.",
       "World": "World resources",
       "Combat": "Resources of each combat"
+    },
+    "Group": {
+      "Legend": "Several Actors",
+      "Help": "A group Test is made by each member before the Action's own Test; Formulas read the results in variables.group (count, best, worst, sum, outcomes). A linked role is the first Actor of a collection of references, such as the vehicle a pilot crews.",
+      "Test": "Group Test",
+      "NoTest": "No group Test",
+      "IncludeSelf": "The acting Actor takes part",
+      "Members": "Members",
+      "MembersChosen": "Chosen when the Action is used",
+      "LinkRole": "Role of the linked Actor",
+      "LinkFrom": "Linked Actor",
+      "NoLink": "No linked role"
     }
   }
 }

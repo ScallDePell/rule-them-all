@@ -1206,6 +1206,18 @@
       "Help": "Des Definitions tenues une seule fois pour toute la table, hors des personnages : réserve du MJ, horloges, dé partagé par un combat. Les Effets et les Formulas les atteignent avec les rôles Monde et Combat.",
       "World": "Ressources du monde",
       "Combat": "Ressources de chaque combat"
+    },
+    "Group": {
+      "Legend": "Plusieurs acteurs",
+      "Help": "Chaque membre fait le Test de groupe avant le Test de l'Action ; les Formulas lisent les résultats dans variables.group (count, best, worst, sum, outcomes). Un rôle lié est le premier acteur d'une collection de références, comme le véhicule d'un pilote.",
+      "Test": "Test de groupe",
+      "NoTest": "Pas de Test de groupe",
+      "IncludeSelf": "L'acteur qui agit participe",
+      "Members": "Membres",
+      "MembersChosen": "Choisis à l'utilisation",
+      "LinkRole": "Rôle de l'acteur lié",
+      "LinkFrom": "Acteur lié",
+      "NoLink": "Pas de rôle lié"
     }
   }
 }

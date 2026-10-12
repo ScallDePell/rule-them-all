@@ -141,7 +141,11 @@ export class RuntimeEngine{
     const unique=new Map(refs.filter(Boolean).map(normalizeRuntimeContainerRef).map(ref=>[this.#refKey(ref),ref]));
     return [...unique.values()];
   }
-  async needsGM(method,args){for(const ref of this.writeTargets(method,args))if(!await this.adapter.canWrite(ref))return true;return false;}
+  async needsGM(method,args){
+    // Roles found through a collection (a pilot's vehicle) are written too: resolve them first.
+    if(method==="executeAction"){const ruleset=this.ruleset(args[0]),action=ruleset.actions?.find(x=>x.id===args[1]);if(action?.roleLinks?.length)args=[args[0],args[1],await this.#linkedRoles(args[0],ruleset,action,this.#shared(args[2]??{}),new Map()),...args.slice(3)];}
+    for(const ref of this.writeTargets(method,args))if(!await this.adapter.canWrite(ref))return true;return false;
+  }
   async #commit(tx){const committed=await tx.commit();if(!committed.duplicate)for(const entry of committed.entries)this.hooks?.callAll?.(RUNTIME_HOOKS.ledgerEntry,clone(entry));return committed;}
   async instantiateDefinition(versionId,containerRef,definitionId,{initial={},transactionId=null}={}){
     const ruleset=this.ruleset(versionId),definition=ruleset.definitions?.find(x=>x.id===definitionId&&x.enabled!==false);if(!definition)throw new Error(`Definition unavailable: ${definitionId}.`);
@@ -454,7 +458,7 @@ export class RuntimeEngine{
     let formula=rollDef.formula;
     for(const variant of rollDef.variants??[])if(await evaluator.condition(variant.conditionRef,context)){formula=variant.formula;break;}
     const content=await evaluator.currentContent(context);
-    return {formula,data:{...clone(rollDef.data??{}),...(content?{content:content.fields}:{}),input:clone(context?.variables?.input??{}),...extra}};
+    return {formula,data:{...clone(rollDef.data??{}),...(content?{content:content.fields}:{}),input:clone(context?.variables?.input??{}),...(context?.variables?.group?{group:{count:context.variables.group.count,best:context.variables.group.best,worst:context.variables.group.worst,sum:context.variables.group.sum,outcomes:clone(context.variables.group.outcomes)}}:{}),...extra}};
   }
   /** Roll operand: the Roll's dice (multiplied by a Formula, e.g. 2 on a critical hit) plus a bonus Formula,
    * then a factor Formula rounded down (half for a resistance), never below the minimum. */
@@ -637,11 +641,13 @@ export class RuntimeEngine{
   async previewAction(versionId,actionId,context={},{acquisitions=[],content=null,staged:shared=null,depth=0}={}){
     const ruleset=this.ruleset(versionId),action=ruleset.actions?.find(x=>x.id===actionId&&enabled(x));if(!action)throw new Error(`Action unavailable: ${actionId}.`);const staged=shared??new Map(),evaluator=this.evaluator(versionId,staged);evaluator.__staged=staged;context=this.#shared(context);
     context=this.#actionInputs(ruleset,action,context);
+    context=await this.#linkedRoles(versionId,ruleset,action,context,staged);
     const many=["each","shared"].includes(action.targeting),targets=many?(Array.isArray(context.targets)?context.targets:[roleRef(context,"target")]).filter(Boolean):null;
     if(many&&!targets.length)throw new Error(`Action ${action.id} needs at least one target.`);
     if(many)context={...context,roles:{...(context.roles??{}),target:targets[0]}};
     for(const conditionId of action.conditionRefs??[])if(!await evaluator.condition(conditionId,context))return {actionId,allowed:false,reason:"condition",conditionId,changes:[]};
     const changes=[];for(const effectId of action.costEffectRefs??[])changes.push(await this.previewEffect(versionId,effectId,context,staged));
+    if(action.group)context=await this.#groupTest(versionId,ruleset,action,context,staged);
     // Acquisitions come before the Effects, which may then target the new DefinitionStates.
     const acquired=[];
     for(const listed of [...(action.acquisitions??[]),...acquisitions]){
@@ -683,6 +689,37 @@ export class RuntimeEngine{
       if(run.choice)choices.push(run.choice);
     }
     return {actionId,allowed:true,testResult:null,tableResult:null,followUps:[],targets:runs,choices,changes,acquired,staged,context};
+  }
+  /** The entries of a reference collection slot on a role's container, as container refs (the crew of a vehicle). */
+  async #collectionRefs(versionId,ruleset,context,role,definitionId,slotId,staged){
+    const definition=ruleset.definitions?.find(x=>x.id===definitionId);if(!definition||!findSlot(definition,"collection",slotId))throw new Error(`Collection slot not found: ${definitionId}/${slotId}.`);
+    const {state}=await this.#stagedState(versionId,context,role,staged);
+    return collectionSlotState(state.definitionStates?.[definitionId]??{capabilityStates:{}},slotId).entries.filter(entry=>entry.entityRef).map(entry=>normalizeRuntimeContainerRef(entry.entityRef));
+  }
+  /** Roles the caller did not give, found through a collection of references (the pilot's vehicle). */
+  async #linkedRoles(versionId,ruleset,action,context,staged){
+    for(const link of action.roleLinks??[]){
+      if(roleRef(context,link.role))continue;
+      const [first]=await this.#collectionRefs(versionId,ruleset,context,link.fromRole,link.definitionId,link.slotId,staged);
+      if(!first)throw new Error(`Action ${action.id}: nothing in ${link.definitionId}/${link.slotId} to act as ${link.role}.`);
+      context={...context,roles:{...(context.roles??{}),[link.role]:first}};
+    }
+    return context;
+  }
+  /** Group Test: each helper makes the group Test as its self (the Action's self among them unless includeSelf is false);
+   * variables.group then holds count, totals, best, worst, sum and outcomes {resultKey: count}, and Rolls read @group. */
+  async #groupTest(versionId,ruleset,action,context,staged){
+    const group=action.group,self=roleRef(context,"self");
+    let helpers=group.helpersFrom?await this.#collectionRefs(versionId,ruleset,context,group.helpersFrom.role,group.helpersFrom.definitionId,group.helpersFrom.slotId,staged):(context.helpers??[]).map(normalizeRuntimeContainerRef);
+    if(group.includeSelf&&self)helpers=[normalizeRuntimeContainerRef(self),...helpers.filter(ref=>this.#refKey(ref)!==this.#refKey(normalizeRuntimeContainerRef(self)))];
+    const members=[];
+    for(const helper of helpers){const result=await this.executeTest(versionId,group.testRef,{...context,roles:{...(context.roles??{}),self:helper,source:helper,leader:self}},{staged});members.push({ref:helper,total:result.total,outcome:result.outcome?.resultKey??null});}
+    // Every Outcome of the group Test is counted, 0 included, so a Formula can read any of them.
+    const test=ruleset.tests?.find(x=>x.id===group.testRef),totals=members.map(member=>Number(member.total)).filter(Number.isFinite),outcomes={};
+    for(const id of [...(test?.outcomeRefs??[]),...(test?.fallbackOutcomeRef?[test.fallbackOutcomeRef]:[])]){const outcome=ruleset.outcomes?.find(x=>x.id===id);if(outcome)outcomes[outcome.resultKey]=0;}
+    for(const member of members)if(member.outcome)outcomes[member.outcome]=(outcomes[member.outcome]??0)+1;
+    const variables={count:members.length,totals,best:totals.length?Math.max(...totals):0,worst:totals.length?Math.min(...totals):0,sum:totals.reduce((a,b)=>a+b,0),outcomes,members};
+    return {...context,variables:{...(context.variables??{}),group:variables}};
   }
   /** One target's part of an Action: Test and its Outcome, states and Modifiers, Effects, Table, follow-ups.
    * An Outcome that stops the Action leaves this target unchanged. */

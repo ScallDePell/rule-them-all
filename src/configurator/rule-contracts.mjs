@@ -211,7 +211,7 @@ function prepareRerollDice(dice){
 }
 export const ACTION_TARGETING=Object.freeze(['one','each','shared']);
 export function prepareAction(data,options={}){
-  const x={descriptionKey:'',enabled:true,order:0,tags:[],inputs:[],conditionRefs:[],costEffectRefs:[],acquisitions:[],stateRemovals:[],stateApplications:[],modifierApplications:[],effectRefs:[],testRef:null,outcomeMappings:[],tableRef:null,targeting:'one',reroll:null,forEach:null,eventTypeRefs:[],...copyJSON(data)};
+  const x={descriptionKey:'',enabled:true,order:0,tags:[],inputs:[],conditionRefs:[],costEffectRefs:[],acquisitions:[],stateRemovals:[],stateApplications:[],modifierApplications:[],effectRefs:[],testRef:null,outcomeMappings:[],tableRef:null,targeting:'one',reroll:null,forEach:null,roleLinks:[],group:null,eventTypeRefs:[],...copyJSON(data)};
   identity(x,'Action',options);
   // targeting: one target, or each of context.targets with its own Effect dice ("each") or the same dice for all ("shared").
   if(!ACTION_TARGETING.includes(x.targeting))throw new Error(`Action.targeting must be one of ${ACTION_TARGETING.join(', ')}.`);
@@ -222,6 +222,13 @@ export function prepareAction(data,options={}){
   // replays it, with new dice or, keepDice, the same ones (a reaction that changes the odds, not the roll).
   // dice: only the kept dice that match (a group, a comparison) are thrown again, or set to a Formula's value; the others stay.
   if(x.reroll!==null){if(!isRecord(x.reroll))throw new Error('Action.reroll must be null or an object.');x.reroll={actionRefs:[],keepDice:false,dice:null,...x.reroll};for(const key of Object.keys(x.reroll))if(!['actionRefs','keepDice','dice'].includes(key))throw new Error(`Action.reroll contains unsupported field: ${key}.`);arr(x.reroll.actionRefs,'Action.reroll.actionRefs');bool(x.reroll.keepDice,'Action.reroll.keepDice');x.reroll.dice=prepareRerollDice(x.reroll.dice);}
+  // roleLinks: roles found through a reference collection (the vehicle a pilot crews): role = the first entry of
+  // fromRole's Definition collection slot. group: before its own Test, each helper (context.helpers, or the entries
+  // of a collection) makes testRef; their results are variables.group (count, best, worst, sum, outcomes by key).
+  arr(x.roleLinks,'Action.roleLinks');
+  x.roleLinks=x.roleLinks.map((link,i)=>{const l={fromRole:'self',...(isRecord(link)?link:{})};if(!isRecord(link))throw new Error(`Action.roleLinks[${i}] must be an object.`);for(const key of Object.keys(l))if(!['role','fromRole','definitionId','slotId'].includes(key))throw new Error(`Action.roleLinks[${i}] contains unsupported field: ${key}.`);for(const key of ['role','fromRole'])if(!ROLE_NAME.test(String(l[key])))throw new Error(`Action.roleLinks[${i}].${key} must be a role name.`);for(const key of ['definitionId','slotId'])if(!nonempty(l[key]))throw new Error(`Action.roleLinks[${i}].${key} is required.`);return l;});
+  if(x.group!==null){if(!isRecord(x.group))throw new Error('Action.group must be null or an object.');x.group={includeSelf:true,helpersFrom:null,...x.group};for(const key of Object.keys(x.group))if(!['testRef','includeSelf','helpersFrom'].includes(key))throw new Error(`Action.group contains unsupported field: ${key}.`);if(!nonempty(x.group.testRef))throw new Error('Action.group needs a Test.');bool(x.group.includeSelf,'Action.group.includeSelf');
+    const from=x.group.helpersFrom;if(from!==null){if(!isRecord(from))throw new Error('Action.group.helpersFrom must be null or an object.');x.group.helpersFrom={role:'self',...from};for(const key of Object.keys(x.group.helpersFrom))if(!['role','definitionId','slotId'].includes(key))throw new Error(`Action.group.helpersFrom contains unsupported field: ${key}.`);if(!nonempty(from.definitionId)||!nonempty(from.slotId))throw new Error('Action.group.helpersFrom needs a Definition and its collection slot.');}}
   // tableRef: a Table rolled after the Effects; its row runs its Actions. An outcome mapping's actionRefs run after the Effects too.
   if(x.tableRef==='')x.tableRef=null;
   if(x.tableRef!==null&&!nonempty(x.tableRef))throw new Error('Action.tableRef must be null or a Table id.');
