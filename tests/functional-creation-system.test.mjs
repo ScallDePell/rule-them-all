@@ -93,3 +93,21 @@ test('Creation allows Content before Definition without duplicating that Definit
   assert.equal(state.definitionStates.sense.capabilityStates.value.base,7);
  }finally{globalThis.Actor=previous}
 });
+
+test('Creation builds onto an Actor made from the directory: its first values make way, an Actor holding Contents is refused', async()=>{
+ const {v,answers,actors,runtime,bridge}=await build();
+ const actor=await actors.create({name:'Luca',type:'hero'});
+ actor.update=async function(data){if(data.name)this.name=data.name;for(const [k,val] of Object.entries(data))if(k.startsWith('flags.'))(this.flags['rule-them-all']??={})[k.split('.').pop()]=val;};
+ // Started without creation: every Definition at 0.
+ await runtime.initializeContainer(v,actor.uuid);
+ const {actor:built,run}=await bridge.createActorFromCreationSystem(v,'creation',{name:'Luca the Brave',answers,sessionId:'s1',actorUuid:actor.uuid});
+ assert.equal(built,actor);assert.equal(actors.created.length,1,'no other Actor is made');
+ assert.equal(actor.name,'Luca the Brave');assert.equal(actor.getFlag('rule-them-all','creationSessionId'),'s1');
+ assert.equal((await runtime.getContainerState(actor.uuid)).definitionStates.sense.capabilityStates.value.base,7);
+ assert.equal(run.creationSystemId,'creation');
+ await assert.rejects(()=>bridge.createActorFromCreationSystem(v,'creation',{name:'Again',answers,actorUuid:actor.uuid}),/already created/);
+ const other=await actors.create({name:'Kit',type:'hero'});
+ await other.setFlag('rule-them-all','contentAcquisitions',{'item-1':{templateId:'culture'}});
+ await assert.rejects(()=>bridge.createActorFromCreationSystem(v,'creation',{name:'Kit',answers,actorUuid:other.uuid}),/already holds Contents/);
+ assert.equal(other.deleted,false,'an existing Actor is never deleted');
+});

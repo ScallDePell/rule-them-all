@@ -18,10 +18,16 @@ export function neighbourStep(view, offset) { return view.steps[view.index + off
 
 export function createCreationWindow({ApplicationV2}) {
   return class CreationWindow extends ApplicationV2 {
-    static DEFAULT_OPTIONS = {id: "rta-creation", classes: ["rta-creation-app"], position: {width: 760, height: 640}, window: {title: "RTA.Creation.WindowTitle", resizable: true}};
+    static DEFAULT_OPTIONS = {classes: ["rta-creation-app"], position: {width: 760, height: 640}, window: {title: "RTA.Creation.WindowTitle", resizable: true}};
     #sessionId = null;
     #dirty = false;
     #page = null;
+    /** options.actorUuid: the character is built onto this Actor (opened from its sheet) rather than a new one. */
+    constructor(options = {}) {
+      super({...options, id: options.actorUuid ? `rta-creation-${String(options.actorUuid).replace(/[^A-Za-z0-9_-]/g, "-")}` : "rta-creation"});
+      this.actorUuid = options.actorUuid ?? null;
+    }
+    get #actor() { return this.actorUuid ? globalThis.fromUuidSync?.(this.actorUuid) ?? null : null; }
 
     async _prepareContext(options) {
       const context = await super._prepareContext(options);
@@ -38,18 +44,25 @@ export function createCreationWindow({ApplicationV2}) {
           this.#sessionId = null;
         }
         const versionId = api.getActiveVersionId(), t = versionId ? translator(versionId) : i18n, ruleset = versionId ? resolveRuntimeRuleset(api, versionId) : null;
-        const drafts = (await creation.list()).filter(session => session.status === "draft").map(session => {
+        const sessions = (await creation.list()).filter(session => session.status === "draft" && (session.targetActorUuid ?? null) === this.actorUuid);
+        const systems = startableSystems(ruleset, t);
+        // From an Actor's sheet: its creation in progress goes on, or its only Creation System starts at once.
+        if (this.actorUuid && (sessions.length || systems.length === 1)) {
+          this.#sessionId = sessions.at(-1)?.id ?? (await creation.start(versionId, systems[0].id, {actorUuid: this.actorUuid})).id;
+          return this._prepareContext(options);
+        }
+        const drafts = sessions.map(session => {
           let label = session.creationSystemId;
           try { const own = translator(session.rulesetVersionId); label = own(resolveRuntimeRuleset(api, session.rulesetVersionId).creationSystems?.find(system => system.id === session.creationSystemId)?.nameKey ?? label); } catch { /* its Ruleset version is gone: the id stays */ }
           return {id: session.id, label: `${label} · ${new Date(session.updatedAt).toLocaleString()}`};
         });
-        this.#page = {kind: "start", versionId, t, drafts, systems: startableSystems(ruleset, t)};
+        this.#page = {kind: "start", versionId, t, drafts, systems};
       } catch (error) { notifyError(error); this.#page = {kind: "start", t: i18n, drafts: [], systems: []}; }
       return context;
     }
     async _renderHTML() {
       const page = this.#page;
-      return page?.kind === "wizard" ? renderCreationHTML(page.view, {t: page.t}) : renderCreationStartHTML(page ?? {}, {t: page?.t ?? i18n});
+      return page?.kind === "wizard" ? renderCreationHTML(page.view, {t: page.t, name: this.#actor?.name ?? ""}) : renderCreationStartHTML(page ?? {}, {t: page?.t ?? i18n});
     }
     _replaceHTML(result, content) { content.innerHTML = result; }
 
@@ -80,7 +93,7 @@ export function createCreationWindow({ApplicationV2}) {
     async #goTo(stepId) { await this.#save(); if (stepId) await rta().creation.goTo(this.#sessionId, stepId); }
     async #command(control) {
       const creation = rta().creation, page = this.#page, command = control.dataset.creationCommand, step = page?.view?.step;
-      if (command === "start") { this.#sessionId = (await creation.start(page.versionId, control.dataset.system)).id; return; }
+      if (command === "start") { this.#sessionId = (await creation.start(page.versionId, control.dataset.system, this.actorUuid ? {actorUuid: this.actorUuid} : {})).id; return; }
       if (command === "resume") { this.#sessionId = control.dataset.session; return; }
       if (command === "abandon") {
         const confirmed = await globalThis.foundry.applications.api.DialogV2.confirm({window: {title: i18n("RTA.Creation.Abandon")}, content: `<p>${i18n("RTA.Creation.AbandonConfirm")}</p>`, rejectClose: false});
@@ -97,7 +110,7 @@ export function createCreationWindow({ApplicationV2}) {
       if (command === "draw") { await this.#save(); await creation.draw(this.#sessionId, step.id); return; }
       if (command === "term") { await this.#save(); await creation.nextTerm(this.#sessionId, step.id); return; }
       if (command === "finish") {
-        const name = this.element.querySelector("[data-creation-name]")?.value?.trim() || i18n("RTA.Creation.DefaultName");
+        const name = this.element.querySelector("[data-creation-name]")?.value?.trim() || this.#actor?.name || i18n("RTA.Creation.DefaultName");
         const {actor} = await creation.finalize(this.#sessionId, {name});
         this.#sessionId = null;
         actor?.sheet?.render?.(true);
@@ -107,9 +120,18 @@ export function createCreationWindow({ApplicationV2}) {
   };
 }
 
+let CreationWindowClass = null;
+/** The creation window: a new character, or (actorUuid) the character of an Actor that exists already. One per Actor. */
+export function openCreationWindow({actorUuid = null, ApplicationV2 = globalThis.foundry?.applications?.api?.ApplicationV2} = {}) {
+  CreationWindowClass ??= createCreationWindow({ApplicationV2});
+  const id = actorUuid ? `rta-creation-${String(actorUuid).replace(/[^A-Za-z0-9_-]/g, "-")}` : "rta-creation";
+  const open = globalThis.foundry?.applications?.instances?.get?.(id);
+  if (open) return open.render({force: true});
+  return new CreationWindowClass({actorUuid}).render({force: true});
+}
+
 /** A "Create a character" button in the Actors directory, when the active Ruleset has a Creation System. */
 export function installCreationButton({hooks = globalThis.Hooks, ApplicationV2 = globalThis.foundry?.applications?.api?.ApplicationV2} = {}) {
-  let CreationWindow = null;
   hooks.on("renderActorDirectory", (_app, html) => {
     const root = html instanceof HTMLElement ? html : html?.[0];
     const api = rta()?.configurator, versionId = api?.getActiveVersionId?.();
@@ -121,7 +143,7 @@ export function installCreationButton({hooks = globalThis.Hooks, ApplicationV2 =
     button.type = "button";
     button.dataset.rtaCreationOpen = "";
     button.innerHTML = `<i class="fa-solid fa-user-plus"></i> ${i18n("RTA.Creation.Open")}`;
-    button.addEventListener("click", () => { CreationWindow ??= createCreationWindow({ApplicationV2}); new CreationWindow().render({force: true}); });
+    button.addEventListener("click", () => openCreationWindow({ApplicationV2}));
     (root.querySelector(".header-actions") ?? root.querySelector(".directory-header") ?? root).append(button);
   });
 }

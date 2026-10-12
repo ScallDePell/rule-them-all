@@ -84,7 +84,7 @@ function optionList(options, {name, extra = "", single}) {
   return `<div class="rta-creation__options"${single ? " data-creation-single" : ""}>${options.map(option => `<label class="rta-creation__option"><input type="checkbox" ${name} value="${escape(option.id)}"${extra}${option.checked ? " checked" : ""}> <span>${escape(option.label)}</span></label>`).join("")}</div>`;
 }
 
-function panelHTML(step, t) {
+function panelHTML(step, t, name = "") {
   const parts = [`<header class="rta-creation__panel-head"><h3 class="rta-creation__title">${escape(step.label)}</h3>${step.term ? `<span class="rta-creation__term">${escape(format(t, "RTA.Creation.Term", {number: step.term}))}</span>` : ""}</header>`];
   if (step.skipped) parts.push(`<p class="rta-creation__hint">${escape(t("RTA.Creation.Skipped"))}</p>`);
   else if (step.options) {
@@ -98,7 +98,7 @@ function panelHTML(step, t) {
     parts.push(step.total === null ? `<p class="rta-creation__hint">${escape(t("RTA.Creation.NotRolled"))}</p>` : `<p class="rta-creation__roll"><span>${escape(step.result)}</span> <strong>${escape(String(step.total))}</strong></p>`);
   } else if (step.summary) {
     parts.push(`<dl class="rta-creation__summary">${step.summary.map(line => `<dt>${escape(line.label)}</dt><dd>${escape(line.value)}</dd>`).join("")}</dl>`);
-    parts.push(`<label class="rta-creation__name"><span>${escape(t("RTA.Creation.Name"))}</span><input type="text" data-creation-name></label>`);
+    parts.push(`<label class="rta-creation__name"><span>${escape(t("RTA.Creation.Name"))}</span><input type="text" data-creation-name value="${escape(name)}"></label>`);
   }
   if (step.errors.length) parts.push(`<ul class="rta-creation__errors">${step.errors.map(error => `<li>${escape(error)}</li>`).join("")}</ul>`);
   const tools = [];
@@ -109,11 +109,11 @@ function panelHTML(step, t) {
 }
 
 /** The wizard page: steps on the side, the step in progress, then the way on. */
-export function renderCreationHTML(view, {t}) {
+export function renderCreationHTML(view, {t, name = ""}) {
   const step = view.step;
   const steps = view.steps.map(entry => `<li><button type="button" class="rta-creation__step" data-creation-goto="${escape(entry.id)}" data-state="${entry.state}"${entry.current ? ' aria-current="step"' : ""}><span class="rta-creation__number">${entry.number}</span><span class="rta-creation__step-label">${escape(entry.label)}</span></button></li>`).join("");
   const footer = step ? `<footer class="rta-creation__footer">${button("abandon", t("RTA.Creation.Abandon"))}<span class="rta-creation__spacer"></span>${button("previous", t("RTA.Creation.Previous"), {disabled: step.first})}${step.kind === "review" ? button("finish", t("RTA.Creation.Finish"), {primary: true, disabled: !step.canFinish}) : button("next", t(step.last ? "RTA.Creation.Save" : "RTA.Creation.Next"), {primary: true})}</footer>` : "";
-  return `<div class="rta-creation"><div class="rta-creation__layout"><nav class="rta-creation__nav" aria-label="${escape(view.title)}"><ol class="rta-creation__steps">${steps}</ol></nav><section class="rta-creation__panel">${step ? panelHTML(step, t) : ""}</section></div>${footer}</div>`;
+  return `<div class="rta-creation"><div class="rta-creation__layout"><nav class="rta-creation__nav" aria-label="${escape(view.title)}"><ol class="rta-creation__steps">${steps}</ol></nav><section class="rta-creation__panel">${step ? panelHTML(step, t, name) : ""}</section></div>${footer}</div>`;
 }
 
 /** First page: the creations left unfinished, and the Creation Systems to start one. */

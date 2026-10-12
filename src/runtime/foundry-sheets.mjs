@@ -6,6 +6,8 @@ import {sheetFor} from "../configurator/sheet-auto-layout.mjs";
 import {resolveRuntimeRuleset} from "./runtime-contracts.mjs";
 import {formatSheetValue, renderActionChatHTML, renderSheetHTML} from "../ui/sheet-markup.mjs";
 import {escapeHTML} from "../ui/html-utils.mjs";
+import {openCreationWindow, startableSystems} from "./foundry-creation.mjs";
+import {foundryJSON} from "./foundry-data.mjs";
 
 const TEMPLATE_FLAG = "contentTemplate";
 const rta = () => globalThis.game?.ruleThemAll;
@@ -77,7 +79,7 @@ export function createRulesetSheets({ActorSheetV2, ItemSheetV2}) {
     }
     async _renderHTML() {
       const state = this.#state ?? {}, t = state.versionId ? translator(state.versionId) : i18n;
-      return renderSheetHTML(state.view, {t, name: this.document.name, img: this.document.img, editableName: this.isEditable, notice: state.notice ?? "", noticeAction: state.noticeAction ?? null});
+      return renderSheetHTML(state.view, {t, name: this.document.name, img: this.document.img, editable: this.isEditable, notice: state.notice ?? "", noticeActions: state.noticeActions ?? [], headerActions: state.headerActions ?? []});
     }
     _replaceHTML(result, content) { content.innerHTML = result; }
 
@@ -89,8 +91,50 @@ export function createRulesetSheets({ActorSheetV2, ItemSheetV2}) {
       for (const button of root.querySelectorAll("[data-sheet-action]")) button.addEventListener("click", event => this.#use(event.currentTarget));
       for (const button of root.querySelectorAll("[data-sheet-command]")) button.addEventListener("click", event => this.#command(event.currentTarget.dataset.sheetCommand));
       for (const button of root.querySelectorAll("[data-sheet-tab]")) button.addEventListener("click", event => this.#showTab(event.currentTarget));
+      for (const button of root.querySelectorAll("[data-sheet-item-open]")) button.addEventListener("click", event => this.#ownedItem(event.currentTarget.dataset.sheetItemOpen)?.sheet?.render(true));
+      for (const button of root.querySelectorAll("[data-sheet-item-remove]")) button.addEventListener("click", event => this.#removeItem(event.currentTarget.dataset.sheetItemRemove));
       const tab = this.#tab && root.querySelector(`[data-sheet-tab="${CSS.escape(this.#tab)}"]`);
       if (tab) this.#showTab(tab);
+    }
+    /** Items dropped on the sheet (from a compendium, the Items directory, another Actor). The listeners sit on the
+       window, which lasts across renders; Foundry's own drop handling, when the base sheet has one, ends here too. */
+    _onFirstRender(context, options) {
+      super._onFirstRender?.(context, options);
+      const root = this.element;
+      root.addEventListener("dragover", event => { if (this.isEditable && this.document.documentName === "Actor") { event.preventDefault(); root.querySelector(".rta-sheet")?.classList.add("rta-sheet--drop"); } });
+      root.addEventListener("dragleave", event => { if (!root.contains(event.relatedTarget)) root.querySelector(".rta-sheet")?.classList.remove("rta-sheet--drop"); });
+      root.addEventListener("drop", event => this.#drop(event));
+    }
+    _onDrop(event) { return this.#drop(event); }
+    #dropped = new WeakSet();
+    async #drop(event) {
+      if (this.#dropped.has(event)) return;
+      this.#dropped.add(event);
+      this.element.querySelector(".rta-sheet")?.classList.remove("rta-sheet--drop");
+      if (!this.isEditable || this.document.documentName !== "Actor") return;
+      event.preventDefault();
+      const TextEditor = globalThis.foundry?.applications?.ux?.TextEditor?.implementation ?? globalThis.TextEditor;
+      const data = TextEditor?.getDragEventData?.(event);
+      if (data?.type !== "Item" || !data.uuid) return;
+      try {
+        const item = await globalThis.fromUuid(data.uuid);
+        if (!item || item.parent?.uuid === this.document.uuid) return;
+        const flag = item.getFlag?.(MODULE_ID, TEMPLATE_FLAG), source = foundryJSON(item.toObject());
+        // A Ruleset Content is acquired (its choices asked, its grants applied); any other Item is simply added.
+        if (flag?.managed) await rta().content.createOwnedContentItem(flag.versionId, this.document.uuid, flag.templateId, {sourceData: source});
+        else { delete source._id; await this.document.createEmbeddedDocuments("Item", [source]); }
+      } catch (error) { notifyError(error); }
+      this.render();
+    }
+    #ownedItem(id) { return this.document.documentName === "Actor" ? this.document.items?.get(id) : null; }
+    async #removeItem(id) {
+      const item = this.#ownedItem(id);
+      if (!item) return;
+      const confirmed = await globalThis.foundry.applications.api.DialogV2.confirm({window: {title: i18n("RTA.Sheet.RemoveContent")}, content: `<p>${escapeHTML(globalThis.game.i18n.format("RTA.Sheet.RemoveContentConfirm", {name: item.name}))}</p>`, rejectClose: false});
+      if (!confirmed) return;
+      // Removing the Item releases what it granted (deleteItem hook).
+      try { await item.delete(); } catch (error) { notifyError(error); }
+      this.render();
     }
     #showTab(button) {
       const tabs = button.closest(".rta-sheet-tabs");
@@ -139,7 +183,10 @@ export function createRulesetSheets({ActorSheetV2, ItemSheetV2}) {
     }
     async #command(command) {
       const state = this.#state;
-      try { if (command === "initialize") await rta().runtime.initializeContainer(state.versionId, state.actor); } catch (error) { notifyError(error); }
+      try {
+        if (command === "initialize") await rta().runtime.initializeContainer(state.versionId, state.actor);
+        if (command === "create") { openCreationWindow({actorUuid: this.document.uuid}); return; }
+      } catch (error) { notifyError(error); }
       this.render();
     }
   };
@@ -151,9 +198,16 @@ export function createRulesetSheets({ActorSheetV2, ItemSheetV2}) {
       const stored = await runtime.getContainerState(actor);
       const versionId = stored.rulesetVersionId || api.getActiveVersionId();
       if (!versionId) return {notice: i18n("RTA.Sheet.NoRuleset")};
-      if (!stored.rulesetVersionId) return {versionId, notice: i18n("RTA.Sheet.NotInitialized"), noticeAction: this.isEditable ? {command: "initialize", label: i18n("RTA.Sheet.Initialize")} : null, actor};
+      // A character not made yet is offered the active Ruleset's creation, as long as it holds no Content.
+      const doc = this.document, active = api.getActiveVersionId();
+      const creatable = this.isEditable && active && (!stored.rulesetVersionId || stored.rulesetVersionId === active) && !doc.getFlag?.(MODULE_ID, "creationRun")
+        && !Object.keys(doc.getFlag?.(MODULE_ID, "contentAcquisitions") ?? {}).length && startableSystems(resolveRuntimeRuleset(api, active), key => key).length > 0;
+      const create = {command: "create", label: i18n("RTA.Creation.CreateThis"), icon: "fa-user-plus"};
+      if (!stored.rulesetVersionId) return {versionId, notice: i18n(creatable ? "RTA.Sheet.NotCreated" : "RTA.Sheet.NotInitialized"), actor,
+        noticeActions: this.isEditable ? [...(creatable ? [create] : []), {command: "initialize", label: i18n(creatable ? "RTA.Sheet.InitializeEmpty" : "RTA.Sheet.Initialize")}] : []};
       const ruleset = resolveRuntimeRuleset(api, versionId), sheet = sheetFor(ruleset, {target: "actor"});
-      return {versionId, ruleset, sheet, actor, view: await runtime.projectSheet(versionId, sheet, {actor})};
+      const items = [...(doc.items ?? [])].map(item => ({id: item.id, name: item.name, img: item.img, managed: Boolean(item.getFlag?.(MODULE_ID, TEMPLATE_FLAG)?.managed)}));
+      return {versionId, ruleset, sheet, actor, headerActions: creatable ? [create] : [], view: await runtime.projectSheet(versionId, sheet, {actor, items})};
     }
   }
 

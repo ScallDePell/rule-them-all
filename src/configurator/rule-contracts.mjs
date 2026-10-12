@@ -518,6 +518,7 @@ export function prepareSheetDefinition(data,options={}){
   arr(x.contentTypeIds,'SheetDefinition.contentTypeIds');
   x.root=prepareLayout(x.root);
   if(x.target!=='item')for(const {node,path} of layoutNodes(x.root))if(node.source?.kind==='field')throw new Error(`${path}: Content fields are only on Item sheets.`);
+  if(x.target==='item')for(const {node,path} of layoutNodes(x.root))if(node.kind==='contents')throw new Error(`${path}: held Contents are only on Actor sheets.`);
   return x;
 }
 

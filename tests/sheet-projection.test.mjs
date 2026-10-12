@@ -102,13 +102,13 @@ test('an Item sheet shows the fields of its Content, owned or not', async()=>{
 test('AUTO lays out every Definition Type with what its capabilities give, and the Actions a player starts', async()=>{
   const {v,engine,api}=await setup();
   const ruleset=engine.ruleset(v),root=autoLayout(ruleset);
-  assert.deepEqual(root.children.map(n=>n.id),['type-attribute','type-resource','type-skill','actions']);
+  assert.deepEqual(root.children.map(n=>n.id),['type-attribute','type-resource','type-skill','contents','actions']);
   assert.deepEqual(root.children[2].children[0].children.map(n=>n.source.outputId),['value.final','state.active']);
   assert.deepEqual(sheetActionIds(ruleset),['rest']);
   const view=await projectSheet(engine,v,{id:'auto',target:'actor',root},{actor:hero});
   assert.deepEqual(find(view.root,'list-resource').rows[0].children.map(c=>[c.label,c.value,c.maximum]),[['Points',9,12]]);
   assert.deepEqual(find(view.root,'list-attribute').rows.map(r=>[r.label,r.children[0].value]),[['STR',7],['DEX',0]]);
-  assert.equal((await api.createSheetDefinition(v,{id:'auto',nameKey:'Auto',target:'actor',root})).root.children.length,4);
+  assert.equal((await api.createSheetDefinition(v,{id:'auto',nameKey:'Auto',target:'actor',root})).root.children.length,5);
 });
 
 test('a sheet keeps the objects it shows from being deleted', async()=>{
@@ -150,4 +150,18 @@ test('setting a value.final moves its base by the difference, so Modifiers stay 
   assert.equal(await engine.resolveReference(v,out('str','value','value.final'),ctx),9);
   await engine.writeSheetValue(v,hero,{sheetId:'auto',nodeId:'each-attribute-value',definitionId:'str',value:12});
   assert.deepEqual([await engine.resolveReference(v,out('str','value','value.base'),ctx),await engine.resolveReference(v,out('str','value','value.final'),ctx)],[10,12]);
+});
+
+test('a contents block lists the Contents an Actor holds, with their Items, and the other Items under the block that shows all', async()=>{
+  const {api,v,engine}=await setup();
+  await engine.acquire(v,hero,{content:{key:'item-1',templateId:'sword',contentTypeId:'weapon'}});
+  const sheet={id:'s',target:'actor',root:prepareLayout({id:'root',kind:'grid',children:[{id:'all',kind:'contents'},{id:'charms',kind:'contents',contentTypeIds:['charm']}]})};
+  const items=[{id:'item-1',name:'My blade',img:'blade.webp',managed:true},{id:'item-2',name:'Rope',img:'',managed:false}];
+  const view=await projectSheet(engine,v,sheet,{actor:hero,items});
+  assert.deepEqual(find(view.root,'all').rows.map(r=>[r.key,r.label,r.img,r.type,r.item]),[['item-1','My blade','blade.webp','Weapon',true],['item-2','Rope','','',true]]);
+  assert.deepEqual(find(view.root,'charms').rows,[]);
+  assert.equal((await projectSheet(engine,v,sheet,{actor:null})).root.children.length,0,'no Actor, no contents');
+  await assert.rejects(api.createSheetDefinition(v,{id:'i',nameKey:'I',target:'item',root:{id:'root',kind:'grid',children:[{id:'c',kind:'contents'}]}}),/only on Actor sheets/);
+  await api.createSheetDefinition(v,{id:'a',nameKey:'A',target:'actor',root:{id:'root',kind:'grid',children:[{id:'c',kind:'contents',contentTypeIds:['charm']}]}});
+  await assert.rejects(api.deleteContentType(v,'charm'),/still referenced/);
 });

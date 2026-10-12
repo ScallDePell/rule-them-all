@@ -92,3 +92,21 @@ test('The Foundry window opens on the first page, with the unfinished characters
   assert.match(html,/data-creation-command="resume"/);assert.match(html,/data-creation-command="start" data-system="creation"/);
   delete globalThis.game;
 });
+
+test('Opened from an Actor sheet, the window starts that Actor creation at once, then picks it up again, with the Actor name ready', async()=>{
+  const {api,v,sessions}=await build();
+  await api.setActiveVersionId(v);
+  await sessions.start(v,'creation');
+  globalThis.game={ruleThemAll:{configurator:api,creation:sessions,configuratorReady:Promise.resolve(api)},i18n:{lang:'en',localize:k=>k}};
+  globalThis.fromUuidSync=uuid=>uuid==='Actor.luca'?{name:'Luca'}:null;
+  class Base{constructor(options){this.options=options;}async _prepareContext(){return {};}}
+  const Window=createCreationWindow({ApplicationV2:Base}),window=new Window({actorUuid:'Actor.luca'});
+  assert.equal(window.options.id,'rta-creation-Actor-luca');
+  await window._prepareContext({});
+  assert.match(await window._renderHTML(),/data-creation-goto="origin" data-state="open" aria-current="step"/);
+  const mine=(await sessions.list()).filter(session=>session.targetActorUuid==='Actor.luca');
+  assert.equal(mine.length,1,'the player other draft is not taken');
+  const again=new Window({actorUuid:'Actor.luca'});await again._prepareContext({});
+  assert.equal((await sessions.list()).filter(session=>session.targetActorUuid==='Actor.luca').length,1,'reopening resumes the same creation');
+  delete globalThis.game;delete globalThis.fromUuidSync;
+});

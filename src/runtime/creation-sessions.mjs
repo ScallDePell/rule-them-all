@@ -1,5 +1,6 @@
 import {MODULE_ID} from "../core/module-contract.mjs";
 import {copyJSON,isRecord} from "../configurator/configurator-schema.mjs";
+import {foundryJSON} from "./foundry-data.mjs";
 import {resolveRuntimeRuleset} from "./runtime-contracts.mjs";
 import {analyzeCreationSystem,drawCreationStep,creationBlockOf} from "./creation-plan.mjs";
 
@@ -15,8 +16,8 @@ const newId=()=>`creation-${globalThis.crypto?.randomUUID?.()??`${Date.now()}-${
 /** Sessions of each user live in that user's flags: a player may update their own User. */
 export class FoundryCreationSessionStore{
   #user(userId){const user=game.users?.get?.(userId);if(!user)throw new Error(`Foundry User not found: ${userId}.`);return user;}
-  async list(userId){return Object.values(copyJSON(this.#user(userId).getFlag(MODULE_ID,"creationSessions")??{}));}
-  async get(userId,id){return copyJSON(this.#user(userId).getFlag(MODULE_ID,"creationSessions")?.[id]??null);}
+  async list(userId){return Object.values(foundryJSON(this.#user(userId).getFlag(MODULE_ID,"creationSessions")??{}));}
+  async get(userId,id){return foundryJSON(this.#user(userId).getFlag(MODULE_ID,"creationSessions")?.[id]??null);}
   async put(session){await this.#user(session.ownerUserId).update({[`flags.${MODULE_ID}.creationSessions.${session.id}`]:copyJSON(session)});return copyJSON(session);}
 }
 export class MemoryCreationSessionStore{
@@ -45,11 +46,12 @@ export class CreationSessions{
     return analysis;
   }
   async #save(session){session.revision+=1;session.updatedAt=this.now();await this.#validate(session);return this.store.put(session);}
-  async start(versionId,creationSystemId,{targetContainerKind="character",notes={}}={}){
+  /** actorUuid: the Actor the character is built onto (one made from the Actors directory); none creates a new Actor. */
+  async start(versionId,creationSystemId,{targetContainerKind="character",notes={},actorUuid=null}={}){
     const system=(this.#ruleset(versionId).creationSystems??[]).find(entry=>entry.id===creationSystemId&&entry.enabled!==false);
     if(!system)throw new Error(`Creation System unavailable: ${creationSystemId}.`);
     const at=this.now(),session={id:newId(),creationSystemId,rulesetVersionId:versionId,targetContainerKind,ownerUserId:this.userId(),status:"draft",currentStepId:system.steps?.[0]?.id??null,
-      currentTerm:0,answers:{},selectedRefs:{},allocations:{},rolls:{},notes:copyJSON(notes),revision:0,createdAt:at,updatedAt:at,validationState:null,result:null};
+      currentTerm:0,answers:{},selectedRefs:{},allocations:{},rolls:{},notes:copyJSON(notes),revision:0,createdAt:at,updatedAt:at,validationState:null,result:null,...(actorUuid?{targetActorUuid:String(actorUuid)}:{})};
     return this.#save(session);
   }
   list(){return this.store.list(this.userId());}

@@ -1,7 +1,7 @@
 /* AUTO sheets (CP-14): the layout a Ruleset gets when it has no SheetDefinition for an Actor or an Item,
    and the starting point the sheet editor offers. Built from the Ruleset alone, so it follows its changes.
    Actor: one section per Definition Type, listing the Definitions the Actor holds with what their capabilities give
-   (value, pools, active state, collection size), then the Actions a player starts.
+   (value, pools, active state, collection size), then the Contents it holds (its Items), then the Actions a player starts.
    Item: every field of its Content Types. */
 import {prepareLayout} from "./layout-contract.mjs";
 
@@ -48,6 +48,8 @@ function actorLayout(ruleset) {
       {id: nodeId("list", type.id), kind: "repeater", query: {definitionTypeId: type.id}, columns: long ? 2 : 1, children: values}
     ]});
   }
+  // The Actor's Items: what it carries and what made it (a background, a career…). Dropping an Item on the sheet adds one.
+  if ((ruleset.contentTypes ?? []).some(type => enabled(type) && type.storageKind !== "actor")) sections.push({id: "contents", kind: "section", labelKey: "RTA.Sheet.Contents", columns: 1, span: 2, children: [{id: "contents-list", kind: "contents"}]});
   const actions = sheetActionIds(ruleset).map(id => ({id: nodeId("action", id), kind: "action", actionRef: id}));
   if (actions.length) sections.push({id: "actions", kind: "section", labelKey: "RTA.Sheet.Actions", columns: Math.min(4, actions.length), span: 2, children: actions});
   const columns = sections.length > 1 ? 2 : 1;

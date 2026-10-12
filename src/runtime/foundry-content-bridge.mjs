@@ -8,6 +8,7 @@ import {initialForDefinition} from "./content-binding.mjs";
 import {resolveRuntimeRuleset} from "./runtime-contracts.mjs";
 import {ContentGrantHandlers,listAcquisitionReferences} from "./content-relations.mjs";
 import {promptAcquisitionChoices} from "./guided-acquisition.mjs";
+import {foundryJSON} from "./foundry-data.mjs";
 
 
 const TEMPLATE_FLAG="contentTemplate";
@@ -76,31 +77,51 @@ export class FoundryContentBridge{
    * Runtime contract. The full plan is validated before Actor.create().
    * Failure deletes ONLY the newly created Actor; an existing Actor is never
    * silently mutated or rolled back by this method.
+   * actorUuid: build onto an Actor that already exists (a new character made from the Actors directory), instead of
+   * creating one. That Actor must hold no Content yet; its runtime values are replaced by the creation's.
    */
-  async createActorFromCreationSystem(versionId,creationSystemId,{name,actorType=null,answers={},sessionId=null}={}){
+  async createActorFromCreationSystem(versionId,creationSystemId,{name,actorType=null,answers={},sessionId=null,actorUuid=null}={}){
     if(typeof name!=="string"||!name.trim())throw new Error("Creating an Actor requires a name.");
     // A CreationSession finalized again after an interruption gets the Actor it completed,
     // or replaces the Actor it left half built.
-    const existing=sessionId?globalThis.game?.actors?.find?.(actor=>actor.getFlag?.(MODULE_ID,"creationSessionId")===sessionId):null;
-    if(existing?.getFlag(MODULE_ID,"creationRun"))return {actor:existing,run:clone(existing.getFlag(MODULE_ID,"creationRun"))};
+    const existing=sessionId&&!actorUuid?globalThis.game?.actors?.find?.(actor=>actor.getFlag?.(MODULE_ID,"creationSessionId")===sessionId):null;
+    if(existing?.getFlag(MODULE_ID,"creationRun"))return {actor:existing,run:foundryJSON(existing.getFlag(MODULE_ID,"creationRun"))};
     if(existing)await existing.delete();
     const ruleset=this.ruleset(versionId);
     const plan=await planCreationSystem(ruleset,creationSystemId,answers);
-    const type=this.documentTypeResolver("Actor",{requestedType:actorType});
-    const klass=globalThis.Actor?.implementation??globalThis.Actor;
-    if(!klass?.create)throw new Error("Foundry Actor.create API is unavailable.");
-    const actor=await klass.create({name:name.trim(),type,...(sessionId?{flags:{[MODULE_ID]:{creationSessionId:sessionId}}}:{})});
-    if(!actor?.uuid||actor.documentName!=="Actor")throw new Error("Foundry did not return a created Actor.");
+    let actor;
+    if(actorUuid){
+      actor=await this.runtime.adapter.resolveDocument(actorUuid);
+      if(actor?.documentName!=="Actor")throw new Error("Character creation needs an Actor.");
+      if(actor.getFlag?.(MODULE_ID,"creationRun"))throw new Error(`${actor.name} was already created.`);
+      if(Object.keys(actor.getFlag?.(MODULE_ID,ACQUISITIONS_FLAG)??{}).length)throw new Error(`${actor.name} already holds Contents: create the character on a new Actor.`);
+      if(this.runtime.adapter.canWrite&&!await this.runtime.adapter.canWrite(actor.uuid))throw new Error("Actor is not writable by the current user.");
+      // The values given when the Actor started without creation make way for the creation's.
+      await this.runtime.resetContainer(actor.uuid);
+      if(actor.name!==name.trim()&&typeof actor.update==="function")await actor.update({name:name.trim(),...(sessionId?{[`flags.${MODULE_ID}.creationSessionId`]:sessionId}:{})});
+      else if(sessionId)await actor.setFlag(MODULE_ID,"creationSessionId",sessionId);
+    }else{
+      const type=this.documentTypeResolver("Actor",{requestedType:actorType});
+      const klass=globalThis.Actor?.implementation??globalThis.Actor;
+      if(!klass?.create)throw new Error("Foundry Actor.create API is unavailable.");
+      actor=await klass.create({name:name.trim(),type,...(sessionId?{flags:{[MODULE_ID]:{creationSessionId:sessionId}}}:{})});
+      if(!actor?.uuid||actor.documentName!=="Actor")throw new Error("Foundry did not return a created Actor.");
+    }
     try{
       const created=new Set(),acquisitions=[];
       // Every Definition chosen in the steps is instantiated in one runtime transaction.
       const chosen=[...new Set(plan.operations.filter(operation=>operation.kind==="definition").map(operation=>operation.definitionId))];
       if(chosen.length){const result=await this.runtime.acquire(versionId,actor.uuid,{definitionBindings:chosen.map(definitionId=>({definitionId,initial:plan.initialByDefinition[definitionId]??{}})),summary:{creationSystemId}});for(const id of result.acquiredDefinitionIds)created.add(id);}
       for(const operation of plan.operations.filter(operation=>operation.kind==="content")){
-        const result=await this.acquireTemplate(versionId,actor.uuid,operation.templateId,{
-          sourceItemId:`creation:${creationSystemId}:${operation.stepId}:${operation.templateId}`,
-          selections:operation.selections
-        });
+        // A Content kept as an Item becomes a real Item of the Actor, as if it had been dropped on its sheet.
+        const type=(ruleset.contentTypes??[]).find(entry=>entry.id===(ruleset.contentTemplates??[]).find(template=>template.id===operation.templateId)?.contentTypeId);
+        const asItem=typeof actor.createEmbeddedDocuments==="function"&&type&&type.storageKind!=="actor";
+        const result=asItem
+          ?(await this.createOwnedContentItem(versionId,actor.uuid,operation.templateId,{selections:operation.selections??{}})).acquisition
+          :await this.acquireTemplate(versionId,actor.uuid,operation.templateId,{
+            sourceItemId:`creation:${creationSystemId}:${operation.stepId}:${operation.templateId}`,
+            selections:operation.selections
+          });
         for(const id of result.createdDefinitionIds??[])created.add(id);
         acquisitions.push({templateId:operation.templateId,stepId:operation.stepId,alreadyApplied:result.alreadyApplied===true});
       }
@@ -114,6 +135,7 @@ export class FoundryContentBridge{
       this.hooks?.callAll?.("ruleThemAllCreationCompleted",actor,clone(run));
       return {actor,run:clone(run)};
     }catch(error){
+      if(actorUuid)throw error;
       try{await actor.delete();}catch(rollbackError){
         throw new AggregateError([error,rollbackError],"Creation failed and the new Actor could not be removed.");
       }
@@ -216,7 +238,7 @@ export class FoundryContentBridge{
     // A native Foundry drag can carry independent Item fields and third-party
     // flags. Preserve the instance transparently, while refreshing ONLY RTA's
     // provenance against the actual Ruleset and checked selections.
-    const data=sourceData?clone(sourceData):canonical;
+    const data=sourceData?foundryJSON(sourceData):canonical;
     if(sourceData){
       if(data.type!==canonical.type)throw new Error(`Content Item subtype changed: expected ${canonical.type}.`);
       delete data._id;delete data.id;
@@ -247,7 +269,7 @@ export class FoundryContentBridge{
     const ruleset=this.ruleset(versionId),template=(ruleset.contentTemplates??[]).find(x=>x.id===templateId&&x.enabled!==false);if(!template)throw new Error(`Content Template unavailable: ${templateId}.`);
     const contentType=(ruleset.contentTypes??[]).find(x=>x.id===template.contentTypeId&&x.enabled!==false);if(!contentType)throw new Error(`Content Type unavailable: ${template.contentTypeId}.`);
     const actor=await this.runtime.adapter.resolveDocument(actorRef);if(actor.documentName!=="Actor")throw new Error("Content can only be acquired by an Actor RuntimeContainer.");
-    const current=clone(actor.getFlag?.(MODULE_ID,ACQUISITIONS_FLAG)??{}),key=sourceItemId??`manual:${template.id}`;
+    const current=foundryJSON(actor.getFlag?.(MODULE_ID,ACQUISITIONS_FLAG)??{}),key=sourceItemId??`manual:${template.id}`;
     if(current[key])return {...clone(current[key]),alreadyApplied:true};
     if((template.runtimeMode??contentType.runtimeMode)==="unique"){
       const duplicate=Object.values(current).find(a=>a?.templateId===template.id&&a?.versionId===versionId);
@@ -258,7 +280,7 @@ export class FoundryContentBridge{
       this.preflightAcquisition(versionId,templateId,selections);
     if(this.runtime.adapter.canWrite&&!await this.runtime.adapter.canWrite(actorRef))throw new Error("Actor is not writable by the current user.");
     const previousAcquisitions=clone(current);
-    const previousOrigins=clone(actor.getFlag?.(MODULE_ID,DEFINITION_ORIGINS_FLAG)??{});
+    const previousOrigins=foundryJSON(actor.getFlag?.(MODULE_ID,DEFINITION_ORIGINS_FLAG)??{});
     const origins=clone(previousOrigins);
     for(const acquisition of Object.values(current))for(const id of acquisition?.createdDefinitionIds??[])origins[originKey(acquisition.versionId,id)]=true;
     // CP-16: the Content's grants and its acquisition Action (Conditions, Costs, Effects) are one transaction.
@@ -342,10 +364,10 @@ export class FoundryContentBridge{
   async #releaseAcquisitionUnlocked(actorRef,acquisitionKey){
     const actor=await this.runtime.adapter.resolveDocument(actorRef);
     if(actor.documentName!=="Actor")throw new Error("Content acquisitions require an Actor.");
-    const previous=clone(actor.getFlag?.(MODULE_ID,ACQUISITIONS_FLAG)??{}),acquisition=previous[acquisitionKey];
+    const previous=foundryJSON(actor.getFlag?.(MODULE_ID,ACQUISITIONS_FLAG)??{}),acquisition=previous[acquisitionKey];
     if(!acquisition)return null;
     const current=clone(previous);delete current[acquisitionKey];
-    const origins=clone(actor.getFlag?.(MODULE_ID,DEFINITION_ORIGINS_FLAG)??{});
+    const origins=foundryJSON(actor.getFlag?.(MODULE_ID,DEFINITION_ORIGINS_FLAG)??{});
     // Existing 0.1.57 records had createdDefinitionIds but no separate provenance flag.
     for(const recorded of Object.values(previous))for(const id of recorded?.createdDefinitionIds??[])origins[originKey(recorded.versionId,id)]=true;
     const stillGranted=new Set(Object.values(current).flatMap(record=>(record?.grantedDefinitionIds??record?.createdDefinitionIds??[]).map(id=>originKey(record.versionId,id))));

@@ -5,14 +5,19 @@
   container: rta-creation / inline-size;
   display: flex;
   flex-direction: column;
+  flex: 1;
   gap: var(--rta-gap-block);
-  min-block-size: 100%;
+  min-block-size: 0;
   color: var(--rta-color-text);
 }
 
+/* Foundry's .window-content hides what overflows: the steps and the step in progress scroll, the footer stays. */
 .rta-creation__layout {
   display: grid;
   flex: 1;
+  min-block-size: 0;
+  overflow-y: auto;
+  scrollbar-gutter: stable;
   grid-template-columns: minmax(10rem, 14rem) minmax(0, 1fr);
   gap: var(--rta-gap-block);
   align-items: start;

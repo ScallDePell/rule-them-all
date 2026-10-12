@@ -10,7 +10,7 @@ const row = (label, control, extra = "") => `<div class="form-group rta-form-row
 const select = (prop, choices, selected) => `<select data-layout-prop="${prop}">${renderSelectOptions(choices, {valueKey: "value", labelKey: "label", colorize: true, selectedValue: selected ?? ""})}</select>`;
 const text = (prop, value, placeholder = "") => `<input type="text" data-layout-prop="${prop}" value="${escape(value ?? "")}"${placeholder ? ` placeholder="${escape(placeholder)}"` : ""}>`;
 const KIND_LABELS = {tabs: ["RTA.SheetEditor.Kind.tabs", "Tabs"], tab: ["RTA.SheetEditor.Kind.tab", "Tab"], section: ["RTA.SheetEditor.Kind.section", "Section"], grid: ["RTA.SheetEditor.Kind.grid", "Grid"],
-  repeater: ["RTA.SheetEditor.Kind.repeater", "List of Definitions"], value: ["RTA.SheetEditor.Kind.value", "Value"], action: ["RTA.SheetEditor.Kind.action", "Action button"], text: ["RTA.SheetEditor.Kind.text", "Text"], spacer: ["RTA.SheetEditor.Kind.spacer", "Empty cell"]};
+  repeater: ["RTA.SheetEditor.Kind.repeater", "List of Definitions"], value: ["RTA.SheetEditor.Kind.value", "Value"], action: ["RTA.SheetEditor.Kind.action", "Action button"], text: ["RTA.SheetEditor.Kind.text", "Text"], contents: ["RTA.SheetEditor.Kind.contents", "Held Contents"], spacer: ["RTA.SheetEditor.Kind.spacer", "Empty cell"]};
 export const kindLabel = kind => t(...(KIND_LABELS[kind] ?? [kind, kind]));
 
 /** Toolbar: add a block into the selection (kinds it accepts), move it, remove it, start again from AUTO. */
@@ -43,6 +43,10 @@ export function renderLayoutPropertiesHTML(node, ctx) {
     rows.push(row(t("RTA.SheetEditor.Label", "Label"), text("labelKey", node.labelKey, ctx.defaultLabel(node))));
   }
   if (node.kind === "text") rows.push(row(t("RTA.SheetEditor.Text", "Text"), text("textKey", node.textKey)));
+  if (node.kind === "contents") {
+    const chosen = new Set(node.contentTypeIds ?? []);
+    rows.push(row(t("RTA.SheetEditor.ContentTypes", "Content Types (none: all)"), `<select multiple data-layout-prop="contentTypeIds">${ctx.contentTypes.map(choice => `<option value="${escape(choice.value)}" data-rta-colors="${escape(choice.colors)}"${chosen.has(choice.value) ? " selected" : ""}>${escape(choice.label)}</option>`).join("")}</select>`));
+  }
   if (ctx.parentColumns > 1) rows.push(row(t("RTA.SheetEditor.Width", "Width"), select("span", ctx.spanChoices(ctx.parentColumns), node.span ?? 1)));
   if (!rows.length) rows.push(`<p class="rta-sheet-editor__hint">${t("RTA.SheetEditor.NothingToSet", "This block has no settings.")}</p>`);
   return `<div class="rta-sheet-editor__properties-head"><strong>${kindLabel(node.kind)}</strong></div>${rows.join("")}`;

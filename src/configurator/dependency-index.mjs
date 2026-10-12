@@ -131,6 +131,7 @@ export class DependencyIndex{
           if(node.query?.conditionRef)pushRef(this.#edges,consumer,{objectKind:'condition',objectId:node.query.conditionRef},'sheetRepeater',`${path}.query.conditionRef`);
         }
         if(node.kind==='action')pushRef(this.#edges,consumer,{objectKind:'action',objectId:node.actionRef},'sheetAction',`${path}.actionRef`);
+        for(const [j,id] of (node.contentTypeIds??[]).entries())pushRef(this.#edges,consumer,{objectKind:'contentType',objectId:id},'sheetContentType',`${path}.contentTypeIds[${j}]`);
       }
     }
     for(const [i,system] of (ruleset.creationSystems??[]).entries())for(const [j,step] of (system?.steps??[]).entries()){

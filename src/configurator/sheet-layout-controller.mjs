@@ -4,7 +4,7 @@
    entry collector reads ([data-sheet-layout-value]); every change fires an input event so the editor knows it is dirty. */
 import {prepareLayout} from "./layout-contract.mjs";
 import {autoLayout} from "./sheet-auto-layout.mjs";
-import {EACH_OUTPUTS, canMoveInto, childKinds, columnsOf, contentFields, defaultValueLabel, insertNode, isContainer, locate, maxColumns, moveInto, moveNode, newNode, outputLabelKey, previewView, removeNode, repeaterOf, updateNode, writableSource} from "./sheet-layout-model.mjs";
+import {EACH_OUTPUTS, itemContentTypes, canMoveInto, childKinds, columnsOf, contentFields, defaultValueLabel, insertNode, isContainer, locate, maxColumns, moveInto, moveNode, newNode, outputLabelKey, previewView, removeNode, repeaterOf, updateNode, writableSource} from "./sheet-layout-model.mjs";
 import {refToken, parseRefToken} from "./reference-token.mjs";
 import {findSlot} from "./capability-slots.mjs";
 import {renderLayoutPreviewHTML} from "../ui/sheet-markup.mjs";
@@ -116,6 +116,7 @@ export class SheetLayoutController {
     if (prop === "labelKey" || prop === "textKey") return this.#commit(updateNode(this.#root, node.id, {[prop]: value}));
     if (prop === "definitionTypeId") return this.#commit(this.#retargetRepeater(node, value));
     if (prop === "conditionRef") return this.#commit(updateNode(this.#root, node.id, {query: {...node.query, conditionRef: value || undefined}}));
+    if (prop === "contentTypeIds") return this.#commit(updateNode(this.#root, node.id, {contentTypeIds: [...target.selectedOptions].map(option => option.value).filter(Boolean)}));
     if (prop === "actionRef") return this.#commit(updateNode(this.#root, node.id, {actionRef: value}));
     if (prop === "write") return this.#commit(updateNode(this.#root, node.id, {write: value ? {operation: value} : undefined}));
     if (prop === "sourceKind") {
@@ -179,6 +180,7 @@ export class SheetLayoutController {
       spanChoices: count => Array.from({length: count}, (_, i) => ({value: String(i + 1), label: format("RTA.SheetEditor.SpanCount", {count: i + 1}, String(i + 1)), colors: neutral})),
       definitionTypes: (r.definitionTypes ?? []).filter(t => (r.definitions ?? []).some(d => d.definitionTypeId === t.id)).map(t => ({value: t.id, label: t.nameKey, colors: selectColorsAttribute(this.#colors("definitionType", t))})),
       conditions: [{value: "", label: i18n("RTA.SheetEditor.AllOfThem"), colors: neutral}, ...(r.conditions ?? []).map(c => ({value: c.id, label: c.nameKey, colors: selectColorsAttribute(this.#colors("condition", c))}))],
+      contentTypes: itemContentTypes(r).map(type => ({value: type.id, label: type.nameKey, colors: selectColorsAttribute(this.#colors("contentType", type))})),
       actions: (r.actions ?? []).map(a => ({value: a.id, label: a.nameKey, colors: selectColorsAttribute(this.#colors("action", a))})),
       sourceKinds: kinds.map(([value, key]) => ({value, label: i18n(key), colors: neutral})),
       sourceChoices: kind => this.#sourceChoices(kind, node),

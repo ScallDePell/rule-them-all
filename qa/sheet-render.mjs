@@ -1,6 +1,7 @@
 // Visual QA of played sheets: renders a few projected sheets with the module CSS (and Foundry's, with RTA_FOUNDRY_CSS)
 // and checks them in Chromium: no horizontal overflow, no clipped label (a long Definition name in a list is cut
-// with its full name as a tooltip), controls aligned in each list, checkboxes at Foundry's size.
+// with its full name as a tooltip), controls aligned in each list, checkboxes at Foundry's size, and a sheet taller
+// than its window scrolls under its header (Foundry's .window-content hides what overflows).
 // Usage: RTA_CHROMIUM=<chrome> [RTA_FOUNDRY_CSS=<foundry.css>] [RTA_SHOTS=<dir>] node qa/sheet-render.mjs <repo> <outDir>
 import {readFileSync, writeFileSync, mkdirSync} from 'node:fs';
 import {join, resolve} from 'node:path';
@@ -60,9 +61,9 @@ const tabbed = {id: 'tabbed', target: 'actor', root: {id: 'root', kind: 'tabs', 
 
 const foundryCss = process.env.RTA_FOUNDRY_CSS ? readFileSync(process.env.RTA_FOUNDRY_CSS, 'utf8') + '\n' : '';
 const css = foundryCss + JSON.parse(readFileSync(join(root, 'module.json'), 'utf8')).styles.map(p => readFileSync(join(root, p), 'utf8')).join('\n');
-const page = (body, theme) => `<!doctype html><html lang="en"><meta charset="utf-8"><style>${css}\nbody{margin:0;font-family:sans-serif;font-size:14px}.application{position:relative}</style><body class="${theme}"><div class="application sheet ${theme}" style="width:var(--qa-width)"><section class="window-content">${body}</section></div></body></html>`;
+const page = (body, theme) => `<!doctype html><html lang="en"><meta charset="utf-8"><style>${css}\nbody{margin:0;font-family:sans-serif;font-size:14px}.application{position:relative;display:flex;flex-direction:column;height:var(--qa-height,auto)}.window-content{flex:1;display:flex;flex-direction:column;min-height:0;overflow:hidden}</style><body class="${theme}"><div class="application sheet ${theme}" style="width:var(--qa-width)"><section class="window-content">${body}</section></div></body></html>`;
 const sheets = [
-  ['actor-auto', await projectSheet(engine, v, sheetFor(ruleset, {target: 'actor'}), {actor: hero}), 'Ayla the Brave'],
+  ['actor-auto', await projectSheet(engine, v, sheetFor(ruleset, {target: 'actor'}), {actor: hero, items: [{id: 'sword-1', name: 'Grandfather\'s sword', img: '', managed: true}, {id: 'rope', name: 'Rope (15 m)', img: '', managed: false}]}), 'Ayla the Brave'],
   ['actor-tabbed', await projectSheet(engine, v, tabbed, {actor: hero}), 'Ayla the Brave'],
   ['item-owned', await projectSheet(engine, v, sheetFor(ruleset, {target: 'item', contentTypeId: 'weapon'}), {actor: hero, content: {key: 'sword-1'}}), 'Sword']
 ];
@@ -71,7 +72,7 @@ const t = key => key?.split('.').reduce((node, part) => node?.[part], english) ?
 const files = [];
 for (const [name, view, title] of sheets) for (const theme of ['theme-dark', 'theme-light']) {
   const file = join(out, `sheet-${name}-${theme}.html`);
-  writeFileSync(file, page(renderSheetHTML(view, {t, name: title, editableName: true}), theme));
+  writeFileSync(file, page(renderSheetHTML(view, {t, name: title, editable: true}), theme));
   files.push([`${name}-${theme}`, file]);
 }
 const chat = join(out, 'chat-card.html');
@@ -96,6 +97,16 @@ for (const [name, file] of files) for (const width of [640, 420]) {
     for (const box of document.querySelectorAll('.rta-sheet input[type="checkbox"]:not([hidden] *)')) { const r = box.getBoundingClientRect(); if (r.width < 10 || r.height < 10) issues.push(`checkbox ${r.width}x${r.height}`); }
     return issues;
   });
+  // The same sheet in a short window: what does not fit is reached by scrolling the body.
+  report.push(...await tab.evaluate(() => {
+    document.querySelector('.application').style.setProperty('--qa-height', '360px');
+    const body = document.querySelector('.rta-sheet__body'), content = document.querySelector('.window-content');
+    const issues = [];
+    if (body && body.scrollHeight > body.clientHeight + 1 && getComputedStyle(body).overflowY !== 'auto') issues.push('sheet body does not scroll');
+    if (body && body.getBoundingClientRect().bottom > content.getBoundingClientRect().bottom + 1) issues.push('sheet body taller than its window');
+    document.querySelector('.application').style.removeProperty('--qa-height');
+    return issues;
+  }));
   if (report.length) { problems += report.length; console.log(`${name} @${width}: ${report.join('; ')}`); }
   if (process.env.RTA_SHOTS) { mkdirSync(process.env.RTA_SHOTS, {recursive: true}); await tab.locator('.application').screenshot({path: join(process.env.RTA_SHOTS, `sheet-${name}-${width}.png`)}); }
 }

@@ -1353,7 +1353,14 @@
       "ChooseActions": "Choisis-en {count}",
       "TestTarget": "Seuil",
       "ContentTypes": "Types de contenu",
-      "NoContentTypes": "Aucun type de contenu pour l'instant."
+      "NoContentTypes": "Aucun type de contenu pour l'instant.",
+      "NotCreated": "Ce personnage n'est pas encore créé.",
+      "InitializeEmpty": "Commencer sans création",
+      "DropContents": "Rien pour l'instant : glisse un objet ici.",
+      "RemoveContent": "Retirer",
+      "RemoveContentConfirm": "Retirer {name} ? Ce qu'il donnait est retiré aussi.",
+      "Contents": "Contenus",
+      "OtherItems": "Autres objets"
     },
     "SheetEditor": {
       "Layout": "Mise en page",
@@ -1390,7 +1397,8 @@
         "value": "Valeur",
         "action": "Bouton d'Action",
         "text": "Texte",
-        "spacer": "Case vide"
+        "spacer": "Case vide",
+        "contents": "Contenus détenus"
       },
       "Source": {
         "output": "Une sortie de Definition",
@@ -1405,7 +1413,8 @@
         "add": "Peut être augmentée",
         "subtract": "Peut être diminuée"
       },
-      "BlockToAdd": "bloc à ajouter"
+      "BlockToAdd": "bloc à ajouter",
+      "ContentTypes": "Types de contenu (aucun : tous)"
     },
     "Reaction": {
       "Title": "Réaction",
@@ -1441,7 +1450,8 @@
       "Roll": "Lancer",
       "Draw": "Tirer au hasard",
       "AnotherTerm": "Un terme de plus",
-      "Term": "Terme {number}"
+      "Term": "Terme {number}",
+      "CreateThis": "Créer le personnage"
     }
   }
 }

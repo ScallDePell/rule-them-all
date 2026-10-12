@@ -6,6 +6,8 @@
   container: rta-sheet / inline-size;
   display: flex;
   flex-direction: column;
+  flex: 1;
+  min-block-size: 0;
   gap: var(--rta-gap-block);
   color: var(--rta-color-text);
 }
@@ -32,8 +34,13 @@
 
 .rta-sheet__body {
   display: flex;
+  flex: 1;
   flex-direction: column;
+  min-block-size: 0;
   gap: var(--rta-gap-block);
+  /* Foundry's .window-content hides what overflows: the body scrolls under the fixed header. */
+  overflow-y: auto;
+  scrollbar-gutter: stable;
 }
 
 .rta-sheet-grid {
@@ -217,6 +224,101 @@
   flex-direction: column;
   align-items: flex-start;
   gap: var(--rta-gap-row);
+}
+
+.rta-sheet-notice__actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--rta-gap-row);
+}
+
+.rta-sheet-notice__actions > button,
+.rta-sheet__command {
+  flex: 0 0 auto;
+  inline-size: auto;
+}
+
+.rta-sheet-notice__primary {
+  border-color: var(--rta-color-border-highlight);
+  font-weight: 600;
+}
+
+/* The Contents an Actor holds: a picture, a name that opens the Item, a button that removes it. */
+.rta-sheet-contents {
+  display: flex;
+  flex-direction: column;
+  gap: var(--rta-gap-tight);
+}
+
+.rta-sheet-contents__type {
+  margin: 0;
+  color: var(--rta-color-text-secondary);
+  font-size: var(--rta-type-sm);
+  text-transform: uppercase;
+}
+
+.rta-sheet-contents__list {
+  display: flex;
+  flex-direction: column;
+  gap: var(--rta-gap-tight);
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.rta-sheet-content {
+  display: flex;
+  align-items: center;
+  gap: var(--rta-gap-row);
+  padding-block: var(--rta-space-2);
+  border-block-end: 1px solid var(--rta-color-border-tertiary);
+}
+
+.rta-sheet-content--unavailable {
+  opacity: .6;
+}
+
+.rta-sheet-content__image {
+  display: flex;
+  flex: 0 0 auto;
+  align-items: center;
+  justify-content: center;
+  inline-size: 28px;
+  block-size: 28px;
+  object-fit: cover;
+  border: var(--rta-frame-border) solid var(--rta-color-border-subtle);
+  border-radius: var(--rta-radius-compact);
+  color: var(--rta-color-text-secondary);
+}
+
+.rta-sheet-content__name {
+  flex: 1;
+  min-inline-size: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  text-align: start;
+}
+
+button.rta-sheet-content__name {
+  justify-content: flex-start;
+  inline-size: auto;
+  border: 0;
+  background: none;
+  padding: 0;
+}
+
+.rta-sheet-content__remove {
+  flex: 0 0 auto;
+  inline-size: auto;
+  border: 0;
+  background: none;
+  color: var(--rta-color-text-secondary);
+}
+
+.rta-sheet--drop .rta-sheet-contents {
+  outline: 2px dashed var(--rta-color-border-highlight);
+  outline-offset: 4px;
 }
 
 .rta-sheet-choice {

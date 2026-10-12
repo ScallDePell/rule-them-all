@@ -63,3 +63,73 @@ test('markup: values, bounds, amounts, tabs and the Action chat summary', ()=>{
   const summary=actionSummary({actionId:'hit',testResult:{roll:{formula:'1d20',result:'14'},total:14,target:12,outcome:{labelKey:'Success'}}},{t:k=>k,ruleset});
   assert.deepEqual(summary,{title:'Hit',lines:[{label:'1d20',value:'14 = 14'},{label:'RTA.Sheet.TestTarget',value:'12'}],outcome:'Success'});
 });
+
+test('a character not made yet is offered the active Ruleset creation, on the notice then in the header, until it holds Contents', async()=>{
+  const {api,v,runtime}=await world();
+  const draft=(await api.createRuleset({id:'c',nameKey:'C',version:'1'})).versionId;
+  await api.registerDefinitionType(draft,{id:'attribute',key:'attribute',nameKey:'Attributes',allowedCapabilities:['value'],defaultCapabilities:['value'],requiredCapabilities:[],fields:{}});
+  await api.createDefinition(draft,{id:'str',key:'str',definitionTypeId:'attribute',nameKey:'Strength',data:{},capabilities:['value']});
+  await api.createCreationSystem(draft,{id:'make',nameKey:'Make',steps:[{id:'points',name:'Points',kind:'allocation',min:2,max:2,source:{collection:'definitions',objectIds:['str']}},{id:'done',name:'Done',kind:'review'}]});
+  await api.publishRuleset(draft);await api.setActiveVersionId(draft);
+  const {RulesetActorSheet}=createRulesetSheets({ActorSheetV2:Base,ItemSheetV2:Base});
+  const flags={};
+  const doc={uuid:'Actor.new',name:'New',img:'',documentName:'Actor',items:[],getFlag:(_s,key)=>flags[key]};
+  const sheet=new RulesetActorSheet(doc);
+  await sheet._prepareContext({});
+  let html=await sheet._renderHTML();
+  assert.match(html,/RTA.Sheet.NotCreated/);
+  assert.match(html,/class="rta-sheet-notice__primary" data-sheet-command="create">RTA.Creation.CreateThis/);
+  assert.match(html,/data-sheet-command="initialize">RTA.Sheet.InitializeEmpty/);
+  await runtime.initializeContainer(draft,'Actor.new');
+  await sheet._prepareContext({});
+  html=await sheet._renderHTML();
+  assert.match(html,/class="rta-sheet__command" data-sheet-command="create"/,'started without creation: still offered in the header');
+  flags.contentAcquisitions={'item-1':{templateId:'x'}};
+  await sheet._prepareContext({});
+  assert.doesNotMatch(await sheet._renderHTML(),/data-sheet-command="create"/);
+  delete flags.contentAcquisitions;flags.creationRun={creationSystemId:'make'};
+  await sheet._prepareContext({});
+  assert.doesNotMatch(await sheet._renderHTML(),/data-sheet-command="create"/);
+  void v;delete globalThis.game;
+});
+
+test('an Item dropped on the Actor sheet: a Ruleset Content is acquired, any other Item is added; Foundry data becomes plain JSON', async()=>{
+  const {v}=await world();
+  const calls=[];
+  globalThis.game.ruleThemAll.content={createOwnedContentItem:async(...args)=>calls.push(['acquire',...args])};
+  // Foundry hands objects with accessors: they must not reach copyJSON as they are.
+  const withGetter=data=>Object.defineProperty({...data},'computed',{get:()=>1,enumerable:false});
+  const items={
+    'Compendium.rta.sword':{uuid:'Compendium.rta.sword',parent:null,getFlag:(_s,key)=>key==='contentTemplate'?{managed:true,versionId:v,templateId:'sword'}:undefined,toObject:()=>withGetter({_id:'abc',name:'Sword',type:'item',system:withGetter({})})},
+    'Item.rope':{uuid:'Item.rope',parent:null,getFlag:()=>undefined,toObject:()=>({_id:'rope',name:'Rope',type:'item'})}
+  };
+  globalThis.fromUuid=async uuid=>items[uuid];
+  let dragged=null;
+  globalThis.foundry={applications:{ux:{TextEditor:{implementation:{getDragEventData:()=>dragged}}}}};
+  const {RulesetActorSheet}=createRulesetSheets({ActorSheetV2:Base,ItemSheetV2:Base});
+  const doc={uuid:'Actor.hero',name:'Hero',documentName:'Actor',items:[],getFlag:()=>undefined,createEmbeddedDocuments:async(name,data)=>calls.push(['embed',name,data])};
+  const sheet=new RulesetActorSheet(doc);
+  Object.defineProperty(sheet,'element',{value:{querySelector:()=>null}});
+  const event=()=>({preventDefault(){}});
+  dragged={type:'Item',uuid:'Compendium.rta.sword'};
+  const drop=event();
+  await sheet._onDrop(drop);await sheet._onDrop(drop);
+  dragged={type:'Item',uuid:'Item.rope'};await sheet._onDrop(event());
+  dragged={type:'Actor',uuid:'Actor.other'};await sheet._onDrop(event());
+  assert.equal(calls.length,2,'the same drop is handled once; an Actor dropped does nothing');
+  assert.deepEqual(calls[0].slice(0,4),['acquire',v,'Actor.hero','sword']);
+  assert.deepEqual(calls[0][4].sourceData,{_id:'abc',name:'Sword',type:'item',system:{}});
+  assert.deepEqual(calls[1],['embed','Item',[{name:'Rope',type:'item'}]]);
+  delete globalThis.game;delete globalThis.fromUuid;delete globalThis.foundry;
+});
+
+test('markup: the Contents an Actor holds, by type, with their remove buttons only when the sheet is editable', ()=>{
+  const view={sheetId:'s',root:{id:'root',kind:'grid',children:[{id:'c',kind:'contents',rows:[
+    {key:'i1',label:'Sword',img:'s.webp',item:true,available:true,type:'Weapon'},{key:'i2',label:'Navy',img:'',item:false,available:false,type:'Background'}]},{id:'e',kind:'contents',rows:[]}]}};
+  const html=renderSheetHTML(view,{name:'Hero',editable:true});
+  assert.match(html,/<p class="rta-sheet-contents__type">Weapon<\/p>/);
+  assert.match(html,/data-sheet-item-open="i1">Sword<\/button><button type="button" class="rta-sheet-content__remove" data-sheet-item-remove="i1"/);
+  assert.match(html,/rta-sheet-content--unavailable"><span class="rta-sheet-content__image"><i class="fa-solid fa-suitcase"><\/i><\/span><span class="rta-sheet-content__name">Navy<\/span><\/li>/);
+  assert.match(html,/RTA.Sheet.DropContents/);
+  assert.doesNotMatch(renderSheetHTML(view,{name:'Hero'}),/data-sheet-item-remove/);
+});

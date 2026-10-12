@@ -28,7 +28,7 @@ export const insideRepeater = (root, id) => Boolean(locate(root, id)?.path.slice
 export const repeaterOf = (root, id) => locate(root, id)?.path.slice(0, -1).findLast(node => node.kind === "repeater") ?? null;
 export const isContainer = node => LAYOUT_CONTAINERS.includes(node?.kind);
 /** The kinds a container accepts: tabs hold only tabs; a tab is only in tabs. */
-export const childKinds = parent => !isContainer(parent) ? [] : parent.kind === "tabs" ? ["tab"] : ["section", "grid", "tabs", "repeater", "value", "action", "text", "spacer"];
+export const childKinds = parent => !isContainer(parent) ? [] : parent.kind === "tabs" ? ["tab"] : ["section", "grid", "tabs", "repeater", "value", "action", "text", "contents", "spacer"];
 export const columnsOf = node => MAX_COLUMNS[node?.kind] ? node.columns ?? 1 : 1;
 export const maxColumns = kind => MAX_COLUMNS[kind] ?? 1;
 
@@ -75,8 +75,17 @@ export function newNode(kind, root, ruleset, {parentId = root?.id, target = "act
   }
   if (kind === "action") { const action = (ruleset.actions ?? []).find(enabled); return action ? {id, kind, actionRef: action.id} : null; }
   if (kind === "text") return {id, kind, textKey: ""};
+  if (kind === "contents") {
+    // An Actor's Items: not on an Item sheet, not once per row of a list.
+    const parent = locate(root, parentId);
+    if (target === "item" || parent?.path.some(node => node.kind === "repeater") || !itemContentTypes(ruleset).length) return null;
+    return {id, kind};
+  }
   return {id, kind: "spacer"};
 }
+
+/** Content Types whose Contents are an Actor's Items (not the Actor-backed ones). */
+export const itemContentTypes = ruleset => (ruleset.contentTypes ?? []).filter(type => enabled(type) && type.storageKind !== "actor");
 
 function edit(root, fn) { const next = copy(root); fn(next); return next; }
 
@@ -109,7 +118,7 @@ export function canMoveInto(root, id, targetId) {
   if (!holder || !childKinds(holder).includes(moving.node.kind)) return false;
   // An "each" value only exists in a repeater.
   const inRepeater = [...(holder === target.node ? target.path : target.path.slice(0, -1))].some(node => node.kind === "repeater");
-  for (const node of nodes(moving.node)) if (node.source?.kind === "each" && !inRepeater) return false;
+  for (const node of nodes(moving.node)) if (node.source?.kind === "each" && !inRepeater || node.kind === "contents" && inRepeater) return false;
   return true;
 }
 export function moveInto(root, id, targetId) {
@@ -189,6 +198,13 @@ export function previewView(root, ruleset, {target = "actor", contentTypeIds = [
     if (node.kind === "value") return previewValue(node, ruleset, row, contentTypeIds);
     if (node.kind === "text") return {...base, text: node.textKey};
     if (node.kind === "spacer") return base;
+    if (node.kind === "contents") {
+      // One Content of each listed type stands for what an Actor would hold.
+      const types = itemContentTypes(ruleset).filter(type => !(node.contentTypeIds ?? []).length || node.contentTypeIds.includes(type.id));
+      const rows = types.slice(0, 3).flatMap(type => (ruleset.contentTemplates ?? []).filter(t => enabled(t) && t.contentTypeId === type.id).slice(0, 1)
+        .map(template => ({key: template.id, label: template.nameKey ?? template.id, img: template.image ?? "", item: true, available: true, type: type.nameKey ?? type.id})));
+      return {...base, rows};
+    }
     if (node.kind === "action") return {...base, label: node.labelKey || ruleset.actions?.find(a => a.id === node.actionRef)?.nameKey || node.actionRef, actionId: node.actionRef, definitionId: row?.id ?? null};
     if (node.kind === "repeater") {
       // Two Definitions of the type stand for what an Actor would hold.

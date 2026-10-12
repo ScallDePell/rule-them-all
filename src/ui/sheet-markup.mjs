@@ -3,7 +3,9 @@
    Data contract with the sheet controller (runtime/foundry-sheets.mjs):
    - [data-sheet-write=nodeId] (+ data-definition-id, data-operation) is a value the player changes;
    - [data-sheet-action=actionId] (+ data-definition-id) uses an Action;
-   - [data-sheet-tab=id] shows the [data-sheet-panel=id] of its tabs. */
+   - [data-sheet-tab=id] shows the [data-sheet-panel=id] of its tabs;
+   - [data-sheet-item-open=key] opens an owned Item's sheet, [data-sheet-item-remove=key] removes it;
+   - [data-sheet-command] runs a sheet command (initialize, create). */
 import {escapeHTML as escape} from "./html-utils.mjs";
 
 const span = node => node.span ? ` style="--rta-sheet-span: ${Number(node.span)}"` : "";
@@ -41,7 +43,18 @@ function valueControl(node, t, row) {
 const mark = (node, edit) => edit ? ` data-layout-node="${escape(node.id)}"` : "";
 const dropZone = (id, t) => `<div class="rta-sheet-drop" data-layout-node="${escape(id)}" data-layout-drop>${escape(t("RTA.SheetEditor.Empty"))}</div>`;
 
-function renderNode(node, t, {row = null, solo = false, edit = false} = {}) {
+/** The Contents an Actor holds, grouped under their Content Type when there are several types. */
+function renderContents(node, t, {edit, editable, m}) {
+  const rows = node.rows ?? [], types = [...new Set(rows.map(r => r.type))];
+  const item = r => `<li class="rta-sheet-content${r.available ? "" : " rta-sheet-content--unavailable"}">${r.img ? `<img class="rta-sheet-content__image" src="${escape(r.img)}" alt="">` : `<span class="rta-sheet-content__image"><i class="fa-solid fa-suitcase"></i></span>`}`
+    + (r.item && !edit ? `<button type="button" class="rta-sheet-content__name" data-sheet-item-open="${escape(r.key)}">${escape(t(r.label))}</button>` : `<span class="rta-sheet-content__name">${escape(t(r.label))}</span>`)
+    + (r.item && editable && !edit ? `<button type="button" class="rta-sheet-content__remove" data-sheet-item-remove="${escape(r.key)}" title="${escape(t("RTA.Sheet.RemoveContent"))}" aria-label="${escape(t("RTA.Sheet.RemoveContent"))}"><i class="fa-solid fa-trash"></i></button>` : "") + "</li>";
+  const groups = types.length > 1 ? types.map(type => `<p class="rta-sheet-contents__type">${escape(type ? t(type) : t("RTA.Sheet.OtherItems"))}</p><ul class="rta-sheet-contents__list">${rows.filter(r => r.type === type).map(item).join("")}</ul>`).join("")
+    : rows.length ? `<ul class="rta-sheet-contents__list">${rows.map(item).join("")}</ul>` : "";
+  return `<div class="rta-sheet-contents"${span(node)}${m}>${groups || `<p class="rta-sheet-empty">${escape(t("RTA.Sheet.DropContents"))}</p>`}</div>`;
+}
+
+function renderNode(node, t, {row = null, solo = false, edit = false, editable = false} = {}) {
   if (!node) return "";
   const m = mark(node, edit);
   if (node.kind === "value") {
@@ -53,8 +66,9 @@ function renderNode(node, t, {row = null, solo = false, edit = false} = {}) {
   if (node.kind === "action") return `<button type="button" class="rta-sheet-action"${span(node)} data-sheet-action="${escape(node.actionId)}"${node.definitionId ? ` data-definition-id="${escape(node.definitionId)}"` : ""}${m}>${escape(t(node.label))}</button>`;
   if (node.kind === "text") return `<p class="rta-sheet-text"${span(node)}${m}>${escape(edit && !node.text ? t("RTA.SheetEditor.EmptyText") : t(node.text))}</p>`;
   if (node.kind === "spacer") return `<div class="rta-sheet-spacer"${span(node)}${m}></div>`;
+  if (node.kind === "contents") return renderContents(node, t, {edit, editable, m});
   if (node.kind === "placeholder") return dropZone(node.parentId, t);
-  const children = (list, options) => list.length || !edit ? list.map(child => renderNode(child, t, {...options, edit})).join("") : dropZone(node.id, t);
+  const children = (list, options) => list.length || !edit ? list.map(child => renderNode(child, t, {...options, edit, editable})).join("") : dropZone(node.id, t);
   if (node.kind === "tabs") {
     const tabs = node.children ?? [];
     return `<div class="rta-sheet-tabs"${span(node)}${m}><nav class="rta-sheet-tabs__nav" role="tablist">${tabs.map((tab, i) => `<button type="button" role="tab" data-sheet-tab="${escape(tab.id)}" aria-selected="${i === 0}"${mark(tab, edit)}>${escape(tab.label ? t(tab.label) : edit ? t("RTA.SheetEditor.UntitledTab") : "")}</button>`).join("")}</nav>${tabs.map((tab, i) => `<div class="rta-sheet-grid rta-sheet-tab" role="tabpanel" data-sheet-panel="${escape(tab.id)}" style="--rta-sheet-columns: 1"${i ? " hidden" : ""}${mark(tab, edit)}>${children(tab.children ?? [], {row})}</div>`).join("")}</div>`;
@@ -89,11 +103,11 @@ export function renderLayoutPreviewHTML(view, {t = key => key, selectedId = null
 }
 
 /** The whole sheet: header (image, editable name), then the layout. notice: a message shown instead of the layout. */
-export function renderSheetHTML(view, {t = key => key, name = "", img = "", editableName = false, notice = "", noticeAction = null} = {}) {
-  const header = `<header class="rta-sheet__header">${img ? `<img class="rta-sheet__image" src="${escape(img)}" alt="">` : ""}${editableName ? `<input class="rta-sheet__name" type="text" data-sheet-name value="${escape(name)}" aria-label="${escape(t("RTA.Template.Name"))}">` : `<h2 class="rta-sheet__name">${escape(name)}</h2>`}</header>`;
+export function renderSheetHTML(view, {t = key => key, name = "", img = "", editable = false, notice = "", noticeActions = [], headerActions = []} = {}) {
+  const header = `<header class="rta-sheet__header">${img ? `<img class="rta-sheet__image" src="${escape(img)}" alt="">` : ""}${editable ? `<input class="rta-sheet__name" type="text" data-sheet-name value="${escape(name)}" aria-label="${escape(t("RTA.Template.Name"))}">` : `<h2 class="rta-sheet__name">${escape(name)}</h2>`}${headerActions.map(action => `<button type="button" class="rta-sheet__command" data-sheet-command="${escape(action.command)}"><i class="fa-solid ${escape(action.icon ?? "fa-wand-magic-sparkles")}"></i> ${escape(action.label)}</button>`).join("")}</header>`;
   const body = notice
-    ? `<div class="rta-sheet-notice"><p>${escape(notice)}</p>${noticeAction ? `<button type="button" data-sheet-command="${escape(noticeAction.command)}">${escape(noticeAction.label)}</button>` : ""}</div>`
-    : renderNode(view?.root, t);
+    ? `<div class="rta-sheet-notice"><p>${escape(notice)}</p>${noticeActions.length ? `<div class="rta-sheet-notice__actions">${noticeActions.map((action, i) => `<button type="button"${i ? "" : ' class="rta-sheet-notice__primary"'} data-sheet-command="${escape(action.command)}">${escape(action.label)}</button>`).join("")}</div>` : ""}</div>`
+    : renderNode(view?.root, t, {editable});
   return `<div class="rta-sheet" data-sheet-id="${escape(view?.sheetId ?? "")}">${header}<div class="rta-sheet__body">${body}</div></div>`;
 }
 

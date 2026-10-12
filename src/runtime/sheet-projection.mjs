@@ -5,7 +5,9 @@
    place with value null and the reason in error, so the sheet keeps its shape.
 
    subject: {actor, content} where actor is the Actor's container ref (null for an Item nobody owns) and content is
-   {key} for an owned Content or {templateId} for an Item in the world or a compendium. */
+   {key} for an owned Content or {templateId} for an Item in the world or a compendium.
+   items: the Actor's Items as Foundry has them ([{id, name, img}]), so a contents block shows their names and pictures;
+   an Item the Ruleset does not know is listed by a contents block that shows every Content Type. */
 import {capabilityTypeRegistry} from "../configurator/capability-type-registry.mjs";
 import {findSlot, SLOT_CAPABILITIES} from "../configurator/capability-slots.mjs";
 
@@ -54,7 +56,7 @@ export function outputLabel(definition, reference) {
   return {label: "", labelKey: `RTA.Sheet.Output.${capability[0].toUpperCase()}${capability.slice(1)}${output[0].toUpperCase()}${output.slice(1)}`};
 }
 
-export async function projectSheet(engine, versionId, sheet, {actor = null, content = null} = {}) {
+export async function projectSheet(engine, versionId, sheet, {actor = null, content = null, items = []} = {}) {
   const ruleset = engine.ruleset(versionId);
   const context = {roles: actor ? {self: actor} : {}, defaultRole: "self", ...(content?.key ? {content: {key: content.key, role: "self"}} : {})};
   const decisions = new Map();
@@ -133,11 +135,34 @@ export async function projectSheet(engine, versionId, sheet, {actor = null, cont
     return view;
   };
 
+  /** The Contents a contents block lists, by Content Type in Ruleset order; an unavailable one is still listed. */
+  let owned;
+  const contents = async (node, base) => {
+    if (!actor) return null;
+    owned ??= await engine.listOwnedContents(versionId, actor);
+    const types = node.contentTypeIds ?? [], byId = new Map(items.map(item => [item.id, item]));
+    const order = new Map((ruleset.contentTypes ?? []).map((type, index) => [type.id, index]));
+    const rows = owned.filter(row => !types.length || types.includes(row.contentTypeId))
+      .sort((a, b) => (order.get(a.contentTypeId) ?? 0) - (order.get(b.contentTypeId) ?? 0))
+      .map(row => {
+        const item = byId.get(row.key), template = ruleset.contentTemplates?.find(t => t.id === row.templateId);
+        return {key: row.key, label: item?.name ?? template?.nameKey ?? row.templateId, img: item?.img ?? template?.image ?? "", item: Boolean(item), available: row.available !== false,
+          type: ruleset.contentTypes?.find(t => t.id === row.contentTypeId)?.nameKey ?? row.contentTypeId};
+      });
+    // Items of the game system, or of no Ruleset, under the block that shows everything.
+    if (!types.length) {
+      const known = new Set(owned.map(row => row.key));
+      for (const item of items) if (!known.has(item.id) && !item.managed) rows.push({key: item.id, label: item.name, img: item.img ?? "", item: true, available: true, type: ""});
+    }
+    return {...base, rows};
+  };
+
   const walk = async (node, scope, row) => {
     const base = {id: node.id, kind: node.kind, ...(node.span ? {span: node.span} : {})};
     if (node.kind === "value") return value(node, scope, row);
     if (node.kind === "text") return {...base, text: node.textKey};
     if (node.kind === "spacer") return base;
+    if (node.kind === "contents") return contents(node, base);
     if (node.kind === "action") {
       const action = ruleset.actions?.find(a => a.id === node.actionRef && enabled(a));
       if (!action || !actor || !await allowed("execute", "action", action.id)) return null;

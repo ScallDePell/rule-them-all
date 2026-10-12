@@ -18,13 +18,15 @@
                                                                        a value.final is written through its value.base
    action    := {kind: "action", actionRef, labelKey?}                 a button that uses the Action (on the repeater's Definition inside one)
    text      := {kind: "text", textKey}
+   contents  := {kind: "contents", contentTypeIds?}                  the Contents the Actor holds (its Items), of these Content Types (all when none);
+                                                                       dropping an Item on the sheet adds one
    spacer    := {kind: "spacer"}
    span: 1 to the parent's columns (default 1). Node ids are unique in the sheet; the tree is at most 8 levels and 500 nodes deep. */
 
 import {copyJSON, isRecord} from "./configurator-schema.mjs";
 
 export const LAYOUT_CONTAINERS = Object.freeze(["tabs", "tab", "section", "grid", "repeater"]);
-export const LAYOUT_LEAVES = Object.freeze(["value", "action", "text", "spacer"]);
+export const LAYOUT_LEAVES = Object.freeze(["value", "action", "text", "contents", "spacer"]);
 export const LAYOUT_NODE_KINDS = Object.freeze([...LAYOUT_CONTAINERS, ...LAYOUT_LEAVES]);
 export const LAYOUT_SOURCE_KINDS = Object.freeze(["output", "formula", "parameter", "each", "field"]);
 /** Sources a sheet can write to. */
@@ -35,7 +37,7 @@ export const LAYOUT_MAX_NODES = 500;
 const MAX_COLUMNS = {section: 4, grid: 6, repeater: 6};
 const FIELDS = {
   tabs: ["children"], tab: ["labelKey", "children"], section: ["labelKey", "columns", "children"], grid: ["columns", "children"],
-  repeater: ["query", "columns", "children"], value: ["source", "labelKey", "write"], action: ["actionRef", "labelKey"], text: ["textKey"], spacer: []
+  repeater: ["query", "columns", "children"], value: ["source", "labelKey", "write"], action: ["actionRef", "labelKey"], text: ["textKey"], contents: ["contentTypeIds"], spacer: []
 };
 const nonempty = value => typeof value === "string" && value.trim().length > 0;
 const NODE_ID = /^[A-Za-z0-9][A-Za-z0-9_-]*$/;
@@ -104,6 +106,10 @@ export function prepareLayout(root) {
     }
     if (node.kind === "action") { if (!nonempty(node.actionRef)) throw new Error(`${path}.actionRef must be an id.`); next.actionRef = node.actionRef; }
     if (node.kind === "text") { if (typeof node.textKey !== "string") throw new Error(`${path}.textKey must be text.`); next.textKey = node.textKey; }
+    if (node.kind === "contents" && node.contentTypeIds !== undefined) {
+      if (!Array.isArray(node.contentTypeIds) || !node.contentTypeIds.every(nonempty)) throw new Error(`${path}.contentTypeIds must be a list of ids.`);
+      if (node.contentTypeIds.length) next.contentTypeIds = [...new Set(node.contentTypeIds)];
+    }
     if (LAYOUT_CONTAINERS.includes(node.kind)) {
       if (!Array.isArray(node.children)) throw new Error(`${path}.children must be a list.`);
       next.children = node.children.map((child, i) => walk(child, `${path}.children[${i}]`, depth + 1, next, inRepeater || node.kind === "repeater"));

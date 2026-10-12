@@ -2,6 +2,7 @@
  * Only the initiating client may write acquisition flags or Runtime state.
  */
 import {MODULE_ID} from '../core/module-contract.mjs';
+import {foundryJSON} from './foundry-data.mjs';
 export function isOwningContentHook(item,userId,currentUserId){
   return Boolean(userId && currentUserId && userId===currentUserId && item?.parent?.documentName==='Actor');
 }
@@ -21,7 +22,7 @@ export function guardOwnedContentCreation(item,userId,currentUserId,bridge,{requ
     if(contentType.storageKind==='actor')throw new Error('Actor-backed Content cannot be embedded as an Item.');
     if(!Object.hasOwn(flag,'acquisitionSelections')){
       requestGuided({versionId:flag.versionId,actorRef:item.parent.uuid,templateId:flag.templateId,
-        sourceData:typeof item.toObject==='function'?item.toObject():null});
+        sourceData:typeof item.toObject==='function'?foundryJSON(item.toObject()):null});
       return false;
     }
     bridge.preflightAcquisition(flag.versionId,flag.templateId,flag.acquisitionSelections);

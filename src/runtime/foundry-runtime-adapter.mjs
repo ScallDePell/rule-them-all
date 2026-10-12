@@ -3,6 +3,7 @@ import {registerRulesetDice} from "./foundry-dice.mjs";
 import {resolveDocumentType} from "../core/system-document-types.mjs";
 import {MODULE_ID} from "../core/module-contract.mjs";
 import {copyJSON} from "../configurator/configurator-schema.mjs";
+import {foundryJSON} from "./foundry-data.mjs";
 import {createRuntimeState,normalizeRuntimeContainerRef,prepareRuntimeState} from "./runtime-contracts.mjs";
 import {foundryDice} from "./dice-results.mjs";
 import {OWNERSHIP_LEVELS,PERMISSION_ROLES} from "../configurator/permission-contract.mjs";
@@ -16,9 +17,9 @@ const replaced=value=>{const operator=globalThis.foundry?.data?.operators?.Force
 const WORLD_SETTING="worldRuntime";
 /** The world container: its state and ledger live in a hidden world setting that only a GM may write. */
 const worldDocument=()=>({id:"world",name:game.world?.title??"World",documentName:"World",
-  getFlag:(_scope,key)=>copyJSON(game.settings.get(MODULE_ID,WORLD_SETTING)?.[key]??null)??undefined,
+  getFlag:(_scope,key)=>foundryJSON(game.settings.get(MODULE_ID,WORLD_SETTING)?.[key]??null)??undefined,
   canUserModify:user=>Boolean(user?.isGM),getUserLevel:user=>user?.isGM?3:2,
-  async writeRuntime(values){await game.settings.set(MODULE_ID,WORLD_SETTING,{...(game.settings.get(MODULE_ID,WORLD_SETTING)??{}),...copyJSON(values)});},
+  async writeRuntime(values){await game.settings.set(MODULE_ID,WORLD_SETTING,{...foundryJSON(game.settings.get(MODULE_ID,WORLD_SETTING)??{}),...copyJSON(values)});},
   async clearRuntime(){await game.settings.set(MODULE_ID,WORLD_SETTING,{});}});
 
 export class FoundryRuntimeAdapter{
@@ -34,7 +35,7 @@ export class FoundryRuntimeAdapter{
     const collection=n.kind==="actor"?game.actors:n.kind==="item"?game.items:n.kind==="combat"?game.combats:null;
     const doc=collection?.get?.(n.id);if(!doc)throw new Error(`Foundry ${n.kind} not found: ${n.id}.`);return doc;
   }
-  async load(ref,{rulesetVersionId=""}={}){const doc=await this.resolveDocument(ref);const stored=doc.getFlag?.(MODULE_ID,FLAG_KEY);return prepareRuntimeState(stored??createRuntimeState({rulesetVersionId}),{rulesetVersionId});}
+  async load(ref,{rulesetVersionId=""}={}){const doc=await this.resolveDocument(ref);const stored=foundryJSON(doc.getFlag?.(MODULE_ID,FLAG_KEY));return prepareRuntimeState(stored??createRuntimeState({rulesetVersionId}),{rulesetVersionId});}
   /** Physical permission of this client: Foundry only lets a Document owner (or a GM) update it. */
   async canWrite(ref,user=game.user){const doc=await this.resolveDocument(ref);if(typeof doc.canUserModify==="function")return doc.canUserModify(user,"update");if(typeof doc.testUserPermission==="function"&&globalThis.CONST?.DOCUMENT_OWNERSHIP_LEVELS)return doc.testUserPermission(user,CONST.DOCUMENT_OWNERSHIP_LEVELS.OWNER);return Boolean(user?.isGM);}
   /** PermissionPolicy subject (CP-11): Foundry role and ownership of a user on the container. */
@@ -62,7 +63,7 @@ export class FoundryRuntimeAdapter{
     const shared=[...(worldDocument().getFlag(MODULE_ID,FLAG_KEY)?[{kind:"world",id:"world"}]:[]),...[...(game.combats??[])].filter(combat=>combat.getFlag?.(MODULE_ID,FLAG_KEY)).map(combat=>({kind:"combat",id:combat.id}))];
     return [...documents,...shared];
   }
-  async loadLedger(ref){const doc=await this.resolveDocument(ref);const stored=doc.getFlag?.(MODULE_ID,LEDGER_KEY);return Array.isArray(stored)?copyJSON(stored):[];}
+  async loadLedger(ref){const doc=await this.resolveDocument(ref);const stored=foundryJSON(doc.getFlag?.(MODULE_ID,LEDGER_KEY));return Array.isArray(stored)?stored:[];}
   /** One Document update carries the state and its ledger, so each container is written atomically.
    * The state replaces the stored object: a merge would keep removed DefinitionStates. */
   async write(ref,{state,ledger}){

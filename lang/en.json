@@ -1357,7 +1357,14 @@
       "ChooseActions": "Choose {count}",
       "TestTarget": "Target",
       "ContentTypes": "Content types",
-      "NoContentTypes": "No content type yet."
+      "NoContentTypes": "No content type yet.",
+      "NotCreated": "This character has not been created yet.",
+      "InitializeEmpty": "Start without creation",
+      "DropContents": "Nothing yet: drop an Item here.",
+      "RemoveContent": "Remove",
+      "RemoveContentConfirm": "Remove {name}? What it gave goes too.",
+      "Contents": "Contents",
+      "OtherItems": "Other Items"
     },
     "SheetEditor": {
       "Layout": "Layout",
@@ -1394,7 +1401,8 @@
         "value": "Value",
         "action": "Action button",
         "text": "Text",
-        "spacer": "Empty cell"
+        "spacer": "Empty cell",
+        "contents": "Held Contents"
       },
       "Source": {
         "output": "A Definition output",
@@ -1409,7 +1417,8 @@
         "add": "Can be increased",
         "subtract": "Can be decreased"
       },
-      "BlockToAdd": "block to add"
+      "BlockToAdd": "block to add",
+      "ContentTypes": "Content Types (none: all)"
     },
     "Reaction": {
       "Title": "Reaction",
@@ -1445,7 +1454,8 @@
       "Roll": "Roll",
       "Draw": "Draw at random",
       "AnotherTerm": "Another term",
-      "Term": "Term {number}"
+      "Term": "Term {number}",
+      "CreateThis": "Create the character"
     }
   }
 }

@@ -72,7 +72,7 @@ Hooks.once("ready", () => {
     game.ruleThemAll.content = new FoundryContentBridge(api, game.ruleThemAll.runtime);
     // CP-15: resumable character creation, stored in each user's flags until finalized.
     game.ruleThemAll.creation = new CreationSessions({configurator: api, store: new FoundryCreationSessionStore(), roll: formula => game.ruleThemAll.runtime.roll(formula),
-      finalize: (session, {name, actorType}) => game.ruleThemAll.content.createActorFromCreationSystem(session.rulesetVersionId, session.creationSystemId, {name, actorType, answers: session.answers, sessionId: session.id})});
+      finalize: (session, {name, actorType}) => game.ruleThemAll.content.createActorFromCreationSystem(session.rulesetVersionId, session.creationSystemId, {name, actorType, answers: session.answers, sessionId: session.id, actorUuid: session.targetActorUuid ?? null})});
     // Ruleset dice (2dp) known to Foundry, so dice in chat messages rebuild; a roll registers its own Ruleset's again.
     const registerDice = () => { for (const family of api.listRulesetFamilies()) for (const version of family.versions) if (version.publishedSnapshot) registerRulesetDice(family.id, version.publishedSnapshot.dice ?? []); };
     registerDice();
