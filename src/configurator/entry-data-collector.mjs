@@ -50,7 +50,10 @@ export function collectEntryData(kind,{fd,current,bool,checkedIds,queryOne,query
         sectionColorOverrides[section.id]=bool(`sectionOverride:${section.id}`);
       }
       const color=String(fd.get('rulesetColor')??DEFAULT_RULESET_COLOR).trim();
-      return{id,nameKey:name,descriptionKey:String(fd.get("descriptionKey")??""),version:String(fd.get("version")??"1.0.0").trim(),color:color===DEFAULT_RULESET_COLOR?null:color,sectionColors,sectionColorOverrides,familyColors:{...current.familyColors}};
+      // A new Ruleset has no Test yet: the initiative fields appear once it exists.
+      const testRef=fieldPresent(fd,"initiativeTestRef")?String(fd.get("initiativeTestRef")??""):current.initiative?.testRef??"";
+      const initiative=!testRef?null:fieldPresent(fd,"initiativeTestRef")?{testRef,tieBreakFormulaRef:String(fd.get("initiativeTieBreakFormulaRef")??"")||null,eachRound:bool("initiativeEachRound")}:{...current.initiative};
+      return{id,initiative,nameKey:name,descriptionKey:String(fd.get("descriptionKey")??""),version:String(fd.get("version")??"1.0.0").trim(),color:color===DEFAULT_RULESET_COLOR?null:color,sectionColors,sectionColorOverrides,familyColors:{...current.familyColors}};
     }
     if(kind==="definitionType"){
       const name=String(fd.get("nameKey")??"").trim(),key=current.key||slug(name)||uid("type");

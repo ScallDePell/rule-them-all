@@ -1156,6 +1156,16 @@
       "ReachedWhen": "Atteint quand",
       "Grants": "Donne",
       "ThenAction": "Puis lance"
+    },
+    "Initiative": {
+      "Rolled": "{name} lance l'initiative",
+      "Legend": "Initiative en combat",
+      "Test": "Test d'initiative",
+      "GameSystem": "Jet du système de jeu",
+      "TieBreak": "Départage",
+      "NoTieBreak": "Aucun",
+      "EachRound": "Relancer à chaque round",
+      "Help": "Les acteurs de ce Ruleset lancent ce Test dans le combat tracker ; son total donne leur initiative."
     }
   }
 }

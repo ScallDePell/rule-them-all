@@ -110,6 +110,10 @@ export class DependencyIndex{
       if(step?.draw?.rollRef)pushRef(this.#edges,{objectKind:'creationSystem',objectId:system.id},{objectKind:'roll',objectId:step.draw.rollRef},'creationRoll',`creationSystems[${i}].steps[${j}].draw.rollRef`);
       if(step?.optionConditionRef)pushRef(this.#edges,{objectKind:'creationSystem',objectId:system.id},{objectKind:'condition',objectId:step.optionConditionRef},'creationCondition',`creationSystems[${i}].steps[${j}].optionConditionRef`);
     }
+    if(ruleset.initiative){
+      pushRef(this.#edges,{objectKind:'ruleset',objectId:ruleset.id},{objectKind:'test',objectId:ruleset.initiative.testRef},'rulesetInitiative','initiative.testRef');
+      pushRef(this.#edges,{objectKind:'ruleset',objectId:ruleset.id},{objectKind:'formula',objectId:ruleset.initiative.tieBreakFormulaRef},'rulesetInitiative','initiative.tieBreakFormulaRef');
+    }
     for(const [i,system] of (ruleset.progressionSystems??[]).entries()){
       const from={objectKind:'progressionSystem',objectId:system.id},add=(kind,id,role,path)=>{if(id)pushRef(this.#edges,from,{objectKind:kind,objectId:id},role,`progressionSystems[${i}].${path}`);};
       for(const [j,a] of (system?.advancements??[]).entries()){

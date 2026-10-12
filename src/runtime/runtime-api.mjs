@@ -31,6 +31,8 @@ export function createRuntimeAPI(configurator,{adapter=new FoundryRuntimeAdapter
     userTargets:()=>adapter.userTargets?.()??[],
     executeAction:write("executeAction"),
     rerollAction:write("rerollAction"),
+    rollInitiative:(versionId,ref)=>engine.rollInitiative(versionId,ref),
+    initiativeEachRound:versionId=>{try{return engine.ruleset(versionId).initiative?.eachRound===true;}catch{return false;}},
     describeProgression:(versionId,id,ref)=>engine.describeProgression(versionId,id,ref),
     advance:write("advance"),
     applyMilestones:write("applyMilestones"),

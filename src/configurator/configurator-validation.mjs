@@ -123,6 +123,20 @@ export function validateRuleset(ruleset, {scope = "save"} = {}) {
     if (!colorFamilies.has(family)) issue("FAMILY_COLOR", `familyColors.${family}`, `Unsupported top-level family: ${family}.`);
     if (!(color === null || nonempty(color))) issue("FAMILY_COLOR", `familyColors.${family}`, "Family color must be null or a non-empty string.");
   }
+  // initiative: the Test whose total orders the Foundry combat tracker, an optional tie-break Formula, rerolled each round or not.
+  const initiative = ruleset.initiative ?? null;
+  if (initiative !== null) {
+    if (!isRecord(initiative)) issue("OBJECT_TYPE", "initiative", "initiative must be an object or null.");
+    else {
+      exactFields(initiative, ["testRef", "tieBreakFormulaRef", "eachRound"], "initiative", issue);
+      if (!nonempty(initiative.testRef)) issue("REQUIRED_STRING", "initiative.testRef", "initiative needs a Test.");
+      else if (!(ruleset.tests ?? []).some(test => test?.id === initiative.testRef)) issue("REFERENCE", "initiative.testRef", `Missing reference: test/${initiative.testRef}.`);
+      if (!(initiative.tieBreakFormulaRef === undefined || initiative.tieBreakFormulaRef === null)) {
+        if (!(ruleset.formulas ?? []).some(formula => formula?.id === initiative.tieBreakFormulaRef)) issue("REFERENCE", "initiative.tieBreakFormulaRef", `Missing reference: formula/${initiative.tieBreakFormulaRef}.`);
+      }
+      if (!(initiative.eachRound === undefined || typeof initiative.eachRound === "boolean")) issue("BOOLEAN_TYPE", "initiative.eachRound", "initiative.eachRound must be true or false.");
+    }
+  }
   if (!Number.isSafeInteger(ruleset.revision) || ruleset.revision < 0) issue("REVISION", "revision", "revision must be a non-negative safe integer.");
   if (!["draft","ready","validated"].includes(ruleset.status)) issue("STATUS", "status", "Unsupported Ruleset status.");
   const idsByKind = new Map();

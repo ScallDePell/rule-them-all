@@ -9,6 +9,7 @@ import {CreationSessions, FoundryCreationSessionStore} from "./src/runtime/creat
 import {FoundryContentBridge} from "./src/runtime/foundry-content-bridge.mjs";
 import {isOwningContentHook,guardOwnedContentCreation} from "./src/runtime/foundry-content-hooks.mjs";
 import {combatChangeEvents, timeElapsedPayload} from "./src/configurator/system-events.mjs";
+import {installInitiative, rerollEachRound} from "./src/runtime/foundry-initiative.mjs";
 
 /** events: () => [{eventTypeId, payload, refs}], emitted in order on the containers they concern. */
 function emitModuleEvents(events) {
@@ -35,6 +36,8 @@ Hooks.once("init", () => {
     type: ConfiguratorApp,
     restricted: true
   });
+  // Combatants under a Ruleset with an initiative Test roll it; the others keep the game system's roll.
+  installInitiative(CONFIG.Combat.documentClass, () => game.ruleThemAll?.runtime);
   Hooks.callAll("ruleThemAllInit", game.ruleThemAll);
   console.log("Rule Them'All | Initialization");
 });
@@ -71,7 +74,10 @@ Hooks.once("ready", () => {
   });
   // Module events: Triggers react to the combat tracker; the active GM emits them once.
   Hooks.on("combatTurnChange", (combat, prior, current) => {
-    if (game.users.activeGM?.isSelf) emitModuleEvents(() => combatChangeEvents(combat, prior, current));
+    if (!game.users.activeGM?.isSelf) return;
+    emitModuleEvents(() => combatChangeEvents(combat, prior, current));
+    Promise.resolve(game.ruleThemAll?.configuratorReady).then(() => rerollEachRound(combat, prior, current, () => game.ruleThemAll.runtime))
+      .catch(error => console.error("Rule Them'All | Initiative reroll failed", error));
   });
   Hooks.on("deleteCombat", combat => {
     if (!game.users.activeGM?.isSelf || !combat.started) return;

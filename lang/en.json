@@ -1160,6 +1160,16 @@
       "ReachedWhen": "Reached when",
       "Grants": "Grants",
       "ThenAction": "Then runs"
+    },
+    "Initiative": {
+      "Rolled": "{name} rolls initiative",
+      "Legend": "Combat initiative",
+      "Test": "Initiative Test",
+      "GameSystem": "Game system's roll",
+      "TieBreak": "Tie-break",
+      "NoTieBreak": "None",
+      "EachRound": "Reroll each round",
+      "Help": "Actors under this Ruleset roll this Test in the combat tracker; its total is their initiative."
     }
   }
 }

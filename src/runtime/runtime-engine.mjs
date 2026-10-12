@@ -741,6 +741,16 @@ export class RuntimeEngine{
     await this.#emitActionEvents(versionId,{actionId,testResult:plan.testResult,context:{...plan.context,cause:use},followUps:plan.followUps,targets:plan.targets},eventDepth,result.events);
     return result;
   }
+  /** Initiative of one container under its Ruleset's initiative Test: the Test total, plus the tie-break
+   * Formula / 100 (Dexterity 14 makes 17 into 17.14). null when the Ruleset sets no initiative. */
+  async rollInitiative(versionId,containerRef){
+    const ruleset=this.ruleset(versionId),initiative=ruleset.initiative;if(!initiative?.testRef)return null;
+    const ref=normalizeRuntimeContainerRef(containerRef),context={roles:{self:ref,source:ref},defaultRole:"self"};
+    const testResult=await this.executeTest(versionId,initiative.testRef,context);
+    const tieBreak=initiative.tieBreakFormulaRef?Number(await this.evaluateFormula(versionId,initiative.tieBreakFormulaRef,context)):0;
+    if(!Number.isFinite(Number(testResult.total))||!Number.isFinite(tieBreak))throw new Error("Initiative is not a number.");
+    return {initiative:Math.round((Number(testResult.total)+tieBreak/100)*100)/100,eachRound:initiative.eachRound===true,testResult};
+  }
   /** A Progression System seen from one Actor: per advancement, the Definitions it can raise there with
    * their value, next cost and whether it is allowed now; per milestone, whether it is reached or applied. */
   async describeProgression(versionId,systemId,containerRef){

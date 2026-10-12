@@ -53,6 +53,12 @@
         <fieldset><legend>{{localize "RTA.Colors.Appearance"}}</legend>
           <div class="form-group rta-form-row"><label>{{localize "RTA.Colors.RulesetColor"}}</label><input name="rulesetColor" type="color" value="{{rulesetMainColor}}" {{#if readOnly}}disabled{{/if}}></div>
         </fieldset>
+        {{#unless creating}}<fieldset><legend>{{localize "RTA.Initiative.Legend"}}</legend>
+          <p>{{localize "RTA.Initiative.Help"}}</p>
+          <div class="form-group rta-form-row"><label>{{localize "RTA.Initiative.Test"}}</label><select name="initiativeTestRef" {{#if readOnly}}disabled{{/if}}><option value="">{{localize "RTA.Initiative.GameSystem"}}</option>{{#each initiativeTestChoices}}<option value="{{id}}" data-rta-colors="{{colors}}" {{#if selected}}selected{{/if}}>{{label}}</option>{{/each}}</select></div>
+          <div class="form-group rta-form-row" data-initiative-only {{#unless initiativeTestChosen}}hidden{{/unless}}><label>{{localize "RTA.Initiative.TieBreak"}}</label><select name="initiativeTieBreakFormulaRef" {{#if readOnly}}disabled{{/if}}><option value="">{{localize "RTA.Initiative.NoTieBreak"}}</option>{{#each initiativeTieBreakChoices}}<option value="{{id}}" data-rta-colors="{{colors}}" {{#if selected}}selected{{/if}}>{{label}}</option>{{/each}}</select></div>
+          <div class="form-group rta-form-row" data-initiative-only {{#unless initiativeTestChosen}}hidden{{/unless}}><label for="rta-initiative-each-round">{{localize "RTA.Initiative.EachRound"}}</label><input id="rta-initiative-each-round" type="checkbox" name="initiativeEachRound" {{#if initiativeEachRound}}checked{{/if}} {{#if readOnly}}disabled{{/if}}></div>
+        </fieldset>{{/unless}}
         <details class="rta-config-entry__section"><summary>{{localize "RTA.Colors.Sections"}}</summary>
           <p>{{localize "RTA.Colors.InheritanceHelp"}}</p>
           {{#each colorSectionChoices}}
