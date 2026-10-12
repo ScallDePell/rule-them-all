@@ -1,14 +1,15 @@
 /* The WYSIWYG sheet editor (CP-14), inside the SheetDefinition entry editor. The canvas is the played sheet's own
    markup (ui/sheet-markup.mjs) with sample values; a click selects a block, its settings show below, blocks are added
-   into the selection, moved with the arrows or dragged onto another block. The tree is kept in a hidden field the
+   into the selection from the palette (or dragged from it onto the sheet), moved with the arrows or dragged onto another
+   block (before a leaf when dropped on its top half). The tools sit beside the sheet. The tree is kept in a hidden field the
    entry collector reads ([data-sheet-layout-value]); every change fires an input event so the editor knows it is dirty. */
 import {prepareLayout} from "./layout-contract.mjs";
 import {autoLayout} from "./sheet-auto-layout.mjs";
-import {EACH_OUTPUTS, itemContentTypes, canMoveInto, childKinds, columnsOf, contentFields, defaultValueLabel, insertNode, isContainer, locate, maxColumns, moveInto, moveNode, newNode, outputLabelKey, previewView, removeNode, repeaterOf, updateNode, writableSource} from "./sheet-layout-model.mjs";
+import {EACH_OUTPUTS, itemContentTypes, canMoveInto, canPlace, paletteGroups, paletteNode, childKinds, columnsOf, contentFields, defaultValueLabel, insertNode, isContainer, locate, maxColumns, moveInto, moveNode, newNode, outputLabelKey, previewView, removeNode, repeaterOf, updateNode, writableSource} from "./sheet-layout-model.mjs";
 import {refToken, parseRefToken} from "./reference-token.mjs";
 import {findSlot} from "./capability-slots.mjs";
 import {renderLayoutPreviewHTML} from "../ui/sheet-markup.mjs";
-import {renderLayoutPropertiesHTML, renderLayoutToolbarHTML} from "../ui/sheet-editor-markup.mjs";
+import {kindText, renderLayoutPaletteHTML, renderLayoutPropertiesHTML, renderLayoutToolbarHTML} from "../ui/sheet-editor-markup.mjs";
 import {selectColorsAttribute} from "../ui/select-option-presentation.mjs";
 import {RTA_NEUTRAL_COLOR} from "../ui/theme-tokens.mjs";
 import {LAYOUT_CONTAINERS} from "./layout-contract.mjs";
@@ -26,16 +27,18 @@ const toHex = rgb => { const m = String(rgb).match(/\d+(\.\d+)?/g); return m && 
 const i18n = key => { const text = globalThis.game?.i18n?.localize?.(key); return text && text !== key ? text : key; };
 const format = (key, data, fallback) => { const text = globalThis.game?.i18n?.format?.(key, data); return text && text !== key ? text : fallback; };
 const HISTORY = 50;
+/** Pixels at the top and bottom of a block where a drop goes next to it rather than into it. */
+const EDGE = 12;
 
 export class SheetLayoutController {
-  #host; #ruleset; #colors; #form; #root; #selected; #history = []; #dragged = null; #readOnly; #styleOpen = false; #toneHex = null;
+  #host; #ruleset; #colors; #form; #root; #selected; #history = []; #dragged = null; #readOnly; #paletteOpen = true; #styleOpen = false; #toneHex = null;
 
   /** host: [data-sheet-layout-editor]; ruleset: the working draft; colors(kind, entry): option colors; form: the entry form (target, content types). */
   constructor(host, {ruleset, colors = () => [RTA_NEUTRAL_COLOR], form, readOnly = false}) {
     this.#host = host; this.#ruleset = ruleset; this.#colors = colors; this.#form = form; this.#readOnly = readOnly;
     this.#root = JSON.parse(this.#field.value || "null") ?? {id: "root", kind: "grid", columns: 1, children: []};
     this.#selected = this.#root.id;
-    this.#form?.addEventListener("change", event => { if (event.target.matches?.('[name="sheetTarget"], [name="sheetContentTypes"]')) this.render(); });
+    this.#form?.addEventListener("change", event => { if (event.target.matches?.('[name="sheetTarget"], [name="sheetContentTypes"]')) { this.#renderPalette(); this.render(); } });
     // A validated Ruleset shows its sheet, read-only.
     if (readOnly) { this.#selected = null; this.render(); return; }
     host.addEventListener("change", event => this.#onChange(event));
@@ -43,10 +46,31 @@ export class SheetLayoutController {
     host.addEventListener("input", event => { if (event.target.matches?.('[data-layout-style="opacity"]')) { event.stopPropagation(); const label = event.target.closest(".rta-form-row")?.querySelector("[data-layout-opacity-value]"); if (label) label.textContent = `${event.target.value} %`; } });
     host.addEventListener("toggle", event => { if (event.target.matches?.("[data-layout-style-group]")) this.#styleOpen = event.target.open; }, true);
     host.addEventListener("click", event => this.#onClick(event));
-    host.addEventListener("dragstart", event => { const node = event.target.closest?.("[data-layout-node]"); if (!node) return; this.#dragged = node.dataset.layoutNode; event.dataTransfer?.setData("text/plain", this.#dragged); });
-    host.addEventListener("dragover", event => { const target = event.target.closest?.("[data-layout-node]"); if (this.#dragged && target && canMoveInto(this.#root, this.#dragged, target.dataset.layoutNode)) { event.preventDefault(); this.#markDrop(target); } });
+    host.addEventListener("input", event => { if (event.target.matches?.("[data-layout-palette-filter]")) this.#filterPalette(event.target.value); });
+    host.addEventListener("toggle", event => { if (event.target.matches?.("[data-layout-palette-panel]")) this.#paletteOpen = event.target.open; }, true);
+    // A block of the sheet, or an element of the palette, dragged onto the sheet.
+    host.addEventListener("dragstart", event => {
+      const item = event.target.closest?.("[data-layout-palette]"), node = event.target.closest?.("[data-layout-canvas] [data-layout-node]");
+      if (!item && !node) return;
+      this.#dragged = item ? {spec: JSON.parse(item.dataset.layoutPalette)} : {id: node.dataset.layoutNode};
+      if (event.dataTransfer) { event.dataTransfer.effectAllowed = item ? "copy" : "move"; event.dataTransfer.setData("text/plain", item?.dataset.layoutPalette ?? node.dataset.layoutNode); }
+    });
+    host.addEventListener("dragover", event => {
+      const target = event.target.closest?.("[data-layout-canvas] [data-layout-node]"), place = target && this.#placement(event, target);
+      if (place) { event.preventDefault(); this.#markDrop(target, place); }
+      else this.#markDrop(null);
+    });
     host.addEventListener("dragleave", event => { if (!this.#host.contains(event.relatedTarget)) this.#markDrop(null); });
-    host.addEventListener("drop", event => { const target = event.target.closest?.("[data-layout-node]"); event.preventDefault(); this.#markDrop(null); if (this.#dragged && target) this.#commit(moveInto(this.#root, this.#dragged, target.dataset.layoutNode)); this.#dragged = null; });
+    host.addEventListener("dragend", () => { this.#markDrop(null); this.#dragged = null; });
+    host.addEventListener("drop", event => {
+      const target = event.target.closest?.("[data-layout-canvas] [data-layout-node]"), place = target && this.#placement(event, target), dragged = this.#dragged;
+      event.preventDefault(); this.#markDrop(null); this.#dragged = null;
+      if (!place) return;
+      const targetId = target.dataset.layoutNode, at = {before: place === "before", beside: place !== "into"};
+      if (dragged.id) return this.#commit(moveInto(this.#root, dragged.id, targetId, at));
+      this.#add(dragged.spec, targetId, at);
+    });
+    this.#renderPalette();
     this.render();
   }
 
@@ -74,12 +98,9 @@ export class SheetLayoutController {
       return;
     }
     const found = locate(this.#root, this.#selected) ?? locate(this.#root, this.#root.id), node = found.node;
-    const holder = isContainer(node) ? node : found.parent;
-    const neutral = selectColorsAttribute([RTA_NEUTRAL_COLOR]);
     this.#host.querySelector("[data-layout-toolbar]").innerHTML = renderLayoutToolbarHTML({
-      addable: childKinds(holder).filter(kind => newNode(kind, this.#root, this.#ruleset, {parentId: holder.id, target: this.#target})),
       canMoveUp: Boolean(found.parent) && found.index > 0, canMoveDown: Boolean(found.parent) && found.index < found.parent.children.length - 1,
-      canRemove: Boolean(found.parent), neutral, undo: this.#history.length > 0});
+      canRemove: Boolean(found.parent), undo: this.#history.length > 0});
     const view = previewView(this.#root, this.#ruleset, {target: this.#target, contentTypeIds: this.#contentTypeIds});
     const canvas = this.#host.querySelector("[data-layout-canvas]");
     canvas.innerHTML = renderLayoutPreviewHTML(view, {t: i18n, selectedId: node.id});
@@ -94,14 +115,60 @@ export class SheetLayoutController {
     for (const button of tabs.querySelectorAll(":scope > nav [data-sheet-tab]")) button.setAttribute("aria-selected", String(button.dataset.sheetTab === id));
     for (const panel of tabs.querySelectorAll(":scope > [data-sheet-panel]")) panel.hidden = panel.dataset.sheetPanel !== id;
   }
-  #markDrop(target) {
+  #markDrop(target, place = null) {
     for (const element of this.#host.querySelectorAll("[data-layout-drop-target]")) element.removeAttribute("data-layout-drop-target");
-    target?.setAttribute("data-layout-drop-target", "");
+    target?.setAttribute("data-layout-drop-target", place);
+  }
+  /** Where what is dragged lands on this block: "into" a container that takes it (but next to it on its top or bottom
+     edge), else "before" or "after" it by the half it is dropped on; null when it cannot go there. */
+  #placement(event, target) {
+    const dragged = this.#dragged, targetId = target.dataset.layoutNode;
+    if (!dragged) return null;
+    const node = dragged.id ? null : paletteNode(dragged.spec, this.#root, this.#ruleset, {parentId: targetId, target: this.#target});
+    const fits = beside => dragged.id ? canMoveInto(this.#root, dragged.id, targetId, {beside}) : canPlace(this.#root, node, targetId, {beside});
+    const box = target.getBoundingClientRect?.(), y = event.clientY;
+    const half = box?.height ? (y < box.top + box.height / 2 ? "before" : "after") : "after";
+    const found = locate(this.#root, targetId), kind = node?.kind ?? locate(this.#root, dragged.id)?.node.kind;
+    if (isContainer(found?.node) && childKinds(found.node).includes(kind)) {
+      const edge = box?.height && y >= box.top && y <= box.bottom && (y < box.top + EDGE || y > box.bottom - EDGE);
+      if (edge && found.parent && fits(true)) return half;
+      return fits(false) ? "into" : null;
+    }
+    return fits(true) ? half : null;
+  }
+  /** A palette element added at targetId (into it, or next to it). */
+  #add(spec, targetId, {before = false, beside = false} = {}) {
+    const node = paletteNode(spec, this.#root, this.#ruleset, {parentId: targetId, target: this.#target});
+    if (!node || !canPlace(this.#root, node, targetId, {beside})) { globalThis.ui?.notifications?.warn?.(i18n("RTA.SheetEditor.Palette.CannotGo")); return; }
+    // A new list starts with a row value, so it shows something.
+    const repeater = node.kind === "repeater" ? newNode("value", {id: "root", kind: "grid", children: [node]}, this.#ruleset, {parentId: node.id, target: this.#target}) : null;
+    if (repeater) node.children.push({...repeater, id: `${node.id}-value`});
+    this.#commit(insertNode(this.#root, targetId, node, {before, beside}), node.id);
+  }
+  #renderPalette() {
+    const host = this.#host.querySelector("[data-layout-palette-host]");
+    if (!host) return;
+    const filter = host.querySelector("[data-layout-palette-filter]")?.value ?? "";
+    const groups = paletteGroups(this.#ruleset, {target: this.#target, contentTypeIds: this.#contentTypeIds}).map(group => ({
+      text: group.labelKey ? i18n(group.labelKey) : group.label,
+      items: group.items.map(item => ({...item, text: item.list ? format("RTA.SheetEditor.Palette.ListOf", {type: item.label}, item.label) : item.label ?? kindText(item.kind)}))}));
+    host.innerHTML = renderLayoutPaletteHTML(groups, {open: this.#paletteOpen, filter});
+    this.#filterPalette(filter);
+  }
+  #filterPalette(text) {
+    const wanted = text.trim().toLowerCase();
+    for (const group of this.#host.querySelectorAll("[data-layout-palette-group]")) {
+      let shown = 0;
+      for (const item of group.querySelectorAll("[data-layout-palette]")) { item.hidden = Boolean(wanted) && !item.dataset.layoutPaletteLabel.includes(wanted); if (!item.hidden) shown++; }
+      group.hidden = !shown;
+    }
   }
 
   #onClick(event) {
     const command = event.target.closest?.("[data-layout-command]");
     if (command) { event.preventDefault(); return this.#command(command.dataset.layoutCommand); }
+    const item = event.target.closest?.("[data-layout-palette]");
+    if (item) { event.preventDefault(); return this.#add(JSON.parse(item.dataset.layoutPalette), this.#selected); }
     const pick = event.target.closest?.("[data-layout-pick]");
     if (pick) { event.preventDefault(); return this.#pick(pick); }
     const node = event.target.closest?.("[data-layout-canvas] [data-layout-node]");
@@ -118,14 +185,9 @@ export class SheetLayoutController {
 
   #onChange(event) {
     const target = event.target;
-    if (!target.closest?.("[data-layout-toolbar], [data-layout-properties]")) return;
+    if (!target.closest?.("[data-layout-toolbar], [data-layout-properties], [data-layout-palette-host]")) return;
+    if (target.matches("[data-layout-palette-filter]")) return event.stopPropagation();
     event.stopPropagation();
-    if (target.matches("[data-layout-add]")) {
-      const found = locate(this.#root, this.#selected), holder = isContainer(found.node) ? found.node : found.parent;
-      const node = newNode(target.value, this.#root, this.#ruleset, {parentId: holder.id, target: this.#target});
-      if (node) this.#commit(insertNode(this.#root, holder.id, node), node.id);
-      return;
-    }
     if (target.dataset.layoutStyleHex) return this.#setStyle(target.dataset.layoutStyleHex, target.value);
     if (target.dataset.layoutStyle) {
       const prop = target.dataset.layoutStyle;

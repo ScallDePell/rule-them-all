@@ -10,9 +10,11 @@ const fixture = JSON.parse(readFileSync(join(dir, 'fixture.json'), 'utf8'));
 const en = JSON.parse(readFileSync(join(root, 'lang/en.json'), 'utf8'));
 const url = rel => pathToFileURL(join(root, rel)).href;
 const browser = await chromium.launch({executablePath: process.env.RTA_CHROMIUM, args: ['--no-sandbox', '--allow-file-access-from-files']});
-const page = await browser.newPage({viewport: {width: 760, height: 1100}});
+const page = await browser.newPage({viewport: {width: 1180, height: 1100}});
 const errors = []; page.on('pageerror', error => errors.push(error.message));
 await page.goto(pathToFileURL(join(dir, 'editor-sheetDefinition.html')).href);
+// Sized like a Foundry window: the entry form scrolls inside it.
+await page.addStyleTag({content: '.application{height:1000px;display:flex;flex-direction:column}.window-content{flex:1;min-height:0;display:flex;flex-direction:column;overflow:hidden}'});
 const result = await page.evaluate(async ({fixture, en, urls}) => {
   const lookup = key => key.split('.').reduce((o, k) => o?.[k], en) ?? key;
   class ApplicationV2 { constructor() {} async _prepareContext() { return {}; } async _onRender() {} render() {} close() {} setPosition() {} }
@@ -40,7 +42,7 @@ const result = await page.evaluate(async ({fixture, en, urls}) => {
   check('selecting a section shows its title', element.querySelector('[data-layout-properties] [data-layout-prop="labelKey"]')?.value === 'Derived');
   await set('[data-layout-properties] [data-layout-prop="columns"]', '2');
   check('changing its columns', find(layout(), 'derived').columns === 2);
-  await set('[data-layout-toolbar] [data-layout-add]', 'value');
+  await click('[data-layout-palette-host] [data-layout-palette*="\\"output\\""]');
   const added = find(layout(), 'derived').children.at(-1);
   check('adding a value into the selection', added?.kind === 'value' && added.source?.kind === 'output');
   check('the new value is selected', element.querySelector('[data-layout-selected]')?.dataset.layoutNode === added.id);
@@ -63,13 +65,27 @@ const result = await page.evaluate(async ({fixture, en, urls}) => {
   stats.dispatchEvent(new DragEvent('dragover', {bubbles: true, cancelable: true, dataTransfer: data}));
   stats.dispatchEvent(new DragEvent('drop', {bubbles: true, cancelable: true, dataTransfer: data})); await wait();
   check('dragging a block into another section', find(layout(), 'stats').children.some(c => c.id === 'strike'));
+  // Drag an Action from the palette onto the Stats section, then drop it on the top half of the section's first block.
+  const drag = (source, target, {top = false} = {}) => { const box = target.getBoundingClientRect(), data = new DataTransfer(), at = {bubbles: true, cancelable: true, dataTransfer: data, clientX: box.left + 4, clientY: top ? box.top + 2 : box.top + box.height / 2};
+    source.dispatchEvent(new DragEvent('dragstart', {bubbles: true, dataTransfer: data})); target.dispatchEvent(new DragEvent('dragover', at)); target.dispatchEvent(new DragEvent('drop', at)); return wait(); };
+  const before = find(layout(), 'stats').children.length;
+  await drag(element.querySelector('[data-layout-palette-host] [data-layout-palette*="actionRef"]'), element.querySelector('[data-layout-canvas] section[data-layout-node="stats"]'));
+  const dropped = find(layout(), 'stats').children.at(-1);
+  check('dragging an Action from the palette onto a section', find(layout(), 'stats').children.length === before + 1 && dropped.kind === 'action');
+  const first = find(layout(), 'stats').children[0];
+  await drag(element.querySelector(`[data-layout-canvas] [data-layout-node="${dropped.id}"]`), element.querySelector(`[data-layout-canvas] [data-layout-node="${first.id}"]`), {top: true});
+  check('dropping on the top edge of a block puts it before', find(layout(), 'stats').children[0]?.id === dropped.id);
+  const strikeNow = element.querySelector('[data-layout-canvas] [data-layout-node="strike"]'), list = element.querySelector(`[data-layout-canvas] [data-layout-node="${find(layout(), 'stats').children.find(c => c.kind === 'repeater')?.id}"]`);
+  if (list) { await drag(strikeNow, list, {top: true}); const kids = find(layout(), 'stats').children.map(c => c.id); check('the top edge of a list puts a block before the list, not in it', kids.indexOf('strike') === kids.indexOf(list.dataset.layoutNode) - 1); }
+  const side = element.querySelector('.rta-sheet-editor__side');
+  check('the tools sit beside the sheet and stay in view', getComputedStyle(side).position === 'sticky' && side.getBoundingClientRect().right <= element.querySelector('[data-layout-canvas]').getBoundingClientRect().left);
   await click('[data-layout-canvas] [data-layout-node="strike"]');
   await click('[data-layout-command="remove"]');
   check('removing a block', !find(layout(), 'strike'));
   await click('[data-sheet-tab="skills-tab"]');
   check('a tab shows its page when selected', !element.querySelector('[data-sheet-panel="skills-tab"]').hidden);
   await click('[data-layout-canvas] [data-layout-drop]');
-  await set('[data-layout-toolbar] [data-layout-add]', 'value');
+  await click('[data-layout-palette-host] [data-layout-palette=\'{"kind":"value"}\']');
   check('an empty list gets a row value', find(layout(), 'skill-list').children[0]?.source?.kind === 'each');
   // Style: colors, opacity, font, emphasis, spacing, then an image block.
   await click('[data-layout-canvas] [data-layout-node="derived"]');
@@ -88,7 +104,7 @@ const result = await page.evaluate(async ({fixture, en, urls}) => {
   check('opacity, font, bold and spacing', JSON.stringify(find(layout(), 'derived').style) === JSON.stringify({background: '#224466', opacity: 60, font: 'Amiri', bold: true, gap: 'tight'}));
   const shown = element.querySelector('[data-layout-canvas] section[data-layout-node="derived"]');
   check('the canvas shows the style', /color-mix\(in srgb, #224466 60%, transparent\)/.test(shown?.getAttribute('style') ?? '') && /Amiri/.test(shown?.getAttribute('style') ?? '') && /gap: var\(--rta-gap-tight\)/.test(shown?.querySelector('.rta-sheet-grid')?.getAttribute('style') ?? ''));
-  await set('[data-layout-toolbar] [data-layout-add]', 'image');
+  await click('[data-layout-palette-host] [data-layout-palette=\'{"kind":"image"}\']');
   const image = find(layout(), 'derived').children.at(-1);
   check('adding an image block', image?.kind === 'image' && image.src === '');
   await set('[data-layout-properties] [data-layout-prop="src"]', 'icons/svg/d20.svg');
@@ -110,8 +126,12 @@ const result = await page.evaluate(async ({fixture, en, urls}) => {
   return steps;
 }, {fixture, en, urls: {api: url('src/configurator/configurator-api.mjs'), editor: url('src/configurator/configurator-entry-editor.mjs')}});
 if (process.env.RTA_SHOTS) {
-  await page.addStyleTag({content: '.application,.window-content,.rta-config-entry,.rta-config-entry form,.rta-config-entry__scroll{height:auto!important;max-height:none!important;overflow:visible!important}'});
-  await page.screenshot({path: join(process.env.RTA_SHOTS, 'sheet-editor-flow.png'), fullPage: true});
+  await page.screenshot({path: join(process.env.RTA_SHOTS, 'sheet-editor-flow.png')});
+  // Scrolled down: the tools stay beside the sheet; then the bottom of the tools column, with the palette.
+  await page.evaluate(() => { const scroll = document.querySelector('.rta-config-entry__scroll'); scroll.scrollTop = scroll.scrollHeight; });
+  await page.screenshot({path: join(process.env.RTA_SHOTS, 'sheet-editor-scrolled.png')});
+  await page.evaluate(() => { const side = document.querySelector('.rta-sheet-editor__side'); side.scrollTop = side.scrollHeight; });
+  await page.screenshot({path: join(process.env.RTA_SHOTS, 'sheet-editor-palette.png')});
 }
 await browser.close();
 for (const line of [...result, ...errors.map(e => `FAIL error: ${e}`)]) console.log(line);

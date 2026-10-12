@@ -85,17 +85,58 @@ export function newNode(kind, root, ruleset, {parentId = root?.id, target = "act
   return {id, kind: "spacer"};
 }
 
+/** What the editor offers to add, grouped: the layout blocks, then what the Ruleset already has (its Definitions by
+   type, a list per Definition type, Actions, Formulas, Parameters; an Item sheet's Content fields). Each item:
+   {label | labelKey, kind, spec}; paletteNode turns a spec into a node. */
+export function paletteGroups(ruleset, {target = "actor", contentTypeIds = []} = {}) {
+  const groups = [], name = entry => entry.nameKey ?? entry.id;
+  const blocks = ["section", "grid", "tabs", "tab", "value", "text", "image", "spacer", ...(target === "actor" && itemContentTypes(ruleset).length ? ["contents"] : [])];
+  groups.push({id: "blocks", labelKey: "RTA.SheetEditor.Palette.Blocks", items: blocks.map(kind => ({kind, spec: {kind}}))});
+  if (target === "item") {
+    const fields = contentFields(ruleset, contentTypeIds);
+    if (fields.length) groups.push({id: "fields", labelKey: "RTA.SheetEditor.Palette.Fields", items: fields.map(field => ({label: field.name ?? field.id, kind: "value", spec: {kind: "value", source: {kind: "field", fieldId: field.id}}}))});
+  } else {
+    for (const type of (ruleset.definitionTypes ?? []).filter(enabled)) {
+      const definitions = (ruleset.definitions ?? []).filter(definition => enabled(definition) && definition.definitionTypeId === type.id);
+      if (!definitions.length) continue;
+      const items = [{label: name(type), list: true, kind: "repeater", spec: {kind: "repeater", definitionTypeId: type.id}}];
+      for (const definition of definitions) {
+        const output = EACH_OUTPUTS.find(o => (definition.capabilities ?? []).includes(o.capabilityId) && !["pool", "collection"].includes(o.capabilityId))
+          ?? EACH_OUTPUTS.find(o => (definition.capabilities ?? []).includes(o.capabilityId));
+        if (output) items.push({label: name(definition), kind: "value", spec: {kind: "value", source: {kind: "output", reference: {objectKind: "definition", objectId: definition.id, capabilityId: output.capabilityId, outputId: output.outputId}}}});
+      }
+      groups.push({id: `type-${type.id}`, label: name(type), items});
+    }
+  }
+  const actions = (ruleset.actions ?? []).filter(enabled);
+  if (actions.length) groups.push({id: "actions", labelKey: "RTA.SheetEditor.Palette.Actions", items: actions.map(action => ({label: name(action), kind: "action", spec: {kind: "action", actionRef: action.id}}))});
+  const formulas = ruleset.formulas ?? [], parameters = ruleset.parameters ?? [];
+  if (formulas.length || parameters.length) groups.push({id: "computed", labelKey: "RTA.SheetEditor.Palette.Computed", items: [
+    ...formulas.map(formula => ({label: name(formula), kind: "value", spec: {kind: "value", source: {kind: "formula", formulaRef: formula.id}}})),
+    ...parameters.map(parameter => ({label: name(parameter), kind: "value", spec: {kind: "value", source: {kind: "parameter", parameterRef: parameter.id}}}))]});
+  return groups;
+}
+
+/** The node a palette spec adds, with a fresh id; null when it cannot be built (a list with no Definition type…). */
+export function paletteNode(spec, root, ruleset, {parentId = root?.id, target = "actor"} = {}) {
+  if (spec?.source) return {id: freshId(root, "value"), kind: "value", source: copy(spec.source)};
+  if (spec?.kind === "action" && spec.actionRef) return {id: freshId(root, "action"), kind: "action", actionRef: spec.actionRef};
+  if (spec?.kind === "repeater" && spec.definitionTypeId) return {id: freshId(root, "repeater"), kind: "repeater", query: {definitionTypeId: spec.definitionTypeId}, columns: 1, children: []};
+  return spec?.kind ? newNode(spec.kind, root, ruleset, {parentId, target}) : null;
+}
+
 /** Content Types whose Contents are an Actor's Items (not the Actor-backed ones). */
 export const itemContentTypes = ruleset => (ruleset.contentTypes ?? []).filter(type => enabled(type) && type.storageKind !== "actor");
 
 function edit(root, fn) { const next = copy(root); fn(next); return next; }
 
-/** Add a node as the last child of a container (or right after a leaf, in that leaf's container). */
-export function insertNode(root, targetId, node) {
+/** Add a node as the last child of a container, or next to a leaf in that leaf's container (before it when asked);
+   beside: next to the target even when it is a container that would take the node. */
+export function insertNode(root, targetId, node, {before = false, beside = false} = {}) {
   return edit(root, next => {
     const target = locate(next, targetId) ?? locate(next, next.id);
-    if (isContainer(target.node) && childKinds(target.node).includes(node.kind)) target.node.children.push(node);
-    else if (target.parent && childKinds(target.parent).includes(node.kind)) target.parent.children.splice(target.index + 1, 0, node);
+    if (!beside && isContainer(target.node) && childKinds(target.node).includes(node.kind)) target.node.children.push(node);
+    else if (target.parent && childKinds(target.parent).includes(node.kind)) target.parent.children.splice(target.index + (before ? 0 : 1), 0, node);
     else throw new Error(`A ${node.kind} cannot go there.`);
   });
 }
@@ -111,21 +152,27 @@ export function moveNode(root, id, step) {
     const [node] = found.parent.children.splice(found.index, 1); found.parent.children.splice(to, 0, node);
   });
 }
-/** Whether a node may be dropped into a container (or next to a leaf): not into itself, and only where its kind is accepted. */
-export function canMoveInto(root, id, targetId) {
-  const moving = locate(root, id), target = locate(root, targetId);
-  if (!moving?.parent || !target || target.path.some(node => node.id === id)) return false;
-  const holder = isContainer(target.node) && childKinds(target.node).includes(moving.node.kind) ? target.node : target.parent;
-  if (!holder || !childKinds(holder).includes(moving.node.kind)) return false;
-  // An "each" value only exists in a repeater.
-  const inRepeater = [...(holder === target.node ? target.path : target.path.slice(0, -1))].some(node => node.kind === "repeater");
-  for (const node of nodes(moving.node)) if (node.source?.kind === "each" && !inRepeater || node.kind === "contents" && inRepeater) return false;
+/** Whether a node (new or moved) may go at targetId: into it when it is a container that accepts it, else next to it. */
+export function canPlace(root, node, targetId, {beside = false} = {}) {
+  const target = locate(root, targetId);
+  if (!node || !target) return false;
+  const holder = !beside && isContainer(target.node) && childKinds(target.node).includes(node.kind) ? target.node : target.parent;
+  if (!holder || !childKinds(holder).includes(node.kind)) return false;
+  // An "each" value only exists in a repeater; held Contents are never once per row.
+  const inRepeater = [...(holder === target.node ? target.path : target.path.slice(0, -1))].some(entry => entry.kind === "repeater");
+  for (const entry of nodes(node)) if (entry.source?.kind === "each" && !inRepeater || entry.kind === "contents" && inRepeater) return false;
   return true;
 }
-export function moveInto(root, id, targetId) {
-  if (!canMoveInto(root, id, targetId)) return root;
+/** Whether a block may be dragged onto another: not into itself, and only where its kind is accepted. */
+export function canMoveInto(root, id, targetId, {beside = false} = {}) {
+  const moving = locate(root, id), target = locate(root, targetId);
+  if (!moving?.parent || !target || target.path.some(node => node.id === id)) return false;
+  return canPlace(root, moving.node, targetId, {beside});
+}
+export function moveInto(root, id, targetId, {before = false, beside = false} = {}) {
+  if (!canMoveInto(root, id, targetId, {beside})) return root;
   const node = copy(locate(root, id).node);
-  return clampSpans(insertNode(removeNode(root, id), targetId, node));
+  return clampSpans(insertNode(removeNode(root, id), targetId, node, {before, beside}));
 }
 function* nodes(root) { if (!root) return; yield root; for (const child of root.children ?? []) yield* nodes(child); }
 

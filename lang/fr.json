@@ -982,7 +982,7 @@
       },
       "sheetDefinition": {
         "Summary": "Une feuille est ce que les joueurs voient sur un Acteur ou un Objet : onglets, sections, listes des Definitions détenues, valeurs et boutons d'Action.",
-        "Usage": "Clique sur un bloc de la feuille ci-dessous pour le modifier, ajoute des blocs dans le bloc sélectionné, fais-les glisser pour les déplacer. Sans feuille, Acteurs et Objets montrent la mise en page automatique. Les joueurs choisissent « Feuille Rule Them'All » dans le choix de feuille de Foundry."
+        "Usage": "Clique sur un bloc de la feuille pour le régler dans les outils à gauche. Sous « Ajouter », clique sur un bloc ou un élément du Ruleset pour l'ajouter dans la sélection, ou fais-le glisser sur la feuille ; fais glisser les blocs de la feuille pour les déplacer. Sans feuille, Acteurs et Objets montrent la mise en page automatique. Les joueurs choisissent « Feuille Rule Them'All » dans le choix de feuille de Foundry."
       },
       "category": {
         "Summary": "Une catégorie classe les Definitions et les contenus pour les filtrer.",
@@ -1368,7 +1368,7 @@
       "EmptyText": "Texte",
       "UntitledTab": "Onglet",
       "ExampleRow": "Exemple",
-      "Add": "Ajouter un bloc",
+      "Add": "Ajouter",
       "Remove": "Retirer le bloc",
       "Undo": "Annuler la dernière modification",
       "Auto": "Mise en page automatique",
@@ -1414,7 +1414,6 @@
         "add": "Peut être augmentée",
         "subtract": "Peut être diminuée"
       },
-      "BlockToAdd": "bloc à ajouter",
       "ContentTypes": "Types de contenu (aucun : tous)",
       "Image": "Image",
       "ImagePath": "chemin/vers/image.webp",
@@ -1488,6 +1487,16 @@
         "side": "À côté de la valeur",
         "top": "Au-dessus de la valeur",
         "hidden": "Masqué"
+      },
+      "Palette": {
+        "Blocks": "Blocs",
+        "Fields": "Champs du Contenu",
+        "Actions": "Actions",
+        "Computed": "Formules et paramètres",
+        "Hint": "Cliquez pour ajouter dans le bloc sélectionné, ou glissez sur la feuille.",
+        "Search": "Rechercher",
+        "ListOf": "Liste : {type}",
+        "CannotGo": "Cet élément ne peut pas aller à cet endroit."
       }
     },
     "Reaction": {

@@ -68,7 +68,7 @@ export class ConfiguratorEntryEditor extends ConfiguratorWindow {
 
   #api; #optionColors=()=>[]; #renderCatalog=null; #versionId; #kind; #id; #definitionTypeId; #contentTypeId; #baseline; #error=""; #dirty=false; #onSaved; #focusPath=null;
   constructor({api,versionId,kind,id=null,definitionTypeId=null,contentTypeId=null,focusPath=null,onSaved=()=>{}},options={}){
-    super(options);this.#focusPath=focusPath;this.#api=api;this.#versionId=versionId;this.#kind=kind;this.#id=id;this.#definitionTypeId=definitionTypeId;this.#contentTypeId=contentTypeId;this.#onSaved=onSaved;
+    super(kind==="sheetDefinition"?{position:{width:1120,height:820},...options}:options);this.#focusPath=focusPath;this.#api=api;this.#versionId=versionId;this.#kind=kind;this.#id=id;this.#definitionTypeId=definitionTypeId;this.#contentTypeId=contentTypeId;this.#onSaved=onSaved;
   }
 
   #read(){

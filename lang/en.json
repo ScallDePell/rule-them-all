@@ -986,7 +986,7 @@
       },
       "sheetDefinition": {
         "Summary": "A sheet is what players see on an Actor or an Item: tabs, sections, lists of the Definitions they hold, values and Action buttons.",
-        "Usage": "Click a block in the sheet below to change it, add blocks into the selected one, drag them to move them. Without any sheet, Actors and Items show the automatic layout. Players choose “Rule Them'All sheet” in Foundry's sheet choice."
+        "Usage": "Click a block of the sheet to change it in the tools on the left. Under “Add”, click a block or an element of the Ruleset to add it into the selection, or drag it onto the sheet; drag the sheet's blocks to move them. Without any sheet, Actors and Items show the automatic layout. Players choose “Rule Them'All sheet” in Foundry's sheet choice."
       },
       "category": {
         "Summary": "A category classifies Definitions and contents for filtering.",
@@ -1372,7 +1372,7 @@
       "EmptyText": "Text",
       "UntitledTab": "Tab",
       "ExampleRow": "Example",
-      "Add": "Add a block",
+      "Add": "Add",
       "Remove": "Remove the block",
       "Undo": "Undo",
       "Auto": "Automatic layout",
@@ -1418,7 +1418,6 @@
         "add": "Can be increased",
         "subtract": "Can be decreased"
       },
-      "BlockToAdd": "block to add",
       "ContentTypes": "Content Types (none: all)",
       "Image": "Image",
       "ImagePath": "path/to/picture.webp",
@@ -1492,6 +1491,16 @@
         "side": "Beside the value",
         "top": "Above the value",
         "hidden": "Hidden"
+      },
+      "Palette": {
+        "Blocks": "Blocks",
+        "Fields": "Content fields",
+        "Actions": "Actions",
+        "Computed": "Formulas and parameters",
+        "Hint": "Click to add into the selected block, or drag onto the sheet.",
+        "Search": "Search",
+        "ListOf": "List: {type}",
+        "CannotGo": "This element cannot go there."
       }
     },
     "Reaction": {

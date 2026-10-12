@@ -1,7 +1,7 @@
 /* Sheet editor markup: the toolbar and the properties of the selected block. Pure; the controller
    (configurator/sheet-layout-controller.mjs) gives every choice already labelled and colored:
    {value, label, colors}. Data contract: [data-layout-prop] fields, [data-layout-command] buttons,
-   [data-layout-add] the "add a block" select. */
+   [data-layout-palette] an element to add (its spec as JSON), [data-layout-palette-filter] the palette search. */
 import {escapeHTML as escape} from "./html-utils.mjs";
 import {localizedKeyMarkup as t} from "./ui-localization.mjs";
 import {renderSelectOptions} from "./select-option-markup.mjs";
@@ -12,13 +12,24 @@ const text = (prop, value, placeholder = "") => `<input type="text" data-layout-
 const imageField = (prop, value, style = false) => `<div class="rta-sheet-editor__file"><input type="text" ${style ? "data-layout-style" : "data-layout-prop"}="${prop}" value="${escape(value ?? "")}" placeholder="${t("RTA.SheetEditor.ImagePath", "path/to/picture.webp")}"><button type="button" class="rta-config-action" data-layout-pick="${prop}"${style ? " data-layout-pick-style" : ""} title="${t("RTA.SheetEditor.Browse", "Browse")}" aria-label="${t("RTA.SheetEditor.Browse", "Browse")}"><i class="fa-solid fa-folder-open"></i></button></div>`;
 const KIND_LABELS = {tabs: ["RTA.SheetEditor.Kind.tabs", "Tabs"], tab: ["RTA.SheetEditor.Kind.tab", "Tab"], section: ["RTA.SheetEditor.Kind.section", "Section"], grid: ["RTA.SheetEditor.Kind.grid", "Grid"],
   repeater: ["RTA.SheetEditor.Kind.repeater", "List of Definitions"], value: ["RTA.SheetEditor.Kind.value", "Value"], action: ["RTA.SheetEditor.Kind.action", "Action button"], text: ["RTA.SheetEditor.Kind.text", "Text"], image: ["RTA.SheetEditor.Kind.image", "Image"], contents: ["RTA.SheetEditor.Kind.contents", "Held Contents"], spacer: ["RTA.SheetEditor.Kind.spacer", "Empty cell"]};
-export const kindLabel = kind => t(...(KIND_LABELS[kind] ?? [kind, kind]));
+/** A block kind's name, as plain text. */
+export const kindText = kind => { const [key, fallback] = KIND_LABELS[kind] ?? [kind, kind], text = globalThis.game?.i18n?.localize?.(key); return text && text !== key ? text : fallback; };
+export const kindLabel = kind => escape(kindText(kind));
 
-/** Toolbar: add a block into the selection (kinds it accepts), move it, remove it, start again from AUTO. */
-export function renderLayoutToolbarHTML({addable = [], canMoveUp = false, canMoveDown = false, canRemove = false, undo = false, neutral = ""}) {
-  const add = `<select data-layout-add aria-label="${t("RTA.SheetEditor.BlockToAdd", "block to add")}"><option value="" data-rta-colors="${escape(neutral)}">${t("RTA.SheetEditor.Add", "Add a block")}</option>${addable.map(kind => `<option value="${escape(kind)}" data-rta-colors="${escape(neutral)}">${kindLabel(kind)}</option>`).join("")}</select>`;
+/** Toolbar: move the selected block, remove it, undo, start again from AUTO. */
+export function renderLayoutToolbarHTML({canMoveUp = false, canMoveDown = false, canRemove = false, undo = false}) {
   const button = (command, icon, label, enabled) => `<button type="button" class="rta-config-action" data-layout-command="${command}" title="${label}" aria-label="${label}"${enabled ? "" : " disabled"}><i class="fa-solid ${icon}"></i></button>`;
-  return `<div class="rta-sheet-editor__toolbar">${add}${button("up", "fa-arrow-up", t("RTA.Template.MoveUp", "Move up"), canMoveUp)}${button("down", "fa-arrow-down", t("RTA.Template.MoveDown", "Move down"), canMoveDown)}${button("remove", "fa-trash", t("RTA.SheetEditor.Remove", "Remove the block"), canRemove)}${button("undo", "fa-rotate-left", t("RTA.SheetEditor.Undo", "Undo"), undo)}<button type="button" data-layout-command="auto"><i class="fa-solid fa-wand-magic-sparkles"></i> ${t("RTA.SheetEditor.Auto", "Automatic layout")}</button></div>`;
+  return `<div class="rta-sheet-editor__toolbar">${button("up", "fa-arrow-up", t("RTA.Template.MoveUp", "Move up"), canMoveUp)}${button("down", "fa-arrow-down", t("RTA.Template.MoveDown", "Move down"), canMoveDown)}${button("remove", "fa-trash", t("RTA.SheetEditor.Remove", "Remove the block"), canRemove)}${button("undo", "fa-rotate-left", t("RTA.SheetEditor.Undo", "Undo"), undo)}<button type="button" data-layout-command="auto"><i class="fa-solid fa-wand-magic-sparkles"></i> ${t("RTA.SheetEditor.Auto", "Automatic layout")}</button></div>`;
+}
+
+const KIND_ICONS = {section: "fa-square", grid: "fa-table-cells", tabs: "fa-folder", tab: "fa-folder-open", repeater: "fa-list", value: "fa-hashtag", action: "fa-dice-d20", text: "fa-font", image: "fa-image", contents: "fa-box-open", spacer: "fa-border-none"};
+
+/** What can be added: blocks, then the Ruleset's own elements. A click adds an item into the selection; it can also
+   be dragged onto the sheet. groups: paletteGroups (configurator/sheet-layout-model.mjs), labels given by the controller. */
+export function renderLayoutPaletteHTML(groups, {open = true, filter = ""} = {}) {
+  const item = entry => `<button type="button" class="rta-sheet-editor__palette-item" draggable="true" data-layout-palette="${escape(JSON.stringify(entry.spec))}" data-layout-palette-label="${escape(entry.text.toLowerCase())}"><i class="fa-solid ${KIND_ICONS[entry.kind] ?? "fa-square"}"></i><span>${escape(entry.text)}</span></button>`;
+  const body = groups.map(group => `<section class="rta-sheet-editor__palette-group" data-layout-palette-group><p class="rta-sheet-editor__palette-title">${escape(group.text)}</p><div class="rta-sheet-editor__palette-items">${group.items.map(item).join("")}</div></section>`).join("");
+  return `<details class="rta-sheet-editor__palette" data-layout-palette-panel${open ? " open" : ""}><summary>${t("RTA.SheetEditor.Add", "Add a block")}</summary><p class="rta-sheet-editor__hint">${t("RTA.SheetEditor.Palette.Hint", "Click to add into the selected block, or drag onto the sheet.")}</p><div class="rta-sheet-editor__palette-search"><input type="search" data-layout-palette-filter value="${escape(filter)}" placeholder="${t("RTA.SheetEditor.Palette.Search", "Search")}"></div>${body}</details>`;
 }
 
 /** The selected block's settings. ctx: choices lists and what the block's place allows. */

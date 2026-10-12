@@ -1,6 +1,6 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import {canMoveInto, childKinds, insertNode, locate, moveInto, moveNode, newNode, previewView, removeNode, updateNode, writableSource} from '../src/configurator/sheet-layout-model.mjs';
+import {canMoveInto, canPlace, paletteGroups, paletteNode, childKinds, insertNode, locate, moveInto, moveNode, newNode, previewView, removeNode, updateNode, writableSource} from '../src/configurator/sheet-layout-model.mjs';
 import {prepareLayout} from '../src/configurator/layout-contract.mjs';
 import {renderLayoutPreviewHTML} from '../src/ui/sheet-markup.mjs';
 import {renderLayoutPropertiesHTML} from '../src/ui/sheet-editor-markup.mjs';
@@ -65,4 +65,26 @@ test('the properties offer only what the selected block can take', ()=>{
   assert.match(html,/data-layout-prop="sourceKind"/);assert.match(html,/placeholder="Defence"/);
   assert.doesNotMatch(html,/data-layout-prop="write"/,'a Formula is read only');
   assert.match(html,/<option value="2" data-rta-colors="" selected>/);
+});
+
+test('The palette offers the blocks, then each Definition by type with a list of that type, Actions, Formulas and Parameters', ()=>{
+  const groups=paletteGroups(ruleset,{target:'actor'});
+  assert.equal(groups[0].id,'blocks');assert.ok(groups[0].items.some(item=>item.kind==='value'));
+  const skills=groups.find(group=>group.id==='type-skill');
+  assert.deepEqual(skills.items.map(item=>[item.kind,item.label]),[['repeater','Skills'],['value','Climb'],['value','Swim'],['value','Health']]);
+  assert.deepEqual(skills.items[1].spec.source.reference,{objectKind:'definition',objectId:'climb',capabilityId:'value',outputId:'value.final'});
+  assert.equal(groups.some(group=>group.id==='type-empty'),false,'a type without Definitions is left out');
+  const root=tree(),node=paletteNode(skills.items[1].spec,root,ruleset,{parentId:'s'});
+  assert.equal(node.kind,'value');assert.equal(locate(root,node.id),null,'a fresh id');
+  assert.deepEqual(paletteNode(skills.items[0].spec,root,ruleset).query,{definitionTypeId:'skill'});
+});
+
+test('A block dropped next to another goes before or after it, even next to a container that would take it', ()=>{
+  const root=tree(),node={id:'new',kind:'text',textKey:'Hi'};
+  assert.deepEqual(locate(insertNode(root,'v',node,{before:true}),'s').node.children.map(c=>c.id),['new','v']);
+  assert.equal(locate(insertNode(root,'s',node),'new').parent.id,'s','into a section');
+  assert.deepEqual(insertNode(root,'s',node,{beside:true,before:true}).children.map(c=>c.id),['new','s','list'],'before the section, beside it');
+  assert.equal(canPlace(root,{id:'e',kind:'value',source:{kind:'each',capabilityId:'value',outputId:'value.final'}},'s'),false,'a row value needs a list');
+  assert.deepEqual(moveInto(root,'list','s',{beside:true,before:true}).children.map(c=>c.id),['list','s']);
+  assert.equal(canMoveInto(root,'s','v',{beside:true}),false,'not next to its own child');
 });

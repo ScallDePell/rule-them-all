@@ -456,9 +456,14 @@
         <details class="rta-config-entry__section" open><summary><strong>{{localize "RTA.SheetEditor.Layout"}}</strong></summary>
           <div class="rta-sheet-editor" data-sheet-layout-editor>
             <input type="hidden" data-sheet-layout-value value="{{sheetLayoutJSON}}">
-            <div data-layout-toolbar {{#if readOnly}}hidden{{/if}}></div>
-            <div class="rta-sheet-editor__canvas" data-layout-canvas></div>
-            <div class="rta-sheet-editor__properties" data-layout-properties {{#if readOnly}}hidden{{/if}}></div>
+            <div class="rta-sheet-editor__body{{#unless readOnly}} rta-sheet-editor__body--editing{{/unless}}">
+              {{#unless readOnly}}<aside class="rta-sheet-editor__side">
+                <div data-layout-toolbar></div>
+                <div class="rta-sheet-editor__properties" data-layout-properties></div>
+                <div data-layout-palette-host></div>
+              </aside>{{/unless}}
+              <div class="rta-sheet-editor__canvas" data-layout-canvas></div>
+            </div>
           </div>
         </details>
       {{/if}}

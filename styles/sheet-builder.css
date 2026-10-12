@@ -1,11 +1,47 @@
 /* Rule Them'All — sheet-builder.css : Constructeur de fiches.
    L'ordre de chargement (module.json "styles") fait partie de la cascade. */
 
-/* The editor shows the played sheet (sheet.css) with sample values: a click selects a block, its settings show below. */
+/* The editor shows the played sheet (sheet.css) with sample values: a click selects a block. While editing, the
+   tools (toolbar, the selected block's settings, what can be added) sit in a column beside the sheet and stay in
+   view while the sheet scrolls; in a narrow window they go above it. */
 .rta-sheet-editor {
+  container: rta-sheet-editor / inline-size;
+}
+
+.rta-sheet-editor__body {
   display: flex;
   flex-direction: column;
   gap: var(--rta-gap-row);
+}
+
+/* The entry window's scroll area is the height the side column may take. */
+.rta-config-entry__scroll:has(.rta-sheet-editor__body--editing) {
+  container: rta-entry-scroll / size;
+}
+
+.rta-sheet-editor__side {
+  --rta-form-label-column-min: 6rem;
+  --rta-form-label-column-max: 7rem;
+  display: flex;
+  flex-direction: column;
+  gap: var(--rta-gap-row);
+  min-inline-size: 0;
+}
+
+@container rta-sheet-editor (inline-size >= 720px) {
+  .rta-sheet-editor__body--editing {
+    display: grid;
+    grid-template-columns: minmax(16rem, 20rem) minmax(0, 1fr);
+    align-items: start;
+  }
+
+  .rta-sheet-editor__side {
+    position: sticky;
+    inset-block-start: 0;
+    max-block-size: 100cqb;
+    overflow-y: auto;
+    scrollbar-gutter: stable;
+  }
 }
 
 .rta-sheet-editor__toolbar {
@@ -15,25 +51,68 @@
   gap: var(--rta-gap-tight);
 }
 
-.rta-sheet-editor__toolbar > .rta-select {
-  flex: 1 1 12rem;
-  max-inline-size: 20rem;
-}
-
-/* The toolbar's select says what it adds in its placeholder: its label is for screen readers. */
-.rta-sheet-editor__toolbar .rta-select__label {
-  position: absolute;
-  inline-size: 1px;
-  block-size: 1px;
-  overflow: hidden;
-  clip-path: inset(50%);
-  white-space: nowrap;
-}
-
 .rta-sheet-editor__toolbar > button:not(.rta-config-action) {
   flex: 0 0 auto;
   inline-size: auto;
   margin-inline-start: auto;
+}
+
+/* What can be added: blocks, then the Ruleset's elements, each a small chip that can be clicked or dragged. */
+.rta-sheet-editor__palette {
+  padding: var(--rta-frame-pad);
+  border: var(--rta-frame-border) solid var(--rta-color-border-subtle);
+  border-radius: var(--rta-radius-panel);
+}
+
+.rta-sheet-editor__palette > summary {
+  cursor: pointer;
+  font-weight: 600;
+}
+
+.rta-sheet-editor__palette[open] > summary {
+  margin-block-end: var(--rta-gap-row);
+}
+
+.rta-sheet-editor__palette > :not(summary) + :not(summary) {
+  margin-block-start: var(--rta-gap-row);
+}
+
+.rta-sheet-editor__palette-group[hidden] {
+  display: none;
+}
+
+.rta-sheet-editor__palette-title {
+  margin: 0 0 var(--rta-gap-tight);
+  color: var(--rta-color-text-secondary);
+  font-size: var(--rta-type-sm);
+}
+
+.rta-sheet-editor__palette-items {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--rta-gap-tight);
+}
+
+.rta-sheet-editor__palette-item {
+  display: inline-flex;
+  flex: 0 1 auto;
+  align-items: center;
+  gap: var(--rta-gap-tight);
+  inline-size: auto;
+  max-inline-size: 100%;
+  min-inline-size: 0;
+  cursor: grab;
+}
+
+.rta-sheet-editor__palette-item[hidden] {
+  display: none;
+}
+
+.rta-sheet-editor__palette-item > span {
+  min-inline-size: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
 
 .rta-sheet-editor__canvas {
@@ -66,9 +145,18 @@
 }
 
 .rta-sheet--edit [data-layout-node][data-layout-selected],
-.rta-sheet--edit [data-layout-drop-target] {
+.rta-sheet--edit [data-layout-drop-target="into"] {
   outline: 2px solid var(--rta-color-border-highlight);
   outline-offset: 2px;
+}
+
+/* Dropped next to a block: a line shows where it lands. */
+.rta-sheet--edit [data-layout-drop-target="before"] {
+  box-shadow: 0 -3px 0 var(--rta-color-border-highlight);
+}
+
+.rta-sheet--edit [data-layout-drop-target="after"] {
+  box-shadow: 0 3px 0 var(--rta-color-border-highlight);
 }
 
 /* Inside the editor the sheet's own controls do nothing: a click reaches the block around them. */
@@ -145,4 +233,8 @@
 
 .rta-sheet-editor__properties input[type="range"] {
   flex: 1;
+}
+
+.rta-sheet-editor__palette-search > input {
+  inline-size: 100%;
 }
