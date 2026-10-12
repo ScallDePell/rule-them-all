@@ -126,7 +126,7 @@ test('an Action says what happens on each Outcome of its Test', async () => {
   const {outcomeMappingContext,collectOutcomeMappings}=await import('../src/configurator/action-outcome-form.mjs');
   const context=outcomeMappingContext({testRef:'attack',outcomeMappings:[{outcomeId:'miss',block:true}]},{tests:[{id:'attack',outcomeRefs:['hit'],fallbackOutcomeRef:'miss'}],outcomes:[{id:'hit',nameKey:'Hit'},{id:'miss',nameKey:'Miss'}],effects:[{id:'dmg',nameKey:'Damage'}]});
   assert.deepEqual(context.outcomeMappingGroups[0].rows.map(row=>[row.outcomeId,row.modeChoices.find(m=>m.selected).id]),[['hit','default'],['miss','block']]);
-  const row=(id,mode,effects=[],actions=[])=>({dataset:{outcomeMapping:id},querySelector:()=>({value:mode}),querySelectorAll:selector=>(selector.includes('mapping-action')?actions:effects).map(value=>({value}))});
+  const row=(id,mode,effects=[],actions=[])=>({dataset:{outcomeMapping:id},querySelector:()=>({value:mode}),querySelectorAll:selector=>(selector.includes('mapping-choice')?[]:selector.includes('mapping-action')?actions:effects).map(value=>({value}))});
   assert.deepEqual(collectOutcomeMappings([row('hit','effects',['dmg']),row('graze','default'),row('miss','block',[],['fumble'])]),[{outcomeId:'hit',effectRefs:['dmg']},{outcomeId:'miss',block:true}]);
   assert.deepEqual(collectOutcomeMappings([row('crit','default',[],['maim'])]),[{outcomeId:'crit',actionRefs:['maim']}],'an Outcome that keeps the Effects and runs another Action');
 });

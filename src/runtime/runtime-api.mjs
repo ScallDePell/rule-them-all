@@ -31,6 +31,7 @@ export function createRuntimeAPI(configurator,{adapter=new FoundryRuntimeAdapter
     userTargets:()=>adapter.userTargets?.()??[],
     executeAction:write("executeAction"),
     rerollAction:write("rerollAction"),
+    chooseActions:write("chooseActions"),
     rollInitiative:(versionId,ref)=>engine.rollInitiative(versionId,ref),
     /** The world's shared Definitions, and a combat's ({kind: "combat", id}); versionId defaults to the active Ruleset. */
     initializeShared:(versionId=configurator.getActiveVersionId?.(),{combat=null}={})=>versionId?engine.initializeShared(versionId,{combat}):{},

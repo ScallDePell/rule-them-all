@@ -1096,7 +1096,9 @@
       "default": "Run the Action's effects",
       "effects": "Run other effects",
       "block": "Stop the Action",
-      "ThenActions": "Then run these Actions"
+      "ThenActions": "Then run these Actions",
+      "Choices": "Choices offered to the player",
+      "ChoiceCount": "Number of choices"
     },
     "SystemEvent": {
       "CombatStart": "Combat starts",
@@ -1147,7 +1149,11 @@
         "one": "One target",
         "each": "Each target, own dice",
         "shared": "Each target, same dice"
-      }
+      },
+      "ForEach": "Repeat for each",
+      "ForEachNone": "Once",
+      "ForEachWhen": "Only those where",
+      "ForEachAll": "All of them"
     },
     "Progression": {
       "Advancement": "Advancement",

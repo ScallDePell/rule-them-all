@@ -1092,7 +1092,9 @@
       "default": "Appliquer les effets de l'Action",
       "effects": "Appliquer d'autres effets",
       "block": "Arrêter l'Action",
-      "ThenActions": "Puis lancer ces Actions"
+      "ThenActions": "Puis lancer ces Actions",
+      "Choices": "Choix proposés au joueur",
+      "ChoiceCount": "Nombre de choix"
     },
     "SystemEvent": {
       "CombatStart": "Début du combat",
@@ -1143,7 +1145,11 @@
         "one": "Une cible",
         "each": "Chaque cible, ses propres dés",
         "shared": "Chaque cible, mêmes dés"
-      }
+      },
+      "ForEach": "Répéter pour chaque",
+      "ForEachNone": "Une seule fois",
+      "ForEachWhen": "Seulement ceux pour qui",
+      "ForEachAll": "Tous"
     },
     "Progression": {
       "Advancement": "Amélioration",

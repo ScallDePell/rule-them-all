@@ -211,10 +211,13 @@ function prepareRerollDice(dice){
 }
 export const ACTION_TARGETING=Object.freeze(['one','each','shared']);
 export function prepareAction(data,options={}){
-  const x={descriptionKey:'',enabled:true,order:0,tags:[],inputs:[],conditionRefs:[],costEffectRefs:[],acquisitions:[],stateRemovals:[],stateApplications:[],modifierApplications:[],effectRefs:[],testRef:null,outcomeMappings:[],tableRef:null,targeting:'one',reroll:null,eventTypeRefs:[],...copyJSON(data)};
+  const x={descriptionKey:'',enabled:true,order:0,tags:[],inputs:[],conditionRefs:[],costEffectRefs:[],acquisitions:[],stateRemovals:[],stateApplications:[],modifierApplications:[],effectRefs:[],testRef:null,outcomeMappings:[],tableRef:null,targeting:'one',reroll:null,forEach:null,eventTypeRefs:[],...copyJSON(data)};
   identity(x,'Action',options);
   // targeting: one target, or each of context.targets with its own Effect dice ("each") or the same dice for all ("shared").
   if(!ACTION_TARGETING.includes(x.targeting))throw new Error(`Action.targeting must be one of ${ACTION_TARGETING.join(', ')}.`);
+  // forEach: {definitionTypeId, role, conditionRef}: the Test, Effects and follow-ups run once per Definition of that type the
+  // role holds and the Condition accepts (variables.each.definition), e.g. an improvement roll for each ticked skill.
+  if(x.forEach!==null){if(!isRecord(x.forEach))throw new Error('Action.forEach must be null or an object.');x.forEach={role:'self',conditionRef:null,...x.forEach};for(const key of Object.keys(x.forEach))if(!['definitionTypeId','role','conditionRef'].includes(key))throw new Error(`Action.forEach contains unsupported field: ${key}.`);if(!nonempty(x.forEach.definitionTypeId))throw new Error('Action.forEach needs a Definition Type.');if(!ROLE_NAME.test(String(x.forEach.role)))throw new Error('Action.forEach.role must be a role name.');if(x.forEach.conditionRef==='')x.forEach.conditionRef=null;if(x.forEach.conditionRef!==null&&!nonempty(x.forEach.conditionRef))throw new Error('Action.forEach.conditionRef must be null or a Condition id.');if(x.targeting!=='one')throw new Error('An Action runs on several targets or on each Definition, not both.');}
   // reroll: this Action undoes one use of another Action (any of actionRefs; none listed: any Action with a Test) and
   // replays it, with new dice or, keepDice, the same ones (a reaction that changes the odds, not the roll).
   // dice: only the kept dice that match (a group, a comparison) are thrown again, or set to a Formula's value; the others stay.
@@ -226,7 +229,9 @@ export function prepareAction(data,options={}){
   if(Object.hasOwn(x,'purpose'))throw new Error('Unsupported Action field: purpose.');
   for(const k of ['inputs','conditionRefs','costEffectRefs','acquisitions','stateRemovals','stateApplications','modifierApplications','effectRefs','outcomeMappings','eventTypeRefs'])arr(x[k],`Action.${k}`);
   x.inputs=x.inputs.map((input,i)=>prepareActionInput(input,i,options));
-  x.outcomeMappings.forEach((mapping,i)=>{if(!isRecord(mapping))throw new Error(`Action.outcomeMappings[${i}] must be an object.`);if(mapping.actionRefs!==undefined)arr(mapping.actionRefs,`Action.outcomeMappings[${i}].actionRefs`);});
+  // choice: {count, actionRefs}: once the result is known, the player picks count of these Actions (offered, not run).
+  x.outcomeMappings.forEach((mapping,i)=>{if(!isRecord(mapping))throw new Error(`Action.outcomeMappings[${i}] must be an object.`);if(mapping.actionRefs!==undefined)arr(mapping.actionRefs,`Action.outcomeMappings[${i}].actionRefs`);
+    if(mapping.choice!==undefined){const c=mapping.choice;if(!isRecord(c))throw new Error(`Action.outcomeMappings[${i}].choice must be an object.`);for(const key of Object.keys(c))if(!['count','actionRefs'].includes(key))throw new Error(`Action.outcomeMappings[${i}].choice contains unsupported field: ${key}.`);arr(c.actionRefs,`Action.outcomeMappings[${i}].choice.actionRefs`);if(!c.actionRefs.length)throw new Error(`Action.outcomeMappings[${i}].choice needs Actions to choose from.`);if(!Number.isInteger(c.count)||c.count<1||c.count>c.actionRefs.length)throw new Error(`Action.outcomeMappings[${i}].choice.count must be from 1 to the number of Actions offered.`);}});
   if(new Set(x.inputs.map(input=>input.id)).size!==x.inputs.length)throw new Error('Action.inputs lists the same id twice.');
   x.acquisitions=x.acquisitions.map(prepareActionAcquisition);
   x.stateRemovals=x.stateRemovals.map(prepareStateRemoval);x.stateApplications=x.stateApplications.map(prepareStateApplication);x.modifierApplications=x.modifierApplications.map(prepareModifierApplication);

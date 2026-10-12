@@ -120,6 +120,7 @@ export class RuntimeEngine{
     if(method==="transferCollectionEntry")return [args[1]?.from?.containerRef,args[1]?.to?.containerRef].filter(Boolean).map(normalizeRuntimeContainerRef);
     if(method==="acquire"){const ref=normalizeRuntimeContainerRef(args[1]),{actionId=null,context={}}=args[2]??{};return actionId?[ref,...this.writeTargets("executeAction",[versionId,actionId,{...context,roles:{...(context.roles??{}),self:ref,source:ref}}])]:[ref];}
     if(method==="rerollAction"){const [,rerollId,original={},context={}]=args,refs=[...this.writeTargets("executeAction",[versionId,original.actionId,original.context??{}]),...this.writeTargets("executeAction",[versionId,rerollId,context])];return [...new Map(refs.map(ref=>[this.#refKey(ref),ref])).values()];}
+    if(method==="chooseActions"){const [,offer={},ids=[]]=args,refs=ids.flatMap(id=>this.writeTargets("executeAction",[versionId,id,offer.context??{}]));return [...new Map(refs.map(ref=>[this.#refKey(ref),ref])).values()];}
     if(method==="advance"||method==="applyMilestones")return [normalizeRuntimeContainerRef(args[2])];
     if(method!=="executeAction")return [normalizeRuntimeContainerRef(args[1])];
     const ruleset=this.ruleset(versionId),context=args[2]??{},roles=new Set(),seen=new Set();
@@ -655,25 +656,39 @@ export class RuntimeEngine{
       else if(Object.keys(acquisition.add??{}).length)changes.push({acquisitionAdd:acquisition.definitionId,add:clone(acquisition.add),containerRef:ref});
     }
     if(content){const {ref,state}=await this.#stagedState(versionId,context,"self",staged);this.#addContent(versionId,state,content);changes.push({content:content.key,templateId:content.templateId,containerRef:ref});}
+    if(action.forEach){
+      // Each Definition of the type the role holds, in Ruleset order, that the Condition accepts.
+      const {state}=await this.#stagedState(versionId,context,action.forEach.role,staged),runs=[],choices=[];
+      for(const definition of ruleset.definitions??[]){
+        if(!enabled(definition)||definition.definitionTypeId!==action.forEach.definitionTypeId||!state.definitionStates[definition.id])continue;
+        const itemContext={...context,variables:{...(context.variables??{}),each:{definitionId:definition.id,definition:{objectKind:"definition",objectId:definition.id}}}};
+        if(action.forEach.conditionRef&&!await evaluator.condition(action.forEach.conditionRef,itemContext))continue;
+        const run=await this.#previewOnTarget(versionId,ruleset,action,itemContext,staged,evaluator,changes,acquired,depth);
+        runs.push({definitionId:definition.id,allowed:run.allowed,reason:run.reason??null,testResult:run.testResult,tableResult:run.tableResult??null,followUps:run.followUps??[],context:itemContext});
+        if(run.choice)choices.push(run.choice);
+      }
+      return {actionId,allowed:true,testResult:null,tableResult:null,followUps:[],each:runs,choices,changes,acquired,staged,context};
+    }
     if(!many){
       const run=await this.#previewOnTarget(versionId,ruleset,action,context,staged,evaluator,changes,acquired,depth);
       if(!run.allowed)return {actionId,allowed:false,reason:run.reason,testResult:run.testResult,changes:[]};
-      return {actionId,allowed:true,testResult:run.testResult,tableResult:run.tableResult,followUps:run.followUps,changes,acquired,staged,context};
+      return {actionId,allowed:true,testResult:run.testResult,tableResult:run.tableResult,followUps:run.followUps,choices:run.choice?[run.choice]:[],changes,acquired,staged,context};
     }
     if(action.targeting==="shared")evaluator.__dice=new Map();
-    const runs=[];
+    const runs=[],choices=[];
     for(const target of targets){
       const targetContext={...context,roles:{...context.roles,target}};
       const run=await this.#previewOnTarget(versionId,ruleset,action,targetContext,staged,evaluator,changes,acquired,depth);
       runs.push({target:normalizeRuntimeContainerRef(target),allowed:run.allowed,reason:run.reason??null,testResult:run.testResult,tableResult:run.tableResult??null,followUps:run.followUps??[],context:targetContext});
+      if(run.choice)choices.push(run.choice);
     }
-    return {actionId,allowed:true,testResult:null,tableResult:null,followUps:[],targets:runs,changes,acquired,staged,context};
+    return {actionId,allowed:true,testResult:null,tableResult:null,followUps:[],targets:runs,choices,changes,acquired,staged,context};
   }
   /** One target's part of an Action: Test and its Outcome, states and Modifiers, Effects, Table, follow-ups.
    * An Outcome that stops the Action leaves this target unchanged. */
   async #previewOnTarget(versionId,ruleset,action,context,staged,evaluator,changes,acquired,depth){
-    let testResult=null,effectRefs=[...(action.effectRefs??[])],next=[];
-    if(action.testRef){testResult=await this.executeTest(versionId,action.testRef,context,{staged});const mapping=(action.outcomeMappings??[]).find(m=>m?.outcomeId===testResult.outcome?.id||m?.resultKey===testResult.outcome?.resultKey);if(mapping){if(Array.isArray(mapping.effectRefs))effectRefs=mapping.effectRefs;if(mapping.block===true)return {allowed:false,reason:"outcome",testResult};next=[...(mapping.actionRefs??[])];}}
+    let testResult=null,effectRefs=[...(action.effectRefs??[])],next=[],choice=null;
+    if(action.testRef){testResult=await this.executeTest(versionId,action.testRef,context,{staged});const mapping=(action.outcomeMappings??[]).find(m=>m?.outcomeId===testResult.outcome?.id||m?.resultKey===testResult.outcome?.resultKey);if(mapping){if(Array.isArray(mapping.effectRefs))effectRefs=mapping.effectRefs;if(mapping.block===true)return {allowed:false,reason:"outcome",testResult};next=[...(mapping.actionRefs??[])];choice=mapping.choice??null;}}
     await this.#stageStates(versionId,ruleset,action,context,staged,evaluator,changes);
     // Effects read the Test under variables.test (total, margin, natural, outcome), e.g. damage that grows with the margin.
     const effectContext=testResult?{...context,variables:{...(context.variables??{}),...testResult.variables,test:{...testResult.variables.test,outcome:testResult.outcome}}}:context;
@@ -691,7 +706,8 @@ export class RuntimeEngine{
       for(const [key,state] of copy)staged.set(key,state);
       changes.push(...sub.changes);acquired.push(...sub.acquired);
     }
-    return {allowed:true,testResult,tableResult,followUps};
+    // A choice is offered once the use is committed, with the context its Actions will run in (the Test result included).
+    return {allowed:true,testResult,tableResult,followUps,...(choice?{choice:{count:choice.count,actionIds:[...choice.actionRefs],context:followContext}}:{})};
   }
   /** triggered: run by a Trigger, so no user chose it and only write permissions apply. */
   async executeAction(versionId,actionId,context={},{preview=false,eventDepth=0,transactionId=null,triggered=false,acquisitions=[],content=null}={}){
@@ -707,10 +723,24 @@ export class RuntimeEngine{
     const strip=list=>list.map(({context:_context,followUps:inner=[],targets,...rest})=>({...rest,followUps:strip(inner),...(targets?{targets:strip(targets)}:{})})),followUps=strip(plan.followUps);
     // use: what a reroll or a reaction needs to undo and replay this use, the dice thrown included.
     const use={actionId,transactionId:committed.transactionId,context:plainContext(context),dice:clone(dice),rerollCount:0};
-    const result={actionId,allowed:true,testResult:plan.testResult??null,tableResult:plan.tableResult??null,followUps,...(plan.targets?{targets:strip(plan.targets)}:{}),changes:plan.changes,acquired:plan.acquired,committed:true,duplicate:committed.duplicate,transactionId:committed.transactionId,ledgerEntryIds:committed.entries.map(entry=>entry.id),use,events:[]};
+    const choices=(plan.choices??[]).map(choice=>({actionId,count:choice.count,actionIds:choice.actionIds,context:plainContext(choice.context),cause:clone(use)}));
+    const result={actionId,allowed:true,testResult:plan.testResult??null,tableResult:plan.tableResult??null,followUps,...(plan.targets?{targets:strip(plan.targets)}:{}),...(plan.each?{each:strip(plan.each)}:{}),choices,changes:plan.changes,acquired:plan.acquired,committed:true,duplicate:committed.duplicate,transactionId:committed.transactionId,ledgerEntryIds:committed.entries.map(entry=>entry.id),use,events:[]};
     if(committed.duplicate)return result;
+    for(const offer of choices)this.hooks?.callAll?.(RUNTIME_HOOKS.choiceOffered,clone(offer));
     this.hooks?.callAll?.(RUNTIME_HOOKS.actionExecuted,clone(result),context);
-    await this.#emitActionEvents(versionId,{actionId,testResult:plan.testResult,context:{...context,cause:use},followUps:plan.followUps,targets:plan.targets},eventDepth,result.events);return result;
+    await this.#emitActionEvents(versionId,{actionId,testResult:plan.testResult,context:{...context,cause:use},followUps:plan.followUps,targets:plan.targets??plan.each},eventDepth,result.events);return result;
+  }
+  /** The player's pick on a choice an Action offered (executeAction result.choices): count distinct Actions among
+   * those offered, run in order in the offer's context, each one its own transaction. */
+  async chooseActions(versionId,offer,actionIds,{transactionId=null}={}){
+    const action=this.ruleset(versionId).actions?.find(x=>x.id===offer?.actionId);
+    const offered=new Set((action?.outcomeMappings??[]).flatMap(mapping=>mapping?.choice?.actionRefs??[]));
+    if(!Array.isArray(actionIds)||new Set(actionIds).size!==actionIds.length)throw new Error("Choose each Action once.");
+    if(actionIds.length!==offer.count)throw new Error(`Choose ${offer.count} Action(s), not ${actionIds.length}.`);
+    for(const id of actionIds)if(!offer.actionIds.includes(id)||!offered.has(id))throw new Error(`${id} is not one of the choices offered.`);
+    const results=[];
+    for(const [index,id] of actionIds.entries())results.push(await this.executeAction(versionId,id,{...clone(offer.context),cause:clone(offer.cause)},{transactionId:transactionId?`${transactionId}-${index}`:null}));
+    return results;
   }
   /** Reroll: undo one use of an Action and replay it with new dice, in one transaction with the reroll Action's
    * own costs. original: {actionId, transactionId, context, rerollCount?} as the first use returned them.
@@ -767,7 +797,7 @@ export class RuntimeEngine{
     if(committed.duplicate)return result;
     this.hooks?.callAll?.(RUNTIME_HOOKS.actionExecuted,clone(result),replayContext);
     await this.#emitActionEvents(versionId,{actionId:rerollActionId,testResult:paid.testResult,context:paid.context,followUps:paid.followUps,targets:paid.targets},eventDepth,result.events);
-    await this.#emitActionEvents(versionId,{actionId,testResult:plan.testResult,context:{...plan.context,cause:use},followUps:plan.followUps,targets:plan.targets},eventDepth,result.events);
+    await this.#emitActionEvents(versionId,{actionId,testResult:plan.testResult,context:{...plan.context,cause:use},followUps:plan.followUps,targets:plan.targets??plan.each},eventDepth,result.events);
     return result;
   }
   /** Initiative of one container under its Ruleset's initiative Test: the Test total, plus the tie-break

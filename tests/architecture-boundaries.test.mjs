@@ -75,7 +75,7 @@ test("RTA always exports rta-ruleset and still reads packages exported by the or
  assert.throws(()=>exportRulesetData(value,{format:"unknown"}),/Unsupported/);
  assert.throws(()=>readRulesetPayload({...old,format:"unknown"}),/Unsupported/);
  assert.equal(MODULE_ID,"rule-them-all");
- assert.deepEqual(RUNTIME_HOOKS,{testResolved:"ruleThemAllTestResolved",event:"ruleThemAllEvent",actionExecuted:"ruleThemAllActionExecuted",ledgerEntry:"ruleThemAllLedgerEntry",reactionOffered:"ruleThemAllReactionOffered"});
+ assert.deepEqual(RUNTIME_HOOKS,{testResolved:"ruleThemAllTestResolved",event:"ruleThemAllEvent",actionExecuted:"ruleThemAllActionExecuted",ledgerEntry:"ruleThemAllLedgerEntry",reactionOffered:"ruleThemAllReactionOffered",choiceOffered:"ruleThemAllChoiceOffered"});
 });
 
 test("Runtime Lab numeric presets are isolated, injectable TEST DATA rather than game rules",()=>{
