@@ -238,3 +238,9 @@
 .rta-sheet-editor__palette-search > input {
   inline-size: 100%;
 }
+
+.rta-sheet-editor__wide {
+  flex: 0 0 auto;
+  align-self: flex-start;
+  inline-size: auto;
+}

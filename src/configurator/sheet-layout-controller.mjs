@@ -126,6 +126,8 @@ export class SheetLayoutController {
     if (!dragged) return null;
     const node = dragged.id ? null : paletteNode(dragged.spec, this.#root, this.#ruleset, {parentId: targetId, target: this.#target});
     const fits = beside => dragged.id ? canMoveInto(this.#root, dragged.id, targetId, {beside}) : canPlace(this.#root, node, targetId, {beside});
+    // The empty frame of a container ("add a block here") always takes what is dropped on it.
+    if (target.hasAttribute("data-layout-drop")) return fits(false) ? "into" : null;
     const box = target.getBoundingClientRect?.(), y = event.clientY;
     const half = box?.height ? (y < box.top + box.height / 2 ? "before" : "after") : "after";
     const found = locate(this.#root, targetId), kind = node?.kind ?? locate(this.#root, dragged.id)?.node.kind;
@@ -140,9 +142,6 @@ export class SheetLayoutController {
   #add(spec, targetId, {before = false, beside = false} = {}) {
     const node = paletteNode(spec, this.#root, this.#ruleset, {parentId: targetId, target: this.#target});
     if (!node || !canPlace(this.#root, node, targetId, {beside})) { globalThis.ui?.notifications?.warn?.(i18n("RTA.SheetEditor.Palette.CannotGo")); return; }
-    // A new list starts with a row value, so it shows something.
-    const repeater = node.kind === "repeater" ? newNode("value", {id: "root", kind: "grid", children: [node]}, this.#ruleset, {parentId: node.id, target: this.#target}) : null;
-    if (repeater) node.children.push({...repeater, id: `${node.id}-value`});
     this.#commit(insertNode(this.#root, targetId, node, {before, beside}), node.id);
   }
   #renderPalette() {
@@ -151,7 +150,7 @@ export class SheetLayoutController {
     const filter = host.querySelector("[data-layout-palette-filter]")?.value ?? "";
     const groups = paletteGroups(this.#ruleset, {target: this.#target, contentTypeIds: this.#contentTypeIds}).map(group => ({
       text: group.labelKey ? i18n(group.labelKey) : group.label,
-      items: group.items.map(item => ({...item, text: item.list ? format("RTA.SheetEditor.Palette.ListOf", {type: item.label}, item.label) : item.label ?? kindText(item.kind)}))}));
+      items: group.items.map(item => ({...item, text: item.labelKey ? i18n(item.labelKey) : item.label ?? kindText(item.kind)}))}));
     host.innerHTML = renderLayoutPaletteHTML(groups, {open: this.#paletteOpen, filter});
     this.#filterPalette(filter);
   }
@@ -179,6 +178,12 @@ export class SheetLayoutController {
     if (command === "up" || command === "down") return this.#commit(moveNode(this.#root, id, command === "up" ? -1 : 1));
     if (command === "remove") { const parent = locate(this.#root, id)?.parent; return this.#commit(removeNode(this.#root, id), parent?.id); }
     if (command === "undo") { const previous = this.#history.pop(); if (!previous) return; this.#root = previous; this.#field.value = JSON.stringify(previous); this.#field.dispatchEvent(new Event("input", {bubbles: true})); if (!locate(previous, this.#selected)) this.#selected = previous.id; return this.render(); }
+    if (command === "addTab") {
+      // Into the tabs selected, or next to the tab selected.
+      const found = locate(this.#root, id), holder = found.node.kind === "tabs" ? found.node : found.parent;
+      const tab = newNode("tab", this.#root, this.#ruleset);
+      return this.#commit(insertNode(this.#root, holder.id, tab), tab.id);
+    }
     if (command === "unstyle") return this.#commit(updateNode(this.#root, id, {style: undefined}));
     if (command === "auto") return this.#commit(autoLayout(this.#ruleset, {target: this.#target, contentTypeIds: this.#contentTypeIds}), "root");
   }
@@ -204,6 +209,10 @@ export class SheetLayoutController {
     if (prop === "labelKey" || prop === "textKey") return this.#commit(updateNode(this.#root, node.id, {[prop]: value}));
     if (prop === "definitionTypeId") return this.#commit(this.#retargetRepeater(node, value));
     if (prop === "conditionRef") return this.#commit(updateNode(this.#root, node.id, {query: {...node.query, conditionRef: value || undefined}}));
+    if (prop === "display") return this.#commit(updateNode(this.#root, node.id, {display: value === "field" ? undefined : value, dots: value === "dots" ? node.dots : undefined}));
+    if (prop === "dots") return this.#commit(updateNode(this.#root, node.id, {dots: number === 5 ? undefined : number}));
+    if (prop === "shape") return this.#commit(updateNode(this.#root, node.id, {shape: value === "square" ? undefined : value}));
+    if (prop === "labelPlace") { const style = {...(node.style ?? {}), label: value === "side" ? undefined : value}; if (!style.label) delete style.label; return this.#commit(updateNode(this.#root, node.id, {style: Object.keys(style).length ? style : undefined})); }
     if (prop === "src") return this.#commit(updateNode(this.#root, node.id, {src: value.trim()}));
     if (prop === "fit" || prop === "height") return this.#commit(updateNode(this.#root, node.id, {[prop]: value === "cover" && prop === "fit" || value === "medium" && prop === "height" ? undefined : value}));
     if (prop === "contentTypeIds") return this.#commit(updateNode(this.#root, node.id, {contentTypeIds: [...target.selectedOptions].map(option => option.value).filter(Boolean)}));
@@ -258,6 +267,15 @@ export class SheetLayoutController {
     return next;
   }
 
+  /** Whether a source shows a number (dots and gauges need one). */
+  #numeric(source) {
+    const r = this.#ruleset;
+    if (source?.kind === "output" || source?.kind === "each") { const capabilityId = source.kind === "output" ? source.reference.capabilityId : source.capabilityId, outputId = source.kind === "output" ? source.reference.outputId : source.outputId; return !["state.active"].includes(outputId) && capabilityId !== "collection"; }
+    if (source?.kind === "formula") return ["number", "integer"].includes(r.formulas?.find(f => f.id === source.formulaRef)?.resultType ?? "number");
+    if (source?.kind === "parameter") return ["number", "integer"].includes(r.parameters?.find(p => p.id === source.parameterRef)?.valueType ?? "number");
+    if (source?.kind === "field") return ["number", "integer"].includes(contentFields(r, this.#contentTypeIds).find(f => f.id === source.fieldId)?.valueType);
+    return false;
+  }
   #eachOutputs(typeId) {
     const capabilities = new Set((this.#ruleset.definitions ?? []).filter(d => d.definitionTypeId === typeId).flatMap(d => d.capabilities ?? []));
     return EACH_OUTPUTS.filter(o => capabilities.has(o.capabilityId));
@@ -272,6 +290,7 @@ export class SheetLayoutController {
     if (kind === "formula") return (r.formulas ?? []).map(f => ({value: f.id, label: f.nameKey, colors: color("formula", f)}));
     if (kind === "parameter") return (r.parameters ?? []).map(p => ({value: p.id, label: p.nameKey, colors: color("parameter", p)}));
     if (kind === "each") return this.#eachOutputs(repeaterOf(this.#root, node.id)?.query?.definitionTypeId).map(o => ({value: `${o.capabilityId}|${o.outputId}`, label: i18n(outputLabelKey(o.capabilityId, o.outputId)), colors: selectColorsAttribute([RTA_NEUTRAL_COLOR])}));
+    if (kind === "content") return (r.contentTypes ?? []).filter(type => type.enabled !== false).map(type => ({value: type.id, label: type.nameKey ?? type.id, colors: color("contentType", type)}));
     if (kind === "field") return contentFields(r, this.#contentTypeIds).map(f => ({value: f.id, label: f.name || f.id, colors: color("contentType", r.contentTypes?.find(t => t.id === f.contentTypeId))}));
     return [];
   }
@@ -279,13 +298,14 @@ export class SheetLayoutController {
     if (kind === "output") { const reference = parseRefToken(token); return {kind, reference}; }
     if (kind === "formula") return {kind, formulaRef: token};
     if (kind === "parameter") return {kind, parameterRef: token};
+    if (kind === "content") return {kind, contentTypeId: token};
     if (kind === "each") { const [capabilityId, outputId] = token.split("|"); return {kind, capabilityId, outputId}; }
     return {kind: "field", fieldId: token};
   }
   #sourceToken(source) {
     if (source?.kind === "output") return refToken(source.reference);
     if (source?.kind === "each") return `${source.capabilityId}|${source.outputId}`;
-    return source?.formulaRef ?? source?.parameterRef ?? source?.fieldId ?? "";
+    return source?.formulaRef ?? source?.parameterRef ?? source?.fieldId ?? source?.contentTypeId ?? "";
   }
 
   #styleContext(neutral) {
@@ -301,16 +321,15 @@ export class SheetLayoutController {
       sizes: [byDefault, ...Object.keys(SHEET_SIZES).map(size => choice(size, `RTA.SheetEditor.Size.${size}`))],
       aligns: [byDefault, ...SHEET_ALIGNS.map(align => choice(align, `RTA.SheetEditor.Align.${align}`))],
       paddings: [byDefault, ...Object.keys(SHEET_SPACES).map(space => choice(space, `RTA.SheetEditor.Space.${space}`))],
-      gaps: [byDefault, ...SHEET_GAPS.map(space => choice(space, `RTA.SheetEditor.Space.${space}`))],
-      labels: SHEET_LABELS.map(label => choice(label, `RTA.SheetEditor.LabelPlace.${label}`))
+      gaps: [byDefault, ...SHEET_GAPS.map(space => choice(space, `RTA.SheetEditor.Space.${space}`))]
     };
   }
   /** Everything the properties markup needs for the selected block. */
   #context(found) {
     const node = found.node, neutral = selectColorsAttribute([RTA_NEUTRAL_COLOR]), r = this.#ruleset;
     const inRepeater = Boolean(repeaterOf(this.#root, node.id));
-    const kinds = [["output", "RTA.SheetEditor.Source.output"], ["formula", "RTA.SheetEditor.Source.formula"], ["parameter", "RTA.SheetEditor.Source.parameter"], ["each", "RTA.SheetEditor.Source.each"], ["field", "RTA.SheetEditor.Source.field"]]
-      .filter(([kind]) => (kind !== "each" || inRepeater) && (kind !== "field" || this.#target === "item") && (kind === node.source?.kind || this.#sourceChoices(kind, node).length));
+    const kinds = [["output", "RTA.SheetEditor.Source.output"], ["content", "RTA.SheetEditor.Source.content"], ["formula", "RTA.SheetEditor.Source.formula"], ["parameter", "RTA.SheetEditor.Source.parameter"], ["each", "RTA.SheetEditor.Source.each"], ["field", "RTA.SheetEditor.Source.field"]]
+      .filter(([kind]) => (kind !== "each" || inRepeater) && (kind !== "field" || this.#target === "item") && (kind !== "content" || this.#target === "actor") && (kind === node.source?.kind || this.#sourceChoices(kind, node).length));
     const label = defaultValueLabel(node.source, r, {contentTypeIds: this.#contentTypeIds});
     return {
       parentColumns: found.parent ? columnsOf(found.parent) : 1,
@@ -325,6 +344,11 @@ export class SheetLayoutController {
       sourceToken: source => this.#sourceToken(source),
       defaultLabel: n => n.kind === "action" ? r.actions?.find(a => a.id === n.actionRef)?.nameKey ?? "" : label.label || i18n(label.labelKey ?? ""),
       writable: node.kind === "value" && writableSource(node.source),
+      displays: ["field", "gauge", "dots"].map(value => ({value, label: i18n(`RTA.SheetEditor.Display.${value}`), colors: neutral})),
+      dotCounts: Array.from({length: 10}, (_, i) => ({value: String(i + 1), label: String(i + 1), colors: neutral})),
+      numeric: node.kind === "value" && this.#numeric(node.source),
+      labelPlaces: SHEET_LABELS.map(label => ({value: label, label: i18n(`RTA.SheetEditor.LabelPlace.${label}`), colors: neutral})),
+      shapes: ["square", "rounded", "circle"].map(value => ({value, label: i18n(`RTA.SheetEditor.Shape.${value}`), colors: neutral})),
       fits: SHEET_IMAGE_FITS.map(value => ({value, label: i18n(`RTA.SheetEditor.Fit.${value}`), colors: neutral})),
       heights: Object.keys(SHEET_IMAGE_HEIGHTS).map(value => ({value, label: i18n(`RTA.SheetEditor.Height.${value}`), colors: neutral})),
       style: this.#styleContext(neutral),

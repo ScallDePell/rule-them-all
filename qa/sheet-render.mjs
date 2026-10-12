@@ -65,7 +65,13 @@ const styled = {id: 'styled', target: 'actor', root: {id: 'root', kind: 'grid', 
   {id: 'attrs', kind: 'section', labelKey: 'Attributes', columns: 2, style: {background: '#3a2a50', opacity: 70, border: 'highlight', color: 'light'}, children: ['str', 'dex', 'wit', 'will'].map(id => ({id: `s-${id}`, kind: 'value', source: {kind: 'output', reference: out_(id, 'value', 'value.final')}, write: {operation: 'set'}, style: {label: 'top', align: 'center'}}))},
   {id: 'quiet', kind: 'section', labelKey: 'Condition', columns: 1, style: {background: 'none', border: 'none', italic: true}, children: [
     {id: 'q-hp', kind: 'value', labelKey: 'Health', source: {kind: 'output', reference: out_('hp', 'pool', 'pool.current', 'points')}, write: {operation: 'subtract'}, style: {bold: true, color: 'danger'}},
-    {id: 'q-def', kind: 'value', source: {kind: 'formula', formulaRef: 'defence'}, style: {label: 'hidden', padding: 'tight', background: 'panel'}}]}]}};
+    {id: 'q-def', kind: 'value', source: {kind: 'formula', formulaRef: 'defence'}, style: {label: 'hidden', padding: 'tight', background: 'panel'}}]},
+  // Dots, a gauge, the Content held of a type, a round portrait.
+  {id: 'looks', kind: 'section', labelKey: 'At a glance', columns: 2, span: 2, children: [
+    {id: 'portrait', kind: 'image', src: 'icons/svg/mystery-man.svg', shape: 'circle', height: 'small'},
+    {id: 'held', kind: 'value', source: {kind: 'content', contentTypeId: 'weapon'}, style: {label: 'top'}},
+    {id: 'd-will', kind: 'value', labelKey: 'Will', source: {kind: 'output', reference: out_('dex', 'value', 'value.final')}, display: 'dots', dots: 10, write: {operation: 'set'}},
+    {id: 'g-hp', kind: 'value', labelKey: 'Health', source: {kind: 'output', reference: out_('hp', 'pool', 'pool.current', 'points')}, display: 'gauge'}]}]}};
 
 const foundryCss = process.env.RTA_FOUNDRY_CSS ? readFileSync(process.env.RTA_FOUNDRY_CSS, 'utf8') + '\n' : '';
 const css = foundryCss + JSON.parse(readFileSync(join(root, 'module.json'), 'utf8')).styles.map(p => readFileSync(join(root, p), 'utf8')).join('\n');
@@ -73,7 +79,7 @@ const page = (body, theme) => `<!doctype html><html lang="en"><meta charset="utf
 const sheets = [
   ['actor-auto', await projectSheet(engine, v, sheetFor(ruleset, {target: 'actor'}), {actor: hero, items: [{id: 'sword-1', name: 'Grandfather\'s sword', img: '', managed: true}, {id: 'rope', name: 'Rope (15 m)', img: '', managed: false}]}), 'Ayla the Brave'],
   ['actor-tabbed', await projectSheet(engine, v, tabbed, {actor: hero}), 'Ayla the Brave'],
-  ['actor-styled', await projectSheet(engine, v, styled, {actor: hero}), 'Ayla the Brave'],
+  ['actor-styled', await projectSheet(engine, v, styled, {actor: hero, items: [{id: 'sword-1', name: 'Grandfather\'s sword', img: '', managed: true}]}), 'Ayla the Brave'],
   ['item-owned', await projectSheet(engine, v, sheetFor(ruleset, {target: 'item', contentTypeId: 'weapon'}), {actor: hero, content: {key: 'sword-1'}}), 'Sword']
 ];
 const english = JSON.parse(readFileSync(join(root, 'lang/en.json'), 'utf8'));

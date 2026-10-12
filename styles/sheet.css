@@ -99,7 +99,7 @@
   border-block-end: var(--rta-frame-border) solid var(--rta-color-border-subtle);
 }
 
-.rta-sheet-tabs__nav > button {
+.rta-sheet-tabs__tab {
   flex: 0 0 auto;
   inline-size: auto;
   border: 0;
@@ -108,7 +108,7 @@
   background: none;
 }
 
-.rta-sheet-tabs__nav > button[aria-selected="true"] {
+.rta-sheet-tabs__tab[aria-selected="true"] {
   border-block-end-color: var(--rta-color-border-highlight);
   font-weight: 600;
 }
@@ -326,7 +326,7 @@ button.rta-sheet-content__name {
   color: inherit;
 }
 
-.rta-sheet-fonted :is(.rta-sheet-section__title, .rta-sheet-tabs__nav > button, .rta-sheet-action) {
+.rta-sheet-fonted :is(.rta-sheet-section__title, .rta-sheet-tabs__tab, .rta-sheet-action) {
   font-family: inherit;
 }
 
@@ -375,7 +375,18 @@ button.rta-sheet-content__name {
   justify-content: center;
   block-size: var(--rta-sheet-image-height);
   overflow: hidden;
+}
+
+.rta-sheet-image--rounded {
   border-radius: var(--rta-radius-panel);
+}
+
+/* A circle (a portrait): as wide as it is high, centred in its cell. */
+.rta-sheet-image--circle {
+  justify-self: center;
+  inline-size: var(--rta-sheet-image-height);
+  aspect-ratio: 1;
+  border-radius: 50%;
 }
 
 .rta-sheet-image > img {
@@ -465,4 +476,78 @@ button.rta-sheet-content__name {
   .rta-sheet-value__control > input:not([type="checkbox"]) {
     inline-size: 100%;
   }
+}
+
+/* A value as dots (a characteristic from 0 to 5) or as a gauge (Health 8 / 12). */
+.rta-sheet-dots {
+  display: inline-flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--rta-gap-tight);
+}
+
+.rta-sheet-dot {
+  flex: 0 0 auto;
+  inline-size: 0.9rem;
+  block-size: 0.9rem;
+  min-block-size: 0;
+  margin: 0;
+  padding: 0;
+  border: var(--rta-frame-border) solid var(--rta-color-border-highlight);
+  border-radius: 50%;
+  background: none;
+}
+
+.rta-sheet-dot--on {
+  background: var(--rta-color-border-highlight);
+}
+
+button.rta-sheet-dot {
+  cursor: pointer;
+}
+
+.rta-sheet-gauge {
+  position: relative;
+  display: flex;
+  flex: 1;
+  align-items: center;
+  justify-content: center;
+  min-inline-size: 6rem;
+  block-size: 1.4rem;
+  overflow: hidden;
+  border: var(--rta-frame-border) solid var(--rta-color-border-tertiary);
+  border-radius: var(--rta-radius-control);
+}
+
+.rta-sheet-gauge__fill {
+  position: absolute;
+  inset-block: 0;
+  inset-inline-start: 0;
+  background: var(--rta-color-border-highlight);
+  opacity: .45;
+}
+
+.rta-sheet-gauge__text {
+  position: relative;
+  font-size: var(--rta-type-sm);
+  font-weight: 600;
+}
+
+/* In the editor, Action buttons and tabs are plain blocks (they must be draggable): they keep their look. */
+.rta-sheet--edit div.rta-sheet-action {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-block-size: var(--input-height, 1.75rem);
+  padding: 0 var(--rta-gap-row);
+  border: var(--rta-frame-border) solid var(--rta-color-border-tertiary);
+  border-radius: var(--rta-radius-control);
+}
+
+.rta-sheet--edit div.rta-sheet-tabs__tab {
+  padding: var(--rta-gap-tight) var(--rta-gap-row);
+}
+
+.rta-sheet-value__control:has(> .rta-sheet-gauge) {
+  flex: 1;
 }

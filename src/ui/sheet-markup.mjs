@@ -2,6 +2,7 @@
    t(key) translates a Ruleset or module key (it returns the key itself when there is no translation).
    Data contract with the sheet controller (runtime/foundry-sheets.mjs):
    - [data-sheet-write=nodeId] (+ data-definition-id, data-operation) is a value the player changes;
+     a dot of a value shown as dots carries data-sheet-dot=n (its value once clicked) instead of being a field;
    - [data-sheet-action=actionId] (+ data-definition-id) uses an Action;
    - [data-sheet-tab=id] shows the [data-sheet-panel=id] of its tabs;
    - [data-sheet-item-open=key] opens an owned Item's sheet, [data-sheet-item-remove=key] removes it;
@@ -24,8 +25,30 @@ export function formatSheetValue(value) {
   return String(value);
 }
 
+/** A value as dots: one per point up to its maximum (or node.dots); with a "set" write, a dot sets the value
+   (the last filled one takes a point back). */
+function dotsControl(node, t, data) {
+  const value = Math.max(0, Math.trunc(Number(node.value) || 0)), count = Math.max(1, Math.min(20, Math.trunc(Number(node.maximum ?? node.dots ?? 5)) || 5));
+  const settable = node.write?.operation === "set";
+  const dot = n => settable
+    ? `<button type="button" class="rta-sheet-dot${n <= value ? " rta-sheet-dot--on" : ""}" ${data} data-sheet-dot="${n === value ? n - 1 : n}" aria-label="${escape(String(n))}"></button>`
+    : `<span class="rta-sheet-dot${n <= value ? " rta-sheet-dot--on" : ""}"></span>`;
+  return `<span class="rta-sheet-dots" role="img" aria-label="${escape(`${value} / ${count}`)}">${Array.from({length: count}, (_, i) => dot(i + 1)).join("")}</span>`;
+}
+
+/** A value as a gauge: a bar filled up to its maximum, the numbers on it. */
+function gaugeHTML(node) {
+  const max = Number(node.maximum), min = Number(node.minimum ?? 0), value = Number(node.value);
+  const share = Number.isFinite(max) && max > min && Number.isFinite(value) ? Math.max(0, Math.min(100, Math.round((value - min) / (max - min) * 100))) : 0;
+  return `<span class="rta-sheet-gauge" role="meter" aria-valuemin="${escape(String(min))}" aria-valuemax="${escape(String(Number.isFinite(max) ? max : ""))}" aria-valuenow="${escape(String(Number.isFinite(value) ? value : ""))}"><span class="rta-sheet-gauge__fill" style="inline-size: ${share}%"></span><span class="rta-sheet-gauge__text">${escape(formatSheetValue(node.value))}${Number.isFinite(max) ? ` / ${escape(formatSheetValue(max))}` : ""}</span></span>`;
+}
+
 function valueControl(node, t, row) {
   const write = node.write, data = `data-sheet-write="${escape(node.id)}"${row ? ` data-definition-id="${escape(row)}"` : ""} data-operation="${escape(write?.operation ?? "")}"`;
+  const numericValue = ["number", "integer"].includes(node.valueType);
+  if (node.display === "dots" && numericValue) return dotsControl(node, t, data);
+  // A gauge shows the bar; a player who may change the value still gets its field beside it.
+  if (node.display === "gauge" && numericValue) return `${gaugeHTML(node)}${write ? valueControl({...node, display: undefined, maximum: undefined}, t, row) : ""}`;
   const bound = node.maximum !== undefined ? `<span class="rta-sheet-value__bound">/ ${escape(formatSheetValue(node.maximum))}</span>` : "";
   if (node.valueType === "boolean") {
     if (write) return `<input type="checkbox" ${data} ${node.value ? "checked" : ""}>`;
@@ -67,20 +90,24 @@ function renderNode(node, t, {row = null, solo = false, edit = false, editable =
     // A row with a single value already says what it is: its label stays for screen readers only.
     return `<div ${attrs(node, `rta-sheet-value${node.error ? " rta-sheet-value--unavailable" : ""}`)}${title}${m}><div class="rta-sheet-value__inner"><span class="rta-sheet-value__label${solo ? " rta-sheet-visually-hidden" : ""}">${escape(label)}</span><span class="rta-sheet-value__control">${valueControl(node, t, row)}</span></div></div>`;
   }
-  if (node.kind === "action") return `<button type="button" ${attrs(node, "rta-sheet-action")} data-sheet-action="${escape(node.actionId)}"${node.definitionId ? ` data-definition-id="${escape(node.definitionId)}"` : ""}${m}>${escape(t(node.label))}</button>`;
+  // In the editor a button is a plain block: some browsers never drag a button.
+  if (node.kind === "action") return edit ? `<div ${attrs(node, "rta-sheet-action")}${m}>${escape(t(node.label))}</div>`
+    : `<button type="button" ${attrs(node, "rta-sheet-action")} data-sheet-action="${escape(node.actionId)}"${node.definitionId ? ` data-definition-id="${escape(node.definitionId)}"` : ""}${m}>${escape(t(node.label))}</button>`;
   if (node.kind === "text") return `<p ${attrs(node, "rta-sheet-text")}${m}>${escape(edit && !node.text ? t("RTA.SheetEditor.EmptyText") : t(node.text))}</p>`;
   if (node.kind === "spacer") return `<div ${attrs(node, "rta-sheet-spacer")}${m}></div>`;
   if (node.kind === "image") {
     // A picture: a banner, a logo. In the editor, an image block without its picture yet says so.
     const look = [`--rta-sheet-image-height: ${SHEET_IMAGE_HEIGHTS[node.height] ?? SHEET_IMAGE_HEIGHTS.medium}`, `--rta-sheet-image-fit: ${node.fit === "contain" ? "contain" : "cover"}`, ...(node.style?.opacity !== undefined ? [`opacity: ${Number(node.style.opacity) / 100}`] : [])];
-    return node.src ? `<div ${attrs(node, "rta-sheet-image", look)}${m}><img src="${escape(node.src)}" alt=""></div>` : edit ? `<div ${attrs(node, "rta-sheet-image rta-sheet-image--empty", look)}${m}><i class="fa-solid fa-image"></i> ${escape(t("RTA.SheetEditor.NoImage"))}</div>` : "";
+    const shape = ["rounded", "circle"].includes(node.shape) ? ` rta-sheet-image--${node.shape}` : "";
+    return node.src ? `<div ${attrs(node, `rta-sheet-image${shape}`, look)}${m}><img src="${escape(node.src)}" alt=""></div>` : edit ? `<div ${attrs(node, `rta-sheet-image rta-sheet-image--empty${shape}`, look)}${m}><i class="fa-solid fa-image"></i> ${escape(t("RTA.SheetEditor.NoImage"))}</div>` : "";
   }
   if (node.kind === "contents") return renderContents(node, t, {edit, editable, m});
   if (node.kind === "placeholder") return dropZone(node.parentId, t);
-  const children = (list, options) => list.length || !edit ? list.map(child => renderNode(child, t, {...options, edit, editable})).join("") : dropZone(node.id, t);
+  // An empty container shows its own drop zone (an empty tab's, not its tabs').
+  const children = (list, options, holder = node) => list.length || !edit ? list.map(child => renderNode(child, t, {...options, edit, editable})).join("") : dropZone(holder.id, t);
   if (node.kind === "tabs") {
     const tabs = node.children ?? [];
-    return `<div ${attrs(node, "rta-sheet-tabs")}${m}><nav class="rta-sheet-tabs__nav" role="tablist">${tabs.map((tab, i) => `<button type="button" role="tab" data-sheet-tab="${escape(tab.id)}" aria-selected="${i === 0}"${mark(tab, edit)}>${escape(tab.label ? t(tab.label) : edit ? t("RTA.SheetEditor.UntitledTab") : "")}</button>`).join("")}</nav>${tabs.map((tab, i) => `<div ${styledAttributes(tab, "rta-sheet-grid rta-sheet-tab", ["--rta-sheet-columns: 1", ...(sheetStyle(tab).gap ? [`gap: ${sheetStyle(tab).gap}`] : [])])} role="tabpanel" data-sheet-panel="${escape(tab.id)}"${i ? " hidden" : ""}${mark(tab, edit)}>${children(tab.children ?? [], {row})}</div>`).join("")}</div>`;
+    return `<div ${attrs(node, "rta-sheet-tabs")}${m}><nav class="rta-sheet-tabs__nav" role="tablist">${tabs.map((tab, i) => `<${edit ? "div" : `button type="button"`} class="rta-sheet-tabs__tab" role="tab" data-sheet-tab="${escape(tab.id)}" aria-selected="${i === 0}"${mark(tab, edit)}>${escape(tab.label ? t(tab.label) : edit ? t("RTA.SheetEditor.UntitledTab") : "")}</${edit ? "div" : "button"}>`).join("")}</nav>${tabs.map((tab, i) => `<div ${styledAttributes(tab, "rta-sheet-grid rta-sheet-tab", ["--rta-sheet-columns: 1", ...(sheetStyle(tab).gap ? [`gap: ${sheetStyle(tab).gap}`] : [])])} role="tabpanel" data-sheet-panel="${escape(tab.id)}"${i ? " hidden" : ""}${mark(tab, edit)}>${children(tab.children ?? [], {row}, tab)}</div>`).join("")}</div>`;
   }
   if (node.kind === "repeater") return renderList(node, t, edit);
   // The grid the children flow in takes the spacing; the block itself takes the rest of the style.

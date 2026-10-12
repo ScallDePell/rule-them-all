@@ -1410,7 +1410,8 @@
         "formula": "A Formula",
         "parameter": "A Parameter",
         "each": "The listed Definition's",
-        "field": "A field of the Item"
+        "field": "A field of the Item",
+        "content": "Held Content"
       },
       "Write": {
         "none": "Read only",
@@ -1452,7 +1453,6 @@
         "Bold": "Bold",
         "Italic": "Italic",
         "Align": "Alignment",
-        "Label": "Label",
         "Padding": "Inner margin",
         "Gap": "Space between blocks",
         "Reset": "Default style"
@@ -1493,15 +1493,30 @@
         "hidden": "Hidden"
       },
       "Palette": {
-        "Blocks": "Blocks",
-        "Fields": "Content fields",
-        "Actions": "Actions",
-        "Computed": "Formulas and parameters",
-        "Hint": "Click to add into the selected block, or drag onto the sheet.",
+        "Layout": "Layout",
+        "Fields": "Fields",
+        "ContentFields": "Content fields",
+        "Families": "Definition families",
+        "Held": "Held Content, by type",
+        "Hint": "Click to add into the selected block, or drag onto the sheet. A family adds the list of its Definitions.",
         "Search": "Search",
-        "ListOf": "List: {type}",
         "CannotGo": "This element cannot go there."
-      }
+      },
+      "Display": {
+        "field": "Field",
+        "gauge": "Gauge",
+        "dots": "Dots"
+      },
+      "DisplayAs": "Shown as",
+      "DotCount": "Dots (without a maximum)",
+      "LabelPlacement": "Label placed",
+      "ImageShape": "Shape",
+      "Shape": {
+        "square": "Square",
+        "rounded": "Rounded",
+        "circle": "Round"
+      },
+      "AddTab": "Add a tab"
     },
     "Reaction": {
       "Title": "Reaction",

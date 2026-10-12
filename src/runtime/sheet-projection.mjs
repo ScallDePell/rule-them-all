@@ -95,7 +95,8 @@ export async function projectSheet(engine, versionId, sheet, {actor = null, cont
   };
 
   const value = async (node, scope, row) => {
-    const source = node.source, view = {id: node.id, kind: "value", ...(node.span ? {span: node.span} : {}), ...(node.style ? {style: node.style} : {}), label: node.labelKey || "", value: null, write: null};
+    const source = node.source, view = {id: node.id, kind: "value", ...(node.span ? {span: node.span} : {}), ...(node.style ? {style: node.style} : {}),
+      ...(node.display ? {display: node.display} : {}), ...(node.dots ? {dots: node.dots} : {}), label: node.labelKey || "", value: null, write: null};
     if (source.kind === "output" || source.kind === "each") {
       const reference = source.kind === "output" ? source.reference : eachReference(row?.definition, source);
       // A row whose Definition lacks this capability keeps an empty cell, so the list stays aligned.
@@ -121,6 +122,18 @@ export async function projectSheet(engine, versionId, sheet, {actor = null, cont
       if (!view.label) view.label = parameter?.nameKey ?? source.parameterRef;
       view.valueType = parameter?.valueType ?? "number";
       try { view.value = engine.evaluator(versionId).parameter(source.parameterRef); } catch (error) { view.error = ERROR(error); }
+      return view;
+    }
+    // content: the Contents the Actor holds of one Content Type, by name (its Origin, its age bracket…).
+    if (source.kind === "content") {
+      if (!actor) return null;
+      owned ??= await engine.listOwnedContents(versionId, actor);
+      const type = ruleset.contentTypes?.find(t => t.id === source.contentTypeId), byId = new Map(items.map(item => [item.id, item]));
+      if (!view.label) view.label = type?.nameKey ?? source.contentTypeId;
+      view.valueType = "string";
+      const names = owned.filter(row => row.contentTypeId === source.contentTypeId)
+        .map(row => byId.get(row.key)?.name ?? ruleset.contentTemplates?.find(t => t.id === row.templateId)?.nameKey ?? row.templateId);
+      view.value = names.length ? names.join(", ") : null;
       return view;
     }
     // field: a field of the Content this Item sheet shows; only an owned Content keeps its own values.
@@ -160,7 +173,7 @@ export async function projectSheet(engine, versionId, sheet, {actor = null, cont
   const walk = async (node, scope, row) => {
     const base = {id: node.id, kind: node.kind, ...(node.span ? {span: node.span} : {}), ...(node.style ? {style: node.style} : {})};
     if (node.kind === "value") return value(node, scope, row);
-    if (node.kind === "image") return node.src ? {...base, src: node.src, fit: node.fit ?? "cover", height: node.height ?? "medium"} : null;
+    if (node.kind === "image") return node.src ? {...base, src: node.src, fit: node.fit ?? "cover", height: node.height ?? "medium", ...(node.shape ? {shape: node.shape} : {})} : null;
     if (node.kind === "text") return {...base, text: node.textKey};
     if (node.kind === "spacer") return base;
     if (node.kind === "contents") return contents(node, base);

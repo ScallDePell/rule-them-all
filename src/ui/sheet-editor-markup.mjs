@@ -22,7 +22,7 @@ export function renderLayoutToolbarHTML({canMoveUp = false, canMoveDown = false,
   return `<div class="rta-sheet-editor__toolbar">${button("up", "fa-arrow-up", t("RTA.Template.MoveUp", "Move up"), canMoveUp)}${button("down", "fa-arrow-down", t("RTA.Template.MoveDown", "Move down"), canMoveDown)}${button("remove", "fa-trash", t("RTA.SheetEditor.Remove", "Remove the block"), canRemove)}${button("undo", "fa-rotate-left", t("RTA.SheetEditor.Undo", "Undo"), undo)}<button type="button" data-layout-command="auto"><i class="fa-solid fa-wand-magic-sparkles"></i> ${t("RTA.SheetEditor.Auto", "Automatic layout")}</button></div>`;
 }
 
-const KIND_ICONS = {section: "fa-square", grid: "fa-table-cells", tabs: "fa-folder", tab: "fa-folder-open", repeater: "fa-list", value: "fa-hashtag", action: "fa-dice-d20", text: "fa-font", image: "fa-image", contents: "fa-box-open", spacer: "fa-border-none"};
+const KIND_ICONS = {section: "fa-square", grid: "fa-table-cells", tabs: "fa-folder", tab: "fa-folder-open", repeater: "fa-list", value: "fa-hashtag", gauge: "fa-battery-half", dots: "fa-circle-dot", content: "fa-id-card", action: "fa-dice-d20", text: "fa-font", image: "fa-image", contents: "fa-box-open", spacer: "fa-border-none"};
 
 /** What can be added: blocks, then the Ruleset's own elements. A click adds an item into the selection; it can also
    be dragged onto the sheet. groups: paletteGroups (configurator/sheet-layout-model.mjs), labels given by the controller. */
@@ -37,6 +37,7 @@ export function renderLayoutPropertiesHTML(node, ctx) {
   if (!node) return `<p class="rta-sheet-editor__hint">${t("RTA.SheetEditor.SelectHint", "Click a block of the sheet to change it.")}</p>`;
   const rows = [];
   if (["tab", "section"].includes(node.kind)) rows.push(row(t("RTA.SheetEditor.Title", "Title"), text("labelKey", node.labelKey)));
+  if (["tabs", "tab"].includes(node.kind)) rows.push(`<button type="button" class="rta-sheet-editor__wide" data-layout-command="addTab"><i class="fa-solid fa-plus"></i> ${t("RTA.SheetEditor.AddTab", "Add a tab")}</button>`);
   if (["section", "grid", "repeater"].includes(node.kind)) rows.push(row(t("RTA.SheetEditor.Columns", "Columns"), select("columns", ctx.columnChoices(node.kind), node.columns ?? 1)));
   if (node.kind === "repeater") {
     rows.push(row(t("RTA.SheetEditor.ListType", "Definitions of type"), select("definitionTypeId", ctx.definitionTypes, node.query?.definitionTypeId)));
@@ -48,6 +49,9 @@ export function renderLayoutPropertiesHTML(node, ctx) {
     const refs = ctx.sourceChoices(source.kind);
     rows.push(row(t("RTA.SheetEditor.Which", "Which one"), select("sourceRef", refs, ctx.sourceToken(source))));
     rows.push(row(t("RTA.SheetEditor.Label", "Label"), text("labelKey", node.labelKey, ctx.defaultLabel(node))));
+    rows.push(row(t("RTA.SheetEditor.LabelPlacement", "Label placed"), select("labelPlace", ctx.labelPlaces, node.style?.label ?? "side")));
+    if (ctx.numeric) rows.push(row(t("RTA.SheetEditor.DisplayAs", "Shown as"), select("display", ctx.displays, node.display ?? "field")));
+    if (node.display === "dots") rows.push(row(t("RTA.SheetEditor.DotCount", "Dots (without a maximum)"), select("dots", ctx.dotCounts, String(node.dots ?? 5))));
     if (ctx.writable) rows.push(row(t("RTA.SheetEditor.Player", "On the sheet"), select("write", ctx.writeChoices, node.write?.operation ?? "")));
   }
   if (node.kind === "action") {
@@ -57,6 +61,7 @@ export function renderLayoutPropertiesHTML(node, ctx) {
   if (node.kind === "text") rows.push(row(t("RTA.SheetEditor.Text", "Text"), text("textKey", node.textKey)));
   if (node.kind === "image") {
     rows.push(row(t("RTA.SheetEditor.Image", "Image"), imageField("src", node.src)));
+    rows.push(row(t("RTA.SheetEditor.ImageShape", "Shape"), select("shape", ctx.shapes, node.shape ?? "square")));
     rows.push(row(t("RTA.SheetEditor.ImageFit", "Fit"), select("fit", ctx.fits, node.fit ?? "cover")));
     rows.push(row(t("RTA.SheetEditor.ImageHeight", "Height"), select("height", ctx.heights, node.height ?? "medium")));
   }
@@ -69,7 +74,7 @@ export function renderLayoutPropertiesHTML(node, ctx) {
   return `<div class="rta-sheet-editor__properties-head"><strong>${kindLabel(node.kind)}</strong></div>${rows.join("")}${ctx.style ? renderStyleHTML(node, ctx.style) : ""}`;
 }
 
-/** The Style group: how the selected block looks. ctx: {open, containers, tones(prop), fonts, sizes, aligns, paddings, gaps, labels}.
+/** The Style group: how the selected block looks. ctx: {open, containers, tones(prop), fonts, sizes, aligns, paddings, gaps}.
    A color is a theme tone or a color of one's own ("custom": its picker shows below). */
 export function renderStyleHTML(node, ctx) {
   const style = node.style ?? {}, rows = [], container = ctx.containers.includes(node.kind);
@@ -97,7 +102,6 @@ export function renderStyleHTML(node, ctx) {
     rows.push(row(t("RTA.SheetEditor.Style.Emphasis", "Emphasis"), `<div class="rta-sheet-editor__checks">${check("bold", t("RTA.SheetEditor.Style.Bold", "Bold"))}${check("italic", t("RTA.SheetEditor.Style.Italic", "Italic"))}</div>`));
     rows.push(row(t("RTA.SheetEditor.Style.Align", "Alignment"), styleSelect("align", ctx.aligns, style.align ?? "default")));
   }
-  if (node.kind === "value") rows.push(row(t("RTA.SheetEditor.Style.Label", "Label"), styleSelect("label", ctx.labels, style.label ?? "side")));
   rows.push(row(t("RTA.SheetEditor.Style.Padding", "Inner margin"), styleSelect("padding", ctx.paddings, style.padding ?? "default")));
   if (container) rows.push(row(t("RTA.SheetEditor.Style.Gap", "Spacing"), styleSelect("gap", ctx.gaps, style.gap ?? "default")));
   const reset = Object.keys(style).length ? `<button type="button" data-layout-command="unstyle"><i class="fa-solid fa-eraser"></i> ${t("RTA.SheetEditor.Style.Reset", "Default style")}</button>` : "";

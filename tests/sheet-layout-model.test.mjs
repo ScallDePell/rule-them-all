@@ -60,23 +60,43 @@ test('the preview is the played sheet with sample values, every block selectable
 
 test('the properties offer only what the selected block can take', ()=>{
   const ctx={parentColumns:2,columnChoices:()=>[],spanChoices:()=>[{value:'1',label:'1',colors:''},{value:'2',label:'2',colors:''}],definitionTypes:[],conditions:[],actions:[],sourceKinds:[{value:'formula',label:'Formula',colors:''}],
-    sourceChoices:()=>[{value:'f',label:'Defence',colors:''}],sourceToken:()=>'f',defaultLabel:()=>'Defence',writable:false,writeChoices:[]};
+    sourceChoices:()=>[{value:'f',label:'Defence',colors:''}],sourceToken:()=>'f',defaultLabel:()=>'Defence',writable:false,writeChoices:[],
+    labelPlaces:[{value:'side',label:'Beside',colors:''},{value:'top',label:'Above',colors:''}],numeric:true,displays:[{value:'field',label:'Field',colors:''},{value:'dots',label:'Dots',colors:''}],dotCounts:[{value:'5',label:'5',colors:''}]};
   const html=renderLayoutPropertiesHTML({id:'v',kind:'value',source:{kind:'formula',formulaRef:'f'},span:2},ctx);
   assert.match(html,/data-layout-prop="sourceKind"/);assert.match(html,/placeholder="Defence"/);
   assert.doesNotMatch(html,/data-layout-prop="write"/,'a Formula is read only');
   assert.match(html,/<option value="2" data-rta-colors="" selected>/);
+  assert.match(html,/data-layout-prop="labelPlace"/,'where the label goes is a setting of the value');assert.match(html,/data-layout-prop="display"/);
+  assert.doesNotMatch(html,/data-layout-prop="dots"/,'the dot count only once shown as dots');
+  assert.match(renderLayoutPropertiesHTML({id:'v',kind:'value',source:{kind:'formula',formulaRef:'f'},display:'dots'},ctx),/data-layout-prop="dots"/);
 });
 
-test('The palette offers the blocks, then each Definition by type with a list of that type, Actions, Formulas and Parameters', ()=>{
-  const groups=paletteGroups(ruleset,{target:'actor'});
-  assert.equal(groups[0].id,'blocks');assert.ok(groups[0].items.some(item=>item.kind==='value'));
-  const skills=groups.find(group=>group.id==='type-skill');
-  assert.deepEqual(skills.items.map(item=>[item.kind,item.label]),[['repeater','Skills'],['value','Climb'],['value','Swim'],['value','Health']]);
-  assert.deepEqual(skills.items[1].spec.source.reference,{objectKind:'definition',objectId:'climb',capabilityId:'value',outputId:'value.final'});
-  assert.equal(groups.some(group=>group.id==='type-empty'),false,'a type without Definitions is left out');
-  const root=tree(),node=paletteNode(skills.items[1].spec,root,ruleset,{parentId:'s'});
-  assert.equal(node.kind,'value');assert.equal(locate(root,node.id),null,'a fresh id');
-  assert.deepEqual(paletteNode(skills.items[0].spec,root,ruleset).query,{definitionTypeId:'skill'});
+test('The palette offers layout blocks, fields, Definition families as lists and the Contents an Actor holds by type', ()=>{
+  const groups=paletteGroups({...ruleset,contentTypes:[{id:'origin',nameKey:'Origin',storageKind:'item'}]},{target:'actor'});
+  assert.deepEqual(groups.map(group=>group.id),['layout','fields','families','held']);
+  assert.deepEqual(groups[1].items.map(item=>item.kind),['value','gauge','dots','action','contents']);
+  assert.deepEqual(groups[2].items.map(item=>[item.kind,item.label]),[['repeater','Skills']],'one item per family, never each Definition');
+  assert.deepEqual(groups[3].items[0].spec,{kind:'value',source:{kind:'content',contentTypeId:'origin'}});
+  const root=tree(),list=paletteNode(groups[2].items[0].spec,root,ruleset);
+  assert.deepEqual(list.query,{definitionTypeId:'skill'});assert.equal(list.children[0].source.kind,'each','a new list shows each row\'s value');
+  const gauge=paletteNode({kind:'value',display:'gauge'},root,ruleset,{parentId:'s'});
+  assert.equal(gauge.display,'gauge');assert.equal(gauge.source.reference.outputId,'pool.current','a gauge starts on a pool');
+  assert.equal(locate(root,gauge.id),null,'a fresh id');
+  assert.deepEqual(paletteGroups(ruleset,{target:'item'}).map(group=>group.id),['layout','fields','content-fields']);
+});
+
+test('Values as dots or gauges, the Contents held, image shapes: checked by the layout contract', ()=>{
+  const leaf=node=>prepareLayout({id:'root',kind:'grid',columns:1,children:[node]}).children[0];
+  assert.deepEqual(leaf({id:'v',kind:'value',source:{kind:'formula',formulaRef:'f'},display:'dots',dots:3}),{id:'v',kind:'value',source:{kind:'formula',formulaRef:'f'},display:'dots',dots:3});
+  assert.equal(leaf({id:'v',kind:'value',source:{kind:'formula',formulaRef:'f'},display:'field'}).display,undefined,'field is the default');
+  assert.throws(()=>leaf({id:'v',kind:'value',source:{kind:'formula',formulaRef:'f'},dots:3}),/dots must be/);
+  assert.throws(()=>leaf({id:'v',kind:'value',source:{kind:'formula',formulaRef:'f'},display:'pie'}),/display must be/);
+  assert.deepEqual(leaf({id:'v',kind:'value',source:{kind:'content',contentTypeId:'origin'}}).source,{kind:'content',contentTypeId:'origin'});
+  assert.equal(leaf({id:'i',kind:'image',src:'a.png',shape:'circle'}).shape,'circle');
+  assert.throws(()=>leaf({id:'i',kind:'image',src:'a.png',shape:'star'}),/shape must be/);
+  const html=renderLayoutPreviewHTML(previewView(prepareLayout({id:'root',kind:'grid',columns:1,children:[{id:'d',kind:'value',source:{kind:'formula',formulaRef:'f'},display:'dots'},{id:'g',kind:'value',source:{kind:'formula',formulaRef:'f'},display:'gauge'},{id:'i',kind:'image',src:'a.png',shape:'circle'}]}),ruleset),{t:key=>key});
+  assert.equal((html.match(/rta-sheet-dot rta-sheet-dot--on/g)??[]).length,3,'3 of 5 dots in the preview');
+  assert.match(html,/rta-sheet-gauge__fill" style="inline-size: 50%"/);assert.match(html,/rta-sheet-image--circle/);
 });
 
 test('A block dropped next to another goes before or after it, even next to a container that would take it', ()=>{

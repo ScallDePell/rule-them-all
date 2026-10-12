@@ -62,7 +62,11 @@ export function newNode(kind, root, ruleset, {parentId = root?.id, target = "act
   if (kind === "section") return {id, kind, labelKey: "", columns: 1, children: []};
   if (kind === "grid") return {id, kind, columns: 2, children: []};
   if (kind === "tab") return {id, kind, labelKey: "", children: []};
-  if (kind === "tabs") return {id, kind, children: [{id: freshId({children: [root, {id}]}, "tab"), kind: "tab", labelKey: "", children: []}]};
+  if (kind === "tabs") {
+    // Two pages to start with: tabs are for switching between them.
+    const first = freshId({children: [root, {id}]}, "tab"), second = freshId({children: [root, {id}, {id: first}]}, "tab");
+    return {id, kind, children: [{id: first, kind: "tab", labelKey: "", children: []}, {id: second, kind: "tab", labelKey: "", children: []}]};
+  }
   if (kind === "repeater") {
     const type = (ruleset.definitionTypes ?? []).find(t => (ruleset.definitions ?? []).some(d => d.definitionTypeId === t.id));
     return type ? {id, kind, query: {definitionTypeId: type.id}, columns: 1, children: []} : null;
@@ -85,43 +89,56 @@ export function newNode(kind, root, ruleset, {parentId = root?.id, target = "act
   return {id, kind: "spacer"};
 }
 
-/** What the editor offers to add, grouped: the layout blocks, then what the Ruleset already has (its Definitions by
-   type, a list per Definition type, Actions, Formulas, Parameters; an Item sheet's Content fields). Each item:
-   {label | labelKey, kind, spec}; paletteNode turns a spec into a node. */
+/** What the editor offers to add, grouped: layout blocks, fields (a value, a gauge, dots, an Action button, the held
+   Contents), a list per Definition family, and on an Actor sheet the Content it holds of each type (its Origin…);
+   on an Item sheet, the Content fields. Each item: {label | labelKey, kind, spec}; paletteNode turns a spec into a node.
+   A single Definition, Formula or Action is chosen in the block's settings once it is placed. */
 export function paletteGroups(ruleset, {target = "actor", contentTypeIds = []} = {}) {
   const groups = [], name = entry => entry.nameKey ?? entry.id;
-  const blocks = ["section", "grid", "tabs", "tab", "value", "text", "image", "spacer", ...(target === "actor" && itemContentTypes(ruleset).length ? ["contents"] : [])];
-  groups.push({id: "blocks", labelKey: "RTA.SheetEditor.Palette.Blocks", items: blocks.map(kind => ({kind, spec: {kind}}))});
+  groups.push({id: "layout", labelKey: "RTA.SheetEditor.Palette.Layout", items: ["section", "grid", "tabs", "text", "image", "spacer"].map(kind => ({kind, spec: {kind}}))});
+  const fields = [
+    {kind: "value", labelKey: "RTA.SheetEditor.Kind.value", spec: {kind: "value"}},
+    ...(target === "actor" ? [{kind: "gauge", labelKey: "RTA.SheetEditor.Display.gauge", spec: {kind: "value", display: "gauge"}}, {kind: "dots", labelKey: "RTA.SheetEditor.Display.dots", spec: {kind: "value", display: "dots"}}] : []),
+    ...((ruleset.actions ?? []).some(enabled) ? [{kind: "action", spec: {kind: "action"}}] : []),
+    ...(target === "actor" && itemContentTypes(ruleset).length ? [{kind: "contents", spec: {kind: "contents"}}] : [])];
+  groups.push({id: "fields", labelKey: "RTA.SheetEditor.Palette.Fields", items: fields});
   if (target === "item") {
-    const fields = contentFields(ruleset, contentTypeIds);
-    if (fields.length) groups.push({id: "fields", labelKey: "RTA.SheetEditor.Palette.Fields", items: fields.map(field => ({label: field.name ?? field.id, kind: "value", spec: {kind: "value", source: {kind: "field", fieldId: field.id}}}))});
-  } else {
-    for (const type of (ruleset.definitionTypes ?? []).filter(enabled)) {
-      const definitions = (ruleset.definitions ?? []).filter(definition => enabled(definition) && definition.definitionTypeId === type.id);
-      if (!definitions.length) continue;
-      const items = [{label: name(type), list: true, kind: "repeater", spec: {kind: "repeater", definitionTypeId: type.id}}];
-      for (const definition of definitions) {
-        const output = EACH_OUTPUTS.find(o => (definition.capabilities ?? []).includes(o.capabilityId) && !["pool", "collection"].includes(o.capabilityId))
-          ?? EACH_OUTPUTS.find(o => (definition.capabilities ?? []).includes(o.capabilityId));
-        if (output) items.push({label: name(definition), kind: "value", spec: {kind: "value", source: {kind: "output", reference: {objectKind: "definition", objectId: definition.id, capabilityId: output.capabilityId, outputId: output.outputId}}}});
-      }
-      groups.push({id: `type-${type.id}`, label: name(type), items});
-    }
+    const contentFieldList = contentFields(ruleset, contentTypeIds);
+    if (contentFieldList.length) groups.push({id: "content-fields", labelKey: "RTA.SheetEditor.Palette.ContentFields", items: contentFieldList.map(field => ({label: field.name ?? field.id, kind: "value", spec: {kind: "value", source: {kind: "field", fieldId: field.id}}}))});
+    return groups;
   }
-  const actions = (ruleset.actions ?? []).filter(enabled);
-  if (actions.length) groups.push({id: "actions", labelKey: "RTA.SheetEditor.Palette.Actions", items: actions.map(action => ({label: name(action), kind: "action", spec: {kind: "action", actionRef: action.id}}))});
-  const formulas = ruleset.formulas ?? [], parameters = ruleset.parameters ?? [];
-  if (formulas.length || parameters.length) groups.push({id: "computed", labelKey: "RTA.SheetEditor.Palette.Computed", items: [
-    ...formulas.map(formula => ({label: name(formula), kind: "value", spec: {kind: "value", source: {kind: "formula", formulaRef: formula.id}}})),
-    ...parameters.map(parameter => ({label: name(parameter), kind: "value", spec: {kind: "value", source: {kind: "parameter", parameterRef: parameter.id}}}))]});
+  const families = (ruleset.definitionTypes ?? []).filter(type => enabled(type) && (ruleset.definitions ?? []).some(d => enabled(d) && d.definitionTypeId === type.id));
+  if (families.length) groups.push({id: "families", labelKey: "RTA.SheetEditor.Palette.Families", items: families.map(type => ({label: name(type), kind: "repeater", spec: {kind: "repeater", definitionTypeId: type.id}}))});
+  const held = (ruleset.contentTypes ?? []).filter(enabled);
+  if (held.length) groups.push({id: "held", labelKey: "RTA.SheetEditor.Palette.Held", items: held.map(type => ({label: name(type), kind: "content", spec: {kind: "value", source: {kind: "content", contentTypeId: type.id}}}))});
   return groups;
+}
+
+/** The first Definition output a gauge can fill: a pool's current points, else any number. */
+function gaugeSource(ruleset) {
+  const definition = (ruleset.definitions ?? []).find(d => enabled(d) && (d.capabilities ?? []).includes("pool"));
+  if (!definition) return null;
+  const slotId = definition.slots?.pool?.[0]?.id;
+  return {kind: "output", reference: {objectKind: "definition", objectId: definition.id, capabilityId: "pool", ...(slotId ? {slotId} : {}), outputId: "pool.current"}};
 }
 
 /** The node a palette spec adds, with a fresh id; null when it cannot be built (a list with no Definition type…). */
 export function paletteNode(spec, root, ruleset, {parentId = root?.id, target = "actor"} = {}) {
-  if (spec?.source) return {id: freshId(root, "value"), kind: "value", source: copy(spec.source)};
-  if (spec?.kind === "action" && spec.actionRef) return {id: freshId(root, "action"), kind: "action", actionRef: spec.actionRef};
-  if (spec?.kind === "repeater" && spec.definitionTypeId) return {id: freshId(root, "repeater"), kind: "repeater", query: {definitionTypeId: spec.definitionTypeId}, columns: 1, children: []};
+  if (spec?.kind === "repeater" && spec.definitionTypeId) {
+    const id = freshId(root, "repeater"), node = {id, kind: "repeater", query: {definitionTypeId: spec.definitionTypeId}, columns: 1, children: []};
+    // A new list shows each Definition's main value straight away.
+    const output = EACH_OUTPUTS.find(o => (ruleset.definitions ?? []).some(d => d.definitionTypeId === spec.definitionTypeId && (d.capabilities ?? []).includes(o.capabilityId)));
+    if (output) node.children.push({id: `${id}-value`, kind: "value", source: {kind: "each", capabilityId: output.capabilityId, outputId: output.outputId}});
+    return node;
+  }
+  if (spec?.kind === "value") {
+    const node = spec.source ? {id: freshId(root, "value"), kind: "value", source: copy(spec.source)} : newNode("value", root, ruleset, {parentId, target});
+    if (!node) return null;
+    const inRepeater = Boolean(locate(root, parentId)?.path.some(entry => entry.kind === "repeater"));
+    if (spec.display === "gauge" && !inRepeater) node.source = gaugeSource(ruleset) ?? node.source;
+    if (spec.display) node.display = spec.display;
+    return node;
+  }
   return spec?.kind ? newNode(spec.kind, root, ruleset, {parentId, target}) : null;
 }
 
@@ -210,6 +227,7 @@ export function defaultValueLabel(source, ruleset, {contentTypeIds = []} = {}) {
   if (source?.kind === "each") return {labelKey: outputLabelKey(source.capabilityId, source.outputId)};
   if (source?.kind === "formula") return {label: ruleset.formulas?.find(f => f.id === source.formulaRef)?.nameKey ?? source.formulaRef};
   if (source?.kind === "parameter") return {label: ruleset.parameters?.find(p => p.id === source.parameterRef)?.nameKey ?? source.parameterRef};
+  if (source?.kind === "content") return {label: ruleset.contentTypes?.find(t => t.id === source.contentTypeId)?.nameKey ?? source.contentTypeId};
   if (source?.kind === "field") return {label: contentFields(ruleset, contentTypeIds).find(f => f.id === source.fieldId)?.name ?? source.fieldId};
   return {label: ""};
 }
@@ -224,19 +242,28 @@ export function contentFields(ruleset, contentTypeIds = []) {
 /* Preview: the projection a played sheet would get, with sample values instead of an Actor's. */
 const SAMPLE = {number: 10, integer: 10, boolean: true};
 function previewValue(node, ruleset, row, contentTypeIds) {
-  const source = node.source, view = {id: node.id, kind: "value", ...(node.span ? {span: node.span} : {}), ...(node.style ? {style: node.style} : {}), label: node.labelKey || "", write: node.write ? {operation: node.write.operation} : null};
+  const source = node.source, view = {id: node.id, kind: "value", ...(node.span ? {span: node.span} : {}), ...(node.style ? {style: node.style} : {}),
+    ...(node.display ? {display: node.display} : {}), ...(node.dots ? {dots: node.dots} : {}), label: node.labelKey || "", write: node.write ? {operation: node.write.operation} : null};
   if (!view.label) Object.assign(view, defaultValueLabel(source, ruleset, {contentTypeIds}));
   let valueType = "number";
   if (source.kind === "output" || source.kind === "each") {
     const capabilityId = source.kind === "output" ? source.reference.capabilityId : source.capabilityId, outputId = source.kind === "output" ? source.reference.outputId : source.outputId;
     valueType = capabilityTypeRegistry.get(capabilityId)?.outputs?.[outputId]?.valueType ?? "number";
     if (capabilityId === "pool" && outputId === "pool.current") view.maximum = 12;
+
   } else if (source.kind === "formula") valueType = ruleset.formulas?.find(f => f.id === source.formulaRef)?.resultType ?? "number";
   else if (source.kind === "parameter") {
     const parameter = ruleset.parameters?.find(p => p.id === source.parameterRef);
     valueType = parameter?.valueType ?? "number";
     if (parameter && parameter.value !== undefined) return {...view, valueType, value: parameter.value};
+  } else if (source.kind === "content") {
+    // The first Content of that type stands for the one an Actor would hold.
+    const template = (ruleset.contentTemplates ?? []).find(t => enabled(t) && t.contentTypeId === source.contentTypeId);
+    return {...view, valueType: "string", value: template?.nameKey ?? "…"};
   } else valueType = contentFields(ruleset, contentTypeIds).find(f => f.id === source.fieldId)?.valueType ?? "text";
+  // Dots and gauges show a part filled: 3 of 5 dots, 10 of 20 on a gauge.
+  if (node.display === "dots" && ["number", "integer"].includes(valueType)) return {...view, valueType, value: 3};
+  if (node.display === "gauge" && view.maximum === undefined) view.maximum = 20;
   return {...view, valueType, value: SAMPLE[valueType] ?? (["string", "text"].includes(valueType) ? "…" : null)};
 }
 
@@ -244,7 +271,7 @@ export function previewView(root, ruleset, {target = "actor", contentTypeIds = [
   const walk = (node, row) => {
     const base = {id: node.id, kind: node.kind, ...(node.span ? {span: node.span} : {}), ...(node.style ? {style: node.style} : {})};
     if (node.kind === "value") return previewValue(node, ruleset, row, contentTypeIds);
-    if (node.kind === "image") return {...base, src: node.src, fit: node.fit ?? "cover", height: node.height ?? "medium"};
+    if (node.kind === "image") return {...base, src: node.src, fit: node.fit ?? "cover", height: node.height ?? "medium", ...(node.shape ? {shape: node.shape} : {})};
     if (node.kind === "text") return {...base, text: node.textKey};
     if (node.kind === "spacer") return base;
     if (node.kind === "contents") {

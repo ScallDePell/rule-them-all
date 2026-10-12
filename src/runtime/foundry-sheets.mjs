@@ -87,7 +87,9 @@ export function createRulesetSheets({ActorSheetV2, ItemSheetV2}) {
       super._onRender?.(context, options);
       const root = this.element;
       root.querySelector("[data-sheet-name]")?.addEventListener("change", event => this.document.update({name: event.currentTarget.value}).catch(notifyError));
-      for (const input of root.querySelectorAll("[data-sheet-write]")) input.addEventListener("change", event => this.#write(event.currentTarget));
+      for (const input of root.querySelectorAll("[data-sheet-write]:not([data-sheet-dot])")) input.addEventListener("change", event => this.#write(event.currentTarget));
+      // A dot of a value shown as dots sets the value it carries.
+      for (const dot of root.querySelectorAll("[data-sheet-dot]")) dot.addEventListener("click", event => { const button = event.currentTarget; this.#write({dataset: button.dataset, type: "number", value: button.dataset.sheetDot}); });
       for (const button of root.querySelectorAll("[data-sheet-action]")) button.addEventListener("click", event => this.#use(event.currentTarget));
       for (const button of root.querySelectorAll("[data-sheet-command]")) button.addEventListener("click", event => this.#command(event.currentTarget.dataset.sheetCommand));
       for (const button of root.querySelectorAll("[data-sheet-tab]")) button.addEventListener("click", event => this.#showTab(event.currentTarget));

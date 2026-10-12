@@ -165,3 +165,15 @@ test('a contents block lists the Contents an Actor holds, with their Items, and 
   await api.createSheetDefinition(v,{id:'a',nameKey:'A',target:'actor',root:{id:'root',kind:'grid',children:[{id:'c',kind:'contents',contentTypeIds:['charm']}]}});
   await assert.rejects(api.deleteContentType(v,'charm'),/still referenced/);
 });
+
+test('a value can show the Content an Actor holds of one type, by name (its Origin, its weapon)', async()=>{
+  const {api,v,engine}=await setup();
+  await engine.acquire(v,hero,{content:{key:'item-1',templateId:'sword',contentTypeId:'weapon'}});
+  const sheet={id:'s',target:'actor',root:prepareLayout({id:'root',kind:'grid',children:[{id:'w',kind:'value',source:{kind:'content',contentTypeId:'weapon'}},{id:'c',kind:'value',source:{kind:'content',contentTypeId:'charm'}}]})};
+  const view=await projectSheet(engine,v,sheet,{actor:hero,items:[{id:'item-1',name:'My blade',managed:true}]});
+  assert.deepEqual([find(view.root,'w').label,find(view.root,'w').value],['Weapon','My blade']);
+  assert.equal(find(view.root,'c').value,null,'nothing held of that type');
+  await assert.rejects(api.createSheetDefinition(v,{id:'i',nameKey:'I',target:'item',root:{id:'root',kind:'grid',children:[{id:'w',kind:'value',source:{kind:'content',contentTypeId:'weapon'}}]}}),/only on Actor sheets/);
+  await api.createSheetDefinition(v,{id:'a',nameKey:'A',target:'actor',root:{id:'root',kind:'grid',children:[{id:'w',kind:'value',source:{kind:'content',contentTypeId:'charm'}}]}});
+  await assert.rejects(api.deleteContentType(v,'charm'),/still referenced/);
+});

@@ -1406,7 +1406,8 @@
         "formula": "Une Formula",
         "parameter": "Un Paramètre",
         "each": "La Definition de la ligne",
-        "field": "Un champ de l'Objet"
+        "field": "Un champ de l'Objet",
+        "content": "Contenu détenu"
       },
       "Write": {
         "none": "Lecture seule",
@@ -1448,7 +1449,6 @@
         "Bold": "Gras",
         "Italic": "Italique",
         "Align": "Alignement",
-        "Label": "Libellé",
         "Padding": "Marge intérieure",
         "Gap": "Espace entre les blocs",
         "Reset": "Style par défaut"
@@ -1489,15 +1489,30 @@
         "hidden": "Masqué"
       },
       "Palette": {
-        "Blocks": "Blocs",
-        "Fields": "Champs du Contenu",
-        "Actions": "Actions",
-        "Computed": "Formules et paramètres",
-        "Hint": "Cliquez pour ajouter dans le bloc sélectionné, ou glissez sur la feuille.",
+        "Layout": "Mise en page",
+        "Fields": "Champs",
+        "ContentFields": "Champs du Contenu",
+        "Families": "Familles de Définitions",
+        "Held": "Contenu détenu, par type",
+        "Hint": "Clique pour ajouter dans le bloc sélectionné, ou glisse sur la feuille. Une famille ajoute la liste de ses Définitions.",
         "Search": "Rechercher",
-        "ListOf": "Liste : {type}",
         "CannotGo": "Cet élément ne peut pas aller à cet endroit."
-      }
+      },
+      "Display": {
+        "field": "Champ",
+        "gauge": "Jauge",
+        "dots": "Pastilles"
+      },
+      "DisplayAs": "Affichage",
+      "DotCount": "Pastilles (sans maximum)",
+      "LabelPlacement": "Libellé placé",
+      "ImageShape": "Forme",
+      "Shape": {
+        "square": "Carrée",
+        "rounded": "Arrondie",
+        "circle": "Ronde"
+      },
+      "AddTab": "Ajouter un onglet"
     },
     "Reaction": {
       "Title": "Réaction",

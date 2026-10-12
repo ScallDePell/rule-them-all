@@ -42,7 +42,7 @@ const result = await page.evaluate(async ({fixture, en, urls}) => {
   check('selecting a section shows its title', element.querySelector('[data-layout-properties] [data-layout-prop="labelKey"]')?.value === 'Derived');
   await set('[data-layout-properties] [data-layout-prop="columns"]', '2');
   check('changing its columns', find(layout(), 'derived').columns === 2);
-  await click('[data-layout-palette-host] [data-layout-palette*="\\"output\\""]');
+  await click('[data-layout-palette-host] [data-layout-palette=\'{"kind":"value"}\']');
   const added = find(layout(), 'derived').children.at(-1);
   check('adding a value into the selection', added?.kind === 'value' && added.source?.kind === 'output');
   check('the new value is selected', element.querySelector('[data-layout-selected]')?.dataset.layoutNode === added.id);
@@ -69,7 +69,7 @@ const result = await page.evaluate(async ({fixture, en, urls}) => {
   const drag = (source, target, {top = false} = {}) => { const box = target.getBoundingClientRect(), data = new DataTransfer(), at = {bubbles: true, cancelable: true, dataTransfer: data, clientX: box.left + 4, clientY: top ? box.top + 2 : box.top + box.height / 2};
     source.dispatchEvent(new DragEvent('dragstart', {bubbles: true, dataTransfer: data})); target.dispatchEvent(new DragEvent('dragover', at)); target.dispatchEvent(new DragEvent('drop', at)); return wait(); };
   const before = find(layout(), 'stats').children.length;
-  await drag(element.querySelector('[data-layout-palette-host] [data-layout-palette*="actionRef"]'), element.querySelector('[data-layout-canvas] section[data-layout-node="stats"]'));
+  await drag(element.querySelector('[data-layout-palette-host] [data-layout-palette=\'{"kind":"action"}\']'), element.querySelector('[data-layout-canvas] section[data-layout-node="stats"]'));
   const dropped = find(layout(), 'stats').children.at(-1);
   check('dragging an Action from the palette onto a section', find(layout(), 'stats').children.length === before + 1 && dropped.kind === 'action');
   const first = find(layout(), 'stats').children[0];
@@ -87,6 +87,25 @@ const result = await page.evaluate(async ({fixture, en, urls}) => {
   await click('[data-layout-canvas] [data-layout-drop]');
   await click('[data-layout-palette-host] [data-layout-palette=\'{"kind":"value"}\']');
   check('an empty list gets a row value', find(layout(), 'skill-list').children[0]?.source?.kind === 'each');
+  // Tabs: two pages to start with; a click on the second shows it; another tab can be added; an empty page takes a drop.
+  await click('[data-layout-canvas] [data-layout-node="derived"]');
+  await click('[data-layout-palette-host] [data-layout-palette=\'{"kind":"tabs"}\']');
+  const tabs = find(layout(), 'derived').children.at(-1);
+  check('new tabs come with two pages', tabs?.kind === 'tabs' && tabs.children.length === 2);
+  await click(`[data-layout-canvas] [data-sheet-tab="${tabs.children[1].id}"]`);
+  check('clicking the second tab shows its page', !element.querySelector(`[data-sheet-panel="${tabs.children[1].id}"]`).hidden && element.querySelector(`[data-sheet-panel="${tabs.children[0].id}"]`).hidden);
+  await click('[data-layout-command="addTab"]');
+  check('adding a tab', find(layout(), tabs.id).children.length === 3);
+  const empty = element.querySelector(`[data-sheet-panel="${tabs.children[0].id}"] [data-layout-drop]`);
+  await drag(element.querySelector('[data-layout-palette-host] [data-layout-palette=\'{"kind":"value","display":"dots"}\']'), empty, {top: true});
+  check(`dropping into the empty frame of a tab${empty ? '' : ' (no frame)'}${element.querySelector('[data-layout-palette-host] [data-layout-palette=\'{"kind":"value","display":"dots"}\']') ? '' : ' (no palette item)'}`, find(layout(), tabs.children[0].id).children[0]?.display === 'dots');
+  if (!find(layout(), tabs.children[0].id).children[0]) return steps;
+  await click(`[data-layout-canvas] [data-layout-node="${find(layout(), tabs.children[0].id).children[0].id}"]`);
+  await set('[data-layout-properties] [data-layout-prop="labelPlace"]', 'top');
+  check('placing a label above its value', find(layout(), tabs.children[0].id).children[0].style?.label === 'top');
+  await set('[data-layout-properties] [data-layout-prop="display"]', 'gauge');
+  check('showing a value as a gauge', find(layout(), tabs.children[0].id).children[0].display === 'gauge' && element.querySelector('[data-layout-canvas] .rta-sheet-gauge'));
+  await click('[data-layout-command="undo"]');
   // Style: colors, opacity, font, emphasis, spacing, then an image block.
   await click('[data-layout-canvas] [data-layout-node="derived"]');
   check('the Style group is offered, folded', element.querySelector('[data-layout-style-group]') && !element.querySelector('[data-layout-style-group]').open);
@@ -110,6 +129,8 @@ const result = await page.evaluate(async ({fixture, en, urls}) => {
   await set('[data-layout-properties] [data-layout-prop="src"]', 'icons/svg/d20.svg');
   await set('[data-layout-properties] [data-layout-prop="height"]', 'small');
   check('choosing its picture and height', find(layout(), image.id).src === 'icons/svg/d20.svg' && find(layout(), image.id).height === 'small');
+  await set('[data-layout-properties] [data-layout-prop="shape"]', 'circle');
+  check('a round picture', find(layout(), image.id).shape === 'circle' && element.querySelector('[data-layout-canvas] .rta-sheet-image--circle'));
   await click('[data-layout-canvas] [data-layout-node="derived"]');
   await click('[data-layout-command="unstyle"]');
   check('back to the default style', !find(layout(), 'derived').style);

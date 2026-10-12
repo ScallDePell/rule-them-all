@@ -125,6 +125,7 @@ export class DependencyIndex{
         const s=node.source;
         if(s?.kind==='output')pushRef(this.#edges,consumer,s.reference,'sheetValue',`${path}.source.reference`);
         if(s?.kind==='formula')pushRef(this.#edges,consumer,{objectKind:'formula',objectId:s.formulaRef},'sheetValue',`${path}.source.formulaRef`);
+        if(s?.kind==='content')pushRef(this.#edges,consumer,{objectKind:'contentType',objectId:s.contentTypeId},'sheetValue',`${path}.source.contentTypeId`);
         if(s?.kind==='parameter')pushRef(this.#edges,consumer,{objectKind:'parameter',objectId:s.parameterRef},'sheetValue',`${path}.source.parameterRef`);
         if(node.kind==='repeater'){
           pushRef(this.#edges,consumer,{objectKind:'definitionType',objectId:node.query?.definitionTypeId},'sheetRepeater',`${path}.query.definitionTypeId`);

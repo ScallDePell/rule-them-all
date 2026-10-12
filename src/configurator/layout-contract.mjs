@@ -10,15 +10,19 @@
    grid      := {kind: "grid", columns: 1-6, children}                 an untitled block
    repeater  := {kind: "repeater", query, columns: 1-6, children}      its children once per Definition the query finds
    query     := {definitionTypeId, conditionRef?}                      held Definitions of that type (variables.each in the Condition)
-   value     := {kind: "value", source, labelKey?, write?}             a value shown, editable with write
+   value     := {kind: "value", source, labelKey?, write?, display?, dots?}   a value shown, editable with write;
+                display: "field" (default: the number or text, or its input) | "gauge" (a bar up to the maximum)
+                | "dots" (one dot per point up to the maximum, or dots: 1-20 when the value has none)
    source    := {kind: "output", reference} | {kind: "formula", formulaRef} | {kind: "parameter", parameterRef}
               | {kind: "each", capabilityId, outputId, slotId?}        the output of the repeater's current Definition (its first slot by default)
               | {kind: "field", fieldId}                               a field of the Content an Item sheet shows
+              | {kind: "content", contentTypeId}                       the name of the Content(s) the Actor holds of that type (its Origin…)
    write     := {operation: "set" | "add" | "subtract"}                only on an output, each or field source (CP-30 WriteBinding);
                                                                        a value.final is written through its value.base
    action    := {kind: "action", actionRef, labelKey?}                 a button that uses the Action (on the repeater's Definition inside one)
    text      := {kind: "text", textKey}
-   image     := {kind: "image", src, fit?: "cover" | "contain", height?: "small" | "medium" | "large"}   a picture (a banner, a logo)
+   image     := {kind: "image", src, fit?: "cover" | "contain", height?: "small" | "medium" | "large", shape?: "rounded" | "circle"}
+                a picture (a banner, a logo, a portrait); a circle is as wide as it is high
    contents  := {kind: "contents", contentTypeIds?}                  the Contents the Actor holds (its Items), of these Content Types (all when none);
                                                                        dropping an Item on the sheet adds one
    spacer    := {kind: "spacer"}
@@ -31,7 +35,10 @@ import {IMAGE_PATH, SHEET_IMAGE_FITS, SHEET_IMAGE_HEIGHTS, prepareLayoutStyle} f
 export const LAYOUT_CONTAINERS = Object.freeze(["tabs", "tab", "section", "grid", "repeater"]);
 export const LAYOUT_LEAVES = Object.freeze(["value", "action", "text", "image", "contents", "spacer"]);
 export const LAYOUT_NODE_KINDS = Object.freeze([...LAYOUT_CONTAINERS, ...LAYOUT_LEAVES]);
-export const LAYOUT_SOURCE_KINDS = Object.freeze(["output", "formula", "parameter", "each", "field"]);
+export const LAYOUT_SOURCE_KINDS = Object.freeze(["output", "formula", "parameter", "each", "field", "content"]);
+export const LAYOUT_VALUE_DISPLAYS = Object.freeze(["field", "gauge", "dots"]);
+export const LAYOUT_IMAGE_SHAPES = Object.freeze(["rounded", "circle"]);
+export const LAYOUT_MAX_DOTS = 20;
 /** Sources a sheet can write to. */
 export const LAYOUT_WRITABLE_SOURCES = Object.freeze(["output", "each", "field"]);
 export const LAYOUT_WRITE_OPERATIONS = Object.freeze(["set", "add", "subtract"]);
@@ -40,7 +47,7 @@ export const LAYOUT_MAX_NODES = 500;
 const MAX_COLUMNS = {section: 4, grid: 6, repeater: 6};
 const FIELDS = {
   tabs: ["children"], tab: ["labelKey", "children"], section: ["labelKey", "columns", "children"], grid: ["columns", "children"],
-  repeater: ["query", "columns", "children"], value: ["source", "labelKey", "write"], action: ["actionRef", "labelKey"], text: ["textKey"], image: ["src", "fit", "height"], contents: ["contentTypeIds"], spacer: []
+  repeater: ["query", "columns", "children"], value: ["source", "labelKey", "write", "display", "dots"], action: ["actionRef", "labelKey"], text: ["textKey"], image: ["src", "fit", "height", "shape"], contents: ["contentTypeIds"], spacer: []
 };
 const nonempty = value => typeof value === "string" && value.trim().length > 0;
 const NODE_ID = /^[A-Za-z0-9][A-Za-z0-9_-]*$/;
@@ -55,6 +62,7 @@ function prepareSource(source, path, inRepeater) {
   } else if (source.kind === "formula") { only(["formulaRef"]); if (!nonempty(source.formulaRef)) throw new Error(`${path}.formulaRef must be an id.`); }
   else if (source.kind === "parameter") { only(["parameterRef"]); if (!nonempty(source.parameterRef)) throw new Error(`${path}.parameterRef must be an id.`); }
   else if (source.kind === "field") { only(["fieldId"]); if (!nonempty(source.fieldId)) throw new Error(`${path}.fieldId must be an id.`); }
+  else if (source.kind === "content") { only(["contentTypeId"]); if (!nonempty(source.contentTypeId)) throw new Error(`${path}.contentTypeId must be an id.`); }
   else {
     only(["capabilityId", "outputId", "slotId"]);
     if (!inRepeater) throw new Error(`${path}: an "each" value only exists inside a repeater.`);
@@ -106,6 +114,14 @@ export function prepareLayout(root) {
         if (!LAYOUT_WRITABLE_SOURCES.includes(next.source.kind)) throw new Error(`${path}: only a Definition output or a Content field can be written from a sheet.`);
         next.write = {operation: node.write.operation};
       }
+      if (node.display !== undefined && node.display !== "field") {
+        if (!LAYOUT_VALUE_DISPLAYS.includes(node.display)) throw new Error(`${path}.display must be ${LAYOUT_VALUE_DISPLAYS.join(", ")}.`);
+        next.display = node.display;
+      }
+      if (node.dots !== undefined) {
+        if (next.display !== "dots" || !Number.isSafeInteger(node.dots) || node.dots < 1 || node.dots > LAYOUT_MAX_DOTS) throw new Error(`${path}.dots must be 1 to ${LAYOUT_MAX_DOTS}, on a value shown as dots.`);
+        next.dots = node.dots;
+      }
     }
     if (node.kind === "action") { if (!nonempty(node.actionRef)) throw new Error(`${path}.actionRef must be an id.`); next.actionRef = node.actionRef; }
     if (node.kind === "text") { if (typeof node.textKey !== "string") throw new Error(`${path}.textKey must be text.`); next.textKey = node.textKey; }
@@ -115,6 +131,7 @@ export function prepareLayout(root) {
       next.src = node.src;
       if (node.fit !== undefined) { if (!SHEET_IMAGE_FITS.includes(node.fit)) throw new Error(`${path}.fit must be ${SHEET_IMAGE_FITS.join(" or ")}.`); next.fit = node.fit; }
       if (node.height !== undefined) { if (!SHEET_IMAGE_HEIGHTS[node.height]) throw new Error(`${path}.height must be ${Object.keys(SHEET_IMAGE_HEIGHTS).join(", ")}.`); next.height = node.height; }
+      if (node.shape !== undefined) { if (!LAYOUT_IMAGE_SHAPES.includes(node.shape)) throw new Error(`${path}.shape must be ${LAYOUT_IMAGE_SHAPES.join(" or ")}.`); next.shape = node.shape; }
     }
     const style = prepareLayoutStyle(node.style, node.kind, `${path}.style`, {containers: LAYOUT_CONTAINERS});
     if (style) next.style = style;
