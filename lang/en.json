@@ -1529,7 +1529,8 @@
       "Draw": "Draw at random",
       "AnotherTerm": "Another term",
       "Term": "Term {number}",
-      "CreateThis": "Create the character"
+      "CreateThis": "Create the character",
+      "ActorType": "Actor type"
     }
   }
 }

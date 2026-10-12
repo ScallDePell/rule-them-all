@@ -110,3 +110,25 @@ test('Opened from an Actor sheet, the window starts that Actor creation at once,
   assert.equal((await sessions.list()).filter(session=>session.targetActorUuid==='Actor.luca').length,1,'reopening resumes the same creation');
   delete globalThis.game;delete globalThis.fromUuidSync;
 });
+
+test('A new character asks for the game system Actor subtype when it has several, and keeps the name typed', async()=>{
+  const {api,v,sessions}=await build();
+  await api.setActiveVersionId(v);
+  const {id}=await sessions.start(v,'creation');
+  await sessions.goTo(id,'done');
+  globalThis.game={ruleThemAll:{configurator:api,creation:sessions,configuratorReady:Promise.resolve(api)},i18n:{lang:'en',localize:k=>k},system:{documentTypes:{Actor:{character:{},npc:{}}}}};
+  globalThis.CONFIG={Actor:{typeLabels:{character:'TYPES.Actor.character',npc:'TYPES.Actor.npc'}}};
+  class Base{constructor(options){this.options=options;}async _prepareContext(){return {};}}
+  const Window=createCreationWindow({ApplicationV2:Base}),window=new Window();
+  await window._prepareContext({});
+  await window._prepareContext({});
+  let html=await window._renderHTML();
+  if(!/data-creation-actor-type/.test(html)){ // the start page: resume the draft
+    const page=await sessions.list();assert.equal(page.length,1);
+  }
+  const view=renderCreationHTML({title:'T',complete:true,index:0,count:1,steps:[],step:{id:'done',kind:'review',label:'Review',errors:[],summary:[],canFinish:true,first:true,last:true}},{t:k=>k,name:'Ayla',actorTypes:[{value:'character',label:'Character'},{value:'npc',label:'NPC'}],actorType:'npc'});
+  assert.match(view,/data-creation-name value="Ayla"/);
+  assert.match(view,/<select data-creation-actor-type><option value="character">Character<\/option><option value="npc" selected>NPC<\/option><\/select>/);
+  assert.doesNotMatch(renderCreationHTML({title:'T',complete:true,index:0,count:1,steps:[],step:{id:'done',kind:'review',label:'Review',errors:[],summary:[],canFinish:true,first:true,last:true}},{t:k=>k,actorTypes:[{value:'character',label:'Character'}]}),/data-creation-actor-type/,'one subtype: nothing to ask');
+  delete globalThis.game;delete globalThis.CONFIG;
+});

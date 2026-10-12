@@ -1525,7 +1525,8 @@
       "Draw": "Tirer au hasard",
       "AnotherTerm": "Un terme de plus",
       "Term": "Terme {number}",
-      "CreateThis": "Créer le personnage"
+      "CreateThis": "Créer le personnage",
+      "ActorType": "Type d'acteur"
     }
   }
 }

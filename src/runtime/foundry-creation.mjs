@@ -3,6 +3,7 @@
 import {resolveRuntimeRuleset} from "./runtime-contracts.mjs";
 import {creationView, readCreationAnswer, renderCreationHTML, renderCreationStartHTML} from "../ui/creation-markup.mjs";
 import {translator} from "./foundry-sheets.mjs";
+import {availableDocumentTypes} from "../core/system-document-types.mjs";
 
 const rta = () => globalThis.game?.ruleThemAll;
 const i18n = key => globalThis.game?.i18n?.localize?.(key) ?? key;
@@ -22,6 +23,8 @@ export function createCreationWindow({ApplicationV2}) {
     #sessionId = null;
     #dirty = false;
     #page = null;
+    #name = null;
+    #actorType = null;
     /** options.actorUuid: the character is built onto this Actor (opened from its sheet) rather than a new one. */
     constructor(options = {}) {
       super({...options, id: options.actorUuid ? `rta-creation-${String(options.actorUuid).replace(/[^A-Za-z0-9_-]/g, "-")}` : "rta-creation"});
@@ -62,7 +65,11 @@ export function createCreationWindow({ApplicationV2}) {
     }
     async _renderHTML() {
       const page = this.#page;
-      return page?.kind === "wizard" ? renderCreationHTML(page.view, {t: page.t, name: this.#actor?.name ?? ""}) : renderCreationStartHTML(page ?? {}, {t: page?.t ?? i18n});
+      if (page?.kind !== "wizard") return renderCreationStartHTML(page ?? {}, {t: page?.t ?? i18n});
+      // A new Actor needs one of the game system's subtypes; one built onto an existing Actor keeps its own.
+      const labels = globalThis.CONFIG?.Actor?.typeLabels ?? {};
+      const actorTypes = this.actorUuid ? [] : availableDocumentTypes("Actor").map(type => ({value: type, label: labels[type] ? i18n(labels[type]) : type}));
+      return renderCreationHTML(page.view, {t: page.t, name: this.#name ?? this.#actor?.name ?? "", actorTypes, actorType: this.#actorType ?? actorTypes[0]?.value ?? ""});
     }
     _replaceHTML(result, content) { content.innerHTML = result; }
 
@@ -72,6 +79,9 @@ export function createCreationWindow({ApplicationV2}) {
       this.#dirty = false;
       for (const control of root.querySelectorAll("[data-creation-goto]")) control.addEventListener("click", event => this.#run(() => this.#goTo(event.currentTarget.dataset.creationGoto)));
       for (const control of root.querySelectorAll("[data-creation-command]")) control.addEventListener("click", event => this.#run(() => this.#command(event.currentTarget)));
+      // The name and subtype typed on the last step stay when the page is drawn again (an error, a step visited).
+      root.querySelector("[data-creation-name]")?.addEventListener("input", event => { this.#name = event.currentTarget.value; });
+      root.querySelector("[data-creation-actor-type]")?.addEventListener("change", event => { this.#actorType = event.currentTarget.value; });
       root.querySelector(".rta-creation__panel")?.addEventListener("change", event => {
         this.#dirty = true;
         // One choice at most: ticking another replaces it, and it can still be unticked.
@@ -111,7 +121,10 @@ export function createCreationWindow({ApplicationV2}) {
       if (command === "term") { await this.#save(); await creation.nextTerm(this.#sessionId, step.id); return; }
       if (command === "finish") {
         const name = this.element.querySelector("[data-creation-name]")?.value?.trim() || this.#actor?.name || i18n("RTA.Creation.DefaultName");
-        const {actor} = await creation.finalize(this.#sessionId, {name});
+        const actorType = this.element.querySelector("[data-creation-actor-type]")?.value || null;
+        this.#name = name;
+        const {actor} = await creation.finalize(this.#sessionId, {name, actorType});
+        this.#name = null; this.#actorType = null;
         this.#sessionId = null;
         actor?.sheet?.render?.(true);
         await this.close();

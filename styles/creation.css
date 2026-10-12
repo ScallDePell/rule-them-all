@@ -163,7 +163,11 @@
   text-align: end;
 }
 
-.rta-creation__name > input {
+.rta-creation__name > span {
+  flex: 0 0 8rem;
+}
+
+.rta-creation__name > :is(input, select) {
   flex: 1;
 }
 
