@@ -182,3 +182,19 @@ test('a value can show the Content an Actor holds of one type, by name (its Orig
   await api.createSheetDefinition(v,{id:'a',nameKey:'A',target:'actor',root:{id:'root',kind:'grid',children:[{id:'w',kind:'value',source:{kind:'content',contentTypeId:'charm'}}]}});
   await assert.rejects(api.deleteContentType(v,'charm'),/still referenced/);
 });
+
+test('a block for the GM only: players never get it nor write through it', async()=>{
+  const {api,v,engine,adapter}=await setup();
+  await api.createSheetDefinition(v,{id:'gm',nameKey:'GM',target:'actor',root:{id:'root',kind:'grid',children:[
+    {id:'open',kind:'value',source:{kind:'output',reference:out('str','value','value.final')},write:{operation:'adjust'}},
+    {id:'secret',kind:'section',labelKey:'Secret',gmOnly:true,children:[{id:'hidden',kind:'value',source:{kind:'output',reference:out('str','value','value.final')},write:{operation:'adjust'}}]}]}});
+  await api.publishRuleset(v);
+  adapter.users.set('p',{role:'player',isGM:false});adapter.ownership.set('actor:hero|p','owner');
+  const sheet=api.getSheetDefinition(v,'gm'),ids=view=>view.root.children.map(c=>c.id);
+  assert.deepEqual(ids(await projectSheet(engine,v,sheet,{actor:hero})),['open','secret'],'the GM sees it');
+  assert.deepEqual(ids(await projectSheet(engine.forUser('p'),v,sheet,{actor:hero})),['open'],'a player does not');
+  await engine.forUser('p').writeSheetValue(v,hero,{sheetId:'gm',nodeId:'open',value:1});
+  await assert.rejects(engine.forUser('p').writeSheetValue(v,hero,{sheetId:'gm',nodeId:'hidden',value:1}),/Only a GM/);
+  await engine.writeSheetValue(v,hero,{sheetId:'gm',nodeId:'hidden',value:-1});
+  assert.throws(()=>prepareLayout({id:'root',kind:'grid',gmOnly:true,children:[]}),/below the root/);
+});

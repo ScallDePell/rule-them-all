@@ -1,6 +1,6 @@
 /* What a sheet shows (CP-14): its LayoutNode tree resolved for one Actor or one Item, as plain data a renderer turns into HTML.
    Values are read through the engine (bindings, Modifiers and pool bounds apply) and filtered by Permission (CP-11):
-   a value the user may not read and an Action they may not use are left out, never sent then hidden.
+   a value the user may not read, an Action they may not use and a block for the GM only are left out, never sent then hidden.
    A value the engine cannot read (a Definition the Actor does not hold, a Formula that needs a missing role) keeps its
    place with value null and the reason in error, so the sheet keeps its shape.
 
@@ -59,7 +59,7 @@ export function outputLabel(definition, reference) {
 export async function projectSheet(engine, versionId, sheet, {actor = null, content = null, items = []} = {}) {
   const ruleset = engine.ruleset(versionId);
   const context = {roles: actor ? {self: actor} : {}, defaultRole: "self", ...(content?.key ? {content: {key: content.key, role: "self"}} : {})};
-  const decisions = new Map();
+  const decisions = new Map(), gm = await engine.isGM();
   const allowed = async (operation, objectKind, objectId) => {
     const key = `${operation}|${objectKind}|${objectId}`;
     if (!decisions.has(key)) decisions.set(key, (await engine.authorize(versionId, operation, {objectKind, objectId}, actor, actor ? context : null)).allowed);
@@ -171,6 +171,8 @@ export async function projectSheet(engine, versionId, sheet, {actor = null, cont
   };
 
   const walk = async (node, scope, row) => {
+    // A block for the GM only is left out for anyone else, with all it holds.
+    if (node.gmOnly && !gm) return null;
     const base = {id: node.id, kind: node.kind, ...(node.span ? {span: node.span} : {}), ...(node.style ? {style: node.style} : {})};
     if (node.kind === "value") return value(node, scope, row);
     if (node.kind === "image") return node.src ? {...base, src: node.src, fit: node.fit ?? "cover", height: node.height ?? "medium", ...(node.shape ? {shape: node.shape} : {})} : null;

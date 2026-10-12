@@ -100,7 +100,7 @@ test('Values as dots or gauges, the Contents held, image shapes: checked by the 
   assert.equal(leaf({id:'v',kind:'value',source:{kind:'output',reference:{objectKind:'definition',objectId:'str',capabilityId:'value',outputId:'value.final'}},write:{operation:'adjust'}}).write.operation,'adjust','raised and lowered');
   const html=renderLayoutPreviewHTML(previewView(prepareLayout({id:'root',kind:'grid',columns:1,children:[{id:'d',kind:'value',source:{kind:'formula',formulaRef:'f'},display:'dots'},{id:'g',kind:'value',source:{kind:'formula',formulaRef:'f'},display:'gauge'},{id:'i',kind:'image',src:'a.png',shape:'circle'}]}),ruleset),{t:key=>key});
   assert.equal((html.match(/rta-sheet-dot rta-sheet-dot--on/g)??[]).length,3,'3 of 5 dots in the preview');
-  assert.match(html,/rta-sheet-gauge__fill" style="inline-size: 50%"/);assert.match(html,/rta-sheet-image--circle/);
+  assert.match(html,/rta-sheet-gauge__fill" style="--rta-gauge-share: 50%"/);assert.match(html,/rta-sheet-image--circle/);
   const portrait=renderLayoutPreviewHTML(previewView(prepareLayout({id:'root',kind:'grid',columns:1,children:[{id:'i',kind:'image',src:'a.png',shape:'portrait'}]}),ruleset),{t:key=>key});
   assert.match(portrait,/rta-sheet-image--portrait/);
 });

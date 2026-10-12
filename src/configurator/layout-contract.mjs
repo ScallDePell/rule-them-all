@@ -18,7 +18,7 @@
               | {kind: "field", fieldId}                               a field of the Content an Item sheet shows
               | {kind: "content", contentTypeId}                       the name of the Content(s) the Actor holds of that type (its Origin…)
    write     := {operation: "set" | "add" | "subtract" | "adjust"}     only on an output, each or field source (CP-30 WriteBinding);
-                                                                       adjust: raised and lowered (an amount either way);
+                                                                       adjust: raised and lowered by 1 with − and + on each side;
                                                                        a value.final is written through its value.base
    action    := {kind: "action", actionRef, labelKey?}                 a button that uses the Action (on the repeater's Definition inside one)
    text      := {kind: "text", textKey}
@@ -28,6 +28,7 @@
    contents  := {kind: "contents", contentTypeIds?}                  the Contents the Actor holds (its Items), of these Content Types (all when none);
                                                                        dropping an Item on the sheet adds one
    spacer    := {kind: "spacer"}
+   gmOnly: true on any node below the root: only a GM sees it (and what it holds) and writes through it.
    style: any node may carry one (colors, background, border, font, size, alignment, margins): layout-style-contract.mjs.
    span: 1 to the parent's columns (default 1). Node ids are unique in the sheet; the tree is at most 8 levels and 500 nodes deep. */
 
@@ -85,13 +86,17 @@ export function prepareLayout(root) {
     ids.add(node.id);
     if (++count > LAYOUT_MAX_NODES) throw new Error(`A sheet has at most ${LAYOUT_MAX_NODES} nodes.`);
     if (depth > LAYOUT_MAX_DEPTH) throw new Error(`${path}: a sheet is at most ${LAYOUT_MAX_DEPTH} levels deep.`);
-    for (const key of Object.keys(node)) if (!["id", "kind", "span", "style", ...FIELDS[node.kind]].includes(key)) throw new Error(`${path} contains unsupported field: ${key}.`);
+    for (const key of Object.keys(node)) if (!["id", "kind", "span", "style", "gmOnly", ...FIELDS[node.kind]].includes(key)) throw new Error(`${path} contains unsupported field: ${key}.`);
     if ((node.kind === "tab") !== (parent?.kind === "tabs")) throw new Error(node.kind === "tab" ? `${path}: a tab belongs in tabs.` : `${path}: tabs hold only tabs.`);
     const next = {id: node.id, kind: node.kind};
     const parentColumns = parent && MAX_COLUMNS[parent.kind] ? parent.columns : 1;
     if (node.span !== undefined) {
       if (!Number.isSafeInteger(node.span) || node.span < 1 || node.span > parentColumns) throw new Error(`${path}.span must be between 1 and ${parentColumns}.`);
       if (node.span > 1) next.span = node.span;
+    }
+    if (node.gmOnly !== undefined && node.gmOnly !== false) {
+      if (node.gmOnly !== true || !parent) throw new Error(`${path}.gmOnly must be true, below the root.`);
+      next.gmOnly = true;
     }
     if (MAX_COLUMNS[node.kind]) {
       const columns = node.columns ?? 1;

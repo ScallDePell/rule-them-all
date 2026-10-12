@@ -63,6 +63,9 @@ const result = await page.evaluate(async ({fixture, en, urls}) => {
   await click('[data-layout-command="undo"]');
   await click('[data-layout-command="undo"]');
   await click('[data-layout-command="undo"]');
+  { const box = element.querySelector('[data-layout-properties] [data-layout-prop="gmOnly"]'); box.checked = true; box.dispatchEvent(new Event('change', {bubbles: true})); await wait(); }
+  check('a block for the GM only', find(layout(), 'stat-value').gmOnly === true && element.querySelector('[data-layout-canvas] [data-layout-node="stat-value"][data-layout-gm-only]'));
+  await click('[data-layout-command="undo"]');
   check('undo', find(layout(), 'stat-value').write?.operation === 'set');
   // Drag the Strike button out of its section into the Stats section.
   const strike = element.querySelector('[data-layout-canvas] [data-layout-node="strike"]'), stats = element.querySelector('[data-layout-canvas] section[data-layout-node="stats"]');
@@ -180,13 +183,14 @@ if (process.env.RTA_SHOTS) {
   await page.screenshot({path: join(process.env.RTA_SHOTS, 'sheet-editor-scrolled.png')});
   await page.evaluate(() => { const side = document.querySelector('.rta-sheet-editor__side'); side.scrollTop = side.scrollHeight; });
   await page.screenshot({path: join(process.env.RTA_SHOTS, 'sheet-editor-palette.png')});
-  // A value shown as a gradient gauge that players raise and lower.
+  // A value shown as a gradient gauge, raised and lowered, for the GM only.
   await page.evaluate(async () => {
     const wait = () => new Promise(r => setTimeout(r, 60)), fire = (field, value) => { if (typeof value === 'boolean') field.checked = value; else field.value = value; field.dispatchEvent(new Event('change', {bubbles: true})); };
     const props = () => document.querySelector('[data-layout-properties]');
     fire(props().querySelector('[data-layout-prop="display"]'), 'gauge'); await wait();
     for (const [prop, value] of [['fill', 'danger'], ['fillTo', 'warning']]) { fire(props().querySelector(`[data-layout-style="${prop}"]`), value); await wait(); }
     for (const key of ['set', 'add', 'subtract']) { const box = props().querySelector(`[data-layout-write="${key}"]`); if (box) { fire(box, key !== 'set'); await wait(); } }
+    fire(props().querySelector('[data-layout-prop="gmOnly"]'), true); await wait();
     document.querySelector('.rta-sheet-editor__side').scrollTop = 0; document.querySelector('.rta-config-entry__scroll').scrollTop = 0;
   });
   await page.screenshot({path: join(process.env.RTA_SHOTS, 'sheet-editor-gauge.png')});

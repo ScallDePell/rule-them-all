@@ -1366,8 +1366,7 @@
       "Contents": "Contents",
       "OtherItems": "Other Items",
       "Raise": "Raise",
-      "Lower": "Lower",
-      "Amount": "Amount"
+      "Lower": "Lower"
     },
     "SheetEditor": {
       "Layout": "Layout",
@@ -1524,7 +1523,9 @@
       "AddTab": "Add a tab",
       "Fill": "Gauge color",
       "FillTo": "Gradient to",
-      "DotColor": "Dot color"
+      "DotColor": "Dot color",
+      "Seen": "Seen by",
+      "GmOnly": "The GM only"
     },
     "Reaction": {
       "Title": "Reaction",

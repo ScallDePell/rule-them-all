@@ -74,6 +74,8 @@ export class RuntimeEngine{
     return out;
   }
   #subject(ref){return this.adapter.subject(ref?normalizeRuntimeContainerRef(ref):null,this.userId??undefined);}
+  /** Whether this engine's user is a GM (what a sheet marked for the GM only needs). */
+  async isGM(){return Boolean((await this.#subject(null))?.isGM);}
   /** CP-11 decision for one operation on one Ruleset object, for this engine's user on a container. */
   async authorize(versionId,operation,target,containerRef=null,context=null){
     const subject=await this.#subject(containerRef),evaluator=this.evaluator(versionId);

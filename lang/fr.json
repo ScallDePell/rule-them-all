@@ -1362,8 +1362,7 @@
       "Contents": "Contenus",
       "OtherItems": "Autres objets",
       "Raise": "Augmenter",
-      "Lower": "Diminuer",
-      "Amount": "Quantité"
+      "Lower": "Diminuer"
     },
     "SheetEditor": {
       "Layout": "Mise en page",
@@ -1520,7 +1519,9 @@
       "AddTab": "Ajouter un onglet",
       "Fill": "Couleur de la jauge",
       "FillTo": "Dégradé vers",
-      "DotColor": "Couleur des pastilles"
+      "DotColor": "Couleur des pastilles",
+      "Seen": "Visible par",
+      "GmOnly": "Le MJ seulement"
     },
     "Reaction": {
       "Title": "Réaction",

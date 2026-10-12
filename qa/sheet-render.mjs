@@ -71,7 +71,7 @@ const styled = {id: 'styled', target: 'actor', root: {id: 'root', kind: 'grid', 
     {id: 'portrait', kind: 'image', src: 'icons/svg/mystery-man.svg', shape: 'circle', height: 'small'},
     {id: 'held', kind: 'value', source: {kind: 'content', contentTypeId: 'weapon'}, style: {label: 'top'}},
     {id: 'd-will', kind: 'value', labelKey: 'Will', source: {kind: 'output', reference: out_('dex', 'value', 'value.final')}, display: 'dots', dots: 10, write: {operation: 'set'}},
-    {id: 'g-hp', kind: 'value', labelKey: 'Health', source: {kind: 'output', reference: out_('hp', 'pool', 'pool.current', 'points')}, display: 'gauge', style: {fill: 'danger', fillTo: '#e0b040'}},
+    {id: 'g-hp', kind: 'value', labelKey: 'Health', source: {kind: 'output', reference: out_('hp', 'pool', 'pool.current', 'points')}, display: 'gauge', write: {operation: 'adjust'}, style: {fill: 'danger', fillTo: '#5fa04b'}},
     {id: 'tall', kind: 'image', src: 'icons/svg/mystery-man.svg', shape: 'portrait', height: 'small'},
     {id: 'a-wit', kind: 'value', labelKey: 'Wits', source: {kind: 'output', reference: out_('wit', 'value', 'value.final')}, write: {operation: 'adjust'}}]}]}};
 

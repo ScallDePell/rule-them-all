@@ -149,6 +149,25 @@
   cursor: pointer;
 }
 
+/* A block only the GM sees: outlined, an eye struck through in its corner. */
+.rta-sheet--edit [data-layout-gm-only] {
+  position: relative;
+  outline: 1px dashed var(--rta-color-warning);
+  outline-offset: 2px;
+}
+
+.rta-sheet--edit [data-layout-gm-only]::after {
+  content: "\f070";
+  position: absolute;
+  inset-block-start: 0;
+  inset-inline-end: 0;
+  font-family: var(--font-awesome);
+  font-weight: 900;
+  font-size: var(--rta-type-sm);
+  color: var(--rta-color-warning);
+  pointer-events: none;
+}
+
 .rta-sheet--edit [data-layout-node]:hover {
   outline: 1px dashed var(--rta-color-border-highlight);
   outline-offset: 2px;

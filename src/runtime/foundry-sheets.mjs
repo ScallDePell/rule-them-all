@@ -88,10 +88,10 @@ export function createRulesetSheets({ActorSheetV2, ItemSheetV2}) {
       const root = this.element;
       root.querySelector("[data-sheet-name]")?.addEventListener("change", event => this.document.update({name: event.currentTarget.value}).catch(notifyError));
       for (const input of root.querySelectorAll("[data-sheet-write]:not([data-sheet-dot], [data-sheet-adjust])")) input.addEventListener("change", event => this.#write(event.currentTarget));
-      // − and + of a value that can go both ways: the amount typed beside them, 1 when none.
+      // − and + of a value that can go both ways: one less, one more.
       for (const step of root.querySelectorAll("[data-sheet-adjust]")) step.addEventListener("click", event => {
-        const button = event.currentTarget, amount = Number(button.parentElement.querySelector("[data-sheet-adjust-amount]")?.value) || 1;
-        this.#write({dataset: button.dataset, type: "number", value: String(Number(button.dataset.sheetAdjust) * Math.abs(amount))});
+        const button = event.currentTarget;
+        this.#write({dataset: button.dataset, type: "number", value: button.dataset.sheetAdjust});
       });
       // A dot of a value shown as dots sets the value it carries.
       for (const dot of root.querySelectorAll("[data-sheet-dot]")) dot.addEventListener("click", event => { const button = event.currentTarget; this.#write({dataset: button.dataset, type: "number", value: button.dataset.sheetDot}); });

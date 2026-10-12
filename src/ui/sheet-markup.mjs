@@ -3,7 +3,7 @@
    Data contract with the sheet controller (runtime/foundry-sheets.mjs):
    - [data-sheet-write=nodeId] (+ data-definition-id, data-operation) is a value the player changes;
      a dot of a value shown as dots carries data-sheet-dot=n (its value once clicked) instead of being a field;
-     an adjust value has −/+ buttons [data-sheet-adjust=-1|1] that apply the amount in [data-sheet-adjust-amount] (1 when empty);
+     an adjust value has − and + buttons [data-sheet-adjust=-1|1] on each side of it, by 1;
    - [data-sheet-action=actionId] (+ data-definition-id) uses an Action;
    - [data-sheet-tab=id] shows the [data-sheet-panel=id] of its tabs;
    - [data-sheet-item-open=key] opens an owned Item's sheet, [data-sheet-item-remove=key] removes it;
@@ -41,15 +41,15 @@ function dotsControl(node, t, data) {
 function gaugeHTML(node) {
   const max = Number(node.maximum), min = Number(node.minimum ?? 0), value = Number(node.value);
   const share = Number.isFinite(max) && max > min && Number.isFinite(value) ? Math.max(0, Math.min(100, Math.round((value - min) / (max - min) * 100))) : 0;
-  return `<span class="rta-sheet-gauge" role="meter" aria-valuemin="${escape(String(min))}" aria-valuemax="${escape(String(Number.isFinite(max) ? max : ""))}" aria-valuenow="${escape(String(Number.isFinite(value) ? value : ""))}"><span class="rta-sheet-gauge__fill" style="inline-size: ${share}%"></span><span class="rta-sheet-gauge__text">${escape(formatSheetValue(node.value))}${Number.isFinite(max) ? ` / ${escape(formatSheetValue(max))}` : ""}</span></span>`;
+  return `<span class="rta-sheet-gauge" role="meter" aria-valuemin="${escape(String(min))}" aria-valuemax="${escape(String(Number.isFinite(max) ? max : ""))}" aria-valuenow="${escape(String(Number.isFinite(value) ? value : ""))}"><span class="rta-sheet-gauge__fill" style="--rta-gauge-share: ${share}%"></span><span class="rta-sheet-gauge__text">${escape(formatSheetValue(node.value))}${Number.isFinite(max) ? ` / ${escape(formatSheetValue(max))}` : ""}</span></span>`;
 }
 
-/** The − and + of a value raised and lowered, the amount between them (1 when empty).
+/** A value raised and lowered by 1: − before what shows it, + after.
     In the editor they are plain marks, so the whole block still drags (some browsers never drag a button). */
-function adjustHTML(t, data, edit) {
+function adjustHTML(shown, t, data, edit) {
   const button = (step, label) => edit ? `<span class="rta-sheet-value__step" data-sheet-adjust="${step}" aria-hidden="true">${step < 0 ? "−" : "+"}</span>`
     : `<button type="button" class="rta-sheet-value__step" ${data} data-sheet-adjust="${step}" aria-label="${escape(t(label))}">${step < 0 ? "−" : "+"}</button>`;
-  return `${button(-1, "RTA.Sheet.Lower")}<input type="number" class="rta-sheet-value__amount" data-sheet-adjust-amount step="any" min="0" placeholder="1" aria-label="${escape(t("RTA.Sheet.Amount"))}">${button(1, "RTA.Sheet.Raise")}`;
+  return `${button(-1, "RTA.Sheet.Lower")}${shown}${button(1, "RTA.Sheet.Raise")}`;
 }
 
 function valueControl(node, t, row, edit = false) {
@@ -57,8 +57,9 @@ function valueControl(node, t, row, edit = false) {
   const numericValue = ["number", "integer"].includes(node.valueType);
   if (node.display === "dots" && numericValue) return dotsControl(node, t, data);
   // A gauge shows the bar; a player who may change the value still gets its field beside it.
-  // A gauge already shows the number: raised and lowered, it only adds the − and +.
-  if (node.display === "gauge" && numericValue) return `${gaugeHTML(node)}${write?.operation === "adjust" ? adjustHTML(t, data, edit) : write ? valueControl({...node, display: undefined, maximum: undefined}, t, row, edit) : ""}`;
+  // A gauge already shows the number: raised and lowered, the − and + go on each side of it.
+  if (node.display === "gauge" && numericValue) return write?.operation === "adjust" ? adjustHTML(gaugeHTML(node), t, data, edit)
+    : `${gaugeHTML(node)}${write ? valueControl({...node, display: undefined, maximum: undefined}, t, row, edit) : ""}`;
   const bound = node.maximum !== undefined ? `<span class="rta-sheet-value__bound">/ ${escape(formatSheetValue(node.maximum))}</span>` : "";
   if (node.valueType === "boolean") {
     if (write) return `<input type="checkbox" ${data} ${node.value ? "checked" : ""}>`;
@@ -70,16 +71,17 @@ function valueControl(node, t, row, edit = false) {
     const limits = numeric ? `${node.minimum !== undefined ? ` min="${escape(node.minimum)}"` : ""}${node.maximum !== undefined ? ` max="${escape(node.maximum)}"` : ""}${node.valueType === "integer" ? ` step="1"` : ` step="any"`}` : "";
     return `<input type="${numeric ? "number" : "text"}" ${data} value="${escape(node.value ?? "")}"${limits}>${bound}`;
   }
-  // adjust: raised or lowered by the amount typed (1 when none) with − and +.
-  if (write.operation === "adjust") return `<span class="rta-sheet-value__text">${escape(formatSheetValue(node.value))}</span>${bound}${adjustHTML(t, data, edit)}`;
+  // adjust: − and + on each side of the value, by 1.
+  if (write.operation === "adjust") return adjustHTML(`<span class="rta-sheet-value__text">${escape(formatSheetValue(node.value))}${bound}</span>`, t, data, edit);
   // add / subtract: the value stays read; the field takes the amount, applied on change, then cleared.
   const sign = write.operation === "add" ? "+" : "−";
   return `<span class="rta-sheet-value__text">${escape(formatSheetValue(node.value))}</span>${bound}<input type="number" class="rta-sheet-value__amount" ${data} step="any" min="0" placeholder="${sign}" aria-label="${escape(t(write.operation === "add" ? "RTA.Sheet.Add" : "RTA.Sheet.Subtract"))}">`;
 }
 
 /* In the editor (edit: true) every node carries data-layout-node so a click selects it, and an empty container
-   shows a drop zone; the controls themselves are inert there (sheet.css). */
-const mark = (node, edit) => edit ? ` data-layout-node="${escape(node.id)}"` : "";
+   shows a drop zone; the controls themselves are inert there (sheet.css).
+   A block for the GM only is outlined there (data-layout-gm-only). */
+const mark = (node, edit) => edit ? ` data-layout-node="${escape(node.id)}"${node.gmOnly ? " data-layout-gm-only" : ""}` : "";
 const dropZone = (id, t) => `<div class="rta-sheet-drop" data-layout-node="${escape(id)}" data-layout-drop>${escape(t("RTA.SheetEditor.Empty"))}</div>`;
 
 /** The Contents an Actor holds, grouped under their Content Type when there are several types. */

@@ -244,7 +244,7 @@ export function contentFields(ruleset, contentTypeIds = []) {
 /* Preview: the projection a played sheet would get, with sample values instead of an Actor's. */
 const SAMPLE = {number: 10, integer: 10, boolean: true};
 function previewValue(node, ruleset, row, contentTypeIds) {
-  const source = node.source, view = {id: node.id, kind: "value", ...(node.span ? {span: node.span} : {}), ...(node.style ? {style: node.style} : {}),
+  const source = node.source, view = {id: node.id, kind: "value", ...(node.span ? {span: node.span} : {}), ...(node.style ? {style: node.style} : {}), ...(node.gmOnly ? {gmOnly: true} : {}),
     ...(node.display ? {display: node.display} : {}), ...(node.dots ? {dots: node.dots} : {}), label: node.labelKey || "", write: node.write ? {operation: node.write.operation} : null};
   if (!view.label) Object.assign(view, defaultValueLabel(source, ruleset, {contentTypeIds}));
   let valueType = "number";
@@ -271,7 +271,7 @@ function previewValue(node, ruleset, row, contentTypeIds) {
 
 export function previewView(root, ruleset, {target = "actor", contentTypeIds = []} = {}) {
   const walk = (node, row) => {
-    const base = {id: node.id, kind: node.kind, ...(node.span ? {span: node.span} : {}), ...(node.style ? {style: node.style} : {})};
+    const base = {id: node.id, kind: node.kind, ...(node.span ? {span: node.span} : {}), ...(node.style ? {style: node.style} : {}), ...(node.gmOnly ? {gmOnly: true} : {})};
     if (node.kind === "value") return previewValue(node, ruleset, row, contentTypeIds);
     if (node.kind === "image") return {...base, src: node.src, fit: node.fit ?? "cover", height: node.height ?? "medium", ...(node.shape ? {shape: node.shape} : {})};
     if (node.kind === "text") return {...base, text: node.textKey};

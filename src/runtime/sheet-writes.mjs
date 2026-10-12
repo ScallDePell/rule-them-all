@@ -4,7 +4,7 @@
    intent: {sheetId, nodeId, value, definitionId?, contentKey?, contentTypeId?}
    - definitionId: the repeater row the value belongs to;
    - contentKey: the owned Content an Item sheet shows; contentTypeId picks the AUTO Item sheet.
-   With add or subtract, value is the amount; with adjust, a signed amount (−2 lowers by 2); with set, the new value. Setting a value.final moves its value.base by the difference. */
+   With add or subtract, value is the amount; with adjust, a signed amount (−1 lowers by 1); with set, the new value. Setting a value.final moves its value.base by the difference. */
 import {sheetFor} from "../configurator/sheet-auto-layout.mjs";
 import {normalizeRuntimeContainerRef} from "./runtime-contracts.mjs";
 import {RuntimeTransactionError, TRANSACTION_ERRORS} from "./runtime-transaction.mjs";
@@ -28,6 +28,7 @@ export async function writeSheetValue(engine, versionId, containerRef, intent = 
   if (!sheet) throw new Error(`Sheet unavailable: ${intent.sheetId}.`);
   const path = findPath(sheet.root, intent.nodeId), node = path?.at(-1);
   if (node?.kind !== "value" || !node.write) throw forbidden(`This sheet does not let ${intent.nodeId} be changed.`);
+  if (path.some(entry => entry.gmOnly) && !await engine.isGM()) throw forbidden(`Only a GM can change ${intent.nodeId}.`);
   const operation = node.write.operation, source = node.source;
   const context = {roles: {self: actor}, defaultRole: "self"};
 

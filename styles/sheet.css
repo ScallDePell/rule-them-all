@@ -175,10 +175,6 @@
   text-align: end;
 }
 
-.rta-sheet-value__control > input.rta-sheet-value__amount {
-  inline-size: 3rem;
-}
-
 .rta-sheet-value__control > input[type="text"] {
   inline-size: 9rem;
   text-align: start;
@@ -536,10 +532,11 @@ button.rta-sheet-dot {
   border-radius: var(--rta-radius-control);
 }
 
+/* The fill spans the whole bar and is cut at the value: a gradient keeps its colors where they are (half full shows the first half). */
 .rta-sheet-gauge__fill {
   position: absolute;
-  inset-block: 0;
-  inset-inline-start: 0;
+  inset: 0;
+  clip-path: inset(0 calc(100% - var(--rta-gauge-share, 0%)) 0 0);
   background: var(--rta-sheet-fill, var(--rta-color-border-highlight));
   opacity: var(--rta-sheet-fill-opacity, .45);
 }

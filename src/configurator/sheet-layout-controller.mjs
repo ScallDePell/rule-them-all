@@ -226,6 +226,7 @@ export class SheetLayoutController {
     if (prop === "src") return this.#commit(updateNode(this.#root, node.id, {src: value.trim()}));
     if (prop === "fit" || prop === "height") return this.#commit(updateNode(this.#root, node.id, {[prop]: value === "cover" && prop === "fit" || value === "medium" && prop === "height" ? undefined : value}));
     if (prop === "contentTypeIds") return this.#commit(updateNode(this.#root, node.id, {contentTypeIds: [...target.selectedOptions].map(option => option.value).filter(Boolean)}));
+    if (prop === "gmOnly") return this.#commit(updateNode(this.#root, node.id, {gmOnly: target.checked || undefined}));
     if (prop === "actionRef") return this.#commit(updateNode(this.#root, node.id, {actionRef: value}));
 
     if (prop === "sourceKind") {
@@ -343,7 +344,7 @@ export class SheetLayoutController {
       .filter(([kind]) => (kind !== "each" || inRepeater) && (kind !== "field" || this.#target === "item") && (kind !== "content" || this.#target === "actor") && (kind === node.source?.kind || this.#sourceChoices(kind, node).length));
     const label = defaultValueLabel(node.source, r, {contentTypeIds: this.#contentTypeIds});
     return {
-      parentColumns: found.parent ? columnsOf(found.parent) : 1,
+      parentColumns: found.parent ? columnsOf(found.parent) : 1, isRoot: !found.parent,
       columnChoices: kind => Array.from({length: maxColumns(kind)}, (_, i) => ({value: String(i + 1), label: format("RTA.SheetEditor.ColumnCount", {count: i + 1}, String(i + 1)), colors: neutral})),
       spanChoices: count => Array.from({length: count}, (_, i) => ({value: String(i + 1), label: format("RTA.SheetEditor.SpanCount", {count: i + 1}, String(i + 1)), colors: neutral})),
       definitionTypes: (r.definitionTypes ?? []).filter(t => (r.definitions ?? []).some(d => d.definitionTypeId === t.id)).map(t => ({value: t.id, label: t.nameKey, colors: selectColorsAttribute(this.#colors("definitionType", t))})),
