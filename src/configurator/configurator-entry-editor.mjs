@@ -19,7 +19,7 @@ import {availableDocumentTypes} from "../core/system-document-types.mjs";
 
 import {pickerSummary,missingTargetLabel,editorDisplayTitle} from "../ui/editor-display-text.mjs";
 import {refToken,parseRefToken} from "./reference-token.mjs";
-import {simpleFormulaModel,simpleConditionModel,CONSTANT_OPERATORS} from "./entry-expression-model.mjs";
+import {simpleFormulaModel,simpleConditionModel,operandEditorRow,CONSTANT_OPERATORS} from "./entry-expression-model.mjs";
 import {buildFieldReferenceChoices} from "./field-reference-choices.mjs";
 import {createEntrySeed} from "./entry-seed.mjs";
 import {ENTRY_OPERATIONS} from "./entry-operations.mjs";
@@ -210,8 +210,11 @@ export class ConfiguratorEntryEditor extends ConfiguratorWindow {
     const referenceTargetToken=refToken(data);
     const bindingTargetToken=refToken(data.targetRef??{});
     const bindingFormulaChoices=formulas.map(x=>({id:x.id,label:x.nameKey,...withColors("formula",x),selected:x.id===data.formulaRef}));
-    const formulaModel=simpleFormulaModel(data.expression??{type:"literal",value:0},{parameters,formulas,references:referenceChoices,withColors});
-    const conditionModel=simpleConditionModel(data.expression??{type:"literal",value:true},{parameters,formulas,references:referenceChoices,withColors});
+    // The counters of the Ruleset's dice, once each, for operands reading the dice of a roll.
+    const neutralColors=selectColorsAttribute([RTA_NEUTRAL_COLOR]),operandCounters=["formula","condition"].includes(this.#kind)?this.#diceCounters():[];
+    const operandSources={parameters,formulas,references:referenceChoices,withColors,counters:operandCounters,neutral:neutralColors};
+    const formulaModel=simpleFormulaModel(data.expression??{type:"literal",value:0},operandSources);
+    const conditionModel=simpleConditionModel(data.expression??{type:"literal",value:true},operandSources);
     const relationTargets=relationCatalog(this.#renderCatalog??{}, {exclude:{objectKind:this.#kind,objectId:data.id}});
     const relationRows=(data.relations??[]).map(relation=>relationRowModel(relation,relationTargets,(kind,entry)=>selectColorsAttribute(this.#optionColors(kind,entry))));
     const tagChoices=selection(tags.map(x=>({id:x.id,label:x.nameKey,...withColors("tag",x)})),data.tags);
@@ -296,7 +299,7 @@ export class ConfiguratorEntryEditor extends ConfiguratorWindow {
     const mark=()=>{if(!this.#dirty){this.#dirty=true;this.#syncFooter();}};
     wireOrderedLists(this.element,{onChange:mark});
     form.addEventListener("input",event=>{mark();if(event.target.closest?.('[data-card="dieCounter"]'))syncDieFaceCounts(this.element);const row=event.target.closest?.("[data-definition-field]");if(row&&!row.dataset.required){const use=row.querySelector("[data-field-present]");if(use&&!use.checked){use.checked=true;}}if(event.target.matches?.("[data-picker-filter]"))this.#filterPicker(event.target);});
-    form.addEventListener("change",event=>{if(event.target.matches?.("[data-step-source-family]")&&event.target.checked){const group=event.target.closest("[data-step-prop=sourceCollection]");for(const other of group?.querySelectorAll("[data-step-source-family]")??[])if(other!==event.target)other.checked=false;}this.#syncCreationSource(event.target);this.#syncCreationKind(event.target);mark();if(event.target.matches?.("[data-presentation-override]")){const row=event.target.closest("[data-presentation-key]");const control=row?.querySelector(".rta-declarative-presentation__value");if(control)control.hidden=!event.target.checked;}this.#syncFieldRow(event.target);this.#syncModeRows(event.target);this.#syncOperandEditor(event.target);this.#syncRuleOperandEditor(event.target);this.#syncPickerSummary(event.target);this.#syncStorageKind(event.target);if(event.target.matches?.("[data-color-override-toggle]")){const input=event.target.closest("[data-color-override-editor]")?.querySelector("[data-custom-color-input]");if(input)input.disabled=!event.target.checked;}});
+    form.addEventListener("change",event=>{if(event.target.matches?.("[data-step-source-family]")&&event.target.checked){const group=event.target.closest("[data-step-prop=sourceCollection]");for(const other of group?.querySelectorAll("[data-step-source-family]")??[])if(other!==event.target)other.checked=false;}this.#syncCreationSource(event.target);this.#syncCreationKind(event.target);mark();if(event.target.matches?.("[data-presentation-override]")){const row=event.target.closest("[data-presentation-key]");const control=row?.querySelector(".rta-declarative-presentation__value");if(control)control.hidden=!event.target.checked;}this.#syncFieldRow(event.target);this.#syncModeRows(event.target);this.#syncOperandEditor(event.target);this.#syncRuleOperandEditor(event.target);this.#syncDiceRead(event.target);this.#syncPickerSummary(event.target);this.#syncStorageKind(event.target);if(event.target.matches?.("[data-color-override-toggle]")){const input=event.target.closest("[data-color-override-editor]")?.querySelector("[data-custom-color-input]");if(input)input.disabled=!event.target.checked;}});
     form.addEventListener("change",event=>{const card=event.target.closest?.("[data-card]");if(card)syncCard(card);if(event.target.matches?.("[data-source-kind]"))syncValueSource(event.target);if(event.target.matches?.('[data-input-prop="sourceKind"]'))syncTestInputSource(event.target);if(event.target.matches?.('[data-slot-prop="entryMode"]'))syncEntryMode(event.target);// Tie-break, reroll and sides only matter once an initiative roll is chosen.
       if(event.target.matches?.("[data-mapping-choice]")){const mapping=event.target.closest("[data-outcome-mapping]"),row=mapping?.querySelector("[data-mapping-choice-count-row]");if(row)row.hidden=!mapping.querySelector("[data-mapping-choice]:checked");}
       if(event.target.matches?.('[name="groupTestRef"]'))for(const row of form.querySelectorAll("[data-group-only]"))row.hidden=!event.target.value;
@@ -349,6 +352,13 @@ export class ConfiguratorEntryEditor extends ConfiguratorWindow {
     if(!target?.matches?.("[data-rule-operand-kind]"))return;
     const row=target.closest("[data-rule-operand]");
     for(const editor of row?.querySelectorAll("[data-rule-operand-editor]")??[])editor.hidden=editor.dataset.ruleOperandEditor!==target.value;
+  }
+  /** Dice read by counter take a counter; any other reading may compare the faces. */
+  #syncDiceRead(target){
+    if(!target?.matches?.('[data-rule-operand-editor="dice"] [data-operand-part="read"]'))return;
+    const editor=target.closest("[data-rule-operand-editor]"),counter=target.value==="counter";
+    for(const part of editor.querySelectorAll("[data-dice-compare-only]"))part.hidden=counter;
+    for(const part of editor.querySelectorAll("[data-dice-counter-only]"))part.hidden=!counter;
   }
 
   /** Effect value rows follow the value source, and disappear for operations without operand (toggle). */
@@ -565,11 +575,17 @@ export class ConfiguratorEntryEditor extends ConfiguratorWindow {
     return row;
   }
 
+  #diceCounters(){
+    const seen=new Map();
+    for(const die of this.#renderList("dice","listDice"))for(const counter of die.counters??[])if(!seen.has(counter.id))seen.set(counter.id,{id:counter.id,label:counter.labelKey||counter.id});
+    return [...seen.values()];
+  }
   #ruleOperandHTML(index){
     const parameters=renderSelectOptions(this.#api.listParameters(this.#versionId).map(x=>({...x,colors:selectColorsAttribute(this.#optionColors("parameter",x))})),{labelKey:"nameKey",colorize:true});
     const formulas=renderSelectOptions(this.#api.listFormulas(this.#versionId).map(x=>({...x,colors:selectColorsAttribute(this.#optionColors("formula",x))})),{labelKey:"nameKey",colorize:true});
     const references=renderSelectOptions(this.#referenceChoices(),{valueKey:"token",colorize:true});
-    return renderRuleOperandHTML({index,parameters,formulas,references});
+    const row=operandEditorRow({type:"literal",value:0},index,{counters:this.#diceCounters(),neutral:selectColorsAttribute([RTA_NEUTRAL_COLOR])});
+    return renderRuleOperandHTML({index,parameters,formulas,references,row});
   }
 
   #renumberRuleOperands(list){

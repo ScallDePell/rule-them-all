@@ -66,3 +66,17 @@
 .rta-rule-operand__controls > [data-action="removeRuleOperand"] {
   grid-column: 3;
 }
+
+/* An operand made of several parts (the dice of a roll, a distance, Actors nearby):
+   its controls stack in the value column, each as wide as an ordinary value. */
+.rta-rule-operand__controls > .rta-rule-operand__parts:not([hidden]) {
+  display: flex;
+  flex-direction: column;
+  gap: var(--rta-gap-row);
+}
+
+.rta-rule-operand__parts > span > :is(input, select, .rta-select) {
+  width: 100%;
+  min-width: 0;
+  box-sizing: border-box;
+}

@@ -1269,6 +1269,49 @@
       "FaceValue": "Value",
       "FaceRank": "Its rank",
       "UnnamedCounter": "New counter"
+    },
+    "Operand": {
+      "Kind": {
+        "literal": "Literal",
+        "parameter": "Parameter",
+        "formula": "Formula",
+        "reference": "Reference",
+        "context": "Context value",
+        "dice": "Dice of the roll",
+        "distance": "Distance",
+        "nearby": "Actors nearby"
+      },
+      "DiceRead": {
+        "count": "Number of dice",
+        "sum": "Sum of the dice",
+        "highest": "Highest die",
+        "lowest": "Lowest die",
+        "size": "Dice thrown",
+        "matches": "Largest set of equal dice",
+        "counter": "Counter of the faces"
+      },
+      "Compare": {
+        "any": "Of any value",
+        "eq": "Equal to",
+        "neq": "Other than",
+        "gt": "Above",
+        "gte": "At least",
+        "lt": "Below",
+        "lte": "At most"
+      },
+      "Role": {
+        "self": "Self",
+        "target": "Target",
+        "source": "Source"
+      },
+      "Side": {
+        "any": "Anyone",
+        "ally": "Allies",
+        "enemy": "Enemies"
+      },
+      "AllGroups": "Every group",
+      "FaceValue": "Face value",
+      "Within": "Within distance"
     }
   }
 }

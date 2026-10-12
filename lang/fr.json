@@ -1265,6 +1265,49 @@
       "FaceValue": "Valeur",
       "FaceRank": "Son rang",
       "UnnamedCounter": "Nouveau compteur"
+    },
+    "Operand": {
+      "Kind": {
+        "literal": "Valeur littérale",
+        "parameter": "Paramètre",
+        "formula": "Formule",
+        "reference": "Référence",
+        "context": "Valeur du contexte",
+        "dice": "Dés du jet",
+        "distance": "Distance",
+        "nearby": "Acteurs à proximité"
+      },
+      "DiceRead": {
+        "count": "Nombre de dés",
+        "sum": "Somme des dés",
+        "highest": "Dé le plus haut",
+        "lowest": "Dé le plus bas",
+        "size": "Dés lancés",
+        "matches": "Plus grand groupe de dés égaux",
+        "counter": "Compteur des faces"
+      },
+      "Compare": {
+        "any": "De toute valeur",
+        "eq": "Égaux à",
+        "neq": "Autres que",
+        "gt": "Au-dessus de",
+        "gte": "Au moins",
+        "lt": "En dessous de",
+        "lte": "Au plus"
+      },
+      "Role": {
+        "self": "Soi",
+        "target": "Cible",
+        "source": "Source"
+      },
+      "Side": {
+        "any": "Tout le monde",
+        "ally": "Alliés",
+        "enemy": "Ennemis"
+      },
+      "AllGroups": "Tous les groupes",
+      "FaceValue": "Valeur de face",
+      "Within": "Dans un rayon de"
     }
   }
 }

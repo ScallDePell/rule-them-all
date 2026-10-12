@@ -8,3 +8,9 @@ export function localizedMarkup(key,fallback){
   const localized=globalThis.game?.i18n?.localize?.(token);
   return escapeHTML(localized&&localized!==token?localized:fallback);
 }
+
+/** The same for a full translation key (RTA.Operand.Kind.dice), with its English fallback. */
+export function localizedKeyMarkup(key,fallback){
+  const localized=globalThis.game?.i18n?.localize?.(key);
+  return escapeHTML(localized&&localized!==key?localized:fallback);
+}
