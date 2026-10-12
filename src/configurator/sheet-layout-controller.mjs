@@ -27,6 +27,8 @@ const toHex = rgb => { const m = String(rgb).match(/\d+(\.\d+)?/g); return m && 
 const i18n = key => { const text = globalThis.game?.i18n?.localize?.(key); return text && text !== key ? text : key; };
 const format = (key, data, fallback) => { const text = globalThis.game?.i18n?.format?.(key, data); return text && text !== key ? text : fallback; };
 const HISTORY = 50;
+/** The element an event happened on: Firefox aims drag events at the text inside an element (a text node). */
+const elementOf = event => event.target?.nodeType === 1 ? event.target : event.target?.parentElement ?? null;
 /** Pixels at the top and bottom of a block where a drop goes next to it rather than into it. */
 const EDGE = 12;
 
@@ -46,24 +48,26 @@ export class SheetLayoutController {
     host.addEventListener("input", event => { if (event.target.matches?.('[data-layout-style="opacity"]')) { event.stopPropagation(); const label = event.target.closest(".rta-form-row")?.querySelector("[data-layout-opacity-value]"); if (label) label.textContent = `${event.target.value} %`; } });
     host.addEventListener("toggle", event => { if (event.target.matches?.("[data-layout-style-group]")) this.#styleOpen = event.target.open; }, true);
     host.addEventListener("click", event => this.#onClick(event));
+    // A palette element is not a button: Enter or Space adds it like a click.
+    host.addEventListener("keydown", event => { const item = elementOf(event)?.closest("[data-layout-palette]"); if (item && (event.key === "Enter" || event.key === " ")) { event.preventDefault(); this.#add(JSON.parse(item.dataset.layoutPalette), this.#selected); } });
     host.addEventListener("input", event => { if (event.target.matches?.("[data-layout-palette-filter]")) this.#filterPalette(event.target.value); });
     host.addEventListener("toggle", event => { if (event.target.matches?.("[data-layout-palette-panel]")) this.#paletteOpen = event.target.open; }, true);
     // A block of the sheet, or an element of the palette, dragged onto the sheet.
     host.addEventListener("dragstart", event => {
-      const item = event.target.closest?.("[data-layout-palette]"), node = event.target.closest?.("[data-layout-canvas] [data-layout-node]");
+      const item = elementOf(event)?.closest("[data-layout-palette]"), node = elementOf(event)?.closest("[data-layout-canvas] [data-layout-node]");
       if (!item && !node) return;
       this.#dragged = item ? {spec: JSON.parse(item.dataset.layoutPalette)} : {id: node.dataset.layoutNode};
       if (event.dataTransfer) { event.dataTransfer.effectAllowed = item ? "copy" : "move"; event.dataTransfer.setData("text/plain", item?.dataset.layoutPalette ?? node.dataset.layoutNode); }
     });
     host.addEventListener("dragover", event => {
-      const target = event.target.closest?.("[data-layout-canvas] [data-layout-node]"), place = target && this.#placement(event, target);
+      const target = elementOf(event)?.closest("[data-layout-canvas] [data-layout-node]"), place = target && this.#placement(event, target);
       if (place) { event.preventDefault(); this.#markDrop(target, place); }
       else this.#markDrop(null);
     });
     host.addEventListener("dragleave", event => { if (!this.#host.contains(event.relatedTarget)) this.#markDrop(null); });
     host.addEventListener("dragend", () => { this.#markDrop(null); this.#dragged = null; });
     host.addEventListener("drop", event => {
-      const target = event.target.closest?.("[data-layout-canvas] [data-layout-node]"), place = target && this.#placement(event, target), dragged = this.#dragged;
+      const target = elementOf(event)?.closest("[data-layout-canvas] [data-layout-node]"), place = target && this.#placement(event, target), dragged = this.#dragged;
       event.preventDefault(); this.#markDrop(null); this.#dragged = null;
       if (!place) return;
       const targetId = target.dataset.layoutNode, at = {before: place === "before", beside: place !== "into"};
@@ -164,13 +168,13 @@ export class SheetLayoutController {
   }
 
   #onClick(event) {
-    const command = event.target.closest?.("[data-layout-command]");
+    const command = elementOf(event)?.closest("[data-layout-command]");
     if (command) { event.preventDefault(); return this.#command(command.dataset.layoutCommand); }
-    const item = event.target.closest?.("[data-layout-palette]");
+    const item = elementOf(event)?.closest("[data-layout-palette]");
     if (item) { event.preventDefault(); return this.#add(JSON.parse(item.dataset.layoutPalette), this.#selected); }
-    const pick = event.target.closest?.("[data-layout-pick]");
+    const pick = elementOf(event)?.closest("[data-layout-pick]");
     if (pick) { event.preventDefault(); return this.#pick(pick); }
-    const node = event.target.closest?.("[data-layout-canvas] [data-layout-node]");
+    const node = elementOf(event)?.closest("[data-layout-canvas] [data-layout-node]");
     if (node) { event.preventDefault(); this.select(node.dataset.layoutNode); }
   }
   #command(command) {

@@ -27,7 +27,8 @@ const KIND_ICONS = {section: "fa-square", grid: "fa-table-cells", tabs: "fa-fold
 /** What can be added: blocks, then the Ruleset's own elements. A click adds an item into the selection; it can also
    be dragged onto the sheet. groups: paletteGroups (configurator/sheet-layout-model.mjs), labels given by the controller. */
 export function renderLayoutPaletteHTML(groups, {open = true, filter = ""} = {}) {
-  const item = entry => `<button type="button" class="rta-sheet-editor__palette-item" draggable="true" data-layout-palette="${escape(JSON.stringify(entry.spec))}" data-layout-palette-label="${escape(entry.text.toLowerCase())}"><i class="fa-solid ${KIND_ICONS[entry.kind] ?? "fa-square"}"></i><span>${escape(entry.text)}</span></button>`;
+  // Not a <button>: Firefox never drags a button.
+  const item = entry => `<div class="rta-sheet-editor__palette-item" role="button" tabindex="0" draggable="true" data-layout-palette="${escape(JSON.stringify(entry.spec))}" data-layout-palette-label="${escape(entry.text.toLowerCase())}"><i class="fa-solid ${KIND_ICONS[entry.kind] ?? "fa-square"}"></i><span>${escape(entry.text)}</span></div>`;
   const body = groups.map(group => `<section class="rta-sheet-editor__palette-group" data-layout-palette-group><p class="rta-sheet-editor__palette-title">${escape(group.text)}</p><div class="rta-sheet-editor__palette-items">${group.items.map(item).join("")}</div></section>`).join("");
   return `<details class="rta-sheet-editor__palette" data-layout-palette-panel${open ? " open" : ""}><summary>${t("RTA.SheetEditor.Add", "Add a block")}</summary><p class="rta-sheet-editor__hint">${t("RTA.SheetEditor.Palette.Hint", "Click to add into the selected block, or drag onto the sheet.")}</p><div class="rta-sheet-editor__palette-search"><input type="search" data-layout-palette-filter value="${escape(filter)}" placeholder="${t("RTA.SheetEditor.Palette.Search", "Search")}"></div>${body}</details>`;
 }

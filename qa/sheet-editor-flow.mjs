@@ -100,6 +100,12 @@ const result = await page.evaluate(async ({fixture, en, urls}) => {
   await drag(element.querySelector('[data-layout-palette-host] [data-layout-palette=\'{"kind":"value","display":"dots"}\']'), empty, {top: true});
   check(`dropping into the empty frame of a tab${empty ? '' : ' (no frame)'}${element.querySelector('[data-layout-palette-host] [data-layout-palette=\'{"kind":"value","display":"dots"}\']') ? '' : ' (no palette item)'}`, find(layout(), tabs.children[0].id).children[0]?.display === 'dots');
   if (!find(layout(), tabs.children[0].id).children[0]) return steps;
+  // Firefox aims drag events at the text inside the frame (a text node): the drop still lands.
+  const frame = element.querySelector(`[data-sheet-panel="${tabs.children[1].id}"] [data-layout-drop]`), words = frame?.firstChild;
+  if (words) { const data = new DataTransfer(), box = frame.getBoundingClientRect(), at = {bubbles: true, cancelable: true, dataTransfer: data, clientX: box.left + 4, clientY: box.top + box.height / 2};
+    element.querySelector('[data-layout-palette-host] [data-layout-palette=\'{"kind":"text"}\']').dispatchEvent(new DragEvent('dragstart', {bubbles: true, dataTransfer: data}));
+    words.dispatchEvent(new DragEvent('dragover', at)); words.dispatchEvent(new DragEvent('drop', at)); await wait(); }
+  check('dropping on the words of an empty frame (Firefox)', find(layout(), tabs.children[1].id).children[0]?.kind === 'text');
   await click(`[data-layout-canvas] [data-layout-node="${find(layout(), tabs.children[0].id).children[0].id}"]`);
   await set('[data-layout-properties] [data-layout-prop="labelPlace"]', 'top');
   check('placing a label above its value', find(layout(), tabs.children[0].id).children[0].style?.label === 'top');

@@ -101,7 +101,17 @@
   inline-size: auto;
   max-inline-size: 100%;
   min-inline-size: 0;
+  padding: var(--rta-gap-tight) var(--rta-gap-row);
+  border: var(--rta-frame-border) solid var(--rta-color-border-tertiary);
+  border-radius: var(--rta-radius-control);
+  background: var(--rta-color-surface-option-light);
   cursor: grab;
+  user-select: none;
+}
+
+.rta-sheet-editor__palette-item:hover,
+.rta-sheet-editor__palette-item:focus-visible {
+  border-color: var(--rta-color-border-highlight);
 }
 
 .rta-sheet-editor__palette-item[hidden] {
