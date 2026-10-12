@@ -2,7 +2,7 @@ import {SYSTEM_EVENT_PREFIX} from './system-events.mjs';
 import {copyJSON, isRecord} from './configurator-schema.mjs';
 import {valueTypeRegistry, validateTypedValue} from './value-type-registry.mjs';
 import {prepareFieldMap} from './field-output-contracts.mjs';
-import {assertSafeRollFormula} from './roll-grammar.mjs';
+import {assertSafeRollFormula, FOUNDRY_DIE_LETTERS} from './roll-grammar.mjs';
 import {DICE_COMPARATORS} from './dice-reading.mjs';
 import {need} from './diagnostics.mjs';
 import {preparePermissionRules} from './permission-contract.mjs';
@@ -376,6 +376,40 @@ export function prepareDuration(data,options={}){
   if(x.at!==null&&!(typeof x.at==='number'&&Number.isFinite(x.at)&&x.at>=0))throw new Error('Duration.at must be a non-negative world time in seconds.');
   if(x.mode==='absoluteTime')need(x.at!==null,'absoluteTime Duration requires at.',options);return x;
 }
+/** Die: a die with faces of its own (narrative dice, a Marvel d6, a stunt die). Rolls throw it by its letter (2dp);
+ * each face may carry a value (added to the total, else its rank) and counts of the die's counters, negative to cancel
+ * (a failure face counts -1 success). Counters of the same id on several dice add up: a Formula reads them by id. */
+export const DIE_MAX_FACES=100;
+const COUNTER_ID=/^[a-z][a-z0-9_-]*$/;
+export function prepareDie(data,options={}){
+  const x=prepareNamedGeneric(data,'Die',{denomination:'',counters:[],faces:[]},options);
+  if(need(nonempty(x.denomination),'Die requires a letter.',options)&&(!/^[a-z]$/.test(x.denomination)||FOUNDRY_DIE_LETTERS.includes(x.denomination)))throw new Error(`Die letter must be one lowercase letter other than ${FOUNDRY_DIE_LETTERS.join(', ')}.`);
+  arr(x.counters,'Die.counters');arr(x.faces,'Die.faces');
+  const counters=new Set();
+  x.counters=x.counters.map((counter,i)=>{
+    if(!isRecord(counter)||!COUNTER_ID.test(counter.id??''))throw new Error(`Die.counters[${i}] requires an id (lowercase letters, digits, - or _).`);
+    if(counters.has(counter.id))throw new Error(`Duplicate Die counter: ${counter.id}.`);counters.add(counter.id);
+    const c={labelKey:'',...copyJSON(counter)};
+    for(const key of Object.keys(c))if(!['id','labelKey'].includes(key))throw new Error(`Die.counters[${i}] contains unsupported field: ${key}.`);
+    return c;
+  });
+  if(x.faces.length>DIE_MAX_FACES)throw new Error(`A Die has at most ${DIE_MAX_FACES} faces.`);
+  x.faces=x.faces.map((face,i)=>{
+    if(!isRecord(face))throw new Error(`Die.faces[${i}] must be an object.`);
+    const f={labelKey:'',value:null,counts:{},...copyJSON(face)};
+    for(const key of Object.keys(f))if(!['labelKey','value','counts'].includes(key))throw new Error(`Die.faces[${i}] contains unsupported field: ${key}.`);
+    if(f.value!==null&&!Number.isFinite(f.value))throw new Error(`Die.faces[${i}].value must be a number or empty.`);
+    if(!isRecord(f.counts))throw new Error(`Die.faces[${i}].counts must be an object.`);
+    for(const [id,n] of Object.entries(f.counts)){
+      if(!counters.has(id))throw new Error(`Die.faces[${i}] counts an unknown counter: ${id}.`);
+      if(!Number.isSafeInteger(n))throw new Error(`Die.faces[${i}].counts.${id} must be a whole number.`);
+      if(n===0)delete f.counts[id];
+    }
+    return f;
+  });
+  need(x.faces.length>=2,'Die requires at least two faces.',options);
+  return x;
+}
 /** Table: a Roll (plus an optional bonus Formula) read against rows of ranges; the row reached runs its
  * Actions (a critical wound, a mutation, a hit location). A row bound left empty is open-ended. */
 export function prepareTable(data,options={}){
@@ -458,4 +492,4 @@ export function prepareSheetDefinition(data,options={}){
   x.layout.components=x.layout.components.map((component,i)=>{if(!isRecord(component)||!nonempty(component.id)||!kinds.has(component.kind))throw new Error(`SheetDefinition.layout.components[${i}] is invalid.`);return {label:'',source:null,editable:false,width:'full',...copyJSON(component)};});return x;
 }
 
-export const PREPARERS={parameters:prepareParameter,formulas:prepareFormula,formulaBindings:prepareFormulaBinding,conditions:prepareCondition,rolls:prepareRoll,outcomes:prepareOutcome,tests:prepareTest,effects:prepareEffect,actions:prepareAction,permissionPolicies:preparePermissionPolicy,eventTypes:prepareEventType,triggers:prepareTrigger,contentTypes:prepareContentType,contentTemplates:prepareContentTemplate,modifiers:prepareModifier,durations:prepareDuration,tables:prepareTable,creationSystems:prepareCreationSystem,progressionSystems:prepareProgressionSystem,sheetDefinitions:prepareSheetDefinition,categories:prepareCategory,tags:prepareTag};
+export const PREPARERS={parameters:prepareParameter,formulas:prepareFormula,formulaBindings:prepareFormulaBinding,conditions:prepareCondition,rolls:prepareRoll,outcomes:prepareOutcome,tests:prepareTest,effects:prepareEffect,actions:prepareAction,permissionPolicies:preparePermissionPolicy,eventTypes:prepareEventType,triggers:prepareTrigger,contentTypes:prepareContentType,contentTemplates:prepareContentTemplate,modifiers:prepareModifier,durations:prepareDuration,dice:prepareDie,tables:prepareTable,creationSystems:prepareCreationSystem,progressionSystems:prepareProgressionSystem,sheetDefinitions:prepareSheetDefinition,categories:prepareCategory,tags:prepareTag};

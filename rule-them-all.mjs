@@ -9,6 +9,7 @@ import {CreationSessions, FoundryCreationSessionStore} from "./src/runtime/creat
 import {FoundryContentBridge} from "./src/runtime/foundry-content-bridge.mjs";
 import {isOwningContentHook,guardOwnedContentCreation} from "./src/runtime/foundry-content-hooks.mjs";
 import {combatChangeEvents, timeElapsedPayload} from "./src/configurator/system-events.mjs";
+import {registerRulesetDice} from "./src/runtime/foundry-dice.mjs";
 import {installInitiative, rerollEachRound} from "./src/runtime/foundry-initiative.mjs";
 import {FoundryRuntimeAdapter} from "./src/runtime/foundry-runtime-adapter.mjs";
 
@@ -60,7 +61,10 @@ Hooks.once("ready", () => {
     // CP-15: resumable character creation, stored in each user's flags until finalized.
     game.ruleThemAll.creation = new CreationSessions({configurator: api, store: new FoundryCreationSessionStore(), roll: formula => game.ruleThemAll.runtime.roll(formula),
       finalize: (session, {name, actorType}) => game.ruleThemAll.content.createActorFromCreationSystem(session.rulesetVersionId, session.creationSystemId, {name, actorType, answers: session.answers, sessionId: session.id})});
-    api.subscribe(() => ConfiguratorApp.refreshOpen());
+    // Ruleset dice (2dp) known to Foundry, so dice in chat messages rebuild; a roll registers its own Ruleset's again.
+    const registerDice = () => { for (const family of api.listRulesetFamilies()) for (const version of family.versions) if (version.publishedSnapshot) registerRulesetDice(family.id, version.publishedSnapshot.dice ?? []); };
+    registerDice();
+    api.subscribe(() => { registerDice(); ConfiguratorApp.refreshOpen(); });
     // The world's shared Definitions (a GM reserve, clocks) exist as soon as the active Ruleset names them.
     if (game.users.activeGM?.isSelf) Promise.resolve(game.ruleThemAll.runtime.initializeShared()).catch(error => console.error("Rule Them'All | Shared containers failed", error));
     Hooks.callAll("ruleThemAllReady", game.ruleThemAll);

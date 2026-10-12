@@ -1,3 +1,4 @@
+import {registerRulesetDice} from "./foundry-dice.mjs";
 import {resolveDocumentType} from "../core/system-document-types.mjs";
 import {MODULE_ID} from "../core/module-contract.mjs";
 import {copyJSON} from "../configurator/configurator-schema.mjs";
@@ -92,9 +93,11 @@ export class FoundryRuntimeAdapter{
     return {source:describe(source),target:describe(target)};
   }
 
-  async roll(formula,data={}){
+  /** dice: the Ruleset's own dice the formula may throw (2dp), registered under their letters first. */
+  async roll(formula,data={},{dice=[],rulesetKey="ruleset"}={}){
     const RollClass=globalThis.Roll??globalThis.foundry?.dice?.Roll;
     if(!RollClass)throw new Error("Foundry Roll API is unavailable.");
+    if(dice.length)registerRulesetDice(rulesetKey,dice);
     const roll=new RollClass(String(formula??""),copyJSON(data??{}));
     await roll.evaluate();
     const first=roll.dice?.[0]?.results?.find?.(r=>r.active!==false)?.result;

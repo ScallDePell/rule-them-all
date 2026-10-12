@@ -123,11 +123,12 @@ async function definitionField(node, kit) {
   if (value === undefined) throw new Error(`Definition ${id} has no field ${node.field}.`);
   return copyJSON(value);
 }
-/** dice: {read, group?, compare?, value?: AST}: the dice of the roll in context (a Test's roll, under variables.roll),
+/** dice: {read, group?, compare?, value?: AST, counter?}: the dice of the roll in context (a Test's roll, under variables.roll),
  * e.g. how many 10s among the hunger dice: {read: "count", group: "hunger", compare: "eq", value: {type: "literal", value: 10}}. */
 function validateDiceNode(node, label) {
   if (!DICE_READS.includes(node.read)) throw new Error(`${label}.read must be ${DICE_READS.join(", ")}.`);
   if (node.group !== undefined && node.group !== null && !(typeof node.group === "string" && /^[A-Za-z][A-Za-z0-9_-]*$/.test(node.group))) throw new Error(`${label}.group must be a dice group name.`);
+  if (node.read === "counter" && !(typeof node.counter === "string" && /^[a-z][a-z0-9_-]*$/.test(node.counter))) throw new Error(`${label}.counter must name a Die counter.`);
   if (node.compare !== undefined && node.compare !== null) {
     if (!DICE_COMPARATORS.includes(node.compare)) throw new Error(`${label}.compare must be ${DICE_COMPARATORS.join(", ")}.`);
     if (!isRecord(node.value)) throw new Error(`${label}.value must be an AST node.`);
@@ -136,7 +137,7 @@ function validateDiceNode(node, label) {
 async function diceNode(node, kit) {
   const roll = kit.context?.variables?.roll;
   if (!roll) throw new Error("No roll in context to read dice from.");
-  return readDice(roll.dice ?? [], {read: node.read, group: node.group ?? null, compare: node.compare ?? null, value: node.compare ? num(await kit.ev(node.value), "dice value") : null});
+  return readDice(roll.dice ?? [], {read: node.read, group: node.group ?? null, counter: node.counter ?? null, compare: node.compare ?? null, value: node.compare ? num(await kit.ev(node.value), "dice value") : null});
 }
 /** distance: {from, to} roles, in the scene's distance units. nearby: {of, within: AST, side: ally|enemy|any}: how many
  * other Actors stand within that distance of the role (allies share its disposition), e.g. flanking or a crowd. */

@@ -1,6 +1,7 @@
 import {copyJSON,isRecord} from './configurator-schema.mjs';
 import {collectCrossFamilyRelations} from './relation-contract.mjs';
 import {isSystemEventType} from './system-events.mjs';
+import {parseRollFormula} from './roll-grammar.mjs';
 
 /* Dependency strength (CP-31): `required` blocks deleting the target;
    `optional` means the consumer contract accepts the reference being absent,
@@ -30,6 +31,11 @@ export class DependencyIndex{
     }
     for(const [i,c] of (ruleset.conditions??[]).entries())scanAst(c.expression,(r,p)=>pushRef(this.#edges,{objectKind:'condition',objectId:c.id},r,'condition',`conditions[${i}].${p}`));
     for(const [i,type] of (ruleset.contentTypes??[]).entries())if(type.availabilityConditionRef)pushRef(this.#edges,{objectKind:'contentType',objectId:type.id},{objectKind:'condition',objectId:type.availabilityConditionRef},'contentAvailability',`contentTypes[${i}].availabilityConditionRef`);
+    // A Roll throwing a die of the Ruleset by its letter (2dp) needs that Die; an unknown letter reads "die/dp".
+    const diceByLetter=new Map((ruleset.dice??[]).filter(isRecord).map(d=>[d.denomination,d.id]));
+    const lettersOf=formula=>{try{return parseRollFormula(formula).customDice;}catch{return [];}};
+    for(const [i,r] of (ruleset.rolls??[]).entries())for(const [path,formula] of [['formula',r?.formula],...(r?.variants??[]).map((v,j)=>[`variants[${j}].formula`,v?.formula])])
+      for(const letter of lettersOf(formula))pushRef(this.#edges,{objectKind:'roll',objectId:r.id},{objectKind:'die',objectId:diceByLetter.get(letter)??`d${letter}`},'rollDie',`rolls[${i}].${path}`);
     for(const [i,r] of (ruleset.rolls??[]).entries())for(const [j,variant] of (r.variants??[]).entries())if(variant?.conditionRef)pushRef(this.#edges,{objectKind:'roll',objectId:r.id},{objectKind:'condition',objectId:variant.conditionRef},'rollVariant',`rolls[${i}].variants[${j}].conditionRef`);
     for(const [i,o] of (ruleset.outcomes??[]).entries())if(o.conditionRef)pushRef(this.#edges,{objectKind:'outcome',objectId:o.id},{objectKind:'condition',objectId:o.conditionRef},'outcomeCondition',`outcomes[${i}].conditionRef`);
     for(const [i,t] of (ruleset.tests??[]).entries()){
@@ -137,7 +143,7 @@ export class DependencyIndex{
         add('action',m.actionRef,'progressionAction',`milestones[${j}].actionRef`);
       }
     }
-    const tagCollections=['definitions','parameters','formulas','formulaBindings','conditions','rolls','outcomes','tests','effects','actions','eventTypes','triggers','contentTypes','contentTemplates','modifiers','durations','tables','creationSystems','progressionSystems','sheetDefinitions'];
+    const tagCollections=['definitions','parameters','formulas','formulaBindings','conditions','rolls','outcomes','tests','effects','actions','eventTypes','triggers','contentTypes','contentTemplates','modifiers','durations','dice','tables','creationSystems','progressionSystems','sheetDefinitions'];
     for(const collection of tagCollections)for(const [i,entry] of (ruleset[collection]??[]).entries())for(const [j,id] of (entry.tags??[]).entries())pushRef(this.#edges,{objectKind:collection.replace(/s$/,''),objectId:entry.id},{objectKind:'tag',objectId:id},'tag',`${collection}[${i}].tags[${j}]`,'metadata');
     // Category catalog (§47): consumers store catalog ids; a used Category cannot be deleted.
     for(const collection of ['definitions','contentTemplates'])for(const [i,entry] of (ruleset[collection]??[]).entries())for(const [j,id] of (entry.categories??[]).entries())pushRef(this.#edges,{objectKind:collection==='definitions'?'definition':'contentTemplate',objectId:entry.id},{objectKind:'category',objectId:id},'category',`${collection}[${i}].categories[${j}]`,'metadata');

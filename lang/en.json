@@ -76,7 +76,8 @@
       "DefinitionTypes": "Definition Types",
       "RuntimeLab": "Runtime Lab",
       "Dependencies": "Dependencies",
-      "Tables": "Tables"
+      "Tables": "Tables",
+      "Dice": "Dice"
     },
     "Dependencies": {
       "Title": "Dependencies",
@@ -96,7 +97,8 @@
       "MoreConnections": "more connections (refine selection)",
       "TechnicalDetails": "Technical details",
       "FilterUnresolved": "Show only unresolved references (click again to show all)",
-      "Recentrer": "Recenter"
+      "Recentrer": "Recenter",
+      "dice": "Dice"
     },
     "CreationSource": {
       "definitions": {
@@ -180,7 +182,8 @@
       "sheetDefinitions": "Sheets",
       "categories": "Categories",
       "tags": "Tags",
-      "tables": "Tables"
+      "tables": "Tables",
+      "dice": "Dice"
     },
     "DynamicMarkup": {
       "NewField": "New field",
@@ -572,7 +575,8 @@
       "ProgressionSystem": "Progression system",
       "AcquisitionChosen": "Also acquires the Definition named by",
       "World": "World",
-      "Combat": "Combat in progress"
+      "Combat": "Combat in progress",
+      "Die": "Die"
     },
     "EditorDisplay": {
       "NoneSelected": "None selected",
@@ -985,6 +989,10 @@
       "table": {
         "Summary": "A Table turns a roll into a result: critical hits, wild magic, random encounters, injuries.",
         "Usage": "Pick the Roll and an optional bonus, then give each row its range and the Actions it runs. An Action rolls the Table after its Effects; the row's Actions run in the same step."
+      },
+      "die": {
+        "Summary": "A Die has faces of its own: narrative dice with symbols, a d6 whose 1 is a special face, a stunt die.",
+        "Usage": "Give it a letter, then its counters and its faces. A Roll throws it with that letter (2dp for two dice). A Formula reads a counter over all the dice thrown; a negative count cancels (a failure counts -1 success)."
       }
     },
     "CapabilityType": {
@@ -1233,6 +1241,24 @@
       "ExtraOperation": "Effect on the total",
       "ExtraAdd": "Adds",
       "ExtraSubtract": "Takes away"
+    },
+    "Die": {
+      "Letter": "Letter",
+      "LetterHelp": "One lowercase letter, other than c, d or f, which Foundry keeps for its own dice.",
+      "Counters": "Counters",
+      "CountersHelp": "What the faces count, like Success or Advantage. Dice sharing a counter name add up.",
+      "AddCounter": "Add counter",
+      "Counter": "Counter",
+      "CounterName": "Name",
+      "CounterPlaceholder": "Success",
+      "Faces": "Faces",
+      "FacesHelp": "One card per face, in order. A count can be negative to cancel another die's symbol.",
+      "AddFace": "Add face",
+      "Face": "Face",
+      "FaceLabel": "Shown as",
+      "FaceValue": "Value",
+      "FaceRank": "Its rank",
+      "UnnamedCounter": "New counter"
     }
   }
 }

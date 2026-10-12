@@ -317,13 +317,15 @@ export class RuntimeEngine{
     const {value,applied}=applyModifierStack(baseValue,applicable.map(row=>({id:row.modifier.id,operation:row.modifier.operation,value:row.value,priority:row.modifier.priority??0,stacking:row.modifier.stacking})));return{base:Number(baseValue),value,applied};
   }
   /** A replay takes back the logged roll of the same formula; a partial reroll (dice.some) throws again only the matching dice. */
-  async #throw(formula,data,context){
+  async #throw(versionId,formula,data,context){
     const dice=context?.[DICE],kept=dice?.keep?.get(formula);let roll=kept?.length?kept.shift():null;
     if(roll&&dice.some){const {filter,replaceWith}=dice.some;if((roll.dice??[]).length)roll=await rerollSomeDice(roll,filter,{replaceWith,next:async faces=>Number((await this.roll(`1d${faces}`)).total)});}
-    roll??=await this.roll(formula,data);
+    roll??=await this.roll(formula,data,{versionId});
     dice?.log.push({formula,roll:clone(roll)});return roll;
   }
-  async roll(formula,data={}){assertSafeRollFormula(formula);if(typeof this.adapter.roll!=="function")throw new Error("Runtime adapter does not provide Foundry Roll support.");return this.adapter.roll(formula,data);}
+  /** versionId: the Ruleset whose dice (2dp) the formula may throw; the adapter makes them known to Foundry first. */
+  async roll(formula,data={},{versionId=null}={}){assertSafeRollFormula(formula);if(typeof this.adapter.roll!=="function")throw new Error("Runtime adapter does not provide Foundry Roll support.");
+    const ruleset=versionId?this.ruleset(versionId):null,dice=(ruleset?.dice??[]).filter(enabled);return this.adapter.roll(formula,data,dice.length?{dice,rulesetKey:ruleset.id}:{});}
   /** Test (CP-29): inputs, optional Roll, total, target, margin, then the first true Outcome in the Test's order.
    * Each step sees the previous ones under variables.test (inputs, roll, rollTotal, natural, bonus, total, target, margin). */
   /** staged: an Action's states before its commit, so the Test sees what the Action already changed (a reaction's Modifier). */
@@ -338,7 +340,7 @@ export class RuntimeEngine{
     if(test.rollRef){
       const rollDef=ruleset.rolls?.find(x=>x.id===test.rollRef&&enabled(x));if(!rollDef)throw new Error(`Roll unavailable: ${test.rollRef}.`);
       const {formula,data}=await this.#rollFormula(rollDef,scope,evaluator,{test:clone(state.inputs)});
-      const roll=await this.#throw(resolveRollData(formula,data),data,scope);
+      const roll=await this.#throw(versionId,resolveRollData(formula,data),data,scope);
       const natural=Number.isFinite(Number(roll.natural))?Number(roll.natural):Number(roll.total);
       state.roll={formula:String(roll.formula??formula),total:Number(roll.total),natural,result:String(roll.result??roll.total??""),dice:clone(roll.dice??[])};
       state.rollTotal=Number(roll.total);state.natural=natural;state.total=Number(roll.total);sync();
@@ -346,7 +348,7 @@ export class RuntimeEngine{
       for(const extra of test.extraRolls??[]){
         if(!await evaluator.condition(extra.conditionRef,scope))continue;
         const extraDef=ruleset.rolls?.find(x=>x.id===extra.rollRef&&enabled(x));if(!extraDef)throw new Error(`Roll unavailable: ${extra.rollRef}.`);
-        const built=await this.#rollFormula(extraDef,scope,evaluator,{test:clone(state.inputs)}),thrown=await this.#throw(resolveRollData(built.formula,built.data),built.data,scope);
+        const built=await this.#rollFormula(extraDef,scope,evaluator,{test:clone(state.inputs)}),thrown=await this.#throw(versionId,resolveRollData(built.formula,built.data),built.data,scope);
         const amount=(extra.operation==="subtract"?-1:1)*Number(thrown.total);
         state.rollTotal+=amount;state.total=state.rollTotal;(state.roll.extra??=[]).push({rollId:extra.rollRef,total:Number(thrown.total),operation:extra.operation});
         state.roll.result=`${state.roll.result} ${extra.operation==="subtract"?"−":"+"} ${thrown.total}`;sync();
@@ -488,7 +490,7 @@ export class RuntimeEngine{
     if(!Number.isFinite(factor))throw new Error(`Roll factor of ${operand.rollRef} is not a number.`);
     const {formula,data}=await this.#rollFormula(rollDef,context,evaluator);
     let roll=shared?.cache.get(shared.key);
-    if(!roll){roll=await this.#throw(multiplyDice(resolveRollData(formula,data),multiplier),data,context);shared?.cache.set(shared.key,roll);}
+    if(!roll){roll=await this.#throw(versionId,multiplyDice(resolveRollData(formula,data),multiplier),data,context);shared?.cache.set(shared.key,roll);}
     let value=Number(roll.total)+bonus;if(factor!==1)value=Math.floor(value*factor);
     return {value:Number.isFinite(operand.minimum)?Math.max(operand.minimum,value):value,roll:{formula:String(roll.formula??formula),total:Number(roll.total),result:String(roll.result??roll.total??""),bonus,...(factor!==1?{factor}:{})}};
   }
@@ -645,7 +647,7 @@ export class RuntimeEngine{
   async rollTable(versionId,tableId,context={},evaluator=this.evaluator(versionId)){
     const ruleset=this.ruleset(versionId),table=ruleset.tables?.find(x=>x.id===tableId&&enabled(x));if(!table)throw new Error(`Table unavailable: ${tableId}.`);
     const rollDef=ruleset.rolls?.find(x=>x.id===table.rollRef&&enabled(x));if(!rollDef)throw new Error(`Roll unavailable: ${table.rollRef}.`);
-    const {formula,data}=await this.#rollFormula(rollDef,context,evaluator),roll=await this.#throw(resolveRollData(formula,data),data,context);
+    const {formula,data}=await this.#rollFormula(rollDef,context,evaluator),roll=await this.#throw(versionId,resolveRollData(formula,data),data,context);
     const bonus=table.bonusFormulaRef?Number(await evaluator.formula(table.bonusFormulaRef,context)):0;if(!Number.isFinite(bonus))throw new Error(`Table ${table.id} bonus is not a number.`);
     const total=Number(roll.total)+bonus,row=(table.rows??[]).find(r=>(r.min===null||total>=r.min)&&(r.max===null||total<=r.max))??null;
     return {tableId:table.id,total,roll:{formula:String(roll.formula??formula),total:Number(roll.total),result:String(roll.result??roll.total??""),bonus},row:row?{id:row.id,labelKey:row.labelKey,actionRefs:[...(row.actionRefs??[])]}:null};

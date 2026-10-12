@@ -44,6 +44,7 @@ await api.createRoll(v,{id:'r1',nameKey:'d20',formula:'1d20',data:{}});
 for(const [id,nameKey] of [['o-crit','Critical'],['o-hit','Hit'],['o-miss','Miss']])await api.createOutcome(v,{id,nameKey,resultKey:id,conditionRef:'c1'});
 await api.createTest(v,{id:'t1',nameKey:'Attack',rollRef:'r1',targetValue:12,outcomeRefs:['o-crit','o-hit'],fallbackOutcomeRef:'o-miss'});
 await api.createProgressionSystem(v,{id:'ps1',nameKey:'Career',advancements:[{id:'adv',labelKey:'Skill advance',definitionTypeId:'skill',currencyRef:{objectKind:'definition',objectId:'d0',capabilityId:'value',outputId:'value.base'},costFormulaRef:'f1'}],milestones:[{id:'l2',labelKey:'Level 2',conditionRef:'c1',definitionIds:['s1'],actionRef:'a1'}]});
+await api.createDie(v,{id:'dz1',nameKey:'Ability',denomination:'a',counters:[{id:'success',labelKey:'Success'},{id:'advantage',labelKey:'Advantage'}],faces:[{labelKey:'Blank'},{labelKey:'Success',counts:{success:1}},{labelKey:'Advantage',value:2,counts:{advantage:1}}]});
 await api.createTable(v,{id:'tb1',nameKey:'Critical hits',rollRef:'r1',rows:[{id:'low',labelKey:'Scratch',min:null,max:10,actionRefs:['a1']},{id:'high',labelKey:'Severed limb',min:11,max:null,actionRefs:[]}]});
 await api.createAction(v,{id:'a2',nameKey:'Swing',testRef:'t1',conditionRefs:[],costEffectRefs:[],effectRefs:[],tableRef:'tb1',targeting:'shared',reroll:{actionRefs:['a1']},outcomeMappings:[{outcomeId:'o-miss',block:true},{outcomeId:'o-crit',actionRefs:['a1']}]});
 // Harness-only copy exposing the private view state.
@@ -69,7 +70,7 @@ console.log('rendered',views.length);
 const {ConfiguratorEntryEditor}=await imp('src/configurator/configurator-entry-editor.mjs');
 const editorTpl=Handlebars.compile(readFileSync(join(root,'templates/configurator/entry-editor.hbs'),'utf8'));
 const selectUrl=pathToFileURL(join(root,'src/ui/rta-select.mjs')).href;
-const editors=[['ruleset',v],['definitionType','stat'],['definition','d0'],['contentType','gear'],['contentTemplate','rope'],['parameter','p1'],['formula','f1'],['condition','c1'],['action','a2'],['tag','tag-a'],['category','cat-core'],['test','t1'],['modifier','m1'],['duration','du1'],['table','tb1'],['progressionSystem','ps1'],['trigger','tr1'],['permissionPolicy','pp1'],['eventType','ev1'],
+const editors=[['ruleset',v],['definitionType','stat'],['definition','d0'],['contentType','gear'],['contentTemplate','rope'],['parameter','p1'],['formula','f1'],['condition','c1'],['action','a2'],['tag','tag-a'],['category','cat-core'],['test','t1'],['modifier','m1'],['duration','du1'],['die','dz1'],['table','tb1'],['progressionSystem','ps1'],['trigger','tr1'],['permissionPolicy','pp1'],['eventType','ev1'],
  ...['formulaBinding','roll','outcome','effect','sheetDefinition','creationSystem'].map(kind=>[kind,null])];
 for(const [kind,id] of editors){
   const editor=new ConfiguratorEntryEditor({api,versionId:v,kind,id,definitionTypeId:kind==='definition'?'stat':null,contentTypeId:kind==='contentTemplate'?'gear':null});

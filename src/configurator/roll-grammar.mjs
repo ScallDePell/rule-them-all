@@ -14,7 +14,9 @@
    poolModifier := ("kh" | "kl" | "k" | "dh" | "dl" | "cs" | "cf") (comparator? integer)?
    label     := "[" identifier "]"                       (a named group of dice: 2d10[hunger])
    count     := integer | "(" sum ")" | reference
-   faces     := integer | "%" | "F" | "(" sum ")" | reference
+   faces     := integer | "%" | "F" | letter | "(" sum ")" | reference
+   letter    := a lowercase letter naming a die: "c" (coin) and "f" (Fate) are Foundry's, any other is a die
+                declared by the Ruleset (2dp: two proficiency dice), checked against its dice when it is saved
    modifier  := ("kh" | "kl" | "k" | "dh" | "dl" | "d" | "rr" | "r" | "xo" | "x"
                  | "cs" | "cf" | "min" | "max") (comparator? integer)?
    call      := ("floor" | "ceil" | "round" | "abs" | "min" | "max") "(" sum ("," sum)* ")"
@@ -24,6 +26,8 @@ export const ROLL_FORMULA_MAX_LENGTH = 256;
 export const ROLL_MAX_DICE = 1000;
 export const ROLL_MAX_FACES = 10000;
 export const ROLL_FUNCTIONS = Object.freeze(["floor", "ceil", "round", "abs", "min", "max"]);
+/** Letters Foundry gives its own dice (dc: a coin, df: a Fate die) or uses for every numbered die. */
+export const FOUNDRY_DIE_LETTERS = Object.freeze(["c", "d", "f"]);
 export const ROLL_MODIFIERS = Object.freeze(["kh", "kl", "k", "dh", "dl", "d", "rr", "r", "xo", "x", "cs", "cf", "min", "max"]);
 
 const MODIFIER_PATTERN = new RegExp(`^(?:${[...ROLL_MODIFIERS].sort((a, b) => b.length - a.length).join("|")})`);
@@ -44,7 +48,7 @@ function rollError(message, formula, position) {
 }
 
 class RollParser {
-  constructor(formula) { this.formula = formula; this.position = 0; this.references = new Set(); this.diceTerms = 0; this.dicePositions = []; this.groups = new Set(); }
+  constructor(formula) { this.formula = formula; this.position = 0; this.references = new Set(); this.diceTerms = 0; this.dicePositions = []; this.groups = new Set(); this.customDice = new Set(); }
   rest() { return this.formula.slice(this.position); }
   skipSpaces() { while (this.formula[this.position] === " ") this.position++; }
   match(pattern) {
@@ -108,6 +112,12 @@ class RollParser {
     this.position++; // "d"
     if (count !== null && (count < 1 || count > ROLL_MAX_DICE)) throw rollError(`dice count must be between 1 and ${ROLL_MAX_DICE}`, this.formula, start);
     if (this.formula[this.position] === "%" || this.formula[this.position] === "F") this.position++;
+    else if (/^[a-z]/.test(this.rest())) {
+      const letter = this.formula[this.position];
+      if (letter === "d") throw rollError("dice faces expected", this.formula, this.position);
+      if (!FOUNDRY_DIE_LETTERS.includes(letter)) this.customDice.add(letter);
+      this.position++;
+    }
     else if (this.formula[this.position] === "(") { this.position++; this.sum(); this.expect(")"); }
     else if (this.match(REFERENCE_PATTERN)) { /* faces from data */ }
     else {
@@ -134,7 +144,7 @@ export function parseRollFormula(formula) {
   if (formula.length > ROLL_FORMULA_MAX_LENGTH) throw rollError(`formula longer than ${ROLL_FORMULA_MAX_LENGTH} characters`, formula.slice(0, 40), ROLL_FORMULA_MAX_LENGTH);
   const parser = new RollParser(formula.trim());
   parser.parse();
-  return {formula: formula.trim(), references: [...parser.references], diceTerms: parser.diceTerms, groups: [...parser.groups]};
+  return {formula: formula.trim(), references: [...parser.references], diceTerms: parser.diceTerms, groups: [...parser.groups], customDice: [...parser.customDice]};
 }
 
 export function assertSafeRollFormula(formula) { return parseRollFormula(formula); }

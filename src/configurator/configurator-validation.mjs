@@ -123,6 +123,22 @@ export function validateRuleset(ruleset, {scope = "save"} = {}) {
     if (!colorFamilies.has(family)) issue("FAMILY_COLOR", `familyColors.${family}`, `Unsupported top-level family: ${family}.`);
     if (!(color === null || nonempty(color))) issue("FAMILY_COLOR", `familyColors.${family}`, "Family color must be null or a non-empty string.");
   }
+  // Dice: one Die per letter; a Formula or Condition reading a counter reads one some Die declares.
+  const letters = new Map(), counters = new Set();
+  for (const [index, die] of (ruleset.dice ?? []).entries()) {
+    if (!isRecord(die)) continue;
+    for (const counter of die.counters ?? []) counters.add(counter?.id);
+    if (!nonempty(die.denomination)) continue;
+    if (letters.has(die.denomination)) issue("DUPLICATE_ID", `dice[${index}].denomination`, `Dice ${letters.get(die.denomination)} and ${die.id} both use the letter ${die.denomination}.`);
+    else letters.set(die.denomination, die.id);
+  }
+  const counterReads = (node, path) => {
+    if (Array.isArray(node)) return node.forEach((child, i) => counterReads(child, `${path}[${i}]`));
+    if (!isRecord(node)) return;
+    if (node.type === "dice" && node.read === "counter" && !counters.has(node.counter)) issue("REFERENCE", `${path}.counter`, `No Die counts ${node.counter}.`);
+    for (const [key, child] of Object.entries(node)) if (typeof child === "object") counterReads(child, `${path}.${key}`);
+  };
+  for (const collection of ["formulas", "conditions"]) for (const [index, entry] of (ruleset[collection] ?? []).entries()) if (isRecord(entry)) counterReads(entry.expression, `${collection}[${index}].expression`);
   // initiative: the Test whose total orders the Foundry combat tracker, an optional tie-break Formula, rerolled each round or not.
   const initiative = ruleset.initiative ?? null;
   if (initiative !== null) {
@@ -183,7 +199,7 @@ export function validateRuleset(ruleset, {scope = "save"} = {}) {
     ["definitionType", new Set(types.keys())], ["definition", new Set((ruleset.definitions ?? []).map(x => x?.id))],
     ["parameter", new Set((ruleset.parameters ?? []).map(x => x?.id))], ["formula", new Set((ruleset.formulas ?? []).map(x => x?.id))], ["formulaBinding", new Set((ruleset.formulaBindings ?? []).map(x => x?.id))],
     ["condition", new Set((ruleset.conditions ?? []).map(x => x?.id))], ["roll", new Set((ruleset.rolls ?? []).map(x => x?.id))], ["outcome", new Set((ruleset.outcomes ?? []).map(x => x?.id))], ["test", new Set((ruleset.tests ?? []).map(x => x?.id))], ["effect", new Set((ruleset.effects ?? []).map(x => x?.id))],
-    ["action", new Set((ruleset.actions ?? []).map(x => x?.id))], ["permissionPolicy", new Set((ruleset.permissionPolicies ?? []).map(x => x?.id))], ["contentType", new Set((ruleset.contentTypes ?? []).map(x => x?.id))], ["tag", new Set((ruleset.tags ?? []).map(x => x?.id))], ["category", new Set((ruleset.categories ?? []).map(x => x?.id))], ["eventType", new Set((ruleset.eventTypes ?? []).map(x => x?.id))], ["trigger", new Set((ruleset.triggers ?? []).map(x => x?.id))], ["contentTemplate", new Set((ruleset.contentTemplates ?? []).map(x => x?.id))], ["modifier", new Set((ruleset.modifiers ?? []).map(x => x?.id))], ["duration", new Set((ruleset.durations ?? []).map(x => x?.id))], ["table", new Set((ruleset.tables ?? []).map(x => x?.id))], ["creationSystem", new Set((ruleset.creationSystems ?? []).map(x => x?.id))], ["progressionSystem", new Set((ruleset.progressionSystems ?? []).map(x => x?.id))], ["sheetDefinition", new Set((ruleset.sheetDefinitions ?? []).map(x => x?.id))]
+    ["action", new Set((ruleset.actions ?? []).map(x => x?.id))], ["permissionPolicy", new Set((ruleset.permissionPolicies ?? []).map(x => x?.id))], ["contentType", new Set((ruleset.contentTypes ?? []).map(x => x?.id))], ["tag", new Set((ruleset.tags ?? []).map(x => x?.id))], ["category", new Set((ruleset.categories ?? []).map(x => x?.id))], ["eventType", new Set((ruleset.eventTypes ?? []).map(x => x?.id))], ["trigger", new Set((ruleset.triggers ?? []).map(x => x?.id))], ["contentTemplate", new Set((ruleset.contentTemplates ?? []).map(x => x?.id))], ["modifier", new Set((ruleset.modifiers ?? []).map(x => x?.id))], ["duration", new Set((ruleset.durations ?? []).map(x => x?.id))], ["die", new Set((ruleset.dice ?? []).map(x => x?.id))], ["table", new Set((ruleset.tables ?? []).map(x => x?.id))], ["creationSystem", new Set((ruleset.creationSystems ?? []).map(x => x?.id))], ["progressionSystem", new Set((ruleset.progressionSystems ?? []).map(x => x?.id))], ["sheetDefinition", new Set((ruleset.sheetDefinitions ?? []).map(x => x?.id))]
   ]);
   const definitionsById = new Map((ruleset.definitions ?? []).filter(isRecord).map(entry => [entry.id, entry]));
   // Generic relation scanning re-finds AST references one level deeper (".reference"): report each once.

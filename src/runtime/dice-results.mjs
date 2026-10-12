@@ -2,16 +2,25 @@
    {group, faces, modifiers[], sign, pooled, value, results: [{value, active, dropped?, rerolled?}]}.
    group: the term's label (2d10[hunger] -> "hunger"), null without one; sign: -1 when the term is subtracted;
    pooled: the term sits inside a group {..}, a parenthesis or a function, so its share of the total is unknown.
+   A die of the Ruleset (2dp) adds die: {id, faces}, and each result its face (rank from 1) and counts: {counter: n}.
    Formulas read these dice (count the 10s, the highest die of a group); a reroll may throw some of them again. */
 
 import {COMPARE} from "../configurator/dice-reading.mjs";
 
 const isDiceTerm = term => term && Number.isFinite(Number(term.faces)) && Array.isArray(term.results);
-const describeTerm = (term, sign, pooled) => ({
-  group: term.flavor ? String(term.flavor) : null, faces: Number(term.faces), modifiers: [...(term.modifiers ?? [])].map(String), sign, pooled,
-  value: Number(term.total ?? 0),
-  results: term.results.map(r => ({value: Number(r.result), active: r.active !== false, ...(r.discarded ? {dropped: true} : {}), ...(r.rerolled ? {rerolled: true} : {})}))
-});
+/** A face of a Ruleset die: its value (its rank when it has none) and its counts. */
+export function dieFace(die, rank) {
+  const face = die?.faces?.[rank - 1] ?? {};
+  return {face: rank, value: Number.isFinite(face.value) ? face.value : rank, counts: {...(face.counts ?? {})}};
+}
+const describeTerm = (term, sign, pooled) => {
+  const die = term.constructor?.rtaDie ?? null;
+  return {
+    group: term.flavor ? String(term.flavor) : null, faces: Number(term.faces), modifiers: [...(term.modifiers ?? [])].map(String), sign, pooled,
+    value: Number(term.total ?? 0), ...(die ? {die: {id: die.id, faces: die.faces}} : {}),
+    results: term.results.map(r => ({...(die ? dieFace(die, Number(r.result)) : {value: Number(r.result)}), active: r.active !== false, ...(r.discarded ? {dropped: true} : {}), ...(r.rerolled ? {rerolled: true} : {})}))
+  };
+};
 
 /** The dice of an evaluated Foundry Roll. Top-level terms keep their sign; dice nested anywhere else are pooled. */
 export function foundryDice(roll) {
@@ -47,7 +56,7 @@ function termValue(term) {
 }
 
 /** The same roll with the kept dice that match `filter` ({group, compare, value}) thrown again (next(faces) gives the new value)
- * or set to `replaceWith`; its total follows. Dice inside a group {..} or a function cannot be thrown again on their own. */
+ * or set to `replaceWith` (a face rank for a Ruleset die); its total follows. Dice inside a group {..} or a function cannot be thrown again on their own. */
 export async function rerollSomeDice(roll, {group = null, compare = null, value = null} = {}, {next, replaceWith = null} = {}) {
   const dice = structuredClone(roll?.dice ?? []);
   if (!dice.length) throw new Error("This roll has no dice to throw again.");
@@ -58,7 +67,8 @@ export async function rerollSomeDice(roll, {group = null, compare = null, value 
     const hits = term.results.filter(r => r.active && (!compare || COMPARE[compare]?.(r.value, Number(value))));
     if (!hits.length) continue;
     if (term.pooled) throw new Error("Dice inside a group {..} or a function cannot be thrown again on their own.");
-    for (const r of hits) { r.value = replaceWith === null ? Number(await next(term.faces)) : Number(replaceWith); changed++; }
+    // A Ruleset die lands on a face: a thrown rank, or the rank replaceWith names.
+    for (const r of hits) { const n = replaceWith === null ? Number(await next(term.faces)) : Number(replaceWith); Object.assign(r, term.die ? dieFace(term.die, n) : {value: n}); changed++; }
     term.value = termValue(term);
   }
   const total = offset + dice.filter(term => !term.pooled).reduce((sum, term) => sum + term.sign * term.value, 0);

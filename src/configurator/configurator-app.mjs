@@ -36,6 +36,7 @@ const TOP_LEVEL = Object.freeze([
   {view:"triggers", kind:"trigger", titleKey:"RTA.Nav.Triggers", list:"listTriggers", collection:"triggers"},
   {view:"modifiers", kind:"modifier", titleKey:"RTA.Nav.Modifiers", list:"listModifiers", collection:"modifiers"},
   {view:"durations", kind:"duration", titleKey:"RTA.Nav.Durations", list:"listDurations", collection:"durations"},
+  {view:"dice", kind:"die", titleKey:"RTA.Nav.Dice", list:"listDice", collection:"dice"},
   {view:"tables", kind:"table", titleKey:"RTA.Nav.Tables", list:"listTables", collection:"tables"},
   {view:"creationSystems", kind:"creationSystem", titleKey:"RTA.Nav.CreationSystems", list:"listCreationSystems", collection:"creationSystems"},
   {view:"progressionSystems", kind:"progressionSystem", titleKey:"RTA.Nav.ProgressionSystems", list:"listProgressionSystems", collection:"progressionSystems"},

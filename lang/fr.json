@@ -72,7 +72,8 @@
       "DefinitionTypes": "Types de définition",
       "RuntimeLab": "Labo runtime",
       "Dependencies": "Dépendances",
-      "Tables": "Tables"
+      "Tables": "Tables",
+      "Dice": "Dés"
     },
     "Dependencies": {
       "Title": "Dépendances",
@@ -92,7 +93,8 @@
       "MoreConnections": "autres connexions (affiner la sélection)",
       "TechnicalDetails": "Détails techniques",
       "FilterUnresolved": "Afficher uniquement les références non résolues (cliquer à nouveau pour tout afficher)",
-      "Recentrer": "Recentrer"
+      "Recentrer": "Recentrer",
+      "dice": "Dés"
     },
     "CreationSource": {
       "definitions": {
@@ -176,7 +178,8 @@
       "sheetDefinitions": "Fiches",
       "categories": "Catégories",
       "tags": "Tags",
-      "tables": "Tables"
+      "tables": "Tables",
+      "dice": "Dés"
     },
     "DynamicMarkup": {
       "NewField": "Nouveau champ",
@@ -568,7 +571,8 @@
       "ProgressionSystem": "Système de progression",
       "AcquisitionChosen": "Acquiert aussi la Definition donnée par",
       "World": "Monde",
-      "Combat": "Combat en cours"
+      "Combat": "Combat en cours",
+      "Die": "Dé"
     },
     "EditorDisplay": {
       "NoneSelected": "Aucune sélection",
@@ -981,6 +985,10 @@
       "table": {
         "Summary": "Une Table transforme un jet en résultat : coups critiques, magie sauvage, rencontres aléatoires, blessures.",
         "Usage": "Choisissez le Jet et un bonus facultatif, puis donnez à chaque ligne sa plage et les Actions qu'elle lance. Une Action tire sur la Table après ses Effets ; les Actions de la ligne s'appliquent dans la même étape."
+      },
+      "die": {
+        "Summary": "Un Dé a ses propres faces : dés narratifs à symboles, d6 dont le 1 est une face spéciale, dé d'exploit.",
+        "Usage": "Donnez-lui une lettre, puis ses compteurs et ses faces. Un Jet le lance avec cette lettre (2dp pour deux dés). Une Formule lit un compteur sur tous les dés lancés ; un compte négatif annule (un échec compte -1 succès)."
       }
     },
     "CapabilityType": {
@@ -1229,6 +1237,24 @@
       "ExtraOperation": "Effet sur le total",
       "ExtraAdd": "Ajoute",
       "ExtraSubtract": "Retranche"
+    },
+    "Die": {
+      "Letter": "Lettre",
+      "LetterHelp": "Une lettre minuscule, autre que c, d ou f, que Foundry garde pour ses propres dés.",
+      "Counters": "Compteurs",
+      "CountersHelp": "Ce que comptent les faces, comme Succès ou Avantage. Les dés qui partagent un nom de compteur s'additionnent.",
+      "AddCounter": "Ajouter un compteur",
+      "Counter": "Compteur",
+      "CounterName": "Nom",
+      "CounterPlaceholder": "Succès",
+      "Faces": "Faces",
+      "FacesHelp": "Une carte par face, dans l'ordre. Un compte peut être négatif pour annuler le symbole d'un autre dé.",
+      "AddFace": "Ajouter une face",
+      "Face": "Face",
+      "FaceLabel": "Affichée comme",
+      "FaceValue": "Valeur",
+      "FaceRank": "Son rang",
+      "UnnamedCounter": "Nouveau compteur"
     }
   }
 }

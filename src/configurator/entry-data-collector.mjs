@@ -14,6 +14,7 @@ import {RULESET_SECTIONS,DEFAULT_RULESET_COLOR} from './ruleset-colors.mjs';
 import {collectTemplateAcquisitions} from './content-template-form.mjs';
 import {collectDefinitionSlots} from './slot-form.mjs';
 import {collectTestInputs} from './test-input-form.mjs';
+import {collectDie} from './die-form.mjs';
 import {collectRollVariants,collectExtraRolls,collectActionInputs,collectTableRows,collectProgression} from './rule-cards-form.mjs';
 const slug=value=>String(value??"").trim().toLowerCase().normalize("NFKD").replace(/[^a-z0-9]+/g,"-").replace(/^-|-$/g,"");
 const json=(value,fallback)=>{const text=String(value??"").trim();return text?JSON.parse(text):fallback;};
@@ -126,6 +127,7 @@ export function collectEntryData(kind,{fd,current,bool,checkedIds,queryOne,query
     if(kind==="creationSystem")return collectCreation();
     if(kind==="modifier")return collectModifier(fd,current,{bool,checkedIds,operand:readOperand(fd,queryOne)});
     if(kind==="duration")return collectDuration(fd,current,{bool,checkedIds});
+    if(kind==="die")return{...current,nameKey:String(fd.get("nameKey")??"").trim(),descriptionKey:String(fd.get("descriptionKey")??""),enabled:bool("enabled"),denomination:String(fd.get("denomination")??"").trim().toLowerCase(),...collectDie(queryAll),tags:checkedIds("tags")};
     if(kind==="table")return{...current,nameKey:String(fd.get("nameKey")??"").trim(),descriptionKey:String(fd.get("descriptionKey")??""),enabled:bool("enabled"),rollRef:String(fd.get("tableRollRef")??"").trim()||null,bonusFormulaRef:String(fd.get("tableBonusFormulaRef")??"").trim()||null,rows:collectTableRows(queryAll),tags:checkedIds("tags")};
     if(kind==="progressionSystem")return{...current,nameKey:String(fd.get("nameKey")??"").trim(),descriptionKey:String(fd.get("descriptionKey")??""),enabled:bool("enabled"),...collectProgression(queryAll),tags:checkedIds("tags")};
     const payload=json(fd.get("genericJson"),{}); if(!payload.id)payload.id=current.id; return payload;
