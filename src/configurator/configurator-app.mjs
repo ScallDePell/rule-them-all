@@ -81,7 +81,9 @@ export class ConfiguratorApp extends ConfiguratorWindow {
   #restoreScroll = false;
   #runtimeResult = null;
   // null: not chosen yet, defaulted on render; "": cleared by the user, kept cleared.
-  #runtimeSelection = {source:null,target:null,actionId:null,formulaId:null,conditionId:null,testId:null,eventTypeId:null,rollFormula:"",sourceType:"",targetType:"",actorRole:"source",tool:"test",definitionId:"",contentKey:""};
+  #runtimeSelection = {source:null,target:null,actionId:null,formulaId:null,conditionId:null,testId:null,eventTypeId:null,rollFormula:"",sourceType:"",targetType:"",actorRole:"source",tool:"test",definitionId:"",contentKey:"",inputs:{}};
+  /** The selected Action's inputs, as described by the runtime (typed values, allowed options). */
+  #runtimeInputSpecs = [];
   entryEditor;
 
   async #api() { return game.ruleThemAll?.configurator ?? await game.ruleThemAll?.configuratorReady; }
@@ -310,6 +312,15 @@ export class ConfiguratorApp extends ConfiguratorWindow {
       try{const owned=await game.ruleThemAll.runtimeLab.listOwnedContents(this.#selected,this.#runtimeSelection.source);const names=new Map((ruleset.contentTemplates??[]).map(t=>[t.id,localize(api,this.#selected,t.nameKey)]));
         if(owned.length)runtimeContentChoices=[{id:"",name:label("RTA.Lab.NoContent"),selected:!this.#runtimeSelection.contentKey},...owned.map(row=>({id:row.key,name:`${names.get(row.templateId)??row.templateId}${row.available?"":` (${label("RTA.Lab.Unavailable")})`}`,selected:row.key===this.#runtimeSelection.contentKey}))];}catch{runtimeContentChoices=[];}
     }
+    // An Action's inputs are asked in the Lab before it runs (a slot level, a difficulty).
+    let runtimeInputRows=[];this.#runtimeInputSpecs=[];
+    if(ruleset&&this.#view==="runtimeLab"&&runtimeTool==="action"&&this.#runtimeSelection.actionId&&(ruleset.actions??[]).find(x=>x.id===this.#runtimeSelection.actionId)?.inputs?.length){
+      try{this.#runtimeInputSpecs=await game.ruleThemAll.runtimeLab.describeActionInputs(this.#selected,this.#runtimeSelection.actionId,this.#runtimeContext());
+        runtimeInputRows=this.#runtimeInputSpecs.map(input=>{const chosen=this.#runtimeSelection.inputs[input.id]??(input.defaultValue===undefined?"":String(input.defaultValue));
+          const options=input.valueType==="boolean"?[{value:"true",labelKey:label("RTA.Template.Yes")},{value:"false",labelKey:label("RTA.Template.No")}]:input.options;
+          return {id:input.id,name:localize(api,this.#selected,input.labelKey),value:chosen,hasOptions:options.length>0,options:[...(input.required&&input.defaultValue!==undefined?[]:[{value:"",name:"—",selected:chosen===""}]),...options.map(option=>({value:String(option.value),name:option.labelKey?localize(api,this.#selected,option.labelKey):String(option.value),selected:String(option.value)===chosen}))]};});
+      }catch(error){runtimeInputRows=[];this.#error=error?.message??String(error);}
+    }
     const runtimeModes={isTest:runtimeTool==="test",isAction:runtimeTool==="action",isFormula:runtimeTool==="formula",isCondition:runtimeTool==="condition",isEvent:runtimeTool==="event",isRoll:runtimeTool==="roll",editSource:this.#runtimeSelection.actorRole!=="target",editTarget:this.#runtimeSelection.actorRole==="target"};
     const runtimeLists={test:runtimeTests,action:runtimeActions,formula:runtimeFormulas,condition:runtimeConditions,event:runtimeEvents};
     const runtimeGuide=label(runtimeTool==="roll"||runtimeLists[runtimeTool]?.length?`RTA.Lab.Guide.${runtimeTool}`:`RTA.Lab.Empty.${runtimeTool}`);
@@ -318,7 +329,7 @@ export class ConfiguratorApp extends ConfiguratorWindow {
       error:this.#error,displayLines:this.#displayMode==="lines",displayTiles:this.#displayMode==="tiles",isWorkspace:!!ruleset,isRulesets:!ruleset,view:this.#view,rulesets,navigation,navGroups,currentNavGroup,definitionTypes,contentTypes,
       selectedRuleset:ruleset,selectedRecord:record,rulesetAccent:rulesetColor(ruleset),canOverrideCollection,currentCollection,collectionAccent,collectionCustomAccent,canEditRuleset:record?.status!=="validated",selectedRulesetName:ruleset?localize(api,this.#selected,ruleset.nameKey):"",
       isGeneral:!!ruleset&&this.#view==="general",isCollection:!!ruleset&&Boolean(currentKind),isContentFamily:currentKind==="contentTemplate",isDependencies:!!ruleset&&this.#view==="dependencies",isRuntimeLab:!!ruleset&&this.#view==="runtimeLab",isContentTypes,isContentTemplates,isContentLibraries,
-      currentTitle,currentKind,currentType,canReorder:Boolean(record&&record.status!=="validated"&&currentKind),cards:filteredCards,availableTags,availableCategories,hasFacets:availableTags.length>0||availableCategories.length>0,hasActiveFilters:activeTagIds.size>0||activeCategoryIds.size>0,dependencyGroups:dependencyVisibleGroups,dependencySelected,dependencyGraph,dependencyStats,dependencyAvailableTags,dependencyActiveTagCount:dependencyActiveTags.size,dependencyUnresolvedOnly,actors,runtimeActions,runtimeFormulas,runtimeConditions,runtimeTests,runtimeEvents,runtimeDefinitionChoices,runtimeContentChoices,runtimeResult:this.#runtimeResult,runtimeStateCards,runtimeSelection:this.#runtimeSelection,runtimeHasActorSubtypes:availableDocumentTypes("Actor").length>1,runtimeActorTypeOptions:availableDocumentTypes("Actor").map(id=>({id,sourceSelected:id===this.#runtimeSelection.sourceType,targetSelected:id===this.#runtimeSelection.targetType})),runtimeTool,runtimeModes,runtimeGuide,runtimeReady,runtimeStateError,runtimeActorNames,
+      currentTitle,currentKind,currentType,canReorder:Boolean(record&&record.status!=="validated"&&currentKind),cards:filteredCards,availableTags,availableCategories,hasFacets:availableTags.length>0||availableCategories.length>0,hasActiveFilters:activeTagIds.size>0||activeCategoryIds.size>0,dependencyGroups:dependencyVisibleGroups,dependencySelected,dependencyGraph,dependencyStats,dependencyAvailableTags,dependencyActiveTagCount:dependencyActiveTags.size,dependencyUnresolvedOnly,actors,runtimeActions,runtimeFormulas,runtimeConditions,runtimeTests,runtimeEvents,runtimeDefinitionChoices,runtimeContentChoices,runtimeInputRows,runtimeResult:this.#runtimeResult,runtimeStateCards,runtimeSelection:this.#runtimeSelection,runtimeHasActorSubtypes:availableDocumentTypes("Actor").length>1,runtimeActorTypeOptions:availableDocumentTypes("Actor").map(id=>({id,sourceSelected:id===this.#runtimeSelection.sourceType,targetSelected:id===this.#runtimeSelection.targetType})),runtimeTool,runtimeModes,runtimeGuide,runtimeReady,runtimeStateError,runtimeActorNames,
       publishReadiness:this.#view==='general'&&record?.status==='draft'?this.#publishReadiness(api,ruleset):null,
       recipes:this.#view==='general'&&record?recipeCards():null,
       lifecycle:record?{isValidated:record.status==="validated",isReady:record.status==="ready",isDraft:record.status==="draft",canMutate:record.status!=="validated",canCreateVersion:record.status==="validated",canActivate:Boolean(record.publishedSnapshot),isActive:record.versionId===activeId,statusLabel:statusLabel(record.status)}:null,
@@ -389,6 +400,7 @@ export class ConfiguratorApp extends ConfiguratorWindow {
     });
     this.#bindDependencyGraph();
     for(const input of this.element?.querySelectorAll?.("[data-runtime-select], [data-runtime-input]")??[])input.addEventListener("change",event=>{const key=event.currentTarget.dataset.runtimeSelect??event.currentTarget.dataset.runtimeInput;this.#runtimeSelection[key]=event.currentTarget.value;if(event.currentTarget.dataset.runtimeSelect)this.render(false);});
+    for(const input of this.element?.querySelectorAll?.("[data-runtime-action-input]")??[])input.addEventListener("change",event=>{this.#runtimeSelection.inputs={...this.#runtimeSelection.inputs,[event.currentTarget.dataset.runtimeActionInput]:event.currentTarget.value};});
   }
 
   #bindDependencyGraph(){
@@ -626,8 +638,16 @@ export class ConfiguratorApp extends ConfiguratorWindow {
   }
 
   #runtimeContext(){const source=this.#runtimeSelection.source,target=this.#runtimeSelection.target||source,{definitionId,contentKey}=this.#runtimeSelection;
+    const variables={...(definitionId?{definition:{objectKind:"definition",objectId:definitionId}}:{})},input=this.#runtimeInputValues();if(Object.keys(input).length)variables.input=input;
     return {roles:{self:source,source,target,subject:target,owner:source},defaultRole:"self",userContext:{userId:game.user?.id??null,isGM:Boolean(game.user?.isGM)},
-      ...(definitionId?{variables:{definition:{objectKind:"definition",objectId:definitionId}}}:{}),...(contentKey?{content:{key:contentKey,role:"self"}}:{})};}
+      ...(Object.keys(variables).length?{variables}:{}),...(contentKey?{content:{key:contentKey,role:"self"}}:{})};}
+  /** The Lab's answers to the selected Action's inputs, typed; an empty answer is left to the input's default. */
+  #runtimeInputValues(){
+    const values={};
+    for(const input of this.#runtimeInputSpecs){const raw=String(this.#runtimeSelection.inputs[input.id]??"").trim();if(raw==="")continue;
+      values[input.id]=["number","integer"].includes(input.valueType)?Number(raw):input.valueType==="boolean"?raw==="true":raw;}
+    return values;
+  }
 
   async #import(event) {
     const file=event.currentTarget.files?.[0]; if(!file)return;

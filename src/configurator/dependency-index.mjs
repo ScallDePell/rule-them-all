@@ -48,6 +48,7 @@ export class DependencyIndex{
     }
     for(const [i,e] of (ruleset.effects??[]).entries()){
       pushRef(this.#edges,{objectKind:'effect',objectId:e.id},e.targetRef,'effectTarget',`effects[${i}].targetRef`);
+      if(e.targetDefinitionFormulaRef)pushRef(this.#edges,{objectKind:'effect',objectId:e.id},{objectKind:'formula',objectId:e.targetDefinitionFormulaRef},'effectTarget',`effects[${i}].targetDefinitionFormulaRef`);
       if(e.operand?.kind==='parameter')pushRef(this.#edges,{objectKind:'effect',objectId:e.id},{objectKind:'parameter',objectId:e.operand.id},'effectOperand',`effects[${i}].operand`);
       if(e.operand?.kind==='formula')pushRef(this.#edges,{objectKind:'effect',objectId:e.id},{objectKind:'formula',objectId:e.operand.id},'effectOperand',`effects[${i}].operand`);
       if(e.operand?.kind==='reference')pushRef(this.#edges,{objectKind:'effect',objectId:e.id},e.operand.reference,'effectOperand',`effects[${i}].operand.reference`);
@@ -56,6 +57,7 @@ export class DependencyIndex{
     }
     for(const [i,a] of (ruleset.actions??[]).entries()){
       if(a.testRef)pushRef(this.#edges,{objectKind:'action',objectId:a.id},{objectKind:'test',objectId:a.testRef},'actionTest',`actions[${i}].testRef`);
+      for(const [j,input] of (a.inputs??[]).entries())if(input?.definitionTypeId)pushRef(this.#edges,{objectKind:'action',objectId:a.id},{objectKind:'definitionType',objectId:input.definitionTypeId},'actionInput',`actions[${i}].inputs[${j}].definitionTypeId`);
       for(const [j,id] of (a.conditionRefs??[]).entries())pushRef(this.#edges,{objectKind:'action',objectId:a.id},{objectKind:'condition',objectId:id},'actionCondition',`actions[${i}].conditionRefs[${j}]`);
       for(const k of ['costEffectRefs','effectRefs'])for(const [j,id] of (a[k]??[]).entries())pushRef(this.#edges,{objectKind:'action',objectId:a.id},{objectKind:'effect',objectId:id},k,`actions[${i}].${k}[${j}]`);
       for(const [j,id] of (a.eventTypeRefs??[]).entries())pushRef(this.#edges,{objectKind:'action',objectId:a.id},{objectKind:'eventType',objectId:id},'actionEvent',`actions[${i}].eventTypeRefs[${j}]`);

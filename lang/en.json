@@ -146,7 +146,8 @@
       "OptionCondition": "Option filter",
       "AlwaysAvailable": "Always available",
       "OpposedBy": "Opposed by {test}",
-      "NoFactor": "×1"
+      "NoFactor": "×1",
+      "FixedTargetDefinition": "The target above"
     },
     "FamilyColor": {
       "parameters": "Parameters",
@@ -542,7 +543,8 @@
       "AvailabilityHint": "While this Condition is false, the Actions of a Content of this type cannot be used. It can read the Content's fields.",
       "RollMinimum": "Lowest result",
       "NoMinimum": "None",
-      "RollFactor": "Factor after the roll"
+      "RollFactor": "Factor after the roll",
+      "TargetDefinitionFormula": "Definition chosen by"
     },
     "EditorDisplay": {
       "NoneSelected": "None selected",
@@ -1035,6 +1037,23 @@
       "VariantsHelp": "While its Condition is true, a variant replaces the dice formula (two dice keeping the best, for example). The first true variant wins. A formula can read @content.<field>, @input.<id> and @test.<id>.",
       "AddVariant": "Add a variant",
       "VariantPlaceholder": "2d20kh1"
+    },
+    "ActionInput": {
+      "Title": "Choices when used",
+      "Help": "Values the player or the GM chooses each time the Action is used (a slot level, a difficulty). Formulas, Conditions and dice read them as variables.input.<id> or @input.<id>.",
+      "Add": "Add a choice",
+      "Input": "Choice",
+      "Label": "Label",
+      "DefinitionType": "Chosen among",
+      "Options": "Allowed values",
+      "OptionsPlaceholder": "One per line: value = label (empty: any value)",
+      "Types": {
+        "number": "Number",
+        "integer": "Whole number",
+        "boolean": "Yes or no",
+        "string": "Text",
+        "reference": "Definition"
+      }
     }
   }
 }

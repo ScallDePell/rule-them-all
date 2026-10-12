@@ -418,7 +418,11 @@ export class RuntimeEngine{
   }
   async previewEffect(versionId,effectId,context={},staged=new Map()){
     const ruleset=this.ruleset(versionId),effect=ruleset.effects?.find(x=>x.id===effectId&&enabled(x));if(!effect)throw new Error(`Effect unavailable: ${effectId}.`);
-    const evaluator=this.evaluator(versionId,staged);evaluator.__staged=staged;const role=effect.targetRole??"target";const target=await this.resolveReference(versionId,effect.targetRef,{...context,defaultRole:role},{forWrite:true,role,staged});const key=this.#refKey(target.containerRef);if(!staged.has(key))staged.set(key,clone(target.state));const state=staged.get(key);let rolled=null,operand;if(effect.operand?.kind==="roll"){rolled=await this.#rollOperand(versionId,effect.operand,context,evaluator);operand=rolled.value;}else operand=await this.#operand(versionId,effect.operand,context,evaluator);const before=this.#readOutput(ruleset,state,effect.targetRef);let pool=null;if(effect.targetRef.capabilityId==="pool"){const {slot}=this.#outputContract(ruleset,effect.targetRef);pool={slot,bounds:await this.#poolBounds(slot,{...context,defaultRole:role},evaluator)};}const after=this.#writeOutput(state,effect.targetRef,effect.operation,operand,pool);return {effectId,before,after,operand,...(rolled?{roll:rolled.roll}:{}),containerRef:target.containerRef};
+    const evaluator=this.evaluator(versionId,staged);evaluator.__staged=staged;const role=effect.targetRole??"target";
+    // A Formula may name the Definition written (the slot level chosen); the target keeps its capability, output and slot.
+    let targetRef=effect.targetRef;
+    if(effect.targetDefinitionFormulaRef){const chosen=await evaluator.formula(effect.targetDefinitionFormulaRef,{...context,defaultRole:role}),id=typeof chosen==="string"?chosen:chosen?.objectId;if(!id)throw new Error(`Effect ${effect.id}: its Formula names no Definition.`);targetRef={...effect.targetRef,objectId:id};}
+    const target=await this.resolveReference(versionId,targetRef,{...context,defaultRole:role},{forWrite:true,role,staged});const key=this.#refKey(target.containerRef);if(!staged.has(key))staged.set(key,clone(target.state));const state=staged.get(key);let rolled=null,operand;if(effect.operand?.kind==="roll"){rolled=await this.#rollOperand(versionId,effect.operand,context,evaluator);operand=rolled.value;}else operand=await this.#operand(versionId,effect.operand,context,evaluator);const before=this.#readOutput(ruleset,state,targetRef);let pool=null;if(targetRef.capabilityId==="pool"){const {slot}=this.#outputContract(ruleset,targetRef);pool={slot,bounds:await this.#poolBounds(slot,{...context,defaultRole:role},evaluator)};}const after=this.#writeOutput(state,targetRef,effect.operation,operand,pool);return {effectId,before,after,operand,...(rolled?{roll:rolled.roll}:{}),containerRef:target.containerRef};
   }
   /** Instantiate one acquired Definition in a container state (CP-16). Returns the new
    * DefinitionState, null when an `ifAbsent` grant is already there, or "present". */
@@ -519,9 +523,41 @@ export class RuntimeEngine{
     }
     return results;
   }
+  /** The inputs an Action asks for when it is used, with their allowed values: listed options, or the
+   * Definitions of the input's type (those the self role holds, when it holds some). */
+  async describeActionInputs(versionId,actionId,context={}){
+    const ruleset=this.ruleset(versionId),action=ruleset.actions?.find(x=>x.id===actionId&&enabled(x));if(!action)throw new Error(`Action unavailable: ${actionId}.`);
+    const self=roleRef(context,"self"),held=self?new Set(Object.keys((await this.adapter.load(self,{rulesetVersionId:versionId})).definitionStates??{})):new Set();
+    return (action.inputs??[]).map(input=>{
+      let options=clone(input.options??[]);
+      if(input.valueType==="reference"){const ofType=(ruleset.definitions??[]).filter(d=>enabled(d)&&d.definitionTypeId===input.definitionTypeId),owned=ofType.filter(d=>held.has(d.id));options=(owned.length?owned:ofType).map(d=>({value:d.id,labelKey:d.nameKey}));}
+      return {id:input.id,labelKey:input.labelKey||input.id,valueType:input.valueType,required:input.required!==false,...(input.defaultValue!==undefined?{defaultValue:clone(input.defaultValue)}:{}),options};
+    });
+  }
+  /** The Action's inputs, checked and completed by their defaults, under variables.input. */
+  #actionInputs(ruleset,action,context){
+    if(!(action.inputs??[]).length)return context;
+    const given=context.variables?.input??{},values={...clone(given)};
+    for(const input of action.inputs){
+      let value=given[input.id];
+      if(value===undefined||value===null||value==="")value=input.defaultValue;
+      if(value===undefined){if(input.required)throw new Error(`Action ${action.id} needs a value for ${input.labelKey||input.id}.`);delete values[input.id];continue;}
+      if(input.valueType==="reference"){
+        const id=typeof value==="string"?value:value?.objectId,definition=ruleset.definitions?.find(d=>d.id===id&&enabled(d));
+        if(!definition||definition.definitionTypeId!==input.definitionTypeId)throw new Error(`Action ${action.id}: ${input.labelKey||input.id} must be a Definition of type ${input.definitionTypeId}.`);
+        value={objectKind:"definition",objectId:id};
+      }else{
+        const check=validateTypedValue(input.valueType,"one",false,value);if(!check.valid)throw new Error(`Action ${action.id}: ${input.labelKey||input.id}: ${check.message}`);
+        if(input.options?.length&&!input.options.some(option=>option.value===value))throw new Error(`Action ${action.id}: ${JSON.stringify(value)} is not a choice of ${input.labelKey||input.id}.`);
+      }
+      values[input.id]=value;
+    }
+    return {...context,variables:{...(context.variables??{}),input:values}};
+  }
   /** previewAction options.acquisitions: extra grants run with the Action's own (a Content's bindings). */
   async previewAction(versionId,actionId,context={},{acquisitions=[],content=null}={}){
     const ruleset=this.ruleset(versionId),action=ruleset.actions?.find(x=>x.id===actionId&&enabled(x));if(!action)throw new Error(`Action unavailable: ${actionId}.`);const staged=new Map(),evaluator=this.evaluator(versionId,staged);evaluator.__staged=staged;
+    context=this.#actionInputs(ruleset,action,context);
     for(const conditionId of action.conditionRefs??[])if(!await evaluator.condition(conditionId,context))return {actionId,allowed:false,reason:"condition",conditionId,changes:[]};
     const changes=[];for(const effectId of action.costEffectRefs??[])changes.push(await this.previewEffect(versionId,effectId,context,staged));
     let testResult=null,effectRefs=[...(action.effectRefs??[])];
@@ -541,12 +577,13 @@ export class RuntimeEngine{
     await this.#stageStates(versionId,ruleset,action,context,staged,evaluator,changes);
     // Effects read the Test under variables.test (total, margin, natural, outcome), e.g. damage that grows with the margin.
     const effectContext=testResult?{...context,variables:{...(context.variables??{}),...testResult.variables,test:{...testResult.variables.test,outcome:testResult.outcome}}}:context;
-    for(const effectId of effectRefs)changes.push(await this.previewEffect(versionId,effectId,effectContext,staged));return {actionId,allowed:true,testResult,changes,acquired,staged};
+    for(const effectId of effectRefs)changes.push(await this.previewEffect(versionId,effectId,effectContext,staged));return {actionId,allowed:true,testResult,changes,acquired,staged,context};
   }
   /** triggered: run by a Trigger, so no user chose it and only write permissions apply. */
   async executeAction(versionId,actionId,context={},{preview=false,eventDepth=0,transactionId=null,triggered=false,acquisitions=[],content=null}={}){
     if(!triggered)await this.#require(versionId,"execute",{objectKind:"action",objectId:actionId},roleRef(context,"self")??roleRef(context,context.defaultRole??"self"),context);
-    const plan=await this.previewAction(versionId,actionId,context,{acquisitions,content});if(preview||!plan.allowed)return {...plan,staged:undefined};
+    const plan=await this.previewAction(versionId,actionId,context,{acquisitions,content});if(preview||!plan.allowed)return {...plan,staged:undefined,context:undefined};
+    context=plan.context;
     // Staged states were read once by the preview: the commit expects their revision unchanged.
     const tx=this.transaction(versionId,"action",{transactionId,summary:{actionId,outcomeKey:plan.testResult?.outcome?.resultKey??null}});
     for(const [key,state] of plan.staged){const change=plan.changes.find(x=>this.#refKey(x.containerRef)===key);if(change)tx.stage(change.containerRef,state);}

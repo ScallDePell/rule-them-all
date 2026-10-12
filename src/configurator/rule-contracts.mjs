@@ -111,8 +111,12 @@ export function prepareTest(data,options={}){
 }
 
 export function prepareEffect(data,options={}){
-  const x={descriptionKey:'',enabled:true,order:0,tags:[],targetRef:null,targetRole:'target',operation:'set',operand:{kind:'literal',value:0},...copyJSON(data)};
+  const x={descriptionKey:'',enabled:true,order:0,tags:[],targetRef:null,targetRole:'target',operation:'set',operand:{kind:'literal',value:0},targetDefinitionFormulaRef:null,...copyJSON(data)};
   identity(x,'Effect',options);
+  // targetDefinitionFormulaRef: a Formula naming the Definition written instead of targetRef's one (the slot level chosen
+  // for a spell); targetRef still gives the capability, output and slot written.
+  if(x.targetDefinitionFormulaRef==='')x.targetDefinitionFormulaRef=null;
+  if(x.targetDefinitionFormulaRef!==null&&!nonempty(x.targetDefinitionFormulaRef))throw new Error('Effect.targetDefinitionFormulaRef must be null or a Formula id.');
   if(!ROLE_NAME.test(String(x.targetRole)))throw new Error('Effect.targetRole must be a role name.');
   if(x.targetRef!==null&&!isRecord(x.targetRef))throw new Error('Effect.targetRef must be a logical Reference.');
   need(isRecord(x.targetRef)&&nonempty(x.targetRef.objectKind)&&nonempty(x.targetRef.objectId),'Effect.targetRef must be a logical Reference.',options);
@@ -163,12 +167,37 @@ function prepareModifierApplication(data,index){
   if(!(x.durationRef===null||nonempty(x.durationRef)))throw new Error(`Action.modifierApplications[${index}].durationRef must be a Duration id or null.`);
   return x;
 }
+/** Action input: a value chosen when the Action is used (a slot level, a difficulty), read as
+ * variables.input.<id>. options lists the allowed values; a reference input chooses a
+ * Definition of definitionTypeId. */
+export const ACTION_INPUT_TYPES=Object.freeze(['number','integer','boolean','string','reference']);
+function prepareActionInput(data,index,options){
+  const label=`Action.inputs[${index}]`;
+  if(!isRecord(data))throw new Error(`${label} must be an object.`);
+  const x={labelKey:'',valueType:'number',options:[],definitionTypeId:null,required:true,...copyJSON(data)};
+  for(const key of Object.keys(x))if(!['id','labelKey','valueType','options','definitionTypeId','required','defaultValue'].includes(key))throw new Error(`${label} contains unsupported field: ${key}.`);
+  if(!nonempty(x.id)||!/^[A-Za-z][A-Za-z0-9_]*$/.test(x.id))throw new Error(`${label}.id must start with a letter and use letters, digits or _.`);
+  if(!ACTION_INPUT_TYPES.includes(x.valueType))throw new Error(`${label}.valueType must be one of ${ACTION_INPUT_TYPES.join(', ')}.`);
+  if(typeof x.labelKey!=='string')throw new Error(`${label}.labelKey must be a string.`);
+  bool(x.required,`${label}.required`);arr(x.options,`${label}.options`);
+  if(x.valueType==='reference'){
+    need(nonempty(x.definitionTypeId),`${label} requires the Definition type it chooses from.`,options);
+    if(x.options.length)throw new Error(`${label} chooses a Definition and cannot list options.`);
+  }else x.definitionTypeId=null;
+  const typed=(value,what)=>{if(x.valueType==='reference'){if(!nonempty(value))throw new Error(`${label}.${what} must be a Definition id.`);return;}const check=validateTypedValue(x.valueType,'one',false,value);if(!check.valid)throw new Error(`${label}.${what}: ${check.message}`);};
+  x.options=x.options.map((option,i)=>{if(!isRecord(option))throw new Error(`${label}.options[${i}] must be {value, labelKey}.`);typed(option.value,`options[${i}].value`);return {value:option.value,labelKey:String(option.labelKey??'')};});
+  if(new Set(x.options.map(option=>JSON.stringify(option.value))).size!==x.options.length)throw new Error(`${label} lists the same option twice.`);
+  if(x.defaultValue!==undefined){typed(x.defaultValue,'defaultValue');if(x.options.length&&!x.options.some(option=>option.value===x.defaultValue))throw new Error(`${label}.defaultValue is not one of its options.`);}
+  return x;
+}
 export function prepareAction(data,options={}){
-  const x={descriptionKey:'',enabled:true,order:0,tags:[],conditionRefs:[],costEffectRefs:[],acquisitions:[],stateRemovals:[],stateApplications:[],modifierApplications:[],effectRefs:[],testRef:null,outcomeMappings:[],eventTypeRefs:[],...copyJSON(data)};
+  const x={descriptionKey:'',enabled:true,order:0,tags:[],inputs:[],conditionRefs:[],costEffectRefs:[],acquisitions:[],stateRemovals:[],stateApplications:[],modifierApplications:[],effectRefs:[],testRef:null,outcomeMappings:[],eventTypeRefs:[],...copyJSON(data)};
   identity(x,'Action',options);
   // An Action acquires when it lists acquisitions; no separate purpose is stored.
   if(Object.hasOwn(x,'purpose'))throw new Error('Unsupported Action field: purpose.');
-  for(const k of ['conditionRefs','costEffectRefs','acquisitions','stateRemovals','stateApplications','modifierApplications','effectRefs','outcomeMappings','eventTypeRefs'])arr(x[k],`Action.${k}`);
+  for(const k of ['inputs','conditionRefs','costEffectRefs','acquisitions','stateRemovals','stateApplications','modifierApplications','effectRefs','outcomeMappings','eventTypeRefs'])arr(x[k],`Action.${k}`);
+  x.inputs=x.inputs.map((input,i)=>prepareActionInput(input,i,options));
+  if(new Set(x.inputs.map(input=>input.id)).size!==x.inputs.length)throw new Error('Action.inputs lists the same id twice.');
   x.acquisitions=x.acquisitions.map(prepareActionAcquisition);
   x.stateRemovals=x.stateRemovals.map(prepareStateRemoval);x.stateApplications=x.stateApplications.map(prepareStateApplication);x.modifierApplications=x.modifierApplications.map(prepareModifierApplication);
   if(new Set(x.acquisitions.map(a=>`${a.targetRole}/${a.definitionId}`)).size!==x.acquisitions.length)throw new Error('Action.acquisitions lists a Definition twice for the same role.');

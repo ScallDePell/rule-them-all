@@ -45,7 +45,8 @@ import {formatEditorValue} from "./editor-value.mjs";
 import {getCreationSources, getCreationSourceDescriptor} from "./creation-source-catalog.mjs";
 import {diagnosticFocusTargets,saveErrorFocusPath} from "./diagnostic-focus.mjs";
 import {buildTestInputContext,syncTestInputSource} from "./test-input-form.mjs";
-import {rollVariantContext} from "./rule-cards-form.mjs";
+import {rollVariantContext,actionInputContext} from "./rule-cards-form.mjs";
+import {syncCard} from "./card-form.mjs";
 
 
 const uid=prefix=>`${prefix}-${crypto.randomUUID?.()??Math.random().toString(36).slice(2)}`;
@@ -236,6 +237,8 @@ export class ConfiguratorEntryEditor extends ConfiguratorWindow {
       ...(this.#kind==="modifier"?modifierFormContext(data,{valueTargetChoices:referenceChoices.filter(x=>parseRefToken(x.token).capabilityId==="value").map(x=>({...x,selected:x.token===targetToken}))}):{}),
       ...(this.#kind==="duration"?durationFormContext(data,{eventTypes,conditions,withColors}):{}),
       ...(this.#kind==="roll"?rollVariantContext(data,{conditions,withColors}):{}),
+      ...(this.#kind==="action"?actionInputContext(data,{definitionTypes:selectableDefinitionTypes,withColors,neutral:selectColorsAttribute([RTA_NEUTRAL_COLOR])}):{}),
+      ...(this.#kind==="effect"?{targetDefinitionFormulaChoices:optionalFormula(data.targetDefinitionFormulaRef,"FixedTargetDefinition","The target above")}:{}),
       ...(this.#kind==="action"?outcomeMappingContext(data,{tests,outcomes,effects,withColors}):{}),
       ...(this.#kind==="trigger"?{...triggerFilterContext(data,{eventTypes:[...eventTypes,...systemEvents]}),triggerEventChoices}:{}),
       ...(this.#kind==="permissionPolicy"?permissionFormContext(data,{definitions,actions,conditions,withColors}):{}),dirty:this.#dirty,canPersist:!isValidated&&this.#dirty,
@@ -272,7 +275,7 @@ export class ConfiguratorEntryEditor extends ConfiguratorWindow {
     wireOrderedLists(this.element,{onChange:mark});
     form.addEventListener("input",event=>{mark();const row=event.target.closest?.("[data-definition-field]");if(row&&!row.dataset.required){const use=row.querySelector("[data-field-present]");if(use&&!use.checked){use.checked=true;}}if(event.target.matches?.("[data-picker-filter]"))this.#filterPicker(event.target);});
     form.addEventListener("change",event=>{if(event.target.matches?.("[data-step-source-family]")&&event.target.checked){const group=event.target.closest("[data-step-prop=sourceCollection]");for(const other of group?.querySelectorAll("[data-step-source-family]")??[])if(other!==event.target)other.checked=false;}this.#syncCreationSource(event.target);this.#syncCreationKind(event.target);mark();if(event.target.matches?.("[data-presentation-override]")){const row=event.target.closest("[data-presentation-key]");const control=row?.querySelector(".rta-declarative-presentation__value");if(control)control.hidden=!event.target.checked;}this.#syncFieldRow(event.target);this.#syncModeRows(event.target);this.#syncOperandEditor(event.target);this.#syncRuleOperandEditor(event.target);this.#syncPickerSummary(event.target);this.#syncStorageKind(event.target);if(event.target.matches?.("[data-color-override-toggle]")){const input=event.target.closest("[data-color-override-editor]")?.querySelector("[data-custom-color-input]");if(input)input.disabled=!event.target.checked;}});
-    form.addEventListener("change",event=>{if(event.target.matches?.("[data-source-kind]"))syncValueSource(event.target);if(event.target.matches?.('[data-input-prop="sourceKind"]'))syncTestInputSource(event.target);if(event.target.matches?.('[data-slot-prop="entryMode"]'))syncEntryMode(event.target);});
+    form.addEventListener("change",event=>{const card=event.target.closest?.("[data-card]");if(card)syncCard(card);if(event.target.matches?.("[data-source-kind]"))syncValueSource(event.target);if(event.target.matches?.('[data-input-prop="sourceKind"]'))syncTestInputSource(event.target);if(event.target.matches?.('[data-slot-prop="entryMode"]'))syncEntryMode(event.target);});
     form.addEventListener("submit",event=>{event.preventDefault();this.#save(false);});
     // Section counters follow rows added or removed by script (§46).
     const counters=[...form.querySelectorAll("[data-live-count]")];

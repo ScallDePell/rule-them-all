@@ -36,3 +36,14 @@ export function cardInteger(value, label, fallback = null) {
   if (!Number.isSafeInteger(number)) throw new Error(`${label} must be a whole number.`);
   return number;
 }
+
+/** Show the parts of a card that depend on one of its choices:
+ * data-card-when="<prop>:<value> <value>…" is visible only while that prop holds one of the values. */
+export function syncCard(card) {
+  for (const part of card.querySelectorAll("[data-card-when]")) {
+    if (part.closest("[data-card]") !== card) continue;
+    const [prop, values = ""] = part.dataset.cardWhen.split(":");
+    const control = [...card.querySelectorAll(`[data-card-prop="${prop}"]`)].find(node => node.closest("[data-card]") === card);
+    part.toggleAttribute("hidden", !values.split(" ").includes(String(control?.value ?? "")));
+  }
+}

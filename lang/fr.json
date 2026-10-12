@@ -142,7 +142,8 @@
       "OptionCondition": "Filtre des options",
       "AlwaysAvailable": "Toujours disponible",
       "OpposedBy": "En opposition à {test}",
-      "NoFactor": "×1"
+      "NoFactor": "×1",
+      "FixedTargetDefinition": "La cible ci-dessus"
     },
     "FamilyColor": {
       "parameters": "Paramètres",
@@ -538,7 +539,8 @@
       "AvailabilityHint": "Tant que cette Condition est fausse, les Actions d'un contenu de ce type ne peuvent pas être utilisées. Elle peut lire les champs du contenu.",
       "RollMinimum": "Résultat minimal",
       "NoMinimum": "Aucun",
-      "RollFactor": "Facteur après le jet"
+      "RollFactor": "Facteur après le jet",
+      "TargetDefinitionFormula": "Definition choisie par"
     },
     "EditorDisplay": {
       "NoneSelected": "Aucune sélection",
@@ -1031,6 +1033,23 @@
       "VariantsHelp": "Tant que sa Condition est vraie, une variante remplace la formule de dés (deux dés en gardant le meilleur, par exemple). La première variante vraie l'emporte. Une formule peut lire @content.<champ>, @input.<id> et @test.<id>.",
       "AddVariant": "Ajouter une variante",
       "VariantPlaceholder": "2d20kh1"
+    },
+    "ActionInput": {
+      "Title": "Choix à l'utilisation",
+      "Help": "Valeurs que le joueur ou le MJ choisit à chaque utilisation de l'Action (un niveau d'emplacement, une difficulté). Les Formulas, les Conditions et les dés les lisent dans variables.input.<id> ou @input.<id>.",
+      "Add": "Ajouter un choix",
+      "Input": "Choix",
+      "Label": "Libellé",
+      "DefinitionType": "Choisi parmi",
+      "Options": "Valeurs permises",
+      "OptionsPlaceholder": "Une par ligne : valeur = libellé (vide : toute valeur)",
+      "Types": {
+        "number": "Nombre",
+        "integer": "Nombre entier",
+        "boolean": "Oui ou non",
+        "string": "Texte",
+        "reference": "Definition"
+      }
     }
   }
 }
