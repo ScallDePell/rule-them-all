@@ -87,3 +87,62 @@
   color: var(--rta-color-text-secondary);
   text-align: center;
 }
+
+/* The Style group of the selected block: folded until opened, it stays open while the GM works in it. */
+.rta-sheet-editor__style {
+  border-block-start: var(--rta-frame-border) solid var(--rta-color-border-subtle);
+  padding-block-start: var(--rta-gap-row);
+}
+
+.rta-sheet-editor__style > summary {
+  cursor: pointer;
+  font-weight: 600;
+}
+
+.rta-sheet-editor__style-body {
+  display: flex;
+  flex-direction: column;
+  gap: var(--rta-gap-row);
+  padding-block-start: var(--rta-gap-row);
+}
+
+.rta-sheet-editor__style-body > button {
+  flex: 0 0 auto;
+  align-self: flex-start;
+  inline-size: auto;
+}
+
+.rta-sheet-editor__file {
+  display: flex;
+  flex: 1;
+  align-items: center;
+  gap: var(--rta-gap-tight);
+  min-inline-size: 0;
+}
+
+.rta-sheet-editor__file > input {
+  flex: 1;
+  min-inline-size: 0;
+}
+
+.rta-sheet-editor__checks {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--rta-gap-block);
+}
+
+.rta-sheet-editor__check {
+  display: flex;
+  align-items: center;
+  gap: var(--rta-gap-tight);
+}
+
+.rta-sheet-editor__properties input[type="color"] {
+  inline-size: 4rem;
+  padding: 0;
+}
+
+.rta-sheet-editor__properties input[type="range"] {
+  flex: 1;
+}

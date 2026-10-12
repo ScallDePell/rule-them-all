@@ -18,15 +18,18 @@
                                                                        a value.final is written through its value.base
    action    := {kind: "action", actionRef, labelKey?}                 a button that uses the Action (on the repeater's Definition inside one)
    text      := {kind: "text", textKey}
+   image     := {kind: "image", src, fit?: "cover" | "contain", height?: "small" | "medium" | "large"}   a picture (a banner, a logo)
    contents  := {kind: "contents", contentTypeIds?}                  the Contents the Actor holds (its Items), of these Content Types (all when none);
                                                                        dropping an Item on the sheet adds one
    spacer    := {kind: "spacer"}
+   style: any node may carry one (colors, background, border, font, size, alignment, margins): layout-style-contract.mjs.
    span: 1 to the parent's columns (default 1). Node ids are unique in the sheet; the tree is at most 8 levels and 500 nodes deep. */
 
 import {copyJSON, isRecord} from "./configurator-schema.mjs";
+import {IMAGE_PATH, SHEET_IMAGE_FITS, SHEET_IMAGE_HEIGHTS, prepareLayoutStyle} from "./layout-style-contract.mjs";
 
 export const LAYOUT_CONTAINERS = Object.freeze(["tabs", "tab", "section", "grid", "repeater"]);
-export const LAYOUT_LEAVES = Object.freeze(["value", "action", "text", "contents", "spacer"]);
+export const LAYOUT_LEAVES = Object.freeze(["value", "action", "text", "image", "contents", "spacer"]);
 export const LAYOUT_NODE_KINDS = Object.freeze([...LAYOUT_CONTAINERS, ...LAYOUT_LEAVES]);
 export const LAYOUT_SOURCE_KINDS = Object.freeze(["output", "formula", "parameter", "each", "field"]);
 /** Sources a sheet can write to. */
@@ -37,7 +40,7 @@ export const LAYOUT_MAX_NODES = 500;
 const MAX_COLUMNS = {section: 4, grid: 6, repeater: 6};
 const FIELDS = {
   tabs: ["children"], tab: ["labelKey", "children"], section: ["labelKey", "columns", "children"], grid: ["columns", "children"],
-  repeater: ["query", "columns", "children"], value: ["source", "labelKey", "write"], action: ["actionRef", "labelKey"], text: ["textKey"], contents: ["contentTypeIds"], spacer: []
+  repeater: ["query", "columns", "children"], value: ["source", "labelKey", "write"], action: ["actionRef", "labelKey"], text: ["textKey"], image: ["src", "fit", "height"], contents: ["contentTypeIds"], spacer: []
 };
 const nonempty = value => typeof value === "string" && value.trim().length > 0;
 const NODE_ID = /^[A-Za-z0-9][A-Za-z0-9_-]*$/;
@@ -72,7 +75,7 @@ export function prepareLayout(root) {
     ids.add(node.id);
     if (++count > LAYOUT_MAX_NODES) throw new Error(`A sheet has at most ${LAYOUT_MAX_NODES} nodes.`);
     if (depth > LAYOUT_MAX_DEPTH) throw new Error(`${path}: a sheet is at most ${LAYOUT_MAX_DEPTH} levels deep.`);
-    for (const key of Object.keys(node)) if (!["id", "kind", "span", ...FIELDS[node.kind]].includes(key)) throw new Error(`${path} contains unsupported field: ${key}.`);
+    for (const key of Object.keys(node)) if (!["id", "kind", "span", "style", ...FIELDS[node.kind]].includes(key)) throw new Error(`${path} contains unsupported field: ${key}.`);
     if ((node.kind === "tab") !== (parent?.kind === "tabs")) throw new Error(node.kind === "tab" ? `${path}: a tab belongs in tabs.` : `${path}: tabs hold only tabs.`);
     const next = {id: node.id, kind: node.kind};
     const parentColumns = parent && MAX_COLUMNS[parent.kind] ? parent.columns : 1;
@@ -106,6 +109,15 @@ export function prepareLayout(root) {
     }
     if (node.kind === "action") { if (!nonempty(node.actionRef)) throw new Error(`${path}.actionRef must be an id.`); next.actionRef = node.actionRef; }
     if (node.kind === "text") { if (typeof node.textKey !== "string") throw new Error(`${path}.textKey must be text.`); next.textKey = node.textKey; }
+    if (node.kind === "image") {
+      // An image block without a picture yet is a draft: it shows nothing in play.
+      if (typeof node.src !== "string" || node.src && !IMAGE_PATH.test(node.src)) throw new Error(`${path}.src must be a file path.`);
+      next.src = node.src;
+      if (node.fit !== undefined) { if (!SHEET_IMAGE_FITS.includes(node.fit)) throw new Error(`${path}.fit must be ${SHEET_IMAGE_FITS.join(" or ")}.`); next.fit = node.fit; }
+      if (node.height !== undefined) { if (!SHEET_IMAGE_HEIGHTS[node.height]) throw new Error(`${path}.height must be ${Object.keys(SHEET_IMAGE_HEIGHTS).join(", ")}.`); next.height = node.height; }
+    }
+    const style = prepareLayoutStyle(node.style, node.kind, `${path}.style`, {containers: LAYOUT_CONTAINERS});
+    if (style) next.style = style;
     if (node.kind === "contents" && node.contentTypeIds !== undefined) {
       if (!Array.isArray(node.contentTypeIds) || !node.contentTypeIds.every(nonempty)) throw new Error(`${path}.contentTypeIds must be a list of ids.`);
       if (node.contentTypeIds.length) next.contentTypeIds = [...new Set(node.contentTypeIds)];

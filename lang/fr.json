@@ -1398,7 +1398,8 @@
         "action": "Bouton d'Action",
         "text": "Texte",
         "spacer": "Case vide",
-        "contents": "Contenus détenus"
+        "contents": "Contenus détenus",
+        "image": "Image"
       },
       "Source": {
         "output": "Une sortie de Definition",
@@ -1414,7 +1415,80 @@
         "subtract": "Peut être diminuée"
       },
       "BlockToAdd": "bloc à ajouter",
-      "ContentTypes": "Types de contenu (aucun : tous)"
+      "ContentTypes": "Types de contenu (aucun : tous)",
+      "Image": "Image",
+      "ImagePath": "chemin/vers/image.webp",
+      "Browse": "Parcourir",
+      "NoImage": "Choisis une image",
+      "ImageFit": "Ajustement",
+      "ImageHeight": "Hauteur",
+      "Fit": {
+        "cover": "Remplir le cadre",
+        "contain": "Image entière"
+      },
+      "Height": {
+        "small": "Petite",
+        "medium": "Moyenne",
+        "large": "Grande"
+      },
+      "Style": {
+        "Title": "Style",
+        "Default": "Par défaut",
+        "None": "Aucun",
+        "CustomChoice": "Couleur personnalisée…",
+        "Custom": "Couleur",
+        "Color": "Couleur du texte",
+        "Background": "Fond",
+        "Opacity": "Opacité du fond",
+        "ImageOpacity": "Opacité",
+        "Image": "Image de fond",
+        "Border": "Bordure",
+        "Font": "Police",
+        "Size": "Taille du texte",
+        "Emphasis": "Mise en valeur",
+        "Bold": "Gras",
+        "Italic": "Italique",
+        "Align": "Alignement",
+        "Label": "Libellé",
+        "Padding": "Marge intérieure",
+        "Gap": "Espace entre les blocs",
+        "Reset": "Style par défaut"
+      },
+      "Tone": {
+        "text": "Texte",
+        "muted": "Texte discret",
+        "accent": "Accent",
+        "highlight": "Surbrillance",
+        "success": "Réussite",
+        "danger": "Danger",
+        "warning": "Alerte",
+        "panel": "Fond de section",
+        "surface": "Fond de fenêtre",
+        "light": "Blanc",
+        "dark": "Noir"
+      },
+      "Size": {
+        "small": "Petite",
+        "normal": "Normale",
+        "large": "Grande",
+        "huge": "Très grande"
+      },
+      "Align": {
+        "start": "À gauche",
+        "center": "Centré",
+        "end": "À droite"
+      },
+      "Space": {
+        "none": "Aucune",
+        "tight": "Serrée (4 px)",
+        "row": "Normale (8 px)",
+        "block": "Large (12 px)"
+      },
+      "LabelPlace": {
+        "side": "À côté de la valeur",
+        "top": "Au-dessus de la valeur",
+        "hidden": "Masqué"
+      }
     },
     "Reaction": {
       "Title": "Réaction",

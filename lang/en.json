@@ -1402,7 +1402,8 @@
         "action": "Action button",
         "text": "Text",
         "spacer": "Empty cell",
-        "contents": "Held Contents"
+        "contents": "Held Contents",
+        "image": "Image"
       },
       "Source": {
         "output": "A Definition output",
@@ -1418,7 +1419,80 @@
         "subtract": "Can be decreased"
       },
       "BlockToAdd": "block to add",
-      "ContentTypes": "Content Types (none: all)"
+      "ContentTypes": "Content Types (none: all)",
+      "Image": "Image",
+      "ImagePath": "path/to/picture.webp",
+      "Browse": "Browse",
+      "NoImage": "Choose a picture",
+      "ImageFit": "Fit",
+      "ImageHeight": "Height",
+      "Fit": {
+        "cover": "Fill the frame",
+        "contain": "Whole picture"
+      },
+      "Height": {
+        "small": "Small",
+        "medium": "Medium",
+        "large": "Large"
+      },
+      "Style": {
+        "Title": "Style",
+        "Default": "Default",
+        "None": "None",
+        "CustomChoice": "Own color…",
+        "Custom": "Color",
+        "Color": "Text color",
+        "Background": "Background",
+        "Opacity": "Background opacity",
+        "ImageOpacity": "Opacity",
+        "Image": "Background picture",
+        "Border": "Border",
+        "Font": "Font",
+        "Size": "Text size",
+        "Emphasis": "Emphasis",
+        "Bold": "Bold",
+        "Italic": "Italic",
+        "Align": "Alignment",
+        "Label": "Label",
+        "Padding": "Inner margin",
+        "Gap": "Space between blocks",
+        "Reset": "Default style"
+      },
+      "Tone": {
+        "text": "Text",
+        "muted": "Quiet text",
+        "accent": "Accent",
+        "highlight": "Highlight",
+        "success": "Success",
+        "danger": "Danger",
+        "warning": "Warning",
+        "panel": "Section background",
+        "surface": "Window background",
+        "light": "White",
+        "dark": "Black"
+      },
+      "Size": {
+        "small": "Small",
+        "normal": "Normal",
+        "large": "Large",
+        "huge": "Huge"
+      },
+      "Align": {
+        "start": "Left",
+        "center": "Centered",
+        "end": "Right"
+      },
+      "Space": {
+        "none": "None",
+        "tight": "Tight (4 px)",
+        "row": "Normal (8 px)",
+        "block": "Wide (12 px)"
+      },
+      "LabelPlace": {
+        "side": "Beside the value",
+        "top": "Above the value",
+        "hidden": "Hidden"
+      }
     },
     "Reaction": {
       "Title": "Reaction",

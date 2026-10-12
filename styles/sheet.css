@@ -321,6 +321,76 @@ button.rta-sheet-content__name {
   outline-offset: 4px;
 }
 
+/* Styles set in the sheet editor (inline, from ui/sheet-style.mjs). A colored block colors its labels and titles too. */
+.rta-sheet-colored :is(.rta-sheet-value__label, .rta-sheet-row__label, .rta-sheet-row__head, .rta-sheet-section__title, .rta-sheet-contents__type, .rta-sheet-value__bound) {
+  color: inherit;
+}
+
+.rta-sheet-fonted :is(.rta-sheet-section__title, .rta-sheet-tabs__nav > button, .rta-sheet-action) {
+  font-family: inherit;
+}
+
+.rta-sheet-align-center > .rta-sheet-value__inner {
+  justify-content: center;
+}
+
+.rta-sheet-align-end > .rta-sheet-value__inner {
+  justify-content: flex-end;
+}
+
+.rta-sheet-align-center .rta-sheet-value__control > input:not([type="checkbox"]) {
+  text-align: center;
+}
+
+.rta-sheet-align-start .rta-sheet-value__control > input:not([type="checkbox"]) {
+  text-align: start;
+}
+
+.rta-sheet-value--label-top > .rta-sheet-value__inner {
+  flex-direction: column;
+  align-items: stretch;
+  gap: var(--rta-gap-tight);
+}
+
+.rta-sheet-value--label-top .rta-sheet-value__control > input:not([type="checkbox"]) {
+  inline-size: 100%;
+}
+
+.rta-sheet-value--label-hidden .rta-sheet-value__label {
+  position: absolute;
+  inline-size: 1px;
+  block-size: 1px;
+  overflow: hidden;
+  clip-path: inset(50%);
+  white-space: nowrap;
+}
+
+.rta-sheet-value--label-hidden > .rta-sheet-value__inner {
+  justify-content: center;
+}
+
+.rta-sheet-image {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  block-size: var(--rta-sheet-image-height);
+  overflow: hidden;
+  border-radius: var(--rta-radius-panel);
+}
+
+.rta-sheet-image > img {
+  inline-size: 100%;
+  block-size: 100%;
+  object-fit: var(--rta-sheet-image-fit);
+  border: 0;
+}
+
+.rta-sheet-image--empty {
+  gap: var(--rta-gap-row);
+  border: var(--rta-frame-border) dashed var(--rta-color-border-tertiary);
+  color: var(--rta-color-text-secondary);
+}
+
 .rta-sheet-choice {
   display: flex;
   flex-direction: column;

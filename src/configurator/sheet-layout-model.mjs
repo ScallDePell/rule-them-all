@@ -28,7 +28,7 @@ export const insideRepeater = (root, id) => Boolean(locate(root, id)?.path.slice
 export const repeaterOf = (root, id) => locate(root, id)?.path.slice(0, -1).findLast(node => node.kind === "repeater") ?? null;
 export const isContainer = node => LAYOUT_CONTAINERS.includes(node?.kind);
 /** The kinds a container accepts: tabs hold only tabs; a tab is only in tabs. */
-export const childKinds = parent => !isContainer(parent) ? [] : parent.kind === "tabs" ? ["tab"] : ["section", "grid", "tabs", "repeater", "value", "action", "text", "contents", "spacer"];
+export const childKinds = parent => !isContainer(parent) ? [] : parent.kind === "tabs" ? ["tab"] : ["section", "grid", "tabs", "repeater", "value", "action", "text", "image", "contents", "spacer"];
 export const columnsOf = node => MAX_COLUMNS[node?.kind] ? node.columns ?? 1 : 1;
 export const maxColumns = kind => MAX_COLUMNS[kind] ?? 1;
 
@@ -75,6 +75,7 @@ export function newNode(kind, root, ruleset, {parentId = root?.id, target = "act
   }
   if (kind === "action") { const action = (ruleset.actions ?? []).find(enabled); return action ? {id, kind, actionRef: action.id} : null; }
   if (kind === "text") return {id, kind, textKey: ""};
+  if (kind === "image") return {id, kind, src: ""};
   if (kind === "contents") {
     // An Actor's Items: not on an Item sheet, not once per row of a list.
     const parent = locate(root, parentId);
@@ -133,7 +134,7 @@ export function updateNode(root, id, changes) {
   return clampSpans(edit(root, next => {
     const {node} = locate(next, id);
     for (const [key, value] of Object.entries(changes)) {
-      if (value === undefined || value === null || value === "" && !["labelKey", "textKey"].includes(key)) delete node[key];
+      if (value === undefined || value === null || value === "" && !["labelKey", "textKey", "src"].includes(key)) delete node[key];
       else node[key] = copy(value);
     }
   }));
@@ -176,7 +177,7 @@ export function contentFields(ruleset, contentTypeIds = []) {
 /* Preview: the projection a played sheet would get, with sample values instead of an Actor's. */
 const SAMPLE = {number: 10, integer: 10, boolean: true};
 function previewValue(node, ruleset, row, contentTypeIds) {
-  const source = node.source, view = {id: node.id, kind: "value", ...(node.span ? {span: node.span} : {}), label: node.labelKey || "", write: node.write ? {operation: node.write.operation} : null};
+  const source = node.source, view = {id: node.id, kind: "value", ...(node.span ? {span: node.span} : {}), ...(node.style ? {style: node.style} : {}), label: node.labelKey || "", write: node.write ? {operation: node.write.operation} : null};
   if (!view.label) Object.assign(view, defaultValueLabel(source, ruleset, {contentTypeIds}));
   let valueType = "number";
   if (source.kind === "output" || source.kind === "each") {
@@ -194,8 +195,9 @@ function previewValue(node, ruleset, row, contentTypeIds) {
 
 export function previewView(root, ruleset, {target = "actor", contentTypeIds = []} = {}) {
   const walk = (node, row) => {
-    const base = {id: node.id, kind: node.kind, ...(node.span ? {span: node.span} : {})};
+    const base = {id: node.id, kind: node.kind, ...(node.span ? {span: node.span} : {}), ...(node.style ? {style: node.style} : {})};
     if (node.kind === "value") return previewValue(node, ruleset, row, contentTypeIds);
+    if (node.kind === "image") return {...base, src: node.src, fit: node.fit ?? "cover", height: node.height ?? "medium"};
     if (node.kind === "text") return {...base, text: node.textKey};
     if (node.kind === "spacer") return base;
     if (node.kind === "contents") {

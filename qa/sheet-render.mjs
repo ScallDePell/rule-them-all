@@ -59,12 +59,21 @@ const tabbed = {id: 'tabbed', target: 'actor', root: {id: 'root', kind: 'tabs', 
     {id: 'mark', kind: 'value', source: {kind: 'each', capabilityId: 'state', outputId: 'state.active'}, write: {operation: 'set'}},
     {id: 'roll', kind: 'action', actionRef: 'sneak', labelKey: 'Roll'}]}]}]}};
 
+// Styles set in the sheet editor: tones, an own color with its opacity, a font, labels above and hidden, spacing.
+const styled = {id: 'styled', target: 'actor', root: {id: 'root', kind: 'grid', columns: 2, style: {gap: 'block'}, children: [
+  {id: 'banner', kind: 'text', span: 2, textKey: 'Ayla, ranger of the north', style: {size: 'huge', align: 'center', font: 'Amiri', color: 'accent'}},
+  {id: 'attrs', kind: 'section', labelKey: 'Attributes', columns: 2, style: {background: '#3a2a50', opacity: 70, border: 'highlight', color: 'light'}, children: ['str', 'dex', 'wit', 'will'].map(id => ({id: `s-${id}`, kind: 'value', source: {kind: 'output', reference: out_(id, 'value', 'value.final')}, write: {operation: 'set'}, style: {label: 'top', align: 'center'}}))},
+  {id: 'quiet', kind: 'section', labelKey: 'Condition', columns: 1, style: {background: 'none', border: 'none', italic: true}, children: [
+    {id: 'q-hp', kind: 'value', labelKey: 'Health', source: {kind: 'output', reference: out_('hp', 'pool', 'pool.current', 'points')}, write: {operation: 'subtract'}, style: {bold: true, color: 'danger'}},
+    {id: 'q-def', kind: 'value', source: {kind: 'formula', formulaRef: 'defence'}, style: {label: 'hidden', padding: 'tight', background: 'panel'}}]}]}};
+
 const foundryCss = process.env.RTA_FOUNDRY_CSS ? readFileSync(process.env.RTA_FOUNDRY_CSS, 'utf8') + '\n' : '';
 const css = foundryCss + JSON.parse(readFileSync(join(root, 'module.json'), 'utf8')).styles.map(p => readFileSync(join(root, p), 'utf8')).join('\n');
 const page = (body, theme) => `<!doctype html><html lang="en"><meta charset="utf-8"><style>${css}\nbody{margin:0;font-family:sans-serif;font-size:14px}.application{position:relative;display:flex;flex-direction:column;height:var(--qa-height,auto)}.window-content{flex:1;display:flex;flex-direction:column;min-height:0;overflow:hidden}</style><body class="${theme}"><div class="application sheet ${theme}" style="width:var(--qa-width)"><section class="window-content">${body}</section></div></body></html>`;
 const sheets = [
   ['actor-auto', await projectSheet(engine, v, sheetFor(ruleset, {target: 'actor'}), {actor: hero, items: [{id: 'sword-1', name: 'Grandfather\'s sword', img: '', managed: true}, {id: 'rope', name: 'Rope (15 m)', img: '', managed: false}]}), 'Ayla the Brave'],
   ['actor-tabbed', await projectSheet(engine, v, tabbed, {actor: hero}), 'Ayla the Brave'],
+  ['actor-styled', await projectSheet(engine, v, styled, {actor: hero}), 'Ayla the Brave'],
   ['item-owned', await projectSheet(engine, v, sheetFor(ruleset, {target: 'item', contentTypeId: 'weapon'}), {actor: hero, content: {key: 'sword-1'}}), 'Sword']
 ];
 const english = JSON.parse(readFileSync(join(root, 'lang/en.json'), 'utf8'));
@@ -88,7 +97,7 @@ for (const [name, file] of files) for (const width of [640, 420]) {
   const report = await tab.evaluate(() => {
     const issues = [], content = document.querySelector('.window-content');
     if (content.scrollWidth > content.clientWidth + 1) issues.push(`horizontal overflow ${content.scrollWidth} > ${content.clientWidth}`);
-    for (const el of document.querySelectorAll('.rta-sheet-value__label:not(.rta-sheet-visually-hidden), .rta-sheet-action, .rta-sheet-section__title'))
+    for (const el of document.querySelectorAll('.rta-sheet-value:not(.rta-sheet-value--label-hidden) .rta-sheet-value__label:not(.rta-sheet-visually-hidden), .rta-sheet-action, .rta-sheet-section__title'))
       if (el.scrollWidth > el.clientWidth + 1) issues.push(`clipped: ${el.textContent.trim()}`);
     for (const list of document.querySelectorAll('.rta-sheet-list:not([hidden] *)')) {
       const lefts = new Set([...list.querySelectorAll(':scope > .rta-sheet-row > .rta-sheet-grid')].map(g => Math.round(g.getBoundingClientRect().left)));

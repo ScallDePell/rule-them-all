@@ -7,9 +7,13 @@
    - [data-sheet-item-open=key] opens an owned Item's sheet, [data-sheet-item-remove=key] removes it;
    - [data-sheet-command] runs a sheet command (initialize, create). */
 import {escapeHTML as escape} from "./html-utils.mjs";
+import {sheetStyle, styledAttributes} from "./sheet-style.mjs";
+import {SHEET_IMAGE_HEIGHTS} from "../configurator/layout-style-contract.mjs";
 
-const span = node => node.span ? ` style="--rta-sheet-span: ${Number(node.span)}"` : "";
+const spanOf = node => node.span ? [`--rta-sheet-span: ${Number(node.span)}`] : [];
 const columns = node => `--rta-sheet-columns: ${Number(node.columns ?? 1)}`;
+/** class and style of a node's element: its base class, its span, its style (sheet-style.mjs). */
+const attrs = (node, base, declarations = []) => styledAttributes(node, base, [...spanOf(node), ...declarations]);
 
 /** A read value as text: numbers rounded to two decimals, nothing as a dash. */
 export function formatSheetValue(value) {
@@ -51,7 +55,7 @@ function renderContents(node, t, {edit, editable, m}) {
     + (r.item && editable && !edit ? `<button type="button" class="rta-sheet-content__remove" data-sheet-item-remove="${escape(r.key)}" title="${escape(t("RTA.Sheet.RemoveContent"))}" aria-label="${escape(t("RTA.Sheet.RemoveContent"))}"><i class="fa-solid fa-trash"></i></button>` : "") + "</li>";
   const groups = types.length > 1 ? types.map(type => `<p class="rta-sheet-contents__type">${escape(type ? t(type) : t("RTA.Sheet.OtherItems"))}</p><ul class="rta-sheet-contents__list">${rows.filter(r => r.type === type).map(item).join("")}</ul>`).join("")
     : rows.length ? `<ul class="rta-sheet-contents__list">${rows.map(item).join("")}</ul>` : "";
-  return `<div class="rta-sheet-contents"${span(node)}${m}>${groups || `<p class="rta-sheet-empty">${escape(t("RTA.Sheet.DropContents"))}</p>`}</div>`;
+  return `<div ${attrs(node, "rta-sheet-contents")}${m}>${groups || `<p class="rta-sheet-empty">${escape(t("RTA.Sheet.DropContents"))}</p>`}</div>`;
 }
 
 function renderNode(node, t, {row = null, solo = false, edit = false, editable = false} = {}) {
@@ -61,22 +65,30 @@ function renderNode(node, t, {row = null, solo = false, edit = false, editable =
     const label = node.label ? t(node.label) : node.labelKey ? t(node.labelKey) : "";
     const title = node.error ? ` title="${escape(node.error)}"` : "";
     // A row with a single value already says what it is: its label stays for screen readers only.
-    return `<div class="rta-sheet-value${node.error ? " rta-sheet-value--unavailable" : ""}"${span(node)}${title}${m}><div class="rta-sheet-value__inner"><span class="rta-sheet-value__label${solo ? " rta-sheet-visually-hidden" : ""}">${escape(label)}</span><span class="rta-sheet-value__control">${valueControl(node, t, row)}</span></div></div>`;
+    return `<div ${attrs(node, `rta-sheet-value${node.error ? " rta-sheet-value--unavailable" : ""}`)}${title}${m}><div class="rta-sheet-value__inner"><span class="rta-sheet-value__label${solo ? " rta-sheet-visually-hidden" : ""}">${escape(label)}</span><span class="rta-sheet-value__control">${valueControl(node, t, row)}</span></div></div>`;
   }
-  if (node.kind === "action") return `<button type="button" class="rta-sheet-action"${span(node)} data-sheet-action="${escape(node.actionId)}"${node.definitionId ? ` data-definition-id="${escape(node.definitionId)}"` : ""}${m}>${escape(t(node.label))}</button>`;
-  if (node.kind === "text") return `<p class="rta-sheet-text"${span(node)}${m}>${escape(edit && !node.text ? t("RTA.SheetEditor.EmptyText") : t(node.text))}</p>`;
-  if (node.kind === "spacer") return `<div class="rta-sheet-spacer"${span(node)}${m}></div>`;
+  if (node.kind === "action") return `<button type="button" ${attrs(node, "rta-sheet-action")} data-sheet-action="${escape(node.actionId)}"${node.definitionId ? ` data-definition-id="${escape(node.definitionId)}"` : ""}${m}>${escape(t(node.label))}</button>`;
+  if (node.kind === "text") return `<p ${attrs(node, "rta-sheet-text")}${m}>${escape(edit && !node.text ? t("RTA.SheetEditor.EmptyText") : t(node.text))}</p>`;
+  if (node.kind === "spacer") return `<div ${attrs(node, "rta-sheet-spacer")}${m}></div>`;
+  if (node.kind === "image") {
+    // A picture: a banner, a logo. In the editor, an image block without its picture yet says so.
+    const look = [`--rta-sheet-image-height: ${SHEET_IMAGE_HEIGHTS[node.height] ?? SHEET_IMAGE_HEIGHTS.medium}`, `--rta-sheet-image-fit: ${node.fit === "contain" ? "contain" : "cover"}`, ...(node.style?.opacity !== undefined ? [`opacity: ${Number(node.style.opacity) / 100}`] : [])];
+    return node.src ? `<div ${attrs(node, "rta-sheet-image", look)}${m}><img src="${escape(node.src)}" alt=""></div>` : edit ? `<div ${attrs(node, "rta-sheet-image rta-sheet-image--empty", look)}${m}><i class="fa-solid fa-image"></i> ${escape(t("RTA.SheetEditor.NoImage"))}</div>` : "";
+  }
   if (node.kind === "contents") return renderContents(node, t, {edit, editable, m});
   if (node.kind === "placeholder") return dropZone(node.parentId, t);
   const children = (list, options) => list.length || !edit ? list.map(child => renderNode(child, t, {...options, edit, editable})).join("") : dropZone(node.id, t);
   if (node.kind === "tabs") {
     const tabs = node.children ?? [];
-    return `<div class="rta-sheet-tabs"${span(node)}${m}><nav class="rta-sheet-tabs__nav" role="tablist">${tabs.map((tab, i) => `<button type="button" role="tab" data-sheet-tab="${escape(tab.id)}" aria-selected="${i === 0}"${mark(tab, edit)}>${escape(tab.label ? t(tab.label) : edit ? t("RTA.SheetEditor.UntitledTab") : "")}</button>`).join("")}</nav>${tabs.map((tab, i) => `<div class="rta-sheet-grid rta-sheet-tab" role="tabpanel" data-sheet-panel="${escape(tab.id)}" style="--rta-sheet-columns: 1"${i ? " hidden" : ""}${mark(tab, edit)}>${children(tab.children ?? [], {row})}</div>`).join("")}</div>`;
+    return `<div ${attrs(node, "rta-sheet-tabs")}${m}><nav class="rta-sheet-tabs__nav" role="tablist">${tabs.map((tab, i) => `<button type="button" role="tab" data-sheet-tab="${escape(tab.id)}" aria-selected="${i === 0}"${mark(tab, edit)}>${escape(tab.label ? t(tab.label) : edit ? t("RTA.SheetEditor.UntitledTab") : "")}</button>`).join("")}</nav>${tabs.map((tab, i) => `<div ${styledAttributes(tab, "rta-sheet-grid rta-sheet-tab", ["--rta-sheet-columns: 1", ...(sheetStyle(tab).gap ? [`gap: ${sheetStyle(tab).gap}`] : [])])} role="tabpanel" data-sheet-panel="${escape(tab.id)}"${i ? " hidden" : ""}${mark(tab, edit)}>${children(tab.children ?? [], {row})}</div>`).join("")}</div>`;
   }
   if (node.kind === "repeater") return renderList(node, t, edit);
-  const body = `<div class="rta-sheet-grid" style="${columns(node)}"${node.kind === "grid" && !node.span ? m : ""}>${children(node.children ?? [], {row})}</div>`;
-  if (node.kind === "section") return `<section class="rta-sheet-section"${span(node)}${m}>${node.label ? `<h3 class="rta-sheet-section__title">${escape(t(node.label))}</h3>` : ""}${body}</section>`;
-  return node.span ? `<div class="rta-sheet-block"${span(node)}${m}>${body}</div>` : body;
+  // The grid the children flow in takes the spacing; the block itself takes the rest of the style.
+  const gap = sheetStyle(node).gap, bare = node.kind === "grid" && !node.span;
+  const grid = [columns(node), ...(gap ? [`gap: ${gap}`] : [])];
+  const body = `<div ${bare ? attrs(node, "rta-sheet-grid", grid) : `class="rta-sheet-grid" style="${escape(grid.join("; "))}"`}${bare ? m : ""}>${children(node.children ?? [], {row})}</div>`;
+  if (node.kind === "section") return `<section ${attrs(node, "rta-sheet-section")}${m}>${node.label ? `<h3 class="rta-sheet-section__title">${escape(t(node.label))}</h3>` : ""}${body}</section>`;
+  return node.span ? `<div ${attrs(node, "rta-sheet-block")}${m}>${body}</div>` : body;
 }
 
 const cellLabel = (node, t) => node.kind === "value" ? (node.label ? t(node.label) : node.labelKey ? t(node.labelKey) : "") : "";
@@ -84,7 +96,7 @@ const cellLabel = (node, t) => node.kind === "value" ? (node.label ? t(node.labe
    Rows share their parent's tracks (subgrid), so every cell lines up; with two values or more, a head row names them. */
 function renderList(node, t, edit) {
   let rows = node.rows ?? [];
-  if (!rows.length && !edit) return `<p class="rta-sheet-empty"${span(node)}>${escape(t("RTA.Sheet.NoneHeld"))}</p>`;
+  if (!rows.length && !edit) return `<p ${attrs(node, "rta-sheet-empty")}>${escape(t("RTA.Sheet.NoneHeld"))}</p>`;
   // The editor always shows a row, and a drop zone in it while the row shows nothing.
   if (!rows.length) rows = [{definitionId: "", label: t("RTA.SheetEditor.ExampleRow"), children: []}];
   if (edit && !rows[0].children.length) rows = rows.map(r => ({...r, children: [{kind: "placeholder", parentId: node.id}]}));
@@ -93,7 +105,7 @@ function renderList(node, t, edit) {
     ? `<div class="rta-sheet-row rta-sheet-row--head" aria-hidden="true"><span></span>${cells.map(c => `<span class="rta-sheet-row__head">${escape(cellLabel(c, t))}</span>`).join("")}</div>`.repeat(Math.min(columnCount, rows.length)) : "";
   const style = `--rta-sheet-cells: ${cells.length + 1}; --rta-sheet-list-template: ${Array(columnCount).fill(perColumn).join(" ")}; --rta-sheet-list-medium: ${Array(Math.min(columnCount, 2)).fill(perColumn).join(" ")}; --rta-sheet-list-narrow: ${perColumn}`;
   const body = rows.map(r => `<div class="rta-sheet-row" data-definition-id="${escape(r.definitionId)}"><span class="rta-sheet-row__label" title="${escape(t(r.label))}">${escape(t(r.label))}</span>${r.children.map(child => renderNode(child, t, {row: r.definitionId, solo: true, edit})).join("")}</div>`).join("");
-  return `<div class="rta-sheet-list" style="${style}${node.span ? `; --rta-sheet-span: ${Number(node.span)}` : ""}"${mark(node, edit)}>${head}${body}</div>`;
+  return `<div ${attrs(node, "rta-sheet-list", [style, ...(sheetStyle(node).gap ? [`row-gap: ${sheetStyle(node).gap}`] : [])])}${mark(node, edit)}>${head}${body}</div>`;
 }
 
 /** The editor's canvas: the sheet as players get it, every node selectable. */

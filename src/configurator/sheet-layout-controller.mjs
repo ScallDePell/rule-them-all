@@ -11,13 +11,24 @@ import {renderLayoutPreviewHTML} from "../ui/sheet-markup.mjs";
 import {renderLayoutPropertiesHTML, renderLayoutToolbarHTML} from "../ui/sheet-editor-markup.mjs";
 import {selectColorsAttribute} from "../ui/select-option-presentation.mjs";
 import {RTA_NEUTRAL_COLOR} from "../ui/theme-tokens.mjs";
+import {LAYOUT_CONTAINERS} from "./layout-contract.mjs";
+import {SHEET_ALIGNS, SHEET_GAPS, SHEET_IMAGE_FITS, SHEET_IMAGE_HEIGHTS, SHEET_LABELS, SHEET_NO_COLOR, SHEET_SIZES, SHEET_SPACES, SHEET_TONES} from "./layout-style-contract.mjs";
+
+/** The fonts Foundry offers (its own and those the world adds in its font settings). */
+function availableFonts() {
+  const config = globalThis.foundry?.applications?.settings?.menus?.FontConfig;
+  try { const fonts = config?.getAvailableFonts?.(); if (fonts?.length) return [...fonts]; } catch { /* the font settings are not ready */ }
+  const defined = Object.keys(globalThis.CONFIG?.fontDefinitions ?? {});
+  return defined.length ? defined : ["Signika", "Modesto Condensed", "Amiri", "Bruno Ace"];
+}
+const toHex = rgb => { const m = String(rgb).match(/\d+(\.\d+)?/g); return m && m.length >= 3 ? `#${m.slice(0, 3).map(n => Math.round(Number(n)).toString(16).padStart(2, "0")).join("")}` : null; };
 
 const i18n = key => { const text = globalThis.game?.i18n?.localize?.(key); return text && text !== key ? text : key; };
 const format = (key, data, fallback) => { const text = globalThis.game?.i18n?.format?.(key, data); return text && text !== key ? text : fallback; };
 const HISTORY = 50;
 
 export class SheetLayoutController {
-  #host; #ruleset; #colors; #form; #root; #selected; #history = []; #dragged = null; #readOnly;
+  #host; #ruleset; #colors; #form; #root; #selected; #history = []; #dragged = null; #readOnly; #styleOpen = false; #toneHex = null;
 
   /** host: [data-sheet-layout-editor]; ruleset: the working draft; colors(kind, entry): option colors; form: the entry form (target, content types). */
   constructor(host, {ruleset, colors = () => [RTA_NEUTRAL_COLOR], form, readOnly = false}) {
@@ -28,6 +39,9 @@ export class SheetLayoutController {
     // A validated Ruleset shows its sheet, read-only.
     if (readOnly) { this.#selected = null; this.render(); return; }
     host.addEventListener("change", event => this.#onChange(event));
+    // The opacity slider says its value while it moves; the change is kept when it is let go.
+    host.addEventListener("input", event => { if (event.target.matches?.('[data-layout-style="opacity"]')) { event.stopPropagation(); const label = event.target.closest(".rta-form-row")?.querySelector("[data-layout-opacity-value]"); if (label) label.textContent = `${event.target.value} %`; } });
+    host.addEventListener("toggle", event => { if (event.target.matches?.("[data-layout-style-group]")) this.#styleOpen = event.target.open; }, true);
     host.addEventListener("click", event => this.#onClick(event));
     host.addEventListener("dragstart", event => { const node = event.target.closest?.("[data-layout-node]"); if (!node) return; this.#dragged = node.dataset.layoutNode; event.dataTransfer?.setData("text/plain", this.#dragged); });
     host.addEventListener("dragover", event => { const target = event.target.closest?.("[data-layout-node]"); if (this.#dragged && target && canMoveInto(this.#root, this.#dragged, target.dataset.layoutNode)) { event.preventDefault(); this.#markDrop(target); } });
@@ -88,6 +102,8 @@ export class SheetLayoutController {
   #onClick(event) {
     const command = event.target.closest?.("[data-layout-command]");
     if (command) { event.preventDefault(); return this.#command(command.dataset.layoutCommand); }
+    const pick = event.target.closest?.("[data-layout-pick]");
+    if (pick) { event.preventDefault(); return this.#pick(pick); }
     const node = event.target.closest?.("[data-layout-canvas] [data-layout-node]");
     if (node) { event.preventDefault(); this.select(node.dataset.layoutNode); }
   }
@@ -96,6 +112,7 @@ export class SheetLayoutController {
     if (command === "up" || command === "down") return this.#commit(moveNode(this.#root, id, command === "up" ? -1 : 1));
     if (command === "remove") { const parent = locate(this.#root, id)?.parent; return this.#commit(removeNode(this.#root, id), parent?.id); }
     if (command === "undo") { const previous = this.#history.pop(); if (!previous) return; this.#root = previous; this.#field.value = JSON.stringify(previous); this.#field.dispatchEvent(new Event("input", {bubbles: true})); if (!locate(previous, this.#selected)) this.#selected = previous.id; return this.render(); }
+    if (command === "unstyle") return this.#commit(updateNode(this.#root, id, {style: undefined}));
     if (command === "auto") return this.#commit(autoLayout(this.#ruleset, {target: this.#target, contentTypeIds: this.#contentTypeIds}), "root");
   }
 
@@ -109,6 +126,15 @@ export class SheetLayoutController {
       if (node) this.#commit(insertNode(this.#root, holder.id, node), node.id);
       return;
     }
+    if (target.dataset.layoutStyleHex) return this.#setStyle(target.dataset.layoutStyleHex, target.value);
+    if (target.dataset.layoutStyle) {
+      const prop = target.dataset.layoutStyle;
+      if (target.type === "checkbox") return this.#setStyle(prop, target.checked || undefined);
+      if (prop === "opacity") return this.#setStyle(prop, Number(target.value) === 100 ? undefined : Number(target.value));
+      // A color of one's own starts from the tone shown before, else from grey.
+      if (target.value === "custom") return this.#setStyle(prop, this.#toneToHex(locate(this.#root, this.#selected).node.style?.[prop]) ?? RTA_NEUTRAL_COLOR);
+      return this.#setStyle(prop, ["", "default"].includes(target.value) || target.value === "side" && prop === "label" ? undefined : target.value);
+    }
     const prop = target.dataset.layoutProp; if (!prop) return;
     const node = locate(this.#root, this.#selected).node, value = target.value;
     const number = Number(value);
@@ -116,6 +142,8 @@ export class SheetLayoutController {
     if (prop === "labelKey" || prop === "textKey") return this.#commit(updateNode(this.#root, node.id, {[prop]: value}));
     if (prop === "definitionTypeId") return this.#commit(this.#retargetRepeater(node, value));
     if (prop === "conditionRef") return this.#commit(updateNode(this.#root, node.id, {query: {...node.query, conditionRef: value || undefined}}));
+    if (prop === "src") return this.#commit(updateNode(this.#root, node.id, {src: value.trim()}));
+    if (prop === "fit" || prop === "height") return this.#commit(updateNode(this.#root, node.id, {[prop]: value === "cover" && prop === "fit" || value === "medium" && prop === "height" ? undefined : value}));
     if (prop === "contentTypeIds") return this.#commit(updateNode(this.#root, node.id, {contentTypeIds: [...target.selectedOptions].map(option => option.value).filter(Boolean)}));
     if (prop === "actionRef") return this.#commit(updateNode(this.#root, node.id, {actionRef: value}));
     if (prop === "write") return this.#commit(updateNode(this.#root, node.id, {write: value ? {operation: value} : undefined}));
@@ -126,6 +154,37 @@ export class SheetLayoutController {
     }
     if (prop === "sourceRef") return this.#commit(this.#withSource(node, this.#parseSource(node.source.kind, value)));
   }
+  /** One style setting of the selected block; undefined takes it back to the default. */
+  #setStyle(prop, value) {
+    const node = locate(this.#root, this.#selected).node, style = {...(node.style ?? {})};
+    if (value === undefined) delete style[prop]; else style[prop] = value;
+    // A background removed has no opacity left to set.
+    if (prop === "background" && (value === undefined || value === SHEET_NO_COLOR) && node.kind !== "section") delete style.opacity;
+    this.#styleOpen = true;
+    this.#commit(updateNode(this.#root, node.id, {style: Object.keys(style).length ? style : undefined}));
+  }
+  /** Foundry's file browser, for an image block or a background picture. */
+  #pick(button) {
+    const FilePicker = globalThis.foundry?.applications?.apps?.FilePicker?.implementation ?? globalThis.FilePicker;
+    if (!FilePicker) return;
+    const node = locate(this.#root, this.#selected).node, prop = button.dataset.layoutPick, style = button.hasAttribute("data-layout-pick-style");
+    const current = style ? node.style?.[prop] : node[prop];
+    new FilePicker({type: "image", current: current ?? "", callback: path => style ? this.#setStyle(prop, path || undefined) : this.#commit(updateNode(this.#root, node.id, {[prop]: path}))}).browse(current ?? "");
+  }
+  /** A tone as the color it shows now (this theme), for the option swatches and a custom color's start. */
+  #toneToHex(tone) {
+    if (/^#/.test(tone ?? "")) return tone;
+    if (!SHEET_TONES[tone] || typeof document === "undefined") return null;
+    if (!this.#toneHex) {
+      this.#toneHex = {};
+      const probe = document.createElement("span");
+      this.#host.querySelector("[data-layout-canvas] .rta-sheet")?.append(probe) ?? this.#host.append(probe);
+      for (const [name, token] of Object.entries(SHEET_TONES)) { probe.style.color = `var(${token})`; this.#toneHex[name] = toHex(getComputedStyle(probe).color); }
+      probe.remove();
+    }
+    return this.#toneHex[tone] ?? null;
+  }
+
   /** A new source; a write the new source does not allow is dropped. */
   #withSource(node, source) { return updateNode(this.#root, node.id, {source, write: node.write && writableSource(source) ? node.write : undefined}); }
   /** A repeater of another type: its row values keep only the outputs that type has. */
@@ -167,6 +226,23 @@ export class SheetLayoutController {
     return source?.formulaRef ?? source?.parameterRef ?? source?.fieldId ?? "";
   }
 
+  #styleContext(neutral) {
+    const choice = (value, key) => ({value, label: i18n(key), colors: neutral});
+    // "default" rather than an empty value: an RTA Select shows an empty value as its placeholder.
+    const byDefault = choice("default", "RTA.SheetEditor.Style.Default");
+    return {
+      open: this.#styleOpen, containers: LAYOUT_CONTAINERS,
+      tones: prop => [byDefault, ...(prop === "color" ? [] : [choice(SHEET_NO_COLOR, "RTA.SheetEditor.Style.None")]),
+        ...Object.keys(SHEET_TONES).map(tone => ({value: tone, label: i18n(`RTA.SheetEditor.Tone.${tone}`), colors: selectColorsAttribute([this.#toneToHex(tone) ?? RTA_NEUTRAL_COLOR])})),
+        choice("custom", "RTA.SheetEditor.Style.CustomChoice")],
+      fonts: current => [byDefault, ...[...new Set([...availableFonts(), ...(current ? [current] : [])])].map(font => ({value: font, label: font, colors: neutral}))],
+      sizes: [byDefault, ...Object.keys(SHEET_SIZES).map(size => choice(size, `RTA.SheetEditor.Size.${size}`))],
+      aligns: [byDefault, ...SHEET_ALIGNS.map(align => choice(align, `RTA.SheetEditor.Align.${align}`))],
+      paddings: [byDefault, ...Object.keys(SHEET_SPACES).map(space => choice(space, `RTA.SheetEditor.Space.${space}`))],
+      gaps: [byDefault, ...SHEET_GAPS.map(space => choice(space, `RTA.SheetEditor.Space.${space}`))],
+      labels: SHEET_LABELS.map(label => choice(label, `RTA.SheetEditor.LabelPlace.${label}`))
+    };
+  }
   /** Everything the properties markup needs for the selected block. */
   #context(found) {
     const node = found.node, neutral = selectColorsAttribute([RTA_NEUTRAL_COLOR]), r = this.#ruleset;
@@ -187,6 +263,9 @@ export class SheetLayoutController {
       sourceToken: source => this.#sourceToken(source),
       defaultLabel: n => n.kind === "action" ? r.actions?.find(a => a.id === n.actionRef)?.nameKey ?? "" : label.label || i18n(label.labelKey ?? ""),
       writable: node.kind === "value" && writableSource(node.source),
+      fits: SHEET_IMAGE_FITS.map(value => ({value, label: i18n(`RTA.SheetEditor.Fit.${value}`), colors: neutral})),
+      heights: Object.keys(SHEET_IMAGE_HEIGHTS).map(value => ({value, label: i18n(`RTA.SheetEditor.Height.${value}`), colors: neutral})),
+      style: this.#styleContext(neutral),
       writeChoices: [["", "RTA.SheetEditor.Write.none"], ["set", "RTA.SheetEditor.Write.set"], ["add", "RTA.SheetEditor.Write.add"], ["subtract", "RTA.SheetEditor.Write.subtract"]].map(([value, key]) => ({value, label: i18n(key), colors: neutral}))
     };
   }

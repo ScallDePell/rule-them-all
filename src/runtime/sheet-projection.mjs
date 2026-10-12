@@ -95,7 +95,7 @@ export async function projectSheet(engine, versionId, sheet, {actor = null, cont
   };
 
   const value = async (node, scope, row) => {
-    const source = node.source, view = {id: node.id, kind: "value", ...(node.span ? {span: node.span} : {}), label: node.labelKey || "", value: null, write: null};
+    const source = node.source, view = {id: node.id, kind: "value", ...(node.span ? {span: node.span} : {}), ...(node.style ? {style: node.style} : {}), label: node.labelKey || "", value: null, write: null};
     if (source.kind === "output" || source.kind === "each") {
       const reference = source.kind === "output" ? source.reference : eachReference(row?.definition, source);
       // A row whose Definition lacks this capability keeps an empty cell, so the list stays aligned.
@@ -158,8 +158,9 @@ export async function projectSheet(engine, versionId, sheet, {actor = null, cont
   };
 
   const walk = async (node, scope, row) => {
-    const base = {id: node.id, kind: node.kind, ...(node.span ? {span: node.span} : {})};
+    const base = {id: node.id, kind: node.kind, ...(node.span ? {span: node.span} : {}), ...(node.style ? {style: node.style} : {})};
     if (node.kind === "value") return value(node, scope, row);
+    if (node.kind === "image") return node.src ? {...base, src: node.src, fit: node.fit ?? "cover", height: node.height ?? "medium"} : null;
     if (node.kind === "text") return {...base, text: node.textKey};
     if (node.kind === "spacer") return base;
     if (node.kind === "contents") return contents(node, base);
