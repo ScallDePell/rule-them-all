@@ -45,7 +45,6 @@ test('one shared CSS grid, nested-inset compensation and responsive behavior',()
   assert.match(block,/label\.rta-form-row--nested/);
 });
 test('specialized compact builders and technical panels stay explicitly excluded',()=>{
-  assert.doesNotMatch(component,/'.rta-config-entry \.rta-sheet-component__config > label'/);
-  assert.match(component,/label\.closest\('\.rta-config-entry__technical, \.rta-sheet-component__config'\)/);
+  assert.match(component,/label\.closest\('\.rta-config-entry__technical'\)/);
   assert.match(component,/const isToolbarControl=/);
 });

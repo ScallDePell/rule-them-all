@@ -43,3 +43,16 @@ test('Progression tracks are removed and the system keeps its name, ready for ad
   assert.deepEqual([system.nameKey,Object.hasOwn(system,'tracks'),system.advancements,system.milestones],['Progress',false,[],[]]);
   assert.ok(notes.some(note=>note.includes('track')));
 });
+
+test('old sheet layouts become a LayoutNode tree that the module reads', async () => {
+  const source=old(),record=source.rulesetFamilies[0].versions[0];
+  for(const key of ['workingDraft','publishedSnapshot'])if(record[key])record[key].sheetDefinitions=[{id:'s',nameKey:'Sheet',descriptionKey:'',enabled:true,order:0,tags:[],viewType:'content',renderer:'foundry',layout:{direction:'grid',components:[
+    {id:'head',kind:'section',label:'Identity',source:null,width:'full'},{id:'note',kind:'text',label:'Hello',source:null,width:'half'},{id:'hp',kind:'field',label:'HP',source:'x',width:'half'}]}}];
+  const {snapshot,notes}=convertSnapshot(source);
+  const [sheet]=snapshot.rulesetFamilies[0].versions[0].workingDraft.sheetDefinitions;
+  assert.deepEqual([sheet.target,sheet.contentTypeIds,Object.hasOwn(sheet,'layout')],['item',[],false]);
+  assert.deepEqual(sheet.root.children.map(n=>[n.kind,n.span??1]),[['section',2],['text',1]]);
+  assert.ok(notes.some(note=>note.includes('field component hp')));
+  readStorageSnapshot(snapshot);
+  await createConfiguratorAPI({load:async()=>snapshot,save:async()=>{},subscribe:()=>()=>{}});
+});

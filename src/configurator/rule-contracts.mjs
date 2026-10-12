@@ -5,6 +5,7 @@ import {prepareFieldMap} from './field-output-contracts.mjs';
 import {assertSafeRollFormula, FOUNDRY_DIE_LETTERS} from './roll-grammar.mjs';
 import {DICE_COMPARATORS} from './dice-reading.mjs';
 import {need} from './diagnostics.mjs';
+import {prepareLayout,emptyLayout} from './layout-contract.mjs';
 import {preparePermissionRules} from './permission-contract.mjs';
 import {validateFormulaAst, effectOperationRegistry} from './operation-registries.mjs';
 
@@ -503,12 +504,16 @@ export function prepareProgressionSystem(data,options={}){
   for(const [list,label] of [[x.advancements,'advancement'],[x.milestones,'milestone']])if(new Set(list.map(e=>e.id)).size!==list.length)throw new Error(`ProgressionSystem lists the same ${label} id twice.`);
   return x;
 }
+/** SheetDefinition (CP-14): which Actors or Items it shows (target, and the ContentTypes of that kind; none listed: all),
+ * and its layout tree (layout-contract.mjs). */
+export const SHEET_TARGETS=Object.freeze(['actor','item']);
 export function prepareSheetDefinition(data,options={}){
-  const x=prepareNamedGeneric(data,'SheetDefinition',{viewType:'actor',renderer:'foundry',layout:{direction:'column',components:[]}},options);
-  if(!['actor','item','content','runtime'].includes(x.viewType))throw new Error('SheetDefinition.viewType is invalid.');if(x.renderer!=='foundry')throw new Error('SheetDefinition.renderer must be foundry.');
-  if(!isRecord(x.layout)||!['column','grid'].includes(x.layout.direction)||!Array.isArray(x.layout.components))throw new Error('SheetDefinition.layout is invalid.');
-  const kinds=new Set(['section','text','field','repeater','actions','content','spacer']);
-  x.layout.components=x.layout.components.map((component,i)=>{if(!isRecord(component)||!nonempty(component.id)||!kinds.has(component.kind))throw new Error(`SheetDefinition.layout.components[${i}] is invalid.`);return {label:'',source:null,editable:false,width:'full',...copyJSON(component)};});return x;
+  const x=prepareNamedGeneric(data,'SheetDefinition',{target:'actor',contentTypeIds:[],root:emptyLayout()},options);
+  for(const key of Object.keys(x))if(!['id','nameKey','descriptionKey','enabled','order','tags','target','contentTypeIds','root'].includes(key))throw new Error(`Unsupported SheetDefinition field: ${key}.`);
+  if(!SHEET_TARGETS.includes(x.target))throw new Error(`SheetDefinition.target must be ${SHEET_TARGETS.join(' or ')}.`);
+  arr(x.contentTypeIds,'SheetDefinition.contentTypeIds');
+  x.root=prepareLayout(x.root);
+  return x;
 }
 
 export const PREPARERS={parameters:prepareParameter,formulas:prepareFormula,formulaBindings:prepareFormulaBinding,conditions:prepareCondition,rolls:prepareRoll,outcomes:prepareOutcome,tests:prepareTest,effects:prepareEffect,actions:prepareAction,permissionPolicies:preparePermissionPolicy,eventTypes:prepareEventType,triggers:prepareTrigger,contentTypes:prepareContentType,contentTemplates:prepareContentTemplate,modifiers:prepareModifier,durations:prepareDuration,dice:prepareDie,tables:prepareTable,creationSystems:prepareCreationSystem,progressionSystems:prepareProgressionSystem,sheetDefinitions:prepareSheetDefinition,categories:prepareCategory,tags:prepareTag};

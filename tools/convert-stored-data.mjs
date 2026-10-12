@@ -109,6 +109,27 @@ function convertColors(map) {
   return next;
 }
 
+// 2026-10-12: a SheetDefinition is a LayoutNode tree {target, contentTypeIds, root}. Only the plain old components
+// (section, text, spacer) carry over; the bound ones never rendered and must be rebuilt in the sheet editor.
+function convertSheet(sheet, notes) {
+  if (!Object.hasOwn(sheet, "layout") && !Object.hasOwn(sheet, "viewType")) return sheet;
+  const columns = sheet.layout?.direction === "grid" ? 2 : 1;
+  const used = new Set(["root"]);
+  const children = [];
+  for (const [i, c] of (sheet.layout?.components ?? []).entries()) {
+    let id = String(c?.id ?? "").replace(/[^A-Za-z0-9_-]/g, "-").replace(/^[^A-Za-z0-9]+/, "") || `node-${i + 1}`;
+    while (used.has(id)) id = `${id}-${i + 1}`;
+    used.add(id);
+    const span = c?.width === "full" && columns > 1 ? {span: columns} : {};
+    if (c?.kind === "section") children.push({id, kind: "section", labelKey: String(c.label ?? ""), columns: 1, children: [], ...span});
+    else if (c?.kind === "text") children.push({id, kind: "text", textKey: String(c.label ?? ""), ...span});
+    else if (c?.kind === "spacer") children.push({id, kind: "spacer", ...span});
+    else notes.push(`sheetDefinitions.${sheet.id}: the ${c?.kind ?? "unknown"} component ${c?.id ?? i} was removed; add it again in the sheet editor.`);
+  }
+  return {...without(sheet, ["viewType", "renderer", "layout"]), target: sheet.viewType === "item" || sheet.viewType === "content" ? "item" : "actor",
+    contentTypeIds: sheet.contentTypeIds ?? [], root: {id: "root", kind: "grid", columns, children}};
+}
+
 export function convertRuleset(source) {
   const notes = [];
   let r = copyJSON(source);
@@ -156,6 +177,7 @@ export function convertRuleset(source) {
     if ((system.tracks ?? []).length) notes.push(`progressionSystems.${system.id}: ${system.tracks.length} track(s) removed; rebuild them as advancements or milestones.`);
     return {...without(system, ["tracks"]), advancements: system.advancements ?? [], milestones: system.milestones ?? []};
   });
+  r.sheetDefinitions = (r.sheetDefinitions ?? []).map(sheet => convertSheet(sheet, notes));
   const policy = restrictionPolicy(restrictions, notes);
   if (policy) r.permissionPolicies = [...(r.permissionPolicies ?? []), policy];
   return {ruleset: r, notes};

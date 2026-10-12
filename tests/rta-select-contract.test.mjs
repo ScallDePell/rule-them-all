@@ -22,7 +22,6 @@ test('all native selects including runtime and dynamic edits are picked up',()=>
   assert.ok((editor.match(/<select\b/g)||[]).length>=40);
   assert.ok((config.match(/<select\b/g)||[]).length>=8);
   assert.match(dynamic,/<select data-step-prop="kind"/);
-  assert.match(dynamic,/<select data-sheet-prop="kind"/);
   assert.match(source,/scan\('select:not\(\[data-rta-select-source\]\)'/);
   assert.match(source,/MutationObserver/);
 });

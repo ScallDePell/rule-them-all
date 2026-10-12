@@ -12,7 +12,7 @@ import {createConfiguratorAPI} from "../src/configurator/configurator-api.mjs";
 import {emptyStorageSnapshot} from "../src/configurator/configurator-storage.mjs";
 import {buildRuntimeLabDemoProfile} from "../src/runtime/runtime-demo-profile.mjs";
 import {getCreationSourceDescriptor,getCreationSources} from "../src/configurator/creation-source-catalog.mjs";
-import {renderNewEventFieldInnerHTML,renderNewSheetComponentHTML} from "../src/ui/entry-editor-markup.mjs";
+import {renderNewEventFieldInnerHTML} from "../src/ui/entry-editor-markup.mjs";
 
 const base=path.resolve(fileURLToPath(new URL("..",import.meta.url)));
 function read(rel){return readFileSync(path.join(base,rel),"utf8");}
@@ -103,9 +103,6 @@ test("Creation System sources localize via FR/EN while retaining stable collecti
 test("dynamic editor markup lives in pure generators and preserves data-* contracts",()=>{
  const event=renderNewEventFieldInnerHTML("e123",'<option>boolean</option>');
  assert.match(event,/data-event-field-prop="name"/);assert.match(event,/data-action="removeEventField"/);
- const sheet=renderNewSheetComponentHTML("s123",'<option value="">— none —</option>');
- for(const action of ["sheetUp","sheetDown","removeSheetComponent"])assert.match(sheet,new RegExp(`data-action="${action}"`));
- assert.match(sheet,/data-sheet-prop="kind"/);assert.match(sheet,/data-sheet-prop="source"/);
  assert.doesNotMatch(read("src/ui/entry-editor-markup.mjs"),/globalThis\.game|game\.settings|fromUuid|this\.#api/);
 });
 

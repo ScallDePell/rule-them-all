@@ -1,3 +1,4 @@
+import {emptyLayout} from "./layout-contract.mjs";
 /** Neutral defaults for RTA editor entries. All game-specific rules belong to Rulesets.
  * No Foundry/window access; dependencies are injected by the caller.
  */
@@ -31,7 +32,7 @@ export function createEntrySeed(kind,{uid,definitionTypeId=null,contentTypeId=nu
   if(kind==="table")return{id:uid("table"),nameKey:"",descriptionKey:"",enabled:true,tags:[],rollRef:"",bonusFormulaRef:null,rows:[]};
   if(kind==="creationSystem")return{id:uid("creation"),nameKey:"",descriptionKey:"",enabled:true,tags:[],steps:[]};
   if(kind==="progressionSystem")return{id:uid("progression"),nameKey:"",descriptionKey:"",enabled:true,tags:[],advancements:[],milestones:[]};
-  if(kind==="sheetDefinition")return{id:uid("sheet"),nameKey:"New Sheet",descriptionKey:"",enabled:true,tags:[],viewType:"actor",renderer:"foundry",layout:{direction:"column",components:[]}};
+  if(kind==="sheetDefinition")return{id:uid("sheet"),nameKey:"New Sheet",descriptionKey:"",enabled:true,tags:[],target:"actor",contentTypeIds:[],root:emptyLayout()};
   return{id:uid(kind),nameKey:"",descriptionKey:"",enabled:true,tags:[]};
   }
 

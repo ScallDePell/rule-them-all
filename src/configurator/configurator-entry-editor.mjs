@@ -29,7 +29,7 @@ export {renderPickerOptions,renderChoiceListBody} from "../ui/picker-markup.mjs"
 import {renderChoiceGroupHTML,renderRuleOperandHTML,renderCreationStepHTML} from "../ui/entry-editor-markup.mjs";
 import {renderDeclarativeConstraintRow} from "../ui/declarative-editor-markup.mjs";
 import {escapeHTML as escape} from "../ui/html-utils.mjs";
-import {renderNewEventFieldInnerHTML,renderNewSheetComponentHTML} from "../ui/entry-editor-markup.mjs";
+import {renderNewEventFieldInnerHTML} from "../ui/entry-editor-markup.mjs";
 import {RULESET_SECTIONS,rulesetColor,sectionColor,mayOverrideSection,sectionForCollection,objectColor} from "./ruleset-colors.mjs";
 import {RTA_NEUTRAL_COLOR} from "../ui/theme-tokens.mjs";
 import {MODULE_ID} from "../core/module-contract.mjs";
@@ -46,7 +46,7 @@ import {getCreationSources, getCreationSourceDescriptor} from "./creation-source
 import {diagnosticFocusTargets,saveErrorFocusPath} from "./diagnostic-focus.mjs";
 import {buildTestInputContext,syncTestInputSource} from "./test-input-form.mjs";
 import {dieContext,syncDieFaceCounts} from "./die-form.mjs";
-import {CREATION_STEP_KINDS} from "./rule-contracts.mjs";
+import {CREATION_STEP_KINDS,SHEET_TARGETS} from "./rule-contracts.mjs";
 import {rollVariantContext,extraRollContext,actionInputContext,tableRowContext,progressionContext} from "./rule-cards-form.mjs";
 import {syncCard} from "./card-form.mjs";
 
@@ -228,10 +228,9 @@ export class ConfiguratorEntryEditor extends ConfiguratorWindow {
     // An Effect acts on the target unless told otherwise; a binding reads its own container.
     const role=data.targetRole||(this.#kind==="effect"?"target":"self"),roleSelf=role==="self",roleSource=role==="source",roleTarget=role==="target",roleSubject=role==="subject",roleOwner=role==="owner",roleWorld=role==="world",roleCombat=role==="combat";
     const conditionSummary=pickerSummary(conditionChoices),costEffectSummary=pickerSummary(effectChoices,"costSelected"),effectSummary=pickerSummary(effectChoices,"effectSelected"),actionSummary=pickerSummary(actionChoices);
-    const sheetComponentRows=this.#kind==="sheetDefinition"?(data.layout?.components??[]).map((c,index)=>({...c,index,sourceToken:c.source?refToken(c.source):"",sourceChoices:[{token:"",label:"— none —"},...referenceChoices].map(x=>({...x,selected:x.token===(c.source?refToken(c.source):"")})),isSection:c.kind==="section",isText:c.kind==="text",isField:c.kind==="field",isRepeater:c.kind==="repeater",isActions:c.kind==="actions",isContent:c.kind==="content",isSpacer:c.kind==="spacer",isHalf:c.width==="half",isFull:c.width!=="half"})):[];
     Object.assign(context,{error:this.#error,kind:this.#kind,creating,readOnly:isValidated,deletion:creating?{blocked:false,reason:""}:this.#deletionView(),help:entryHelp(this.#kind,{definitionType:type}),data,type,fieldContract,fieldRows,newFieldRow,capabilityChoices,colorSectionChoices,rulesetMainColor:rulesetColor(data),allowTypeColor,inheritedTypeColor,hasCustomColor:!!data.color,valueTypes:this.#api.listValueTypes().map(v=>({...v,selected:v.id===(data.valueType??data.resultType)})),
       documentActorTypes:availableDocumentTypes("Actor").map(id=>({id,selected:data.storageKind==="actor"&&data.documentSubtype===id})),documentItemTypes:availableDocumentTypes("Item").map(id=>({id,selected:data.storageKind!=="actor"&&data.documentSubtype===id})),
-      hasForcedCapabilities,hasOptionalCapabilities,conditionChoices,acquiredDefinitionChoices,acquisitionActionChoices,appliedStateChoices,removedStateChoices,appliedModifierChoices,stateDurationChoices,rollChoices,outcomeRows,fallbackOutcomeChoices,testChoices,bindingFormulaChoices,tagChoices,tagSummary,categoryChoices,categorySummary,eventFieldRows,roleChoices,contentTypeChoices,relationRows,hasRelations:RELATION_KINDS.includes(this.#kind),roleSelf,roleSource,roleTarget,roleSubject,roleOwner,roleWorld,roleCombat,outcomeConditionChoices,bonusFormulaChoices,targetSourceChoices,fixedTarget,showTestCalculation,effectChoices,actionChoices,eventTypeChoices,choiceGroupRows,conditionSummary,costEffectSummary,effectSummary,actionSummary,formulaModel,conditionModel,conditionOperands:[conditionModel.left,conditionModel.right],sheetComponentRows,sheetViewActor:data.viewType==="actor"||!data.viewType,sheetViewItem:data.viewType==="item",sheetViewContent:data.viewType==="content",sheetViewRuntime:data.viewType==="runtime",
+      hasForcedCapabilities,hasOptionalCapabilities,conditionChoices,acquiredDefinitionChoices,acquisitionActionChoices,appliedStateChoices,removedStateChoices,appliedModifierChoices,stateDurationChoices,rollChoices,outcomeRows,fallbackOutcomeChoices,testChoices,bindingFormulaChoices,tagChoices,tagSummary,categoryChoices,categorySummary,eventFieldRows,roleChoices,contentTypeChoices,relationRows,hasRelations:RELATION_KINDS.includes(this.#kind),roleSelf,roleSource,roleTarget,roleSubject,roleOwner,roleWorld,roleCombat,outcomeConditionChoices,bonusFormulaChoices,targetSourceChoices,fixedTarget,showTestCalculation,effectChoices,actionChoices,eventTypeChoices,choiceGroupRows,conditionSummary,costEffectSummary,effectSummary,actionSummary,formulaModel,conditionModel,conditionOperands:[conditionModel.left,conditionModel.right],sheetTargetChoices:SHEET_TARGETS.map(id=>({id,labelKey:`RTA.Sheet.Target${id[0].toUpperCase()}${id.slice(1)}`,colors:selectColorsAttribute([RTA_NEUTRAL_COLOR]),selected:(data.target??"actor")===id})),
       referenceChoices:referenceChoices.map(x=>({...x,selected:x.token===referenceTargetToken})),
       bindingTargetChoices:referenceChoices.filter(x=>parseRefToken(x.token).capabilityId).map(x=>({...x,selected:x.token===bindingTargetToken})),
       effectTargetChoices:mutableReferenceChoices.map(x=>({...x,selected:x.token===targetToken})),
@@ -612,10 +611,6 @@ export class ConfiguratorEntryEditor extends ConfiguratorWindow {
       event.currentTarget.closest('[data-relation-row]')?.remove();
       this.#dirty=true;this.#syncFooter();return;
     }
-    if(action==="addSheetComponent"){
-      const list=this.element.querySelector("[data-sheet-components]");if(!list)return;const id=uid("component"),choices=renderSelectOptions([{token:"",label:"— none —"},...this.#referenceChoices()],{valueKey:"token",colorize:true});
-      list.insertAdjacentHTML("beforeend",renderNewSheetComponentHTML(id,choices));for(const b of list.lastElementChild.querySelectorAll("[data-action]"))b.addEventListener("click",e=>this.#action(e));this.#dirty=true;this.#syncFooter();return;
-    }
     if(action==="addCreationStep"){
       const list=this.element.querySelector("[data-creation-steps]");if(!list)return;
       list.insertAdjacentHTML("beforeend",this.#creationStepHTML());
@@ -637,8 +632,6 @@ export class ConfiguratorEntryEditor extends ConfiguratorWindow {
       }
       this.#dirty=true;this.#syncFooter();return;
     }
-    if(action==="removeSheetComponent"){event.currentTarget.closest("[data-sheet-component]")?.remove();this.#dirty=true;this.#syncFooter();return;}
-    if(action==="sheetUp"||action==="sheetDown"){const row=event.currentTarget.closest("[data-sheet-component]");if(!row)return;const sibling=action==="sheetUp"?row.previousElementSibling:row.nextElementSibling;if(sibling){if(action==="sheetUp")row.parentElement.insertBefore(row,sibling);else row.parentElement.insertBefore(sibling,row);this.#dirty=true;this.#syncFooter();}return;}
     if(action==="addDeclarativeConstraint"){const list=this.element.querySelector("[data-declarative-constraints]");if(list){const row=document.createElement("div");row.className="rta-declarative-constraint";row.dataset.declarativeConstraint="";row.innerHTML=renderDeclarativeConstraintRow({fields:[...(this.element.querySelector("template[data-constraint-field-options]")?.content.querySelectorAll("option")??[])].map(option=>({id:option.value,colors:option.dataset.rtaColors??RTA_NEUTRAL_COLOR})),labels:{field:game?.i18n?.localize?.("RTA.Declarative.Field")??"Field",rule:game?.i18n?.localize?.("RTA.Declarative.Rule")??"Rule",value:game?.i18n?.localize?.("RTA.Declarative.Value")??"Value",remove:game?.i18n?.localize?.("RTA.Declarative.DeleteConstraint")??"Remove constraint"}});list.append(row);RTASelect.enhance(this.element);row.querySelector("[data-action]").addEventListener("click",event=>this.#action(event));this.#dirty=true;this.#syncFooter();}return;}
     if(action==="removeDeclarativeConstraint"){event.currentTarget.closest("[data-declarative-constraint]")?.remove();this.#dirty=true;this.#syncFooter();return;}
     if(action==="addField"){

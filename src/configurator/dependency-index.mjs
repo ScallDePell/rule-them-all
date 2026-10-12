@@ -2,6 +2,7 @@ import {copyJSON,isRecord} from './configurator-schema.mjs';
 import {collectCrossFamilyRelations} from './relation-contract.mjs';
 import {isSystemEventType} from './system-events.mjs';
 import {parseRollFormula} from './roll-grammar.mjs';
+import {layoutNodes} from './layout-contract.mjs';
 
 /* Dependency strength (CP-31): `required` blocks deleting the target;
    `optional` means the consumer contract accepts the reference being absent,
@@ -116,7 +117,21 @@ export class DependencyIndex{
       if(policy.scope?.objectKind&&policy.scope.objectKind!=='ruleset'&&policy.scope.objectId)pushRef(this.#edges,consumer,{objectKind:policy.scope.objectKind,objectId:policy.scope.objectId},'permissionScope',`permissionPolicies[${i}].scope`);
       for(const [j,rule] of (policy.rules??[]).entries())if(rule?.conditionRef)pushRef(this.#edges,consumer,{objectKind:'condition',objectId:rule.conditionRef},'permissionCondition',`permissionPolicies[${i}].rules[${j}].conditionRef`);
     }
-    for(const [i,sheet] of (ruleset.sheetDefinitions??[]).entries())for(const [j,c] of (sheet.layout?.components??[]).entries())if(c.source?.objectKind&&c.source?.objectId)pushRef(this.#edges,{objectKind:'sheetDefinition',objectId:sheet.id},c.source,'sheetSource',`sheetDefinitions[${i}].layout.components[${j}].source`);
+    for(const [i,sheet] of (ruleset.sheetDefinitions??[]).entries()){
+      const consumer={objectKind:'sheetDefinition',objectId:sheet.id},at=`sheetDefinitions[${i}]`;
+      for(const [j,id] of (sheet.contentTypeIds??[]).entries())pushRef(this.#edges,consumer,{objectKind:'contentType',objectId:id},'sheetContentType',`${at}.contentTypeIds[${j}]`);
+      for(const {node,path} of layoutNodes(sheet.root,`${at}.root`)){
+        const s=node.source;
+        if(s?.kind==='output')pushRef(this.#edges,consumer,s.reference,'sheetValue',`${path}.source.reference`);
+        if(s?.kind==='formula')pushRef(this.#edges,consumer,{objectKind:'formula',objectId:s.formulaRef},'sheetValue',`${path}.source.formulaRef`);
+        if(s?.kind==='parameter')pushRef(this.#edges,consumer,{objectKind:'parameter',objectId:s.parameterRef},'sheetValue',`${path}.source.parameterRef`);
+        if(node.kind==='repeater'){
+          pushRef(this.#edges,consumer,{objectKind:'definitionType',objectId:node.query?.definitionTypeId},'sheetRepeater',`${path}.query.definitionTypeId`);
+          if(node.query?.conditionRef)pushRef(this.#edges,consumer,{objectKind:'condition',objectId:node.query.conditionRef},'sheetRepeater',`${path}.query.conditionRef`);
+        }
+        if(node.kind==='action')pushRef(this.#edges,consumer,{objectKind:'action',objectId:node.actionRef},'sheetAction',`${path}.actionRef`);
+      }
+    }
     for(const [i,system] of (ruleset.creationSystems??[]).entries())for(const [j,step] of (system?.steps??[]).entries()){
       for(const key of ['minFormulaRef','maxFormulaRef','perTargetMaxFormulaRef'])if(step?.[key])pushRef(this.#edges,{objectKind:'creationSystem',objectId:system.id},{objectKind:'formula',objectId:step[key]},'creationFormula',`creationSystems[${i}].steps[${j}].${key}`);
       if(step?.draw?.rollRef)pushRef(this.#edges,{objectKind:'creationSystem',objectId:system.id},{objectKind:'roll',objectId:step.draw.rollRef},'creationRoll',`creationSystems[${i}].steps[${j}].draw.rollRef`);

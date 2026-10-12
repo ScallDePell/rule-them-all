@@ -35,11 +35,11 @@ test("business cards remain distinct from plain checkbox rows",()=>{
 });
 test("other UI families remain: shell, actions, field editors, panels, tables, sheet builder, runtime",()=>{
  for(const token of ['rta-config-action','rta-config-card','rta-config-table','rta-dependencies','rta-runtime-lab'])assert.ok(shell.includes(token),token);
- for(const token of ['rta-field-editor','rta-form-stack','rta-config-entry__technical','rta-sheet-component','rta-rule-builder','rta-choice-list'])assert.ok(editor.includes(token)||js.includes(token),token);
+ for(const token of ['rta-field-editor','rta-form-stack','rta-config-entry__technical','rta-rule-builder','rta-choice-list'])assert.ok(editor.includes(token)||js.includes(token),token);
 });
 
-test("icon-only sheet and acquisition actions reuse the shared icon action component",()=>{
- for(const action of ['sheetUp','sheetDown','removeSheetComponent','removeChoiceGroup']){
+test("icon-only acquisition actions reuse the shared icon action component",()=>{
+ for(const action of ['removeChoiceGroup']){
   const re=new RegExp(`<button type="button" class="rta-config-action" data-action="${action}"`);
   assert.match(editor+readFileSync(new URL("../src/ui/entry-editor-markup.mjs",import.meta.url),"utf8"),re);
   assert.match(js+read("src/ui/entry-editor-markup.mjs"),re);

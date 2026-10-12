@@ -1316,6 +1316,11 @@
       "AllGroups": "Every group",
       "FaceValue": "Face value",
       "Within": "Within distance"
+    },
+    "Sheet": {
+      "Target": "Used for",
+      "TargetActor": "Actors",
+      "TargetItem": "Items"
     }
   }
 }

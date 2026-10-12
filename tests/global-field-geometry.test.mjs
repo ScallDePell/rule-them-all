@@ -12,7 +12,6 @@ test('all editor form inputs and selects share exactly one control-height token'
   assert.match(css,/\.rta-form-row :is\(input:not\(\[type="checkbox"\]\)/);
   assert.match(css,/height:\s*var\(--rta-form-control-height\)/);
   assert.doesNotMatch(css,/\.rta-rule-builder \.rta-select__trigger,[\s\S]{0,150}height:\s*32px/);
-  assert.match(css,/\.rta-sheet-component__toolbar > input:not\(\[type="checkbox"\]\)/);
   assert.match(css,/\.rta-config-entry__technical input:not\(\[type="checkbox"\]\)/);
 });
 

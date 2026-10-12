@@ -22,7 +22,7 @@ const formRow=(control,label)=>{
   return row;
 };
 const alreadyInFormRow=node=>Boolean(node.closest('.form-group, .rta-form-row'));
-const isToolbarControl=node=>Boolean(node.closest('.rta-sheet-component__toolbar, .rta-config-actions, .rta-configurator__toolbar, .rta-lab-tool-tabs'));
+const isToolbarControl=node=>Boolean(node.closest('.rta-config-actions, .rta-configurator__toolbar, .rta-lab-tool-tabs'));
 
 /** One optional color rail placed BEFORE the checkbox, never part of the saved value. */
 const decorateOption=(label,rawColors)=>{
@@ -433,7 +433,6 @@ export class RTAFormRows {
       '.rta-config-entry .rta-field-editor__numeric > label',
       '.rta-config-entry .rta-field-editor__body > label',
       '.rta-config-entry .rta-config-entry__section > label',
-      '.rta-config-entry .rta-sheet-builder > label',
       '.rta-config-entry fieldset > label'
     ].join(','));
     for(const label of candidates){
@@ -442,7 +441,7 @@ export class RTAFormRows {
       if(!label.querySelector(':scope > input, :scope > select, :scope > textarea, :scope > .rta-select'))continue;
       // Raw/JSON editors and compact repeating card controls are intentionally
       // full-width/inline specialized surfaces, not ordinary form rows.
-      if(label.closest('.rta-config-entry__technical, .rta-sheet-component__config'))continue;
+      if(label.closest('.rta-config-entry__technical'))continue;
       label.classList.add('rta-form-row','rta-form-row--nested');changed++;
     }
     return changed;

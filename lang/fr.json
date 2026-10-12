@@ -1312,6 +1312,11 @@
       "AllGroups": "Tous les groupes",
       "FaceValue": "Valeur de face",
       "Within": "Dans un rayon de"
+    },
+    "Sheet": {
+      "Target": "Utilisée pour",
+      "TargetActor": "Acteurs",
+      "TargetItem": "Objets"
     }
   }
 }
