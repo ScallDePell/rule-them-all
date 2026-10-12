@@ -1166,6 +1166,26 @@
       "NoTieBreak": "Aucun",
       "EachRound": "Relancer à chaque round",
       "Help": "Les acteurs de ce Ruleset lancent ce Test dans le combat tracker ; son total donne leur initiative."
+    },
+    "Reroll": {
+      "DiceMode": "Dés relancés",
+      "AllDice": "Tous les dés",
+      "SomeDice": "Seulement certains dés",
+      "Group": "Groupe de dés",
+      "AnyGroup": "Tous les groupes",
+      "Compare": "Dés qui montrent",
+      "AnyValue": "N'importe quelle valeur",
+      "Value": "Valeur",
+      "Replace": "À la place, les fixer à",
+      "ThrowAgain": "Les relancer"
+    },
+    "Compare": {
+      "eq": "égale à",
+      "neq": "différente de",
+      "gt": "au-dessus de",
+      "gte": "au moins",
+      "lt": "en dessous de",
+      "lte": "au plus"
     }
   }
 }

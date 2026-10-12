@@ -5,7 +5,7 @@ import {prepareRoll} from '../src/configurator/rule-contracts.mjs';
 
 const SAFE=['1d20','d20','20','2d6+3','4d6kh3','1d20 + @abilities.str.mod','(@level)d8','1d@faces','2d6x','1d20cs>=19','d%','4dF',
   'floor(@x/2) + 1','min(1d6, 3)','max(2d6,1d12)-1','10d6r1','-1d4','1.5*2','(1d6+2)*2','8d6dl2','3d6rr<2','1d6xo'];
-const UNSAFE=['','1d20[fire]','Math.random()','1d20; alert(1)','"1d20"','constructor','1d20 + foo','1d0','1001d6','1d20y','1.5d6',
+const UNSAFE=['','1d20[fire bolt]','Math.random()','1d20; alert(1)','"1d20"','constructor','1d20 + foo','1d0','1001d6','1d20y','1.5d6',
   '@x.()','1d20 ** 2','eval(1)','1d6kh>','2d6 + ','()','x'.repeat(300)];
 
 test('the dice grammar accepts the supported Foundry dice syntax',()=>{

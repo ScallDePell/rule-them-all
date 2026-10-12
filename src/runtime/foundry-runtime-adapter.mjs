@@ -2,6 +2,7 @@ import {resolveDocumentType} from "../core/system-document-types.mjs";
 import {MODULE_ID} from "../core/module-contract.mjs";
 import {copyJSON} from "../configurator/configurator-schema.mjs";
 import {createRuntimeState,normalizeRuntimeContainerRef,prepareRuntimeState} from "./runtime-contracts.mjs";
+import {foundryDice} from "./dice-results.mjs";
 import {OWNERSHIP_LEVELS,PERMISSION_ROLES} from "../configurator/permission-contract.mjs";
 
 
@@ -71,7 +72,7 @@ export class FoundryRuntimeAdapter{
     const roll=new RollClass(String(formula??""),copyJSON(data??{}));
     await roll.evaluate();
     const first=roll.dice?.[0]?.results?.find?.(r=>r.active!==false)?.result;
-    return {formula:String(roll.formula??formula??""),result:String(roll.result??roll.total??""),total:Number(roll.total),natural:Number.isFinite(Number(first))?Number(first):null};
+    return {formula:String(roll.formula??formula??""),result:String(roll.result??roll.total??""),total:Number(roll.total),natural:Number.isFinite(Number(first))?Number(first):null,dice:foundryDice(roll)};
   }
   async createStateEffect(ref,{name,definitionId,stateInstanceId,disabled=false,duration=null}={}){
     const doc=await this.resolveDocument(ref);

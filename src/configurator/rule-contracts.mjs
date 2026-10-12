@@ -3,6 +3,7 @@ import {copyJSON, isRecord} from './configurator-schema.mjs';
 import {valueTypeRegistry, validateTypedValue} from './value-type-registry.mjs';
 import {prepareFieldMap} from './field-output-contracts.mjs';
 import {assertSafeRollFormula} from './roll-grammar.mjs';
+import {DICE_COMPARATORS} from './dice-reading.mjs';
 import {need} from './diagnostics.mjs';
 import {preparePermissionRules} from './permission-contract.mjs';
 import {validateFormulaAst, effectOperationRegistry} from './operation-registries.mjs';
@@ -195,6 +196,19 @@ function prepareActionInput(data,index,options){
   if(x.defaultValue!==undefined){typed(x.defaultValue,'defaultValue');if(x.options.length&&!x.options.some(option=>option.value===x.defaultValue))throw new Error(`${label}.defaultValue is not one of its options.`);}
   return x;
 }
+function prepareRerollDice(dice){
+  if(dice===null||dice===undefined)return null;
+  if(!isRecord(dice))throw new Error('Action.reroll.dice must be null or an object.');
+  const x={group:null,compare:null,value:null,replaceFormulaRef:null,...dice};
+  for(const key of Object.keys(x))if(!['group','compare','value','replaceFormulaRef'].includes(key))throw new Error(`Action.reroll.dice contains unsupported field: ${key}.`);
+  for(const key of ['group','compare','replaceFormulaRef'])if(x[key]==='')x[key]=null;
+  if(x.group!==null&&!/^[A-Za-z][A-Za-z0-9_-]*$/.test(String(x.group)))throw new Error('Action.reroll.dice.group must be a dice group name.');
+  if(x.compare!==null&&!DICE_COMPARATORS.includes(x.compare))throw new Error(`Action.reroll.dice.compare must be one of ${DICE_COMPARATORS.join(', ')}.`);
+  if(x.compare!==null&&!Number.isFinite(x.value))throw new Error('Action.reroll.dice.value must be a number.');
+  if(x.compare===null)x.value=null;
+  if(x.replaceFormulaRef!==null&&!nonempty(x.replaceFormulaRef))throw new Error('Action.reroll.dice.replaceFormulaRef must be null or a Formula id.');
+  return x;
+}
 export const ACTION_TARGETING=Object.freeze(['one','each','shared']);
 export function prepareAction(data,options={}){
   const x={descriptionKey:'',enabled:true,order:0,tags:[],inputs:[],conditionRefs:[],costEffectRefs:[],acquisitions:[],stateRemovals:[],stateApplications:[],modifierApplications:[],effectRefs:[],testRef:null,outcomeMappings:[],tableRef:null,targeting:'one',reroll:null,eventTypeRefs:[],...copyJSON(data)};
@@ -203,7 +217,8 @@ export function prepareAction(data,options={}){
   if(!ACTION_TARGETING.includes(x.targeting))throw new Error(`Action.targeting must be one of ${ACTION_TARGETING.join(', ')}.`);
   // reroll: this Action undoes one use of another Action (any of actionRefs; none listed: any Action with a Test) and
   // replays it, with new dice or, keepDice, the same ones (a reaction that changes the odds, not the roll).
-  if(x.reroll!==null){if(!isRecord(x.reroll))throw new Error('Action.reroll must be null or an object.');x.reroll={actionRefs:[],keepDice:false,...x.reroll};for(const key of Object.keys(x.reroll))if(!['actionRefs','keepDice'].includes(key))throw new Error(`Action.reroll contains unsupported field: ${key}.`);arr(x.reroll.actionRefs,'Action.reroll.actionRefs');bool(x.reroll.keepDice,'Action.reroll.keepDice');}
+  // dice: only the kept dice that match (a group, a comparison) are thrown again, or set to a Formula's value; the others stay.
+  if(x.reroll!==null){if(!isRecord(x.reroll))throw new Error('Action.reroll must be null or an object.');x.reroll={actionRefs:[],keepDice:false,dice:null,...x.reroll};for(const key of Object.keys(x.reroll))if(!['actionRefs','keepDice','dice'].includes(key))throw new Error(`Action.reroll contains unsupported field: ${key}.`);arr(x.reroll.actionRefs,'Action.reroll.actionRefs');bool(x.reroll.keepDice,'Action.reroll.keepDice');x.reroll.dice=prepareRerollDice(x.reroll.dice);}
   // tableRef: a Table rolled after the Effects; its row runs its Actions. An outcome mapping's actionRefs run after the Effects too.
   if(x.tableRef==='')x.tableRef=null;
   if(x.tableRef!==null&&!nonempty(x.tableRef))throw new Error('Action.tableRef must be null or a Table id.');

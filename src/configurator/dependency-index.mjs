@@ -58,6 +58,7 @@ export class DependencyIndex{
     for(const [i,a] of (ruleset.actions??[]).entries()){
       if(a.testRef)pushRef(this.#edges,{objectKind:'action',objectId:a.id},{objectKind:'test',objectId:a.testRef},'actionTest',`actions[${i}].testRef`);
       for(const [k,id] of (a.reroll?.actionRefs??[]).entries())pushRef(this.#edges,{objectKind:'action',objectId:a.id},{objectKind:'action',objectId:id},'actionReroll',`actions[${i}].reroll.actionRefs[${k}]`);
+      if(a.reroll?.dice?.replaceFormulaRef)pushRef(this.#edges,{objectKind:'action',objectId:a.id},{objectKind:'formula',objectId:a.reroll.dice.replaceFormulaRef},'actionRerollValue',`actions[${i}].reroll.dice.replaceFormulaRef`);
       if(a.tableRef)pushRef(this.#edges,{objectKind:'action',objectId:a.id},{objectKind:'table',objectId:a.tableRef},'actionTable',`actions[${i}].tableRef`);
       for(const [j,mapping] of (a.outcomeMappings??[]).entries())for(const [k,id] of (mapping?.actionRefs??[]).entries())pushRef(this.#edges,{objectKind:'action',objectId:a.id},{objectKind:'action',objectId:id},'actionFollowUp',`actions[${i}].outcomeMappings[${j}].actionRefs[${k}]`);
       for(const [j,input] of (a.inputs??[]).entries())if(input?.definitionTypeId)pushRef(this.#edges,{objectKind:'action',objectId:a.id},{objectKind:'definitionType',objectId:input.definitionTypeId},'actionInput',`actions[${i}].inputs[${j}].definitionTypeId`);

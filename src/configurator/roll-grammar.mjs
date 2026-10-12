@@ -8,8 +8,11 @@
    sum       := product (("+" | "-") product)*
    product   := unary (("*" | "/") unary)*
    unary     := ("+" | "-")? primary
-   primary   := dice | number | reference | call | "(" sum ")"
-   dice      := count? "d" faces modifier*
+   primary   := dice | number | reference | call | pool | "(" sum ")"
+   dice      := count? "d" faces modifier* label?
+   pool      := "{" sum ("," sum)* "}" poolModifier*      (the best of several dice: {1d8x,1d6x}kh)
+   poolModifier := ("kh" | "kl" | "k" | "dh" | "dl" | "cs" | "cf") (comparator? integer)?
+   label     := "[" identifier "]"                       (a named group of dice: 2d10[hunger])
    count     := integer | "(" sum ")" | reference
    faces     := integer | "%" | "F" | "(" sum ")" | reference
    modifier  := ("kh" | "kl" | "k" | "dh" | "dl" | "d" | "rr" | "r" | "xo" | "x"
@@ -28,6 +31,9 @@ const COMPARATOR_PATTERN = /^(?:<=|>=|=|<|>)/;
 const INTEGER_PATTERN = /^\d+/;
 const NUMBER_PATTERN = /^(?:\d+(?:\.\d+)?|\.\d+)/;
 const REFERENCE_PATTERN = /^@[A-Za-z_][A-Za-z0-9_-]*(?:\.[A-Za-z_][A-Za-z0-9_-]*)*/;
+const LABEL_PATTERN = /^\[[A-Za-z][A-Za-z0-9_-]*\]/;
+export const ROLL_POOL_MODIFIERS = Object.freeze(["kh", "kl", "k", "dh", "dl", "cs", "cf"]);
+const POOL_MODIFIER_PATTERN = new RegExp(`^(?:${[...ROLL_POOL_MODIFIERS].sort((a, b) => b.length - a.length).join("|")})`);
 const FUNCTION_PATTERN = new RegExp(`^(?:${ROLL_FUNCTIONS.join("|")})(?=\\s*\\()`);
 
 function rollError(message, formula, position) {
@@ -38,7 +44,7 @@ function rollError(message, formula, position) {
 }
 
 class RollParser {
-  constructor(formula) { this.formula = formula; this.position = 0; this.references = new Set(); this.diceTerms = 0; this.dicePositions = []; }
+  constructor(formula) { this.formula = formula; this.position = 0; this.references = new Set(); this.diceTerms = 0; this.dicePositions = []; this.groups = new Set(); }
   rest() { return this.formula.slice(this.position); }
   skipSpaces() { while (this.formula[this.position] === " ") this.position++; }
   match(pattern) {
@@ -73,6 +79,17 @@ class RollParser {
       this.expect(")");
       return this.diceTail(start, null);
     }
+    if (this.accept("{")) {
+      this.sum();
+      while (this.accept(",")) this.sum();
+      this.expect("}");
+      while (this.match(POOL_MODIFIER_PATTERN)) {
+        const comparator = this.match(COMPARATOR_PATTERN);
+        if (this.match(INTEGER_PATTERN) === null && comparator) throw rollError("modifier value expected", this.formula, this.position);
+      }
+      if (/^[A-Za-z]/.test(this.rest())) throw rollError(`unknown group modifier "${this.rest().match(/^[A-Za-z]+/)[0]}"`, this.formula, this.position);
+      return;
+    }
     const reference = this.match(REFERENCE_PATTERN);
     if (reference) { this.references.add(reference.slice(1)); return this.diceTail(start, null); }
     if (/^d/.test(this.rest())) return this.dice(start, 1);
@@ -104,6 +121,9 @@ class RollParser {
       if (comparator && value === null) throw rollError("modifier value expected", this.formula, this.position);
     }
     if (/^[A-Za-z]/.test(this.rest())) throw rollError(`unknown dice modifier "${this.rest().match(/^[A-Za-z]+/)[0]}"`, this.formula, this.position);
+    const label = this.match(LABEL_PATTERN);
+    if (label) this.groups.add(label.slice(1, -1));
+    else if (this.formula[this.position] === "[") throw rollError("a dice group name is letters, digits, - or _", this.formula, this.position);
     this.diceTerms++;
   }
 }
@@ -114,7 +134,7 @@ export function parseRollFormula(formula) {
   if (formula.length > ROLL_FORMULA_MAX_LENGTH) throw rollError(`formula longer than ${ROLL_FORMULA_MAX_LENGTH} characters`, formula.slice(0, 40), ROLL_FORMULA_MAX_LENGTH);
   const parser = new RollParser(formula.trim());
   parser.parse();
-  return {formula: formula.trim(), references: [...parser.references], diceTerms: parser.diceTerms};
+  return {formula: formula.trim(), references: [...parser.references], diceTerms: parser.diceTerms, groups: [...parser.groups]};
 }
 
 export function assertSafeRollFormula(formula) { return parseRollFormula(formula); }

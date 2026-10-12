@@ -1170,6 +1170,26 @@
       "NoTieBreak": "None",
       "EachRound": "Reroll each round",
       "Help": "Actors under this Ruleset roll this Test in the combat tracker; its total is their initiative."
+    },
+    "Reroll": {
+      "DiceMode": "Dice thrown again",
+      "AllDice": "All the dice",
+      "SomeDice": "Only some dice",
+      "Group": "Dice group",
+      "AnyGroup": "Any group",
+      "Compare": "Dice showing",
+      "AnyValue": "Any value",
+      "Value": "Value",
+      "Replace": "Instead, set them to",
+      "ThrowAgain": "Throw them again"
+    },
+    "Compare": {
+      "eq": "equal to",
+      "neq": "other than",
+      "gt": "above",
+      "gte": "at least",
+      "lt": "below",
+      "lte": "at most"
     }
   }
 }

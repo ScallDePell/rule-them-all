@@ -47,7 +47,7 @@ test('An incomplete draft saves, but publish needs the complete graph',async()=>
 
 test('Structural problems block even a draft save',async()=>{
   const {api,v}=await setup();
-  await assert.rejects(()=>api.createRoll(v,{id:'flavored',nameKey:'Flavored',formula:'1d20[fire]',data:{},enabled:true,order:10,tags:[]}),/Invalid Roll formula/);
+  await assert.rejects(()=>api.createRoll(v,{id:'flavored',nameKey:'Flavored',formula:'1d20[fire bolt]',data:{},enabled:true,order:10,tags:[]}),/Invalid Roll formula/);
   await assert.rejects(()=>api.createTest(v,{id:'dangling',nameKey:'Dangling',rollRef:'missing',outcomeRefs:[],enabled:true,order:10,tags:[]}),/Dependency target does not exist/);
   const ruleset={...api.getRuleset(v),unexpected:true};
   const save=validateRuleset(ruleset);

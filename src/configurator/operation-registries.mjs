@@ -4,6 +4,7 @@
    one; other modules register theirs on the ruleThemAllRegisterTypes hook. */
 import {copyJSON, isRecord} from "./configurator-schema.mjs";
 import {valueTypeRegistry} from "./value-type-registry.mjs";
+import {DICE_COMPARATORS, DICE_READS, readDice} from "./dice-reading.mjs";
 
 const nonempty = value => typeof value === "string" && value.trim().length > 0;
 const args = node => Array.isArray(node.args) ? node.args : [];
@@ -122,6 +123,21 @@ async function definitionField(node, kit) {
   if (value === undefined) throw new Error(`Definition ${id} has no field ${node.field}.`);
   return copyJSON(value);
 }
+/** dice: {read, group?, compare?, value?: AST}: the dice of the roll in context (a Test's roll, under variables.roll),
+ * e.g. how many 10s among the hunger dice: {read: "count", group: "hunger", compare: "eq", value: {type: "literal", value: 10}}. */
+function validateDiceNode(node, label) {
+  if (!DICE_READS.includes(node.read)) throw new Error(`${label}.read must be ${DICE_READS.join(", ")}.`);
+  if (node.group !== undefined && node.group !== null && !(typeof node.group === "string" && /^[A-Za-z][A-Za-z0-9_-]*$/.test(node.group))) throw new Error(`${label}.group must be a dice group name.`);
+  if (node.compare !== undefined && node.compare !== null) {
+    if (!DICE_COMPARATORS.includes(node.compare)) throw new Error(`${label}.compare must be ${DICE_COMPARATORS.join(", ")}.`);
+    if (!isRecord(node.value)) throw new Error(`${label}.value must be an AST node.`);
+  }
+}
+async function diceNode(node, kit) {
+  const roll = kit.context?.variables?.roll;
+  if (!roll) throw new Error("No roll in context to read dice from.");
+  return readDice(roll.dice ?? [], {read: node.read, group: node.group ?? null, compare: node.compare ?? null, value: node.compare ? num(await kit.ev(node.value), "dice value") : null});
+}
 const needsDefinitionNode = keys => (node, label) => { if (!isRecord(node.definition)) throw new Error(`${label}.definition must be an AST node.`); for (const key of keys) if (!nonempty(node[key])) throw new Error(`${label}.${key} is required.`); };
 
 export const formulaNodeRegistry = new FormulaNodeRegistry()
@@ -131,6 +147,7 @@ export const formulaNodeRegistry = new FormulaNodeRegistry()
   .register({id: "reference", evaluate: (node, kit) => kit.reference(node.reference, node.container ?? null), resultType: (node, infer, leaf) => leaf("reference", node.reference), validate: validateReferenceNode})
   .register({id: "definitionValue", evaluate: definitionValue, resultType: node => node.outputId === "state.active" ? "boolean" : "number", validate: needsDefinitionNode(["capabilityId", "outputId"])})
   .register({id: "definitionField", evaluate: definitionField, validate: needsDefinitionNode(["field"])})
+  .register({id: "dice", evaluate: diceNode, resultType: "integer", validate: validateDiceNode})
   .register({id: "contentAggregate", evaluate: aggregateContents, resultType: node => node.operation === "count" ? "integer" : "number", validate: validateContentAggregate})
   .register({id: "contentField", evaluate: contentField, validate: (node, label) => { if (!nonempty(node.field)) throw new Error(`${label}.field is required.`); }})
   .register({id: "context", evaluate: (node, kit) => { let value = kit.context; for (const part of String(node.path ?? "").split(".").filter(Boolean)) value = value?.[part]; return value === undefined ? undefined : copyJSON(value); }})

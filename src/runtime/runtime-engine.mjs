@@ -13,6 +13,7 @@ import {effectOperationRegistry} from "../configurator/operation-registries.mjs"
 import {assertSafeRollFormula,multiplyDice,resolveRollData} from "../configurator/roll-grammar.mjs";
 import {findSlot, slotInitialKey} from "../configurator/capability-slots.mjs";
 import {systemEventType} from "../configurator/system-events.mjs";
+import {rerollSomeDice} from "./dice-results.mjs";
 import {SLOT_CAPABILITIES,requireSlot,poolSlotState,collectionSlotState,boundPoolValue,initialSlotStates,prepareCollectionEntry,assertCollectionRoom,assertCollectionMinimum} from "./capability-slot-runtime.mjs";
 
 const clone=v=>copyJSON(v);
@@ -283,8 +284,11 @@ export class RuntimeEngine{
     for(const modifier of ruleset.modifiers??[]){if(!enabled(modifier))continue;const t=modifier.targetRef??{};if(t.objectKind!==targetRef.objectKind||t.objectId!==targetRef.objectId||String(t.capabilityId??'')!==String(targetRef.capabilityId??'')||String(t.outputId??'')!==String(targetRef.outputId??''))continue;let ok=true;for(const id of modifier.conditionRefs??[])if(!await evaluator.condition(id,context)){ok=false;break;}if(!ok)continue;let value;if(modifier.valueSource.kind==='literal')value=modifier.valueSource.value;else if(modifier.valueSource.kind==='parameter')value=evaluator.parameter(modifier.valueSource.id);else if(modifier.valueSource.kind==='formula')value=await evaluator.formula(modifier.valueSource.id,context);else value=await this.resolveReference(versionId,modifier.valueSource.reference,context);applicable.push({modifier,value:Number(value)});}
     const {value,applied}=applyModifierStack(baseValue,applicable.map(row=>({id:row.modifier.id,operation:row.modifier.operation,value:row.value,priority:row.modifier.priority??0,stacking:row.modifier.stacking})));return{base:Number(baseValue),value,applied};
   }
+  /** A replay takes back the logged roll of the same formula; a partial reroll (dice.some) throws again only the matching dice. */
   async #throw(formula,data,context){
-    const dice=context?.[DICE],kept=dice?.keep?.get(formula),roll=kept?.length?kept.shift():await this.roll(formula,data);
+    const dice=context?.[DICE],kept=dice?.keep?.get(formula);let roll=kept?.length?kept.shift():null;
+    if(roll&&dice.some){const {filter,replaceWith}=dice.some;if((roll.dice??[]).length)roll=await rerollSomeDice(roll,filter,{replaceWith,next:async faces=>Number((await this.roll(`1d${faces}`)).total)});}
+    roll??=await this.roll(formula,data);
     dice?.log.push({formula,roll:clone(roll)});return roll;
   }
   async roll(formula,data={}){assertSafeRollFormula(formula);if(typeof this.adapter.roll!=="function")throw new Error("Runtime adapter does not provide Foundry Roll support.");return this.adapter.roll(formula,data);}
@@ -304,7 +308,7 @@ export class RuntimeEngine{
       const {formula,data}=await this.#rollFormula(rollDef,scope,evaluator,{test:clone(state.inputs)});
       const roll=await this.#throw(resolveRollData(formula,data),data,scope);
       const natural=Number.isFinite(Number(roll.natural))?Number(roll.natural):Number(roll.total);
-      state.roll={formula:String(roll.formula??formula),total:Number(roll.total),natural,result:String(roll.result??roll.total??"")};
+      state.roll={formula:String(roll.formula??formula),total:Number(roll.total),natural,result:String(roll.result??roll.total??""),dice:clone(roll.dice??[])};
       state.rollTotal=Number(roll.total);state.natural=natural;state.total=Number(roll.total);sync();
     }
     const number=async(formulaId,label)=>{const value=Number(await evaluator.formula(formulaId,scope));if(!Number.isFinite(value))throw new Error(`Test ${test.id} ${label} is not a number.`);return value;};
@@ -720,8 +724,12 @@ export class RuntimeEngine{
     if(!paid.allowed)return {...paid,staged:undefined,context:undefined};
     const afterCost=snapshot();
     // keepDice: the replay takes back the dice of the use it replaces (a reaction that changes the target, not the roll).
-    const keep=new Map();if(reroll.reroll.keepDice)for(const {formula,roll} of original.dice??[])keep.set(formula,[...(keep.get(formula)??[]),roll]);
-    const replayContext={...originalContext,variables:{...(originalContext.variables??{}),reroll:{count,actionId}},[DICE]:{log:[],keep}};
+    // dice: the replay takes back the same rolls with only the matching dice thrown again, or set to a Formula's value.
+    const keep=new Map(),partial=reroll.reroll.dice;if(reroll.reroll.keepDice||partial)for(const {formula,roll} of original.dice??[])keep.set(formula,[...(keep.get(formula)??[]),roll]);
+    const replaceWith=partial?.replaceFormulaRef?Number(await this.evaluateFormula(versionId,partial.replaceFormulaRef,paid.context)):null;
+    if(replaceWith!==null&&!Number.isFinite(replaceWith))throw new Error(`${rerollActionId}: the value given to the dice is not a number.`);
+    // The replay sees the reroll Action's own inputs (the Luck points spent) under variables.reroll.input.
+    const replayContext={...originalContext,variables:{...(originalContext.variables??{}),reroll:{count,actionId,rerollActionId,input:clone(paid.context?.variables?.input??{})}},[DICE]:{log:[],keep,...(partial?{some:{filter:{group:partial.group,compare:partial.compare,value:partial.value},replaceWith}}:{})}};
     const plan=await this.previewAction(versionId,actionId,replayContext,{staged});
     if(!plan.allowed)return {...plan,staged:undefined,context:undefined};
     for(const change of [...paid.changes,...plan.changes])if(change.containerRef)refs.set(this.#refKey(change.containerRef),normalizeRuntimeContainerRef(change.containerRef));
