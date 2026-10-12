@@ -96,9 +96,13 @@ test('Values as dots or gauges, the Contents held, image shapes: checked by the 
   assert.deepEqual(leaf({id:'v',kind:'value',source:{kind:'content',contentTypeId:'origin'}}).source,{kind:'content',contentTypeId:'origin'});
   assert.equal(leaf({id:'i',kind:'image',src:'a.png',shape:'circle'}).shape,'circle');
   assert.throws(()=>leaf({id:'i',kind:'image',src:'a.png',shape:'star'}),/shape must be/);
+  for(const shape of ['rounded','square','portrait','landscape','circle']) assert.equal(leaf({id:'i',kind:'image',src:'a.png',shape}).shape,shape);
+  assert.equal(leaf({id:'v',kind:'value',source:{kind:'output',reference:{objectKind:'definition',objectId:'str',capabilityId:'value',outputId:'value.final'}},write:{operation:'adjust'}}).write.operation,'adjust','raised and lowered');
   const html=renderLayoutPreviewHTML(previewView(prepareLayout({id:'root',kind:'grid',columns:1,children:[{id:'d',kind:'value',source:{kind:'formula',formulaRef:'f'},display:'dots'},{id:'g',kind:'value',source:{kind:'formula',formulaRef:'f'},display:'gauge'},{id:'i',kind:'image',src:'a.png',shape:'circle'}]}),ruleset),{t:key=>key});
   assert.equal((html.match(/rta-sheet-dot rta-sheet-dot--on/g)??[]).length,3,'3 of 5 dots in the preview');
   assert.match(html,/rta-sheet-gauge__fill" style="inline-size: 50%"/);assert.match(html,/rta-sheet-image--circle/);
+  const portrait=renderLayoutPreviewHTML(previewView(prepareLayout({id:'root',kind:'grid',columns:1,children:[{id:'i',kind:'image',src:'a.png',shape:'portrait'}]}),ruleset),{t:key=>key});
+  assert.match(portrait,/rta-sheet-image--portrait/);
 });
 
 test('A block dropped next to another goes before or after it, even next to a container that would take it', ()=>{

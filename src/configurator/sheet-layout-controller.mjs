@@ -13,7 +13,7 @@ import {kindText, renderLayoutPaletteHTML, renderLayoutPropertiesHTML, renderLay
 import {selectColorsAttribute} from "../ui/select-option-presentation.mjs";
 import {RTA_NEUTRAL_COLOR} from "../ui/theme-tokens.mjs";
 import {LAYOUT_CONTAINERS} from "./layout-contract.mjs";
-import {SHEET_ALIGNS, SHEET_GAPS, SHEET_IMAGE_FITS, SHEET_IMAGE_HEIGHTS, SHEET_LABELS, SHEET_NO_COLOR, SHEET_SIZES, SHEET_SPACES, SHEET_TONES} from "./layout-style-contract.mjs";
+import {SHEET_ALIGNS, SHEET_FILL_PROPS, SHEET_GAPS, SHEET_IMAGE_FITS, SHEET_IMAGE_HEIGHTS, SHEET_LABELS, SHEET_NO_COLOR, SHEET_SIZES, SHEET_SPACES, SHEET_TONES} from "./layout-style-contract.mjs";
 
 /** The fonts Foundry offers (its own and those the world adds in its font settings). */
 function availableFonts() {
@@ -197,6 +197,12 @@ export class SheetLayoutController {
     if (!target.closest?.("[data-layout-toolbar], [data-layout-properties], [data-layout-palette-host]")) return;
     if (target.matches("[data-layout-palette-filter]")) return event.stopPropagation();
     event.stopPropagation();
+    if (target.dataset.layoutWrite) {
+      // Typing a value covers raising and lowering; raising and lowering together is "adjust".
+      const on = key => this.#host.querySelector(`[data-layout-write="${key}"]`)?.checked === true;
+      const operation = on("set") ? "set" : on("add") && on("subtract") ? "adjust" : on("add") ? "add" : on("subtract") ? "subtract" : null;
+      return this.#commit(updateNode(this.#root, locate(this.#root, this.#selected).node.id, {write: operation ? {operation} : undefined}));
+    }
     if (target.dataset.layoutStyleHex) return this.#setStyle(target.dataset.layoutStyleHex, target.value);
     if (target.dataset.layoutStyle) {
       const prop = target.dataset.layoutStyle;
@@ -215,13 +221,13 @@ export class SheetLayoutController {
     if (prop === "conditionRef") return this.#commit(updateNode(this.#root, node.id, {query: {...node.query, conditionRef: value || undefined}}));
     if (prop === "display") return this.#commit(updateNode(this.#root, node.id, {display: value === "field" ? undefined : value, dots: value === "dots" ? node.dots : undefined}));
     if (prop === "dots") return this.#commit(updateNode(this.#root, node.id, {dots: number === 5 ? undefined : number}));
-    if (prop === "shape") return this.#commit(updateNode(this.#root, node.id, {shape: value === "square" ? undefined : value}));
+    if (prop === "shape") return this.#commit(updateNode(this.#root, node.id, {shape: value === "free" ? undefined : value}));
     if (prop === "labelPlace") { const style = {...(node.style ?? {}), label: value === "side" ? undefined : value}; if (!style.label) delete style.label; return this.#commit(updateNode(this.#root, node.id, {style: Object.keys(style).length ? style : undefined})); }
     if (prop === "src") return this.#commit(updateNode(this.#root, node.id, {src: value.trim()}));
     if (prop === "fit" || prop === "height") return this.#commit(updateNode(this.#root, node.id, {[prop]: value === "cover" && prop === "fit" || value === "medium" && prop === "height" ? undefined : value}));
     if (prop === "contentTypeIds") return this.#commit(updateNode(this.#root, node.id, {contentTypeIds: [...target.selectedOptions].map(option => option.value).filter(Boolean)}));
     if (prop === "actionRef") return this.#commit(updateNode(this.#root, node.id, {actionRef: value}));
-    if (prop === "write") return this.#commit(updateNode(this.#root, node.id, {write: value ? {operation: value} : undefined}));
+
     if (prop === "sourceKind") {
       const first = this.#sourceChoices(value, node)[0];
       if (!first) return this.render();
@@ -235,7 +241,8 @@ export class SheetLayoutController {
     if (value === undefined) delete style[prop]; else style[prop] = value;
     // A background removed has no opacity left to set.
     if (prop === "background" && (value === undefined || value === SHEET_NO_COLOR) && node.kind !== "section") delete style.opacity;
-    this.#styleOpen = true;
+    // The gauge and dot colors sit with the value's settings, not in the Style group.
+    if (!SHEET_FILL_PROPS.includes(prop)) this.#styleOpen = true;
     this.#commit(updateNode(this.#root, node.id, {style: Object.keys(style).length ? style : undefined}));
   }
   /** Foundry's file browser, for an image block or a background picture. */
@@ -318,7 +325,7 @@ export class SheetLayoutController {
     const byDefault = choice("default", "RTA.SheetEditor.Style.Default");
     return {
       open: this.#styleOpen, containers: LAYOUT_CONTAINERS,
-      tones: prop => [byDefault, ...(prop === "color" ? [] : [choice(SHEET_NO_COLOR, "RTA.SheetEditor.Style.None")]),
+      tones: prop => [byDefault, ...(["background", "border"].includes(prop) ? [choice(SHEET_NO_COLOR, "RTA.SheetEditor.Style.None")] : []),
         ...Object.keys(SHEET_TONES).map(tone => ({value: tone, label: i18n(`RTA.SheetEditor.Tone.${tone}`), colors: selectColorsAttribute([this.#toneToHex(tone) ?? RTA_NEUTRAL_COLOR])})),
         choice("custom", "RTA.SheetEditor.Style.CustomChoice")],
       fonts: current => [byDefault, ...[...new Set([...availableFonts(), ...(current ? [current] : [])])].map(font => ({value: font, label: font, colors: neutral}))],
@@ -352,11 +359,10 @@ export class SheetLayoutController {
       dotCounts: Array.from({length: 10}, (_, i) => ({value: String(i + 1), label: String(i + 1), colors: neutral})),
       numeric: node.kind === "value" && this.#numeric(node.source),
       labelPlaces: SHEET_LABELS.map(label => ({value: label, label: i18n(`RTA.SheetEditor.LabelPlace.${label}`), colors: neutral})),
-      shapes: ["square", "rounded", "circle"].map(value => ({value, label: i18n(`RTA.SheetEditor.Shape.${value}`), colors: neutral})),
+      shapes: ["free", "rounded", "square", "portrait", "landscape", "circle"].map(value => ({value, label: i18n(`RTA.SheetEditor.Shape.${value}`), colors: neutral})),
       fits: SHEET_IMAGE_FITS.map(value => ({value, label: i18n(`RTA.SheetEditor.Fit.${value}`), colors: neutral})),
       heights: Object.keys(SHEET_IMAGE_HEIGHTS).map(value => ({value, label: i18n(`RTA.SheetEditor.Height.${value}`), colors: neutral})),
-      style: this.#styleContext(neutral),
-      writeChoices: [["", "RTA.SheetEditor.Write.none"], ["set", "RTA.SheetEditor.Write.set"], ["add", "RTA.SheetEditor.Write.add"], ["subtract", "RTA.SheetEditor.Write.subtract"]].map(([value, key]) => ({value, label: i18n(key), colors: neutral}))
+      style: this.#styleContext(neutral)
     };
   }
 }

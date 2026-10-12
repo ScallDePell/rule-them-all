@@ -45,3 +45,13 @@ test('played sheet and editor canvas show the same style; an image block without
   assert.doesNotMatch(renderSheetHTML({sheetId:'s',root:{id:'root',kind:'grid',children:[{id:'i',kind:'image',src:''}]}}),/rta-sheet-image/);
   assert.match(renderLayoutPreviewHTML(previewView(root,ruleset),{t:k=>k}),/style="--rta-sheet-columns: 1; background-color: #101010"/);
 });
+
+test('a gauge takes one color or a gradient between two; only a value has them', ()=>{
+  const gauge=style=>({id:'root',kind:'grid',children:[{id:'g',kind:'value',source:{kind:'formula',formulaRef:'f'},display:'gauge',style}]});
+  assert.deepEqual(prepareLayout(gauge({fill:'accent',fillTo:'#aa3300'})).children[0].style,{fill:'accent',fillTo:'#aa3300'});
+  assert.throws(()=>prepareLayout(gauge({fill:'none'})),/tone or a #rrggbb/);
+  assert.throws(()=>prepareLayout(tree({fill:'accent'})),/on a value/);
+  const both=sheetStyle({style:{fill:'#112233',fillTo:'#445566'}}).css.join(';'), one=sheetStyle({style:{fill:'#112233'}}).css.join(';');
+  assert.match(both,/--rta-sheet-fill: linear-gradient\(to right, #112233, #445566\)/);assert.match(both,/--rta-sheet-fill-solid: #112233/);
+  assert.match(one,/--rta-sheet-fill: #112233/);assert.doesNotMatch(one,/gradient/);
+});

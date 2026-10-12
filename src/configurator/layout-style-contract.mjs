@@ -12,7 +12,8 @@
    align                      start | center | end
    padding                    none | tight | row | block (0, 4, 8, 12 px)
    gap                        tight | row | block: between the blocks of a container
-   label                      side | top | hidden: where a value shows its label */
+   label                      side | top | hidden: where a value shows its label
+   fill, fillTo               a gauge's (or dots') color, and the second color of its gradient (values only) */
 import {isRecord} from "./configurator-schema.mjs";
 
 /** Theme tones a color setting can name, each a token of tokens.css. */
@@ -21,7 +22,9 @@ export const SHEET_TONES = Object.freeze({
   success: "--rta-color-success", danger: "--rta-color-danger", warning: "--rta-color-warning",
   panel: "--rta-color-surface-option-light", surface: "--rta-color-surface", light: "--rta-color-inverse-fill", dark: "--rta-color-inverse-text"
 });
-export const SHEET_COLOR_PROPS = Object.freeze(["color", "background", "border"]);
+export const SHEET_COLOR_PROPS = Object.freeze(["color", "background", "border", "fill", "fillTo"]);
+/** Colors only a value has: the fill of its gauge or dots. */
+export const SHEET_FILL_PROPS = Object.freeze(["fill", "fillTo"]);
 /** Background and border may also be removed ("none"): a section without its frame. */
 export const SHEET_NO_COLOR = "none";
 export const SHEET_SIZES = Object.freeze({small: "--rta-type-sm", normal: "--rta-type-control", large: "--rta-type-heading", huge: "--rta-type-display"});
@@ -46,7 +49,10 @@ export function prepareLayoutStyle(style, kind, path, {containers = []} = {}) {
   const next = {}, fail = (key, what) => { throw new Error(`${path}.${key} must be ${what}.`); };
   for (const [key, value] of Object.entries(style)) {
     if (value === undefined || value === null || value === "" || value === false) continue;
-    if (SHEET_COLOR_PROPS.includes(key)) { if (!(HEX_COLOR.test(value) || SHEET_TONES[value] || key !== "color" && value === SHEET_NO_COLOR)) fail(key, "a tone or a #rrggbb color"); }
+    if (SHEET_COLOR_PROPS.includes(key)) {
+      if (!(HEX_COLOR.test(value) || SHEET_TONES[value] || ["background", "border"].includes(key) && value === SHEET_NO_COLOR)) fail(key, "a tone or a #rrggbb color");
+      if (SHEET_FILL_PROPS.includes(key) && kind !== "value") fail(key, "on a value");
+    }
     else if (key === "opacity") { if (!Number.isInteger(value) || value < 0 || value > 100) fail(key, "0 to 100"); }
     else if (key === "image") { if (typeof value !== "string" || !IMAGE_PATH.test(value)) fail(key, "a file path"); }
     else if (key === "font") { if (typeof value !== "string" || !FONT_NAME.test(value)) fail(key, "a font name"); }

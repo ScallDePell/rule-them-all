@@ -1364,7 +1364,10 @@
       "RemoveContent": "Remove",
       "RemoveContentConfirm": "Remove {name}? What it gave goes too.",
       "Contents": "Contents",
-      "OtherItems": "Other Items"
+      "OtherItems": "Other Items",
+      "Raise": "Raise",
+      "Lower": "Lower",
+      "Amount": "Amount"
     },
     "SheetEditor": {
       "Layout": "Layout",
@@ -1414,10 +1417,9 @@
         "content": "Held Content"
       },
       "Write": {
-        "none": "Read only",
-        "set": "Can be changed",
-        "add": "Can be increased",
-        "subtract": "Can be decreased"
+        "set": "Typed in",
+        "add": "Can be raised",
+        "subtract": "Can be lowered"
       },
       "ContentTypes": "Content Types (none: all)",
       "Image": "Image",
@@ -1512,11 +1514,17 @@
       "LabelPlacement": "Label placed",
       "ImageShape": "Shape",
       "Shape": {
+        "free": "Free (full width)",
+        "rounded": "Free, rounded corners",
         "square": "Square",
-        "rounded": "Rounded",
+        "portrait": "Portrait",
+        "landscape": "Landscape",
         "circle": "Round"
       },
-      "AddTab": "Add a tab"
+      "AddTab": "Add a tab",
+      "Fill": "Gauge color",
+      "FillTo": "Gradient to",
+      "DotColor": "Dot color"
     },
     "Reaction": {
       "Title": "Reaction",

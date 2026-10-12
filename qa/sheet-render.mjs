@@ -66,12 +66,14 @@ const styled = {id: 'styled', target: 'actor', root: {id: 'root', kind: 'grid', 
   {id: 'quiet', kind: 'section', labelKey: 'Condition', columns: 1, style: {background: 'none', border: 'none', italic: true}, children: [
     {id: 'q-hp', kind: 'value', labelKey: 'Health', source: {kind: 'output', reference: out_('hp', 'pool', 'pool.current', 'points')}, write: {operation: 'subtract'}, style: {bold: true, color: 'danger'}},
     {id: 'q-def', kind: 'value', source: {kind: 'formula', formulaRef: 'defence'}, style: {label: 'hidden', padding: 'tight', background: 'panel'}}]},
-  // Dots, a gauge, the Content held of a type, a round portrait.
+  // Dots, a gradient gauge, the Content held of a type, a round and a tall portrait, a value raised and lowered with − and +.
   {id: 'looks', kind: 'section', labelKey: 'At a glance', columns: 2, span: 2, children: [
     {id: 'portrait', kind: 'image', src: 'icons/svg/mystery-man.svg', shape: 'circle', height: 'small'},
     {id: 'held', kind: 'value', source: {kind: 'content', contentTypeId: 'weapon'}, style: {label: 'top'}},
     {id: 'd-will', kind: 'value', labelKey: 'Will', source: {kind: 'output', reference: out_('dex', 'value', 'value.final')}, display: 'dots', dots: 10, write: {operation: 'set'}},
-    {id: 'g-hp', kind: 'value', labelKey: 'Health', source: {kind: 'output', reference: out_('hp', 'pool', 'pool.current', 'points')}, display: 'gauge'}]}]}};
+    {id: 'g-hp', kind: 'value', labelKey: 'Health', source: {kind: 'output', reference: out_('hp', 'pool', 'pool.current', 'points')}, display: 'gauge', style: {fill: 'danger', fillTo: '#e0b040'}},
+    {id: 'tall', kind: 'image', src: 'icons/svg/mystery-man.svg', shape: 'portrait', height: 'small'},
+    {id: 'a-wit', kind: 'value', labelKey: 'Wits', source: {kind: 'output', reference: out_('wit', 'value', 'value.final')}, write: {operation: 'adjust'}}]}]}};
 
 const foundryCss = process.env.RTA_FOUNDRY_CSS ? readFileSync(process.env.RTA_FOUNDRY_CSS, 'utf8') + '\n' : '';
 const css = foundryCss + JSON.parse(readFileSync(join(root, 'module.json'), 'utf8')).styles.map(p => readFileSync(join(root, p), 'utf8')).join('\n');

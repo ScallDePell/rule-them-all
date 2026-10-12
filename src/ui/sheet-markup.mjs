@@ -3,6 +3,7 @@
    Data contract with the sheet controller (runtime/foundry-sheets.mjs):
    - [data-sheet-write=nodeId] (+ data-definition-id, data-operation) is a value the player changes;
      a dot of a value shown as dots carries data-sheet-dot=n (its value once clicked) instead of being a field;
+     an adjust value has −/+ buttons [data-sheet-adjust=-1|1] that apply the amount in [data-sheet-adjust-amount] (1 when empty);
    - [data-sheet-action=actionId] (+ data-definition-id) uses an Action;
    - [data-sheet-tab=id] shows the [data-sheet-panel=id] of its tabs;
    - [data-sheet-item-open=key] opens an owned Item's sheet, [data-sheet-item-remove=key] removes it;
@@ -43,12 +44,21 @@ function gaugeHTML(node) {
   return `<span class="rta-sheet-gauge" role="meter" aria-valuemin="${escape(String(min))}" aria-valuemax="${escape(String(Number.isFinite(max) ? max : ""))}" aria-valuenow="${escape(String(Number.isFinite(value) ? value : ""))}"><span class="rta-sheet-gauge__fill" style="inline-size: ${share}%"></span><span class="rta-sheet-gauge__text">${escape(formatSheetValue(node.value))}${Number.isFinite(max) ? ` / ${escape(formatSheetValue(max))}` : ""}</span></span>`;
 }
 
-function valueControl(node, t, row) {
+/** The − and + of a value raised and lowered, the amount between them (1 when empty).
+    In the editor they are plain marks, so the whole block still drags (some browsers never drag a button). */
+function adjustHTML(t, data, edit) {
+  const button = (step, label) => edit ? `<span class="rta-sheet-value__step" data-sheet-adjust="${step}" aria-hidden="true">${step < 0 ? "−" : "+"}</span>`
+    : `<button type="button" class="rta-sheet-value__step" ${data} data-sheet-adjust="${step}" aria-label="${escape(t(label))}">${step < 0 ? "−" : "+"}</button>`;
+  return `${button(-1, "RTA.Sheet.Lower")}<input type="number" class="rta-sheet-value__amount" data-sheet-adjust-amount step="any" min="0" placeholder="1" aria-label="${escape(t("RTA.Sheet.Amount"))}">${button(1, "RTA.Sheet.Raise")}`;
+}
+
+function valueControl(node, t, row, edit = false) {
   const write = node.write, data = `data-sheet-write="${escape(node.id)}"${row ? ` data-definition-id="${escape(row)}"` : ""} data-operation="${escape(write?.operation ?? "")}"`;
   const numericValue = ["number", "integer"].includes(node.valueType);
   if (node.display === "dots" && numericValue) return dotsControl(node, t, data);
   // A gauge shows the bar; a player who may change the value still gets its field beside it.
-  if (node.display === "gauge" && numericValue) return `${gaugeHTML(node)}${write ? valueControl({...node, display: undefined, maximum: undefined}, t, row) : ""}`;
+  // A gauge already shows the number: raised and lowered, it only adds the − and +.
+  if (node.display === "gauge" && numericValue) return `${gaugeHTML(node)}${write?.operation === "adjust" ? adjustHTML(t, data, edit) : write ? valueControl({...node, display: undefined, maximum: undefined}, t, row, edit) : ""}`;
   const bound = node.maximum !== undefined ? `<span class="rta-sheet-value__bound">/ ${escape(formatSheetValue(node.maximum))}</span>` : "";
   if (node.valueType === "boolean") {
     if (write) return `<input type="checkbox" ${data} ${node.value ? "checked" : ""}>`;
@@ -60,6 +70,8 @@ function valueControl(node, t, row) {
     const limits = numeric ? `${node.minimum !== undefined ? ` min="${escape(node.minimum)}"` : ""}${node.maximum !== undefined ? ` max="${escape(node.maximum)}"` : ""}${node.valueType === "integer" ? ` step="1"` : ` step="any"`}` : "";
     return `<input type="${numeric ? "number" : "text"}" ${data} value="${escape(node.value ?? "")}"${limits}>${bound}`;
   }
+  // adjust: raised or lowered by the amount typed (1 when none) with − and +.
+  if (write.operation === "adjust") return `<span class="rta-sheet-value__text">${escape(formatSheetValue(node.value))}</span>${bound}${adjustHTML(t, data, edit)}`;
   // add / subtract: the value stays read; the field takes the amount, applied on change, then cleared.
   const sign = write.operation === "add" ? "+" : "−";
   return `<span class="rta-sheet-value__text">${escape(formatSheetValue(node.value))}</span>${bound}<input type="number" class="rta-sheet-value__amount" ${data} step="any" min="0" placeholder="${sign}" aria-label="${escape(t(write.operation === "add" ? "RTA.Sheet.Add" : "RTA.Sheet.Subtract"))}">`;
@@ -88,7 +100,7 @@ function renderNode(node, t, {row = null, solo = false, edit = false, editable =
     const label = node.label ? t(node.label) : node.labelKey ? t(node.labelKey) : "";
     const title = node.error ? ` title="${escape(node.error)}"` : "";
     // A row with a single value already says what it is: its label stays for screen readers only.
-    return `<div ${attrs(node, `rta-sheet-value${node.error ? " rta-sheet-value--unavailable" : ""}`)}${title}${m}><div class="rta-sheet-value__inner"><span class="rta-sheet-value__label${solo ? " rta-sheet-visually-hidden" : ""}">${escape(label)}</span><span class="rta-sheet-value__control">${valueControl(node, t, row)}</span></div></div>`;
+    return `<div ${attrs(node, `rta-sheet-value${node.error ? " rta-sheet-value--unavailable" : ""}`)}${title}${m}><div class="rta-sheet-value__inner"><span class="rta-sheet-value__label${solo ? " rta-sheet-visually-hidden" : ""}">${escape(label)}</span><span class="rta-sheet-value__control">${valueControl(node, t, row, edit)}</span></div></div>`;
   }
   // In the editor a button is a plain block: some browsers never drag a button.
   if (node.kind === "action") return edit ? `<div ${attrs(node, "rta-sheet-action")}${m}>${escape(t(node.label))}</div>`
@@ -98,7 +110,7 @@ function renderNode(node, t, {row = null, solo = false, edit = false, editable =
   if (node.kind === "image") {
     // A picture: a banner, a logo. In the editor, an image block without its picture yet says so.
     const look = [`--rta-sheet-image-height: ${SHEET_IMAGE_HEIGHTS[node.height] ?? SHEET_IMAGE_HEIGHTS.medium}`, `--rta-sheet-image-fit: ${node.fit === "contain" ? "contain" : "cover"}`, ...(node.style?.opacity !== undefined ? [`opacity: ${Number(node.style.opacity) / 100}`] : [])];
-    const shape = ["rounded", "circle"].includes(node.shape) ? ` rta-sheet-image--${node.shape}` : "";
+    const shape = ["rounded", "square", "portrait", "landscape", "circle"].includes(node.shape) ? ` rta-sheet-image--${node.shape}` : "";
     return node.src ? `<div ${attrs(node, `rta-sheet-image${shape}`, look)}${m}><img src="${escape(node.src)}" alt=""></div>` : edit ? `<div ${attrs(node, `rta-sheet-image rta-sheet-image--empty${shape}`, look)}${m}><i class="fa-solid fa-image"></i> ${escape(t("RTA.SheetEditor.NoImage"))}</div>` : "";
   }
   if (node.kind === "contents") return renderContents(node, t, {edit, editable, m});

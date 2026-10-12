@@ -1360,7 +1360,10 @@
       "RemoveContent": "Retirer",
       "RemoveContentConfirm": "Retirer {name} ? Ce qu'il donnait est retiré aussi.",
       "Contents": "Contenus",
-      "OtherItems": "Autres objets"
+      "OtherItems": "Autres objets",
+      "Raise": "Augmenter",
+      "Lower": "Diminuer",
+      "Amount": "Quantité"
     },
     "SheetEditor": {
       "Layout": "Mise en page",
@@ -1410,8 +1413,7 @@
         "content": "Contenu détenu"
       },
       "Write": {
-        "none": "Lecture seule",
-        "set": "Modifiable",
+        "set": "Saisie libre",
         "add": "Peut être augmentée",
         "subtract": "Peut être diminuée"
       },
@@ -1508,11 +1510,17 @@
       "LabelPlacement": "Libellé placé",
       "ImageShape": "Forme",
       "Shape": {
+        "free": "Libre (toute la largeur)",
+        "rounded": "Libre, coins arrondis",
         "square": "Carrée",
-        "rounded": "Arrondie",
+        "portrait": "Portrait",
+        "landscape": "Paysage",
         "circle": "Ronde"
       },
-      "AddTab": "Ajouter un onglet"
+      "AddTab": "Ajouter un onglet",
+      "Fill": "Couleur de la jauge",
+      "FillTo": "Dégradé vers",
+      "DotColor": "Couleur des pastilles"
     },
     "Reaction": {
       "Title": "Réaction",

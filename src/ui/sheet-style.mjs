@@ -26,6 +26,9 @@ export function sheetStyle(node) {
   if (SHEET_ALIGNS.includes(style.align)) { css.push(`text-align: ${style.align}`); classes.push(`rta-sheet-align-${style.align}`); }
   if (SHEET_SPACES[style.padding]) css.push(`padding: ${SHEET_SPACES[style.padding]}`);
   if (style.label === "top" || style.label === "hidden") classes.push(`rta-sheet-value--label-${style.label}`);
+  // A gauge (or dots) fills with one color, or a gradient from the first to the second.
+  const fill = colorValue(style.fill), fillTo = colorValue(style.fillTo);
+  if (fill || fillTo) css.push(`--rta-sheet-fill: ${fill && fillTo ? `linear-gradient(to right, ${fill}, ${fillTo})` : fill ?? fillTo}`, `--rta-sheet-fill-solid: ${fill ?? fillTo}`);
   return {classes, css, gap: SHEET_GAPS.includes(style.gap) ? `var(--rta-gap-${style.gap})` : null};
 }
 

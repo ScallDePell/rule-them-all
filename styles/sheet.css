@@ -176,7 +176,7 @@
 }
 
 .rta-sheet-value__control > input.rta-sheet-value__amount {
-  inline-size: 3.5rem;
+  inline-size: 3rem;
 }
 
 .rta-sheet-value__control > input[type="text"] {
@@ -381,11 +381,28 @@ button.rta-sheet-content__name {
   border-radius: var(--rta-radius-panel);
 }
 
-/* A circle (a portrait): as wide as it is high, centred in its cell. */
-.rta-sheet-image--circle {
+/* A shape keeps its proportions at the chosen height, centred in its cell: a portrait, a token, a map. */
+.rta-sheet-image:is(.rta-sheet-image--square, .rta-sheet-image--portrait, .rta-sheet-image--landscape, .rta-sheet-image--circle) {
   justify-self: center;
-  inline-size: var(--rta-sheet-image-height);
-  aspect-ratio: 1;
+  inline-size: auto;
+  max-inline-size: 100%;
+  aspect-ratio: var(--rta-sheet-image-ratio);
+}
+
+.rta-sheet-image--square,
+.rta-sheet-image--circle {
+  --rta-sheet-image-ratio: 1;
+}
+
+.rta-sheet-image--portrait {
+  --rta-sheet-image-ratio: 3 / 4;
+}
+
+.rta-sheet-image--landscape {
+  --rta-sheet-image-ratio: 4 / 3;
+}
+
+.rta-sheet-image--circle {
   border-radius: 50%;
 }
 
@@ -493,13 +510,13 @@ button.rta-sheet-content__name {
   min-block-size: 0;
   margin: 0;
   padding: 0;
-  border: var(--rta-frame-border) solid var(--rta-color-border-highlight);
+  border: var(--rta-frame-border) solid var(--rta-sheet-fill-solid, var(--rta-color-border-highlight));
   border-radius: 50%;
   background: none;
 }
 
 .rta-sheet-dot--on {
-  background: var(--rta-color-border-highlight);
+  background: var(--rta-sheet-fill-solid, var(--rta-color-border-highlight));
 }
 
 button.rta-sheet-dot {
@@ -523,8 +540,13 @@ button.rta-sheet-dot {
   position: absolute;
   inset-block: 0;
   inset-inline-start: 0;
-  background: var(--rta-color-border-highlight);
-  opacity: .45;
+  background: var(--rta-sheet-fill, var(--rta-color-border-highlight));
+  opacity: var(--rta-sheet-fill-opacity, .45);
+}
+
+/* A color chosen for the gauge shows at full strength. */
+[style*="--rta-sheet-fill"] .rta-sheet-gauge__fill {
+  --rta-sheet-fill-opacity: .85;
 }
 
 .rta-sheet-gauge__text {
@@ -550,4 +572,21 @@ button.rta-sheet-dot {
 
 .rta-sheet-value__control:has(> .rta-sheet-gauge) {
   flex: 1;
+}
+
+/* − and + of a value that goes both ways, around the amount. */
+.rta-sheet-value__step {
+  flex: 0 0 auto;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  inline-size: var(--input-height, 1.75rem);
+  block-size: var(--input-height, 1.75rem);
+  padding: 0;
+}
+
+/* In the editor the − and + are marks drawn like the buttons. */
+span.rta-sheet-value__step {
+  border: var(--rta-frame-border) solid var(--rta-color-border-highlight);
+  border-radius: var(--rta-radius-control);
 }

@@ -54,8 +54,14 @@ const result = await page.evaluate(async ({fixture, en, urls}) => {
   check('moving it up', find(layout(), 'derived').children.findIndex(c => c.id === added.id) === 1);
   await click('[data-layout-canvas] [data-layout-node="stat-value"]');
   check('a row value offers the listed Definition outputs', element.querySelector('[data-layout-properties] [data-layout-prop="sourceKind"]')?.value === 'each');
-  await set('[data-layout-properties] [data-layout-prop="write"]', 'add');
+  const tick = async key => { const box = element.querySelector(`[data-layout-properties] [data-layout-write="${key}"]`); if (!box) { steps.push(`FAIL no ${key} box`); return; } box.checked = !box.checked; box.dispatchEvent(new Event('change', {bubbles: true})); await wait(); };
+  await tick('set');
+  await tick('add');
   check('making it increasable', find(layout(), 'stat-value').write?.operation === 'add');
+  await tick('subtract');
+  check('raising and lowering together', find(layout(), 'stat-value').write?.operation === 'adjust' && element.querySelector('[data-layout-canvas] [data-layout-node="stat-value"]')?.querySelectorAll('[data-sheet-adjust]').length === 2);
+  await click('[data-layout-command="undo"]');
+  await click('[data-layout-command="undo"]');
   await click('[data-layout-command="undo"]');
   check('undo', find(layout(), 'stat-value').write?.operation === 'set');
   // Drag the Strike button out of its section into the Stats section.
@@ -111,6 +117,13 @@ const result = await page.evaluate(async ({fixture, en, urls}) => {
   check('placing a label above its value', find(layout(), tabs.children[0].id).children[0].style?.label === 'top');
   await set('[data-layout-properties] [data-layout-prop="display"]', 'gauge');
   check('showing a value as a gauge', find(layout(), tabs.children[0].id).children[0].display === 'gauge' && element.querySelector('[data-layout-canvas] .rta-sheet-gauge'));
+  const tone = sel => [...(element.querySelector(sel)?.options ?? [])].map(option => option.value).find(value => !['default', 'custom', 'none'].includes(value));
+  await set('[data-layout-properties] [data-layout-style="fill"]', tone('[data-layout-properties] [data-layout-style="fill"]'));
+  await set('[data-layout-properties] [data-layout-style="fillTo"]', tone('[data-layout-properties] [data-layout-style="fillTo"]'));
+  { const gauge = find(layout(), tabs.children[0].id).children[0];
+    check('a gauge in a two-color gradient', gauge.style?.fill && gauge.style?.fillTo && element.querySelector(`[data-layout-canvas] [data-layout-node="${gauge.id}"]`)?.getAttribute('style')?.includes('linear-gradient')); }
+  await click('[data-layout-command="undo"]');
+  await click('[data-layout-command="undo"]');
   await click('[data-layout-command="undo"]');
   // A Definition family adds the list of its Definitions.
   await click('[data-layout-canvas] [data-layout-node="derived"]');
@@ -141,6 +154,8 @@ const result = await page.evaluate(async ({fixture, en, urls}) => {
   await set('[data-layout-properties] [data-layout-prop="src"]', 'icons/svg/d20.svg');
   await set('[data-layout-properties] [data-layout-prop="height"]', 'small');
   check('choosing its picture and height', find(layout(), image.id).src === 'icons/svg/d20.svg' && find(layout(), image.id).height === 'small');
+  await set('[data-layout-properties] [data-layout-prop="shape"]', 'portrait');
+  check('a portrait picture', find(layout(), image.id).shape === 'portrait' && element.querySelector('[data-layout-canvas] .rta-sheet-image--portrait'));
   await set('[data-layout-properties] [data-layout-prop="shape"]', 'circle');
   check('a round picture', find(layout(), image.id).shape === 'circle' && element.querySelector('[data-layout-canvas] .rta-sheet-image--circle'));
   await click('[data-layout-canvas] [data-layout-node="derived"]');
@@ -165,6 +180,16 @@ if (process.env.RTA_SHOTS) {
   await page.screenshot({path: join(process.env.RTA_SHOTS, 'sheet-editor-scrolled.png')});
   await page.evaluate(() => { const side = document.querySelector('.rta-sheet-editor__side'); side.scrollTop = side.scrollHeight; });
   await page.screenshot({path: join(process.env.RTA_SHOTS, 'sheet-editor-palette.png')});
+  // A value shown as a gradient gauge that players raise and lower.
+  await page.evaluate(async () => {
+    const wait = () => new Promise(r => setTimeout(r, 60)), fire = (field, value) => { if (typeof value === 'boolean') field.checked = value; else field.value = value; field.dispatchEvent(new Event('change', {bubbles: true})); };
+    const props = () => document.querySelector('[data-layout-properties]');
+    fire(props().querySelector('[data-layout-prop="display"]'), 'gauge'); await wait();
+    for (const [prop, value] of [['fill', 'danger'], ['fillTo', 'warning']]) { fire(props().querySelector(`[data-layout-style="${prop}"]`), value); await wait(); }
+    for (const key of ['set', 'add', 'subtract']) { const box = props().querySelector(`[data-layout-write="${key}"]`); if (box) { fire(box, key !== 'set'); await wait(); } }
+    document.querySelector('.rta-sheet-editor__side').scrollTop = 0; document.querySelector('.rta-config-entry__scroll').scrollTop = 0;
+  });
+  await page.screenshot({path: join(process.env.RTA_SHOTS, 'sheet-editor-gauge.png')});
 }
 await browser.close();
 for (const line of [...result, ...errors.map(e => `FAIL error: ${e}`)]) console.log(line);

@@ -4,7 +4,7 @@
    intent: {sheetId, nodeId, value, definitionId?, contentKey?, contentTypeId?}
    - definitionId: the repeater row the value belongs to;
    - contentKey: the owned Content an Item sheet shows; contentTypeId picks the AUTO Item sheet.
-   With add or subtract, value is the amount; with set, the new value. Setting a value.final moves its value.base by the difference. */
+   With add or subtract, value is the amount; with adjust, a signed amount (−2 lowers by 2); with set, the new value. Setting a value.final moves its value.base by the difference. */
 import {sheetFor} from "../configurator/sheet-auto-layout.mjs";
 import {normalizeRuntimeContainerRef} from "./runtime-contracts.mjs";
 import {RuntimeTransactionError, TRANSACTION_ERRORS} from "./runtime-transaction.mjs";
@@ -16,6 +16,8 @@ function findPath(node, id, path = []) {
   for (const child of node?.children ?? []) { const found = findPath(child, id, [...path, node]); if (found) return found; }
   return null;
 }
+/** How an amount moves the value: added, taken away, or as signed (adjust). */
+const sign = operation => operation === "subtract" ? -1 : 1;
 const forbidden = message => new RuntimeTransactionError(TRANSACTION_ERRORS.forbidden, message);
 
 export async function writeSheetValue(engine, versionId, containerRef, intent = {}) {
@@ -34,7 +36,7 @@ export async function writeSheetValue(engine, versionId, containerRef, intent = 
     if (!await engine.adapter.canWrite(actor)) throw forbidden("You cannot change this Item.");
     const current = (await engine.listOwnedContents(versionId, actor)).find(row => row.key === intent.contentKey);
     if (!current) throw new Error(`Owned Content not found: ${intent.contentKey}.`);
-    const value = operation === "set" ? intent.value : Number(current.fields?.[source.fieldId] ?? 0) + (operation === "add" ? 1 : -1) * Number(intent.value);
+    const value = operation === "set" ? intent.value : Number(current.fields?.[source.fieldId] ?? 0) + sign(operation) * Number(intent.value);
     return engine.setContentField(versionId, actor, intent.contentKey, source.fieldId, value);
   }
 
@@ -54,7 +56,7 @@ export async function writeSheetValue(engine, versionId, containerRef, intent = 
   await engine.resolveReference(versionId, stored, scope, {forWrite: true});
   const shown = await engine.resolveReference(versionId, reference, scope);
   const next = reference.capabilityId === "state" ? (operation === "set" ? Boolean(intent.value) : !shown)
-    : operation === "set" ? Number(intent.value) : Number(shown) + (operation === "add" ? 1 : -1) * Number(intent.value);
+    : operation === "set" ? Number(intent.value) : Number(shown) + sign(operation) * Number(intent.value);
   if (reference.capabilityId !== "state" && !Number.isFinite(next)) throw new Error("A number is expected.");
   const id = reference.objectId;
   if (reference.capabilityId === "value") {

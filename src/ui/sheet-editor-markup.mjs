@@ -53,7 +53,16 @@ export function renderLayoutPropertiesHTML(node, ctx) {
     rows.push(row(t("RTA.SheetEditor.LabelPlacement", "Label placed"), select("labelPlace", ctx.labelPlaces, node.style?.label ?? "side")));
     if (ctx.numeric) rows.push(row(t("RTA.SheetEditor.DisplayAs", "Shown as"), select("display", ctx.displays, node.display ?? "field")));
     if (node.display === "dots") rows.push(row(t("RTA.SheetEditor.DotCount", "Dots (without a maximum)"), select("dots", ctx.dotCounts, String(node.dots ?? 5))));
-    if (ctx.writable) rows.push(row(t("RTA.SheetEditor.Player", "On the sheet"), select("write", ctx.writeChoices, node.write?.operation ?? "")));
+    if (["gauge", "dots"].includes(node.display) && ctx.numeric && ctx.style) {
+      rows.push(...colorRows("fill", node.display === "gauge" ? t("RTA.SheetEditor.Fill", "Gauge color") : t("RTA.SheetEditor.DotColor", "Dot color"), node.style ?? {}, ctx.style.tones));
+      if (node.display === "gauge") rows.push(...colorRows("fillTo", t("RTA.SheetEditor.FillTo", "Gradient to"), node.style ?? {}, ctx.style.tones));
+    }
+    if (ctx.writable) {
+      // What a player may do with it: type a value, raise it, lower it (raise and lower together: −/+ buttons).
+      const operation = node.write?.operation, on = {set: operation === "set", add: ["add", "adjust"].includes(operation), subtract: ["subtract", "adjust"].includes(operation)};
+      const check = (key, label) => `<label class="rta-sheet-editor__check"><input type="checkbox" data-layout-write="${key}"${on[key] ? " checked" : ""}${key !== "set" && on.set ? " disabled" : ""}> ${label}</label>`;
+      rows.push(row(t("RTA.SheetEditor.Player", "On the sheet"), `<div class="rta-sheet-editor__checks">${check("set", t("RTA.SheetEditor.Write.set", "Can be changed"))}${check("add", t("RTA.SheetEditor.Write.add", "Can be raised"))}${check("subtract", t("RTA.SheetEditor.Write.subtract", "Can be lowered"))}</div>`));
+    }
   }
   if (node.kind === "action") {
     rows.push(row(t("RTA.SheetEditor.Action", "Action"), select("actionRef", ctx.actions, node.actionRef)));
@@ -62,7 +71,7 @@ export function renderLayoutPropertiesHTML(node, ctx) {
   if (node.kind === "text") rows.push(row(t("RTA.SheetEditor.Text", "Text"), text("textKey", node.textKey)));
   if (node.kind === "image") {
     rows.push(row(t("RTA.SheetEditor.Image", "Image"), imageField("src", node.src)));
-    rows.push(row(t("RTA.SheetEditor.ImageShape", "Shape"), select("shape", ctx.shapes, node.shape ?? "square")));
+    rows.push(row(t("RTA.SheetEditor.ImageShape", "Shape"), select("shape", ctx.shapes, node.shape ?? "free")));
     rows.push(row(t("RTA.SheetEditor.ImageFit", "Fit"), select("fit", ctx.fits, node.fit ?? "cover")));
     rows.push(row(t("RTA.SheetEditor.ImageHeight", "Height"), select("height", ctx.heights, node.height ?? "medium")));
   }
@@ -75,16 +84,20 @@ export function renderLayoutPropertiesHTML(node, ctx) {
   return `<div class="rta-sheet-editor__properties-head"><strong>${kindLabel(node.kind)}</strong></div>${rows.join("")}${ctx.style ? renderStyleHTML(node, ctx.style) : ""}`;
 }
 
+/** A color setting: a theme tone or a color of one's own ("custom": its picker shows below). */
+export function colorRows(prop, label, style, tones) {
+  const value = style[prop] ?? "", custom = /^#/.test(value);
+  const rows = [row(label, `<select data-layout-style="${prop}">${renderSelectOptions(tones(prop), {valueKey: "value", labelKey: "label", colorize: true, selectedValue: custom ? "custom" : value || "default"})}</select>`)];
+  if (custom) rows.push(row(t("RTA.SheetEditor.Style.Custom", "Own color"), `<input type="color" data-layout-style-hex="${prop}" value="${escape(value)}">`));
+  return rows;
+}
+
 /** The Style group: how the selected block looks. ctx: {open, containers, tones(prop), fonts, sizes, aligns, paddings, gaps}.
    A color is a theme tone or a color of one's own ("custom": its picker shows below). */
 export function renderStyleHTML(node, ctx) {
   const style = node.style ?? {}, rows = [], container = ctx.containers.includes(node.kind);
   const styleSelect = (prop, choices, selected) => `<select data-layout-style="${prop}">${renderSelectOptions(choices, {valueKey: "value", labelKey: "label", colorize: true, selectedValue: selected ?? ""})}</select>`;
-  const color = (prop, label) => {
-    const value = style[prop] ?? "", custom = /^#/.test(value);
-    rows.push(row(label, styleSelect(prop, ctx.tones(prop), custom ? "custom" : value || "default")));
-    if (custom) rows.push(row(t("RTA.SheetEditor.Style.Custom", "Own color"), `<input type="color" data-layout-style-hex="${prop}" value="${escape(value)}">`));
-  };
+  const color = (prop, label) => rows.push(...colorRows(prop, label, style, ctx.tones));
   if (node.kind !== "image") {
     color("color", t("RTA.SheetEditor.Style.Color", "Text color"));
     color("background", t("RTA.SheetEditor.Style.Background", "Background"));

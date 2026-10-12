@@ -17,12 +17,14 @@
               | {kind: "each", capabilityId, outputId, slotId?}        the output of the repeater's current Definition (its first slot by default)
               | {kind: "field", fieldId}                               a field of the Content an Item sheet shows
               | {kind: "content", contentTypeId}                       the name of the Content(s) the Actor holds of that type (its Origin…)
-   write     := {operation: "set" | "add" | "subtract"}                only on an output, each or field source (CP-30 WriteBinding);
+   write     := {operation: "set" | "add" | "subtract" | "adjust"}     only on an output, each or field source (CP-30 WriteBinding);
+                                                                       adjust: raised and lowered (an amount either way);
                                                                        a value.final is written through its value.base
    action    := {kind: "action", actionRef, labelKey?}                 a button that uses the Action (on the repeater's Definition inside one)
    text      := {kind: "text", textKey}
-   image     := {kind: "image", src, fit?: "cover" | "contain", height?: "small" | "medium" | "large", shape?: "rounded" | "circle"}
-                a picture (a banner, a logo, a portrait); a circle is as wide as it is high
+   image     := {kind: "image", src, fit?: "cover" | "contain", height?: "small" | "medium" | "large", shape?}
+                a picture (a banner, a logo, a portrait). shape: none fills the width (a banner), "rounded" the same with
+                rounded corners; "square", "portrait" (3:4), "landscape" (4:3) and "circle" keep their proportions at that height
    contents  := {kind: "contents", contentTypeIds?}                  the Contents the Actor holds (its Items), of these Content Types (all when none);
                                                                        dropping an Item on the sheet adds one
    spacer    := {kind: "spacer"}
@@ -37,11 +39,11 @@ export const LAYOUT_LEAVES = Object.freeze(["value", "action", "text", "image", 
 export const LAYOUT_NODE_KINDS = Object.freeze([...LAYOUT_CONTAINERS, ...LAYOUT_LEAVES]);
 export const LAYOUT_SOURCE_KINDS = Object.freeze(["output", "formula", "parameter", "each", "field", "content"]);
 export const LAYOUT_VALUE_DISPLAYS = Object.freeze(["field", "gauge", "dots"]);
-export const LAYOUT_IMAGE_SHAPES = Object.freeze(["rounded", "circle"]);
+export const LAYOUT_IMAGE_SHAPES = Object.freeze(["rounded", "square", "portrait", "landscape", "circle"]);
 export const LAYOUT_MAX_DOTS = 20;
 /** Sources a sheet can write to. */
 export const LAYOUT_WRITABLE_SOURCES = Object.freeze(["output", "each", "field"]);
-export const LAYOUT_WRITE_OPERATIONS = Object.freeze(["set", "add", "subtract"]);
+export const LAYOUT_WRITE_OPERATIONS = Object.freeze(["set", "add", "subtract", "adjust"]);
 export const LAYOUT_MAX_DEPTH = 8;
 export const LAYOUT_MAX_NODES = 500;
 const MAX_COLUMNS = {section: 4, grid: 6, repeater: 6};
