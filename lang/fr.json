@@ -545,7 +545,11 @@
       "RollFactor": "Facteur après le jet",
       "TargetDefinitionFormula": "Definition choisie par",
       "Table": "Table",
-      "TableAfterEffects": "Puis tirer sur la Table"
+      "TableAfterEffects": "Puis tirer sur la Table",
+      "RerollAction": "Relance",
+      "RerollHelp": "Cette Action annule une utilisation d'une autre Action et la rejoue avec de nouveaux dés. Ses coûts sont payés dans la même étape. Aucune Action cochée : toute Action avec un Test. Les Conditions peuvent lire variables.reroll.count (1 pour la première relance).",
+      "IsReroll": "Relance une autre Action",
+      "RerollOf": "Actions qu'elle peut relancer"
     },
     "EditorDisplay": {
       "NoneSelected": "Aucune sélection",
@@ -711,7 +715,13 @@
       "NoDefinition": "Aucune",
       "UsedContent": "Contenu utilisé",
       "NoContent": "Aucun",
-      "Unavailable": "indisponible"
+      "Unavailable": "indisponible",
+      "Outcome": "Résultat",
+      "TargetOutcome": "Cible {name}",
+      "FollowUps": "Puis",
+      "RerollCount": "Relances",
+      "Reroll": "Relancer {name} avec",
+      "RerollButton": "Relancer"
     },
     "TestInput": {
       "Title": "Entrées",

@@ -44,7 +44,7 @@ await api.createRoll(v,{id:'r1',nameKey:'d20',formula:'1d20',data:{}});
 for(const [id,nameKey] of [['o-crit','Critical'],['o-hit','Hit'],['o-miss','Miss']])await api.createOutcome(v,{id,nameKey,resultKey:id,conditionRef:'c1'});
 await api.createTest(v,{id:'t1',nameKey:'Attack',rollRef:'r1',targetValue:12,outcomeRefs:['o-crit','o-hit'],fallbackOutcomeRef:'o-miss'});
 await api.createTable(v,{id:'tb1',nameKey:'Critical hits',rollRef:'r1',rows:[{id:'low',labelKey:'Scratch',min:null,max:10,actionRefs:['a1']},{id:'high',labelKey:'Severed limb',min:11,max:null,actionRefs:[]}]});
-await api.createAction(v,{id:'a2',nameKey:'Swing',testRef:'t1',conditionRefs:[],costEffectRefs:[],effectRefs:[],tableRef:'tb1',outcomeMappings:[{outcomeId:'o-miss',block:true},{outcomeId:'o-crit',actionRefs:['a1']}]});
+await api.createAction(v,{id:'a2',nameKey:'Swing',testRef:'t1',conditionRefs:[],costEffectRefs:[],effectRefs:[],tableRef:'tb1',targeting:'shared',reroll:{actionRefs:['a1']},outcomeMappings:[{outcomeId:'o-miss',block:true},{outcomeId:'o-crit',actionRefs:['a1']}]});
 // Harness-only copy exposing the private view state.
 const src=readFileSync(join(root,'src/configurator/configurator-app.mjs'),'utf8')
   .replace('#view = "general";','#view = globalThis.__qa.view;').replace('#displayMode = "tiles";','#displayMode = globalThis.__qa.mode;').replace('#selected = "";','#selected = globalThis.__qa.selected;');

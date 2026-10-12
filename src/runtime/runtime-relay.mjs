@@ -3,7 +3,7 @@ import {RuntimeTransactionError} from "./runtime-transaction.mjs";
 
 /** Runtime writes a player may ask the GM client to perform (CP-11): Foundry runs no module
  * code on the server, so a Document the player does not own is written by the active GM. */
-export const RELAYED_METHODS=Object.freeze(["instantiateDefinition","removeDefinitionState","setDefinitionState","addCollectionEntry","removeCollectionEntry","transferCollectionEntry","initializeContainer","executeAction","compensate","acquire","setContentField","releaseContent","removeStateInstance","expireStates"]);
+export const RELAYED_METHODS=Object.freeze(["instantiateDefinition","removeDefinitionState","setDefinitionState","addCollectionEntry","removeCollectionEntry","transferCollectionEntry","initializeContainer","executeAction","rerollAction","compensate","acquire","setContentField","releaseContent","removeStateInstance","expireStates"]);
 export const RELAY_ERRORS=Object.freeze({noGM:"RUNTIME_GM_UNAVAILABLE",timeout:"RUNTIME_RELAY_TIMEOUT",method:"RUNTIME_RELAY_METHOD"});
 
 /** GM side: replay the call with the rules checked for the requesting user, never for the GM. */

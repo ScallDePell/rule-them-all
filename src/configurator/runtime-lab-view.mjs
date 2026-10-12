@@ -42,9 +42,21 @@ export function describeRuntimeResult(kind, data, {i18n = key => key, nameOf = (
         return card(data.preview ? "ActionPreview" : "ActionExecuted", {tone: "failure", message: reason});
       }
       const changes = (data.changes ?? []).map(change => ({name: nameOf("effects", change.effectId), before: JSON.stringify(change.before ?? null), after: JSON.stringify(change.after ?? null)}));
+      // What decided the changes: the Test (per target when there are several), the Table row, the Actions that followed.
+      const outcomeOf = test => test?.outcome ? `${nameOf("outcomes", test.outcome.id)} (${test.total})` : null;
+      const followed = list => (list ?? []).filter(follow => follow.allowed).flatMap(follow => [nameOf("actions", follow.actionId), ...followed(follow.followUps)]);
+      const after = followed([...(data.followUps ?? []), ...(data.targets ?? []).flatMap(run => run.followUps ?? [])]);
+      const rows = [
+        ...(data.testResult ? [row(i18n("RTA.Lab.Outcome"), outcomeOf(data.testResult))] : []),
+        ...(data.targets ?? []).map(run => row(i18n("RTA.Lab.TargetOutcome", {name: run.target?.id ?? ""}), run.allowed ? outcomeOf(run.testResult) ?? "✓" : i18n("RTA.Lab.BlockedByOutcome"))),
+        ...(data.tableResult ? [row(nameOf("tables", data.tableResult.tableId), `${data.tableResult.total} → ${data.tableResult.row?.labelKey || data.tableResult.row?.id || "—"}`)] : []),
+        ...(after.length ? [row(i18n("RTA.Lab.FollowUps"), after.join(", "))] : []),
+        ...(data.rerollCount ? [row(i18n("RTA.Lab.RerollCount"), data.rerollCount)] : [])
+      ];
       return card(data.preview ? "ActionPreview" : "ActionExecuted", {
         tone: "success",
         message: i18n(changes.length ? "RTA.Lab.ChangeCount" : "RTA.Lab.NoChange", {count: changes.length}),
+        rows,
         changes
       });
     }

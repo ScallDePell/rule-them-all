@@ -91,6 +91,7 @@ export class RuntimeEngine{
     const [versionId]=args;
     if(method==="transferCollectionEntry")return [args[1]?.from?.containerRef,args[1]?.to?.containerRef].filter(Boolean).map(normalizeRuntimeContainerRef);
     if(method==="acquire"){const ref=normalizeRuntimeContainerRef(args[1]),{actionId=null,context={}}=args[2]??{};return actionId?[ref,...this.writeTargets("executeAction",[versionId,actionId,{...context,roles:{...(context.roles??{}),self:ref,source:ref}}])]:[ref];}
+    if(method==="rerollAction"){const [,rerollId,original={},context={}]=args,refs=[...this.writeTargets("executeAction",[versionId,original.actionId,original.context??{}]),...this.writeTargets("executeAction",[versionId,rerollId,context])];return [...new Map(refs.map(ref=>[this.#refKey(ref),ref])).values()];}
     if(method!=="executeAction")return [normalizeRuntimeContainerRef(args[1])];
     const ruleset=this.ruleset(versionId),context=args[2]??{},roles=new Set(),seen=new Set();
     const visit=actionId=>{
@@ -649,6 +650,57 @@ export class RuntimeEngine{
     if(committed.duplicate)return result;
     this.hooks?.callAll?.(RUNTIME_HOOKS.actionExecuted,clone(result),context);
     await this.#emitActionEvents(versionId,{actionId,testResult:plan.testResult,context,followUps:plan.followUps,targets:plan.targets},eventDepth,result.events);return result;
+  }
+  /** Reroll: undo one use of an Action and replay it with new dice, in one transaction with the reroll Action's
+   * own costs. original: {actionId, transactionId, context, rerollCount?} as the first use returned them.
+   * The replay and the reroll Action read variables.reroll.count (1 for the first reroll), so a Condition can
+   * cap the rerolls; a use already rerolled is refused, its reroll can be rerolled in turn. */
+  async rerollAction(versionId,rerollActionId,original={},context={},{transactionId=null}={}){
+    const ruleset=this.ruleset(versionId),reroll=ruleset.actions?.find(x=>x.id===rerollActionId&&enabled(x));
+    if(!reroll?.reroll)throw new Error(`Not a reroll Action: ${rerollActionId}.`);
+    const {actionId,transactionId:originalId,context:originalContext={}}=original;
+    const action=ruleset.actions?.find(x=>x.id===actionId&&enabled(x));if(!action)throw new Error(`Action unavailable: ${actionId}.`);
+    if(!originalId)throw new Error("A reroll needs the transaction of the use it replaces.");
+    if(reroll.reroll.actionRefs.length?!reroll.reroll.actionRefs.includes(actionId):!action.testRef)throw new Error(`${rerollActionId} cannot reroll ${actionId}.`);
+    await this.#require(versionId,"execute",{objectKind:"action",objectId:rerollActionId},roleRef(context,"self"),context);
+    await this.#require(versionId,"execute",{objectKind:"action",objectId:actionId},roleRef(originalContext,"self"),originalContext);
+    // Undo the first use on every container it wrote, provided nothing changed them since. Of a reroll,
+    // only its replay is undone: the use it replaced stays undone and its costs stay paid.
+    const staged=new Map(),refs=new Map();let count=Number(original.rerollCount??0)+1;
+    for(const ref of this.writeTargets("rerollAction",[versionId,rerollActionId,original,context])){
+      const key=this.#refKey(ref),ledger=await this.adapter.loadLedger(ref);
+      if(ledger.some(entry=>entry.corrects===originalId))throw new RuntimeTransactionError(TRANSACTION_ERRORS.compensation,`This use of ${actionId} was already rerolled.`,{transactionId:originalId});
+      const entries=ledger.filter(entry=>entry.transactionId===originalId&&(entry.part??"action")==="action");if(!entries.length)continue;
+      const state=await this.adapter.load(ref,{rulesetVersionId:versionId});
+      for(const entry of entries.reverse()){
+        if(JSON.stringify(applyLedgerChanges(clone(state),entry.changes,"after"))!==JSON.stringify(state))throw new RuntimeTransactionError(TRANSACTION_ERRORS.compensation,`Runtime container changed after the use of ${actionId}; it can no longer be rerolled.`,{transactionId:originalId});
+        applyLedgerChanges(state,entry.changes,"before");count=Math.max(count,Number(entry.summary?.rerollCount??0)+1);
+      }
+      staged.set(key,state);refs.set(key,ref);
+    }
+    const snapshot=()=>new Map([...staged].map(([key,state])=>[key,clone(state)])),undone=snapshot();
+    const rerollContext={...context,variables:{...(context.variables??{}),reroll:{count,actionId}}};
+    const paid=await this.previewAction(versionId,rerollActionId,rerollContext,{staged});
+    if(!paid.allowed)return {...paid,staged:undefined,context:undefined};
+    const afterCost=snapshot();
+    const replayContext={...originalContext,variables:{...(originalContext.variables??{}),reroll:{count,actionId}}};
+    const plan=await this.previewAction(versionId,actionId,replayContext,{staged});
+    if(!plan.allowed)return {...plan,staged:undefined,context:undefined};
+    for(const change of [...paid.changes,...plan.changes])if(change.containerRef)refs.set(this.#refKey(change.containerRef),normalizeRuntimeContainerRef(change.containerRef));
+    const tx=this.transaction(versionId,"reroll",{transactionId,corrects:originalId,summary:{actionId,rerollActionId,rerollOf:originalId,rerollCount:count,outcomeKey:plan.testResult?.outcome?.resultKey??null}});
+    // One ledger entry per part: the undone use, the reroll's costs, the replay (the part a later reroll undoes).
+    for(const [key,ref] of refs)if(staged.has(key)){
+      const steps=[["undo",undone],["cost",afterCost]].filter(([,states])=>states.has(key)).map(([part,states])=>({part,state:states.get(key)}));
+      const state=staged.get(key);tx.stage(ref,state,(steps[0]?.state??state).runtimeRevision,{steps,part:"action"});
+    }
+    const committed=await this.#commit(tx);
+    const strip=list=>list.map(({context:_context,followUps:inner=[],targets,...rest})=>({...rest,followUps:strip(inner),...(targets?{targets:strip(targets)}:{})}));
+    const result={actionId,rerollActionId,allowed:true,rerollCount:count,testResult:plan.testResult??null,tableResult:plan.tableResult??null,followUps:strip(plan.followUps),...(plan.targets?{targets:strip(plan.targets)}:{}),changes:[...paid.changes,...plan.changes],committed:true,duplicate:committed.duplicate,transactionId:committed.transactionId,ledgerEntryIds:committed.entries.map(entry=>entry.id),events:[]};
+    if(committed.duplicate)return result;
+    this.hooks?.callAll?.(RUNTIME_HOOKS.actionExecuted,clone(result),replayContext);
+    await this.#emitActionEvents(versionId,{actionId:rerollActionId,testResult:paid.testResult,context:paid.context,followUps:paid.followUps,targets:paid.targets},0,result.events);
+    await this.#emitActionEvents(versionId,{actionId,testResult:plan.testResult,context:plan.context,followUps:plan.followUps,targets:plan.targets},0,result.events);
+    return result;
   }
   /** After the commit: the events of the Action, then those of each follow-up that ran, each with its own context.
    * An Action on several targets emits its events once per target its Outcome let through. */

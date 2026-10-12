@@ -61,14 +61,16 @@ export class RuntimeTransaction{
     if(!this.#staged.has(key)){const state=await this.#adapter.load(ref,{rulesetVersionId:this.rulesetVersionId});this.#staged.set(key,{ref,state,expected:state.runtimeRevision});}
     return this.#staged.get(key).state;
   }
-  /** Stage a state prepared elsewhere (an Action preview) against the revision it was read at. */
-  stage(containerRef,state,expectedRevision=state.runtimeRevision){
-    const ref=normalizeRuntimeContainerRef(containerRef);this.#staged.set(containerKey(ref),{ref,state,expected:expectedRevision});return state;
+  /** Stage a state prepared elsewhere (an Action preview) against the revision it was read at.
+   * steps: [{part, state}], the states the container went through before `state`, in order; each step
+   * gets its own ledger entry (marked with its part) so that one part can be undone later on its own. */
+  stage(containerRef,state,expectedRevision=state.runtimeRevision,{steps=[],part=null}={}){
+    const ref=normalizeRuntimeContainerRef(containerRef);this.#staged.set(containerKey(ref),{ref,state,expected:expectedRevision,steps,part});return state;
   }
   get containers(){return [...this.#staged.values()].map(entry=>copyJSON(entry.ref));}
   async commit(){
     const adapter=this.#adapter,writes=[];
-    for(const {ref,state,expected} of this.#staged.values()){
+    for(const {ref,state,expected,steps=[],part=null} of this.#staged.values()){
       const current=await adapter.load(ref,{rulesetVersionId:this.rulesetVersionId}),ledger=await adapter.loadLedger(ref);
       const done=ledger.filter(entry=>entry.transactionId===this.id);
       if(done.length)return {transactionId:this.id,duplicate:true,entries:copyJSON(done)};
@@ -81,8 +83,11 @@ export class RuntimeTransaction{
       // Allowed by the rules but not by Foundry: only the GM client can write this Document.
       if(!await adapter.canWrite(ref))throw new RuntimeTransactionError(TRANSACTION_ERRORS.needsGM,"Runtime target can only be written by the GM client.",{ref});
       const next={...copyJSON(state),runtimeRevision:current.runtimeRevision+1};
-      const entry={id:newId("ledger"),transactionId:this.id,kind:this.kind,rulesetVersionId:this.rulesetVersionId,at:Date.now(),worldTime:globalThis.game?.time?.worldTime??null,userId:this.userId,summary:copyJSON(this.summary),revision:next.runtimeRevision,changes,corrects:this.corrects};
-      writes.push({ref,previous:current,previousLedger:ledger,next,ledger:[...ledger,entry].slice(-LEDGER_LIMIT),entry});
+      const entryFor=(stepChanges,stepPart)=>({id:newId("ledger"),transactionId:this.id,kind:this.kind,rulesetVersionId:this.rulesetVersionId,at:Date.now(),worldTime:globalThis.game?.time?.worldTime??null,userId:this.userId,summary:copyJSON(this.summary),revision:next.runtimeRevision,changes:stepChanges,corrects:this.corrects,...(stepPart?{part:stepPart}:{})});
+      let previous=current;const entries=[];
+      for(const step of [...steps,{part,state}]){const stepChanges=diffRuntimeStates(previous,step.state);if(stepChanges.length)entries.push(entryFor(stepChanges,step.part));previous=step.state;}
+      if(!entries.length)entries.push(entryFor(changes,part));
+      writes.push({ref,previous:current,previousLedger:ledger,next,ledger:[...ledger,...entries].slice(-LEDGER_LIMIT),entries});
     }
     const written=[];
     try{for(const write of writes){await adapter.write(write.ref,{state:write.next,ledger:write.ledger});written.push(write);}}
@@ -96,6 +101,6 @@ export class RuntimeTransaction{
       throw new RuntimeTransactionError(TRANSACTION_ERRORS.failed,`Runtime transaction failed: ${cause?.message??cause}`,{cause,compensated:!failures.length,compensationFailures:failures});
     }
     for(const write of writes)this.stage(write.ref,write.next,write.next.runtimeRevision);
-    return {transactionId:this.id,duplicate:false,entries:writes.map(write=>copyJSON(write.entry))};
+    return {transactionId:this.id,duplicate:false,entries:writes.flatMap(write=>copyJSON(write.entries))};
   }
 }

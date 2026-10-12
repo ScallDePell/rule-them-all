@@ -81,6 +81,8 @@ export class ConfiguratorApp extends ConfiguratorWindow {
   #scroll = new Map();
   #restoreScroll = false;
   #runtimeResult = null;
+  /** The last Action the Lab executed, {actionId, transactionId, context, rerollCount}: what a reroll Action replays. */
+  #runtimeLastUse = null;
   // null: not chosen yet, defaulted on render; "": cleared by the user, kept cleared.
   #runtimeSelection = {source:null,target:null,actionId:null,formulaId:null,conditionId:null,testId:null,eventTypeId:null,rollFormula:"",sourceType:"",targetType:"",actorRole:"source",tool:"test",definitionId:"",contentKey:"",inputs:{}};
   /** The selected Action's inputs, as described by the runtime (typed values, allowed options). */
@@ -322,6 +324,11 @@ export class ConfiguratorApp extends ConfiguratorWindow {
           return {id:input.id,name:localize(api,this.#selected,input.labelKey),value:chosen,hasOptions:options.length>0,options:[...(input.required&&input.defaultValue!==undefined?[]:[{value:"",name:"—",selected:chosen===""}]),...options.map(option=>({value:String(option.value),name:option.labelKey?localize(api,this.#selected,option.labelKey):String(option.value),selected:String(option.value)===chosen}))]};});
       }catch(error){runtimeInputRows=[];this.#error=error?.message??String(error);}
     }
+    // Reroll Actions that may replay the Lab's last executed Action.
+    const lastUse=this.#runtimeLastUse,lastAction=lastUse&&(ruleset?.actions??[]).find(x=>x.id===lastUse.actionId);
+    const runtimeRerolls=ruleset&&this.#view==="runtimeLab"&&runtimeTool==="action"&&lastAction?(ruleset.actions??[]).filter(x=>x.enabled!==false&&x.reroll&&(x.reroll.actionRefs?.length?x.reroll.actionRefs.includes(lastAction.id):Boolean(lastAction.testRef))).map(x=>({id:x.id,name:localize(api,this.#selected,x.nameKey),colors:runtimeColors("action",x),selected:x.id===this.#runtimeSelection.rerollId})):[];
+    if(runtimeRerolls.length&&!runtimeRerolls.some(x=>x.selected))runtimeRerolls[0].selected=true;
+    const runtimeLastUseName=lastAction?localize(api,this.#selected,lastAction.nameKey):"";
     const runtimeModes={isTest:runtimeTool==="test",isAction:runtimeTool==="action",isFormula:runtimeTool==="formula",isCondition:runtimeTool==="condition",isEvent:runtimeTool==="event",isRoll:runtimeTool==="roll",editSource:this.#runtimeSelection.actorRole!=="target",editTarget:this.#runtimeSelection.actorRole==="target"};
     const runtimeLists={test:runtimeTests,action:runtimeActions,formula:runtimeFormulas,condition:runtimeConditions,event:runtimeEvents};
     const runtimeGuide=label(runtimeTool==="roll"||runtimeLists[runtimeTool]?.length?`RTA.Lab.Guide.${runtimeTool}`:`RTA.Lab.Empty.${runtimeTool}`);
@@ -330,7 +337,7 @@ export class ConfiguratorApp extends ConfiguratorWindow {
       error:this.#error,displayLines:this.#displayMode==="lines",displayTiles:this.#displayMode==="tiles",isWorkspace:!!ruleset,isRulesets:!ruleset,view:this.#view,rulesets,navigation,navGroups,currentNavGroup,definitionTypes,contentTypes,
       selectedRuleset:ruleset,selectedRecord:record,rulesetAccent:rulesetColor(ruleset),canOverrideCollection,currentCollection,collectionAccent,collectionCustomAccent,canEditRuleset:record?.status!=="validated",selectedRulesetName:ruleset?localize(api,this.#selected,ruleset.nameKey):"",
       isGeneral:!!ruleset&&this.#view==="general",isCollection:!!ruleset&&Boolean(currentKind),isContentFamily:currentKind==="contentTemplate",isDependencies:!!ruleset&&this.#view==="dependencies",isRuntimeLab:!!ruleset&&this.#view==="runtimeLab",isContentTypes,isContentTemplates,isContentLibraries,
-      currentTitle,currentKind,currentType,canReorder:Boolean(record&&record.status!=="validated"&&currentKind),cards:filteredCards,availableTags,availableCategories,hasFacets:availableTags.length>0||availableCategories.length>0,hasActiveFilters:activeTagIds.size>0||activeCategoryIds.size>0,dependencyGroups:dependencyVisibleGroups,dependencySelected,dependencyGraph,dependencyStats,dependencyAvailableTags,dependencyActiveTagCount:dependencyActiveTags.size,dependencyUnresolvedOnly,actors,runtimeActions,runtimeFormulas,runtimeConditions,runtimeTests,runtimeEvents,runtimeDefinitionChoices,runtimeContentChoices,runtimeInputRows,runtimeResult:this.#runtimeResult,runtimeStateCards,runtimeSelection:this.#runtimeSelection,runtimeHasActorSubtypes:availableDocumentTypes("Actor").length>1,runtimeActorTypeOptions:availableDocumentTypes("Actor").map(id=>({id,sourceSelected:id===this.#runtimeSelection.sourceType,targetSelected:id===this.#runtimeSelection.targetType})),runtimeTool,runtimeModes,runtimeGuide,runtimeReady,runtimeStateError,runtimeActorNames,
+      currentTitle,currentKind,currentType,canReorder:Boolean(record&&record.status!=="validated"&&currentKind),cards:filteredCards,availableTags,availableCategories,hasFacets:availableTags.length>0||availableCategories.length>0,hasActiveFilters:activeTagIds.size>0||activeCategoryIds.size>0,dependencyGroups:dependencyVisibleGroups,dependencySelected,dependencyGraph,dependencyStats,dependencyAvailableTags,dependencyActiveTagCount:dependencyActiveTags.size,dependencyUnresolvedOnly,actors,runtimeActions,runtimeFormulas,runtimeConditions,runtimeTests,runtimeEvents,runtimeDefinitionChoices,runtimeContentChoices,runtimeInputRows,runtimeRerolls,runtimeLastUseName,runtimeResult:this.#runtimeResult,runtimeStateCards,runtimeSelection:this.#runtimeSelection,runtimeHasActorSubtypes:availableDocumentTypes("Actor").length>1,runtimeActorTypeOptions:availableDocumentTypes("Actor").map(id=>({id,sourceSelected:id===this.#runtimeSelection.sourceType,targetSelected:id===this.#runtimeSelection.targetType})),runtimeTool,runtimeModes,runtimeGuide,runtimeReady,runtimeStateError,runtimeActorNames,
       publishReadiness:this.#view==='general'&&record?.status==='draft'?this.#publishReadiness(api,ruleset):null,
       recipes:this.#view==='general'&&record?recipeCards():null,
       lifecycle:record?{isValidated:record.status==="validated",isReady:record.status==="ready",isDraft:record.status==="draft",canMutate:record.status!=="validated",canCreateVersion:record.status==="validated",canActivate:Boolean(record.publishedSnapshot),isActive:record.versionId===activeId,statusLabel:statusLabel(record.status)}:null,
@@ -600,8 +607,16 @@ export class ConfiguratorApp extends ConfiguratorWindow {
       if (action==="runtimeCondition") return this.#runtimeShow("condition",{value:await game.ruleThemAll.runtimeLab.evaluateCondition(this.#selected,runtimeId("conditionId"),this.#runtimeContext())});
       if (action==="runtimePreviewAction"||action==="runtimeExecuteAction") {
         const id=runtimeId("actionId"),preview=action==="runtimePreviewAction";
-        const result=preview?await game.ruleThemAll.runtimeLab.previewAction(this.#selected,id,this.#runtimeContext()):await game.ruleThemAll.runtimeLab.executeAction(this.#selected,id,this.#runtimeContext());
+        const context=this.#runtimeContext(),result=preview?await game.ruleThemAll.runtimeLab.previewAction(this.#selected,id,context):await game.ruleThemAll.runtimeLab.executeAction(this.#selected,id,context);
+        if(!preview&&result.allowed&&result.transactionId)this.#runtimeLastUse={actionId:id,transactionId:result.transactionId,context,rerollCount:0};
         return this.#runtimeShow("action",{...result,preview});
+      }
+      if (action==="runtimeReroll") {
+        const use=this.#runtimeLastUse,rerollId=String(this.element.querySelector('[data-runtime-select="rerollId"]')?.value??"");
+        if(!use||!rerollId)throw new Error(label("RTA.Lab.Error.Choose.actionId"));
+        const result=await game.ruleThemAll.runtimeLab.rerollAction(this.#selected,rerollId,use,this.#runtimeContext());
+        if(result.allowed&&result.transactionId)this.#runtimeLastUse={...use,transactionId:result.transactionId,rerollCount:result.rerollCount};
+        return this.#runtimeShow("action",{...result,preview:false});
       }
       if (action==="runtimeTest") return this.#runtimeShow("test",await game.ruleThemAll.runtimeLab.executeTest(this.#selected,runtimeId("testId"),this.#runtimeContext()));
       if (action==="runtimeRoll") {

@@ -30,6 +30,7 @@ export function createRuntimeAPI(configurator,{adapter=new FoundryRuntimeAdapter
     describeActionInputs:(versionId,id,context)=>engine.describeActionInputs(versionId,id,context),
     userTargets:()=>adapter.userTargets?.()??[],
     executeAction:write("executeAction"),
+    rerollAction:write("rerollAction"),
     describeContainer:ref=>adapter.describe(ref),
     getLedger:ref=>engine.getLedger(ref),
     compensate:write("compensate"),

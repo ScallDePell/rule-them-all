@@ -549,7 +549,11 @@
       "RollFactor": "Factor after the roll",
       "TargetDefinitionFormula": "Definition chosen by",
       "Table": "Table",
-      "TableAfterEffects": "Then roll on Table"
+      "TableAfterEffects": "Then roll on Table",
+      "RerollAction": "Reroll",
+      "RerollHelp": "This Action undoes one use of another Action and replays it with new dice. Its costs are paid in the same step. No Action ticked: any Action with a Test. Conditions can read variables.reroll.count (1 for the first reroll).",
+      "IsReroll": "Rerolls another Action",
+      "RerollOf": "Actions it can reroll"
     },
     "EditorDisplay": {
       "NoneSelected": "None selected",
@@ -715,7 +719,13 @@
       "NoDefinition": "None",
       "UsedContent": "Content used",
       "NoContent": "None",
-      "Unavailable": "unavailable"
+      "Unavailable": "unavailable",
+      "Outcome": "Outcome",
+      "TargetOutcome": "Target {name}",
+      "FollowUps": "Then",
+      "RerollCount": "Rerolls",
+      "Reroll": "Reroll {name} with",
+      "RerollButton": "Reroll"
     },
     "TestInput": {
       "Title": "Inputs",
