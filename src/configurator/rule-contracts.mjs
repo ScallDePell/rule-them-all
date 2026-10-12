@@ -190,9 +190,12 @@ function prepareActionInput(data,index,options){
   if(x.defaultValue!==undefined){typed(x.defaultValue,'defaultValue');if(x.options.length&&!x.options.some(option=>option.value===x.defaultValue))throw new Error(`${label}.defaultValue is not one of its options.`);}
   return x;
 }
+export const ACTION_TARGETING=Object.freeze(['one','each','shared']);
 export function prepareAction(data,options={}){
-  const x={descriptionKey:'',enabled:true,order:0,tags:[],inputs:[],conditionRefs:[],costEffectRefs:[],acquisitions:[],stateRemovals:[],stateApplications:[],modifierApplications:[],effectRefs:[],testRef:null,outcomeMappings:[],tableRef:null,eventTypeRefs:[],...copyJSON(data)};
+  const x={descriptionKey:'',enabled:true,order:0,tags:[],inputs:[],conditionRefs:[],costEffectRefs:[],acquisitions:[],stateRemovals:[],stateApplications:[],modifierApplications:[],effectRefs:[],testRef:null,outcomeMappings:[],tableRef:null,targeting:'one',eventTypeRefs:[],...copyJSON(data)};
   identity(x,'Action',options);
+  // targeting: one target, or each of context.targets with its own Effect dice ("each") or the same dice for all ("shared").
+  if(!ACTION_TARGETING.includes(x.targeting))throw new Error(`Action.targeting must be one of ${ACTION_TARGETING.join(', ')}.`);
   // tableRef: a Table rolled after the Effects; its row runs its Actions. An outcome mapping's actionRefs run after the Effects too.
   if(x.tableRef==='')x.tableRef=null;
   if(x.tableRef!==null&&!nonempty(x.tableRef))throw new Error('Action.tableRef must be null or a Table id.');

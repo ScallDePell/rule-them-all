@@ -101,10 +101,14 @@ export class RuntimeEngine{
       if(action.tableRef)for(const row of ruleset.tables?.find(x=>x.id===action.tableRef)?.rows??[])(row.actionRefs??[]).forEach(visit);
       const effectIds=[...(action.costEffectRefs??[]),...(action.effectRefs??[]),...(action.outcomeMappings??[]).flatMap(m=>m?.effectRefs??[])];
       for(const id of effectIds){const effect=ruleset.effects?.find(x=>x.id===id);if(effect)roles.add(effect.targetRole??"target");}
+      for(const entry of [...(action.stateRemovals??[]),...(action.stateApplications??[]),...(action.modifierApplications??[]),...(action.acquisitions??[])])roles.add(entry.targetRole??"target");
       for(const eventTypeId of action.eventTypeRefs??[])for(const trigger of ruleset.triggers??[])if(trigger.eventTypeId===eventTypeId)(trigger.actionRefs??[]).forEach(visit);
     };
     visit(args[1]);
-    return [...roles].map(role=>roleRef(context,role)).filter(Boolean).map(normalizeRuntimeContainerRef);
+    const refs=[...roles].map(role=>roleRef(context,role));
+    if(roles.has("target")&&Array.isArray(context.targets))refs.push(...context.targets);
+    const unique=new Map(refs.filter(Boolean).map(normalizeRuntimeContainerRef).map(ref=>[this.#refKey(ref),ref]));
+    return [...unique.values()];
   }
   async needsGM(method,args){for(const ref of this.writeTargets(method,args))if(!await this.adapter.canWrite(ref))return true;return false;}
   async #commit(tx){const committed=await tx.commit();if(!committed.duplicate)for(const entry of committed.entries)this.hooks?.callAll?.(RUNTIME_HOOKS.ledgerEntry,clone(entry));return committed;}
@@ -397,7 +401,8 @@ export class RuntimeEngine{
   }
   /** Roll operand: the Roll's dice (multiplied by a Formula, e.g. 2 on a critical hit) plus a bonus Formula,
    * then a factor Formula rounded down (half for a resistance), never below the minimum. */
-  async #rollOperand(versionId,operand,context,evaluator){
+  /** shared: {cache,key}; the dice thrown under that key are reused, while bonus and factor stay per target. */
+  async #rollOperand(versionId,operand,context,evaluator,shared=null){
     const ruleset=this.ruleset(versionId),rollDef=ruleset.rolls?.find(x=>x.id===operand.rollRef&&enabled(x));if(!rollDef)throw new Error(`Roll unavailable: ${operand.rollRef}.`);
     const multiplier=operand.multiplierFormulaRef?Number(await evaluator.formula(operand.multiplierFormulaRef,context)):1;
     const bonus=operand.bonusFormulaRef?Number(await evaluator.formula(operand.bonusFormulaRef,context)):0;
@@ -405,7 +410,8 @@ export class RuntimeEngine{
     const factor=operand.factorFormulaRef?Number(await evaluator.formula(operand.factorFormulaRef,context)):1;
     if(!Number.isFinite(factor))throw new Error(`Roll factor of ${operand.rollRef} is not a number.`);
     const {formula,data}=await this.#rollFormula(rollDef,context,evaluator);
-    const roll=await this.roll(multiplyDice(resolveRollData(formula,data),multiplier),data);
+    let roll=shared?.cache.get(shared.key);
+    if(!roll){roll=await this.roll(multiplyDice(resolveRollData(formula,data),multiplier),data);shared?.cache.set(shared.key,roll);}
     let value=Number(roll.total)+bonus;if(factor!==1)value=Math.floor(value*factor);
     return {value:Number.isFinite(operand.minimum)?Math.max(operand.minimum,value):value,roll:{formula:String(roll.formula??formula),total:Number(roll.total),result:String(roll.result??roll.total??""),bonus,...(factor!==1?{factor}:{})}};
   }
@@ -419,13 +425,14 @@ export class RuntimeEngine{
     if(cap==="pool"){next=boundPoolValue(pool.slot,next,pool.bounds,`${reference.objectId}/${pool.slot.id}`);poolSlotState(ds,reference.slotId).current=next;}
     else if(cap==="value")ds.capabilityStates.value.base=Number(next);else ds.capabilityStates.state.active=Boolean(next);return clone(next);
   }
-  async previewEffect(versionId,effectId,context={},staged=new Map()){
+  /** dice: a Map shared by the targets of one Action use, so each Effect rolls its dice once for all of them. */
+  async previewEffect(versionId,effectId,context={},staged=new Map(),dice=null){
     const ruleset=this.ruleset(versionId),effect=ruleset.effects?.find(x=>x.id===effectId&&enabled(x));if(!effect)throw new Error(`Effect unavailable: ${effectId}.`);
     const evaluator=this.evaluator(versionId,staged);evaluator.__staged=staged;const role=effect.targetRole??"target";
     // A Formula may name the Definition written (the slot level chosen); the target keeps its capability, output and slot.
     let targetRef=effect.targetRef;
     if(effect.targetDefinitionFormulaRef){const chosen=await evaluator.formula(effect.targetDefinitionFormulaRef,{...context,defaultRole:role}),id=typeof chosen==="string"?chosen:chosen?.objectId;if(!id)throw new Error(`Effect ${effect.id}: its Formula names no Definition.`);targetRef={...effect.targetRef,objectId:id};}
-    const target=await this.resolveReference(versionId,targetRef,{...context,defaultRole:role},{forWrite:true,role,staged});const key=this.#refKey(target.containerRef);if(!staged.has(key))staged.set(key,clone(target.state));const state=staged.get(key);let rolled=null,operand;if(effect.operand?.kind==="roll"){rolled=await this.#rollOperand(versionId,effect.operand,context,evaluator);operand=rolled.value;}else operand=await this.#operand(versionId,effect.operand,context,evaluator);const before=this.#readOutput(ruleset,state,targetRef);let pool=null;if(targetRef.capabilityId==="pool"){const {slot}=this.#outputContract(ruleset,targetRef);pool={slot,bounds:await this.#poolBounds(slot,{...context,defaultRole:role},evaluator)};}const after=this.#writeOutput(state,targetRef,effect.operation,operand,pool);return {effectId,before,after,operand,...(rolled?{roll:rolled.roll}:{}),containerRef:target.containerRef};
+    const target=await this.resolveReference(versionId,targetRef,{...context,defaultRole:role},{forWrite:true,role,staged});const key=this.#refKey(target.containerRef);if(!staged.has(key))staged.set(key,clone(target.state));const state=staged.get(key);let rolled=null,operand;if(effect.operand?.kind==="roll"){rolled=await this.#rollOperand(versionId,effect.operand,context,evaluator,dice?{cache:dice,key:effect.id}:null);operand=rolled.value;}else operand=await this.#operand(versionId,effect.operand,context,evaluator);const before=this.#readOutput(ruleset,state,targetRef);let pool=null;if(targetRef.capabilityId==="pool"){const {slot}=this.#outputContract(ruleset,targetRef);pool={slot,bounds:await this.#poolBounds(slot,{...context,defaultRole:role},evaluator)};}const after=this.#writeOutput(state,targetRef,effect.operation,operand,pool);return {effectId,before,after,operand,...(rolled?{roll:rolled.roll}:{}),containerRef:target.containerRef};
   }
   /** Instantiate one acquired Definition in a container state (CP-16). Returns the new
    * DefinitionState, null when an `ifAbsent` grant is already there, or "present". */
@@ -567,14 +574,17 @@ export class RuntimeEngine{
     return {tableId:table.id,total,roll:{formula:String(roll.formula??formula),total:Number(roll.total),result:String(roll.result??roll.total??""),bonus},row:row?{id:row.id,labelKey:row.labelKey,actionRefs:[...(row.actionRefs??[])]}:null};
   }
   /** previewAction options.acquisitions: extra grants run with the Action's own (a Content's bindings).
-   * staged/depth: a follow-up Action (an Outcome's or a Table row's) previews into its parent's staged states. */
+   * staged/depth: a follow-up Action (an Outcome's or a Table row's) previews into its parent's staged states.
+   * An Action whose targeting is "each" or "shared" runs its Test, Effects, Table and follow-ups once per
+   * context.targets entry (costs, acquisitions and Conditions once); "shared" rolls Effect dice once for all. */
   async previewAction(versionId,actionId,context={},{acquisitions=[],content=null,staged:shared=null,depth=0}={}){
     const ruleset=this.ruleset(versionId),action=ruleset.actions?.find(x=>x.id===actionId&&enabled(x));if(!action)throw new Error(`Action unavailable: ${actionId}.`);const staged=shared??new Map(),evaluator=this.evaluator(versionId,staged);evaluator.__staged=staged;
     context=this.#actionInputs(ruleset,action,context);
+    const many=["each","shared"].includes(action.targeting),targets=many?(Array.isArray(context.targets)?context.targets:[roleRef(context,"target")]).filter(Boolean):null;
+    if(many&&!targets.length)throw new Error(`Action ${action.id} needs at least one target.`);
+    if(many)context={...context,roles:{...(context.roles??{}),target:targets[0]}};
     for(const conditionId of action.conditionRefs??[])if(!await evaluator.condition(conditionId,context))return {actionId,allowed:false,reason:"condition",conditionId,changes:[]};
     const changes=[];for(const effectId of action.costEffectRefs??[])changes.push(await this.previewEffect(versionId,effectId,context,staged));
-    let testResult=null,effectRefs=[...(action.effectRefs??[])],next=[];
-    if(action.testRef){testResult=await this.executeTest(versionId,action.testRef,context);const mapping=(action.outcomeMappings??[]).find(m=>m?.outcomeId===testResult.outcome?.id||m?.resultKey===testResult.outcome?.resultKey);if(mapping){if(Array.isArray(mapping.effectRefs))effectRefs=mapping.effectRefs;if(mapping.block===true)return {actionId,allowed:false,reason:"outcome",testResult,changes:[]};next=[...(mapping.actionRefs??[])];}}
     // Acquisitions come before the Effects, which may then target the new DefinitionStates.
     const acquired=[];
     for(const acquisition of [...(action.acquisitions??[]),...acquisitions]){
@@ -582,15 +592,34 @@ export class RuntimeEngine{
       const ref=normalizeRuntimeContainerRef(target),key=this.#refKey(ref);
       if(!staged.has(key))staged.set(key,await this.adapter.load(ref,{rulesetVersionId:versionId}));
       const created=await this.#acquireInto(versionId,ruleset,ref,staged.get(key),acquisition);
-      if(created==="present")return {actionId,allowed:false,reason:"acquired",definitionId:acquisition.definitionId,testResult,changes:[]};
+      if(created==="present")return {actionId,allowed:false,reason:"acquired",definitionId:acquisition.definitionId,changes:[]};
       if(created){changes.push({acquisition:acquisition.definitionId,before:null,after:clone(created),containerRef:ref});acquired.push(acquisition.definitionId);}
       else if(Object.keys(acquisition.add??{}).length)changes.push({acquisitionAdd:acquisition.definitionId,add:clone(acquisition.add),containerRef:ref});
     }
     if(content){const {ref,state}=await this.#stagedState(versionId,context,"self",staged);this.#addContent(versionId,state,content);changes.push({content:content.key,templateId:content.templateId,containerRef:ref});}
+    if(!many){
+      const run=await this.#previewOnTarget(versionId,ruleset,action,context,staged,evaluator,changes,acquired,depth);
+      if(!run.allowed)return {actionId,allowed:false,reason:run.reason,testResult:run.testResult,changes:[]};
+      return {actionId,allowed:true,testResult:run.testResult,tableResult:run.tableResult,followUps:run.followUps,changes,acquired,staged,context};
+    }
+    if(action.targeting==="shared")evaluator.__dice=new Map();
+    const runs=[];
+    for(const target of targets){
+      const targetContext={...context,roles:{...context.roles,target}};
+      const run=await this.#previewOnTarget(versionId,ruleset,action,targetContext,staged,evaluator,changes,acquired,depth);
+      runs.push({target:normalizeRuntimeContainerRef(target),allowed:run.allowed,reason:run.reason??null,testResult:run.testResult,tableResult:run.tableResult??null,followUps:run.followUps??[],context:targetContext});
+    }
+    return {actionId,allowed:true,testResult:null,tableResult:null,followUps:[],targets:runs,changes,acquired,staged,context};
+  }
+  /** One target's part of an Action: Test and its Outcome, states and Modifiers, Effects, Table, follow-ups.
+   * An Outcome that stops the Action leaves this target unchanged. */
+  async #previewOnTarget(versionId,ruleset,action,context,staged,evaluator,changes,acquired,depth){
+    let testResult=null,effectRefs=[...(action.effectRefs??[])],next=[];
+    if(action.testRef){testResult=await this.executeTest(versionId,action.testRef,context);const mapping=(action.outcomeMappings??[]).find(m=>m?.outcomeId===testResult.outcome?.id||m?.resultKey===testResult.outcome?.resultKey);if(mapping){if(Array.isArray(mapping.effectRefs))effectRefs=mapping.effectRefs;if(mapping.block===true)return {allowed:false,reason:"outcome",testResult};next=[...(mapping.actionRefs??[])];}}
     await this.#stageStates(versionId,ruleset,action,context,staged,evaluator,changes);
     // Effects read the Test under variables.test (total, margin, natural, outcome), e.g. damage that grows with the margin.
     const effectContext=testResult?{...context,variables:{...(context.variables??{}),...testResult.variables,test:{...testResult.variables.test,outcome:testResult.outcome}}}:context;
-    for(const effectId of effectRefs)changes.push(await this.previewEffect(versionId,effectId,effectContext,staged));
+    for(const effectId of effectRefs)changes.push(await this.previewEffect(versionId,effectId,effectContext,staged,evaluator.__dice));
     // Then the Table, whose row adds its Actions to the Outcome's: each follow-up previews on a copy of the
     // staged states, kept only when it is allowed (a follow-up refused by its Conditions changes nothing).
     let tableResult=null,followContext=effectContext;
@@ -599,12 +628,12 @@ export class RuntimeEngine{
     const followUps=[];
     for(const followId of next){
       const copy=new Map([...staged].map(([key,state])=>[key,clone(state)])),sub=await this.previewAction(versionId,followId,followContext,{staged:copy,depth:depth+1});
-      followUps.push({actionId:followId,allowed:sub.allowed,reason:sub.reason??null,testResult:sub.testResult??null,tableResult:sub.tableResult??null,followUps:sub.followUps??[],context:sub.context??null});
+      followUps.push({actionId:followId,allowed:sub.allowed,reason:sub.reason??null,testResult:sub.testResult??null,tableResult:sub.tableResult??null,followUps:sub.followUps??[],targets:sub.targets,context:sub.context??null});
       if(!sub.allowed)continue;
       for(const [key,state] of copy)staged.set(key,state);
       changes.push(...sub.changes);acquired.push(...sub.acquired);
     }
-    return {actionId,allowed:true,testResult,tableResult,followUps,changes,acquired,staged,context};
+    return {allowed:true,testResult,tableResult,followUps};
   }
   /** triggered: run by a Trigger, so no user chose it and only write permissions apply. */
   async executeAction(versionId,actionId,context={},{preview=false,eventDepth=0,transactionId=null,triggered=false,acquisitions=[],content=null}={}){
@@ -615,14 +644,16 @@ export class RuntimeEngine{
     const tx=this.transaction(versionId,"action",{transactionId,summary:{actionId,outcomeKey:plan.testResult?.outcome?.resultKey??null}});
     for(const [key,state] of plan.staged){const change=plan.changes.find(x=>this.#refKey(x.containerRef)===key);if(change)tx.stage(change.containerRef,state);}
     const committed=await this.#commit(tx);
-    const strip=list=>list.map(({context:_context,followUps:inner=[],...rest})=>({...rest,followUps:strip(inner)})),followUps=strip(plan.followUps);
-    const result={actionId,allowed:true,testResult:plan.testResult??null,tableResult:plan.tableResult??null,followUps,changes:plan.changes,acquired:plan.acquired,committed:true,duplicate:committed.duplicate,transactionId:committed.transactionId,ledgerEntryIds:committed.entries.map(entry=>entry.id),events:[]};
+    const strip=list=>list.map(({context:_context,followUps:inner=[],targets,...rest})=>({...rest,followUps:strip(inner),...(targets?{targets:strip(targets)}:{})})),followUps=strip(plan.followUps);
+    const result={actionId,allowed:true,testResult:plan.testResult??null,tableResult:plan.tableResult??null,followUps,...(plan.targets?{targets:strip(plan.targets)}:{}),changes:plan.changes,acquired:plan.acquired,committed:true,duplicate:committed.duplicate,transactionId:committed.transactionId,ledgerEntryIds:committed.entries.map(entry=>entry.id),events:[]};
     if(committed.duplicate)return result;
     this.hooks?.callAll?.(RUNTIME_HOOKS.actionExecuted,clone(result),context);
-    await this.#emitActionEvents(versionId,{actionId,testResult:plan.testResult,context,followUps:plan.followUps},eventDepth,result.events);return result;
+    await this.#emitActionEvents(versionId,{actionId,testResult:plan.testResult,context,followUps:plan.followUps,targets:plan.targets},eventDepth,result.events);return result;
   }
-  /** After the commit: the events of the Action, then those of each follow-up that ran, each with its own context. */
-  async #emitActionEvents(versionId,{actionId,testResult,context,followUps=[]},eventDepth,out){
+  /** After the commit: the events of the Action, then those of each follow-up that ran, each with its own context.
+   * An Action on several targets emits its events once per target its Outcome let through. */
+  async #emitActionEvents(versionId,{actionId,testResult,context,followUps=[],targets=null},eventDepth,out){
+    if(targets){for(const run of targets)if(run.allowed)await this.#emitActionEvents(versionId,{actionId,...run},eventDepth,out);return;}
     const action=this.ruleset(versionId).actions?.find(x=>x.id===actionId);
     for(const eventTypeId of action?.eventTypeRefs??[]){const emitted=await this.emitEvent(versionId,eventTypeId,{actionId,outcomeKey:testResult?.outcome?.resultKey??null},context,{depth:eventDepth+1});out.push({eventTypeId,actionId,triggered:emitted.triggered});}
     for(const follow of followUps)if(follow.allowed)await this.#emitActionEvents(versionId,follow,eventDepth,out);

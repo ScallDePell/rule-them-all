@@ -297,6 +297,7 @@
         <fieldset><legend>{{localize "RTA.Template.Action"}}</legend>
           {{> rtaIdentityName}}
           {{> rtaEnabled}}
+          <div class="form-group rta-form-row"><label>{{localize "RTA.Action.Targets"}}</label><select name="targeting" {{#if readOnly}}disabled{{/if}}>{{#each targetingChoices}}<option value="{{id}}" data-rta-colors="{{colors}}" {{#if selected}}selected{{/if}}>{{localize labelKey}}</option>{{/each}}</select></div>
           {{#with actionInputs}}{{> rtaCardList name="actionInput" card="rtaActionInputCard" title=(localize "RTA.ActionInput.Title") help=(localize "RTA.ActionInput.Help") add=(localize "RTA.ActionInput.Add")}}{{/with}}
           <div class="form-group rta-form-row"><label>{{localize "RTA.Template.TestOptional"}}</label><select name="testRef"><option value="">{{localize "RTA.Template.None"}}</option>{{#each testChoices}}<option value="{{id}}" data-rta-colors="{{colors}}" {{#if selected}}selected{{/if}}>{{label}}</option>{{/each}}</select></div>
           <details class="rta-config-entry__section" data-outcome-mappings open {{#unless hasOutcomeMappings}}hidden{{/unless}}><summary><strong>{{localize "RTA.OutcomeMapping.Title"}}</strong></summary>

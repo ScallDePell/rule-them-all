@@ -884,7 +884,7 @@
       },
       "action": {
         "Summary": "An Action is what a player or the GM triggers: Conditions, costs, an optional Test, then Effects.",
-        "Usage": "If a Condition is false nothing is written. Costs are paid before effects. An acquisition Action adds Definitions to the character before its effects."
+        "Usage": "If a Condition is false nothing is written. Costs are paid before effects. An acquisition Action adds Definitions to the character before its effects. With several targets, costs are paid once and the Test, Effects and Table run for each target."
       },
       "permissionPolicy": {
         "Summary": "A Permission decides who may read, write, execute or configure what. The GM always has every right.",
@@ -1076,6 +1076,14 @@
       "Result": "Result",
       "Actions": "Actions run",
       "NoActions": "No Action yet."
+    },
+    "Action": {
+      "Targets": "Targets",
+      "Targeting": {
+        "one": "One target",
+        "each": "Each target, own dice",
+        "shared": "Each target, same dice"
+      }
     }
   }
 }

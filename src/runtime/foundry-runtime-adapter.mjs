@@ -28,6 +28,8 @@ export class FoundryRuntimeAdapter{
   }
   worldTime(){return Number(game.time?.worldTime??0);}
   roundSeconds(){return Number(CONFIG.time?.roundTime??6);}
+  /** The Actors of the tokens the current user targets, for an Action on several targets (context.targets). */
+  userTargets(){return [...new Set([...(game.user?.targets??[])].map(token=>token.actor?.uuid).filter(Boolean))];}
   /** World Actors, their Items and world Items that hold runtime data. */
   async listContainers(){return [...(game.actors??[]).flatMap(actor=>[actor,...(actor.items??[])]),...(game.items??[])].filter(doc=>doc.getFlag?.(MODULE_ID,FLAG_KEY)).map(doc=>({uuid:doc.uuid}));}
   async loadLedger(ref){const doc=await this.resolveDocument(ref);const stored=doc.getFlag?.(MODULE_ID,LEDGER_KEY);return Array.isArray(stored)?copyJSON(stored):[];}

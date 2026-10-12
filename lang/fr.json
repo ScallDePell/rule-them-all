@@ -880,7 +880,7 @@
       },
       "action": {
         "Summary": "Une Action est ce qu'un joueur ou le MJ déclenche : Conditions, coûts, Test éventuel, puis Effects.",
-        "Usage": "Si une Condition est fausse, rien n'est écrit. Les coûts sont payés avant les effets. Une Action d'acquisition ajoute des Definitions au personnage avant ses effets."
+        "Usage": "Si une Condition est fausse, rien n'est écrit. Les coûts sont payés avant les effets. Une Action d'acquisition ajoute des Definitions au personnage avant ses effets. Avec plusieurs cibles, les coûts sont payés une fois, puis le Test, les Effets et la Table s'appliquent à chaque cible."
       },
       "permissionPolicy": {
         "Summary": "Une Permission décide qui peut lire, modifier, exécuter ou configurer quoi. Le MJ a toujours tous les droits.",
@@ -1072,6 +1072,14 @@
       "Result": "Résultat",
       "Actions": "Actions lancées",
       "NoActions": "Aucune Action pour l'instant."
+    },
+    "Action": {
+      "Targets": "Cibles",
+      "Targeting": {
+        "one": "Une cible",
+        "each": "Chaque cible, ses propres dés",
+        "shared": "Chaque cible, mêmes dés"
+      }
     }
   }
 }
