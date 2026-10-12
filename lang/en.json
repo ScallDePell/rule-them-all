@@ -1410,6 +1410,11 @@
         "subtract": "Can be decreased"
       },
       "BlockToAdd": "block to add"
+    },
+    "Reaction": {
+      "Title": "Reaction",
+      "Offer": "{name} can react:",
+      "Pass": "Let it pass"
     }
   }
 }

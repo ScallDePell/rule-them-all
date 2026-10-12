@@ -13,7 +13,7 @@ const i18n = key => globalThis.game?.i18n?.localize?.(key) ?? key;
 const notifyError = error => { console.error("Rule Them'All | Sheet", error); globalThis.ui?.notifications?.error?.(error?.message ?? String(error)); };
 
 /** Ruleset text first (world overrides, Ruleset translations), then the module's. */
-function translator(versionId) {
+export function translator(versionId) {
   const api = rta()?.configurator;
   return key => { if (!key) return ""; try { return api.resolveLocalizedText(versionId, globalThis.game?.i18n?.lang ?? "en", key, i18n); } catch { return i18n(key); } };
 }
@@ -28,7 +28,8 @@ export function actionSummary(result, {t, ruleset}) {
     const definition = ruleset.definitions?.find(d => d.id === run.definitionId);
     lines.push({label: t(definition?.nameKey ?? run.definitionId), value: run.testResult?.outcome ? t(run.testResult.outcome.labelKey) : run.allowed === false ? i18n("RTA.Sheet.NotAllowed") : "✓"});
   }
-  return {title: name(result.actionId), lines, outcome: test?.outcome ? t(test.outcome.labelKey) : ""};
+  // A reroll (a reaction such as a shield) shows the replayed use under the reroll Action's name.
+  return {title: result.rerollActionId ? `${name(result.rerollActionId)} · ${name(result.actionId)}` : name(result.actionId), lines, outcome: test?.outcome ? t(test.outcome.labelKey) : ""};
 }
 
 async function askInputs(inputs, t) {

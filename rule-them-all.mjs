@@ -13,6 +13,7 @@ import {registerRulesetDice} from "./src/runtime/foundry-dice.mjs";
 import {installInitiative, installInitiativePasses, rerollEachRound} from "./src/runtime/foundry-initiative.mjs";
 import {FoundryRuntimeAdapter} from "./src/runtime/foundry-runtime-adapter.mjs";
 import {registerRulesetSheets} from "./src/runtime/foundry-sheets.mjs";
+import {installReactions} from "./src/runtime/foundry-reactions.mjs";
 
 /** events: () => [{eventTypeId, payload, refs}], emitted in order on the containers they concern. */
 function emitModuleEvents(events) {
@@ -60,6 +61,8 @@ Hooks.once("ready", () => {
     const relay = new FoundrySocketRelay();
     game.ruleThemAll.runtime = createRuntimeAPI(api, {relay});
     relay.listen(message => game.ruleThemAll.runtime.serveRelay(message));
+    // Reactions offered by Triggers are asked of the reacting Actor's player, on their own client.
+    installReactions();
     // GM sandbox only: previews the working draft. Gameplay never uses it.
     game.ruleThemAll.runtimeLab = createRuntimeAPI(api, {rulesetSource: "draft"});
     game.ruleThemAll.content = new FoundryContentBridge(api, game.ruleThemAll.runtime);

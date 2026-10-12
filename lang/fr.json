@@ -1406,6 +1406,11 @@
         "subtract": "Peut être diminuée"
       },
       "BlockToAdd": "bloc à ajouter"
+    },
+    "Reaction": {
+      "Title": "Réaction",
+      "Offer": "{name} peut réagir :",
+      "Pass": "Laisser passer"
     }
   }
 }

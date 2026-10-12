@@ -87,3 +87,24 @@ test('Saving checks the reaction fields', async()=>{
   await assert.rejects(api.updateTrigger(v,'offer-shield',{mode:'later'}),/mode/);
   await assert.rejects(api.updateAction(v,'shield',{reroll:{actionRefs:[],keepDice:'yes'}}),/keepDice/);
 });
+
+test('In play: the reacting Actor\'s player is asked, and the Action picked replays the attack', async()=>{
+  const {api,v,engine,adapter,hooks}=await setup();
+  const {answerReaction,reactingUser}=await import('../src/runtime/foundry-reactions.mjs');
+  adapter.queue=[10];
+  await engine.executeAction(v,'sword',context);
+  const [, offer]=hooks.calls.find(([name])=>name==='ruleThemAllReactionOffered');
+  assert.equal(offer.rulesetVersionId,v);
+  const ruleset=api.getPublishedRuleset(v),t=key=>key,cards=[];let asked=null;
+  const passed=await answerReaction(offer,{runtime:engine,ruleset,t,ask:async request=>{asked=request;return null;}});
+  assert.equal(passed,null);assert.deepEqual(asked.actions,[{id:'shield',label:'Shield'}]);assert.equal(asked.eventLabel,'Hit by an attack');
+  const result=await answerReaction(offer,{runtime:engine,ruleset,t,ask:async()=>'shield',chat:{create:async card=>cards.push(card)}});
+  assert.equal(result.testResult.outcome.resultKey,'miss');assert.equal(await hp(engine,v,wizard),20);
+  assert.match(cards[0].content,/<strong>Shield · Sword<\/strong>.*Miss/);
+  // Who is asked: the player whose character it is, another active owner, else the GM.
+  const gm={id:'gm',active:true,isGM:true},ann={id:'ann',active:true,isGM:false,character:{id:'w'}},bob={id:'bob',active:true,isGM:false},off={id:'off',active:false,isGM:false};
+  const actor={id:'w',ownership:{ann:3,bob:3,off:3}};
+  assert.equal(reactingUser(actor,[gm,bob,ann,off],gm),ann);
+  assert.equal(reactingUser({id:'w',ownership:{bob:3}},[gm,bob],gm),bob);
+  assert.equal(reactingUser({id:'w',ownership:{off:3}},[gm,off],gm),gm);
+});

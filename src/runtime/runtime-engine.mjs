@@ -451,7 +451,7 @@ export class RuntimeEngine{
     // Its Conditions read the acting role as self (the defender's own Thorns).
     for(const conditionId of trigger.conditionRefs??[])if(!await this.evaluateCondition(versionId,conditionId,context))return;
     if(trigger.mode==="offer"){
-      const offer={triggerId:trigger.id,eventTypeId:trigger.eventTypeId,actionIds:[...(trigger.actionRefs??[])],actor:roleRef(context,"self"),context:plainContext(context),cause:clone(cause)};
+      const offer={triggerId:trigger.id,rulesetVersionId:versionId,eventTypeId:trigger.eventTypeId,actionIds:[...(trigger.actionRefs??[])],actor:roleRef(context,"self"),context:plainContext(context),cause:clone(cause)};
       this.hooks?.callAll?.(RUNTIME_HOOKS.reactionOffered,clone(offer));triggered.push({triggerId:trigger.id,actions:[],offer});return;
     }
     const actions=[];
