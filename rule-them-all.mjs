@@ -12,6 +12,7 @@ import {combatChangeEvents, timeElapsedPayload} from "./src/configurator/system-
 import {registerRulesetDice} from "./src/runtime/foundry-dice.mjs";
 import {installInitiative, installInitiativePasses, rerollEachRound} from "./src/runtime/foundry-initiative.mjs";
 import {FoundryRuntimeAdapter} from "./src/runtime/foundry-runtime-adapter.mjs";
+import {registerRulesetSheets} from "./src/runtime/foundry-sheets.mjs";
 
 /** events: () => [{eventTypeId, payload, refs}], emitted in order on the containers they concern. */
 function emitModuleEvents(events) {
@@ -43,6 +44,8 @@ Hooks.once("init", () => {
   installInitiative(CONFIG.Combat.documentClass, () => game.ruleThemAll?.runtime);
   // Rulesets with initiative passes give a second pass (or more) to the fastest combatants before the round ends.
   installInitiativePasses(CONFIG.Combat.documentClass, () => game.ruleThemAll?.runtime);
+  // The Ruleset's sheets (or AUTO ones), offered for every Actor and Item type next to the game system's.
+  registerRulesetSheets();
   Hooks.callAll("ruleThemAllInit", game.ruleThemAll);
   console.log("Rule Them'All | Initialization");
 });

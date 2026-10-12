@@ -17,6 +17,12 @@ export function writableReference(reference) {
   return reference.capabilityId === "value" && reference.outputId === "value.final" ? {...reference, outputId: "value.base"} : reference;
 }
 
+/** Whether a Formula Binding derives this output: then nothing a sheet writes would change it. */
+export function isDerived(ruleset, reference) {
+  return (ruleset.formulaBindings ?? []).some(b => enabled(b) && b.targetRef?.objectId === reference.objectId && b.targetRef?.capabilityId === reference.capabilityId
+    && b.targetRef?.outputId === reference.outputId && (b.targetRef?.slotId ?? null) === (reference.slotId ?? null));
+}
+
 /** The Definition output an "each" source names for one Definition, or null when that Definition lacks the capability or slot. */
 export function eachReference(definition, source) {
   if (!(definition?.capabilities ?? []).includes(source.capabilityId)) return null;
@@ -27,7 +33,7 @@ export function eachReference(definition, source) {
 }
 
 /** The Definitions a repeater lists: those of its type the Actor holds, in Ruleset order, that its Condition accepts. */
-async function repeaterRows(engine, versionId, ruleset, query, context) {
+export async function repeaterRows(engine, versionId, ruleset, query, context) {
   if (!context.roles?.self) return [];
   const state = await engine.adapter.load(context.roles.self, {rulesetVersionId: versionId});
   const rows = [];
@@ -82,7 +88,7 @@ export async function projectSheet(engine, versionId, sheet, {actor = null, cont
     } catch (error) { view.value = null; view.error = ERROR(error); }
   };
   const canWrite = async (reference, scope) => {
-    if (!await allowed("write", "definition", reference.objectId)) return false;
+    if (isDerived(ruleset, reference) || !await allowed("write", "definition", reference.objectId)) return false;
     try { await engine.resolveReference(versionId, writableReference(reference), scope, {forWrite: true}); return true; } catch { return false; }
   };
 
@@ -90,6 +96,8 @@ export async function projectSheet(engine, versionId, sheet, {actor = null, cont
     const source = node.source, view = {id: node.id, kind: "value", ...(node.span ? {span: node.span} : {}), label: node.labelKey || "", value: null, write: null};
     if (source.kind === "output" || source.kind === "each") {
       const reference = source.kind === "output" ? source.reference : eachReference(row?.definition, source);
+      // A row whose Definition lacks this capability keeps an empty cell, so the list stays aligned.
+      if (!reference && source.kind === "each") return {id: node.id, kind: "spacer"};
       if (!reference || !await allowed("read", "definition", reference.objectId)) return null;
       if (!view.label && source.kind === "output") view.label = ruleset.definitions?.find(d => d.id === reference.objectId)?.nameKey ?? reference.objectId;
       if (!view.label && source.kind === "each") Object.assign(view, outputLabel(row.definition, reference));

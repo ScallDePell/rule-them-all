@@ -1,0 +1,292 @@
+/* Rule Them'All — sheet.css : Feuilles jouées (Acteurs et Objets) et carte de chat des Actions.
+   L'ordre de chargement (module.json "styles") fait partie de la cascade.
+   Les blocs se rangent en colonnes (--rta-sheet-columns) ; un bloc en occupe --rta-sheet-span.
+   Sous 480 px de large, tout passe sur une colonne. */
+.rta-sheet {
+  container: rta-sheet / inline-size;
+  display: flex;
+  flex-direction: column;
+  gap: var(--rta-gap-block);
+  color: var(--rta-color-text);
+}
+
+.rta-sheet__header {
+  display: flex;
+  align-items: center;
+  gap: var(--rta-gap-block);
+}
+
+.rta-sheet__image {
+  inline-size: 64px;
+  block-size: 64px;
+  object-fit: cover;
+  border: var(--rta-frame-border) solid var(--rta-color-border-subtle);
+  border-radius: var(--rta-radius-control);
+}
+
+.rta-sheet__name {
+  flex: 1;
+  margin: 0;
+  font-size: var(--rta-type-display);
+}
+
+.rta-sheet__body {
+  display: flex;
+  flex-direction: column;
+  gap: var(--rta-gap-block);
+}
+
+.rta-sheet-grid {
+  display: grid;
+  grid-template-columns: repeat(var(--rta-sheet-columns, 1), minmax(0, 1fr));
+  gap: var(--rta-gap-row);
+  align-items: start;
+}
+
+/* Not inherited: a block spans its parent's columns, never its own children's. */
+@property --rta-sheet-span {
+  syntax: "<integer>";
+  inherits: false;
+  initial-value: 1;
+}
+
+.rta-sheet-grid > * {
+  grid-column: span var(--rta-sheet-span);
+}
+
+/* A value in a block measures its own cell: too narrow, its label goes above the control. */
+.rta-sheet-grid > .rta-sheet-value {
+  container: rta-sheet-value / inline-size;
+}
+
+.rta-sheet-section {
+  display: flex;
+  flex-direction: column;
+  gap: var(--rta-gap-row);
+  padding: var(--rta-frame-pad);
+  border: var(--rta-frame-border) solid var(--rta-color-border-subtle);
+  border-radius: var(--rta-radius-panel);
+  background: var(--rta-color-surface-option-light);
+}
+
+.rta-sheet-section__title {
+  margin: 0;
+  border: 0;
+  font-size: var(--rta-type-heading);
+}
+
+.rta-sheet-tabs {
+  display: flex;
+  flex-direction: column;
+  gap: var(--rta-gap-row);
+}
+
+.rta-sheet-tabs__nav {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--rta-gap-tight);
+  border-block-end: var(--rta-frame-border) solid var(--rta-color-border-subtle);
+}
+
+.rta-sheet-tabs__nav > button {
+  flex: 0 0 auto;
+  inline-size: auto;
+  border: 0;
+  border-block-end: 2px solid transparent;
+  border-radius: 0;
+  background: none;
+}
+
+.rta-sheet-tabs__nav > button[aria-selected="true"] {
+  border-block-end-color: var(--rta-color-border-highlight);
+  font-weight: 600;
+}
+
+.rta-sheet-list {
+  display: grid;
+  grid-template-columns: var(--rta-sheet-list-template);
+  column-gap: var(--rta-gap-block);
+  align-items: center;
+}
+
+.rta-sheet-row {
+  display: grid;
+  grid-column: span var(--rta-sheet-cells);
+  grid-template-columns: subgrid;
+  column-gap: var(--rta-gap-row);
+  align-items: center;
+  padding-block: var(--rta-space-2);
+  border-block-end: 1px solid var(--rta-color-border-tertiary);
+}
+
+.rta-sheet-row--head {
+  border-block-end-color: var(--rta-color-border-subtle);
+  color: var(--rta-color-text-secondary);
+  font-size: var(--rta-type-sm);
+}
+
+.rta-sheet-row__label {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.rta-sheet-row__head {
+  text-align: center;
+  white-space: nowrap;
+}
+
+.rta-sheet-value__inner {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--rta-gap-row);
+  min-inline-size: 0;
+}
+
+.rta-sheet-value__label {
+  min-inline-size: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  color: var(--rta-color-text-secondary);
+}
+
+.rta-sheet-value__control {
+  display: flex;
+  flex: 0 0 auto;
+  align-items: center;
+  gap: var(--rta-gap-tight);
+}
+
+.rta-sheet-value__control > input:not([type="checkbox"]) {
+  inline-size: 4.5rem;
+  text-align: end;
+}
+
+.rta-sheet-value__control > input.rta-sheet-value__amount {
+  inline-size: 3.5rem;
+}
+
+.rta-sheet-value__control > input[type="text"] {
+  inline-size: 9rem;
+  text-align: start;
+}
+
+.rta-sheet-value__text {
+  font-weight: 600;
+}
+
+.rta-sheet-value__bound {
+  color: var(--rta-color-text-secondary);
+}
+
+.rta-sheet-value--unavailable {
+  opacity: .6;
+}
+
+.rta-sheet-visually-hidden {
+  position: absolute;
+  inline-size: 1px;
+  block-size: 1px;
+  overflow: hidden;
+  clip-path: inset(50%);
+  white-space: nowrap;
+}
+
+.rta-sheet-action {
+  inline-size: 100%;
+}
+
+.rta-sheet-text,
+.rta-sheet-empty {
+  margin: 0;
+}
+
+.rta-sheet-empty {
+  color: var(--rta-color-text-secondary);
+  font-style: italic;
+}
+
+.rta-sheet-notice {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: var(--rta-gap-row);
+}
+
+.rta-sheet-choice {
+  display: flex;
+  flex-direction: column;
+  gap: var(--rta-gap-tight);
+}
+
+.rta-chat-card {
+  display: flex;
+  flex-direction: column;
+  gap: var(--rta-gap-tight);
+}
+
+.rta-chat-card__title {
+  display: flex;
+  justify-content: space-between;
+  gap: var(--rta-gap-row);
+}
+
+.rta-chat-card__lines {
+  display: grid;
+  grid-template-columns: auto 1fr;
+  gap: var(--rta-gap-tight);
+  margin: 0;
+}
+
+.rta-chat-card__lines > dd {
+  margin: 0;
+  text-align: end;
+  font-weight: 600;
+}
+
+.rta-chat-card__outcome {
+  margin: 0;
+  font-weight: 600;
+}
+
+@container rta-sheet (max-width: 600px) {
+  .rta-sheet-list {
+    grid-template-columns: var(--rta-sheet-list-medium);
+  }
+
+  .rta-sheet-row--head:nth-child(n + 3) {
+    display: none;
+  }
+}
+
+@container rta-sheet (max-width: 480px) {
+  .rta-sheet-grid {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  .rta-sheet-list {
+    grid-template-columns: var(--rta-sheet-list-narrow);
+  }
+
+  .rta-sheet-row--head + .rta-sheet-row--head {
+    display: none;
+  }
+
+  .rta-sheet-grid > * {
+    grid-column: auto;
+  }
+}
+
+@container rta-sheet-value (max-width: 10rem) {
+  .rta-sheet-value__inner {
+    flex-direction: column;
+    align-items: stretch;
+    gap: var(--rta-gap-tight);
+  }
+
+  .rta-sheet-value__control > input:not([type="checkbox"]) {
+    inline-size: 100%;
+  }
+}

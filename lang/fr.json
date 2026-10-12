@@ -1327,7 +1327,21 @@
         "StateActive": "Actif",
         "StateStacks": "Cumuls"
       },
-      "Actions": "Actions"
+      "Actions": "Actions",
+      "ActorSheet": "Feuille Rule Them'All",
+      "ItemSheet": "Feuille Rule Them'All",
+      "NotReady": "Rule Them'All est encore en cours de chargement.",
+      "NoRuleset": "Aucun Ruleset n'est actif dans ce monde.",
+      "NotInitialized": "Cet Acteur n'utilise pas encore le Ruleset.",
+      "Initialize": "Utiliser le Ruleset",
+      "NotContent": "Cet Objet ne vient pas d'un Ruleset.",
+      "NoneHeld": "Aucun pour l'instant.",
+      "Add": "Quantité à ajouter",
+      "Subtract": "Quantité à retirer",
+      "NotAllowed": "Non permis",
+      "ActionInputs": "Avant d'utiliser cette Action",
+      "ChooseActions": "Choisis-en {count}",
+      "TestTarget": "Seuil"
     }
   }
 }

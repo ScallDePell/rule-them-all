@@ -22,6 +22,7 @@
     "styles/dependencies.css",
     "styles/runtime-lab.css",
     "styles/sheet-builder.css",
+    "styles/sheet.css",
     "styles/editor.css",
     "styles/choices.css",
     "styles/rule-builder.css",

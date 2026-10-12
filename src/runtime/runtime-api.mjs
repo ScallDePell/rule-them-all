@@ -1,6 +1,7 @@
 import {RuntimeEngine} from "./runtime-engine.mjs";
 import {FoundryRuntimeAdapter} from "./foundry-runtime-adapter.mjs";
 import {serveRuntimeRelay} from "./runtime-relay.mjs";
+import {projectSheet} from "./sheet-projection.mjs";
 
 /** relay: {request(method,args)}; a write this client cannot make on a Document goes to the GM client. */
 export function createRuntimeAPI(configurator,{adapter=new FoundryRuntimeAdapter(),hooks=globalThis.Hooks,rulesetSource="published",relay=null}={}){
@@ -12,6 +13,9 @@ export function createRuntimeAPI(configurator,{adapter=new FoundryRuntimeAdapter
     instantiateDefinition:write("instantiateDefinition"),
     removeDefinitionState:write("removeDefinitionState"),
     setDefinitionState:write("setDefinitionState"),
+    /** What a sheet shows for an Actor ({actor}) or an Item ({actor?, content: {key} | {templateId}}), Permission applied. */
+    projectSheet:(versionId,sheet,subject)=>projectSheet(engine,versionId,sheet,subject),
+    writeSheetValue:write("writeSheetValue"),
     addCollectionEntry:write("addCollectionEntry"),
     removeCollectionEntry:write("removeCollectionEntry"),
     transferCollectionEntry:write("transferCollectionEntry"),

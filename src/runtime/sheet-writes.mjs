@@ -1,0 +1,67 @@
+/* Writing from a sheet (CP-30 WriteIntent). The sheet only says which of its value nodes changed and to what;
+   the engine finds what that node shows, checks it may be written (the node allows it, Permission, a held
+   Definition, a stored output) and writes through the usual transaction, so bounds, the ledger and the GM relay apply.
+   intent: {sheetId, nodeId, value, definitionId?, contentKey?, contentTypeId?}
+   - definitionId: the repeater row the value belongs to;
+   - contentKey: the owned Content an Item sheet shows; contentTypeId picks the AUTO Item sheet.
+   With add or subtract, value is the amount; with set, the new value. Setting a value.final moves its value.base by the difference. */
+import {sheetFor} from "../configurator/sheet-auto-layout.mjs";
+import {normalizeRuntimeContainerRef} from "./runtime-contracts.mjs";
+import {RuntimeTransactionError, TRANSACTION_ERRORS} from "./runtime-transaction.mjs";
+import {eachReference, isDerived, repeaterRows, writableReference} from "./sheet-projection.mjs";
+
+/** A node and the containers above it. */
+function findPath(node, id, path = []) {
+  if (node?.id === id) return [...path, node];
+  for (const child of node?.children ?? []) { const found = findPath(child, id, [...path, node]); if (found) return found; }
+  return null;
+}
+const forbidden = message => new RuntimeTransactionError(TRANSACTION_ERRORS.forbidden, message);
+
+export async function writeSheetValue(engine, versionId, containerRef, intent = {}) {
+  const ruleset = engine.ruleset(versionId), actor = normalizeRuntimeContainerRef(containerRef);
+  const target = intent.contentKey ? "item" : "actor";
+  const sheet = intent.sheetId === "auto" ? sheetFor({...ruleset, sheetDefinitions: []}, {target, contentTypeId: intent.contentTypeId ?? null})
+    : (ruleset.sheetDefinitions ?? []).find(entry => entry.id === intent.sheetId && entry.enabled !== false && entry.target === target);
+  if (!sheet) throw new Error(`Sheet unavailable: ${intent.sheetId}.`);
+  const path = findPath(sheet.root, intent.nodeId), node = path?.at(-1);
+  if (node?.kind !== "value" || !node.write) throw forbidden(`This sheet does not let ${intent.nodeId} be changed.`);
+  const operation = node.write.operation, source = node.source;
+  const context = {roles: {self: actor}, defaultRole: "self"};
+
+  if (source.kind === "field") {
+    if (!intent.contentKey) throw new Error("A Content field needs the owned Content it belongs to.");
+    if (!await engine.adapter.canWrite(actor)) throw forbidden("You cannot change this Item.");
+    const current = (await engine.listOwnedContents(versionId, actor)).find(row => row.key === intent.contentKey);
+    if (!current) throw new Error(`Owned Content not found: ${intent.contentKey}.`);
+    const value = operation === "set" ? intent.value : Number(current.fields?.[source.fieldId] ?? 0) + (operation === "add" ? 1 : -1) * Number(intent.value);
+    return engine.setContentField(versionId, actor, intent.contentKey, source.fieldId, value);
+  }
+
+  let reference = source.reference, scope = context;
+  if (source.kind === "each") {
+    const repeater = path.findLast(entry => entry.kind === "repeater");
+    const row = (await repeaterRows(engine, versionId, ruleset, repeater.query, context)).find(entry => entry.definition.id === intent.definitionId);
+    if (!row) throw new Error(`${intent.definitionId} is not listed on this sheet.`);
+    reference = eachReference(row.definition, source); scope = row.context;
+    if (!reference) throw new Error(`${intent.definitionId} has no ${source.capabilityId}.`);
+  }
+  if (source.kind !== "output" && source.kind !== "each") throw forbidden("Only a Definition output or a Content field can be changed from a sheet.");
+  const decision = await engine.authorize(versionId, "write", {objectKind: "definition", objectId: reference.objectId}, actor, scope);
+  if (!decision.allowed) throw forbidden(decision.messageKey ? globalThis.game?.i18n?.localize?.(decision.messageKey) ?? decision.messageKey : `Permission denied: write definition ${reference.objectId}.`);
+  if (isDerived(ruleset, reference)) throw forbidden(`${reference.objectId} is computed by a Formula.`);
+  const stored = writableReference(reference);
+  await engine.resolveReference(versionId, stored, scope, {forWrite: true});
+  const shown = await engine.resolveReference(versionId, reference, scope);
+  const next = reference.capabilityId === "state" ? (operation === "set" ? Boolean(intent.value) : !shown)
+    : operation === "set" ? Number(intent.value) : Number(shown) + (operation === "add" ? 1 : -1) * Number(intent.value);
+  if (reference.capabilityId !== "state" && !Number.isFinite(next)) throw new Error("A number is expected.");
+  const id = reference.objectId;
+  if (reference.capabilityId === "value") {
+    const base = Number(await engine.resolveReference(versionId, stored, scope));
+    return engine.setDefinitionState(versionId, actor, id, {base: base + (next - Number(shown))});
+  }
+  if (reference.capabilityId === "pool") return engine.setDefinitionState(versionId, actor, id, {pools: {[reference.slotId]: next}});
+  if (reference.capabilityId === "state") return engine.setDefinitionState(versionId, actor, id, {active: next});
+  throw forbidden(`${reference.outputId} cannot be changed from a sheet.`);
+}

@@ -119,3 +119,35 @@ test('a sheet keeps the objects it shows from being deleted', async()=>{
   await assert.rejects(api.deleteFormula(v,'f'),/still referenced/);
   await assert.rejects(api.createSheetDefinition(v,{id:'t',nameKey:'T',target:'actor',root:{id:'root',kind:'grid',children:[{id:'x',kind:'value',source:{kind:'field',fieldId:'damage'}}]}}),/Item sheets/);
 });
+
+test('a sheet writes only what its nodes allow, through the engine', async()=>{
+  const {api,v,engine,adapter}=await setup();
+  await api.createSheetDefinition(v,{id:'main',nameKey:'Main',target:'actor',root:{id:'root',kind:'grid',children:[
+    {id:'str',kind:'value',source:{kind:'output',reference:out('str','value','value.final')},write:{operation:'set'}},
+    {id:'dex',kind:'value',source:{kind:'output',reference:out('dex','value','value.final')}},
+    {id:'hurt',kind:'value',source:{kind:'output',reference:out('hp','pool','pool.current','points')},write:{operation:'subtract'}},
+    {id:'skills',kind:'repeater',query:{definitionTypeId:'skill'},children:[{id:'mark',kind:'value',source:{kind:'each',capabilityId:'state',outputId:'state.active'},write:{operation:'set'}}]}]}});
+  await api.publishRuleset(v);
+  const read=(id,capabilityId='value',outputId='value.final',slotId)=>engine.resolveReference(v,out(id,capabilityId,outputId,slotId),{roles:{self:hero},defaultRole:'self'});
+  await engine.writeSheetValue(v,hero,{sheetId:'main',nodeId:'str',value:10});
+  assert.equal(await read('str'),10);
+  await engine.writeSheetValue(v,hero,{sheetId:'main',nodeId:'hurt',value:20});
+  assert.equal(await read('hp','pool','pool.current','points'),0,'the pool keeps its bounds');
+  await engine.writeSheetValue(v,hero,{sheetId:'main',nodeId:'mark',definitionId:'secret',value:true});
+  assert.equal(await read('secret','state','state.active'),true);
+  await assert.rejects(engine.writeSheetValue(v,hero,{sheetId:'main',nodeId:'dex',value:3}),/does not let/);
+  await assert.rejects(engine.writeSheetValue(v,hero,{sheetId:'main',nodeId:'mark',definitionId:'swim',value:true}),/not listed/);
+  adapter.users.set('p',{role:'player',isGM:false});adapter.ownership.set('actor:hero|p','observer');
+  await assert.rejects(engine.forUser('p').writeSheetValue(v,hero,{sheetId:'main',nodeId:'str',value:1}),/Permission denied/);
+  assert.equal((await adapter.loadLedger(hero)).length>=3,true,'each write is in the ledger');
+});
+
+test('setting a value.final moves its base by the difference, so Modifiers stay on top; AUTO sheets write too', async()=>{
+  const {api,v,engine}=await setup();
+  await api.createModifier(v,{id:'blessed',nameKey:'Blessed',targetRef:out('str','value','value.final'),operation:'add',valueSource:{kind:'literal',value:2},conditionRefs:[],stacking:{mode:'stack',group:''},priority:0});
+  await api.publishRuleset(v);
+  const ctx={roles:{self:hero},defaultRole:'self'};
+  assert.equal(await engine.resolveReference(v,out('str','value','value.final'),ctx),9);
+  await engine.writeSheetValue(v,hero,{sheetId:'auto',nodeId:'each-attribute-value',definitionId:'str',value:12});
+  assert.deepEqual([await engine.resolveReference(v,out('str','value','value.base'),ctx),await engine.resolveReference(v,out('str','value','value.final'),ctx)],[10,12]);
+});

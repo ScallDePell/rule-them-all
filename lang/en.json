@@ -1331,7 +1331,21 @@
         "StateActive": "Active",
         "StateStacks": "Stacks"
       },
-      "Actions": "Actions"
+      "Actions": "Actions",
+      "ActorSheet": "Rule Them'All sheet",
+      "ItemSheet": "Rule Them'All sheet",
+      "NotReady": "Rule Them'All is still loading.",
+      "NoRuleset": "No Ruleset is active in this world.",
+      "NotInitialized": "This Actor does not use the Ruleset yet.",
+      "Initialize": "Use the Ruleset",
+      "NotContent": "This Item does not come from a Ruleset.",
+      "NoneHeld": "None yet.",
+      "Add": "Amount to add",
+      "Subtract": "Amount to remove",
+      "NotAllowed": "Not allowed",
+      "ActionInputs": "Before using this Action",
+      "ChooseActions": "Choose {count}",
+      "TestTarget": "Target"
     }
   }
 }

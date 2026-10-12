@@ -14,6 +14,7 @@ import {assertSafeRollFormula,multiplyDice,resolveRollData} from "../configurato
 import {findSlot, slotInitialKey} from "../configurator/capability-slots.mjs";
 import {systemEventType} from "../configurator/system-events.mjs";
 import {rerollSomeDice} from "./dice-results.mjs";
+import {writeSheetValue} from "./sheet-writes.mjs";
 import {SLOT_CAPABILITIES,requireSlot,poolSlotState,collectionSlotState,boundPoolValue,initialSlotStates,prepareCollectionEntry,assertCollectionRoom,assertCollectionMinimum} from "./capability-slot-runtime.mjs";
 
 const clone=v=>copyJSON(v);
@@ -858,6 +859,8 @@ export class RuntimeEngine{
   /** Initiative of one container under its Ruleset: the initiative Test total, or a row drawn from the initiative
    * Table among those not drawn yet this round (drawn: their ids; a deck of cards), whose Actions then run for the
    * container (a joker's bonus). The tie-break Formula adds hundredths (Dexterity 14 makes 17 into 17.14). null without initiative. */
+  /** A value changed on a sheet (CP-30 WriteIntent): see sheet-writes.mjs. */
+  async writeSheetValue(versionId,containerRef,intent){return writeSheetValue(this,versionId,containerRef,intent);}
   async rollInitiative(versionId,containerRef,{drawn=[]}={}){
     const ruleset=this.ruleset(versionId),initiative=ruleset.initiative;if(!initiative?.testRef&&!initiative?.tableRef)return null;
     const ref=normalizeRuntimeContainerRef(containerRef),context=this.#shared({roles:{self:ref,source:ref},defaultRole:"self"});

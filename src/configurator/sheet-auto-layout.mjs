@@ -42,13 +42,16 @@ function actorLayout(ruleset) {
       ...(output.write ? {write: {operation: "set"}} : {})
     }));
     if (!values.length) continue;
-    sections.push({id: nodeId("type", type.id), kind: "section", labelKey: type.nameKey ?? type.id, columns: 1, children: [
-      {id: nodeId("list", type.id), kind: "repeater", query: {definitionTypeId: type.id}, columns: values.length, children: values}
+    // A long list (skills) takes the sheet's whole width, in two columns.
+    const long = definitions.length > 6;
+    sections.push({id: nodeId("type", type.id), kind: "section", labelKey: type.nameKey ?? type.id, columns: 1, ...(long ? {span: 2} : {}), children: [
+      {id: nodeId("list", type.id), kind: "repeater", query: {definitionTypeId: type.id}, columns: long ? 2 : 1, children: values}
     ]});
   }
   const actions = sheetActionIds(ruleset).map(id => ({id: nodeId("action", id), kind: "action", actionRef: id}));
-  if (actions.length) sections.push({id: "actions", kind: "section", labelKey: "RTA.Sheet.Actions", columns: Math.min(3, actions.length), children: actions});
-  return {id: "root", kind: "grid", columns: sections.length > 1 ? 2 : 1, children: sections};
+  if (actions.length) sections.push({id: "actions", kind: "section", labelKey: "RTA.Sheet.Actions", columns: Math.min(4, actions.length), span: 2, children: actions});
+  const columns = sections.length > 1 ? 2 : 1;
+  return {id: "root", kind: "grid", columns, children: columns === 1 ? sections.map(({span: _span, ...section}) => section) : sections};
 }
 
 function itemLayout(ruleset, contentTypeIds) {
@@ -60,4 +63,13 @@ function itemLayout(ruleset, contentTypeIds) {
 /** The AUTO layout for an Actor or an Item sheet (contentTypeIds narrows an Item sheet; none means every Content Type). */
 export function autoLayout(ruleset, {target = "actor", contentTypeIds = []} = {}) {
   return prepareLayout(target === "item" ? itemLayout(ruleset, contentTypeIds) : actorLayout(ruleset));
+}
+
+/** The sheet an Actor or an Item of this Content Type shows: the first enabled SheetDefinition for it, else AUTO (id "auto"). */
+export function sheetFor(ruleset, {target = "actor", contentTypeId = null} = {}) {
+  const found = (ruleset.sheetDefinitions ?? []).find(sheet => enabled(sheet) && sheet.target === target
+    && (target !== "item" || !(sheet.contentTypeIds ?? []).length || (sheet.contentTypeIds ?? []).includes(contentTypeId)));
+  if (found) return found;
+  const contentTypeIds = target === "item" && contentTypeId ? [contentTypeId] : [];
+  return {id: "auto", nameKey: "", target, contentTypeIds, root: autoLayout(ruleset, {target, contentTypeIds})};
 }
