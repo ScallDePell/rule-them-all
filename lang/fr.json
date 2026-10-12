@@ -566,7 +566,9 @@
       },
       "AcquisitionRaiseBy": "Augmenter de",
       "ProgressionSystem": "Système de progression",
-      "AcquisitionChosen": "Acquiert aussi la Definition donnée par"
+      "AcquisitionChosen": "Acquiert aussi la Definition donnée par",
+      "World": "Monde",
+      "Combat": "Combat en cours"
     },
     "EditorDisplay": {
       "NoneSelected": "Aucune sélection",
@@ -1076,6 +1078,12 @@
       "Modes": {
         "automatic": "Automatiquement",
         "offer": "Proposé à qui agit"
+      },
+      "Holder": "Entendu par",
+      "Holders": {
+        "actor": "Chaque personnage concerné",
+        "combat": "Le combat, une fois",
+        "world": "Le monde, une fois"
       }
     },
     "OutcomeMapping": {
@@ -1186,6 +1194,12 @@
       "gte": "au moins",
       "lt": "en dessous de",
       "lte": "au plus"
+    },
+    "Shared": {
+      "Legend": "Ressources partagées",
+      "Help": "Des Definitions tenues une seule fois pour toute la table, hors des personnages : réserve du MJ, horloges, dé partagé par un combat. Les Effets et les Formulas les atteignent avec les rôles Monde et Combat.",
+      "World": "Ressources du monde",
+      "Combat": "Ressources de chaque combat"
     }
   }
 }

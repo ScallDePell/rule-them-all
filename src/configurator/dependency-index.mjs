@@ -111,6 +111,7 @@ export class DependencyIndex{
       if(step?.draw?.rollRef)pushRef(this.#edges,{objectKind:'creationSystem',objectId:system.id},{objectKind:'roll',objectId:step.draw.rollRef},'creationRoll',`creationSystems[${i}].steps[${j}].draw.rollRef`);
       if(step?.optionConditionRef)pushRef(this.#edges,{objectKind:'creationSystem',objectId:system.id},{objectKind:'condition',objectId:step.optionConditionRef},'creationCondition',`creationSystems[${i}].steps[${j}].optionConditionRef`);
     }
+    for(const holder of ['world','combat'])for(const [k,id] of (ruleset.sharedDefinitions?.[holder]??[]).entries())pushRef(this.#edges,{objectKind:'ruleset',objectId:ruleset.id},{objectKind:'definition',objectId:id},'rulesetShared',`sharedDefinitions.${holder}[${k}]`);
     if(ruleset.initiative){
       pushRef(this.#edges,{objectKind:'ruleset',objectId:ruleset.id},{objectKind:'test',objectId:ruleset.initiative.testRef},'rulesetInitiative','initiative.testRef');
       pushRef(this.#edges,{objectKind:'ruleset',objectId:ruleset.id},{objectKind:'formula',objectId:ruleset.initiative.tieBreakFormulaRef},'rulesetInitiative','initiative.tieBreakFormulaRef');

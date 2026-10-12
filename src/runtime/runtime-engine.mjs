@@ -26,6 +26,9 @@ const swapRoles=context=>{const self=roleRef(context,"self"),target=roleRef(cont
 /** A context as it can be kept and replayed later: no event, cause or dice. */
 const plainContext=context=>clone(Object.fromEntries(Object.entries(context).filter(([key])=>key!=="event"&&key!=="cause")));
 const enabled=(entry)=>entry&&entry.enabled!==false;
+/** The containers every use can reach besides the Actors: the world, and the combat in progress. */
+export const WORLD_CONTAINER=Object.freeze({kind:"world",id:"world"});
+const holderOf=ref=>ref?.kind==="world"?"world":ref?.kind==="combat"?"combat":"actor";
 const appliedByActions=new WeakMap();
 /** A Modifier that no Action applies is passive: it changes value.final wherever its Conditions are true.
  * A Modifier an Action applies only lives as the ModifierStates that Action creates. */
@@ -53,6 +56,22 @@ export class RuntimeEngine{
   ruleset(versionId){return resolveRuntimeRuleset(this.configurator,versionId,{source:this.rulesetSource});}
   /** Same engine, checking the rules for another user (the GM serving a player's request). */
   forUser(userId){return new RuntimeEngine({configurator:this.configurator,adapter:this.adapter,hooks:this.hooks,rulesetSource:this.rulesetSource,userId});}
+  /** The world and current combat roles, unless the caller set them. */
+  #shared(context={}){
+    const roles=context.roles??{};if(roles.world&&(roles.combat||!this.adapter.activeCombat))return context;
+    const combat=roles.combat??this.adapter.activeCombat?.()??null;
+    return {...context,roles:{...roles,world:roles.world??WORLD_CONTAINER,...(combat?{combat}:{})}};
+  }
+  /** Instantiate the world's shared Definitions, and a combat's when one is given ({kind: "combat", id}). */
+  async initializeShared(versionId,{combat=null}={}){
+    const shared=this.ruleset(versionId).sharedDefinitions??{},out={};
+    for(const [holder,ref] of [["world",WORLD_CONTAINER],["combat",combat]]){
+      const ids=shared[holder]??[];if(!ref||!ids.length)continue;
+      const state=await this.adapter.load(ref);if(state.rulesetVersionId&&state.rulesetVersionId!==versionId)continue;
+      out[holder]=(await this.initializeContainer(versionId,ref,{definitionIds:ids})).created;
+    }
+    return out;
+  }
   #subject(ref){return this.adapter.subject(ref?normalizeRuntimeContainerRef(ref):null,this.userId??undefined);}
   /** CP-11 decision for one operation on one Ruleset object, for this engine's user on a container. */
   async authorize(versionId,operation,target,containerRef=null,context=null){
@@ -97,6 +116,7 @@ export class RuntimeEngine{
   /** Containers a call may write: where this client needs the GM when Foundry refuses the update. */
   writeTargets(method,args){
     const [versionId]=args;
+    if(method==="executeAction"&&args[2]!==undefined)args=[args[0],args[1],this.#shared(args[2]),...args.slice(3)];
     if(method==="transferCollectionEntry")return [args[1]?.from?.containerRef,args[1]?.to?.containerRef].filter(Boolean).map(normalizeRuntimeContainerRef);
     if(method==="acquire"){const ref=normalizeRuntimeContainerRef(args[1]),{actionId=null,context={}}=args[2]??{};return actionId?[ref,...this.writeTargets("executeAction",[versionId,actionId,{...context,roles:{...(context.roles??{}),self:ref,source:ref}}])]:[ref];}
     if(method==="rerollAction"){const [,rerollId,original={},context={}]=args,refs=[...this.writeTargets("executeAction",[versionId,original.actionId,original.context??{}]),...this.writeTargets("executeAction",[versionId,rerollId,context])];return [...new Map(refs.map(ref=>[this.#refKey(ref),ref])).values()];}
@@ -227,7 +247,7 @@ export class RuntimeEngine{
     const source=output.source?.split(".")??[];let value=ds.capabilityStates?.[cap];for(const part of source.slice(1))value=value?.[part];return clone(value);
   }
   /** Read (or prepare a write of) a RuntimeReference {container, reference}; a bare logical Reference is read on `role`, else on the context's default role. */
-  async resolveReference(versionId,target,context,{forWrite=false,role=null,staged=null,skipBinding=false}={}){const ruleset=this.ruleset(versionId);const runtime=toRuntimeReference(target,role??context?.defaultRole??"self"),reference=runtime.reference;const resolved=resolveContainer(runtime,context);context=resolved.context;const selectedRole=resolved.role,n=resolved.containerRef;const state=staged?.get(this.#refKey(n))??await this.adapter.load(n,{rulesetVersionId:versionId});const binding=(ruleset.formulaBindings??[]).find(b=>enabled(b)&&b.targetRef?.objectKind===reference.objectKind&&b.targetRef?.objectId===reference.objectId&&b.targetRef?.capabilityId===reference.capabilityId&&b.targetRef?.outputId===reference.outputId&&(b.targetRef?.slotId??null)===(reference.slotId??null));if(forWrite){const {output}=this.#outputContract(ruleset,reference);if(binding)throw new Error(`Output is derived and read-only: ${reference.outputId}.`);if(!output.mutable)throw new Error(`Output is not mutable: ${reference.outputId}.`);return {containerRef:n,state,reference,output};}const finalValue=reference.capabilityId==="value"&&reference.outputId==="value.final";
+  async resolveReference(versionId,target,context,{forWrite=false,role=null,staged=null,skipBinding=false}={}){const ruleset=this.ruleset(versionId);context=this.#shared(context??{});const runtime=toRuntimeReference(target,role??context?.defaultRole??"self"),reference=runtime.reference;const resolved=resolveContainer(runtime,context);context=resolved.context;const selectedRole=resolved.role,n=resolved.containerRef;const state=staged?.get(this.#refKey(n))??await this.adapter.load(n,{rulesetVersionId:versionId});const binding=(ruleset.formulaBindings??[]).find(b=>enabled(b)&&b.targetRef?.objectKind===reference.objectKind&&b.targetRef?.objectId===reference.objectId&&b.targetRef?.capabilityId===reference.capabilityId&&b.targetRef?.outputId===reference.outputId&&(b.targetRef?.slotId??null)===(reference.slotId??null));if(forWrite){const {output}=this.#outputContract(ruleset,reference);if(binding)throw new Error(`Output is derived and read-only: ${reference.outputId}.`);if(!output.mutable)throw new Error(`Output is not mutable: ${reference.outputId}.`);return {containerRef:n,state,reference,output};}const finalValue=reference.capabilityId==="value"&&reference.outputId==="value.final";
     const passiveRows=finalValue?await this.#passiveRows(versionId,ruleset,reference,{...context,defaultRole:selectedRole},staged):[];
     if(binding&&!skipBinding){const derivedContext={...context,defaultRole:selectedRole},value=await this.evaluator(versionId,staged).formula(binding.formulaRef,derivedContext);if(!finalValue)return value;
       // A derived value.final takes the same ModifierStates and passive Modifiers as a stored one.
@@ -277,8 +297,8 @@ export class RuntimeEngine{
     const tx=this.transaction(versionId,"content.release",{transactionId,summary:{key}}),state=await tx.load(containerRef);
     if(!state.contents?.[key])return false;delete state.contents[key];await this.#commit(tx);return true;
   }
-  async evaluateFormula(versionId,formulaId,context={}){return await this.evaluator(versionId).formula(formulaId,context);}
-  async evaluateCondition(versionId,conditionId,context={}){return await this.evaluator(versionId).condition(conditionId,context);}
+  async evaluateFormula(versionId,formulaId,context={}){return await this.evaluator(versionId).formula(formulaId,this.#shared(context));}
+  async evaluateCondition(versionId,conditionId,context={}){return await this.evaluator(versionId).condition(conditionId,this.#shared(context));}
   async resolveModifiers(versionId,targetRef,baseValue,context={}){
     const ruleset=this.ruleset(versionId),evaluator=this.evaluator(versionId),applicable=[];
     for(const modifier of ruleset.modifiers??[]){if(!enabled(modifier))continue;const t=modifier.targetRef??{};if(t.objectKind!==targetRef.objectKind||t.objectId!==targetRef.objectId||String(t.capabilityId??'')!==String(targetRef.capabilityId??'')||String(t.outputId??'')!==String(targetRef.outputId??''))continue;let ok=true;for(const id of modifier.conditionRefs??[])if(!await evaluator.condition(id,context)){ok=false;break;}if(!ok)continue;let value;if(modifier.valueSource.kind==='literal')value=modifier.valueSource.value;else if(modifier.valueSource.kind==='parameter')value=evaluator.parameter(modifier.valueSource.id);else if(modifier.valueSource.kind==='formula')value=await evaluator.formula(modifier.valueSource.id,context);else value=await this.resolveReference(versionId,modifier.valueSource.reference,context);applicable.push({modifier,value:Number(value)});}
@@ -296,7 +316,7 @@ export class RuntimeEngine{
    * Each step sees the previous ones under variables.test (inputs, roll, rollTotal, natural, bonus, total, target, margin). */
   /** staged: an Action's states before its commit, so the Test sees what the Action already changed (a reaction's Modifier). */
   async executeTest(versionId,testId,context={},{staged=null}={}){
-    const evaluator=this.evaluator(versionId,staged);
+    const evaluator=this.evaluator(versionId,staged);context=this.#shared(context);
     const ruleset=this.ruleset(versionId),test=ruleset.tests?.find(x=>x.id===testId&&enabled(x));if(!test)throw new Error(`Test unavailable: ${testId}.`);
     const scope={...context,variables:{...(context.variables??{})}};
     const state={id:test.id,inputs:{},roll:null,rollTotal:0,natural:null,bonus:0,total:0,target:null,margin:null};
@@ -391,8 +411,8 @@ export class RuntimeEngine{
     const ruleset=this.ruleset(versionId),eventType=ruleset.eventTypes?.find(x=>x.id===eventTypeId&&enabled(x))??systemEventType(eventTypeId);if(!eventType)throw new Error(`EventType unavailable: ${eventTypeId}.`);
     const depth=Number(options.depth??0);if(depth>20)throw new Error("Rule Them'All event chain depth exceeded.");
     const event={id:globalThis.crypto?.randomUUID?.()??`evt-${Date.now()}-${Math.random().toString(36).slice(2)}`,eventTypeId,rulesetVersionId:versionId,occurredAt:Date.now(),payload:clone(payload),chainId:options.chainId??null,parentEventId:options.parentEventId??null,depth};event.chainId??=event.id;
-    const eventContext={...context,event};const triggered=[];
-    for(const trigger of ruleset.triggers??[]){if(!enabled(trigger)||trigger.eventTypeId!==eventTypeId)continue;if(!this.#eventFilterMatches(trigger.eventFilter,event,eventContext))continue;await this.#runTrigger(versionId,ruleset,trigger,eventContext,depth,triggered);}
+    const eventContext={...this.#shared(context),event};const triggered=[],holder=holderOf(roleRef(context,"self"));
+    for(const trigger of ruleset.triggers??[]){if(!enabled(trigger)||trigger.eventTypeId!==eventTypeId||(trigger.holder??"actor")!==holder)continue;if(!this.#eventFilterMatches(trigger.eventFilter,event,eventContext))continue;await this.#runTrigger(versionId,ruleset,trigger,eventContext,depth,triggered);}
     // untilEvent Durations end on the containers the event concerns.
     const expired=[];for(const ref of new Map(Object.values(context.roles??{}).filter(Boolean).map(ref=>{const n=normalizeRuntimeContainerRef(ref);return [this.#refKey(n),n];})).values()){const state=await this.adapter.load(ref);if(state.rulesetVersionId===versionId&&hasDurations(state)){const result=await this.expireStates(versionId,ref,{eventTypeId});if(result.stateInstanceIds.length||result.modifierStateIds.length)expired.push({ref,...result});}}
     this.hooks?.callAll?.(RUNTIME_HOOKS.event,event,clone(triggered));return {event,triggered,expired};
@@ -421,7 +441,7 @@ export class RuntimeEngine{
     for(const ref of refs){
       const state=await this.adapter.load(ref),versionId=state.rulesetVersionId;
       if(!versionId||!this.#hasRuleset(versionId)||!(this.ruleset(versionId).triggers??[]).some(trigger=>enabled(trigger)&&trigger.eventTypeId===eventTypeId))continue;
-      results.push({ref,...await this.emitEvent(versionId,eventTypeId,payload,{roles:{self:ref}})});
+      results.push({ref,...await this.emitEvent(versionId,eventTypeId,payload,{roles:{self:ref,...(ref.kind==="combat"?{combat:ref}:{})}})});
     }
     return results;
   }
@@ -614,7 +634,7 @@ export class RuntimeEngine{
    * An Action whose targeting is "each" or "shared" runs its Test, Effects, Table and follow-ups once per
    * context.targets entry (costs, acquisitions and Conditions once); "shared" rolls Effect dice once for all. */
   async previewAction(versionId,actionId,context={},{acquisitions=[],content=null,staged:shared=null,depth=0}={}){
-    const ruleset=this.ruleset(versionId),action=ruleset.actions?.find(x=>x.id===actionId&&enabled(x));if(!action)throw new Error(`Action unavailable: ${actionId}.`);const staged=shared??new Map(),evaluator=this.evaluator(versionId,staged);evaluator.__staged=staged;
+    const ruleset=this.ruleset(versionId),action=ruleset.actions?.find(x=>x.id===actionId&&enabled(x));if(!action)throw new Error(`Action unavailable: ${actionId}.`);const staged=shared??new Map(),evaluator=this.evaluator(versionId,staged);evaluator.__staged=staged;context=this.#shared(context);
     context=this.#actionInputs(ruleset,action,context);
     const many=["each","shared"].includes(action.targeting),targets=many?(Array.isArray(context.targets)?context.targets:[roleRef(context,"target")]).filter(Boolean):null;
     if(many&&!targets.length)throw new Error(`Action ${action.id} needs at least one target.`);
@@ -675,6 +695,7 @@ export class RuntimeEngine{
   }
   /** triggered: run by a Trigger, so no user chose it and only write permissions apply. */
   async executeAction(versionId,actionId,context={},{preview=false,eventDepth=0,transactionId=null,triggered=false,acquisitions=[],content=null}={}){
+    context=this.#shared(context);
     if(!triggered)await this.#require(versionId,"execute",{objectKind:"action",objectId:actionId},roleRef(context,"self")??roleRef(context,context.defaultRole??"self"),context);
     context={...context,[DICE]:{log:[],keep:null}};
     const plan=await this.previewAction(versionId,actionId,context,{acquisitions,content});if(preview||!plan.allowed)return {...plan,staged:undefined,context:undefined};
@@ -698,7 +719,7 @@ export class RuntimeEngine{
   async rerollAction(versionId,rerollActionId,original={},context={},{transactionId=null,triggered=false,eventDepth=0}={}){
     const ruleset=this.ruleset(versionId),reroll=ruleset.actions?.find(x=>x.id===rerollActionId&&enabled(x));
     if(!reroll?.reroll)throw new Error(`Not a reroll Action: ${rerollActionId}.`);
-    const {actionId,transactionId:originalId,context:originalContext={}}=original;
+    const {actionId,transactionId:originalId}=original,originalContext=this.#shared(original.context??{});context=this.#shared(context);
     const action=ruleset.actions?.find(x=>x.id===actionId&&enabled(x));if(!action)throw new Error(`Action unavailable: ${actionId}.`);
     if(!originalId)throw new Error("A reroll needs the transaction of the use it replaces.");
     if(reroll.reroll.actionRefs.length?!reroll.reroll.actionRefs.includes(actionId):!action.testRef)throw new Error(`${rerollActionId} cannot reroll ${actionId}.`);

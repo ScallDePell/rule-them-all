@@ -43,7 +43,7 @@ async function system(){
 test('Combat tracker changes become start, round and turn events', ()=>{
   const combat={id:'c1',combatants:[{id:'x',actor:{uuid:'Actor.a'}},{id:'y',actor:{uuid:'Actor.b'}}]};
   assert.deepEqual(combatChangeEvents(combat,{round:0,turn:null},{round:1,turn:0,combatantId:'x'}).map(e=>[e.eventTypeId,e.refs]),
-    [['rta.combat.start',['Actor.a','Actor.b']],['rta.combat.round',['Actor.a','Actor.b']],['rta.combat.turn',['Actor.a']]]);
+    [['rta.combat.start',['Actor.a','Actor.b',{kind:'combat',id:'c1'}]],['rta.combat.round',['Actor.a','Actor.b',{kind:'combat',id:'c1'}]],['rta.combat.turn',['Actor.a']]]);
   assert.deepEqual(combatChangeEvents(combat,{round:1,turn:0},{round:1,turn:1,combatantId:'y'}).map(e=>e.eventTypeId),['rta.combat.turn']);
   assert.deepEqual(timeElapsedPayload(86400*2+10,20),{seconds:20,days:1,worldTime:172810});
   assert.equal(timeElapsedPayload(100,-5),null);

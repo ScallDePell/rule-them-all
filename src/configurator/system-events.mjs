@@ -1,5 +1,6 @@
 /** Events the module emits itself, from Foundry's combat tracker and world clock.
- * A Trigger listens to one by id exactly like a Ruleset Event Type; the Actor concerned is the self role. */
+ * A Trigger listens to one by id exactly like a Ruleset Event Type; the Actor concerned is the self role.
+ * The combat container hears the combat events and the world container the passing time, once each. */
 const field = (id, name, valueType) => ({id, name, valueType, cardinality: "one", nullable: false, required: true, constraints: []});
 const combat = [field("combatId", "Combat", "string"), field("round", "Round", "integer")];
 const type = (id, nameKey, fields) => Object.freeze({id, nameKey, system: true, roles: ["self"], payloadFields: Object.freeze(Object.fromEntries(fields.map(f => [f.id, f])))});
@@ -18,7 +19,8 @@ export const isSystemEventType = id => Boolean(systemEventType(id));
 
 /** Combat change (Foundry combatTurnChange: prior and current {round, turn, combatantId}) to the events it means. */
 export function combatChangeEvents(combat, prior, current) {
-  const combatId = String(combat?.id ?? ""), round = Number(current?.round ?? 0), actors = (combat?.combatants ?? []).map(c => c.actor?.uuid).filter(Boolean);
+  // The combat itself hears its start and its rounds once (its Triggers held by "combat"), after its Actors.
+  const combatId = String(combat?.id ?? ""), round = Number(current?.round ?? 0), actors = [...(combat?.combatants ?? []).map(c => c.actor?.uuid).filter(Boolean), ...(combatId ? [{kind: "combat", id: combatId}] : [])];
   if (round < 1) return [];
   const events = [], payload = {combatId, round};
   const previousRound = Number(prior?.round ?? 0);

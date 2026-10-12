@@ -5,7 +5,7 @@ export const COLLECTION_FIELDS = Object.freeze([
   "permissionPolicies", "eventTypes", "triggers", "contentTypes", "contentTemplates", "modifiers", "durations", "tables", "creationSystems", "progressionSystems", "sheetDefinitions", "categories", "tags"
 ]);
 export const RULESET_FIELDS = Object.freeze([
-  "id", "nameKey", "descriptionKey", "version", "revision", "engineContractVersion", "status", "color", "sectionColors", "sectionColorOverrides", "familyColors", "initiative", ...COLLECTION_FIELDS
+  "id", "nameKey", "descriptionKey", "version", "revision", "engineContractVersion", "status", "color", "sectionColors", "sectionColorOverrides", "familyColors", "initiative", "sharedDefinitions", ...COLLECTION_FIELDS
 ]);
 
 export function isRecord(value) {
@@ -45,5 +45,5 @@ export function createRulesetData(data) {
   if (!isRecord(data)) throw new TypeError("Ruleset data must be an object.");
   const input = copyJSON(data);
   const collections = Object.fromEntries(COLLECTION_FIELDS.map(key => [key, []]));
-  return {descriptionKey: "", engineContractVersion: ENGINE_CONTRACT_VERSION, color:null, sectionColors:{}, sectionColorOverrides:{}, familyColors: {}, initiative: null, ...collections, ...input, revision: 0, status: "draft"};
+  return {descriptionKey: "", engineContractVersion: ENGINE_CONTRACT_VERSION, color:null, sectionColors:{}, sectionColorOverrides:{}, familyColors: {}, initiative: null, sharedDefinitions: {world: [], combat: []}, ...collections, ...input, revision: 0, status: "draft"};
 }

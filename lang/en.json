@@ -570,7 +570,9 @@
       },
       "AcquisitionRaiseBy": "Raise by",
       "ProgressionSystem": "Progression system",
-      "AcquisitionChosen": "Also acquires the Definition named by"
+      "AcquisitionChosen": "Also acquires the Definition named by",
+      "World": "World",
+      "Combat": "Combat in progress"
     },
     "EditorDisplay": {
       "NoneSelected": "None selected",
@@ -1080,6 +1082,12 @@
       "Modes": {
         "automatic": "Automatically",
         "offer": "Offered to who acts"
+      },
+      "Holder": "Heard by",
+      "Holders": {
+        "actor": "Each character concerned",
+        "combat": "The combat, once",
+        "world": "The world, once"
       }
     },
     "OutcomeMapping": {
@@ -1190,6 +1198,12 @@
       "gte": "at least",
       "lt": "below",
       "lte": "at most"
+    },
+    "Shared": {
+      "Legend": "Shared resources",
+      "Help": "Definitions held once for the whole table, outside the characters: a GM reserve, clocks, a die every combat shares. Effects and Formulas reach them with the World and Combat roles.",
+      "World": "World resources",
+      "Combat": "Resources of each combat"
     }
   }
 }

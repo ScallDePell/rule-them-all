@@ -263,12 +263,15 @@ export function prepareEventType(data,options={}){
   if(!isRecord(x.payloadFields))throw new Error('EventType.payloadFields must be an object.');
   arr(x.roles,'EventType.roles'); arr(x.tags,'EventType.tags'); bool(x.enabled,'EventType.enabled'); return x;
 }
+export const TRIGGER_HOLDERS=Object.freeze(['actor','combat','world']);
 export function prepareTrigger(data,options={}){
-  const x={descriptionKey:'',enabled:true,order:0,tags:[],eventTypeId:'',eventFilter:null,conditionRefs:[],actionRefs:[],actingRole:'self',mode:'automatic',...copyJSON(data)};
+  const x={descriptionKey:'',enabled:true,order:0,tags:[],eventTypeId:'',eventFilter:null,conditionRefs:[],actionRefs:[],actingRole:'self',mode:'automatic',holder:'actor',...copyJSON(data)};
   identity(x,'Trigger',options);need(nonempty(x.eventTypeId),'Trigger requires eventTypeId.',options);
   // actingRole "target": the one the event's Action aimed at acts (a reaction). mode "offer": the Actions are offered, not run.
   if(!['self','target'].includes(x.actingRole))throw new Error('Trigger.actingRole must be self or target.');
   if(!['automatic','offer'].includes(x.mode))throw new Error('Trigger.mode must be automatic or offer.');
+  // holder: whose events it hears, an Actor's (its Actions, its turn) or those the world or a combat receives once (a new round, time passing).
+  if(!TRIGGER_HOLDERS.includes(x.holder))throw new Error(`Trigger.holder must be one of ${TRIGGER_HOLDERS.join(', ')}.`);
   if(x.eventFilter!==null&&!isRecord(x.eventFilter))throw new Error('Trigger.eventFilter must be an object or null.');
   arr(x.conditionRefs,'Trigger.conditionRefs');arr(x.actionRefs,'Trigger.actionRefs');arr(x.tags,'Trigger.tags');bool(x.enabled,'Trigger.enabled');return x;
 }

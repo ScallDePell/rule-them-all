@@ -10,6 +10,7 @@ import {FoundryContentBridge} from "./src/runtime/foundry-content-bridge.mjs";
 import {isOwningContentHook,guardOwnedContentCreation} from "./src/runtime/foundry-content-hooks.mjs";
 import {combatChangeEvents, timeElapsedPayload} from "./src/configurator/system-events.mjs";
 import {installInitiative, rerollEachRound} from "./src/runtime/foundry-initiative.mjs";
+import {FoundryRuntimeAdapter} from "./src/runtime/foundry-runtime-adapter.mjs";
 
 /** events: () => [{eventTypeId, payload, refs}], emitted in order on the containers they concern. */
 function emitModuleEvents(events) {
@@ -27,6 +28,7 @@ Hooks.once("init", () => {
   game.ruleThemAll.registries = engineRegistries();
   storage = new WorldSettingStorage(game.settings);
   storage.register();
+  FoundryRuntimeAdapter.registerSettings(game.settings);
   ConfiguratorApp.registerSettings(game.settings);
   game.settings.registerMenu(MODULE_ID, "configurator", {
     name: "RTA.Settings.Configurator.Name",
@@ -59,6 +61,8 @@ Hooks.once("ready", () => {
     game.ruleThemAll.creation = new CreationSessions({configurator: api, store: new FoundryCreationSessionStore(), roll: formula => game.ruleThemAll.runtime.roll(formula),
       finalize: (session, {name, actorType}) => game.ruleThemAll.content.createActorFromCreationSystem(session.rulesetVersionId, session.creationSystemId, {name, actorType, answers: session.answers, sessionId: session.id})});
     api.subscribe(() => ConfiguratorApp.refreshOpen());
+    // The world's shared Definitions (a GM reserve, clocks) exist as soon as the active Ruleset names them.
+    if (game.users.activeGM?.isSelf) Promise.resolve(game.ruleThemAll.runtime.initializeShared()).catch(error => console.error("Rule Them'All | Shared containers failed", error));
     Hooks.callAll("ruleThemAllReady", game.ruleThemAll);
     console.log("Rule Them'All | Configurator and runtime ready");
     return api;
@@ -75,7 +79,11 @@ Hooks.once("ready", () => {
   // Module events: Triggers react to the combat tracker; the active GM emits them once.
   Hooks.on("combatTurnChange", (combat, prior, current) => {
     if (!game.users.activeGM?.isSelf) return;
-    emitModuleEvents(() => combatChangeEvents(combat, prior, current));
+    // A combat that starts gets its shared Definitions before its first events.
+    emitModuleEvents(async () => {
+      if (Number(prior?.round ?? 0) < 1) await game.ruleThemAll.runtime.initializeShared(undefined, {combat: {kind: "combat", id: combat.id}});
+      return combatChangeEvents(combat, prior, current);
+    });
     Promise.resolve(game.ruleThemAll?.configuratorReady).then(() => rerollEachRound(combat, prior, current, () => game.ruleThemAll.runtime))
       .catch(error => console.error("Rule Them'All | Initiative reroll failed", error));
   });

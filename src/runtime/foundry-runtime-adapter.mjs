@@ -11,11 +11,23 @@ const LEDGER_KEY="runtimeLedger";
 /** Foundry v14 forced replacement of an object value inside an update. */
 const replaced=value=>{const operator=globalThis.foundry?.data?.operators?.ForcedReplacement;if(typeof operator?.create!=="function")throw new Error("Foundry ForcedReplacement operator is unavailable.");return operator.create(value);};
 
+const WORLD_SETTING="worldRuntime";
+/** The world container: its state and ledger live in a hidden world setting that only a GM may write. */
+const worldDocument=()=>({id:"world",name:game.world?.title??"World",documentName:"World",
+  getFlag:(_scope,key)=>copyJSON(game.settings.get(MODULE_ID,WORLD_SETTING)?.[key]??null)??undefined,
+  canUserModify:user=>Boolean(user?.isGM),getUserLevel:user=>user?.isGM?3:2,
+  async writeRuntime(values){await game.settings.set(MODULE_ID,WORLD_SETTING,{...(game.settings.get(MODULE_ID,WORLD_SETTING)??{}),...copyJSON(values)});},
+  async clearRuntime(){await game.settings.set(MODULE_ID,WORLD_SETTING,{});}});
+
 export class FoundryRuntimeAdapter{
+  static registerSettings(settings){settings.register(MODULE_ID,WORLD_SETTING,{scope:"world",config:false,type:Object,default:{}});}
+  /** The combat in progress, as a container: its shared Definitions (an escalation die) live in its flags. */
+  activeCombat(){const combat=game.combat;return combat?.started?{kind:"combat",id:combat.id}:null;}
   async resolveDocument(ref){
     const n=normalizeRuntimeContainerRef(ref);
     if(n.uuid){const doc=await globalThis.fromUuid?.(n.uuid);if(!doc)throw new Error(`Foundry Document not found: ${n.uuid}.`);return doc;}
-    const collection=n.kind==="actor"?game.actors:n.kind==="item"?game.items:null;
+    if(n.kind==="world")return worldDocument();
+    const collection=n.kind==="actor"?game.actors:n.kind==="item"?game.items:n.kind==="combat"?game.combats:null;
     const doc=collection?.get?.(n.id);if(!doc)throw new Error(`Foundry ${n.kind} not found: ${n.id}.`);return doc;
   }
   async load(ref,{rulesetVersionId=""}={}){const doc=await this.resolveDocument(ref);const stored=doc.getFlag?.(MODULE_ID,FLAG_KEY);return prepareRuntimeState(stored??createRuntimeState({rulesetVersionId}),{rulesetVersionId});}
@@ -32,17 +44,22 @@ export class FoundryRuntimeAdapter{
   /** The Actors of the tokens the current user targets, for an Action on several targets (context.targets). */
   userTargets(){return [...new Set([...(game.user?.targets??[])].map(token=>token.actor?.uuid).filter(Boolean))];}
   /** World Actors, their Items and world Items that hold runtime data. */
-  async listContainers(){return [...(game.actors??[]).flatMap(actor=>[actor,...(actor.items??[])]),...(game.items??[])].filter(doc=>doc.getFlag?.(MODULE_ID,FLAG_KEY)).map(doc=>({uuid:doc.uuid}));}
+  async listContainers(){
+    const documents=[...(game.actors??[]).flatMap(actor=>[actor,...(actor.items??[])]),...(game.items??[])].filter(doc=>doc.getFlag?.(MODULE_ID,FLAG_KEY)).map(doc=>({uuid:doc.uuid}));
+    const shared=[...(worldDocument().getFlag(MODULE_ID,FLAG_KEY)?[{kind:"world",id:"world"}]:[]),...[...(game.combats??[])].filter(combat=>combat.getFlag?.(MODULE_ID,FLAG_KEY)).map(combat=>({kind:"combat",id:combat.id}))];
+    return [...documents,...shared];
+  }
   async loadLedger(ref){const doc=await this.resolveDocument(ref);const stored=doc.getFlag?.(MODULE_ID,LEDGER_KEY);return Array.isArray(stored)?copyJSON(stored):[];}
   /** One Document update carries the state and its ledger, so each container is written atomically.
    * The state replaces the stored object: a merge would keep removed DefinitionStates. */
   async write(ref,{state,ledger}){
     const doc=await this.resolveDocument(ref);if(!await this.canWrite(ref))throw new Error(`User cannot update Foundry Document ${doc.name??doc.id}.`);
+    if(doc.writeRuntime){await doc.writeRuntime({[FLAG_KEY]:state,[LEDGER_KEY]:ledger});return copyJSON(state);}
     await doc.update({[`flags.${MODULE_ID}.${FLAG_KEY}`]:replaced(copyJSON(state)),[`flags.${MODULE_ID}.${LEDGER_KEY}`]:copyJSON(ledger)});
     return copyJSON(state);
   }
   /** Remove a container's runtime data (e.g. stale or unreadable state); the next initialization starts fresh. */
-  async reset(ref){const doc=await this.resolveDocument(ref);if(!await this.canWrite(ref))throw new Error(`User cannot update Foundry Document ${doc.name??doc.id}.`);await doc.unsetFlag?.(MODULE_ID,FLAG_KEY);await doc.unsetFlag?.(MODULE_ID,LEDGER_KEY);}
+  async reset(ref){const doc=await this.resolveDocument(ref);if(!await this.canWrite(ref))throw new Error(`User cannot update Foundry Document ${doc.name??doc.id}.`);if(doc.clearRuntime)return doc.clearRuntime();await doc.unsetFlag?.(MODULE_ID,FLAG_KEY);await doc.unsetFlag?.(MODULE_ID,LEDGER_KEY);}
   async describe(ref){const doc=await this.resolveDocument(ref);return {ref:normalizeRuntimeContainerRef(ref),uuid:doc.uuid,id:doc.id,name:doc.name,documentName:doc.documentName,type:doc.type};}
 
 

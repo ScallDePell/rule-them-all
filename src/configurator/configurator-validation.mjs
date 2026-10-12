@@ -137,6 +137,17 @@ export function validateRuleset(ruleset, {scope = "save"} = {}) {
       if (!(initiative.eachRound === undefined || typeof initiative.eachRound === "boolean")) issue("BOOLEAN_TYPE", "initiative.eachRound", "initiative.eachRound must be true or false.");
     }
   }
+  // sharedDefinitions: the Definitions the world holds (a GM's reserve, faction clocks) and each combat holds (an escalation die).
+  const shared = ruleset.sharedDefinitions ?? {world: [], combat: []};
+  if (!isRecord(shared)) issue("OBJECT_TYPE", "sharedDefinitions", "sharedDefinitions must be an object.");
+  else {
+    exactFields(shared, ["world", "combat"], "sharedDefinitions", issue);
+    for (const holder of ["world", "combat"]) {
+      const ids = shared[holder] ?? [];
+      if (!Array.isArray(ids)) { issue("ARRAY_TYPE", `sharedDefinitions.${holder}`, `sharedDefinitions.${holder} must be an array.`); continue; }
+      ids.forEach((id, i) => { if (!(ruleset.definitions ?? []).some(definition => definition?.id === id)) issue("REFERENCE", `sharedDefinitions.${holder}[${i}]`, `Missing reference: definition/${id}.`); });
+    }
+  }
   if (!Number.isSafeInteger(ruleset.revision) || ruleset.revision < 0) issue("REVISION", "revision", "revision must be a non-negative safe integer.");
   if (!["draft","ready","validated"].includes(ruleset.status)) issue("STATUS", "status", "Unsupported Ruleset status.");
   const idsByKind = new Map();

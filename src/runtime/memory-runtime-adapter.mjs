@@ -10,6 +10,8 @@ export class MemoryRuntimeAdapter{
   async loadLedger(ref){return copyJSON(this.ledgers.get(key(ref))??[]);}
   /** One container write: state and ledger together (a Document update in Foundry). */
   async write(ref,{state,ledger}){const k=key(ref);this.states.set(k,copyJSON(state));this.ledgers.set(k,copyJSON(ledger));return copyJSON(state);}
+  /** The combat in progress ({kind: "combat", id}), set by tests. */
+  activeCombat(){return this.combat??null;}
   /** World clock for Durations, in seconds; tests move it by hand. */
   worldTime(){return this.clock??0;}
   roundSeconds(){return 6;}
