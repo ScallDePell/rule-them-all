@@ -74,7 +74,7 @@ export class DependencyIndex{
         pushRef(this.#edges,{objectKind:'action',objectId:a.id},{objectKind:'modifier',objectId:application?.modifierRef},'actionModifier',`actions[${i}].modifierApplications[${j}].modifierRef`);
         if(application?.durationRef)pushRef(this.#edges,{objectKind:'action',objectId:a.id},{objectKind:'duration',objectId:application.durationRef},'actionDuration',`actions[${i}].modifierApplications[${j}].durationRef`);
       }
-      for(const [j,acquisition] of (a.acquisitions??[]).entries())pushRef(this.#edges,{objectKind:'action',objectId:a.id},{objectKind:'definition',objectId:acquisition?.definitionId},'actionAcquisition',`actions[${i}].acquisitions[${j}].definitionId`);
+      for(const [j,acquisition] of (a.acquisitions??[]).entries()){if(acquisition?.definitionFormulaRef){pushRef(this.#edges,{objectKind:'action',objectId:a.id},{objectKind:'formula',objectId:acquisition.definitionFormulaRef},'actionAcquisitionFormula',`actions[${i}].acquisitions[${j}].definitionFormulaRef`);continue;}pushRef(this.#edges,{objectKind:'action',objectId:a.id},{objectKind:'definition',objectId:acquisition?.definitionId},'actionAcquisition',`actions[${i}].acquisitions[${j}].definitionId`);}
     }
     for(const [i,t] of (ruleset.triggers??[]).entries()){
       if(!isSystemEventType(t.eventTypeId))pushRef(this.#edges,{objectKind:'trigger',objectId:t.id},{objectKind:'eventType',objectId:t.eventTypeId},'triggerEvent',`triggers[${i}].eventTypeId`);
@@ -109,6 +109,21 @@ export class DependencyIndex{
       for(const key of ['minFormulaRef','maxFormulaRef','perTargetMaxFormulaRef'])if(step?.[key])pushRef(this.#edges,{objectKind:'creationSystem',objectId:system.id},{objectKind:'formula',objectId:step[key]},'creationFormula',`creationSystems[${i}].steps[${j}].${key}`);
       if(step?.draw?.rollRef)pushRef(this.#edges,{objectKind:'creationSystem',objectId:system.id},{objectKind:'roll',objectId:step.draw.rollRef},'creationRoll',`creationSystems[${i}].steps[${j}].draw.rollRef`);
       if(step?.optionConditionRef)pushRef(this.#edges,{objectKind:'creationSystem',objectId:system.id},{objectKind:'condition',objectId:step.optionConditionRef},'creationCondition',`creationSystems[${i}].steps[${j}].optionConditionRef`);
+    }
+    for(const [i,system] of (ruleset.progressionSystems??[]).entries()){
+      const from={objectKind:'progressionSystem',objectId:system.id},add=(kind,id,role,path)=>{if(id)pushRef(this.#edges,from,{objectKind:kind,objectId:id},role,`progressionSystems[${i}].${path}`);};
+      for(const [j,a] of (system?.advancements??[]).entries()){
+        add('definitionType',a.definitionTypeId,'progressionType',`advancements[${j}].definitionTypeId`);
+        for(const [k,id] of (a.definitionIds??[]).entries())add('definition',id,'progressionTarget',`advancements[${j}].definitionIds[${k}]`);
+        add('definition',a.currencyRef?.objectId,'progressionCurrency',`advancements[${j}].currencyRef`);
+        for(const key of ['costFormulaRef','maximumFormulaRef'])add('formula',a[key],'progressionFormula',`advancements[${j}].${key}`);
+        add('condition',a.conditionRef,'progressionCondition',`advancements[${j}].conditionRef`);
+      }
+      for(const [j,m] of (system?.milestones??[]).entries()){
+        add('condition',m.conditionRef,'progressionCondition',`milestones[${j}].conditionRef`);
+        for(const [k,id] of (m.definitionIds??[]).entries())add('definition',id,'progressionGrant',`milestones[${j}].definitionIds[${k}]`);
+        add('action',m.actionRef,'progressionAction',`milestones[${j}].actionRef`);
+      }
     }
     const tagCollections=['definitions','parameters','formulas','formulaBindings','conditions','rolls','outcomes','tests','effects','actions','eventTypes','triggers','contentTypes','contentTemplates','modifiers','durations','tables','creationSystems','progressionSystems','sheetDefinitions'];
     for(const collection of tagCollections)for(const [i,entry] of (ruleset[collection]??[]).entries())for(const [j,id] of (entry.tags??[]).entries())pushRef(this.#edges,{objectKind:collection.replace(/s$/,''),objectId:entry.id},{objectKind:'tag',objectId:id},'tag',`${collection}[${i}].tags[${j}]`,'metadata');

@@ -156,7 +156,8 @@
       "DrawLocked": "Drawn, final",
       "DrawWeightField": "Chance from the data field",
       "DrawEvenly": "Empty: every option has the same chance",
-      "DrawRoll": "Roll for each Definition"
+      "DrawRoll": "Roll for each Definition",
+      "NoChosenDefinition": "None"
     },
     "FamilyColor": {
       "parameters": "Parameters",
@@ -567,7 +568,9 @@
         "refuse": "Refuse the Action",
         "raise": "Raise its value"
       },
-      "AcquisitionRaiseBy": "Raise by"
+      "AcquisitionRaiseBy": "Raise by",
+      "ProgressionSystem": "Progression system",
+      "AcquisitionChosen": "Also acquires the Definition named by"
     },
     "EditorDisplay": {
       "NoneSelected": "None selected",
@@ -698,7 +701,9 @@
         "Initialized": "Actors initialized",
         "Reset": "Runtime data reset",
         "Saved": "Value saved",
-        "Error": "Operation failed"
+        "Error": "Operation failed",
+        "Progression": "Advancement",
+        "Milestones": "Milestones"
       },
       "Guide": {
         "test": "Choose a Test, then run it. Source / Self supplies the tested values; Target is available to the rule context.",
@@ -706,14 +711,16 @@
         "formula": "Evaluate a Formula against Source / Self to inspect a calculated value.",
         "condition": "Evaluate a Condition against Source / Self. The result is TRUE or FALSE.",
         "event": "Emit an Event and see which Triggers fire.",
-        "roll": "Roll Foundry dice on their own, outside the Ruleset rules."
+        "roll": "Roll Foundry dice on their own, outside the Ruleset rules.",
+        "progression": "Choose a progression system: Source / Self buys advancements and applies the milestones it reached."
       },
       "Empty": {
         "test": "This Ruleset has no Test yet.",
         "action": "This Ruleset has no Action yet.",
         "formula": "This Ruleset has no Formula yet.",
         "condition": "This Ruleset has no Condition yet.",
-        "event": "This Ruleset has no Event Type yet."
+        "event": "This Ruleset has no Event Type yet.",
+        "progression": "This Ruleset has no progression system yet."
       },
       "Error": {
         "NoTestActors": "Test Actor creation is unavailable.",
@@ -725,7 +732,8 @@
           "formulaId": "Choose a Formula.",
           "conditionId": "Choose a Condition.",
           "eventTypeId": "Choose an Event Type.",
-          "rollFormula": "Enter a dice formula."
+          "rollFormula": "Enter a dice formula.",
+          "progressionId": "Choose a progression system."
         }
       },
       "Diagnostics": "Diagnostics",
@@ -739,7 +747,21 @@
       "FollowUps": "Then",
       "RerollCount": "Rerolls",
       "Reroll": "Reroll {name} with",
-      "RerollButton": "Reroll"
+      "RerollButton": "Reroll",
+      "Progression": "Progression",
+      "Advance": "Buy",
+      "Cost": "Cost",
+      "AdvanceRefused": {
+        "cost": "not enough to pay",
+        "maximum": "already at its highest",
+        "condition": "its Condition is false"
+      },
+      "MilestoneApplied": "Applied",
+      "MilestoneReached": "Reached, not applied yet",
+      "MilestoneNotReached": "Not reached",
+      "ApplyMilestones": "Apply the milestones reached",
+      "MilestonesApplied": "{count} milestone(s) applied.",
+      "MilestoneStopped": "Stopped at"
     },
     "TestInput": {
       "Title": "Inputs",
@@ -943,8 +965,8 @@
         "Usage": "Each step offers a choice of definitions or contents, or a final review."
       },
       "progressionSystem": {
-        "Summary": "A progression system describes how a character evolves.",
-        "Usage": "This contract is still open; the “Experience progression” recipe shows an approach with today's primitives."
+        "Summary": "A progression system says how a character grows: advancements bought with XP or points, and milestones reached at a level.",
+        "Usage": "An advancement raises a Definition and pays a cost Formula from a currency; its cost can grow with the current value. A milestone grants Definitions and runs an Action once its Condition holds; an Action input lets the player choose (a feat). Levels themselves are a Formula over the XP."
       },
       "sheetDefinition": {
         "Summary": "A sheet describes how an Actor or an Item is displayed.",
@@ -1118,6 +1140,26 @@
         "each": "Each target, own dice",
         "shared": "Each target, same dice"
       }
+    },
+    "Progression": {
+      "Advancement": "Advancement",
+      "Advancements": "Advancements bought",
+      "AdvancementsHelp": "What a character buys with a currency (XP, points): each purchase raises one Definition by the step. The cost Formula reads variables.advance.current and variables.advance.next.",
+      "AddAdvancement": "Add an advancement",
+      "Label": "Label",
+      "RaisesType": "Raises Definitions of type",
+      "RaisesDefinitions": "Or these Definitions",
+      "Step": "Raised by",
+      "Currency": "Paid with",
+      "Cost": "Cost",
+      "Maximum": "Highest value",
+      "Milestone": "Milestone",
+      "Milestones": "Milestones",
+      "MilestonesHelp": "Reached when their Condition holds (a level): they grant their Definitions and run their Action once per character. The Action's inputs are the choices of that milestone.",
+      "AddMilestone": "Add a milestone",
+      "ReachedWhen": "Reached when",
+      "Grants": "Grants",
+      "ThenAction": "Then runs"
     }
   }
 }

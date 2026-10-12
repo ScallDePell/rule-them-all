@@ -60,6 +60,12 @@ export function describeRuntimeResult(kind, data, {i18n = key => key, nameOf = (
         changes
       });
     }
+    case "progression": return data.allowed === false
+      ? card("Progression", {tone: "failure", message: i18n(`RTA.Lab.AdvanceRefused.${data.reason}`)})
+      : card("Progression", {tone: "success", message: `${data.name ?? data.definitionId}: ${data.before} → ${data.after}`, rows: [row(i18n("RTA.Lab.Cost"), data.cost)]});
+    case "milestones": return card("Milestones", {tone: data.applied.length ? "success" : "info",
+      message: i18n("RTA.Lab.MilestonesApplied", {count: data.applied.length}),
+      rows: data.stopped ? [row(i18n("RTA.Lab.MilestoneStopped"), data.stopped.milestoneId)] : []});
     case "event": {
       const triggered = (data.triggered ?? []).map(entry => nameOf("triggers", entry.triggerId));
       return card("Event", {tone: triggered.length ? "success" : "info", message: i18n("RTA.Lab.TriggerCount", {count: triggered.length}), triggered});
@@ -72,4 +78,22 @@ export function describeRuntimeResult(kind, data, {i18n = key => key, nameOf = (
     case "error": return card("Error", {tone: "error", message: data.message});
     default: return card("Error", {tone: "error", message: String(kind)});
   }
+}
+
+/** Progression tool rows: one per Definition an advancement can raise (with its next cost), one per milestone,
+ *  and the choices a reached milestone still asks for. chosen: the Lab's answers, "<milestoneId>|<inputId>" -> value. */
+export function progressionLabRows(described, {nameOf = id => id, text = key => key, i18n = key => key, chosen = {}} = {}) {
+  const advances = described.advancements.flatMap(advancement => advancement.targets.map(target => ({
+    advancementId: advancement.id, definitionId: target.definitionId, name: `${text(advancement.labelKey)} · ${nameOf(target.definitionId)}`,
+    detail: `${target.current} → ${target.next} · ${i18n("RTA.Lab.Cost")} ${target.cost}`, allowed: target.allowed,
+    reason: target.allowed ? "" : i18n(`RTA.Lab.AdvanceRefused.${target.reason}`)
+  })));
+  const milestones = described.milestones.map(milestone => ({
+    name: text(milestone.labelKey), state: i18n(milestone.applied ? "RTA.Lab.MilestoneApplied" : milestone.reached ? "RTA.Lab.MilestoneReached" : "RTA.Lab.MilestoneNotReached"),
+    inputs: milestone.applied || !milestone.reached ? [] : milestone.inputs.map(input => {
+      const key = `${milestone.id}|${input.id}`, value = String(chosen[key] ?? "");
+      return {key, name: text(input.labelKey), options: [{value: "", name: "—", selected: value === ""}, ...input.options.map(option => ({value: String(option.value), name: text(option.labelKey || String(option.value)), selected: String(option.value) === value}))]};
+    })
+  }));
+  return {advances, milestones, canApply: described.milestones.some(milestone => milestone.reached && !milestone.applied)};
 }

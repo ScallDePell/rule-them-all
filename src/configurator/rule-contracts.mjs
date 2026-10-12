@@ -134,7 +134,9 @@ export function prepareEffect(data,options={}){
 const ROLE_NAME=/^[A-Za-z][A-Za-z0-9_-]*$/;
 /** Acquisition: the Action instantiates absent DefinitionStates on a role's container. */
 function prepareActionAcquisition(data,index){
-  if(!isRecord(data)||!nonempty(data.definitionId))throw new Error(`Action.acquisitions[${index}] requires definitionId.`);
+  // definitionFormulaRef instead of definitionId: the Definition comes from a Formula, typically an Action input (a feat chosen at level 4).
+  if(!isRecord(data)||!(nonempty(data.definitionId)||nonempty(data.definitionFormulaRef)))throw new Error(`Action.acquisitions[${index}] requires definitionId.`);
+  if(data.definitionId&&data.definitionFormulaRef)throw new Error(`Action.acquisitions[${index}]: definitionId or definitionFormulaRef, not both.`);
   const x={targetRole:'self',initial:{},...copyJSON(data)};
   if(!ROLE_NAME.test(String(x.targetRole)))throw new Error(`Action.acquisitions[${index}].targetRole must be a role name.`);
   if(!isRecord(x.initial))throw new Error(`Action.acquisitions[${index}].initial must be an object.`);
@@ -213,7 +215,7 @@ export function prepareAction(data,options={}){
   if(new Set(x.inputs.map(input=>input.id)).size!==x.inputs.length)throw new Error('Action.inputs lists the same id twice.');
   x.acquisitions=x.acquisitions.map(prepareActionAcquisition);
   x.stateRemovals=x.stateRemovals.map(prepareStateRemoval);x.stateApplications=x.stateApplications.map(prepareStateApplication);x.modifierApplications=x.modifierApplications.map(prepareModifierApplication);
-  if(new Set(x.acquisitions.map(a=>`${a.targetRole}/${a.definitionId}`)).size!==x.acquisitions.length)throw new Error('Action.acquisitions lists a Definition twice for the same role.');
+  if(new Set(x.acquisitions.map(a=>`${a.targetRole}/${a.definitionId??`=${a.definitionFormulaRef}`}`)).size!==x.acquisitions.length)throw new Error('Action.acquisitions lists a Definition twice for the same role.');
   bool(x.enabled,'Action.enabled'); return x;
 }
 export function preparePermissionPolicy(data,options={}){
@@ -379,8 +381,40 @@ export function prepareCreationSystem(data,options={}){
     if(n.perTargetMax===null||n.perTargetMax==='')delete n.perTargetMax;else if(n.perTargetMax!==undefined&&!(Number.isSafeInteger(n.perTargetMax)&&n.perTargetMax>=0))throw new Error(`CreationSystem.steps[${i}].perTargetMax must be a whole number of 0 or more.`);
     return n;});return x;
 }
+/** Progression: advancements bought with a currency (XP, points) and milestones reached by a Condition (levels).
+ * An advancement raises value.base of one of its Definitions by step; its cost Formula reads
+ * variables.advance = {definitionId, current, next}. A milestone, once its Condition holds, grants its
+ * Definitions and runs its Action (whose inputs are the choices of that level), once per Actor. */
 export function prepareProgressionSystem(data,options={}){
-  const x=prepareNamedGeneric(data,'ProgressionSystem',{tracks:[]},options);arr(x.tracks,'ProgressionSystem.tracks');x.tracks=x.tracks.map((track,i)=>{if(!isRecord(track)||!nonempty(track.id))throw new Error(`ProgressionSystem.tracks[${i}] requires id.`);need(nonempty(track.name),`ProgressionSystem.tracks[${i}] requires name.`,options);return {mode:'threshold',thresholds:[],...copyJSON(track)};});return x;
+  const x=prepareNamedGeneric(data,'ProgressionSystem',{advancements:[],milestones:[]},options);
+  if(Object.hasOwn(x,'tracks'))throw new Error('Unsupported ProgressionSystem field: tracks.');
+  arr(x.advancements,'ProgressionSystem.advancements');arr(x.milestones,'ProgressionSystem.milestones');
+  const only=(value,keys,label)=>{for(const key of Object.keys(value))if(!keys.includes(key))throw new Error(`${label} contains unsupported field: ${key}.`);};
+  const ref=(value,label)=>{if(value===''||value===null||value===undefined)return null;if(!nonempty(value))throw new Error(`${label} must be null or an id.`);return value;};
+  x.advancements=x.advancements.map((entry,i)=>{
+    const label=`ProgressionSystem.advancements[${i}]`;if(!isRecord(entry)||!nonempty(entry.id))throw new Error(`${label} requires id.`);
+    const a={labelKey:'',definitionTypeId:null,definitionIds:[],currencyRef:null,costFormulaRef:null,step:1,maximumFormulaRef:null,conditionRef:null,...copyJSON(entry)};
+    only(a,['id','labelKey','definitionTypeId','definitionIds','currencyRef','costFormulaRef','step','maximumFormulaRef','conditionRef'],label);
+    for(const key of ['definitionTypeId','costFormulaRef','maximumFormulaRef','conditionRef'])a[key]=ref(a[key],`${label}.${key}`);
+    arr(a.definitionIds,`${label}.definitionIds`);
+    if(!Number.isFinite(a.step)||a.step===0)throw new Error(`${label}.step must be a number other than 0.`);
+    if(a.currencyRef!==null&&!(isRecord(a.currencyRef)&&a.currencyRef.objectKind==='definition'&&nonempty(a.currencyRef.objectId)&&['pool.current','value.base'].includes(a.currencyRef.outputId)))throw new Error(`${label}.currencyRef must be the current value of a pool or the base of a value.`);
+    need(a.definitionTypeId!==null||a.definitionIds.length>0,`${label} needs a Definition type or Definitions to raise.`,options);
+    need(a.currencyRef!==null,`${label} needs a currency.`,options);need(a.costFormulaRef!==null,`${label} needs a cost Formula.`,options);
+    return a;
+  });
+  x.milestones=x.milestones.map((entry,i)=>{
+    const label=`ProgressionSystem.milestones[${i}]`;if(!isRecord(entry)||!nonempty(entry.id))throw new Error(`${label} requires id.`);
+    const m={labelKey:'',conditionRef:null,definitionIds:[],actionRef:null,...copyJSON(entry)};
+    only(m,['id','labelKey','conditionRef','definitionIds','actionRef'],label);
+    for(const key of ['conditionRef','actionRef'])m[key]=ref(m[key],`${label}.${key}`);
+    arr(m.definitionIds,`${label}.definitionIds`);
+    need(m.conditionRef!==null,`${label} needs a Condition.`,options);
+    need(m.definitionIds.length>0||m.actionRef!==null,`${label} grants nothing.`,options);
+    return m;
+  });
+  for(const [list,label] of [[x.advancements,'advancement'],[x.milestones,'milestone']])if(new Set(list.map(e=>e.id)).size!==list.length)throw new Error(`ProgressionSystem lists the same ${label} id twice.`);
+  return x;
 }
 export function prepareSheetDefinition(data,options={}){
   const x=prepareNamedGeneric(data,'SheetDefinition',{viewType:'actor',renderer:'foundry',layout:{direction:'column',components:[]}},options);

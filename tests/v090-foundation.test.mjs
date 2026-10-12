@@ -10,7 +10,8 @@ test('v0.9.0 creates gameplay foundations and a constrained SheetDefinition',asy
  await api.createModifier(v,{id:'m',nameKey:'Bonus',targetRef:{objectKind:'definition',objectId:'x',capabilityId:'value',outputId:'value.final'},operation:'add',valueSource:{kind:'literal',value:2},conditionRefs:[],stacking:{mode:'stack',group:''},priority:0});
  await api.createDuration(v,{id:'d',nameKey:'Round',mode:'fixed',amount:1,unit:'round'});
  await api.createCreationSystem(v,{id:'c',nameKey:'Create',steps:[{id:'s',name:'Choose',kind:'choice',options:[],min:0,max:1}]});
- await api.createProgressionSystem(v,{id:'p',nameKey:'Progress',tracks:[{id:'xp',name:'XP',thresholds:[5,10]}]});
+ await api.createProgressionSystem(v,{id:'p',nameKey:'Progress',milestones:[{id:'level-2',conditionRef:null,definitionIds:['x']}]});
+ await assert.rejects(api.createProgressionSystem(v,{id:'old',nameKey:'Old',tracks:[]}),/tracks/);
  const sheet=await api.createSheetDefinition(v,{id:'sheet',nameKey:'Character',viewType:'actor',renderer:'foundry',layout:{direction:'column',components:[{id:'head',kind:'section',label:'Identity',source:null,width:'full'}]}});
  assert.equal(sheet.layout.components[0].kind,'section');assert.equal(api.listModifiers(v).length,1);assert.equal(api.listCreationSystems(v).length,1);
 });

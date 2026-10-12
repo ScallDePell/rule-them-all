@@ -99,6 +99,7 @@ export class RuntimeEngine{
     if(method==="transferCollectionEntry")return [args[1]?.from?.containerRef,args[1]?.to?.containerRef].filter(Boolean).map(normalizeRuntimeContainerRef);
     if(method==="acquire"){const ref=normalizeRuntimeContainerRef(args[1]),{actionId=null,context={}}=args[2]??{};return actionId?[ref,...this.writeTargets("executeAction",[versionId,actionId,{...context,roles:{...(context.roles??{}),self:ref,source:ref}}])]:[ref];}
     if(method==="rerollAction"){const [,rerollId,original={},context={}]=args,refs=[...this.writeTargets("executeAction",[versionId,original.actionId,original.context??{}]),...this.writeTargets("executeAction",[versionId,rerollId,context])];return [...new Map(refs.map(ref=>[this.#refKey(ref),ref])).values()];}
+    if(method==="advance"||method==="applyMilestones")return [normalizeRuntimeContainerRef(args[2])];
     if(method!=="executeAction")return [normalizeRuntimeContainerRef(args[1])];
     const ruleset=this.ruleset(versionId),context=args[2]??{},roles=new Set(),seen=new Set();
     const visit=actionId=>{
@@ -618,8 +619,10 @@ export class RuntimeEngine{
     const changes=[];for(const effectId of action.costEffectRefs??[])changes.push(await this.previewEffect(versionId,effectId,context,staged));
     // Acquisitions come before the Effects, which may then target the new DefinitionStates.
     const acquired=[];
-    for(const acquisition of [...(action.acquisitions??[]),...acquisitions]){
-      const role=acquisition.targetRole??"self",target=roleRef(context,role);if(!target)throw new Error(`EvaluationContext role is missing: ${role}.`);
+    for(const listed of [...(action.acquisitions??[]),...acquisitions]){
+      const role=listed.targetRole??"self",target=roleRef(context,role);if(!target)throw new Error(`EvaluationContext role is missing: ${role}.`);
+      let acquisition=listed;
+      if(listed.definitionFormulaRef){const chosen=await evaluator.formula(listed.definitionFormulaRef,context),definitionId=typeof chosen==="string"?chosen:chosen?.objectId;if(!definitionId)throw new Error(`Action ${action.id}: the Formula ${listed.definitionFormulaRef} names no Definition to acquire.`);acquisition={...listed,definitionId};}
       const ref=normalizeRuntimeContainerRef(target),key=this.#refKey(ref);
       if(!staged.has(key))staged.set(key,await this.adapter.load(ref,{rulesetVersionId:versionId}));
       const created=await this.#acquireInto(versionId,ruleset,ref,staged.get(key),acquisition);
@@ -737,6 +740,80 @@ export class RuntimeEngine{
     await this.#emitActionEvents(versionId,{actionId:rerollActionId,testResult:paid.testResult,context:paid.context,followUps:paid.followUps,targets:paid.targets},eventDepth,result.events);
     await this.#emitActionEvents(versionId,{actionId,testResult:plan.testResult,context:{...plan.context,cause:use},followUps:plan.followUps,targets:plan.targets},eventDepth,result.events);
     return result;
+  }
+  /** A Progression System seen from one Actor: per advancement, the Definitions it can raise there with
+   * their value, next cost and whether it is allowed now; per milestone, whether it is reached or applied. */
+  async describeProgression(versionId,systemId,containerRef){
+    const ruleset=this.ruleset(versionId),system=this.#progression(ruleset,systemId),ref=normalizeRuntimeContainerRef(containerRef);
+    const state=await this.adapter.load(ref,{rulesetVersionId:versionId}),staged=new Map([[this.#refKey(ref),state]]),evaluator=this.evaluator(versionId,staged),context={roles:{self:ref},defaultRole:"self"};
+    const advancements=[];
+    for(const advancement of system.advancements??[]){
+      const targets=[];
+      for(const definitionId of this.#advanceTargets(ruleset,advancement,state)){const quote=await this.#advanceQuote(versionId,ruleset,advancement,definitionId,state,context,evaluator,staged);targets.push({definitionId,...quote});}
+      advancements.push({id:advancement.id,labelKey:advancement.labelKey||advancement.id,targets});
+    }
+    const milestones=[];
+    for(const milestone of system.milestones??[]){
+      const applied=state.milestones.includes(`${system.id}/${milestone.id}`);
+      milestones.push({id:milestone.id,labelKey:milestone.labelKey||milestone.id,applied,reached:applied||await evaluator.condition(milestone.conditionRef,context),inputs:milestone.actionRef?await this.describeActionInputs(versionId,milestone.actionRef,context):[]});
+    }
+    return {progressionSystemId:system.id,advancements,milestones};
+  }
+  /** Buy one advancement on one Definition: the currency pays the cost Formula, value.base rises by step, in one transaction. */
+  async advance(versionId,systemId,containerRef,advancementId,definitionId,{transactionId=null}={}){
+    const ruleset=this.ruleset(versionId),system=this.#progression(ruleset,systemId),advancement=system.advancements?.find(x=>x.id===advancementId);
+    if(!advancement)throw new Error(`Advancement unavailable: ${advancementId}.`);
+    const ref=normalizeRuntimeContainerRef(containerRef),tx=this.transaction(versionId,"advance",{transactionId,summary:{progressionSystemId:system.id,advancementId,definitionId}}),state=await tx.load(ref);
+    if(!this.#advanceTargets(ruleset,advancement,state).includes(definitionId))throw new Error(`${advancement.labelKey||advancement.id} cannot raise ${definitionId} here.`);
+    const staged=new Map([[this.#refKey(ref),state]]),evaluator=this.evaluator(versionId,staged),context={roles:{self:ref},defaultRole:"self"};
+    const quote=await this.#advanceQuote(versionId,ruleset,advancement,definitionId,state,context,evaluator,staged);
+    if(!quote.allowed)return {allowed:false,reason:quote.reason,...quote};
+    const currency=advancement.currencyRef;let pool=null;
+    if(currency.capabilityId==="pool"){const {slot}=this.#outputContract(ruleset,currency);pool={slot,bounds:await this.#poolBounds(slot,context,evaluator)};}
+    this.#writeOutput(state,currency,"subtract",quote.cost,pool);
+    state.definitionStates[definitionId].capabilityStates.value.base=quote.next;
+    const committed=await this.#commit(tx);
+    return {allowed:true,definitionId,before:quote.current,after:quote.next,cost:quote.cost,transactionId:committed.transactionId,ledgerEntryIds:committed.entries.map(entry=>entry.id)};
+  }
+  /** Apply every milestone reached and not yet applied, in order: its Definitions, then its Action
+   * (inputs: choices[milestoneId]), all in one transaction. A milestone whose Action is refused stops there. */
+  async applyMilestones(versionId,systemId,containerRef,{choices={},transactionId=null}={}){
+    const ruleset=this.ruleset(versionId),system=this.#progression(ruleset,systemId),ref=normalizeRuntimeContainerRef(containerRef),key=this.#refKey(ref);
+    const staged=new Map([[key,await this.adapter.load(ref,{rulesetVersionId:versionId})]]),evaluator=this.evaluator(versionId,staged),context={roles:{self:ref,source:ref},defaultRole:"self"};
+    const applied=[],changes=[];let stopped=null;
+    for(const milestone of system.milestones??[]){
+      const mark=`${system.id}/${milestone.id}`,state=staged.get(key);
+      if(state.milestones.includes(mark)||!await evaluator.condition(milestone.conditionRef,context))continue;
+      const copy=new Map([...staged].map(([k,s])=>[k,clone(s)]));
+      for(const definitionId of milestone.definitionIds??[]){const created=await this.#acquireInto(versionId,ruleset,ref,copy.get(key),{definitionId,initial:{},ifAbsent:true});if(created)changes.push({acquisition:definitionId,containerRef:ref});}
+      if(milestone.actionRef){
+        const plan=await this.previewAction(versionId,milestone.actionRef,{...context,variables:{input:clone(choices[milestone.id]??{})}},{staged:copy});
+        if(!plan.allowed){stopped={milestoneId:milestone.id,reason:plan.reason,conditionId:plan.conditionId??null};break;}
+        changes.push(...plan.changes);
+      }
+      copy.get(key).milestones.push(mark);
+      for(const [k,s] of copy)staged.set(k,s);applied.push(milestone.id);
+    }
+    if(!applied.length)return {applied,stopped,changes:[]};
+    const tx=this.transaction(versionId,"milestones",{transactionId,summary:{progressionSystemId:system.id,milestoneIds:applied}});
+    const refs=new Map([[key,ref],...changes.filter(change=>change.containerRef).map(change=>[this.#refKey(change.containerRef),normalizeRuntimeContainerRef(change.containerRef)])]);
+    for(const [k,r] of refs)if(staged.has(k))tx.stage(r,staged.get(k));
+    const committed=await this.#commit(tx);
+    return {applied,stopped,changes,transactionId:committed.transactionId,ledgerEntryIds:committed.entries.map(entry=>entry.id)};
+  }
+  #progression(ruleset,systemId){const system=ruleset.progressionSystems?.find(x=>x.id===systemId&&enabled(x));if(!system)throw new Error(`Progression System unavailable: ${systemId}.`);return system;}
+  /** The Definitions an advancement can raise on this container: those listed or of its type, held, with a value. */
+  #advanceTargets(ruleset,advancement,state){
+    return (ruleset.definitions??[]).filter(definition=>enabled(definition)&&(advancement.definitionIds.includes(definition.id)||definition.definitionTypeId===advancement.definitionTypeId)&&state.definitionStates[definition.id]?.capabilityStates?.value).map(definition=>definition.id);
+  }
+  async #advanceQuote(versionId,ruleset,advancement,definitionId,state,context,evaluator,staged){
+    const current=Number(state.definitionStates[definitionId].capabilityStates.value.base??0),next=current+advancement.step;
+    const scope={...context,variables:{advance:{definitionId,definition:{objectKind:"definition",objectId:definitionId},current,next}}};
+    const cost=Number(await evaluator.formula(advancement.costFormulaRef,scope));if(!Number.isFinite(cost)||cost<0)throw new Error(`${advancement.labelKey||advancement.id}: the cost is not a number of 0 or more.`);
+    const maximum=advancement.maximumFormulaRef?Number(await evaluator.formula(advancement.maximumFormulaRef,scope)):null;
+    const funds=Number(await this.resolveReference(versionId,advancement.currencyRef,context,{staged}));
+    const reason=maximum!==null&&next>maximum?"maximum":advancement.conditionRef&&!await evaluator.condition(advancement.conditionRef,scope)?"condition":funds<cost?"cost":null;
+    return {current,next,cost,maximum,funds,allowed:!reason,reason};
   }
   /** After the commit: the events of the Action, then those of each follow-up that ran, each with its own context.
    * An Action on several targets emits its events once per target its Outcome let through. */

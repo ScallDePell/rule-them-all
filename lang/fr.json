@@ -152,7 +152,8 @@
       "DrawLocked": "Tiré, définitif",
       "DrawWeightField": "Chance selon le champ",
       "DrawEvenly": "Vide : chaque option a la même chance",
-      "DrawRoll": "Jet pour chaque Definition"
+      "DrawRoll": "Jet pour chaque Definition",
+      "NoChosenDefinition": "Aucune"
     },
     "FamilyColor": {
       "parameters": "Paramètres",
@@ -563,7 +564,9 @@
         "refuse": "Refuser l'Action",
         "raise": "Augmenter sa valeur"
       },
-      "AcquisitionRaiseBy": "Augmenter de"
+      "AcquisitionRaiseBy": "Augmenter de",
+      "ProgressionSystem": "Système de progression",
+      "AcquisitionChosen": "Acquiert aussi la Definition donnée par"
     },
     "EditorDisplay": {
       "NoneSelected": "Aucune sélection",
@@ -694,7 +697,9 @@
         "Initialized": "Acteurs initialisés",
         "Reset": "Données réinitialisées",
         "Saved": "Valeur enregistrée",
-        "Error": "Échec de l’opération"
+        "Error": "Échec de l’opération",
+        "Progression": "Amélioration",
+        "Milestones": "Paliers"
       },
       "Guide": {
         "test": "Choisissez un test puis lancez-le. Source / Soi fournit les valeurs testées ; la cible est disponible dans le contexte de la règle.",
@@ -702,14 +707,16 @@
         "formula": "Évaluez une formule sur Source / Soi pour vérifier une valeur calculée.",
         "condition": "Évaluez une condition sur Source / Soi. Le résultat est VRAI ou FAUX.",
         "event": "Émettez un événement et voyez quels déclencheurs s’activent.",
-        "roll": "Lancez des dés Foundry seuls, hors des règles du Ruleset."
+        "roll": "Lancez des dés Foundry seuls, hors des règles du Ruleset.",
+        "progression": "Choisissez un système de progression : Source / Self achète des améliorations et applique les paliers atteints."
       },
       "Empty": {
         "test": "Ce Ruleset n’a pas encore de test.",
         "action": "Ce Ruleset n’a pas encore d’action.",
         "formula": "Ce Ruleset n’a pas encore de formule.",
         "condition": "Ce Ruleset n’a pas encore de condition.",
-        "event": "Ce Ruleset n’a pas encore de type d’événement."
+        "event": "Ce Ruleset n’a pas encore de type d’événement.",
+        "progression": "Ce Ruleset n'a pas encore de système de progression."
       },
       "Error": {
         "NoTestActors": "La création d’acteurs de test est indisponible.",
@@ -721,7 +728,8 @@
           "formulaId": "Choisissez une formule.",
           "conditionId": "Choisissez une condition.",
           "eventTypeId": "Choisissez un type d’événement.",
-          "rollFormula": "Saisissez une formule de dés."
+          "rollFormula": "Saisissez une formule de dés.",
+          "progressionId": "Choisissez un système de progression."
         }
       },
       "Diagnostics": "Diagnostic",
@@ -735,7 +743,21 @@
       "FollowUps": "Puis",
       "RerollCount": "Relances",
       "Reroll": "Relancer {name} avec",
-      "RerollButton": "Relancer"
+      "RerollButton": "Relancer",
+      "Progression": "Progression",
+      "Advance": "Acheter",
+      "Cost": "Coût",
+      "AdvanceRefused": {
+        "cost": "pas assez pour payer",
+        "maximum": "déjà au maximum",
+        "condition": "sa Condition est fausse"
+      },
+      "MilestoneApplied": "Appliqué",
+      "MilestoneReached": "Atteint, pas encore appliqué",
+      "MilestoneNotReached": "Pas atteint",
+      "ApplyMilestones": "Appliquer les paliers atteints",
+      "MilestonesApplied": "{count} palier(s) appliqué(s).",
+      "MilestoneStopped": "Arrêté à"
     },
     "TestInput": {
       "Title": "Entrées",
@@ -939,8 +961,8 @@
         "Usage": "Chaque étape propose un choix de définitions ou de contenus, ou une relecture finale."
       },
       "progressionSystem": {
-        "Summary": "Un système de progression décrit comment un personnage évolue.",
-        "Usage": "Ce contrat est encore ouvert ; la recette « Progression par l'expérience » montre une approche avec les primitives actuelles."
+        "Summary": "Un système de progression dit comment un personnage évolue : améliorations achetées avec de l'XP ou des points, et paliers atteints à un niveau.",
+        "Usage": "Une amélioration augmente une Definition et paie une Formule de coût avec une monnaie ; son coût peut croître avec la valeur actuelle. Un palier donne des Definitions et lance une Action une fois sa Condition vraie ; un choix de l'Action laisse le joueur choisir (un don). Le niveau lui-même est une Formule sur l'XP."
       },
       "sheetDefinition": {
         "Summary": "Une feuille décrit l'affichage d'un Actor ou d'un Item.",
@@ -1114,6 +1136,26 @@
         "each": "Chaque cible, ses propres dés",
         "shared": "Chaque cible, mêmes dés"
       }
+    },
+    "Progression": {
+      "Advancement": "Amélioration",
+      "Advancements": "Améliorations achetées",
+      "AdvancementsHelp": "Ce qu'un personnage achète avec une monnaie (XP, points) : chaque achat augmente une Definition du pas. La Formule de coût lit variables.advance.current et variables.advance.next.",
+      "AddAdvancement": "Ajouter une amélioration",
+      "Label": "Libellé",
+      "RaisesType": "Augmente les Definitions du type",
+      "RaisesDefinitions": "Ou ces Definitions",
+      "Step": "Augmentée de",
+      "Currency": "Payée avec",
+      "Cost": "Coût",
+      "Maximum": "Valeur maximale",
+      "Milestone": "Palier",
+      "Milestones": "Paliers",
+      "MilestonesHelp": "Atteints quand leur Condition est vraie (un niveau) : ils donnent leurs Definitions et lancent leur Action une fois par personnage. Les choix de l'Action sont ceux du palier.",
+      "AddMilestone": "Ajouter un palier",
+      "ReachedWhen": "Atteint quand",
+      "Grants": "Donne",
+      "ThenAction": "Puis lance"
     }
   }
 }

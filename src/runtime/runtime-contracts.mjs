@@ -17,6 +17,9 @@ export function prepareRuntimeState(data,{rulesetVersionId=""}={}) {
   // Owned Contents: acquisition key -> {templateId, contentTypeId, fields} (instance values over the template's data).
   state.contents??={};
   if(!isRecord(state.contents)) throw new Error("contents must be an object.");
+  // Progression milestones already applied: "<progressionSystemId>/<milestoneId>".
+  state.milestones??=[];
+  if(!Array.isArray(state.milestones)) throw new Error("milestones must be an array.");
   return state;
 }
 

@@ -29,7 +29,7 @@ export function createEntrySeed(kind,{uid,definitionTypeId=null,contentTypeId=nu
   if(kind==="duration")return{id:uid("duration"),nameKey:"",descriptionKey:"",enabled:true,tags:[],mode:"untilRemoved",amount:null,unit:null,eventTypeRef:null,conditionRef:null,at:null};
   if(kind==="table")return{id:uid("table"),nameKey:"",descriptionKey:"",enabled:true,tags:[],rollRef:"",bonusFormulaRef:null,rows:[]};
   if(kind==="creationSystem")return{id:uid("creation"),nameKey:"",descriptionKey:"",enabled:true,tags:[],steps:[]};
-  if(kind==="progressionSystem")return{id:uid("progression"),nameKey:"",descriptionKey:"",enabled:true,tags:[],tracks:[]};
+  if(kind==="progressionSystem")return{id:uid("progression"),nameKey:"",descriptionKey:"",enabled:true,tags:[],advancements:[],milestones:[]};
   if(kind==="sheetDefinition")return{id:uid("sheet"),nameKey:"New Sheet",descriptionKey:"",enabled:true,tags:[],viewType:"actor",renderer:"foundry",layout:{direction:"column",components:[]}};
   return{id:uid(kind),nameKey:"",descriptionKey:"",enabled:true,tags:[]};
   }

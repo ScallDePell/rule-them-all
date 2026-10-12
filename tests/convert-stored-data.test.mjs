@@ -34,3 +34,12 @@ test('FormulaBindings copied per role become one binding without a role', () => 
   assert.deepEqual(snapshot.rulesetFamilies[0].versions[0].workingDraft.formulaBindings.map(b=>[b.id,Object.hasOwn(b,'targetRole')]),[['b-self',false]]);
   assert.ok(notes.some(note=>note.includes('b-target')));
 });
+
+test('Progression tracks are removed and the system keeps its name, ready for advancements and milestones', () => {
+  const source=old(),r=source.rulesetFamilies[0].versions[0].workingDraft;
+  r.progressionSystems=[{id:'p',nameKey:'Progress',descriptionKey:'',enabled:true,order:0,tags:[],tracks:[{id:'xp',name:'XP',mode:'threshold',thresholds:[5,10]}]}];
+  const {snapshot,notes}=convertSnapshot(source);
+  const [system]=snapshot.rulesetFamilies[0].versions[0].workingDraft.progressionSystems;
+  assert.deepEqual([system.nameKey,Object.hasOwn(system,'tracks'),system.advancements,system.milestones],['Progress',false,[],[]]);
+  assert.ok(notes.some(note=>note.includes('track')));
+});

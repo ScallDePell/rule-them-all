@@ -14,7 +14,7 @@ import {RULESET_SECTIONS,DEFAULT_RULESET_COLOR} from './ruleset-colors.mjs';
 import {collectTemplateAcquisitions} from './content-template-form.mjs';
 import {collectDefinitionSlots} from './slot-form.mjs';
 import {collectTestInputs} from './test-input-form.mjs';
-import {collectRollVariants,collectActionInputs,collectTableRows} from './rule-cards-form.mjs';
+import {collectRollVariants,collectActionInputs,collectTableRows,collectProgression} from './rule-cards-form.mjs';
 const slug=value=>String(value??"").trim().toLowerCase().normalize("NFKD").replace(/[^a-z0-9]+/g,"-").replace(/^-|-$/g,"");
 const json=(value,fallback)=>{const text=String(value??"").trim();return text?JSON.parse(text):fallback;};
 const fieldPresent=(fd,key)=>typeof fd.has==="function"?fd.has(key):fd.get(key)!==undefined&&fd.get(key)!==null;
@@ -73,8 +73,9 @@ export function collectEntryData(kind,{fd,current,bool,checkedIds,queryOne,query
     if(kind==="action")return{...current,nameKey:String(fd.get("nameKey")??"").trim(),descriptionKey:String(fd.get("descriptionKey")??""),enabled:bool("enabled"),inputs:collectActionInputs(queryAll),conditionRefs:checkedIds("conditionRefs"),costEffectRefs:checkedIds("costEffectRefs"),effectRefs:checkedIds("effectRefs"),tableRef:String(fd.get("tableRef")??"").trim()||null,targeting:String(fd.get("targeting")??"one")||"one",reroll:bool("isReroll")?{actionRefs:checkedIds("rerollActionRefs"),keepDice:bool("rerollKeepDice")}:null,tags:checkedIds("tags"),outcomeMappings:collectOutcomeMappings(queryAll("[data-outcome-mapping-group]:not([hidden]) [data-outcome-mapping]")),eventTypeRefs:checkedIds("eventTypeRefs"),testRef:String(fd.get("testRef")??"").trim()||null,
       // Keep the role and initial values of Definitions still acquired; new ones go to "self".
       // Already held: refuse the Action, or raise the Definition's value (a talent taken again gains a rank).
-      acquisitions:checkedIds("acquisitionDefinitionIds").map(definitionId=>{
-        const {ifAbsent:_ifAbsent,add:_add,...base}=(current.acquisitions??[]).find(a=>a?.definitionId===definitionId)??{definitionId,targetRole:"self",initial:{}};
+      // A Formula can name the Definition acquired (one chosen through an input).
+      acquisitions:[...checkedIds("acquisitionDefinitionIds").map(definitionId=>({definitionId})),...(String(fd.get("acquisitionFormulaRef")??"").trim()?[{definitionFormulaRef:String(fd.get("acquisitionFormulaRef")).trim()}]:[])].map(({definitionId,definitionFormulaRef})=>{
+        const {ifAbsent:_ifAbsent,add:_add,...base}=(current.acquisitions??[]).find(a=>definitionId?a?.definitionId===definitionId:a?.definitionFormulaRef===definitionFormulaRef)??(definitionId?{definitionId,targetRole:"self",initial:{}}:{definitionFormulaRef,targetRole:"self",initial:{}});
         if(String(fd.get("acquisitionRepeat")??"refuse")!=="raise")return base;
         const amount=Number(String(fd.get("acquisitionRaise")??"").trim()||1);if(!Number.isFinite(amount))throw new Error("The raise of an acquired Definition must be a number.");
         return {...base,ifAbsent:true,add:{"value.base":amount}};
@@ -101,6 +102,6 @@ export function collectEntryData(kind,{fd,current,bool,checkedIds,queryOne,query
     if(kind==="modifier")return collectModifier(fd,current,{bool,checkedIds,operand:readOperand(fd,queryOne)});
     if(kind==="duration")return collectDuration(fd,current,{bool,checkedIds});
     if(kind==="table")return{...current,nameKey:String(fd.get("nameKey")??"").trim(),descriptionKey:String(fd.get("descriptionKey")??""),enabled:bool("enabled"),rollRef:String(fd.get("tableRollRef")??"").trim()||null,bonusFormulaRef:String(fd.get("tableBonusFormulaRef")??"").trim()||null,rows:collectTableRows(queryAll),tags:checkedIds("tags")};
-    if(kind==="progressionSystem"){const parsed=json(fd.get("genericJson"),current);return{...parsed,id:current.id};}
+    if(kind==="progressionSystem")return{...current,nameKey:String(fd.get("nameKey")??"").trim(),descriptionKey:String(fd.get("descriptionKey")??""),enabled:bool("enabled"),...collectProgression(queryAll),tags:checkedIds("tags")};
     const payload=json(fd.get("genericJson"),{}); if(!payload.id)payload.id=current.id; return payload;
 }

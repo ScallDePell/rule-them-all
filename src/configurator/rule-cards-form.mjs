@@ -2,6 +2,7 @@
    (Roll variants, ...). Context building is pure; collection reads the cards. */
 import {collectCards, choicesFor, cardInteger} from "./card-form.mjs";
 import {parseTypedText} from "./test-input-form.mjs";
+import {refToken, parseRefToken} from "./reference-token.mjs";
 
 const named = (kind, entries, withColors) => entries.map(entry => ({id: entry.id, label: entry.nameKey, ...withColors(kind, entry)}));
 
@@ -64,4 +65,39 @@ export function collectTableRows(queryAll) {
     const label = `Row ${card.labelKey || index + 1}`;
     return {id: card.id || freshId(), labelKey: card.labelKey ?? "", min: cardInteger(card.min, `${label} minimum`), max: cardInteger(card.max, `${label} maximum`), actionRefs: card.actionRefs ?? []};
   });
+}
+
+/** Progression: advancement cards (what is raised, paid with what, at which cost) and milestone cards
+ * (a Condition, the Definitions granted, an Action). currencies: {token, label, colors} of writable outputs. */
+export function progressionContext(data, {definitionTypes = [], definitions = [], currencies = [], formulas = [], conditions = [], actions = [], withColors, none = "—"}) {
+  const types = named("definitionType", definitionTypes, withColors), defs = named("definition", definitions, withColors);
+  const formulaChoices = named("formula", formulas, withColors), conditionChoices = named("condition", conditions, withColors), actionChoices = named("action", actions, withColors);
+  const many = (list, ids = []) => list.map(choice => ({...choice, selected: ids.includes(choice.id)}));
+  const advancement = (entry = {}) => ({
+    id: entry.id ?? "", labelKey: entry.labelKey ?? "", step: entry.step ?? 1, none,
+    definitionTypes: choicesFor(types, entry.definitionTypeId ?? ""), definitions: many(defs, entry.definitionIds),
+    currencies: currencies.map(choice => ({...choice, selected: choice.token === (entry.currencyRef ? refToken(entry.currencyRef) : "")})),
+    costFormulas: choicesFor(formulaChoices, entry.costFormulaRef ?? ""), maximumFormulas: choicesFor(formulaChoices, entry.maximumFormulaRef ?? ""),
+    conditions: choicesFor(conditionChoices, entry.conditionRef ?? "")
+  });
+  const milestone = (entry = {}) => ({
+    id: entry.id ?? "", labelKey: entry.labelKey ?? "", none,
+    conditions: choicesFor(conditionChoices, entry.conditionRef ?? ""), definitions: many(defs, entry.definitionIds), actions: choicesFor(actionChoices, entry.actionRef ?? "")
+  });
+  return {advancementCards: {rows: (data.advancements ?? []).map(advancement), blank: advancement()}, milestoneCards: {rows: (data.milestones ?? []).map(milestone), blank: milestone()}};
+}
+export function collectProgression(queryAll) {
+  const ids = list => { const used = new Set(list.map(card => card.id).filter(Boolean)); let n = 1; return prefix => { while (used.has(`${prefix}-${n}`)) n++; used.add(`${prefix}-${n}`); return `${prefix}-${n}`; }; };
+  const advancementCards = collectCards(queryAll, "advancement"), milestoneCards = collectCards(queryAll, "milestone");
+  const advancementId = ids(advancementCards), milestoneId = ids(milestoneCards);
+  return {
+    advancements: advancementCards.map((card, index) => {
+      const step = Number(card.step || 1);
+      if (!Number.isFinite(step) || step === 0) throw new Error(`Advancement ${card.labelKey || index + 1}: the step must be a number other than 0.`);
+      return {id: card.id || advancementId("advancement"), labelKey: card.labelKey ?? "", definitionTypeId: card.definitionTypeId || null, definitionIds: card.definitionIds ?? [],
+        currencyRef: card.currencyRef ? parseRefToken(card.currencyRef) : null, costFormulaRef: card.costFormulaRef || null, step,
+        maximumFormulaRef: card.maximumFormulaRef || null, conditionRef: card.conditionRef || null};
+    }),
+    milestones: milestoneCards.map(card => ({id: card.id || milestoneId("milestone"), labelKey: card.labelKey ?? "", conditionRef: card.conditionRef || null, definitionIds: card.definitionIds ?? [], actionRef: card.actionRef || null}))
+  };
 }

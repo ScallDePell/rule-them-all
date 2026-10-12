@@ -10,7 +10,7 @@ import {confirmRTA, promptRTA} from "./foundry-dialogs.mjs";
 import {ConfiguratorWindow} from "./configurator-window.mjs";
 import {ConfiguratorEntryEditor} from "./configurator-entry-editor.mjs";
 import {buildRuntimeLabDemoProfile} from "../runtime/runtime-demo-profile.mjs";
-import {applyRuntimeChoice,describeRuntimeResult} from "./runtime-lab-view.mjs";
+import {applyRuntimeChoice,describeRuntimeResult,progressionLabRows} from "./runtime-lab-view.mjs";
 import {diagnosticEditor,pathInObject} from "./diagnostic-focus.mjs";
 import {recipeCards,recipeTextKeys} from "./recipes.mjs";
 
@@ -38,8 +38,8 @@ const TOP_LEVEL = Object.freeze([
   {view:"durations", kind:"duration", titleKey:"RTA.Nav.Durations", list:"listDurations", collection:"durations"},
   {view:"tables", kind:"table", titleKey:"RTA.Nav.Tables", list:"listTables", collection:"tables"},
   {view:"creationSystems", kind:"creationSystem", titleKey:"RTA.Nav.CreationSystems", list:"listCreationSystems", collection:"creationSystems"},
-  // Progression and Sheets stay out of the navigation until their runtime exists (milestone 4 for sheets).
-  {view:"progressionSystems", kind:"progressionSystem", titleKey:"RTA.Nav.ProgressionSystems", list:"listProgressionSystems", collection:"progressionSystems", hidden:true},
+  {view:"progressionSystems", kind:"progressionSystem", titleKey:"RTA.Nav.ProgressionSystems", list:"listProgressionSystems", collection:"progressionSystems"},
+  // Sheets stay out of the navigation until their runtime exists (milestone 4).
   {view:"sheetDefinitions", kind:"sheetDefinition", titleKey:"RTA.Nav.SheetDefinitions", list:"listSheetDefinitions", collection:"sheetDefinitions", hidden:true},
   {view:"contentTypes", kind:"contentType", titleKey:"RTA.Nav.ContentTypes", list:"listContentTypes", collection:"contentTypes"},
   {view:"categories", kind:"category", titleKey:"RTA.Nav.Categories", list:"listCategories", collection:"categories"},
@@ -84,7 +84,7 @@ export class ConfiguratorApp extends ConfiguratorWindow {
   /** The last Action use the Lab executed (result.use: actionId, transactionId, context, dice, rerollCount): what a reroll Action replays. */
   #runtimeLastUse = null;
   // null: not chosen yet, defaulted on render; "": cleared by the user, kept cleared.
-  #runtimeSelection = {source:null,target:null,actionId:null,formulaId:null,conditionId:null,testId:null,eventTypeId:null,rollFormula:"",sourceType:"",targetType:"",actorRole:"source",tool:"test",definitionId:"",contentKey:"",inputs:{}};
+  #runtimeSelection = {source:null,target:null,actionId:null,formulaId:null,conditionId:null,testId:null,eventTypeId:null,rollFormula:"",sourceType:"",targetType:"",actorRole:"source",tool:"test",definitionId:"",contentKey:"",inputs:{},progressionId:null,milestoneInputs:{}};
   /** The selected Action's inputs, as described by the runtime (typed values, allowed options). */
   #runtimeInputSpecs = [];
   entryEditor;
@@ -298,7 +298,8 @@ export class ConfiguratorApp extends ConfiguratorWindow {
     const runtimeConditions=ruleset&&this.#view==="runtimeLab"?api.listConditions(this.#selected).filter(x=>x.enabled!==false).map(x=>({id:x.id,name:localize(api,this.#selected,x.nameKey),colors:runtimeColors("condition",x),selected:false})) : [];
     const runtimeTests=ruleset&&this.#view==="runtimeLab"?api.listTests(this.#selected).filter(x=>x.enabled!==false).map(x=>({id:x.id,name:localize(api,this.#selected,x.nameKey),colors:runtimeColors("test",x),selected:false})) : [];
     const runtimeEvents=ruleset&&this.#view==="runtimeLab"?api.listEventTypes(this.#selected).filter(x=>x.enabled!==false).map(x=>({id:x.id,name:localize(api,this.#selected,x.nameKey),colors:runtimeColors("eventType",x),selected:false})) : [];
-    for(const [key,list] of [["testId",runtimeTests],["formulaId",runtimeFormulas],["conditionId",runtimeConditions],["actionId",runtimeActions],["eventTypeId",runtimeEvents]]){
+    const runtimeProgressions=ruleset&&this.#view==="runtimeLab"?api.listProgressionSystems(this.#selected).filter(x=>x.enabled!==false).map(x=>({id:x.id,name:localize(api,this.#selected,x.nameKey),colors:runtimeColors("progressionSystem",x),selected:false})) : [];
+    for(const [key,list] of [["testId",runtimeTests],["formulaId",runtimeFormulas],["conditionId",runtimeConditions],["actionId",runtimeActions],["eventTypeId",runtimeEvents],["progressionId",runtimeProgressions]]){
       const chosen=applyRuntimeChoice(this.#runtimeSelection,key,list);for(const entry of list)entry.selected=entry.id===chosen;
     }
     let runtimeStateCards=[],runtimeStateError="";
@@ -329,15 +330,23 @@ export class ConfiguratorApp extends ConfiguratorWindow {
     const runtimeRerolls=ruleset&&this.#view==="runtimeLab"&&runtimeTool==="action"&&lastAction?(ruleset.actions??[]).filter(x=>x.enabled!==false&&x.reroll&&(x.reroll.actionRefs?.length?x.reroll.actionRefs.includes(lastAction.id):Boolean(lastAction.testRef))).map(x=>({id:x.id,name:localize(api,this.#selected,x.nameKey),colors:runtimeColors("action",x),selected:x.id===this.#runtimeSelection.rerollId})):[];
     if(runtimeRerolls.length&&!runtimeRerolls.some(x=>x.selected))runtimeRerolls[0].selected=true;
     const runtimeLastUseName=lastAction?localize(api,this.#selected,lastAction.nameKey):"";
-    const runtimeModes={isTest:runtimeTool==="test",isAction:runtimeTool==="action",isFormula:runtimeTool==="formula",isCondition:runtimeTool==="condition",isEvent:runtimeTool==="event",isRoll:runtimeTool==="roll",editSource:this.#runtimeSelection.actorRole!=="target",editTarget:this.#runtimeSelection.actorRole==="target"};
-    const runtimeLists={test:runtimeTests,action:runtimeActions,formula:runtimeFormulas,condition:runtimeConditions,event:runtimeEvents};
+    // Progression: what Source / Self can buy now, and the milestones it reached.
+    let runtimeProgression=null;
+    if(ruleset&&this.#view==="runtimeLab"&&runtimeTool==="progression"&&this.#runtimeSelection.progressionId&&this.#runtimeSelection.source){
+      try{const described=await game.ruleThemAll.runtimeLab.describeProgression(this.#selected,this.#runtimeSelection.progressionId,this.#runtimeSelection.source);
+        const nameOf=id=>{const entry=(ruleset.definitions??[]).find(x=>x.id===id);return entry?localize(api,this.#selected,entry.nameKey):id;};
+        runtimeProgression=progressionLabRows(described,{nameOf,text:key=>localize(api,this.#selected,key),i18n:(key,data)=>data?game.i18n?.format?.(key,data)??key:label(key),chosen:this.#runtimeSelection.milestoneInputs});
+      }catch(error){this.#error=error?.message??String(error);}
+    }
+    const runtimeModes={isProgression:runtimeTool==="progression",isTest:runtimeTool==="test",isAction:runtimeTool==="action",isFormula:runtimeTool==="formula",isCondition:runtimeTool==="condition",isEvent:runtimeTool==="event",isRoll:runtimeTool==="roll",editSource:this.#runtimeSelection.actorRole!=="target",editTarget:this.#runtimeSelection.actorRole==="target"};
+    const runtimeLists={progression:runtimeProgressions,test:runtimeTests,action:runtimeActions,formula:runtimeFormulas,condition:runtimeConditions,event:runtimeEvents};
     const runtimeGuide=label(runtimeTool==="roll"||runtimeLists[runtimeTool]?.length?`RTA.Lab.Guide.${runtimeTool}`:`RTA.Lab.Empty.${runtimeTool}`);
     const runtimeReady={source:!!this.#runtimeSelection.source,target:!!this.#runtimeSelection.target,test:!!this.#runtimeSelection.testId,action:!!this.#runtimeSelection.actionId,formula:!!this.#runtimeSelection.formulaId,condition:!!this.#runtimeSelection.conditionId,event:!!this.#runtimeSelection.eventTypeId,actors:!!(this.#runtimeSelection.source||this.#runtimeSelection.target)};
     return Object.assign(context,{
       error:this.#error,displayLines:this.#displayMode==="lines",displayTiles:this.#displayMode==="tiles",isWorkspace:!!ruleset,isRulesets:!ruleset,view:this.#view,rulesets,navigation,navGroups,currentNavGroup,definitionTypes,contentTypes,
       selectedRuleset:ruleset,selectedRecord:record,rulesetAccent:rulesetColor(ruleset),canOverrideCollection,currentCollection,collectionAccent,collectionCustomAccent,canEditRuleset:record?.status!=="validated",selectedRulesetName:ruleset?localize(api,this.#selected,ruleset.nameKey):"",
       isGeneral:!!ruleset&&this.#view==="general",isCollection:!!ruleset&&Boolean(currentKind),isContentFamily:currentKind==="contentTemplate",isDependencies:!!ruleset&&this.#view==="dependencies",isRuntimeLab:!!ruleset&&this.#view==="runtimeLab",isContentTypes,isContentTemplates,isContentLibraries,
-      currentTitle,currentKind,currentType,canReorder:Boolean(record&&record.status!=="validated"&&currentKind),cards:filteredCards,availableTags,availableCategories,hasFacets:availableTags.length>0||availableCategories.length>0,hasActiveFilters:activeTagIds.size>0||activeCategoryIds.size>0,dependencyGroups:dependencyVisibleGroups,dependencySelected,dependencyGraph,dependencyStats,dependencyAvailableTags,dependencyActiveTagCount:dependencyActiveTags.size,dependencyUnresolvedOnly,actors,runtimeActions,runtimeFormulas,runtimeConditions,runtimeTests,runtimeEvents,runtimeDefinitionChoices,runtimeContentChoices,runtimeInputRows,runtimeRerolls,runtimeLastUseName,runtimeResult:this.#runtimeResult,runtimeStateCards,runtimeSelection:this.#runtimeSelection,runtimeHasActorSubtypes:availableDocumentTypes("Actor").length>1,runtimeActorTypeOptions:availableDocumentTypes("Actor").map(id=>({id,sourceSelected:id===this.#runtimeSelection.sourceType,targetSelected:id===this.#runtimeSelection.targetType})),runtimeTool,runtimeModes,runtimeGuide,runtimeReady,runtimeStateError,runtimeActorNames,
+      currentTitle,currentKind,currentType,canReorder:Boolean(record&&record.status!=="validated"&&currentKind),cards:filteredCards,availableTags,availableCategories,hasFacets:availableTags.length>0||availableCategories.length>0,hasActiveFilters:activeTagIds.size>0||activeCategoryIds.size>0,dependencyGroups:dependencyVisibleGroups,dependencySelected,dependencyGraph,dependencyStats,dependencyAvailableTags,dependencyActiveTagCount:dependencyActiveTags.size,dependencyUnresolvedOnly,actors,runtimeActions,runtimeFormulas,runtimeConditions,runtimeTests,runtimeEvents,runtimeDefinitionChoices,runtimeContentChoices,runtimeInputRows,runtimeRerolls,runtimeProgressions,runtimeProgression,runtimeLastUseName,runtimeResult:this.#runtimeResult,runtimeStateCards,runtimeSelection:this.#runtimeSelection,runtimeHasActorSubtypes:availableDocumentTypes("Actor").length>1,runtimeActorTypeOptions:availableDocumentTypes("Actor").map(id=>({id,sourceSelected:id===this.#runtimeSelection.sourceType,targetSelected:id===this.#runtimeSelection.targetType})),runtimeTool,runtimeModes,runtimeGuide,runtimeReady,runtimeStateError,runtimeActorNames,
       publishReadiness:this.#view==='general'&&record?.status==='draft'?this.#publishReadiness(api,ruleset):null,
       recipes:this.#view==='general'&&record?recipeCards():null,
       lifecycle:record?{isValidated:record.status==="validated",isReady:record.status==="ready",isDraft:record.status==="draft",canMutate:record.status!=="validated",canCreateVersion:record.status==="validated",canActivate:Boolean(record.publishedSnapshot),isActive:record.versionId===activeId,statusLabel:statusLabel(record.status)}:null,
@@ -408,6 +417,7 @@ export class ConfiguratorApp extends ConfiguratorWindow {
     });
     this.#bindDependencyGraph();
     for(const input of this.element?.querySelectorAll?.("[data-runtime-select], [data-runtime-input]")??[])input.addEventListener("change",event=>{const key=event.currentTarget.dataset.runtimeSelect??event.currentTarget.dataset.runtimeInput;this.#runtimeSelection[key]=event.currentTarget.value;if(event.currentTarget.dataset.runtimeSelect)this.render(false);});
+    for(const input of this.element?.querySelectorAll?.("[data-runtime-milestone-input]")??[])input.addEventListener("change",event=>{this.#runtimeSelection.milestoneInputs={...this.#runtimeSelection.milestoneInputs,[event.currentTarget.dataset.runtimeMilestoneInput]:event.currentTarget.value};});
     for(const input of this.element?.querySelectorAll?.("[data-runtime-action-input]")??[])input.addEventListener("change",event=>{this.#runtimeSelection.inputs={...this.#runtimeSelection.inputs,[event.currentTarget.dataset.runtimeActionInput]:event.currentTarget.value};});
   }
 
@@ -610,6 +620,14 @@ export class ConfiguratorApp extends ConfiguratorWindow {
         const context=this.#runtimeContext(),result=preview?await game.ruleThemAll.runtimeLab.previewAction(this.#selected,id,context):await game.ruleThemAll.runtimeLab.executeAction(this.#selected,id,context);
         if(!preview&&result.allowed&&result.use)this.#runtimeLastUse=result.use;
         return this.#runtimeShow("action",{...result,preview});
+      }
+      if (action==="runtimeAdvance") {
+        const {advancement,definition}=button.dataset,result=await game.ruleThemAll.runtimeLab.advance(this.#selected,runtimeId("progressionId"),this.#runtimeSelection.source,advancement,definition);
+        return this.#runtimeShow("progression",{...result,name:button.dataset.name});
+      }
+      if (action==="runtimeMilestones") {
+        const choices={};for(const [key,value] of Object.entries(this.#runtimeSelection.milestoneInputs)){const [milestoneId,inputId]=key.split("|");if(value!=="")(choices[milestoneId]??={})[inputId]=value;}
+        return this.#runtimeShow("milestones",await game.ruleThemAll.runtimeLab.applyMilestones(this.#selected,runtimeId("progressionId"),this.#runtimeSelection.source,{choices}));
       }
       if (action==="runtimeReroll") {
         const use=this.#runtimeLastUse,rerollId=String(this.element.querySelector('[data-runtime-select="rerollId"]')?.value??"");

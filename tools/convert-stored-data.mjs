@@ -1,4 +1,4 @@
-/** One-shot conversion of a World saved before the 2026-10-11 UI simplification or the RWF gap fixes.
+/** One-shot conversion of a World saved before the 2026-10-11 UI simplification, the RWF gap fixes or the 2026-10-12 progression.
  * The module itself reads only the current format; this tool rewrites stored data once.
  * In the Foundry console, as GM:
  *   const {convertWorld}=await import("/modules/rule-them-all/tools/convert-stored-data.mjs");
@@ -150,6 +150,12 @@ export function convertRuleset(source) {
   }
   if (r.formulaBindings) r.formulaBindings = r.formulaBindings.map(b => [...bindings.values()].find(x => x.id === b?.id)).filter(Boolean);
 
+  // 2026-10-12: Progression Systems hold advancements and milestones; the old tracks were never run.
+  r.progressionSystems = (r.progressionSystems ?? []).map(system => {
+    if (!Object.hasOwn(system, "tracks")) return system;
+    if ((system.tracks ?? []).length) notes.push(`progressionSystems.${system.id}: ${system.tracks.length} track(s) removed; rebuild them as advancements or milestones.`);
+    return {...without(system, ["tracks"]), advancements: system.advancements ?? [], milestones: system.milestones ?? []};
+  });
   const policy = restrictionPolicy(restrictions, notes);
   if (policy) r.permissionPolicies = [...(r.permissionPolicies ?? []), policy];
   return {ruleset: r, notes};
