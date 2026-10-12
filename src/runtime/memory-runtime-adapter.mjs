@@ -10,6 +10,9 @@ export class MemoryRuntimeAdapter{
   async loadLedger(ref){return copyJSON(this.ledgers.get(key(ref))??[]);}
   /** One container write: state and ledger together (a Document update in Foundry). */
   async write(ref,{state,ledger}){const k=key(ref);this.states.set(k,copyJSON(state));this.ledgers.set(k,copyJSON(ledger));return copyJSON(state);}
+  /** Token positions for tests: key -> {x, y, disposition}; distance is straight-line. */
+  async distance(a,b){const p=this.positions?.get(key(a)),q=this.positions?.get(key(b));return p&&q?Math.hypot(p.x-q.x,p.y-q.y):NaN;}
+  async nearby(ref,within,side="any"){const me=this.positions?.get(key(ref));if(!me)return NaN;let n=0;for(const [k,p] of this.positions)if(k!==key(ref)&&Math.hypot(p.x-me.x,p.y-me.y)<=within&&(side==="any"||(side==="ally")===(p.disposition===me.disposition)))n++;return n;}
   /** The combat in progress ({kind: "combat", id}), set by tests. */
   activeCombat(){return this.combat??null;}
   /** World clock for Durations, in seconds; tests move it by hand. */

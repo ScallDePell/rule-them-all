@@ -3,7 +3,8 @@ import {formulaNodeRegistry} from "../configurator/operation-registries.mjs";
 
 export class RuntimeEvaluator {
   /** listContents(context, role) and currentContent(context): owned Contents with their fields (formulas over equipment). */
-  constructor({ruleset,resolveReference,listContents=async()=>[],currentContent=async()=>null}) { this.ruleset=ruleset; this.resolveReference=resolveReference; this.listContents=listContents; this.currentContent=currentContent; }
+  /** space: {distance(context, fromRole, toRole), nearby(context, role, within, side)} over the tokens of the scene. */
+  constructor({ruleset,resolveReference,listContents=async()=>[],currentContent=async()=>null,space=null}) { this.ruleset=ruleset; this.resolveReference=resolveReference; this.listContents=listContents; this.currentContent=currentContent; this.space=space; }
 
   parameter(id){const p=this.ruleset.parameters?.find(x=>x.id===id&&x.enabled!==false);if(!p)throw new Error(`Parameter unavailable: ${id}.`);return copyJSON(p.value);}
   async formula(id,context,stack=new Set()){if(stack.has(id))throw new Error(`Formula cycle detected: ${id}.`);const f=this.ruleset.formulas?.find(x=>x.id===id&&x.enabled!==false);if(!f)throw new Error(`Formula unavailable: ${id}.`);const next=new Set(stack);next.add(id);return this.evaluate(f.expression,context,next);}
@@ -22,7 +23,9 @@ export class RuntimeEvaluator {
       reference:(reference,container=null)=>this.resolveReference(container?{container,reference}:reference,context,{forWrite:false}),
       contents:(container=null)=>this.listContents(context,container),
       definition:id=>this.ruleset.definitions?.find(x=>x.id===id&&x.enabled!==false)??null,
-      content:()=>this.currentContent(context)
+      content:()=>this.currentContent(context),
+      distance:(from,to)=>{if(!this.space)throw new Error("Distances need the scene.");return this.space.distance(context,from,to);},
+      nearby:(role,within,side)=>{if(!this.space)throw new Error("Distances need the scene.");return this.space.nearby(context,role,within,side);}
     };
     return type.evaluate(node,kit);
   }

@@ -1178,12 +1178,14 @@
     "Initiative": {
       "Rolled": "{name} rolls initiative",
       "Legend": "Combat initiative",
-      "Test": "Initiative Test",
+      "Test": "Initiative roll",
       "GameSystem": "Game system's roll",
       "TieBreak": "Tie-break",
       "NoTieBreak": "None",
       "EachRound": "Reroll each round",
-      "Help": "Actors under this Ruleset roll this Test in the combat tracker; its total is their initiative."
+      "Help": "Actors under this Ruleset roll this Test, or draw a row of this Table, in the combat tracker; the result is their initiative.",
+      "BySide": "One roll per side",
+      "RolledSide": "{name} rolls initiative for their side"
     },
     "Reroll": {
       "DiceMode": "Dice thrown again",
@@ -1222,6 +1224,15 @@
       "LinkRole": "Role of the linked Actor",
       "LinkFrom": "Linked Actor",
       "NoLink": "No linked role"
+    },
+    "Test": {
+      "ExtraRolls": "Extra rolls",
+      "ExtraRollsHelp": "After the Roll, each extra roll whose Condition holds adds to the roll total or takes from it (a 10 adds a die, a 1 takes one away).",
+      "AddExtraRoll": "Add an extra roll",
+      "ExtraRoll": "Extra roll",
+      "ExtraOperation": "Effect on the total",
+      "ExtraAdd": "Adds",
+      "ExtraSubtract": "Takes away"
     }
   }
 }

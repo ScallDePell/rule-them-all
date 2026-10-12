@@ -41,6 +41,15 @@ export class FoundryRuntimeAdapter{
   }
   worldTime(){return Number(game.time?.worldTime??0);}
   roundSeconds(){return Number(CONFIG.time?.roundTime??6);}
+  /** The token of an Actor on the viewed scene (a linked Actor's first token, or the token itself). */
+  async #token(ref){const doc=await this.resolveDocument(ref);const token=doc.documentName==="Token"?doc.object:doc.getActiveTokens?.()?.[0]??doc.token?.object;return token??null;}
+  /** Distance between two Actors' tokens, in the scene's units (canvas grid measurement). */
+  async distance(a,b){const [p,q]=[await this.#token(a),await this.#token(b)];if(!p||!q)return NaN;return Number(canvas.grid.measurePath([p.center,q.center]).distance);}
+  /** Other tokens within a distance of an Actor's token; allies share its disposition. */
+  async nearby(ref,within,side="any"){
+    const me=await this.#token(ref);if(!me)return NaN;
+    return (canvas.tokens?.placeables??[]).filter(t=>t!==me&&!t.document.hidden&&(side==="any"||(side==="ally")===(t.document.disposition===me.document.disposition))&&Number(canvas.grid.measurePath([me.center,t.center]).distance)<=within).length;
+  }
   /** The Actors of the tokens the current user targets, for an Action on several targets (context.targets). */
   userTargets(){return [...new Set([...(game.user?.targets??[])].map(token=>token.actor?.uuid).filter(Boolean))];}
   /** World Actors, their Items and world Items that hold runtime data. */

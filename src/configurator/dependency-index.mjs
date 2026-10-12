@@ -34,6 +34,7 @@ export class DependencyIndex{
     for(const [i,o] of (ruleset.outcomes??[]).entries())if(o.conditionRef)pushRef(this.#edges,{objectKind:'outcome',objectId:o.id},{objectKind:'condition',objectId:o.conditionRef},'outcomeCondition',`outcomes[${i}].conditionRef`);
     for(const [i,t] of (ruleset.tests??[]).entries()){
       pushRef(this.#edges,{objectKind:'test',objectId:t.id},{objectKind:'roll',objectId:t.rollRef},'testRoll',`tests[${i}].rollRef`);
+      for(const [k,row] of (t.extraRolls??[]).entries()){pushRef(this.#edges,{objectKind:'test',objectId:t.id},{objectKind:'roll',objectId:row.rollRef},'testExtraRoll',`tests[${i}].extraRolls[${k}].rollRef`);pushRef(this.#edges,{objectKind:'test',objectId:t.id},{objectKind:'condition',objectId:row.conditionRef},'testExtraRoll',`tests[${i}].extraRolls[${k}].conditionRef`);}
       if(t.bonusFormulaRef)pushRef(this.#edges,{objectKind:'test',objectId:t.id},{objectKind:'formula',objectId:t.bonusFormulaRef},'testBonus',`tests[${i}].bonusFormulaRef`,'optional');
       if(t.targetFormulaRef)pushRef(this.#edges,{objectKind:'test',objectId:t.id},{objectKind:'formula',objectId:t.targetFormulaRef},'testTarget',`tests[${i}].targetFormulaRef`,'optional');
       if(t.totalFormulaRef)pushRef(this.#edges,{objectKind:'test',objectId:t.id},{objectKind:'formula',objectId:t.totalFormulaRef},'testTotal',`tests[${i}].totalFormulaRef`);
@@ -118,6 +119,7 @@ export class DependencyIndex{
     for(const holder of ['world','combat'])for(const [k,id] of (ruleset.sharedDefinitions?.[holder]??[]).entries())pushRef(this.#edges,{objectKind:'ruleset',objectId:ruleset.id},{objectKind:'definition',objectId:id},'rulesetShared',`sharedDefinitions.${holder}[${k}]`);
     if(ruleset.initiative){
       pushRef(this.#edges,{objectKind:'ruleset',objectId:ruleset.id},{objectKind:'test',objectId:ruleset.initiative.testRef},'rulesetInitiative','initiative.testRef');
+      pushRef(this.#edges,{objectKind:'ruleset',objectId:ruleset.id},{objectKind:'table',objectId:ruleset.initiative.tableRef},'rulesetInitiative','initiative.tableRef');
       pushRef(this.#edges,{objectKind:'ruleset',objectId:ruleset.id},{objectKind:'formula',objectId:ruleset.initiative.tieBreakFormulaRef},'rulesetInitiative','initiative.tieBreakFormulaRef');
     }
     for(const [i,system] of (ruleset.progressionSystems??[]).entries()){

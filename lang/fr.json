@@ -1174,12 +1174,14 @@
     "Initiative": {
       "Rolled": "{name} lance l'initiative",
       "Legend": "Initiative en combat",
-      "Test": "Test d'initiative",
+      "Test": "Jet d'initiative",
       "GameSystem": "Jet du système de jeu",
       "TieBreak": "Départage",
       "NoTieBreak": "Aucun",
       "EachRound": "Relancer à chaque round",
-      "Help": "Les acteurs de ce Ruleset lancent ce Test dans le combat tracker ; son total donne leur initiative."
+      "Help": "Les Acteurs de ce Ruleset lancent ce Test, ou tirent une ligne de cette Table, dans le suivi de combat ; le résultat est leur initiative.",
+      "BySide": "Un jet par camp",
+      "RolledSide": "{name} lance l'initiative pour son camp"
     },
     "Reroll": {
       "DiceMode": "Dés relancés",
@@ -1218,6 +1220,15 @@
       "LinkRole": "Rôle de l'acteur lié",
       "LinkFrom": "Acteur lié",
       "NoLink": "Pas de rôle lié"
+    },
+    "Test": {
+      "ExtraRolls": "Jets supplémentaires",
+      "ExtraRollsHelp": "Après le jet, chaque jet supplémentaire dont la Condition est vraie s'ajoute au total du jet ou s'en retranche (un 10 ajoute un dé, un 1 en retire un).",
+      "AddExtraRoll": "Ajouter un jet supplémentaire",
+      "ExtraRoll": "Jet supplémentaire",
+      "ExtraOperation": "Effet sur le total",
+      "ExtraAdd": "Ajoute",
+      "ExtraSubtract": "Retranche"
     }
   }
 }

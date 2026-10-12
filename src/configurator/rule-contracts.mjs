@@ -95,8 +95,12 @@ export function prepareInputBinding(data,options={},label='InputBinding'){
 /** TestDefinition (CP-29). A Test may run without a Roll; it then needs a total Formula.
  * total = totalFormulaRef ?? roll total + bonus; margin = marginFormulaRef ?? total - target. */
 export function prepareTest(data,options={}){
-  const x={descriptionKey:'',enabled:true,order:0,tags:[],rollRef:null,inputBindings:[],bonusFormulaRef:null,totalFormulaRef:null,targetFormulaRef:null,targetValue:null,opposedTestRef:null,marginFormulaRef:null,outcomeRefs:[],fallbackOutcomeRef:null,...copyJSON(data)};
+  const x={descriptionKey:'',enabled:true,order:0,tags:[],rollRef:null,inputBindings:[],bonusFormulaRef:null,totalFormulaRef:null,targetFormulaRef:null,targetValue:null,opposedTestRef:null,marginFormulaRef:null,outcomeRefs:[],fallbackOutcomeRef:null,extraRolls:[],...copyJSON(data)};
   identity(x,'Test',options);
+  // extraRolls: after the Roll, each one whose Condition holds throws another Roll that adds to or takes from the roll
+  // total (a 10 adds a d10, a 1 takes one away); later Conditions see the totals so far.
+  arr(x.extraRolls,'Test.extraRolls');
+  x.extraRolls=x.extraRolls.map((row,i)=>{if(!isRecord(row))throw new Error(`Test.extraRolls[${i}] must be an object.`);const r={operation:'add',...row};for(const key of Object.keys(r))if(!['conditionRef','rollRef','operation'].includes(key))throw new Error(`Test.extraRolls[${i}] contains unsupported field: ${key}.`);if(!nonempty(r.conditionRef)||!nonempty(r.rollRef))throw new Error(`Test.extraRolls[${i}] needs a Condition and a Roll.`);if(!['add','subtract'].includes(r.operation))throw new Error(`Test.extraRolls[${i}].operation must be add or subtract.`);return r;});
   if(x.rollRef==='')x.rollRef=null;
   for(const key of ['rollRef','bonusFormulaRef','totalFormulaRef','targetFormulaRef','marginFormulaRef','fallbackOutcomeRef'])if(x[key]!==null&&!nonempty(x[key]))throw new Error(`Test.${key} must be null or an id.`);
   need(x.rollRef!==null||x.totalFormulaRef!==null,'Test requires a Roll or a total Formula.',options);

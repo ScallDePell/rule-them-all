@@ -274,7 +274,14 @@ export class RuntimeEngine{
   #refKey(ref){return ref.uuid??`${ref.kind}:${ref.id}`;}
   evaluator(versionId,staged=null){const ruleset=this.ruleset(versionId);return new RuntimeEvaluator({ruleset,resolveReference:(reference,context,opts)=>this.resolveReference(versionId,reference,context,{...opts,staged}),
     listContents:async(context,container)=>this.#contents(versionId,context,container??context?.defaultRole??"self",staged),
-    currentContent:async context=>{if(!context?.content?.key)return null;return (await this.#contents(versionId,context,context.content.role??"self",staged)).find(row=>row.key===context.content.key)??null;}});}
+    currentContent:async context=>{if(!context?.content?.key)return null;return (await this.#contents(versionId,context,context.content.role??"self",staged)).find(row=>row.key===context.content.key)??null;},
+    space:{distance:(context,from,to)=>this.#spatial("distance",context,[from,to]),nearby:(context,role,within,side)=>this.#spatial("nearby",context,[role],within,side)}});}
+  /** Distances come from the adapter (Foundry: the tokens of the viewed scene). */
+  async #spatial(kind,context,roles,...rest){
+    const refs=roles.map(role=>{const ref=roleRef(context,role);if(!ref)throw new Error(`EvaluationContext role is missing: ${role}.`);return normalizeRuntimeContainerRef(ref);});
+    if(typeof this.adapter[kind]!=="function")throw new Error("This runtime has no scene to measure distances on.");
+    const value=Number(await this.adapter[kind](...refs,...rest));if(!Number.isFinite(value))throw new Error(`No ${kind} between these Actors: are their tokens on the scene?`);return value;
+  }
   /** A role's owned Contents, each with its template data overlaid by its instance fields. */
   async #contents(versionId,context,role,staged){
     const target=roleRef(context,role);if(!target)throw new Error(`EvaluationContext role is missing: ${role}.`);
@@ -335,6 +342,15 @@ export class RuntimeEngine{
       const natural=Number.isFinite(Number(roll.natural))?Number(roll.natural):Number(roll.total);
       state.roll={formula:String(roll.formula??formula),total:Number(roll.total),natural,result:String(roll.result??roll.total??""),dice:clone(roll.dice??[])};
       state.rollTotal=Number(roll.total);state.natural=natural;state.total=Number(roll.total);sync();
+      // Extra rolls: each whose Condition holds now adds to or takes from the roll total.
+      for(const extra of test.extraRolls??[]){
+        if(!await evaluator.condition(extra.conditionRef,scope))continue;
+        const extraDef=ruleset.rolls?.find(x=>x.id===extra.rollRef&&enabled(x));if(!extraDef)throw new Error(`Roll unavailable: ${extra.rollRef}.`);
+        const built=await this.#rollFormula(extraDef,scope,evaluator,{test:clone(state.inputs)}),thrown=await this.#throw(resolveRollData(built.formula,built.data),built.data,scope);
+        const amount=(extra.operation==="subtract"?-1:1)*Number(thrown.total);
+        state.rollTotal+=amount;state.total=state.rollTotal;(state.roll.extra??=[]).push({rollId:extra.rollRef,total:Number(thrown.total),operation:extra.operation});
+        state.roll.result=`${state.roll.result} ${extra.operation==="subtract"?"−":"+"} ${thrown.total}`;sync();
+      }
     }
     const number=async(formulaId,label)=>{const value=Number(await evaluator.formula(formulaId,scope));if(!Number.isFinite(value))throw new Error(`Test ${test.id} ${label} is not a number.`);return value;};
     if(test.bonusFormulaRef){state.bonus=await number(test.bonusFormulaRef,"bonus");state.total=state.rollTotal+state.bonus;sync();}
@@ -837,15 +853,24 @@ export class RuntimeEngine{
     await this.#emitActionEvents(versionId,{actionId,testResult:plan.testResult,context:{...plan.context,cause:use},followUps:plan.followUps,targets:plan.targets??plan.each},eventDepth,result.events);
     return result;
   }
-  /** Initiative of one container under its Ruleset's initiative Test: the Test total, plus the tie-break
-   * Formula / 100 (Dexterity 14 makes 17 into 17.14). null when the Ruleset sets no initiative. */
-  async rollInitiative(versionId,containerRef){
-    const ruleset=this.ruleset(versionId),initiative=ruleset.initiative;if(!initiative?.testRef)return null;
-    const ref=normalizeRuntimeContainerRef(containerRef),context={roles:{self:ref,source:ref},defaultRole:"self"};
-    const testResult=await this.executeTest(versionId,initiative.testRef,context);
+  /** Initiative of one container under its Ruleset: the initiative Test total, or a row drawn from the initiative
+   * Table among those not drawn yet this round (drawn: their ids; a deck of cards), whose Actions then run for the
+   * container (a joker's bonus). The tie-break Formula adds hundredths (Dexterity 14 makes 17 into 17.14). null without initiative. */
+  async rollInitiative(versionId,containerRef,{drawn=[]}={}){
+    const ruleset=this.ruleset(versionId),initiative=ruleset.initiative;if(!initiative?.testRef&&!initiative?.tableRef)return null;
+    const ref=normalizeRuntimeContainerRef(containerRef),context=this.#shared({roles:{self:ref,source:ref},defaultRole:"self"});
+    let total,testResult=null,row=null;
+    if(initiative.testRef){testResult=await this.executeTest(versionId,initiative.testRef,context);total=Number(testResult.total);}
+    else{
+      const table=ruleset.tables?.find(x=>x.id===initiative.tableRef&&enabled(x));if(!table)throw new Error(`Table unavailable: ${initiative.tableRef}.`);
+      const left=(table.rows??[]).filter(r=>!drawn.includes(r.id));if(!left.length)throw new Error(`Every row of ${table.id} is drawn this round.`);
+      row=left[Math.max(0,Math.min(left.length-1,Number((await this.roll(`1d${left.length}`)).total)-1))];
+      total=Number(row.max??row.min??0);
+      for(const actionId of row.actionRefs??[])await this.executeAction(versionId,actionId,context,{triggered:true});
+    }
     const tieBreak=initiative.tieBreakFormulaRef?Number(await this.evaluateFormula(versionId,initiative.tieBreakFormulaRef,context)):0;
-    if(!Number.isFinite(Number(testResult.total))||!Number.isFinite(tieBreak))throw new Error("Initiative is not a number.");
-    return {initiative:Math.round((Number(testResult.total)+tieBreak/100)*100)/100,eachRound:initiative.eachRound===true,testResult};
+    if(!Number.isFinite(total)||!Number.isFinite(tieBreak))throw new Error("Initiative is not a number.");
+    return {initiative:Math.round((total+tieBreak/100)*100)/100,eachRound:initiative.eachRound===true,bySide:initiative.bySide===true,testResult,...(row?{rowId:row.id,labelKey:row.labelKey}:{})};
   }
   /** A Progression System seen from one Actor: per advancement, the Definitions it can raise there with
    * their value, next cost and whether it is allowed now; per milestone, whether it is reached or applied. */

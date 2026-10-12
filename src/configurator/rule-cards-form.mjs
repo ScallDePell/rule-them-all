@@ -16,6 +16,17 @@ export function collectRollVariants(queryAll) {
   return collectCards(queryAll, "rollVariant").map(card => ({conditionRef: card.conditionRef ?? "", formula: card.formula ?? ""}));
 }
 
+/** Test: one card per extra roll (a Condition, the Roll thrown, added or taken away). */
+export function extraRollContext(data, {conditions = [], rolls = [], withColors, neutral = ""}) {
+  const conditionChoices = named("condition", conditions, withColors), rollChoices = named("roll", rolls, withColors);
+  const row = (extra = {}) => ({conditions: choicesFor(conditionChoices, extra.conditionRef ?? ""), rolls: choicesFor(rollChoices, extra.rollRef ?? ""),
+    operations: ["add", "subtract"].map(id => ({id, labelKey: id === "add" ? "RTA.Test.ExtraAdd" : "RTA.Test.ExtraSubtract", colors: neutral, selected: id === (extra.operation ?? "add")}))});
+  return {extraRolls: {rows: (data.extraRolls ?? []).map(row), blank: row()}};
+}
+export function collectExtraRolls(queryAll) {
+  return collectCards(queryAll, "extraRoll").map(card => ({conditionRef: card.conditionRef ?? "", rollRef: card.rollRef ?? "", operation: card.operation || "add"}));
+}
+
 /** Action: one card per input chosen when the Action is used. Options are written one per line, "value = label". */
 export const ACTION_INPUT_EDITOR_TYPES = Object.freeze(["number", "integer", "boolean", "string", "reference"]);
 const show = value => value === undefined || value === null ? "" : typeof value === "object" ? String(value.objectId ?? "") : String(value);

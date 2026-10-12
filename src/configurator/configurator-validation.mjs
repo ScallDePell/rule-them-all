@@ -128,9 +128,13 @@ export function validateRuleset(ruleset, {scope = "save"} = {}) {
   if (initiative !== null) {
     if (!isRecord(initiative)) issue("OBJECT_TYPE", "initiative", "initiative must be an object or null.");
     else {
-      exactFields(initiative, ["testRef", "tieBreakFormulaRef", "eachRound"], "initiative", issue);
-      if (!nonempty(initiative.testRef)) issue("REQUIRED_STRING", "initiative.testRef", "initiative needs a Test.");
-      else if (!(ruleset.tests ?? []).some(test => test?.id === initiative.testRef)) issue("REFERENCE", "initiative.testRef", `Missing reference: test/${initiative.testRef}.`);
+      // A Test rolled by each combatant, or a Table drawn without replacement each round (a deck of cards); bySide: one roll per disposition.
+      exactFields(initiative, ["testRef", "tableRef", "tieBreakFormulaRef", "eachRound", "bySide"], "initiative", issue);
+      const hasTest = nonempty(initiative.testRef), hasTable = nonempty(initiative.tableRef);
+      if (hasTest === hasTable) issue("REQUIRED_STRING", "initiative.testRef", "initiative needs a Test or a Table, not both.");
+      if (hasTest && !(ruleset.tests ?? []).some(test => test?.id === initiative.testRef)) issue("REFERENCE", "initiative.testRef", `Missing reference: test/${initiative.testRef}.`);
+      if (hasTable && !(ruleset.tables ?? []).some(table => table?.id === initiative.tableRef)) issue("REFERENCE", "initiative.tableRef", `Missing reference: table/${initiative.tableRef}.`);
+      if (!(initiative.bySide === undefined || typeof initiative.bySide === "boolean")) issue("BOOLEAN_TYPE", "initiative.bySide", "initiative.bySide must be true or false.");
       if (!(initiative.tieBreakFormulaRef === undefined || initiative.tieBreakFormulaRef === null)) {
         if (!(ruleset.formulas ?? []).some(formula => formula?.id === initiative.tieBreakFormulaRef)) issue("REFERENCE", "initiative.tieBreakFormulaRef", `Missing reference: formula/${initiative.tieBreakFormulaRef}.`);
       }

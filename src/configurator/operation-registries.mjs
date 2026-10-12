@@ -138,6 +138,16 @@ async function diceNode(node, kit) {
   if (!roll) throw new Error("No roll in context to read dice from.");
   return readDice(roll.dice ?? [], {read: node.read, group: node.group ?? null, compare: node.compare ?? null, value: node.compare ? num(await kit.ev(node.value), "dice value") : null});
 }
+/** distance: {from, to} roles, in the scene's distance units. nearby: {of, within: AST, side: ally|enemy|any}: how many
+ * other Actors stand within that distance of the role (allies share its disposition), e.g. flanking or a crowd. */
+export const NEARBY_SIDES = Object.freeze(["ally", "enemy", "any"]);
+const roleName = value => typeof value === "string" && /^[A-Za-z][A-Za-z0-9_-]*$/.test(value);
+function validateDistance(node, label) { for (const key of ["from", "to"]) if (!roleName(node[key])) throw new Error(`${label}.${key} must be a role.`); }
+function validateNearby(node, label) {
+  if (!roleName(node.of)) throw new Error(`${label}.of must be a role.`);
+  if (!isRecord(node.within)) throw new Error(`${label}.within must be an AST node.`);
+  if (!NEARBY_SIDES.includes(node.side ?? "any")) throw new Error(`${label}.side must be ${NEARBY_SIDES.join(", ")}.`);
+}
 const needsDefinitionNode = keys => (node, label) => { if (!isRecord(node.definition)) throw new Error(`${label}.definition must be an AST node.`); for (const key of keys) if (!nonempty(node[key])) throw new Error(`${label}.${key} is required.`); };
 
 export const formulaNodeRegistry = new FormulaNodeRegistry()
@@ -147,6 +157,8 @@ export const formulaNodeRegistry = new FormulaNodeRegistry()
   .register({id: "reference", evaluate: (node, kit) => kit.reference(node.reference, node.container ?? null), resultType: (node, infer, leaf) => leaf("reference", node.reference), validate: validateReferenceNode})
   .register({id: "definitionValue", evaluate: definitionValue, resultType: node => node.outputId === "state.active" ? "boolean" : "number", validate: needsDefinitionNode(["capabilityId", "outputId"])})
   .register({id: "definitionField", evaluate: definitionField, validate: needsDefinitionNode(["field"])})
+  .register({id: "distance", evaluate: (node, kit) => kit.distance(node.from, node.to), resultType: "number", validate: validateDistance})
+  .register({id: "nearby", evaluate: async (node, kit) => kit.nearby(node.of, num(await kit.ev(node.within), "nearby distance"), node.side ?? "any"), resultType: "integer", validate: validateNearby})
   .register({id: "dice", evaluate: diceNode, resultType: "integer", validate: validateDiceNode})
   .register({id: "contentAggregate", evaluate: aggregateContents, resultType: node => node.operation === "count" ? "integer" : "number", validate: validateContentAggregate})
   .register({id: "contentField", evaluate: contentField, validate: (node, label) => { if (!nonempty(node.field)) throw new Error(`${label}.field is required.`); }})
