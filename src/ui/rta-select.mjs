@@ -22,7 +22,7 @@ const formRow=(control,label)=>{
   return row;
 };
 const alreadyInFormRow=node=>Boolean(node.closest('.form-group, .rta-form-row'));
-const isToolbarControl=node=>Boolean(node.closest('.rta-config-actions, .rta-configurator__toolbar, .rta-lab-tool-tabs'));
+const isToolbarControl=node=>Boolean(node.closest('.rta-config-actions, .rta-configurator__toolbar, .rta-lab-tool-tabs, .rta-sheet-editor__toolbar'));
 
 /** One optional color rail placed BEFORE the checkbox, never part of the saved value. */
 const decorateOption=(label,rawColors)=>{

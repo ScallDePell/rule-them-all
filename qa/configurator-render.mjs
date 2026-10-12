@@ -49,6 +49,10 @@ await api.createFormula(v,{id:'f-dice',nameKey:'Hunger tens',resultType:'number'
 await api.createCondition(v,{id:'c-near',nameKey:'Flanked',expression:{type:'gte',left:{type:'nearby',of:'target',within:{type:'literal',value:2},side:'enemy'},right:{type:'context',path:'variables.test.total'}}});
 await api.createTable(v,{id:'tb1',nameKey:'Critical hits',rollRef:'r1',rows:[{id:'low',labelKey:'Scratch',min:null,max:10,actionRefs:['a1']},{id:'high',labelKey:'Severed limb',min:11,max:null,actionRefs:[]}]});
 await api.createAction(v,{id:'a2',nameKey:'Swing',testRef:'t1',conditionRefs:[],costEffectRefs:[],effectRefs:[],tableRef:'tb1',targeting:'shared',reroll:{actionRefs:['a1']},outcomeMappings:[{outcomeId:'o-miss',block:true},{outcomeId:'o-crit',actionRefs:['a1']}]});
+await api.createSheetDefinition(v,{id:'sh1',nameKey:'Character sheet',target:'actor',root:{id:'root',kind:'tabs',children:[{id:'main',kind:'tab',labelKey:'Character',children:[{id:'top',kind:'grid',columns:2,children:[
+  {id:'stats',kind:'section',labelKey:'Stats',columns:1,children:[{id:'stat-list',kind:'repeater',query:{definitionTypeId:'stat'},columns:1,children:[{id:'stat-value',kind:'value',source:{kind:'each',capabilityId:'value',outputId:'value.final'},write:{operation:'set'}}]}]},
+  {id:'derived',kind:'section',labelKey:'Derived',columns:1,children:[{id:'total',kind:'value',source:{kind:'formula',formulaRef:'f1'}},{id:'strike',kind:'action',actionRef:'a1'}]}]}]},
+  {id:'skills-tab',kind:'tab',labelKey:'Skills',children:[{id:'skill-list',kind:'repeater',query:{definitionTypeId:'skill'},columns:2,children:[]}]}]}});
 // Harness-only copy exposing the private view state.
 const src=readFileSync(join(root,'src/configurator/configurator-app.mjs'),'utf8')
   .replace('#view = "general";','#view = globalThis.__qa.view;').replace('#displayMode = "tiles";','#displayMode = globalThis.__qa.mode;').replace('#selected = "";','#selected = globalThis.__qa.selected;');
@@ -73,7 +77,7 @@ const {ConfiguratorEntryEditor}=await imp('src/configurator/configurator-entry-e
 const editorTpl=Handlebars.compile(readFileSync(join(root,'templates/configurator/entry-editor.hbs'),'utf8'));
 const selectUrl=pathToFileURL(join(root,'src/ui/rta-select.mjs')).href;
 const editors=[['ruleset',v],['definitionType','stat'],['definition','d0'],['contentType','gear'],['contentTemplate','rope'],['parameter','p1'],['formula','f1'],['condition','c1'],['action','a2'],['tag','tag-a'],['category','cat-core'],['test','t1'],['modifier','m1'],['duration','du1'],['die','dz1'],['formula','f-dice'],['condition','c-near'],['table','tb1'],['progressionSystem','ps1'],['trigger','tr1'],['permissionPolicy','pp1'],['eventType','ev1'],
- ...['formulaBinding','roll','outcome','effect','sheetDefinition','creationSystem'].map(kind=>[kind,null])];
+ ['sheetDefinition','sh1'],...['formulaBinding','roll','outcome','effect','creationSystem'].map(kind=>[kind,null])];
 for(const [kind,id] of editors){
   const editor=new ConfiguratorEntryEditor({api,versionId:v,kind,id,definitionTypeId:kind==='definition'?'stat':null,contentTypeId:kind==='contentTemplate'?'gear':null});
   const ctx=await editor._prepareContext({});

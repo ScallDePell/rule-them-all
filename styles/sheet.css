@@ -81,6 +81,10 @@
   gap: var(--rta-gap-row);
 }
 
+.rta-sheet-tab[hidden] {
+  display: none;
+}
+
 .rta-sheet-tabs__nav {
   display: flex;
   flex-wrap: wrap;
@@ -105,7 +109,7 @@
 .rta-sheet-list {
   display: grid;
   grid-template-columns: var(--rta-sheet-list-template);
-  column-gap: var(--rta-gap-block);
+  gap: var(--rta-gap-tight) var(--rta-gap-block);
   align-items: center;
 }
 

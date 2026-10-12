@@ -126,7 +126,7 @@ export function collectEntryData(kind,{fd,current,bool,checkedIds,queryOne,query
     }
     if(kind==="category")return{...current,nameKey:String(fd.get("nameKey")??"").trim(),descriptionKey:String(fd.get("descriptionKey")??"")};
     if(kind==="tag")return{...current,nameKey:String(fd.get("nameKey")??"").trim(),descriptionKey:String(fd.get("descriptionKey")??""),color:fieldPresent(fd,"customColorEnabled")?(String(fd.get("color")??"").trim()||current.color||null):fieldPresent(fd,"customColorPermission")?null:current.color??null};
-    if(kind==="sheetDefinition")return{...current,nameKey:String(fd.get("nameKey")??"").trim(),descriptionKey:String(fd.get("descriptionKey")??""),enabled:bool("enabled"),target:String(fd.get("sheetTarget")??current.target??"actor")};
+    if(kind==="sheetDefinition"){const target=String(fd.get("sheetTarget")??current.target??"actor");return{...current,nameKey:String(fd.get("nameKey")??"").trim(),descriptionKey:String(fd.get("descriptionKey")??""),enabled:bool("enabled"),target,contentTypeIds:target==="item"?checkedIds("sheetContentTypes"):[],root:json(queryOne("[data-sheet-layout-value]")?.value,current.root)};}
     if(kind==="creationSystem")return collectCreation();
     if(kind==="modifier")return collectModifier(fd,current,{bool,checkedIds,operand:readOperand(fd,queryOne)});
     if(kind==="duration")return collectDuration(fd,current,{bool,checkedIds});

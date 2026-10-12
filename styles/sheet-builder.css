@@ -1,2 +1,89 @@
 /* Rule Them'All — sheet-builder.css : Constructeur de fiches.
    L'ordre de chargement (module.json "styles") fait partie de la cascade. */
+
+/* The editor shows the played sheet (sheet.css) with sample values: a click selects a block, its settings show below. */
+.rta-sheet-editor {
+  display: flex;
+  flex-direction: column;
+  gap: var(--rta-gap-row);
+}
+
+.rta-sheet-editor__toolbar {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--rta-gap-tight);
+}
+
+.rta-sheet-editor__toolbar > .rta-select {
+  flex: 1 1 12rem;
+  max-inline-size: 20rem;
+}
+
+/* The toolbar's select says what it adds in its placeholder: its label is for screen readers. */
+.rta-sheet-editor__toolbar .rta-select__label {
+  position: absolute;
+  inline-size: 1px;
+  block-size: 1px;
+  overflow: hidden;
+  clip-path: inset(50%);
+  white-space: nowrap;
+}
+
+.rta-sheet-editor__toolbar > button:not(.rta-config-action) {
+  flex: 0 0 auto;
+  inline-size: auto;
+  margin-inline-start: auto;
+}
+
+.rta-sheet-editor__canvas {
+  padding: var(--rta-frame-pad);
+  border: var(--rta-frame-border) dashed var(--rta-color-border-subtle);
+  border-radius: var(--rta-radius-panel);
+}
+
+.rta-sheet-editor__properties {
+  display: flex;
+  flex-direction: column;
+  gap: var(--rta-gap-row);
+  padding: var(--rta-frame-pad);
+  border: var(--rta-frame-border) solid var(--rta-color-border-subtle);
+  border-radius: var(--rta-radius-panel);
+}
+
+.rta-sheet-editor__hint {
+  margin: 0;
+  color: var(--rta-color-text-secondary);
+}
+
+.rta-sheet--edit [data-layout-node] {
+  cursor: pointer;
+}
+
+.rta-sheet--edit [data-layout-node]:hover {
+  outline: 1px dashed var(--rta-color-border-highlight);
+  outline-offset: 2px;
+}
+
+.rta-sheet--edit [data-layout-node][data-layout-selected],
+.rta-sheet--edit [data-layout-drop-target] {
+  outline: 2px solid var(--rta-color-border-highlight);
+  outline-offset: 2px;
+}
+
+/* Inside the editor the sheet's own controls do nothing: a click reaches the block around them. */
+.rta-sheet--edit :is(input, select, button):not([data-layout-node]) {
+  pointer-events: none;
+}
+
+.rta-sheet--edit .rta-sheet-grid[data-layout-node] {
+  padding: var(--rta-space-2);
+}
+
+.rta-sheet-drop {
+  padding: var(--rta-space-4);
+  border: var(--rta-frame-border) dashed var(--rta-color-border-tertiary);
+  border-radius: var(--rta-radius-control);
+  color: var(--rta-color-text-secondary);
+  text-align: center;
+}

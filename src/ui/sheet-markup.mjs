@@ -36,40 +36,56 @@ function valueControl(node, t, row) {
   return `<span class="rta-sheet-value__text">${escape(formatSheetValue(node.value))}</span>${bound}<input type="number" class="rta-sheet-value__amount" ${data} step="any" min="0" placeholder="${sign}" aria-label="${escape(t(write.operation === "add" ? "RTA.Sheet.Add" : "RTA.Sheet.Subtract"))}">`;
 }
 
-function renderNode(node, t, {row = null, solo = false} = {}) {
+/* In the editor (edit: true) every node carries data-layout-node so a click selects it, and an empty container
+   shows a drop zone; the controls themselves are inert there (sheet.css). */
+const mark = (node, edit) => edit ? ` data-layout-node="${escape(node.id)}"` : "";
+const dropZone = (id, t) => `<div class="rta-sheet-drop" data-layout-node="${escape(id)}" data-layout-drop>${escape(t("RTA.SheetEditor.Empty"))}</div>`;
+
+function renderNode(node, t, {row = null, solo = false, edit = false} = {}) {
   if (!node) return "";
+  const m = mark(node, edit);
   if (node.kind === "value") {
     const label = node.label ? t(node.label) : node.labelKey ? t(node.labelKey) : "";
     const title = node.error ? ` title="${escape(node.error)}"` : "";
     // A row with a single value already says what it is: its label stays for screen readers only.
-    return `<div class="rta-sheet-value${node.error ? " rta-sheet-value--unavailable" : ""}"${span(node)}${title}><div class="rta-sheet-value__inner"><span class="rta-sheet-value__label${solo ? " rta-sheet-visually-hidden" : ""}">${escape(label)}</span><span class="rta-sheet-value__control">${valueControl(node, t, row)}</span></div></div>`;
+    return `<div class="rta-sheet-value${node.error ? " rta-sheet-value--unavailable" : ""}"${span(node)}${title}${m}><div class="rta-sheet-value__inner"><span class="rta-sheet-value__label${solo ? " rta-sheet-visually-hidden" : ""}">${escape(label)}</span><span class="rta-sheet-value__control">${valueControl(node, t, row)}</span></div></div>`;
   }
-  if (node.kind === "action") return `<button type="button" class="rta-sheet-action"${span(node)} data-sheet-action="${escape(node.actionId)}"${node.definitionId ? ` data-definition-id="${escape(node.definitionId)}"` : ""}>${escape(t(node.label))}</button>`;
-  if (node.kind === "text") return `<p class="rta-sheet-text"${span(node)}>${escape(t(node.text))}</p>`;
-  if (node.kind === "spacer") return `<div class="rta-sheet-spacer"${span(node)}></div>`;
-  const children = (list, options) => list.map(child => renderNode(child, t, options)).join("");
+  if (node.kind === "action") return `<button type="button" class="rta-sheet-action"${span(node)} data-sheet-action="${escape(node.actionId)}"${node.definitionId ? ` data-definition-id="${escape(node.definitionId)}"` : ""}${m}>${escape(t(node.label))}</button>`;
+  if (node.kind === "text") return `<p class="rta-sheet-text"${span(node)}${m}>${escape(edit && !node.text ? t("RTA.SheetEditor.EmptyText") : t(node.text))}</p>`;
+  if (node.kind === "spacer") return `<div class="rta-sheet-spacer"${span(node)}${m}></div>`;
+  if (node.kind === "placeholder") return dropZone(node.parentId, t);
+  const children = (list, options) => list.length || !edit ? list.map(child => renderNode(child, t, {...options, edit})).join("") : dropZone(node.id, t);
   if (node.kind === "tabs") {
     const tabs = node.children ?? [];
-    return `<div class="rta-sheet-tabs"${span(node)}><nav class="rta-sheet-tabs__nav" role="tablist">${tabs.map((tab, i) => `<button type="button" role="tab" data-sheet-tab="${escape(tab.id)}" aria-selected="${i === 0}">${escape(t(tab.label))}</button>`).join("")}</nav>${tabs.map((tab, i) => `<div class="rta-sheet-grid rta-sheet-tab" role="tabpanel" data-sheet-panel="${escape(tab.id)}" style="--rta-sheet-columns: 1"${i ? " hidden" : ""}>${children(tab.children ?? [], {row})}</div>`).join("")}</div>`;
+    return `<div class="rta-sheet-tabs"${span(node)}${m}><nav class="rta-sheet-tabs__nav" role="tablist">${tabs.map((tab, i) => `<button type="button" role="tab" data-sheet-tab="${escape(tab.id)}" aria-selected="${i === 0}"${mark(tab, edit)}>${escape(tab.label ? t(tab.label) : edit ? t("RTA.SheetEditor.UntitledTab") : "")}</button>`).join("")}</nav>${tabs.map((tab, i) => `<div class="rta-sheet-grid rta-sheet-tab" role="tabpanel" data-sheet-panel="${escape(tab.id)}" style="--rta-sheet-columns: 1"${i ? " hidden" : ""}${mark(tab, edit)}>${children(tab.children ?? [], {row})}</div>`).join("")}</div>`;
   }
-  if (node.kind === "repeater") return renderList(node, t);
-  const body = `<div class="rta-sheet-grid" style="${columns(node)}">${children(node.children ?? [], {row})}</div>`;
-  if (node.kind === "section") return `<section class="rta-sheet-section"${span(node)}>${node.label ? `<h3 class="rta-sheet-section__title">${escape(t(node.label))}</h3>` : ""}${body}</section>`;
-  return node.span ? `<div class="rta-sheet-block"${span(node)}>${body}</div>` : body;
+  if (node.kind === "repeater") return renderList(node, t, edit);
+  const body = `<div class="rta-sheet-grid" style="${columns(node)}"${node.kind === "grid" && !node.span ? m : ""}>${children(node.children ?? [], {row})}</div>`;
+  if (node.kind === "section") return `<section class="rta-sheet-section"${span(node)}${m}>${node.label ? `<h3 class="rta-sheet-section__title">${escape(t(node.label))}</h3>` : ""}${body}</section>`;
+  return node.span ? `<div class="rta-sheet-block"${span(node)}${m}>${body}</div>` : body;
 }
 
 const cellLabel = (node, t) => node.kind === "value" ? (node.label ? t(node.label) : node.labelKey ? t(node.labelKey) : "") : "";
 /** A repeater: one row per Definition (its name, then one cell per child), flowing into node.columns columns.
    Rows share their parent's tracks (subgrid), so every cell lines up; with two values or more, a head row names them. */
-function renderList(node, t) {
-  const rows = node.rows ?? [];
-  if (!rows.length) return `<p class="rta-sheet-empty"${span(node)}>${escape(t("RTA.Sheet.NoneHeld"))}</p>`;
+function renderList(node, t, edit) {
+  let rows = node.rows ?? [];
+  if (!rows.length && !edit) return `<p class="rta-sheet-empty"${span(node)}>${escape(t("RTA.Sheet.NoneHeld"))}</p>`;
+  // The editor always shows a row, and a drop zone in it while the row shows nothing.
+  if (!rows.length) rows = [{definitionId: "", label: t("RTA.SheetEditor.ExampleRow"), children: []}];
+  if (edit && !rows[0].children.length) rows = rows.map(r => ({...r, children: [{kind: "placeholder", parentId: node.id}]}));
   const cells = rows[0].children, perColumn = `minmax(0, 1fr)${" auto".repeat(cells.length)}`, columnCount = Math.max(1, Number(node.columns ?? 1));
   const head = cells.filter(c => c.kind === "value").length > 1
     ? `<div class="rta-sheet-row rta-sheet-row--head" aria-hidden="true"><span></span>${cells.map(c => `<span class="rta-sheet-row__head">${escape(cellLabel(c, t))}</span>`).join("")}</div>`.repeat(Math.min(columnCount, rows.length)) : "";
   const style = `--rta-sheet-cells: ${cells.length + 1}; --rta-sheet-list-template: ${Array(columnCount).fill(perColumn).join(" ")}; --rta-sheet-list-medium: ${Array(Math.min(columnCount, 2)).fill(perColumn).join(" ")}; --rta-sheet-list-narrow: ${perColumn}`;
-  const body = rows.map(r => `<div class="rta-sheet-row" data-definition-id="${escape(r.definitionId)}"><span class="rta-sheet-row__label" title="${escape(t(r.label))}">${escape(t(r.label))}</span>${r.children.map(child => renderNode(child, t, {row: r.definitionId, solo: true})).join("")}</div>`).join("");
-  return `<div class="rta-sheet-list" style="${style}${node.span ? `; --rta-sheet-span: ${Number(node.span)}` : ""}">${head}${body}</div>`;
+  const body = rows.map(r => `<div class="rta-sheet-row" data-definition-id="${escape(r.definitionId)}"><span class="rta-sheet-row__label" title="${escape(t(r.label))}">${escape(t(r.label))}</span>${r.children.map(child => renderNode(child, t, {row: r.definitionId, solo: true, edit})).join("")}</div>`).join("");
+  return `<div class="rta-sheet-list" style="${style}${node.span ? `; --rta-sheet-span: ${Number(node.span)}` : ""}"${mark(node, edit)}>${head}${body}</div>`;
+}
+
+/** The editor's canvas: the sheet as players get it, every node selectable. */
+export function renderLayoutPreviewHTML(view, {t = key => key, selectedId = null} = {}) {
+  const html = `<div class="rta-sheet rta-sheet--edit"><div class="rta-sheet__body">${renderNode(view?.root, t, {edit: true})}</div></div>`;
+  return selectedId ? html.replaceAll(`data-layout-node="${escape(selectedId)}"`, `data-layout-node="${escape(selectedId)}" data-layout-selected`) : html;
 }
 
 /** The whole sheet: header (image, editable name), then the layout. notice: a message shown instead of the layout. */

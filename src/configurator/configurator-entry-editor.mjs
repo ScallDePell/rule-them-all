@@ -47,6 +47,7 @@ import {diagnosticFocusTargets,saveErrorFocusPath} from "./diagnostic-focus.mjs"
 import {buildTestInputContext,syncTestInputSource} from "./test-input-form.mjs";
 import {dieContext,syncDieFaceCounts} from "./die-form.mjs";
 import {CREATION_STEP_KINDS,SHEET_TARGETS} from "./rule-contracts.mjs";
+import {SheetLayoutController} from "./sheet-layout-controller.mjs";
 import {rollVariantContext,extraRollContext,actionInputContext,tableRowContext,progressionContext} from "./rule-cards-form.mjs";
 import {syncCard} from "./card-form.mjs";
 
@@ -230,7 +231,7 @@ export class ConfiguratorEntryEditor extends ConfiguratorWindow {
     const conditionSummary=pickerSummary(conditionChoices),costEffectSummary=pickerSummary(effectChoices,"costSelected"),effectSummary=pickerSummary(effectChoices,"effectSelected"),actionSummary=pickerSummary(actionChoices);
     Object.assign(context,{error:this.#error,kind:this.#kind,creating,readOnly:isValidated,deletion:creating?{blocked:false,reason:""}:this.#deletionView(),help:entryHelp(this.#kind,{definitionType:type}),data,type,fieldContract,fieldRows,newFieldRow,capabilityChoices,colorSectionChoices,rulesetMainColor:rulesetColor(data),allowTypeColor,inheritedTypeColor,hasCustomColor:!!data.color,valueTypes:this.#api.listValueTypes().map(v=>({...v,selected:v.id===(data.valueType??data.resultType)})),
       documentActorTypes:availableDocumentTypes("Actor").map(id=>({id,selected:data.storageKind==="actor"&&data.documentSubtype===id})),documentItemTypes:availableDocumentTypes("Item").map(id=>({id,selected:data.storageKind!=="actor"&&data.documentSubtype===id})),
-      hasForcedCapabilities,hasOptionalCapabilities,conditionChoices,acquiredDefinitionChoices,acquisitionActionChoices,appliedStateChoices,removedStateChoices,appliedModifierChoices,stateDurationChoices,rollChoices,outcomeRows,fallbackOutcomeChoices,testChoices,bindingFormulaChoices,tagChoices,tagSummary,categoryChoices,categorySummary,eventFieldRows,roleChoices,contentTypeChoices,relationRows,hasRelations:RELATION_KINDS.includes(this.#kind),roleSelf,roleSource,roleTarget,roleSubject,roleOwner,roleWorld,roleCombat,outcomeConditionChoices,bonusFormulaChoices,targetSourceChoices,fixedTarget,showTestCalculation,effectChoices,actionChoices,eventTypeChoices,choiceGroupRows,conditionSummary,costEffectSummary,effectSummary,actionSummary,formulaModel,conditionModel,conditionOperands:[conditionModel.left,conditionModel.right],sheetTargetChoices:SHEET_TARGETS.map(id=>({id,labelKey:`RTA.Sheet.Target${id[0].toUpperCase()}${id.slice(1)}`,colors:selectColorsAttribute([RTA_NEUTRAL_COLOR]),selected:(data.target??"actor")===id})),
+      hasForcedCapabilities,hasOptionalCapabilities,conditionChoices,acquiredDefinitionChoices,acquisitionActionChoices,appliedStateChoices,removedStateChoices,appliedModifierChoices,stateDurationChoices,rollChoices,outcomeRows,fallbackOutcomeChoices,testChoices,bindingFormulaChoices,tagChoices,tagSummary,categoryChoices,categorySummary,eventFieldRows,roleChoices,contentTypeChoices,relationRows,hasRelations:RELATION_KINDS.includes(this.#kind),roleSelf,roleSource,roleTarget,roleSubject,roleOwner,roleWorld,roleCombat,outcomeConditionChoices,bonusFormulaChoices,targetSourceChoices,fixedTarget,showTestCalculation,effectChoices,actionChoices,eventTypeChoices,choiceGroupRows,conditionSummary,costEffectSummary,effectSummary,actionSummary,formulaModel,conditionModel,conditionOperands:[conditionModel.left,conditionModel.right],...(this.#kind==="sheetDefinition"?(()=>{const choices=selection(this.#renderList("contentTypes","listContentTypes").map(x=>({id:x.id,label:x.nameKey,...withColors("contentType",x)})),data.contentTypeIds??[]);return {sheetIsItem:data.target==="item",sheetContentTypeChoices:choices,sheetContentTypeSummary:pickerSummary(choices),sheetLayoutJSON:JSON.stringify(data.root??null)};})():{}),sheetTargetChoices:SHEET_TARGETS.map(id=>({id,labelKey:`RTA.Sheet.Target${id[0].toUpperCase()}${id.slice(1)}`,colors:selectColorsAttribute([RTA_NEUTRAL_COLOR]),selected:(data.target??"actor")===id})),
       referenceChoices:referenceChoices.map(x=>({...x,selected:x.token===referenceTargetToken})),
       bindingTargetChoices:referenceChoices.filter(x=>parseRefToken(x.token).capabilityId).map(x=>({...x,selected:x.token===bindingTargetToken})),
       effectTargetChoices:mutableReferenceChoices.map(x=>({...x,selected:x.token===targetToken})),
@@ -305,12 +306,15 @@ export class ConfiguratorEntryEditor extends ConfiguratorWindow {
       if(event.target.matches?.('[name="linkFrom"]'))for(const row of form.querySelectorAll("[data-link-only]"))row.hidden=!event.target.value;
       if(event.target.matches?.('[name="forEachType"]'))for(const row of form.querySelectorAll("[data-for-each-only]"))row.hidden=!event.target.value;
       if(event.target.matches?.('[name="rerollDiceMode"]'))for(const row of form.querySelectorAll("[data-reroll-dice-only]"))row.hidden=event.target.value!=="some";
+      if(event.target.matches?.('[name="sheetTarget"]'))for(const row of form.querySelectorAll("[data-sheet-item-only]"))row.hidden=event.target.value!=="item";
       if(event.target.matches?.('[name="initiativeSource"]'))for(const row of form.querySelectorAll("[data-initiative-only]"))row.hidden=!event.target.value;});
     form.addEventListener("submit",event=>{event.preventDefault();this.#save(false);});
     // Section counters follow rows added or removed by script (§46).
     const counters=[...form.querySelectorAll("[data-live-count]")];
     if(counters.length){const sync=()=>{for(const counter of counters){const scope=counter.closest("details")??form;const count=String(scope.querySelectorAll(counter.dataset.liveCount).length);if(counter.textContent!==count)counter.textContent=count;}};sync();this._rtaCountObserver?.disconnect();this._rtaCountObserver=new MutationObserver(sync);this._rtaCountObserver.observe(form,{childList:true,subtree:true});}
     for(const button of this.element.querySelectorAll("[data-action]"))button.addEventListener("click",event=>this.#action(event));
+    const layout=this.element.querySelector("[data-sheet-layout-editor]");
+    if(layout)this._rtaSheetLayout=new SheetLayoutController(layout,{ruleset:this.#api.getRulesetVersion(this.#versionId)?.workingDraft??this.#api.getRuleset(this.#versionId),colors:(kind,entry)=>this.#optionColors(kind,entry),form,readOnly:context.readOnly});
     if(this.#focusPath!==null){const path=this.#focusPath;this.#focusPath=null;requestAnimationFrame(()=>this.#focusDiagnostic(path));}
   }
 

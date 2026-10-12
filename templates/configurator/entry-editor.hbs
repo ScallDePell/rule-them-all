@@ -446,9 +446,18 @@
         <fieldset><legend>{{localize "RTA.Template.Sheet"}}</legend>
           {{> rtaIdentityName}}
           <div class="form-group rta-form-row"><label>{{localize "RTA.Sheet.Target"}}</label><select name="sheetTarget" {{#if readOnly}}disabled{{/if}}>{{#each sheetTargetChoices}}<option value="{{id}}" data-rta-colors="{{colors}}" {{#if selected}}selected{{/if}}>{{localize labelKey}}</option>{{/each}}</select></div>
+          <div data-sheet-item-only {{#unless sheetIsItem}}hidden{{/unless}}><details class="rta-picker rta-config-entry__section" data-picker><summary><strong>{{localize "RTA.Sheet.ContentTypes"}}</strong><span data-picker-summary>{{sheetContentTypeSummary}}</span></summary><div class="rta-picker__body rta-choice-list">{{#each sheetContentTypeChoices}}<label data-picker-option data-picker-label="{{label}}" data-rta-colors="{{colors}}"><input type="checkbox" name="sheetContentTypes" value="{{id}}" {{#if selected}}checked{{/if}} {{#if ../readOnly}}disabled{{/if}}> {{label}}</label>{{else}}<p>{{localize "RTA.Sheet.NoContentTypes"}}</p>{{/each}}</div></details></div>
           <div class="form-group rta-form-row"><label>{{localize "RTA.Template.Description"}}</label><textarea name="descriptionKey" rows="2" {{#if readOnly}}readonly{{/if}}>{{data.descriptionKey}}</textarea></div>
           {{> rtaEnabled}}
         </fieldset>
+        <details class="rta-config-entry__section" open><summary><strong>{{localize "RTA.SheetEditor.Layout"}}</strong></summary>
+          <div class="rta-sheet-editor" data-sheet-layout-editor>
+            <input type="hidden" data-sheet-layout-value value="{{sheetLayoutJSON}}">
+            <div data-layout-toolbar {{#if readOnly}}hidden{{/if}}></div>
+            <div class="rta-sheet-editor__canvas" data-layout-canvas></div>
+            <div class="rta-sheet-editor__properties" data-layout-properties {{#if readOnly}}hidden{{/if}}></div>
+          </div>
+        </details>
       {{/if}}
 
       {{#if isCreationSystem}}

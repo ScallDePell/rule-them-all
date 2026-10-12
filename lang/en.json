@@ -69,7 +69,7 @@
       "Durations": "Durations",
       "CreationSystems": "Creation Systems",
       "ProgressionSystems": "Progression Systems",
-      "SheetDefinitions": "Sheet Builder",
+      "SheetDefinitions": "Sheets",
       "ContentTypes": "Content Types",
       "Categories": "Categories",
       "Tags": "Tags",
@@ -985,8 +985,8 @@
         "Usage": "An advancement raises a Definition and pays a cost Formula from a currency; its cost can grow with the current value. A milestone grants Definitions and runs an Action once its Condition holds; an Action input lets the player choose (a feat). Levels themselves are a Formula over the XP."
       },
       "sheetDefinition": {
-        "Summary": "A sheet describes how an Actor or an Item is displayed.",
-        "Usage": "The visual sheet editor comes with milestone 4."
+        "Summary": "A sheet is what players see on an Actor or an Item: tabs, sections, lists of the Definitions they hold, values and Action buttons.",
+        "Usage": "Click a block in the sheet below to change it, add blocks into the selected one, drag them to move them. Without any sheet, Actors and Items show the automatic layout. Players choose “Rule Them'All sheet” in Foundry's sheet choice."
       },
       "category": {
         "Summary": "A category classifies Definitions and contents for filtering.",
@@ -1345,7 +1345,61 @@
       "NotAllowed": "Not allowed",
       "ActionInputs": "Before using this Action",
       "ChooseActions": "Choose {count}",
-      "TestTarget": "Target"
+      "TestTarget": "Target",
+      "ContentTypes": "Content types",
+      "NoContentTypes": "No content type yet."
+    },
+    "SheetEditor": {
+      "Layout": "Layout",
+      "Empty": "Empty: add a block here",
+      "EmptyText": "Text",
+      "UntitledTab": "Tab",
+      "ExampleRow": "Example",
+      "Add": "Add a block",
+      "Remove": "Remove the block",
+      "Undo": "Undo",
+      "Auto": "Automatic layout",
+      "SelectHint": "Click a block of the sheet to change it.",
+      "NothingToSet": "This block has no settings.",
+      "Title": "Title",
+      "Columns": "Columns",
+      "ColumnCount": "{count} column(s)",
+      "SpanCount": "{count} column(s)",
+      "Width": "Width",
+      "ListType": "Definitions of type",
+      "ListFilter": "Only those where",
+      "AllOfThem": "All of them",
+      "Shows": "Shows",
+      "Which": "Which one",
+      "Label": "Label",
+      "Player": "On the sheet",
+      "Action": "Action",
+      "Text": "Text",
+      "Kind": {
+        "tabs": "Tabs",
+        "tab": "Tab",
+        "section": "Section",
+        "grid": "Grid",
+        "repeater": "List of Definitions",
+        "value": "Value",
+        "action": "Action button",
+        "text": "Text",
+        "spacer": "Empty cell"
+      },
+      "Source": {
+        "output": "A Definition output",
+        "formula": "A Formula",
+        "parameter": "A Parameter",
+        "each": "The listed Definition's",
+        "field": "A field of the Item"
+      },
+      "Write": {
+        "none": "Read only",
+        "set": "Can be changed",
+        "add": "Can be increased",
+        "subtract": "Can be decreased"
+      },
+      "BlockToAdd": "block to add"
     }
   }
 }

@@ -65,7 +65,7 @@
       "Durations": "Durées",
       "CreationSystems": "Systèmes de création",
       "ProgressionSystems": "Systèmes de progression",
-      "SheetDefinitions": "Fiches",
+      "SheetDefinitions": "Feuilles",
       "ContentTypes": "Types de contenu",
       "Categories": "Catégories",
       "Tags": "Tags",
@@ -981,8 +981,8 @@
         "Usage": "Une amélioration augmente une Definition et paie une Formule de coût avec une monnaie ; son coût peut croître avec la valeur actuelle. Un palier donne des Definitions et lance une Action une fois sa Condition vraie ; un choix de l'Action laisse le joueur choisir (un don). Le niveau lui-même est une Formule sur l'XP."
       },
       "sheetDefinition": {
-        "Summary": "Une feuille décrit l'affichage d'un Actor ou d'un Item.",
-        "Usage": "L'éditeur visuel des feuilles viendra au jalon 4."
+        "Summary": "Une feuille est ce que les joueurs voient sur un Acteur ou un Objet : onglets, sections, listes des Definitions détenues, valeurs et boutons d'Action.",
+        "Usage": "Clique sur un bloc de la feuille ci-dessous pour le modifier, ajoute des blocs dans le bloc sélectionné, fais-les glisser pour les déplacer. Sans feuille, Acteurs et Objets montrent la mise en page automatique. Les joueurs choisissent « Feuille Rule Them'All » dans le choix de feuille de Foundry."
       },
       "category": {
         "Summary": "Une catégorie classe les Definitions et les contenus pour les filtrer.",
@@ -1341,7 +1341,61 @@
       "NotAllowed": "Non permis",
       "ActionInputs": "Avant d'utiliser cette Action",
       "ChooseActions": "Choisis-en {count}",
-      "TestTarget": "Seuil"
+      "TestTarget": "Seuil",
+      "ContentTypes": "Types de contenu",
+      "NoContentTypes": "Aucun type de contenu pour l'instant."
+    },
+    "SheetEditor": {
+      "Layout": "Mise en page",
+      "Empty": "Vide : ajoute un bloc ici",
+      "EmptyText": "Texte",
+      "UntitledTab": "Onglet",
+      "ExampleRow": "Exemple",
+      "Add": "Ajouter un bloc",
+      "Remove": "Retirer le bloc",
+      "Undo": "Annuler la dernière modification",
+      "Auto": "Mise en page automatique",
+      "SelectHint": "Clique sur un bloc de la feuille pour le modifier.",
+      "NothingToSet": "Ce bloc n'a pas de réglage.",
+      "Title": "Titre",
+      "Columns": "Colonnes",
+      "ColumnCount": "{count} colonne(s)",
+      "SpanCount": "{count} colonne(s)",
+      "Width": "Largeur",
+      "ListType": "Definitions du type",
+      "ListFilter": "Seulement celles où",
+      "AllOfThem": "Toutes",
+      "Shows": "Affiche",
+      "Which": "Laquelle",
+      "Label": "Libellé",
+      "Player": "Sur la feuille",
+      "Action": "Action",
+      "Text": "Texte",
+      "Kind": {
+        "tabs": "Onglets",
+        "tab": "Onglet",
+        "section": "Section",
+        "grid": "Grille",
+        "repeater": "Liste de Definitions",
+        "value": "Valeur",
+        "action": "Bouton d'Action",
+        "text": "Texte",
+        "spacer": "Case vide"
+      },
+      "Source": {
+        "output": "Une sortie de Definition",
+        "formula": "Une Formula",
+        "parameter": "Un Paramètre",
+        "each": "La Definition de la ligne",
+        "field": "Un champ de l'Objet"
+      },
+      "Write": {
+        "none": "Lecture seule",
+        "set": "Modifiable",
+        "add": "Peut être augmentée",
+        "subtract": "Peut être diminuée"
+      },
+      "BlockToAdd": "bloc à ajouter"
     }
   }
 }
