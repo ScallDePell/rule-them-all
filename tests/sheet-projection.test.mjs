@@ -1,0 +1,121 @@
+import test from 'node:test';
+import assert from 'node:assert/strict';
+import {createConfiguratorAPI} from '../src/configurator/configurator-api.mjs';
+import {emptyStorageSnapshot} from '../src/configurator/configurator-storage.mjs';
+import {MemoryRuntimeAdapter} from '../src/runtime/memory-runtime-adapter.mjs';
+import {RuntimeEngine} from '../src/runtime/runtime-engine.mjs';
+import {projectSheet} from '../src/runtime/sheet-projection.mjs';
+import {autoLayout,sheetActionIds} from '../src/configurator/sheet-auto-layout.mjs';
+import {prepareLayout} from '../src/configurator/layout-contract.mjs';
+
+class Storage{value=emptyStorageSnapshot();async load(){return structuredClone(this.value)}async save(v){this.value=structuredClone(v)}}
+const hero={kind:'actor',id:'hero'};
+const field=(id,valueType)=>({id,name:id,valueType,cardinality:'one',nullable:false,required:false,constraints:[]});
+const out=(objectId,capabilityId,outputId,slotId)=>({objectKind:'definition',objectId,capabilityId,outputId,...(slotId?{slotId}:{})});
+
+async function setup(){
+  const api=await createConfiguratorAPI(new Storage());
+  const v=(await api.createRuleset({id:'g',nameKey:'Game',version:'1'})).versionId;
+  await api.registerDefinitionType(v,{id:'attribute',key:'attribute',nameKey:'Attributes',allowedCapabilities:['value'],defaultCapabilities:['value'],requiredCapabilities:[],fields:{}});
+  await api.registerDefinitionType(v,{id:'resource',key:'resource',nameKey:'Resources',allowedCapabilities:['pool'],defaultCapabilities:['pool'],requiredCapabilities:[],fields:{}});
+  await api.registerDefinitionType(v,{id:'skill',key:'skill',nameKey:'Skills',allowedCapabilities:['value','state'],defaultCapabilities:['value'],requiredCapabilities:[],fields:{}});
+  for(const id of ['str','dex'])await api.createDefinition(v,{id,key:id,definitionTypeId:'attribute',nameKey:id.toUpperCase(),data:{},capabilities:['value']});
+  await api.createDefinition(v,{id:'hp',key:'hp',definitionTypeId:'resource',nameKey:'Health',data:{},capabilities:['pool'],slots:{pool:[{id:'points',name:'Points',minimum:{literal:0},maximum:{literal:12}}]}});
+  for(const id of ['climb','swim','secret'])await api.createDefinition(v,{id,key:id,definitionTypeId:'skill',nameKey:id,data:{},capabilities:['value','state']});
+  await api.createFormula(v,{id:'double-str',nameKey:'Twice STR',resultType:'number',expression:{type:'multiply',args:[{type:'literal',value:2},{type:'reference',reference:out('str','value','value.final')}]}});
+  await api.createParameter(v,{id:'cap',nameKey:'Cap',valueType:'number',value:99});
+  await api.createAction(v,{id:'rest',nameKey:'Rest',effectRefs:[]});
+  await api.createPermissionPolicy(v,{id:'hidden',nameKey:'Hidden',scope:{objectKind:'definition',objectId:'secret'},defaultEffect:'DENY',rules:[]});
+  await api.createContentType(v,{id:'weapon',nameKey:'Weapon',storageKind:'item',runtimeMode:'unique',fields:{damage:field('damage','string'),reach:field('reach','number')}});
+  await api.createContentType(v,{id:'charm',nameKey:'Charm',storageKind:'item',runtimeMode:'unique',fields:{luck:field('luck','number')}});
+  await api.createContentTemplate(v,{id:'sword',nameKey:'Sword',contentTypeId:'weapon',data:{damage:'1d8',reach:1},relations:[],choiceGroups:[]});
+  await api.publishRuleset(v);
+  const adapter=new MemoryRuntimeAdapter(),engine=new RuntimeEngine({configurator:api,adapter,hooks:null});
+  await engine.initializeContainer(v,hero,{definitionIds:['str','dex','hp','climb','secret']});
+  await engine.setDefinitionState(v,hero,'str',{base:7});
+  await engine.setDefinitionState(v,hero,'climb',{base:40,active:true});
+  await engine.setDefinitionState(v,hero,'hp',{pools:{points:9}});
+  return {api,v,engine,adapter,ruleset:engine.ruleset(v)};
+}
+const find=(node,id)=>{if(!node)return null;if(node.id===id)return node;for(const child of [...(node.children??[]),...(node.rows??[]).flatMap(r=>r.children)]){const hit=find(child,id);if(hit)return hit;}return null;};
+
+test('a sheet resolves outputs, Formulas and Parameters for one Actor', async()=>{
+  const {v,engine}=await setup();
+  const sheet={id:'s',target:'actor',root:prepareLayout({id:'root',kind:'tabs',children:[{id:'main',kind:'tab',labelKey:'Main',children:[
+    {id:'str',kind:'value',source:{kind:'output',reference:out('str','value','value.final')},write:{operation:'set'}},
+    {id:'hp',kind:'value',source:{kind:'output',reference:out('hp','pool','pool.current','points')},write:{operation:'subtract'}},
+    {id:'twice',kind:'value',source:{kind:'formula',formulaRef:'double-str'},labelKey:'Double'},
+    {id:'cap',kind:'value',source:{kind:'parameter',parameterRef:'cap'}},
+    {id:'rest',kind:'action',actionRef:'rest'},{id:'note',kind:'text',textKey:'Hello'}]}]})};
+  const view=await projectSheet(engine,v,sheet,{actor:hero});
+  assert.deepEqual([find(view.root,'str').value,find(view.root,'str').label,find(view.root,'str').write],[7,'STR',{operation:'set'}]);
+  assert.deepEqual([find(view.root,'hp').value,find(view.root,'hp').minimum,find(view.root,'hp').maximum],[9,0,12]);
+  assert.deepEqual([find(view.root,'twice').value,find(view.root,'twice').label,find(view.root,'twice').write],[14,'Double',null]);
+  assert.equal(find(view.root,'cap').value,99);
+  assert.equal(find(view.root,'rest').actionId,'rest');
+  assert.equal(find(view.root,'main').label,'Main');
+});
+
+test('a repeater lists the held Definitions of a type; Permission hides what a user may not read or use', async()=>{
+  const {v,engine,adapter}=await setup();
+  const sheet={id:'s',target:'actor',root:prepareLayout({id:'root',kind:'grid',columns:2,children:[
+    {id:'skills',kind:'repeater',query:{definitionTypeId:'skill'},columns:2,children:[
+      {id:'rank',kind:'value',source:{kind:'each',capabilityId:'value',outputId:'value.final'},write:{operation:'set'}},
+      {id:'mark',kind:'value',source:{kind:'each',capabilityId:'state',outputId:'state.active'},write:{operation:'set'}},
+      {id:'train',kind:'action',actionRef:'rest'}]}]})};
+  const gm=await projectSheet(engine,v,sheet,{actor:hero});
+  const skills=find(gm.root,'skills');
+  assert.deepEqual(skills.rows.map(r=>r.definitionId),['climb','secret'],'swim is not held');
+  const climb=skills.rows[0];
+  assert.deepEqual(climb.children.map(c=>[c.id,c.value??c.actionId]),[['rank',40],['mark',true],['train','rest']]);
+  assert.equal(climb.children[1].labelKey,'RTA.Sheet.Output.StateActive');
+  assert.equal(climb.children[2].definitionId,'climb');
+  adapter.users.set('p',{role:'player',isGM:false});adapter.ownership.set('actor:hero|p','observer');adapter.currentUserId='p';
+  const watcher=await projectSheet(engine,v,sheet,{actor:hero});
+  const rows=find(watcher.root,'skills').rows;
+  assert.deepEqual(rows.map(r=>r.definitionId),['climb'],'the secret skill is never sent');
+  assert.deepEqual(rows[0].children.map(c=>[c.id,c.write]),[['rank',null],['mark',null]],'an observer reads, cannot write, and has no Actions');
+  adapter.ownership.set('actor:hero|p','owner');
+  const owner=await projectSheet(engine,v,sheet,{actor:hero});
+  assert.deepEqual(find(owner.root,'skills').rows[0].children.map(c=>c.write?.operation??c.actionId),['set','set','rest']);
+});
+
+test('a value the engine cannot read keeps its place, with the reason', async()=>{
+  const {v,engine}=await setup();
+  const sheet={id:'s',target:'actor',root:prepareLayout({id:'root',kind:'grid',children:[{id:'swim',kind:'value',source:{kind:'output',reference:out('swim','value','value.final')},write:{operation:'set'}}]})};
+  const view=await projectSheet(engine,v,sheet,{actor:hero});
+  assert.equal(view.root.children[0].value,null);assert.match(view.root.children[0].error,/not instantiated/);assert.equal(view.root.children[0].write,null);
+});
+
+test('an Item sheet shows the fields of its Content, owned or not', async()=>{
+  const {v,engine,adapter}=await setup();
+  const sheet={id:'w',target:'item',root:autoLayout(engine.ruleset(v),{target:'item',contentTypeIds:['weapon','charm']})};
+  assert.deepEqual(sheet.root.children.map(n=>n.source.fieldId),['damage','reach','luck']);
+  const loose=await projectSheet(engine,v,sheet,{content:{templateId:'sword'}});
+  assert.deepEqual(loose.root.children.map(c=>[c.label,c.value,c.write]),[['damage','1d8',null],['reach',1,null]],'luck is a Charm field');
+  const state=await adapter.load(hero,{rulesetVersionId:v});state.contents={'sword-1':{templateId:'sword',contentTypeId:'weapon',fields:{damage:'2d6'}}};
+  await adapter.write(hero,{state,ledger:await adapter.loadLedger(hero)});
+  const owned=await projectSheet(engine,v,sheet,{actor:hero,content:{key:'sword-1'}});
+  assert.deepEqual(owned.root.children.map(c=>[c.value,c.write?.operation]),[['2d6','set'],[1,'set']]);
+});
+
+test('AUTO lays out every Definition Type with what its capabilities give, and the Actions a player starts', async()=>{
+  const {v,engine,api}=await setup();
+  const ruleset=engine.ruleset(v),root=autoLayout(ruleset);
+  assert.deepEqual(root.children.map(n=>n.id),['type-attribute','type-resource','type-skill','actions']);
+  assert.deepEqual(root.children[2].children[0].children.map(n=>n.source.outputId),['value.final','state.active']);
+  assert.deepEqual(sheetActionIds(ruleset),['rest']);
+  const view=await projectSheet(engine,v,{id:'auto',target:'actor',root},{actor:hero});
+  assert.deepEqual(find(view.root,'list-resource').rows[0].children.map(c=>[c.label,c.value,c.maximum]),[['Points',9,12]]);
+  assert.deepEqual(find(view.root,'list-attribute').rows.map(r=>[r.label,r.children[0].value]),[['STR',7],['DEX',0]]);
+  assert.equal((await api.createSheetDefinition(v,{id:'auto',nameKey:'Auto',target:'actor',root})).root.children.length,4);
+});
+
+test('a sheet keeps the objects it shows from being deleted', async()=>{
+  const {api}=await setup();
+  const v=(await api.createRuleset({id:'h',nameKey:'H',version:'1'})).versionId;
+  await api.createFormula(v,{id:'f',nameKey:'F',resultType:'number',expression:{type:'literal',value:1}});
+  await api.createSheetDefinition(v,{id:'s',nameKey:'S',target:'actor',root:{id:'root',kind:'grid',children:[{id:'f',kind:'value',source:{kind:'formula',formulaRef:'f'}}]}});
+  await assert.rejects(api.deleteFormula(v,'f'),/still referenced/);
+  await assert.rejects(api.createSheetDefinition(v,{id:'t',nameKey:'T',target:'actor',root:{id:'root',kind:'grid',children:[{id:'x',kind:'value',source:{kind:'field',fieldId:'damage'}}]}}),/Item sheets/);
+});

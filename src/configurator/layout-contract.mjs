@@ -12,8 +12,10 @@
    query     := {definitionTypeId, conditionRef?}                      held Definitions of that type (variables.each in the Condition)
    value     := {kind: "value", source, labelKey?, write?}             a value shown, editable with write
    source    := {kind: "output", reference} | {kind: "formula", formulaRef} | {kind: "parameter", parameterRef}
-              | {kind: "each", capabilityId, outputId, slotId?}        the output of the repeater's current Definition
-   write     := {operation: "set" | "add" | "subtract"}                only on an output or each source (CP-30 WriteBinding)
+              | {kind: "each", capabilityId, outputId, slotId?}        the output of the repeater's current Definition (its first slot by default)
+              | {kind: "field", fieldId}                               a field of the Content an Item sheet shows
+   write     := {operation: "set" | "add" | "subtract"}                only on an output, each or field source (CP-30 WriteBinding);
+                                                                       a value.final is written through its value.base
    action    := {kind: "action", actionRef, labelKey?}                 a button that uses the Action (on the repeater's Definition inside one)
    text      := {kind: "text", textKey}
    spacer    := {kind: "spacer"}
@@ -24,7 +26,9 @@ import {copyJSON, isRecord} from "./configurator-schema.mjs";
 export const LAYOUT_CONTAINERS = Object.freeze(["tabs", "tab", "section", "grid", "repeater"]);
 export const LAYOUT_LEAVES = Object.freeze(["value", "action", "text", "spacer"]);
 export const LAYOUT_NODE_KINDS = Object.freeze([...LAYOUT_CONTAINERS, ...LAYOUT_LEAVES]);
-export const LAYOUT_SOURCE_KINDS = Object.freeze(["output", "formula", "parameter", "each"]);
+export const LAYOUT_SOURCE_KINDS = Object.freeze(["output", "formula", "parameter", "each", "field"]);
+/** Sources a sheet can write to. */
+export const LAYOUT_WRITABLE_SOURCES = Object.freeze(["output", "each", "field"]);
 export const LAYOUT_WRITE_OPERATIONS = Object.freeze(["set", "add", "subtract"]);
 export const LAYOUT_MAX_DEPTH = 8;
 export const LAYOUT_MAX_NODES = 500;
@@ -45,6 +49,7 @@ function prepareSource(source, path, inRepeater) {
     if (!isRecord(r) || r.objectKind !== "definition" || !nonempty(r.objectId) || !nonempty(r.capabilityId) || !nonempty(r.outputId)) throw new Error(`${path}.reference must name a Definition output.`);
   } else if (source.kind === "formula") { only(["formulaRef"]); if (!nonempty(source.formulaRef)) throw new Error(`${path}.formulaRef must be an id.`); }
   else if (source.kind === "parameter") { only(["parameterRef"]); if (!nonempty(source.parameterRef)) throw new Error(`${path}.parameterRef must be an id.`); }
+  else if (source.kind === "field") { only(["fieldId"]); if (!nonempty(source.fieldId)) throw new Error(`${path}.fieldId must be an id.`); }
   else {
     only(["capabilityId", "outputId", "slotId"]);
     if (!inRepeater) throw new Error(`${path}: an "each" value only exists inside a repeater.`);
@@ -93,7 +98,7 @@ export function prepareLayout(root) {
       next.source = prepareSource(node.source, `${path}.source`, inRepeater);
       if (node.write !== undefined && node.write !== null) {
         if (!isRecord(node.write) || !LAYOUT_WRITE_OPERATIONS.includes(node.write.operation) || Object.keys(node.write).some(key => key !== "operation")) throw new Error(`${path}.write must be {operation: ${LAYOUT_WRITE_OPERATIONS.join(" | ")}}.`);
-        if (!["output", "each"].includes(next.source.kind)) throw new Error(`${path}: only a Definition output can be written from a sheet.`);
+        if (!LAYOUT_WRITABLE_SOURCES.includes(next.source.kind)) throw new Error(`${path}: only a Definition output or a Content field can be written from a sheet.`);
         next.write = {operation: node.write.operation};
       }
     }

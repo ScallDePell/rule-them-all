@@ -5,7 +5,7 @@ import {prepareFieldMap} from './field-output-contracts.mjs';
 import {assertSafeRollFormula, FOUNDRY_DIE_LETTERS} from './roll-grammar.mjs';
 import {DICE_COMPARATORS} from './dice-reading.mjs';
 import {need} from './diagnostics.mjs';
-import {prepareLayout,emptyLayout} from './layout-contract.mjs';
+import {prepareLayout,emptyLayout,layoutNodes} from './layout-contract.mjs';
 import {preparePermissionRules} from './permission-contract.mjs';
 import {validateFormulaAst, effectOperationRegistry} from './operation-registries.mjs';
 
@@ -513,6 +513,7 @@ export function prepareSheetDefinition(data,options={}){
   if(!SHEET_TARGETS.includes(x.target))throw new Error(`SheetDefinition.target must be ${SHEET_TARGETS.join(' or ')}.`);
   arr(x.contentTypeIds,'SheetDefinition.contentTypeIds');
   x.root=prepareLayout(x.root);
+  if(x.target!=='item')for(const {node,path} of layoutNodes(x.root))if(node.source?.kind==='field')throw new Error(`${path}: Content fields are only on Item sheets.`);
   return x;
 }
 

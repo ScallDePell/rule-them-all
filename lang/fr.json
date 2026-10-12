@@ -1316,7 +1316,18 @@
     "Sheet": {
       "Target": "Utilisée pour",
       "TargetActor": "Acteurs",
-      "TargetItem": "Objets"
+      "TargetItem": "Objets",
+      "Output": {
+        "ValueBase": "Base",
+        "ValueFinal": "Valeur",
+        "PoolCurrent": "Actuel",
+        "PoolMinimum": "Minimum",
+        "PoolMaximum": "Maximum",
+        "CollectionCount": "Nombre",
+        "StateActive": "Actif",
+        "StateStacks": "Cumuls"
+      },
+      "Actions": "Actions"
     }
   }
 }

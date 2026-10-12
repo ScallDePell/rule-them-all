@@ -1320,7 +1320,18 @@
     "Sheet": {
       "Target": "Used for",
       "TargetActor": "Actors",
-      "TargetItem": "Items"
+      "TargetItem": "Items",
+      "Output": {
+        "ValueBase": "Base",
+        "ValueFinal": "Value",
+        "PoolCurrent": "Current",
+        "PoolMinimum": "Minimum",
+        "PoolMaximum": "Maximum",
+        "CollectionCount": "Count",
+        "StateActive": "Active",
+        "StateStacks": "Stacks"
+      },
+      "Actions": "Actions"
     }
   }
 }
