@@ -97,3 +97,14 @@ test('The Die editor turns counter and face cards into the Die', ()=>{
   const fixed=selector=>(cards[selector.match(/"(.+)"/)[1]]??[]).map(card);
   assert.deepEqual(collectDie(fixed),{counters:[{id:'success',labelKey:'Success'},{id:'dark-side',labelKey:'Dark side'}],faces:[{labelKey:'Hit',value:null,counts:{success:1}},{labelKey:'Doom',value:2,counts:{success:-1,'dark-side':1}}]});
 });
+
+test('Foundry: a Die keeps or drops like a standard die (bonus dice of a d100: the lowest tens die)', ()=>{
+  class Base{static MODIFIERS={};constructor({number=1,faces=6,modifiers=[],results=[]}={}){Object.assign(this,{number,faces,modifiers,results,_evaluated:true});}}
+  class Die{static MODIFIERS={kl:'keep',x:'explode',zz:'missing'};keep(){const low=Math.min(...this.results.map(r=>r.result));let kept=false;for(const r of this.results){r.active=!kept&&r.result===low;kept||=r.active;}}explode(){}}
+  const tens={id:'tens',denomination:'t',faces:Array.from({length:10},(_,i)=>({value:i*10}))};
+  const Cls=rulesetDieClass(Base,'coc',tens,Die);
+  assert.deepEqual(Object.keys(Cls.MODIFIERS),['kl','x'],'only the modifiers Foundry implements');
+  const t=new Cls({number:2,results:[{result:7,active:true},{result:1,active:true}]});
+  Cls.MODIFIERS.kl.call(t);
+  assert.equal(t.total,0,'the "0" tens die is kept, so 00 + a 0 unit die reads 100 through the Test bonus');
+});

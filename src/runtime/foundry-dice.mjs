@@ -1,19 +1,24 @@
 /* A Ruleset's own dice (2dp) as Foundry dice terms. Each Die becomes a DiceTerm subclass under its letter in
    CONFIG.Dice.terms, so Foundry throws it, and under its class name in CONFIG.Dice.termTypes, so a chat message
-   rebuilds it. A face rolls its rank; the term's total adds the faces' values; the chat shows the faces' labels. */
+   rebuilds it. A face rolls its rank; the term's total adds the faces' values; the chat shows the faces' labels.
+   Keep, drop, reroll and explode work on the rank, as Foundry's Fate dice borrow them from its standard Die. */
 
 import {dieFace} from "./dice-results.mjs";
 
 const classes = new Map();
 const className = (rulesetKey, die) => `RuleThemAllDie_${`${rulesetKey}_${die.id}`.replace(/[^A-Za-z0-9_]/g, "_")}`;
 
-/** The DiceTerm class of one Die, made once per Ruleset, Die and faces. */
-export function rulesetDieClass(Base, rulesetKey, die) {
+/** Foundry's Die modifiers as functions (Die.MODIFIERS names its methods). */
+const borrowedModifiers = Die => Object.fromEntries(Object.entries(Die?.MODIFIERS ?? {}).map(([key, method]) => [key, typeof method === "string" ? Die.prototype[method] : method]).filter(([, method]) => typeof method === "function"));
+
+/** The DiceTerm class of one Die, made once per Ruleset, Die and faces. Die: Foundry's standard Die, lending its modifiers. */
+export function rulesetDieClass(Base, rulesetKey, die, Die = null) {
   const plain = {id: die.id, denomination: die.denomination, faces: (die.faces ?? []).map(face => ({labelKey: face.labelKey ?? "", value: face.value ?? null, counts: {...(face.counts ?? {})}}))};
   const key = `${className(rulesetKey, die)}|${JSON.stringify(plain)}`;
   if (classes.has(key)) return classes.get(key);
   class RulesetDie extends Base {
     static DENOMINATION = plain.denomination;
+    static MODIFIERS = {...borrowedModifiers(Die), ...(Base.MODIFIERS ?? {})};
     static rtaDie = plain;
     constructor(termData = {}) { super({...termData, faces: plain.faces.length}); }
     get expression() { return `${this._number ?? this.number}d${plain.denomination}${(this.modifiers ?? []).join("")}`; }
@@ -33,11 +38,11 @@ export function rulesetDieClass(Base, rulesetKey, die) {
 }
 
 /** Make the enabled dice of a Ruleset the ones Foundry throws for their letters. */
-export function registerRulesetDice(rulesetKey, dice = [], {config = globalThis.CONFIG, Base = globalThis.foundry?.dice?.terms?.DiceTerm} = {}) {
+export function registerRulesetDice(rulesetKey, dice = [], {config = globalThis.CONFIG, Base = globalThis.foundry?.dice?.terms?.DiceTerm, Die = globalThis.foundry?.dice?.terms?.Die} = {}) {
   if (!config?.Dice || !Base) return [];
   config.Dice.termTypes ??= {};
   return dice.filter(die => die && die.enabled !== false && die.denomination).map(die => {
-    const cls = rulesetDieClass(Base, rulesetKey, die);
+    const cls = rulesetDieClass(Base, rulesetKey, die, Die);
     config.Dice.terms[die.denomination] = cls;
     config.Dice.termTypes[cls.name] = cls;
     return cls;
