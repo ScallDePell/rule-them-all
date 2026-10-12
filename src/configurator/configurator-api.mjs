@@ -11,7 +11,7 @@ function registryAPI(registry) {
   return {...createGraphAPI(registry),
     listCapabilityTypes:()=>capabilityTypeRegistry.list(), getCapabilityType:id=>capabilityTypeRegistry.get(id),
     listValueTypes:()=>valueTypeRegistry.list(), getValueType:id=>valueTypeRegistry.get(id), isValueTypeAssignable:(source,target)=>valueTypeRegistry.isAssignable(source,target),
-    listRulesetFamilies:()=>registry.listFamilies(), listRulesetVersions:id=>registry.listVersions(id), getRulesetVersion:id=>registry.getRecord(id), getRuleset:id=>registry.get(id), getPublishedRuleset:id=>registry.getPublished(id),
+    listRulesetFamilies:()=>registry.listFamilies(), listRulesetVersions:id=>registry.listVersions(id), getRulesetVersion:id=>registry.getRecord(id), getRuntimeRuleset:(id,source)=>registry.getRuntimeRuleset(id,source), getRuleset:id=>registry.get(id), getPublishedRuleset:id=>registry.getPublished(id),
     getStorageRevision:()=>registry.getStorageRevision(), getActiveVersionId:()=>registry.getActiveVersionId(), setActiveVersionId:id=>registry.setActiveVersionId(id),
     getWorldOverride:(v,l,k)=>registry.getWorldOverride(v,l,k), getVersionWorldOverrides:v=>registry.getVersionWorldOverrides(v), resolveLocalizedText:(v,l,k,f)=>registry.resolveLocalizedText(v,l,k,f), setWorldOverride:(v,l,k,x)=>registry.setWorldOverride(v,l,k,x), deleteWorldOverride:(v,l,k)=>registry.deleteWorldOverride(v,l,k),
     createRuleset:d=>registry.create(d), updateRuleset:(v,p)=>registry.update(v,p), deleteRulesetVersion:v=>registry.delete(v), validateRuleset,

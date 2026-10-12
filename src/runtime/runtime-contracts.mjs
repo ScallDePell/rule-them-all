@@ -45,6 +45,8 @@ export function normalizeRuntimeContainerRef(ref) {
 export const RULESET_SOURCES=Object.freeze(["published","draft"]);
 export function resolveRuntimeRuleset(configurator,versionId,{source="published"}={}){
   if(!RULESET_SOURCES.includes(source))throw new Error(`Unknown runtime Ruleset source: ${source}.`);
+  // Frozen and shared: callers copy what they change.
+  if(configurator.getRuntimeRuleset){const ruleset=configurator.getRuntimeRuleset(versionId,source);if(ruleset)return ruleset;}
   const record=configurator.getRulesetVersion?.(versionId);
   if(!record)throw new Error(`Ruleset version not found: ${versionId}.`);
   const ruleset=source==="draft"?record.workingDraft:record.publishedSnapshot;

@@ -5,6 +5,9 @@ import {DependencyIndex} from "./dependency-index.mjs";
 import {createStableId} from "./identity.mjs";
 import {copyVersionWorldOverrides, deleteVersionWorldOverrides, deleteWorldOverride, getVersionWorldOverrides, getWorldOverride, resolveLocalizedText, setWorldOverride} from "./world-localization.mjs";
 
+const runtimeCopies = new WeakMap();
+const deepFreeze = value => { if (value && typeof value === "object" && !Object.isFrozen(value)) { Object.freeze(value); for (const child of Object.values(value)) deepFreeze(child); } return value; };
+
 /** Ruleset families and independently persisted versions. */
 export class ConfiguratorRegistry {
   #families = new Map();
@@ -75,6 +78,17 @@ export class ConfiguratorRegistry {
     const familyId = this.#versionFamily.get(versionId);
     const record = familyId === undefined ? undefined : this.#families.get(familyId)?.versions.get(versionId);
     return record === undefined ? undefined : copyJSON(record);
+  }
+  /** Read-only Ruleset for the runtime: one deep-frozen copy per stored snapshot, reused until the snapshot is replaced.
+   * The runtime reads the Ruleset on every evaluation; copying it each time made large acquisitions take seconds. */
+  getRuntimeRuleset(versionId, source = "published") {
+    const familyId = this.#versionFamily.get(versionId);
+    const record = familyId === undefined ? undefined : this.#families.get(familyId)?.versions.get(versionId);
+    const stored = source === "draft" ? record?.workingDraft : record?.publishedSnapshot;
+    if (!stored) return stored ?? undefined;
+    let frozen = runtimeCopies.get(stored);
+    if (!frozen) { frozen = deepFreeze(copyJSON(stored)); runtimeCopies.set(stored, frozen); }
+    return frozen;
   }
   get(versionId) { return this.getRecord(versionId)?.workingDraft; }
   getPublished(versionId) { return this.getRecord(versionId)?.publishedSnapshot ?? undefined; }
