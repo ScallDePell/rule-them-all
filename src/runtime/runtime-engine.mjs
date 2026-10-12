@@ -17,6 +17,13 @@ import {SLOT_CAPABILITIES,requireSlot,poolSlotState,collectionSlotState,boundPoo
 
 const clone=v=>copyJSON(v);
 const roleRef=(context,role)=>context?.roles?.[role]??null;
+/** The dice of one Action use, carried by its context under a symbol (never cloned nor stored):
+ * {log: [{formula, roll}], keep: Map formula -> [roll]}. A replay that keeps the dice takes back a logged roll of the same formula. */
+const DICE=Symbol("rta.dice");
+/** The roles seen from the other side: the target acts on the former self (a reaction). */
+const swapRoles=context=>{const self=roleRef(context,"self"),target=roleRef(context,"target");return {...context,roles:{...(context.roles??{}),self:target,source:target,target:self,subject:self},defaultRole:"self"};};
+/** A context as it can be kept and replayed later: no event, cause or dice. */
+const plainContext=context=>clone(Object.fromEntries(Object.entries(context).filter(([key])=>key!=="event"&&key!=="cause")));
 const enabled=(entry)=>entry&&entry.enabled!==false;
 const appliedByActions=new WeakMap();
 /** A Modifier that no Action applies is passive: it changes value.final wherever its Conditions are true.
@@ -275,25 +282,31 @@ export class RuntimeEngine{
     for(const modifier of ruleset.modifiers??[]){if(!enabled(modifier))continue;const t=modifier.targetRef??{};if(t.objectKind!==targetRef.objectKind||t.objectId!==targetRef.objectId||String(t.capabilityId??'')!==String(targetRef.capabilityId??'')||String(t.outputId??'')!==String(targetRef.outputId??''))continue;let ok=true;for(const id of modifier.conditionRefs??[])if(!await evaluator.condition(id,context)){ok=false;break;}if(!ok)continue;let value;if(modifier.valueSource.kind==='literal')value=modifier.valueSource.value;else if(modifier.valueSource.kind==='parameter')value=evaluator.parameter(modifier.valueSource.id);else if(modifier.valueSource.kind==='formula')value=await evaluator.formula(modifier.valueSource.id,context);else value=await this.resolveReference(versionId,modifier.valueSource.reference,context);applicable.push({modifier,value:Number(value)});}
     const {value,applied}=applyModifierStack(baseValue,applicable.map(row=>({id:row.modifier.id,operation:row.modifier.operation,value:row.value,priority:row.modifier.priority??0,stacking:row.modifier.stacking})));return{base:Number(baseValue),value,applied};
   }
+  async #throw(formula,data,context){
+    const dice=context?.[DICE],kept=dice?.keep?.get(formula),roll=kept?.length?kept.shift():await this.roll(formula,data);
+    dice?.log.push({formula,roll:clone(roll)});return roll;
+  }
   async roll(formula,data={}){assertSafeRollFormula(formula);if(typeof this.adapter.roll!=="function")throw new Error("Runtime adapter does not provide Foundry Roll support.");return this.adapter.roll(formula,data);}
   /** Test (CP-29): inputs, optional Roll, total, target, margin, then the first true Outcome in the Test's order.
    * Each step sees the previous ones under variables.test (inputs, roll, rollTotal, natural, bonus, total, target, margin). */
-  async executeTest(versionId,testId,context={}){
+  /** staged: an Action's states before its commit, so the Test sees what the Action already changed (a reaction's Modifier). */
+  async executeTest(versionId,testId,context={},{staged=null}={}){
+    const evaluator=this.evaluator(versionId,staged);
     const ruleset=this.ruleset(versionId),test=ruleset.tests?.find(x=>x.id===testId&&enabled(x));if(!test)throw new Error(`Test unavailable: ${testId}.`);
     const scope={...context,variables:{...(context.variables??{})}};
     const state={id:test.id,inputs:{},roll:null,rollTotal:0,natural:null,bonus:0,total:0,target:null,margin:null};
     const sync=()=>{scope.variables.test={...state,inputs:{...state.inputs}};if(state.roll)scope.variables.roll={...state.roll};};
     sync();
-    for(const input of test.inputBindings??[]){state.inputs[input.id]=await this.#testInput(versionId,test,input,scope);sync();}
+    for(const input of test.inputBindings??[]){state.inputs[input.id]=await this.#testInput(versionId,test,input,scope,evaluator,staged);sync();}
     if(test.rollRef){
       const rollDef=ruleset.rolls?.find(x=>x.id===test.rollRef&&enabled(x));if(!rollDef)throw new Error(`Roll unavailable: ${test.rollRef}.`);
-      const {formula,data}=await this.#rollFormula(rollDef,scope,this.evaluator(versionId),{test:clone(state.inputs)});
-      const roll=await this.roll(resolveRollData(formula,data),data);
+      const {formula,data}=await this.#rollFormula(rollDef,scope,evaluator,{test:clone(state.inputs)});
+      const roll=await this.#throw(resolveRollData(formula,data),data,scope);
       const natural=Number.isFinite(Number(roll.natural))?Number(roll.natural):Number(roll.total);
       state.roll={formula:String(roll.formula??formula),total:Number(roll.total),natural,result:String(roll.result??roll.total??"")};
       state.rollTotal=Number(roll.total);state.natural=natural;state.total=Number(roll.total);sync();
     }
-    const number=async(formulaId,label)=>{const value=Number(await this.evaluateFormula(versionId,formulaId,scope));if(!Number.isFinite(value))throw new Error(`Test ${test.id} ${label} is not a number.`);return value;};
+    const number=async(formulaId,label)=>{const value=Number(await evaluator.formula(formulaId,scope));if(!Number.isFinite(value))throw new Error(`Test ${test.id} ${label} is not a number.`);return value;};
     if(test.bonusFormulaRef){state.bonus=await number(test.bonusFormulaRef,"bonus");state.total=state.rollTotal+state.bonus;sync();}
     if(test.totalFormulaRef){state.total=await number(test.totalFormulaRef,"total");sync();}
     // Opposed Test: the target role makes the other Test as its self, against this Test's self; its total is the target.
@@ -302,7 +315,7 @@ export class RuntimeEngine{
       if(opposing.opposedTestRef)throw new Error(`Test ${opposing.id} is itself opposed and cannot answer ${test.id}.`);
       const opponent=roleRef(context,"target");if(!opponent)throw new Error(`Opposed Test ${test.id} needs a target.`);
       const roles={...(context.roles??{}),self:opponent,source:opponent,target:roleRef(context,"self")};
-      const {content:_attackerContent,...opponentContext}=context,answer=await this.executeTest(versionId,opposing.id,{...opponentContext,roles,variables:{...(context.variables??{})}});
+      const {content:_attackerContent,...opponentContext}=context,answer=await this.executeTest(versionId,opposing.id,{...opponentContext,roles,variables:{...(context.variables??{})}},{staged});
       state.opposed={testId:opposing.id,total:answer.total,natural:answer.roll?.natural??null,outcome:answer.outcome?.resultKey??null};state.target=answer.total;sync();
     }
     else state.target=test.targetFormulaRef?await number(test.targetFormulaRef,"target"):(test.targetValue===null||test.targetValue===undefined?null:Number(test.targetValue));sync();
@@ -311,18 +324,18 @@ export class RuntimeEngine{
     // fallback. With Outcomes configured and no match, the Test fails explicitly.
     const candidates=(test.outcomeRefs??[]).map(id=>ruleset.outcomes?.find(x=>x.id===id&&enabled(x))).filter(Boolean);
     let outcome=null;
-    for(const candidate of candidates){if(!candidate.conditionRef||await this.evaluateCondition(versionId,candidate.conditionRef,scope)){outcome=candidate;break;}}
+    for(const candidate of candidates){if(!candidate.conditionRef||await evaluator.condition(candidate.conditionRef,scope)){outcome=candidate;break;}}
     if(!outcome&&test.fallbackOutcomeRef){outcome=ruleset.outcomes?.find(x=>x.id===test.fallbackOutcomeRef&&enabled(x))??null;if(!outcome)throw new Error(`Fallback Outcome unavailable: ${test.fallbackOutcomeRef}.`);}
     if(!outcome&&candidates.length)throw new Error(`Test ${test.id} matched no Outcome and has no fallback Outcome.`);
     const variables={...(state.roll?{roll:{...state.roll}}:{}),test:{...state,inputs:{...state.inputs}}};
     const result={testId:test.id,inputs:copyJSON(state.inputs),roll:state.roll?{...state.roll}:null,bonus:state.bonus,total:state.total,target:state.target,margin:state.margin,...(state.opposed?{opposed:{...state.opposed}}:{}),outcome:outcome?{id:String(outcome.id),resultKey:String(outcome.resultKey),nameKey:String(outcome.nameKey),labelKey:String(outcome.labelKey||outcome.nameKey)}:null,variables,context:{variables}};
     this.hooks?.callAll?.(RUNTIME_HOOKS.testResolved,result,{roles:{...(context.roles??{})},defaultRole:context.defaultRole??"self",userContext:{...(context.userContext??{})}});return result;
   }
-  async #testInput(versionId,test,input,scope){
+  async #testInput(versionId,test,input,scope,evaluator,staged){
     let value;
     if(Object.hasOwn(input.source,"literal"))value=copyJSON(input.source.literal);
-    else if(input.source.formulaRef)value=await this.evaluateFormula(versionId,input.source.formulaRef,scope);
-    else if(input.source.reference)value=await this.resolveReference(versionId,input.source.reference,scope);
+    else if(input.source.formulaRef)value=await evaluator.formula(input.source.formulaRef,scope);
+    else if(input.source.reference)value=await this.resolveReference(versionId,input.source.reference,scope,{staged});
     if(value===undefined||value===null){
       if(input.defaultValue!==undefined)return copyJSON(input.defaultValue);
       if(input.required)throw new Error(`Test ${test.id} input ${input.id} has no value.`);
@@ -374,10 +387,27 @@ export class RuntimeEngine{
     const depth=Number(options.depth??0);if(depth>20)throw new Error("Rule Them'All event chain depth exceeded.");
     const event={id:globalThis.crypto?.randomUUID?.()??`evt-${Date.now()}-${Math.random().toString(36).slice(2)}`,eventTypeId,rulesetVersionId:versionId,occurredAt:Date.now(),payload:clone(payload),chainId:options.chainId??null,parentEventId:options.parentEventId??null,depth};event.chainId??=event.id;
     const eventContext={...context,event};const triggered=[];
-    for(const trigger of ruleset.triggers??[]){if(!enabled(trigger)||trigger.eventTypeId!==eventTypeId)continue;if(!this.#eventFilterMatches(trigger.eventFilter,event,eventContext))continue;let ok=true;for(const conditionId of trigger.conditionRefs??[])if(!await this.evaluateCondition(versionId,conditionId,eventContext)){ok=false;break;}if(!ok)continue;const actions=[];for(const actionId of trigger.actionRefs??[]){actions.push(await this.executeAction(versionId,actionId,eventContext,{eventDepth:depth,triggered:true}));}triggered.push({triggerId:trigger.id,actions});}
+    for(const trigger of ruleset.triggers??[]){if(!enabled(trigger)||trigger.eventTypeId!==eventTypeId)continue;if(!this.#eventFilterMatches(trigger.eventFilter,event,eventContext))continue;await this.#runTrigger(versionId,ruleset,trigger,eventContext,depth,triggered);}
     // untilEvent Durations end on the containers the event concerns.
     const expired=[];for(const ref of new Map(Object.values(context.roles??{}).filter(Boolean).map(ref=>{const n=normalizeRuntimeContainerRef(ref);return [this.#refKey(n),n];})).values()){const state=await this.adapter.load(ref);if(state.rulesetVersionId===versionId&&hasDurations(state)){const result=await this.expireStates(versionId,ref,{eventTypeId});if(result.stateInstanceIds.length||result.modifierStateIds.length)expired.push({ref,...result});}}
     this.hooks?.callAll?.(RUNTIME_HOOKS.event,event,clone(triggered));return {event,triggered,expired};
+  }
+  /** A Trigger's Actions, run by the role it names: automatically, or offered to that role (hook reactionOffered,
+   * the offer listing the Actions and their context). A reroll Action replays the use that caused the event. */
+  async #runTrigger(versionId,ruleset,trigger,eventContext,depth,triggered){
+    const context=trigger.actingRole==="target"?swapRoles(eventContext):eventContext,cause=eventContext.cause??null;
+    // Its Conditions read the acting role as self (the defender's own Thorns).
+    for(const conditionId of trigger.conditionRefs??[])if(!await this.evaluateCondition(versionId,conditionId,context))return;
+    if(trigger.mode==="offer"){
+      const offer={triggerId:trigger.id,eventTypeId:trigger.eventTypeId,actionIds:[...(trigger.actionRefs??[])],actor:roleRef(context,"self"),context:plainContext(context),cause:clone(cause)};
+      this.hooks?.callAll?.(RUNTIME_HOOKS.reactionOffered,clone(offer));triggered.push({triggerId:trigger.id,actions:[],offer});return;
+    }
+    const actions=[];
+    for(const actionId of trigger.actionRefs??[]){
+      const action=ruleset.actions?.find(x=>x.id===actionId);
+      actions.push(action?.reroll&&cause?await this.rerollAction(versionId,actionId,cause,context,{triggered:true,eventDepth:depth}):await this.executeAction(versionId,actionId,context,{eventDepth:depth,triggered:true}));
+    }
+    triggered.push({triggerId:trigger.id,actions});
   }
   /** A module event (combat, world clock) on each container concerned, under its own Ruleset; containers whose Ruleset has no Trigger for it are skipped. */
   async emitSystemEvent(eventTypeId,payload,refs){
@@ -412,7 +442,7 @@ export class RuntimeEngine{
     if(!Number.isFinite(factor))throw new Error(`Roll factor of ${operand.rollRef} is not a number.`);
     const {formula,data}=await this.#rollFormula(rollDef,context,evaluator);
     let roll=shared?.cache.get(shared.key);
-    if(!roll){roll=await this.roll(multiplyDice(resolveRollData(formula,data),multiplier),data);shared?.cache.set(shared.key,roll);}
+    if(!roll){roll=await this.#throw(multiplyDice(resolveRollData(formula,data),multiplier),data,context);shared?.cache.set(shared.key,roll);}
     let value=Number(roll.total)+bonus;if(factor!==1)value=Math.floor(value*factor);
     return {value:Number.isFinite(operand.minimum)?Math.max(operand.minimum,value):value,roll:{formula:String(roll.formula??formula),total:Number(roll.total),result:String(roll.result??roll.total??""),bonus,...(factor!==1?{factor}:{})}};
   }
@@ -569,7 +599,7 @@ export class RuntimeEngine{
   async rollTable(versionId,tableId,context={},evaluator=this.evaluator(versionId)){
     const ruleset=this.ruleset(versionId),table=ruleset.tables?.find(x=>x.id===tableId&&enabled(x));if(!table)throw new Error(`Table unavailable: ${tableId}.`);
     const rollDef=ruleset.rolls?.find(x=>x.id===table.rollRef&&enabled(x));if(!rollDef)throw new Error(`Roll unavailable: ${table.rollRef}.`);
-    const {formula,data}=await this.#rollFormula(rollDef,context,evaluator),roll=await this.roll(resolveRollData(formula,data),data);
+    const {formula,data}=await this.#rollFormula(rollDef,context,evaluator),roll=await this.#throw(resolveRollData(formula,data),data,context);
     const bonus=table.bonusFormulaRef?Number(await evaluator.formula(table.bonusFormulaRef,context)):0;if(!Number.isFinite(bonus))throw new Error(`Table ${table.id} bonus is not a number.`);
     const total=Number(roll.total)+bonus,row=(table.rows??[]).find(r=>(r.min===null||total>=r.min)&&(r.max===null||total<=r.max))??null;
     return {tableId:table.id,total,roll:{formula:String(roll.formula??formula),total:Number(roll.total),result:String(roll.result??roll.total??""),bonus},row:row?{id:row.id,labelKey:row.labelKey,actionRefs:[...(row.actionRefs??[])]}:null};
@@ -616,7 +646,7 @@ export class RuntimeEngine{
    * An Outcome that stops the Action leaves this target unchanged. */
   async #previewOnTarget(versionId,ruleset,action,context,staged,evaluator,changes,acquired,depth){
     let testResult=null,effectRefs=[...(action.effectRefs??[])],next=[];
-    if(action.testRef){testResult=await this.executeTest(versionId,action.testRef,context);const mapping=(action.outcomeMappings??[]).find(m=>m?.outcomeId===testResult.outcome?.id||m?.resultKey===testResult.outcome?.resultKey);if(mapping){if(Array.isArray(mapping.effectRefs))effectRefs=mapping.effectRefs;if(mapping.block===true)return {allowed:false,reason:"outcome",testResult};next=[...(mapping.actionRefs??[])];}}
+    if(action.testRef){testResult=await this.executeTest(versionId,action.testRef,context,{staged});const mapping=(action.outcomeMappings??[]).find(m=>m?.outcomeId===testResult.outcome?.id||m?.resultKey===testResult.outcome?.resultKey);if(mapping){if(Array.isArray(mapping.effectRefs))effectRefs=mapping.effectRefs;if(mapping.block===true)return {allowed:false,reason:"outcome",testResult};next=[...(mapping.actionRefs??[])];}}
     await this.#stageStates(versionId,ruleset,action,context,staged,evaluator,changes);
     // Effects read the Test under variables.test (total, margin, natural, outcome), e.g. damage that grows with the margin.
     const effectContext=testResult?{...context,variables:{...(context.variables??{}),...testResult.variables,test:{...testResult.variables.test,outcome:testResult.outcome}}}:context;
@@ -639,31 +669,34 @@ export class RuntimeEngine{
   /** triggered: run by a Trigger, so no user chose it and only write permissions apply. */
   async executeAction(versionId,actionId,context={},{preview=false,eventDepth=0,transactionId=null,triggered=false,acquisitions=[],content=null}={}){
     if(!triggered)await this.#require(versionId,"execute",{objectKind:"action",objectId:actionId},roleRef(context,"self")??roleRef(context,context.defaultRole??"self"),context);
+    context={...context,[DICE]:{log:[],keep:null}};
     const plan=await this.previewAction(versionId,actionId,context,{acquisitions,content});if(preview||!plan.allowed)return {...plan,staged:undefined,context:undefined};
-    context=plan.context;
+    const dice=context[DICE].log;context=plan.context;
     // Staged states were read once by the preview: the commit expects their revision unchanged.
     const tx=this.transaction(versionId,"action",{transactionId,summary:{actionId,outcomeKey:plan.testResult?.outcome?.resultKey??null}});
     for(const [key,state] of plan.staged){const change=plan.changes.find(x=>this.#refKey(x.containerRef)===key);if(change)tx.stage(change.containerRef,state);}
     const committed=await this.#commit(tx);
     const strip=list=>list.map(({context:_context,followUps:inner=[],targets,...rest})=>({...rest,followUps:strip(inner),...(targets?{targets:strip(targets)}:{})})),followUps=strip(plan.followUps);
-    const result={actionId,allowed:true,testResult:plan.testResult??null,tableResult:plan.tableResult??null,followUps,...(plan.targets?{targets:strip(plan.targets)}:{}),changes:plan.changes,acquired:plan.acquired,committed:true,duplicate:committed.duplicate,transactionId:committed.transactionId,ledgerEntryIds:committed.entries.map(entry=>entry.id),events:[]};
+    // use: what a reroll or a reaction needs to undo and replay this use, the dice thrown included.
+    const use={actionId,transactionId:committed.transactionId,context:plainContext(context),dice:clone(dice),rerollCount:0};
+    const result={actionId,allowed:true,testResult:plan.testResult??null,tableResult:plan.tableResult??null,followUps,...(plan.targets?{targets:strip(plan.targets)}:{}),changes:plan.changes,acquired:plan.acquired,committed:true,duplicate:committed.duplicate,transactionId:committed.transactionId,ledgerEntryIds:committed.entries.map(entry=>entry.id),use,events:[]};
     if(committed.duplicate)return result;
     this.hooks?.callAll?.(RUNTIME_HOOKS.actionExecuted,clone(result),context);
-    await this.#emitActionEvents(versionId,{actionId,testResult:plan.testResult,context,followUps:plan.followUps,targets:plan.targets},eventDepth,result.events);return result;
+    await this.#emitActionEvents(versionId,{actionId,testResult:plan.testResult,context:{...context,cause:use},followUps:plan.followUps,targets:plan.targets},eventDepth,result.events);return result;
   }
   /** Reroll: undo one use of an Action and replay it with new dice, in one transaction with the reroll Action's
    * own costs. original: {actionId, transactionId, context, rerollCount?} as the first use returned them.
    * The replay and the reroll Action read variables.reroll.count (1 for the first reroll), so a Condition can
    * cap the rerolls; a use already rerolled is refused, its reroll can be rerolled in turn. */
-  async rerollAction(versionId,rerollActionId,original={},context={},{transactionId=null}={}){
+  async rerollAction(versionId,rerollActionId,original={},context={},{transactionId=null,triggered=false,eventDepth=0}={}){
     const ruleset=this.ruleset(versionId),reroll=ruleset.actions?.find(x=>x.id===rerollActionId&&enabled(x));
     if(!reroll?.reroll)throw new Error(`Not a reroll Action: ${rerollActionId}.`);
     const {actionId,transactionId:originalId,context:originalContext={}}=original;
     const action=ruleset.actions?.find(x=>x.id===actionId&&enabled(x));if(!action)throw new Error(`Action unavailable: ${actionId}.`);
     if(!originalId)throw new Error("A reroll needs the transaction of the use it replaces.");
     if(reroll.reroll.actionRefs.length?!reroll.reroll.actionRefs.includes(actionId):!action.testRef)throw new Error(`${rerollActionId} cannot reroll ${actionId}.`);
-    await this.#require(versionId,"execute",{objectKind:"action",objectId:rerollActionId},roleRef(context,"self"),context);
-    await this.#require(versionId,"execute",{objectKind:"action",objectId:actionId},roleRef(originalContext,"self"),originalContext);
+    if(!triggered)await this.#require(versionId,"execute",{objectKind:"action",objectId:rerollActionId},roleRef(context,"self"),context);
+    if(!triggered)await this.#require(versionId,"execute",{objectKind:"action",objectId:actionId},roleRef(originalContext,"self"),originalContext);
     // Undo the first use on every container it wrote, provided nothing changed them since. Of a reroll,
     // only its replay is undone: the use it replaced stays undone and its costs stay paid.
     const staged=new Map(),refs=new Map();let count=Number(original.rerollCount??0)+1;
@@ -683,7 +716,9 @@ export class RuntimeEngine{
     const paid=await this.previewAction(versionId,rerollActionId,rerollContext,{staged});
     if(!paid.allowed)return {...paid,staged:undefined,context:undefined};
     const afterCost=snapshot();
-    const replayContext={...originalContext,variables:{...(originalContext.variables??{}),reroll:{count,actionId}}};
+    // keepDice: the replay takes back the dice of the use it replaces (a reaction that changes the target, not the roll).
+    const keep=new Map();if(reroll.reroll.keepDice)for(const {formula,roll} of original.dice??[])keep.set(formula,[...(keep.get(formula)??[]),roll]);
+    const replayContext={...originalContext,variables:{...(originalContext.variables??{}),reroll:{count,actionId}},[DICE]:{log:[],keep}};
     const plan=await this.previewAction(versionId,actionId,replayContext,{staged});
     if(!plan.allowed)return {...plan,staged:undefined,context:undefined};
     for(const change of [...paid.changes,...plan.changes])if(change.containerRef)refs.set(this.#refKey(change.containerRef),normalizeRuntimeContainerRef(change.containerRef));
@@ -695,19 +730,21 @@ export class RuntimeEngine{
     }
     const committed=await this.#commit(tx);
     const strip=list=>list.map(({context:_context,followUps:inner=[],targets,...rest})=>({...rest,followUps:strip(inner),...(targets?{targets:strip(targets)}:{})}));
-    const result={actionId,rerollActionId,allowed:true,rerollCount:count,testResult:plan.testResult??null,tableResult:plan.tableResult??null,followUps:strip(plan.followUps),...(plan.targets?{targets:strip(plan.targets)}:{}),changes:[...paid.changes,...plan.changes],committed:true,duplicate:committed.duplicate,transactionId:committed.transactionId,ledgerEntryIds:committed.entries.map(entry=>entry.id),events:[]};
+    const use={actionId,transactionId:committed.transactionId,context:clone(originalContext),dice:clone(replayContext[DICE].log),rerollCount:count};
+    const result={actionId,rerollActionId,allowed:true,rerollCount:count,use,testResult:plan.testResult??null,tableResult:plan.tableResult??null,followUps:strip(plan.followUps),...(plan.targets?{targets:strip(plan.targets)}:{}),changes:[...paid.changes,...plan.changes],committed:true,duplicate:committed.duplicate,transactionId:committed.transactionId,ledgerEntryIds:committed.entries.map(entry=>entry.id),events:[]};
     if(committed.duplicate)return result;
     this.hooks?.callAll?.(RUNTIME_HOOKS.actionExecuted,clone(result),replayContext);
-    await this.#emitActionEvents(versionId,{actionId:rerollActionId,testResult:paid.testResult,context:paid.context,followUps:paid.followUps,targets:paid.targets},0,result.events);
-    await this.#emitActionEvents(versionId,{actionId,testResult:plan.testResult,context:plan.context,followUps:plan.followUps,targets:plan.targets},0,result.events);
+    await this.#emitActionEvents(versionId,{actionId:rerollActionId,testResult:paid.testResult,context:paid.context,followUps:paid.followUps,targets:paid.targets},eventDepth,result.events);
+    await this.#emitActionEvents(versionId,{actionId,testResult:plan.testResult,context:{...plan.context,cause:use},followUps:plan.followUps,targets:plan.targets},eventDepth,result.events);
     return result;
   }
   /** After the commit: the events of the Action, then those of each follow-up that ran, each with its own context.
    * An Action on several targets emits its events once per target its Outcome let through. */
   async #emitActionEvents(versionId,{actionId,testResult,context,followUps=[],targets=null},eventDepth,out){
-    if(targets){for(const run of targets)if(run.allowed)await this.#emitActionEvents(versionId,{actionId,...run},eventDepth,out);return;}
+    const cause=context?.cause??null,withCause=entry=>({...entry,context:{...(entry.context??{}),cause}});
+    if(targets){for(const run of targets)if(run.allowed)await this.#emitActionEvents(versionId,withCause({actionId,...run}),eventDepth,out);return;}
     const action=this.ruleset(versionId).actions?.find(x=>x.id===actionId);
     for(const eventTypeId of action?.eventTypeRefs??[]){const emitted=await this.emitEvent(versionId,eventTypeId,{actionId,outcomeKey:testResult?.outcome?.resultKey??null},context,{depth:eventDepth+1});out.push({eventTypeId,actionId,triggered:emitted.triggered});}
-    for(const follow of followUps)if(follow.allowed)await this.#emitActionEvents(versionId,follow,eventDepth,out);
+    for(const follow of followUps)if(follow.allowed)await this.#emitActionEvents(versionId,withCause(follow),eventDepth,out);
   }
 }

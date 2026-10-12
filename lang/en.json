@@ -553,7 +553,8 @@
       "RerollAction": "Reroll",
       "RerollHelp": "This Action undoes one use of another Action and replays it with new dice. Its costs are paid in the same step. No Action ticked: any Action with a Test. Conditions can read variables.reroll.count (1 for the first reroll).",
       "IsReroll": "Rerolls another Action",
-      "RerollOf": "Actions it can reroll"
+      "RerollOf": "Actions it can reroll",
+      "KeepDice": "Keep the same dice"
     },
     "EditorDisplay": {
       "NoneSelected": "None selected",
@@ -906,7 +907,7 @@
       },
       "trigger": {
         "Summary": "A Trigger reacts to an Event type: it filters, checks its Conditions, then runs Actions.",
-        "Usage": "There is no second rule language: everything goes through Actions."
+        "Usage": "Everything goes through Actions. Who acts: the one who caused the event, or the one it aimed at for a reaction (parry, thorns). Offered: the Actions are proposed to who acts instead of running. A reroll Action run this way replays the use that caused the event; keep the dice for a Shield spell."
       },
       "contentType": {
         "Summary": "A content type describes elements stored in Foundry (items, spells, gear…) and their fields.",
@@ -1034,7 +1035,17 @@
       "AddFilter": "Add condition",
       "RemoveFilter": "Remove",
       "PayloadField": "Payload field",
-      "EqualsValue": "Equals"
+      "EqualsValue": "Equals",
+      "ActingRole": "Who acts",
+      "Acting": {
+        "self": "The one who caused the event",
+        "target": "The one it aimed at (reaction)"
+      },
+      "Mode": "When it happens",
+      "Modes": {
+        "automatic": "Automatically",
+        "offer": "Offered to who acts"
+      }
     },
     "OutcomeMapping": {
       "Title": "On each outcome",

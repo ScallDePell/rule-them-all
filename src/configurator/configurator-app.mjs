@@ -81,7 +81,7 @@ export class ConfiguratorApp extends ConfiguratorWindow {
   #scroll = new Map();
   #restoreScroll = false;
   #runtimeResult = null;
-  /** The last Action the Lab executed, {actionId, transactionId, context, rerollCount}: what a reroll Action replays. */
+  /** The last Action use the Lab executed (result.use: actionId, transactionId, context, dice, rerollCount): what a reroll Action replays. */
   #runtimeLastUse = null;
   // null: not chosen yet, defaulted on render; "": cleared by the user, kept cleared.
   #runtimeSelection = {source:null,target:null,actionId:null,formulaId:null,conditionId:null,testId:null,eventTypeId:null,rollFormula:"",sourceType:"",targetType:"",actorRole:"source",tool:"test",definitionId:"",contentKey:"",inputs:{}};
@@ -608,14 +608,14 @@ export class ConfiguratorApp extends ConfiguratorWindow {
       if (action==="runtimePreviewAction"||action==="runtimeExecuteAction") {
         const id=runtimeId("actionId"),preview=action==="runtimePreviewAction";
         const context=this.#runtimeContext(),result=preview?await game.ruleThemAll.runtimeLab.previewAction(this.#selected,id,context):await game.ruleThemAll.runtimeLab.executeAction(this.#selected,id,context);
-        if(!preview&&result.allowed&&result.transactionId)this.#runtimeLastUse={actionId:id,transactionId:result.transactionId,context,rerollCount:0};
+        if(!preview&&result.allowed&&result.use)this.#runtimeLastUse=result.use;
         return this.#runtimeShow("action",{...result,preview});
       }
       if (action==="runtimeReroll") {
         const use=this.#runtimeLastUse,rerollId=String(this.element.querySelector('[data-runtime-select="rerollId"]')?.value??"");
         if(!use||!rerollId)throw new Error(label("RTA.Lab.Error.Choose.actionId"));
         const result=await game.ruleThemAll.runtimeLab.rerollAction(this.#selected,rerollId,use,this.#runtimeContext());
-        if(result.allowed&&result.transactionId)this.#runtimeLastUse={...use,transactionId:result.transactionId,rerollCount:result.rerollCount};
+        if(result.allowed&&result.use)this.#runtimeLastUse=result.use;
         return this.#runtimeShow("action",{...result,preview:false});
       }
       if (action==="runtimeTest") return this.#runtimeShow("test",await game.ruleThemAll.runtimeLab.executeTest(this.#selected,runtimeId("testId"),this.#runtimeContext()));

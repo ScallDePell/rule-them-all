@@ -549,7 +549,8 @@
       "RerollAction": "Relance",
       "RerollHelp": "Cette Action annule une utilisation d'une autre Action et la rejoue avec de nouveaux dés. Ses coûts sont payés dans la même étape. Aucune Action cochée : toute Action avec un Test. Les Conditions peuvent lire variables.reroll.count (1 pour la première relance).",
       "IsReroll": "Relance une autre Action",
-      "RerollOf": "Actions qu'elle peut relancer"
+      "RerollOf": "Actions qu'elle peut relancer",
+      "KeepDice": "Garder les mêmes dés"
     },
     "EditorDisplay": {
       "NoneSelected": "Aucune sélection",
@@ -902,7 +903,7 @@
       },
       "trigger": {
         "Summary": "Un Trigger réagit à un type d'Event : il filtre, vérifie ses Conditions puis lance des Actions.",
-        "Usage": "Il n'y a pas de second langage de règles : tout passe par des Actions."
+        "Usage": "Tout passe par des Actions. Qui agit : celui qui a causé l'événement, ou celui qui était visé pour une réaction (parade, épines). Proposé : les Actions sont proposées à qui agit au lieu de se lancer. Une Action de relance lancée ainsi rejoue l'utilisation qui a causé l'événement ; gardez les dés pour un sort de Bouclier."
       },
       "contentType": {
         "Summary": "Un type de contenu décrit des éléments stockés dans Foundry (objets, sorts, équipements…) et leurs champs.",
@@ -1030,7 +1031,17 @@
       "AddFilter": "Ajouter une condition",
       "RemoveFilter": "Retirer",
       "PayloadField": "Champ de l'événement",
-      "EqualsValue": "Vaut"
+      "EqualsValue": "Vaut",
+      "ActingRole": "Qui agit",
+      "Acting": {
+        "self": "Celui qui a causé l'événement",
+        "target": "Celui qui était visé (réaction)"
+      },
+      "Mode": "Quand",
+      "Modes": {
+        "automatic": "Automatiquement",
+        "offer": "Proposé à qui agit"
+      }
     },
     "OutcomeMapping": {
       "Title": "Selon le résultat",

@@ -196,8 +196,9 @@ export function prepareAction(data,options={}){
   identity(x,'Action',options);
   // targeting: one target, or each of context.targets with its own Effect dice ("each") or the same dice for all ("shared").
   if(!ACTION_TARGETING.includes(x.targeting))throw new Error(`Action.targeting must be one of ${ACTION_TARGETING.join(', ')}.`);
-  // reroll: this Action undoes one use of another Action (any of actionRefs; none listed: any Action with a Test) and replays it.
-  if(x.reroll!==null){if(!isRecord(x.reroll))throw new Error('Action.reroll must be null or an object.');x.reroll={actionRefs:[],...x.reroll};for(const key of Object.keys(x.reroll))if(key!=='actionRefs')throw new Error(`Action.reroll contains unsupported field: ${key}.`);arr(x.reroll.actionRefs,'Action.reroll.actionRefs');}
+  // reroll: this Action undoes one use of another Action (any of actionRefs; none listed: any Action with a Test) and
+  // replays it, with new dice or, keepDice, the same ones (a reaction that changes the odds, not the roll).
+  if(x.reroll!==null){if(!isRecord(x.reroll))throw new Error('Action.reroll must be null or an object.');x.reroll={actionRefs:[],keepDice:false,...x.reroll};for(const key of Object.keys(x.reroll))if(!['actionRefs','keepDice'].includes(key))throw new Error(`Action.reroll contains unsupported field: ${key}.`);arr(x.reroll.actionRefs,'Action.reroll.actionRefs');bool(x.reroll.keepDice,'Action.reroll.keepDice');}
   // tableRef: a Table rolled after the Effects; its row runs its Actions. An outcome mapping's actionRefs run after the Effects too.
   if(x.tableRef==='')x.tableRef=null;
   if(x.tableRef!==null&&!nonempty(x.tableRef))throw new Error('Action.tableRef must be null or a Table id.');
@@ -243,8 +244,11 @@ export function prepareEventType(data,options={}){
   arr(x.roles,'EventType.roles'); arr(x.tags,'EventType.tags'); bool(x.enabled,'EventType.enabled'); return x;
 }
 export function prepareTrigger(data,options={}){
-  const x={descriptionKey:'',enabled:true,order:0,tags:[],eventTypeId:'',eventFilter:null,conditionRefs:[],actionRefs:[],...copyJSON(data)};
+  const x={descriptionKey:'',enabled:true,order:0,tags:[],eventTypeId:'',eventFilter:null,conditionRefs:[],actionRefs:[],actingRole:'self',mode:'automatic',...copyJSON(data)};
   identity(x,'Trigger',options);need(nonempty(x.eventTypeId),'Trigger requires eventTypeId.',options);
+  // actingRole "target": the one the event's Action aimed at acts (a reaction). mode "offer": the Actions are offered, not run.
+  if(!['self','target'].includes(x.actingRole))throw new Error('Trigger.actingRole must be self or target.');
+  if(!['automatic','offer'].includes(x.mode))throw new Error('Trigger.mode must be automatic or offer.');
   if(x.eventFilter!==null&&!isRecord(x.eventFilter))throw new Error('Trigger.eventFilter must be an object or null.');
   arr(x.conditionRefs,'Trigger.conditionRefs');arr(x.actionRefs,'Trigger.actionRefs');arr(x.tags,'Trigger.tags');bool(x.enabled,'Trigger.enabled');return x;
 }

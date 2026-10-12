@@ -38,7 +38,7 @@ await api.createAction(v,{id:'a1',nameKey:'Strike',conditionRefs:['c1'],costEffe
 await api.createModifier(v,{id:'m1',nameKey:'Blessed',targetRef:{objectKind:'definition',objectId:'d0',capabilityId:'value',outputId:'value.final'},operation:'add',valueSource:{kind:'literal',value:2},conditionRefs:['c1'],stacking:{mode:'highest',group:'blessing'}});
 await api.createDuration(v,{id:'du1',nameKey:'Three rounds',mode:'fixed',amount:3,unit:'round'});
 await api.createEventType(v,{id:'ev1',nameKey:'Damage taken',payloadFields:{amount:{name:'Amount',valueType:'number',required:true,nullable:false},kind:{name:'Kind',valueType:'string',required:false,nullable:false}}});
-await api.createTrigger(v,{id:'tr1',nameKey:'On heavy fire damage',eventTypeId:'ev1',eventFilter:{payloadMatches:{kind:'fire'}},conditionRefs:[],actionRefs:['a1']});
+await api.createTrigger(v,{id:'tr1',nameKey:'On heavy fire damage',eventTypeId:'ev1',actingRole:'target',mode:'offer',eventFilter:{payloadMatches:{kind:'fire'}},conditionRefs:[],actionRefs:['a1']});
 await api.createPermissionPolicy(v,{id:'pp1',nameKey:'Players act',scope:{objectKind:'action',objectId:null},defaultEffect:'DENY',rules:[{id:'r1',effect:'ALLOW',operations:['execute'],roles:['player'],minimumOwnership:'owner',priority:0,messageKey:''}]});
 await api.createRoll(v,{id:'r1',nameKey:'d20',formula:'1d20',data:{}});
 for(const [id,nameKey] of [['o-crit','Critical'],['o-hit','Hit'],['o-miss','Miss']])await api.createOutcome(v,{id,nameKey,resultKey:id,conditionRef:'c1'});
