@@ -71,7 +71,8 @@
       "Tags": "Tags",
       "DefinitionTypes": "Types de définition",
       "RuntimeLab": "Labo runtime",
-      "Dependencies": "Dépendances"
+      "Dependencies": "Dépendances",
+      "Tables": "Tables"
     },
     "Dependencies": {
       "Title": "Dépendances",
@@ -143,7 +144,8 @@
       "AlwaysAvailable": "Toujours disponible",
       "OpposedBy": "En opposition à {test}",
       "NoFactor": "×1",
-      "FixedTargetDefinition": "La cible ci-dessus"
+      "FixedTargetDefinition": "La cible ci-dessus",
+      "NoTable": "Aucune Table"
     },
     "FamilyColor": {
       "parameters": "Paramètres",
@@ -165,7 +167,8 @@
       "progressionSystems": "Systèmes de progression",
       "sheetDefinitions": "Fiches",
       "categories": "Catégories",
-      "tags": "Tags"
+      "tags": "Tags",
+      "tables": "Tables"
     },
     "DynamicMarkup": {
       "NewField": "Nouveau champ",
@@ -540,7 +543,9 @@
       "RollMinimum": "Résultat minimal",
       "NoMinimum": "Aucun",
       "RollFactor": "Facteur après le jet",
-      "TargetDefinitionFormula": "Definition choisie par"
+      "TargetDefinitionFormula": "Definition choisie par",
+      "Table": "Table",
+      "TableAfterEffects": "Puis tirer sur la Table"
     },
     "EditorDisplay": {
       "NoneSelected": "Aucune sélection",
@@ -924,6 +929,10 @@
       "tag": {
         "Summary": "Une étiquette marque librement n'importe quel objet du Ruleset.",
         "Usage": "Les filtres des listes s'en servent."
+      },
+      "table": {
+        "Summary": "Une Table transforme un jet en résultat : coups critiques, magie sauvage, rencontres aléatoires, blessures.",
+        "Usage": "Choisissez le Jet et un bonus facultatif, puis donnez à chaque ligne sa plage et les Actions qu'elle lance. Une Action tire sur la Table après ses Effets ; les Actions de la ligne s'appliquent dans la même étape."
       }
     },
     "CapabilityType": {
@@ -1018,7 +1027,8 @@
       "Then": "Alors",
       "default": "Appliquer les effets de l'Action",
       "effects": "Appliquer d'autres effets",
-      "block": "Arrêter l'Action"
+      "block": "Arrêter l'Action",
+      "ThenActions": "Puis lancer ces Actions"
     },
     "SystemEvent": {
       "CombatStart": "Début du combat",
@@ -1050,6 +1060,18 @@
         "string": "Texte",
         "reference": "Definition"
       }
+    },
+    "Table": {
+      "Row": "Ligne",
+      "Rows": "Lignes",
+      "RowsHelp": "Chaque ligne couvre une plage de totaux. Laissez une borne vide pour une plage ouverte. Les plages ne doivent pas se chevaucher.",
+      "AddRow": "Ajouter une ligne",
+      "Min": "De",
+      "Max": "À",
+      "Open": "Ouvert",
+      "Result": "Résultat",
+      "Actions": "Actions lancées",
+      "NoActions": "Aucune Action pour l'instant."
     }
   }
 }

@@ -75,7 +75,8 @@
       "Tags": "Tags",
       "DefinitionTypes": "Definition Types",
       "RuntimeLab": "Runtime Lab",
-      "Dependencies": "Dependencies"
+      "Dependencies": "Dependencies",
+      "Tables": "Tables"
     },
     "Dependencies": {
       "Title": "Dependencies",
@@ -147,7 +148,8 @@
       "AlwaysAvailable": "Always available",
       "OpposedBy": "Opposed by {test}",
       "NoFactor": "×1",
-      "FixedTargetDefinition": "The target above"
+      "FixedTargetDefinition": "The target above",
+      "NoTable": "No Table"
     },
     "FamilyColor": {
       "parameters": "Parameters",
@@ -169,7 +171,8 @@
       "progressionSystems": "Progression Systems",
       "sheetDefinitions": "Sheets",
       "categories": "Categories",
-      "tags": "Tags"
+      "tags": "Tags",
+      "tables": "Tables"
     },
     "DynamicMarkup": {
       "NewField": "New field",
@@ -544,7 +547,9 @@
       "RollMinimum": "Lowest result",
       "NoMinimum": "None",
       "RollFactor": "Factor after the roll",
-      "TargetDefinitionFormula": "Definition chosen by"
+      "TargetDefinitionFormula": "Definition chosen by",
+      "Table": "Table",
+      "TableAfterEffects": "Then roll on Table"
     },
     "EditorDisplay": {
       "NoneSelected": "None selected",
@@ -928,6 +933,10 @@
       "tag": {
         "Summary": "A tag freely marks any Ruleset object.",
         "Usage": "List filters use it."
+      },
+      "table": {
+        "Summary": "A Table turns a roll into a result: critical hits, wild magic, random encounters, injuries.",
+        "Usage": "Pick the Roll and an optional bonus, then give each row its range and the Actions it runs. An Action rolls the Table after its Effects; the row's Actions run in the same step."
       }
     },
     "CapabilityType": {
@@ -1022,7 +1031,8 @@
       "Then": "Then",
       "default": "Run the Action's effects",
       "effects": "Run other effects",
-      "block": "Stop the Action"
+      "block": "Stop the Action",
+      "ThenActions": "Then run these Actions"
     },
     "SystemEvent": {
       "CombatStart": "Combat starts",
@@ -1054,6 +1064,18 @@
         "string": "Text",
         "reference": "Definition"
       }
+    },
+    "Table": {
+      "Row": "Row",
+      "Rows": "Rows",
+      "RowsHelp": "Each row covers a range of totals. Leave a bound empty for an open end. Ranges must not overlap.",
+      "AddRow": "Add a row",
+      "Min": "From",
+      "Max": "To",
+      "Open": "Open",
+      "Result": "Result",
+      "Actions": "Actions run",
+      "NoActions": "No Action yet."
     }
   }
 }

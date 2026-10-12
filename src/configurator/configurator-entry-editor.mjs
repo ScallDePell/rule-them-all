@@ -45,7 +45,7 @@ import {formatEditorValue} from "./editor-value.mjs";
 import {getCreationSources, getCreationSourceDescriptor} from "./creation-source-catalog.mjs";
 import {diagnosticFocusTargets,saveErrorFocusPath} from "./diagnostic-focus.mjs";
 import {buildTestInputContext,syncTestInputSource} from "./test-input-form.mjs";
-import {rollVariantContext,actionInputContext} from "./rule-cards-form.mjs";
+import {rollVariantContext,actionInputContext,tableRowContext} from "./rule-cards-form.mjs";
 import {syncCard} from "./card-form.mjs";
 
 
@@ -149,7 +149,7 @@ export class ConfiguratorEntryEditor extends ConfiguratorWindow {
     const fieldKinds=["definitionType","contentType"].includes(this.#kind),fieldDefinitionTypes=fieldKinds?selectableDefinitionTypes.map(type=>({...type,colors:selectColorsAttribute(this.#optionColors("definitionType",type))})):[];
     const fieldRows=fieldKinds?Object.entries(data.fields??{}).map(([id,field])=>buildFieldRow(id,field,this.#api.listValueTypes(),fieldDefinitionTypes)):[];
     const newFieldRow=fieldKinds?buildNewFieldRow(this.#api.listValueTypes(),fieldDefinitionTypes):null;
-    const lists={listParameters:"parameters",listFormulas:"formulas",listFormulaBindings:"formulaBindings",listConditions:"conditions",listRolls:"rolls",listOutcomes:"outcomes",listTests:"tests",listEffects:"effects",listActions:"actions",listEventTypes:"eventTypes",listContentTypes:"contentTypes",listDefinitions:"definitions",listCategories:"categories",listTags:"tags",listModifiers:"modifiers",listDurations:"durations"};
+    const lists={listParameters:"parameters",listFormulas:"formulas",listFormulaBindings:"formulaBindings",listConditions:"conditions",listRolls:"rolls",listOutcomes:"outcomes",listTests:"tests",listEffects:"effects",listActions:"actions",listEventTypes:"eventTypes",listContentTypes:"contentTypes",listDefinitions:"definitions",listCategories:"categories",listTags:"tags",listModifiers:"modifiers",listDurations:"durations",listTables:"tables"};
     const list=method=>(this.#kind==="ruleset" && !this.#id)?[]:this.#renderList(lists[method],method);
     const parameters=list("listParameters"), formulas=list("listFormulas"), formulaBindings=list("listFormulaBindings"), conditions=list("listConditions"), rolls=list("listRolls"), outcomes=list("listOutcomes"), tests=list("listTests"), effects=list("listEffects"), actions=list("listActions"), eventTypes=list("listEventTypes"), contentTypes=list("listContentTypes"), definitions=list("listDefinitions"), categories=list("listCategories"), tags=list("listTags");
     const conditionChoices=selection(conditions.map(x=>({id:x.id,label:x.nameKey,...withColors("condition",x)})),data.conditionRefs);
@@ -230,7 +230,7 @@ export class ConfiguratorEntryEditor extends ConfiguratorWindow {
       operandReferenceChoices:referenceChoices.map(x=>({...x,selected:x.token===operandRefToken})),operandKind,isOperandLiteral:operandKind==="literal",isOperandParameter:operandKind==="parameter",isOperandFormula:operandKind==="formula",isOperandReference:operandKind==="reference",isOperandRoll:operandKind==="roll",operandAllowsRoll:this.#kind==="effect",showOperand:Object.fromEntries(["literal","parameter","formula","reference","roll"].map(kind=>[kind,operandKind===kind&&needsOperand])),
       operandRollChoices:rolls.map(x=>({id:x.id,label:x.nameKey,...withColors("roll",x),selected:x.id===operandSource?.rollRef})),operandRollMultiplierChoices:[{id:"",label:uiText("NoMultiplier","×1"),selected:!operandSource?.multiplierFormulaRef},...formulas.map(x=>({id:x.id,label:x.nameKey,...withColors("formula",x),selected:x.id===operandSource?.multiplierFormulaRef}))],operandRollBonusChoices:[{id:"",label:uiText("NoBonus","No bonus"),selected:!operandSource?.bonusFormulaRef},...formulas.map(x=>({id:x.id,label:x.nameKey,...withColors("formula",x),selected:x.id===operandSource?.bonusFormulaRef}))],operandRollFactorChoices:[{id:"",label:uiText("NoFactor","×1"),selected:!operandSource?.factorFormulaRef},...formulas.map(x=>({id:x.id,label:x.nameKey,...withColors("formula",x),selected:x.id===operandSource?.factorFormulaRef}))],operandRollMinimum:Number.isFinite(operandSource?.minimum)?String(operandSource.minimum):"",operandLiteral:operandKind==="literal"?formatEditorValue("number","one",operandSource?.value??0):"",
       isRuleset:this.#kind==="ruleset",isDefinitionType:this.#kind==="definitionType",isDefinition:this.#kind==="definition",
-      isParameter:this.#kind==="parameter",isFormula:this.#kind==="formula",isFormulaBinding:this.#kind==="formulaBinding",isCondition:this.#kind==="condition",isRoll:this.#kind==="roll",isOutcome:this.#kind==="outcome",isTest:this.#kind==="test",isEffect:this.#kind==="effect",isAction:this.#kind==="action",
+      isParameter:this.#kind==="parameter",isFormula:this.#kind==="formula",isFormulaBinding:this.#kind==="formulaBinding",isCondition:this.#kind==="condition",isRoll:this.#kind==="roll",isOutcome:this.#kind==="outcome",isTest:this.#kind==="test",isEffect:this.#kind==="effect",isAction:this.#kind==="action",isTable:this.#kind==="table",
       isPermissionPolicy:this.#kind==="permissionPolicy",isSheetDefinition:this.#kind==="sheetDefinition",isTag:this.#kind==="tag",isCategory:this.#kind==="category",
       slots:this.#kind==="definition"?buildSlotFormContext({definition:data,permittedCapabilities:capabilityChoices.filter(cap=>cap.permitted).map(cap=>cap.id),formulas,contentTypes,valueTypes:this.#api.listValueTypes(),colorsOf:(kind,entry)=>withColors(kind,entry).colors,neutral:selectColorsAttribute([RTA_NEUTRAL_COLOR])}):null,testInputs:this.#kind==="test"?buildTestInputContext({inputs:data.inputBindings??[],formulas:formulas.map(x=>({id:x.id,label:x.nameKey,...withColors("formula",x)})),references:this.#referenceChoices(),neutral:selectColorsAttribute([RTA_NEUTRAL_COLOR])}):null,totalFormulaChoices,marginFormulaChoices,isEventType:this.#kind==="eventType",isTrigger:this.#kind==="trigger",isContentType:this.#kind==="contentType",availabilityChoices,isContentTemplate:this.#kind==="contentTemplate",
       isCreationSystem:this.#kind==="creationSystem",creationStepRows:this.#kind==="creationSystem"?(data.steps??[]).map(step=>({html:this.#creationStepHTML(step)})):[],isGeneric:this.#kind==="progressionSystem",isModifier:this.#kind==="modifier",isDuration:this.#kind==="duration",
@@ -238,8 +238,10 @@ export class ConfiguratorEntryEditor extends ConfiguratorWindow {
       ...(this.#kind==="duration"?durationFormContext(data,{eventTypes,conditions,withColors}):{}),
       ...(this.#kind==="roll"?rollVariantContext(data,{conditions,withColors}):{}),
       ...(this.#kind==="action"?actionInputContext(data,{definitionTypes:selectableDefinitionTypes,withColors,neutral:selectColorsAttribute([RTA_NEUTRAL_COLOR])}):{}),
+      ...(this.#kind==="table"?{...tableRowContext(data,{actions,withColors}),tableRollChoices:rolls.map(x=>({id:x.id,label:x.nameKey,...withColors("roll",x),selected:x.id===data.rollRef})),tableBonusChoices:optionalFormula(data.bonusFormulaRef,"NoBonus","No bonus")}:{}),
+      ...(this.#kind==="action"?{tableChoices:[{id:"",label:uiText("NoTable","No Table"),selected:!data.tableRef},...list("listTables").map(x=>({id:x.id,label:x.nameKey,...withColors("table",x),selected:x.id===data.tableRef}))]}:{}),
       ...(this.#kind==="effect"?{targetDefinitionFormulaChoices:optionalFormula(data.targetDefinitionFormulaRef,"FixedTargetDefinition","The target above")}:{}),
-      ...(this.#kind==="action"?outcomeMappingContext(data,{tests,outcomes,effects,withColors}):{}),
+      ...(this.#kind==="action"?outcomeMappingContext(data,{tests,outcomes,effects,actions:actions.filter(x=>x.id!==data.id),withColors}):{}),
       ...(this.#kind==="trigger"?{...triggerFilterContext(data,{eventTypes:[...eventTypes,...systemEvents]}),triggerEventChoices}:{}),
       ...(this.#kind==="permissionPolicy"?permissionFormContext(data,{definitions,actions,conditions,withColors}):{}),dirty:this.#dirty,canPersist:!isValidated&&this.#dirty,
       constraintRows:(data.constraints??[]).filter(rule=>CONSTRAINT_KINDS.includes(rule?.kind)).map(rule=>{
@@ -420,7 +422,7 @@ export class ConfiguratorEntryEditor extends ConfiguratorWindow {
       let shown=false;for(const group of this.element.querySelectorAll("[data-outcome-mapping-group]")){group.hidden=group.dataset.outcomeMappingGroup!==target.value;shown||=!group.hidden;}
       this.element.querySelector("[data-outcome-mappings]")?.toggleAttribute("hidden",!shown);
     }
-    if(target?.matches?.("[data-mapping-mode]"))target.closest("[data-outcome-mapping]")?.querySelector("[data-mapping-effects]")?.toggleAttribute("hidden",target.value!=="effects");
+    if(target?.matches?.("[data-mapping-mode]")){const row=target.closest("[data-outcome-mapping]");row?.querySelector("[data-mapping-effects]")?.toggleAttribute("hidden",target.value!=="effects");row?.querySelector("[data-mapping-actions]")?.toggleAttribute("hidden",target.value==="block");}
     if(target?.name==="targetSource")this.element.querySelector("[data-target-fixed]")?.toggleAttribute("hidden",target.value!=="__fixed");
     if(target?.name==="durationMode")for(const row of this.element.querySelectorAll("[data-duration-mode]"))row.hidden=row.dataset.durationMode!==target.value;
   }

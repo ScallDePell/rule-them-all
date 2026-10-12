@@ -57,6 +57,8 @@ export class DependencyIndex{
     }
     for(const [i,a] of (ruleset.actions??[]).entries()){
       if(a.testRef)pushRef(this.#edges,{objectKind:'action',objectId:a.id},{objectKind:'test',objectId:a.testRef},'actionTest',`actions[${i}].testRef`);
+      if(a.tableRef)pushRef(this.#edges,{objectKind:'action',objectId:a.id},{objectKind:'table',objectId:a.tableRef},'actionTable',`actions[${i}].tableRef`);
+      for(const [j,mapping] of (a.outcomeMappings??[]).entries())for(const [k,id] of (mapping?.actionRefs??[]).entries())pushRef(this.#edges,{objectKind:'action',objectId:a.id},{objectKind:'action',objectId:id},'actionFollowUp',`actions[${i}].outcomeMappings[${j}].actionRefs[${k}]`);
       for(const [j,input] of (a.inputs??[]).entries())if(input?.definitionTypeId)pushRef(this.#edges,{objectKind:'action',objectId:a.id},{objectKind:'definitionType',objectId:input.definitionTypeId},'actionInput',`actions[${i}].inputs[${j}].definitionTypeId`);
       for(const [j,id] of (a.conditionRefs??[]).entries())pushRef(this.#edges,{objectKind:'action',objectId:a.id},{objectKind:'condition',objectId:id},'actionCondition',`actions[${i}].conditionRefs[${j}]`);
       for(const k of ['costEffectRefs','effectRefs'])for(const [j,id] of (a[k]??[]).entries())pushRef(this.#edges,{objectKind:'action',objectId:a.id},{objectKind:'effect',objectId:id},k,`actions[${i}].${k}[${j}]`);
@@ -86,6 +88,11 @@ export class DependencyIndex{
       if(m.valueSource?.kind==='formula')pushRef(this.#edges,{objectKind:'modifier',objectId:m.id},{objectKind:'formula',objectId:m.valueSource.id},'modifierValue',`modifiers[${i}].valueSource`);
       if(m.valueSource?.kind==='reference')pushRef(this.#edges,{objectKind:'modifier',objectId:m.id},m.valueSource.reference,'modifierValue',`modifiers[${i}].valueSource.reference`);
     }
+    for(const [i,t] of (ruleset.tables??[]).entries()){
+      pushRef(this.#edges,{objectKind:'table',objectId:t.id},{objectKind:'roll',objectId:t.rollRef},'tableRoll',`tables[${i}].rollRef`);
+      if(t.bonusFormulaRef)pushRef(this.#edges,{objectKind:'table',objectId:t.id},{objectKind:'formula',objectId:t.bonusFormulaRef},'tableBonus',`tables[${i}].bonusFormulaRef`,'optional');
+      for(const [j,row] of (t.rows??[]).entries())for(const [k,id] of (row?.actionRefs??[]).entries())pushRef(this.#edges,{objectKind:'table',objectId:t.id},{objectKind:'action',objectId:id},'tableAction',`tables[${i}].rows[${j}].actionRefs[${k}]`);
+    }
     for(const [i,d] of (ruleset.durations??[]).entries()){
       if(d.eventTypeRef)pushRef(this.#edges,{objectKind:'duration',objectId:d.id},{objectKind:'eventType',objectId:d.eventTypeRef},'durationEvent',`durations[${i}].eventTypeRef`);
       if(d.conditionRef)pushRef(this.#edges,{objectKind:'duration',objectId:d.id},{objectKind:'condition',objectId:d.conditionRef},'durationCondition',`durations[${i}].conditionRef`);
@@ -101,7 +108,7 @@ export class DependencyIndex{
       for(const key of ['minFormulaRef','maxFormulaRef','perTargetMaxFormulaRef'])if(step?.[key])pushRef(this.#edges,{objectKind:'creationSystem',objectId:system.id},{objectKind:'formula',objectId:step[key]},'creationFormula',`creationSystems[${i}].steps[${j}].${key}`);
       if(step?.optionConditionRef)pushRef(this.#edges,{objectKind:'creationSystem',objectId:system.id},{objectKind:'condition',objectId:step.optionConditionRef},'creationCondition',`creationSystems[${i}].steps[${j}].optionConditionRef`);
     }
-    const tagCollections=['definitions','parameters','formulas','formulaBindings','conditions','rolls','outcomes','tests','effects','actions','eventTypes','triggers','contentTypes','contentTemplates','modifiers','durations','creationSystems','progressionSystems','sheetDefinitions'];
+    const tagCollections=['definitions','parameters','formulas','formulaBindings','conditions','rolls','outcomes','tests','effects','actions','eventTypes','triggers','contentTypes','contentTemplates','modifiers','durations','tables','creationSystems','progressionSystems','sheetDefinitions'];
     for(const collection of tagCollections)for(const [i,entry] of (ruleset[collection]??[]).entries())for(const [j,id] of (entry.tags??[]).entries())pushRef(this.#edges,{objectKind:collection.replace(/s$/,''),objectId:entry.id},{objectKind:'tag',objectId:id},'tag',`${collection}[${i}].tags[${j}]`,'metadata');
     // Category catalog (§47): consumers store catalog ids; a used Category cannot be deleted.
     for(const collection of ['definitions','contentTemplates'])for(const [i,entry] of (ruleset[collection]??[]).entries())for(const [j,id] of (entry.categories??[]).entries())pushRef(this.#edges,{objectKind:collection==='definitions'?'definition':'contentTemplate',objectId:entry.id},{objectKind:'category',objectId:id},'category',`${collection}[${i}].categories[${j}]`,'metadata');

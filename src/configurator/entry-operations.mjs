@@ -23,6 +23,7 @@ export const ENTRY_OPERATIONS=Object.freeze({
   tag:{get:"getTag",create:"createTag",update:"updateTag",delete:"deleteTag"},
   modifier:{get:"getModifier",create:"createModifier",update:"updateModifier",delete:"deleteModifier"},
   duration:{get:"getDuration",create:"createDuration",update:"updateDuration",delete:"deleteDuration"},
+  table:{get:"getTable",create:"createTable",update:"updateTable",delete:"deleteTable"},
   creationSystem:{get:"getCreationSystem",create:"createCreationSystem",update:"updateCreationSystem",delete:"deleteCreationSystem"},
   progressionSystem:{get:"getProgressionSystem",create:"createProgressionSystem",update:"updateProgressionSystem",delete:"deleteProgressionSystem"},
   sheetDefinition:{get:"getSheetDefinition",create:"createSheetDefinition",update:"updateSheetDefinition",delete:"deleteSheetDefinition"}

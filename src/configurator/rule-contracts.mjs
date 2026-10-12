@@ -191,12 +191,16 @@ function prepareActionInput(data,index,options){
   return x;
 }
 export function prepareAction(data,options={}){
-  const x={descriptionKey:'',enabled:true,order:0,tags:[],inputs:[],conditionRefs:[],costEffectRefs:[],acquisitions:[],stateRemovals:[],stateApplications:[],modifierApplications:[],effectRefs:[],testRef:null,outcomeMappings:[],eventTypeRefs:[],...copyJSON(data)};
+  const x={descriptionKey:'',enabled:true,order:0,tags:[],inputs:[],conditionRefs:[],costEffectRefs:[],acquisitions:[],stateRemovals:[],stateApplications:[],modifierApplications:[],effectRefs:[],testRef:null,outcomeMappings:[],tableRef:null,eventTypeRefs:[],...copyJSON(data)};
   identity(x,'Action',options);
+  // tableRef: a Table rolled after the Effects; its row runs its Actions. An outcome mapping's actionRefs run after the Effects too.
+  if(x.tableRef==='')x.tableRef=null;
+  if(x.tableRef!==null&&!nonempty(x.tableRef))throw new Error('Action.tableRef must be null or a Table id.');
   // An Action acquires when it lists acquisitions; no separate purpose is stored.
   if(Object.hasOwn(x,'purpose'))throw new Error('Unsupported Action field: purpose.');
   for(const k of ['inputs','conditionRefs','costEffectRefs','acquisitions','stateRemovals','stateApplications','modifierApplications','effectRefs','outcomeMappings','eventTypeRefs'])arr(x[k],`Action.${k}`);
   x.inputs=x.inputs.map((input,i)=>prepareActionInput(input,i,options));
+  x.outcomeMappings.forEach((mapping,i)=>{if(!isRecord(mapping))throw new Error(`Action.outcomeMappings[${i}] must be an object.`);if(mapping.actionRefs!==undefined)arr(mapping.actionRefs,`Action.outcomeMappings[${i}].actionRefs`);});
   if(new Set(x.inputs.map(input=>input.id)).size!==x.inputs.length)throw new Error('Action.inputs lists the same id twice.');
   x.acquisitions=x.acquisitions.map(prepareActionAcquisition);
   x.stateRemovals=x.stateRemovals.map(prepareStateRemoval);x.stateApplications=x.stateApplications.map(prepareStateApplication);x.modifierApplications=x.modifierApplications.map(prepareModifierApplication);
@@ -324,6 +328,28 @@ export function prepareDuration(data,options={}){
   if(x.at!==null&&!(typeof x.at==='number'&&Number.isFinite(x.at)&&x.at>=0))throw new Error('Duration.at must be a non-negative world time in seconds.');
   if(x.mode==='absoluteTime')need(x.at!==null,'absoluteTime Duration requires at.',options);return x;
 }
+/** Table: a Roll (plus an optional bonus Formula) read against rows of ranges; the row reached runs its
+ * Actions (a critical wound, a mutation, a hit location). A row bound left empty is open-ended. */
+export function prepareTable(data,options={}){
+  const x=prepareNamedGeneric(data,'Table',{rollRef:null,bonusFormulaRef:null,rows:[]},options);
+  for(const key of ['rollRef','bonusFormulaRef']){if(x[key]==='')x[key]=null;if(x[key]!==null&&!nonempty(x[key]))throw new Error(`Table.${key} must be null or an id.`);}
+  need(x.rollRef!==null,'Table requires a Roll.',options);
+  arr(x.rows,'Table.rows');
+  const ids=new Set();
+  x.rows=x.rows.map((row,i)=>{
+    if(!isRecord(row)||!nonempty(row.id))throw new Error(`Table.rows[${i}] requires id.`);
+    if(ids.has(row.id))throw new Error(`Duplicate Table row: ${row.id}.`);ids.add(row.id);
+    const r={labelKey:'',min:null,max:null,actionRefs:[],...copyJSON(row)};
+    for(const key of Object.keys(r))if(!['id','labelKey','min','max','actionRefs'].includes(key))throw new Error(`Table.rows[${i}] contains unsupported field: ${key}.`);
+    for(const key of ['min','max'])if(r[key]!==null&&!Number.isSafeInteger(r[key]))throw new Error(`Table.rows[${i}].${key} must be a whole number or empty.`);
+    if(r.min!==null&&r.max!==null&&r.min>r.max)throw new Error(`Table.rows[${i}]: ${r.min} is above ${r.max}.`);
+    arr(r.actionRefs,`Table.rows[${i}].actionRefs`);return r;
+  });
+  need(x.rows.length>0,'Table requires at least one row.',options);
+  const sorted=[...x.rows].sort((a,b)=>(a.min??-Infinity)-(b.min??-Infinity));
+  for(let i=1;i<sorted.length;i++)if((sorted[i].min??-Infinity)<=(sorted[i-1].max??Infinity))throw new Error(`Table rows ${sorted[i-1].id} and ${sorted[i].id} overlap.`);
+  return x;
+}
 export function prepareCreationSystem(data,options={}){
   const x=prepareNamedGeneric(data,'CreationSystem',{steps:[]},options);arr(x.steps,'CreationSystem.steps');x.steps=x.steps.map((step,i)=>{if(!isRecord(step)||!nonempty(step.id))throw new Error(`CreationSystem.steps[${i}] requires id.`);need(nonempty(step.name),`CreationSystem.steps[${i}] requires name.`,options);const n={kind:'choice',required:true,options:[],min:0,max:1,...copyJSON(step)};if(!['choice','allocation','content','review'].includes(n.kind))throw new Error(`CreationSystem.steps[${i}].kind is invalid.`);arr(n.options,`CreationSystem.steps[${i}].options`);
     // Computed bounds and option filter (Formulas and a Condition over the earlier steps); allocation: points per Definition.
@@ -342,4 +368,4 @@ export function prepareSheetDefinition(data,options={}){
   x.layout.components=x.layout.components.map((component,i)=>{if(!isRecord(component)||!nonempty(component.id)||!kinds.has(component.kind))throw new Error(`SheetDefinition.layout.components[${i}] is invalid.`);return {label:'',source:null,editable:false,width:'full',...copyJSON(component)};});return x;
 }
 
-export const PREPARERS={parameters:prepareParameter,formulas:prepareFormula,formulaBindings:prepareFormulaBinding,conditions:prepareCondition,rolls:prepareRoll,outcomes:prepareOutcome,tests:prepareTest,effects:prepareEffect,actions:prepareAction,permissionPolicies:preparePermissionPolicy,eventTypes:prepareEventType,triggers:prepareTrigger,contentTypes:prepareContentType,contentTemplates:prepareContentTemplate,modifiers:prepareModifier,durations:prepareDuration,creationSystems:prepareCreationSystem,progressionSystems:prepareProgressionSystem,sheetDefinitions:prepareSheetDefinition,categories:prepareCategory,tags:prepareTag};
+export const PREPARERS={parameters:prepareParameter,formulas:prepareFormula,formulaBindings:prepareFormulaBinding,conditions:prepareCondition,rolls:prepareRoll,outcomes:prepareOutcome,tests:prepareTest,effects:prepareEffect,actions:prepareAction,permissionPolicies:preparePermissionPolicy,eventTypes:prepareEventType,triggers:prepareTrigger,contentTypes:prepareContentType,contentTemplates:prepareContentTemplate,modifiers:prepareModifier,durations:prepareDuration,tables:prepareTable,creationSystems:prepareCreationSystem,progressionSystems:prepareProgressionSystem,sheetDefinitions:prepareSheetDefinition,categories:prepareCategory,tags:prepareTag};

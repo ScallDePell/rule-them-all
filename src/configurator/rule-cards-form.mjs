@@ -1,6 +1,6 @@
 /* Editor context and collection for the card lists of rule entries
    (Roll variants, ...). Context building is pure; collection reads the cards. */
-import {collectCards, choicesFor} from "./card-form.mjs";
+import {collectCards, choicesFor, cardInteger} from "./card-form.mjs";
 import {parseTypedText} from "./test-input-form.mjs";
 
 const named = (kind, entries, withColors) => entries.map(entry => ({id: entry.id, label: entry.nameKey, ...withColors(kind, entry)}));
@@ -44,5 +44,24 @@ export function collectActionInputs(queryAll) {
     const fallback = valueType === "reference" ? (card.defaultValue || undefined) : parseTypedText(valueType, card.defaultValue, `${label} default`);
     if (fallback !== undefined) input.defaultValue = fallback;
     return input;
+  });
+}
+
+/** Table: one card per row, a range of totals (an empty bound is open) and the Actions it runs. */
+export function tableRowContext(data, {actions = [], withColors}) {
+  const choices = named("action", actions, withColors);
+  const row = (entry = {}) => ({
+    id: entry.id ?? "", labelKey: entry.labelKey ?? "", min: entry.min ?? "", max: entry.max ?? "",
+    actions: choices.map(choice => ({...choice, selected: (entry.actionRefs ?? []).includes(choice.id)}))
+  });
+  return {tableRows: {rows: (data.rows ?? []).map(row), blank: row()}};
+}
+export function collectTableRows(queryAll) {
+  const cards = collectCards(queryAll, "tableRow"), used = new Set(cards.map(card => card.id).filter(Boolean));
+  let next = 1;
+  const freshId = () => { while (used.has(`row-${next}`)) next++; used.add(`row-${next}`); return `row-${next}`; };
+  return cards.map((card, index) => {
+    const label = `Row ${card.labelKey || index + 1}`;
+    return {id: card.id || freshId(), labelKey: card.labelKey ?? "", min: cardInteger(card.min, `${label} minimum`), max: cardInteger(card.max, `${label} maximum`), actionRefs: card.actionRefs ?? []};
   });
 }
