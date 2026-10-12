@@ -4,7 +4,7 @@ import {createConfiguratorAPI} from '../src/configurator/configurator-api.mjs';
 import {emptyStorageSnapshot} from '../src/configurator/configurator-storage.mjs';
 import {MemoryRuntimeAdapter} from '../src/runtime/memory-runtime-adapter.mjs';
 import {createRuntimeAPI} from '../src/runtime/runtime-api.mjs';
-import {installInitiative, rerollEachRound} from '../src/runtime/foundry-initiative.mjs';
+import {installInitiative, installInitiativePasses, rerollEachRound} from '../src/runtime/foundry-initiative.mjs';
 class Storage{value=emptyStorageSnapshot();async load(){return structuredClone(this.value)}async save(v){this.value=structuredClone(v)}}
 class Adapter extends MemoryRuntimeAdapter{queue=[];async roll(formula){const n=this.queue.shift()??10;return {formula,total:n,natural:n,result:String(n)};}}
 const value=id=>({objectKind:'definition',objectId:id,capabilityId:'value',outputId:'value.final'});
@@ -65,8 +65,8 @@ test('The Ruleset editor saves the initiative settings, and none when the game s
   const {collectEntryData}=await import('../src/configurator/entry-data-collector.mjs');
   const collect=(values,current={id:'r',nameKey:'R'})=>{const fd=new Map(Object.entries({nameKey:'R',version:'1',...values}));
     return collectEntryData('ruleset',{fd,current,bool:key=>fd.get(key)==='on',checkedIds:()=>[],queryOne:()=>null,queryAll:()=>[],uid:()=>'x',fieldUid:()=>'y'}).initiative;};
-  assert.deepEqual(collect({initiativeSource:'test:init',initiativeTieBreakFormulaRef:'agility',initiativeEachRound:'on'}),{testRef:'init',tieBreakFormulaRef:'agility',eachRound:true,bySide:false});
-  assert.deepEqual(collect({initiativeSource:'table:deck',initiativeBySide:'on'}),{tableRef:'deck',tieBreakFormulaRef:null,eachRound:false,bySide:true});
+  assert.deepEqual(collect({initiativeSource:'test:init',initiativeTieBreakFormulaRef:'agility',initiativeEachRound:'on'}),{testRef:'init',tieBreakFormulaRef:'agility',eachRound:true,bySide:false,passes:null});
+  assert.deepEqual(collect({initiativeSource:'table:deck',initiativeBySide:'on',initiativePassStep:'10',initiativePassThreshold:''}),{tableRef:'deck',tieBreakFormulaRef:null,eachRound:false,bySide:true,passes:{step:10,threshold:0}});
   assert.equal(collect({initiativeSource:''}),null);
   assert.deepEqual(collect({},{id:'r',initiative:{testRef:'init',eachRound:false}}),{testRef:'init',eachRound:false},'a form without the fields keeps them');
 });
@@ -110,4 +110,24 @@ test('Initiative drawn from a Table: the row gives the value, rows drawn this ro
   combat.round=2;adapter.queue=[1];
   await combat.rollInitiative(['c']);
   assert.deepEqual(draws.at(-1),['c',[]],'a new round shuffles the deck');
+});
+
+test('Initiative passes: the fastest act again in the same round, the others wait for the next one', async()=>{
+  const {api,v:first}=await setup(null);
+  await assert.rejects(api.updateRuleset(first,{initiative:{testRef:'init',passes:{step:0}}}),/step must be a number above 0/);
+  const passes={step:10,threshold:0},rounds=[];
+  const runtime={getContainerState:async uuid=>uuid==='Actor.other'?null:{rulesetVersionId:'v'},initiativePasses:()=>passes};
+  class Combat{
+    constructor(){this.round=1;this.turn=0;this.flags={};this.turns=[{id:'fast',initiative:24,actor:{uuid:'fast'}},{id:'mid',initiative:12,actor:{uuid:'mid'}},{id:'npc',initiative:9,actor:{uuid:'Actor.other'}},{id:'slow',initiative:7,actor:{uuid:'slow'}}];}
+    getFlag(scope,key){return this.flags[`flags.${scope}.${key}`];}
+    async update(data){for(const [key,value] of Object.entries(data))if(key.startsWith('flags.'))this.flags[key]=value;else this[key]=value;}
+    async nextTurn(){if(this.turn+1<this.turns.length){this.turn++;return this;}return this.nextRound();}
+    async nextRound(){this.round++;this.turn=0;rounds.push(this.round);return this;}
+  }
+  installInitiativePasses(Combat,()=>runtime,{chat:null});
+  const combat=new Combat(),acted=[];
+  const play=async steps=>{for(let i=0;i<steps;i++){acted.push(`${combat.round}.${combat.getFlag('rule-them-all','initiativePass')??1}:${combat.turns[combat.turn].id}`);await combat.nextTurn();}};
+  await play(8);
+  assert.deepEqual(acted,['1.1:fast','1.1:mid','1.1:npc','1.1:slow','1.2:fast','1.2:mid','1.3:fast','2.1:fast']);
+  assert.deepEqual(rounds,[2],'one new round, after the third pass');
 });

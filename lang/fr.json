@@ -1199,7 +1199,11 @@
       "EachRound": "Relancer à chaque round",
       "Help": "Les Acteurs de ce Ruleset lancent ce Test, ou tirent une ligne de cette Table, dans le suivi de combat ; le résultat est leur initiative.",
       "BySide": "Un jet par camp",
-      "RolledSide": "{name} lance l'initiative pour son camp"
+      "RolledSide": "{name} lance l'initiative pour son camp",
+      "PassStep": "Initiative perdue par passe en plus",
+      "OnePass": "Vide : une passe par round",
+      "PassThreshold": "Une autre passe tant qu'au-dessus de",
+      "Pass": "Passe d'initiative {pass}"
     },
     "Reroll": {
       "DiceMode": "Dés relancés",

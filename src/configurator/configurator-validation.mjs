@@ -145,7 +145,17 @@ export function validateRuleset(ruleset, {scope = "save"} = {}) {
     if (!isRecord(initiative)) issue("OBJECT_TYPE", "initiative", "initiative must be an object or null.");
     else {
       // A Test rolled by each combatant, or a Table drawn without replacement each round (a deck of cards); bySide: one roll per disposition.
-      exactFields(initiative, ["testRef", "tableRef", "tieBreakFormulaRef", "eachRound", "bySide"], "initiative", issue);
+      exactFields(initiative, ["testRef", "tableRef", "tieBreakFormulaRef", "eachRound", "bySide", "passes"], "initiative", issue);
+      // passes: {step, threshold}: another pass for those whose initiative minus step per pass stays above threshold.
+      const passes = initiative.passes ?? null;
+      if (passes !== null) {
+        if (!isRecord(passes)) issue("OBJECT_TYPE", "initiative.passes", "initiative.passes must be an object or null.");
+        else {
+          exactFields(passes, ["step", "threshold"], "initiative.passes", issue);
+          if (!(typeof passes.step === "number" && passes.step > 0)) issue("NUMBER_TYPE", "initiative.passes.step", "initiative.passes.step must be a number above 0.");
+          if (!(passes.threshold === undefined || Number.isFinite(passes.threshold))) issue("NUMBER_TYPE", "initiative.passes.threshold", "initiative.passes.threshold must be a number.");
+        }
+      }
       const hasTest = nonempty(initiative.testRef), hasTable = nonempty(initiative.tableRef);
       if (hasTest === hasTable) issue("REQUIRED_STRING", "initiative.testRef", "initiative needs a Test or a Table, not both.");
       if (hasTest && !(ruleset.tests ?? []).some(test => test?.id === initiative.testRef)) issue("REFERENCE", "initiative.testRef", `Missing reference: test/${initiative.testRef}.`);

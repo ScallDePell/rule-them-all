@@ -35,6 +35,7 @@ export function createRuntimeAPI(configurator,{adapter=new FoundryRuntimeAdapter
     rollInitiative:(versionId,ref,options)=>engine.rollInitiative(versionId,ref,options),
     /** The world's shared Definitions, and a combat's ({kind: "combat", id}); versionId defaults to the active Ruleset. */
     initializeShared:(versionId=configurator.getActiveVersionId?.(),{combat=null}={})=>versionId?engine.initializeShared(versionId,{combat}):{},
+    initiativePasses:versionId=>{try{const passes=engine.ruleset(versionId).initiative?.passes;return passes?{step:passes.step,threshold:passes.threshold??0}:null;}catch{return null;}},
     initiativeEachRound:versionId=>{try{return engine.ruleset(versionId).initiative?.eachRound===true;}catch{return false;}},
     describeProgression:(versionId,id,ref)=>engine.describeProgression(versionId,id,ref),
     advance:write("advance"),

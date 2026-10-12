@@ -16,6 +16,12 @@ import {collectDefinitionSlots} from './slot-form.mjs';
 import {collectTestInputs} from './test-input-form.mjs';
 import {collectDie} from './die-form.mjs';
 import {collectRollVariants,collectExtraRolls,collectActionInputs,collectTableRows,collectProgression} from './rule-cards-form.mjs';
+/** Initiative passes from the Ruleset form: none while the step is empty or 0. */
+const initiativePasses=fd=>{
+  const step=Number(String(fd.get("initiativePassStep")??"").trim()||0),threshold=Number(String(fd.get("initiativePassThreshold")??"").trim()||0);
+  if(!Number.isFinite(step)||step<0||!Number.isFinite(threshold))throw new Error("Initiative passes need numbers.");
+  return step>0?{step,threshold}:null;
+};
 const slug=value=>String(value??"").trim().toLowerCase().normalize("NFKD").replace(/[^a-z0-9]+/g,"-").replace(/^-|-$/g,"");
 const json=(value,fallback)=>{const text=String(value??"").trim();return text?JSON.parse(text):fallback;};
 const fieldPresent=(fd,key)=>typeof fd.has==="function"?fd.has(key):fd.get(key)!==undefined&&fd.get(key)!==null;
@@ -73,7 +79,7 @@ export function collectEntryData(kind,{fd,current,bool,checkedIds,queryOne,query
       const source=fieldPresent(fd,"initiativeSource")?String(fd.get("initiativeSource")??""):"";
       const [sourceKind,sourceId]=[source.slice(0,source.indexOf(":")),source.slice(source.indexOf(":")+1)];
       const initiative=!fieldPresent(fd,"initiativeSource")?current.initiative?{...current.initiative}:null
-        :!source?null:{...(sourceKind==="table"?{tableRef:sourceId}:{testRef:sourceId}),tieBreakFormulaRef:String(fd.get("initiativeTieBreakFormulaRef")??"")||null,eachRound:bool("initiativeEachRound"),bySide:bool("initiativeBySide")};
+        :!source?null:{...(sourceKind==="table"?{tableRef:sourceId}:{testRef:sourceId}),tieBreakFormulaRef:String(fd.get("initiativeTieBreakFormulaRef")??"")||null,eachRound:bool("initiativeEachRound"),bySide:bool("initiativeBySide"),passes:initiativePasses(fd)};
       // The shared lists appear once the Ruleset exists; an unticked list is empty.
       const sharedDefinitions=fieldPresent(fd,"initiativeSource")?{world:checkedIds("sharedWorld"),combat:checkedIds("sharedCombat")}:{world:[],combat:[],...current.sharedDefinitions};
       return{id,initiative,sharedDefinitions,nameKey:name,descriptionKey:String(fd.get("descriptionKey")??""),version:String(fd.get("version")??"1.0.0").trim(),color:color===DEFAULT_RULESET_COLOR?null:color,sectionColors,sectionColorOverrides,familyColors:{...current.familyColors}};

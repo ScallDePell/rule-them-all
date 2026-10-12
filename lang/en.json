@@ -1203,7 +1203,11 @@
       "EachRound": "Reroll each round",
       "Help": "Actors under this Ruleset roll this Test, or draw a row of this Table, in the combat tracker; the result is their initiative.",
       "BySide": "One roll per side",
-      "RolledSide": "{name} rolls initiative for their side"
+      "RolledSide": "{name} rolls initiative for their side",
+      "PassStep": "Initiative lost per extra pass",
+      "OnePass": "Empty: one pass per round",
+      "PassThreshold": "Another pass while above",
+      "Pass": "Initiative pass {pass}"
     },
     "Reroll": {
       "DiceMode": "Dice thrown again",

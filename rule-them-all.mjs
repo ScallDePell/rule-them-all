@@ -10,7 +10,7 @@ import {FoundryContentBridge} from "./src/runtime/foundry-content-bridge.mjs";
 import {isOwningContentHook,guardOwnedContentCreation} from "./src/runtime/foundry-content-hooks.mjs";
 import {combatChangeEvents, timeElapsedPayload} from "./src/configurator/system-events.mjs";
 import {registerRulesetDice} from "./src/runtime/foundry-dice.mjs";
-import {installInitiative, rerollEachRound} from "./src/runtime/foundry-initiative.mjs";
+import {installInitiative, installInitiativePasses, rerollEachRound} from "./src/runtime/foundry-initiative.mjs";
 import {FoundryRuntimeAdapter} from "./src/runtime/foundry-runtime-adapter.mjs";
 
 /** events: () => [{eventTypeId, payload, refs}], emitted in order on the containers they concern. */
@@ -41,6 +41,8 @@ Hooks.once("init", () => {
   });
   // Combatants under a Ruleset with an initiative Test roll it; the others keep the game system's roll.
   installInitiative(CONFIG.Combat.documentClass, () => game.ruleThemAll?.runtime);
+  // Rulesets with initiative passes give a second pass (or more) to the fastest combatants before the round ends.
+  installInitiativePasses(CONFIG.Combat.documentClass, () => game.ruleThemAll?.runtime);
   Hooks.callAll("ruleThemAllInit", game.ruleThemAll);
   console.log("Rule Them'All | Initialization");
 });
