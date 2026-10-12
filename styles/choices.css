@@ -199,7 +199,7 @@
 
 /* Script-built lists and cards (slots, choice groups, relations, constraints):
    one row gap between children, however many rows a script appends. */
-.rta-config-entry :is([data-slot-list], [data-choice-group-list], [data-relation-list], [data-declarative-constraints], [data-test-input-list], .rta-generic-relation, .rta-generic-relation__fields),
+.rta-config-entry :is([data-slot-list], [data-choice-group-list], [data-relation-list], [data-declarative-constraints], [data-test-input-list], [data-card-list-body], .rta-generic-relation, .rta-generic-relation__fields),
 .rta-config-entry .rta-binding-card {
   display: flex;
   flex-direction: column;
@@ -208,7 +208,7 @@
 
 /* An empty list takes no room: unlike a block, a flex box does not let the
    margins around it collapse. */
-.rta-config-entry :is([data-slot-list], [data-choice-group-list], [data-relation-list], [data-declarative-constraints], [data-test-input-list]):not(:has(> *)) {
+.rta-config-entry :is([data-slot-list], [data-choice-group-list], [data-relation-list], [data-declarative-constraints], [data-test-input-list], [data-card-list-body]):not(:has(> *)) {
   display: none;
 }
 

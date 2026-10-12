@@ -145,7 +145,8 @@
       "ComputedPointsPerTarget": "Computed points per target",
       "OptionCondition": "Option filter",
       "AlwaysAvailable": "Always available",
-      "OpposedBy": "Opposed by {test}"
+      "OpposedBy": "Opposed by {test}",
+      "NoFactor": "×1"
     },
     "FamilyColor": {
       "parameters": "Parameters",
@@ -540,7 +541,8 @@
       "Availability": "Availability",
       "AvailabilityHint": "While this Condition is false, the Actions of a Content of this type cannot be used. It can read the Content's fields.",
       "RollMinimum": "Lowest result",
-      "NoMinimum": "None"
+      "NoMinimum": "None",
+      "RollFactor": "Factor after the roll"
     },
     "EditorDisplay": {
       "NoneSelected": "None selected",
@@ -1026,6 +1028,13 @@
       "CombatTurn": "Turn starts",
       "CombatEnd": "Combat ends",
       "TimeElapsed": "Time elapsed"
+    },
+    "Roll": {
+      "Variant": "Variant",
+      "Variants": "Variants",
+      "VariantsHelp": "While its Condition is true, a variant replaces the dice formula (two dice keeping the best, for example). The first true variant wins. A formula can read @content.<field>, @input.<id> and @test.<id>.",
+      "AddVariant": "Add a variant",
+      "VariantPlaceholder": "2d20kh1"
     }
   }
 }

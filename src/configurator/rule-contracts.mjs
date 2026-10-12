@@ -45,11 +45,23 @@ export function prepareCondition(data,options={}){
   validateFormulaAst(x.expression,'Condition.expression'); bool(x.enabled,'Condition.enabled'); arr(x.tags,'Condition.tags'); return x;
 }
 
+/** A Roll throws its formula, or the formula of its first variant whose Condition is true
+ * (two dice keeping the best when a Condition grants it). @content.<field>, @input.<id> and
+ * @test.<id> read the Content used, the Action's inputs and the Test's inputs. */
 export function prepareRoll(data,options={}){
-  const x={descriptionKey:'',enabled:true,order:0,tags:[],formula:'',data:{},...copyJSON(data)};
+  const x={descriptionKey:'',enabled:true,order:0,tags:[],formula:'',data:{},variants:[],...copyJSON(data)};
   identity(x,'Roll',options);
   if(need(nonempty(x.formula),'Roll.formula is required.',options))assertSafeRollFormula(x.formula);
   if(!isRecord(x.data))throw new Error('Roll.data must be an object.');
+  arr(x.variants,'Roll.variants');
+  x.variants=x.variants.map((variant,i)=>{
+    if(!isRecord(variant))throw new Error(`Roll.variants[${i}] must be an object.`);
+    const v={conditionRef:'',formula:'',...copyJSON(variant)};
+    for(const key of Object.keys(v))if(!['conditionRef','formula'].includes(key))throw new Error(`Roll.variants[${i}] contains unsupported field: ${key}.`);
+    need(nonempty(v.conditionRef),`Roll.variants[${i}] requires a Condition.`,options);
+    if(need(nonempty(v.formula),`Roll.variants[${i}] requires a dice formula.`,options))assertSafeRollFormula(v.formula);
+    return v;
+  });
   bool(x.enabled,'Roll.enabled');arr(x.tags,'Roll.tags');return x;
 }
 export function prepareOutcome(data,options={}){
@@ -109,7 +121,8 @@ export function prepareEffect(data,options={}){
   if(!isRecord(x.operand)||!['literal','parameter','formula','reference','roll'].includes(x.operand.kind))throw new Error('Effect.operand must select literal, parameter, formula, reference or roll.');
   // A roll operand: the Roll's total (its dice multiplied by a Formula, for a critical hit) plus a bonus Formula.
   if(x.operand.kind==='roll'){need(nonempty(x.operand.rollRef),'Effect roll operand requires a Roll.',options);
-    for(const key of ['multiplierFormulaRef','bonusFormulaRef'])if(x.operand[key]!==undefined&&x.operand[key]!==null&&typeof x.operand[key]!=='string')throw new Error(`Effect.operand.${key} must be a Formula id.`);
+    // factorFormulaRef: applied after the roll and its bonus, rounded down (half damage for a resistance).
+    for(const key of ['multiplierFormulaRef','bonusFormulaRef','factorFormulaRef'])if(x.operand[key]!==undefined&&x.operand[key]!==null&&typeof x.operand[key]!=='string')throw new Error(`Effect.operand.${key} must be a Formula id.`);
     // minimum: the lowest value the roll gives once the bonus is added (armour cannot turn damage into healing).
     if(x.operand.minimum!==undefined&&x.operand.minimum!==null&&!Number.isFinite(x.operand.minimum))throw new Error('Effect.operand.minimum must be a number.');}
   bool(x.enabled,'Effect.enabled'); arr(x.tags,'Effect.tags'); return x;

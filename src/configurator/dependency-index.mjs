@@ -30,6 +30,7 @@ export class DependencyIndex{
     }
     for(const [i,c] of (ruleset.conditions??[]).entries())scanAst(c.expression,(r,p)=>pushRef(this.#edges,{objectKind:'condition',objectId:c.id},r,'condition',`conditions[${i}].${p}`));
     for(const [i,type] of (ruleset.contentTypes??[]).entries())if(type.availabilityConditionRef)pushRef(this.#edges,{objectKind:'contentType',objectId:type.id},{objectKind:'condition',objectId:type.availabilityConditionRef},'contentAvailability',`contentTypes[${i}].availabilityConditionRef`);
+    for(const [i,r] of (ruleset.rolls??[]).entries())for(const [j,variant] of (r.variants??[]).entries())if(variant?.conditionRef)pushRef(this.#edges,{objectKind:'roll',objectId:r.id},{objectKind:'condition',objectId:variant.conditionRef},'rollVariant',`rolls[${i}].variants[${j}].conditionRef`);
     for(const [i,o] of (ruleset.outcomes??[]).entries())if(o.conditionRef)pushRef(this.#edges,{objectKind:'outcome',objectId:o.id},{objectKind:'condition',objectId:o.conditionRef},'outcomeCondition',`outcomes[${i}].conditionRef`);
     for(const [i,t] of (ruleset.tests??[]).entries()){
       pushRef(this.#edges,{objectKind:'test',objectId:t.id},{objectKind:'roll',objectId:t.rollRef},'testRoll',`tests[${i}].rollRef`);
@@ -51,7 +52,7 @@ export class DependencyIndex{
       if(e.operand?.kind==='formula')pushRef(this.#edges,{objectKind:'effect',objectId:e.id},{objectKind:'formula',objectId:e.operand.id},'effectOperand',`effects[${i}].operand`);
       if(e.operand?.kind==='reference')pushRef(this.#edges,{objectKind:'effect',objectId:e.id},e.operand.reference,'effectOperand',`effects[${i}].operand.reference`);
       if(e.operand?.kind==='roll'){pushRef(this.#edges,{objectKind:'effect',objectId:e.id},{objectKind:'roll',objectId:e.operand.rollRef},'effectOperand',`effects[${i}].operand.rollRef`);
-        for(const key of ['multiplierFormulaRef','bonusFormulaRef'])if(e.operand[key])pushRef(this.#edges,{objectKind:'effect',objectId:e.id},{objectKind:'formula',objectId:e.operand[key]},'effectOperand',`effects[${i}].operand.${key}`);}
+        for(const key of ['multiplierFormulaRef','bonusFormulaRef','factorFormulaRef'])if(e.operand[key])pushRef(this.#edges,{objectKind:'effect',objectId:e.id},{objectKind:'formula',objectId:e.operand[key]},'effectOperand',`effects[${i}].operand.${key}`);}
     }
     for(const [i,a] of (ruleset.actions??[]).entries()){
       if(a.testRef)pushRef(this.#edges,{objectKind:'action',objectId:a.id},{objectKind:'test',objectId:a.testRef},'actionTest',`actions[${i}].testRef`);

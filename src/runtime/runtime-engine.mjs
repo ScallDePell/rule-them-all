@@ -279,9 +279,10 @@ export class RuntimeEngine{
     for(const input of test.inputBindings??[]){state.inputs[input.id]=await this.#testInput(versionId,test,input,scope);sync();}
     if(test.rollRef){
       const rollDef=ruleset.rolls?.find(x=>x.id===test.rollRef&&enabled(x));if(!rollDef)throw new Error(`Roll unavailable: ${test.rollRef}.`);
-      const roll=await this.roll(rollDef.formula,rollDef.data??{});
+      const {formula,data}=await this.#rollFormula(rollDef,scope,this.evaluator(versionId),{test:clone(state.inputs)});
+      const roll=await this.roll(resolveRollData(formula,data),data);
       const natural=Number.isFinite(Number(roll.natural))?Number(roll.natural):Number(roll.total);
-      state.roll={formula:String(roll.formula??rollDef.formula),total:Number(roll.total),natural,result:String(roll.result??roll.total??"")};
+      state.roll={formula:String(roll.formula??formula),total:Number(roll.total),natural,result:String(roll.result??roll.total??"")};
       state.rollTotal=Number(roll.total);state.natural=natural;state.total=Number(roll.total);sync();
     }
     const number=async(formulaId,label)=>{const value=Number(await this.evaluateFormula(versionId,formulaId,scope));if(!Number.isFinite(value))throw new Error(`Test ${test.id} ${label} is not a number.`);return value;};
@@ -382,17 +383,28 @@ export class RuntimeEngine{
     return results;
   }
   #eventFilterMatches(filter,event,context){if(!filter)return true;const matches=filter.payloadMatches??{};for(const [key,value] of Object.entries(matches))if(event.payload?.[key]!==value)return false;return true;}
-  /** Roll operand: the Roll's dice (multiplied by a Formula, e.g. 2 on a critical hit) plus a bonus Formula. */
+  /** The formula a Roll throws in a context: its first variant whose Condition is true, else its own.
+   * Its @data: the Roll's data, the Content used (@content.<field>, a weapon's damage dice),
+   * the Action's inputs (@input.<id>) and whatever the caller adds (a Test's inputs as @test.<id>). */
+  async #rollFormula(rollDef,context,evaluator,extra={}){
+    let formula=rollDef.formula;
+    for(const variant of rollDef.variants??[])if(await evaluator.condition(variant.conditionRef,context)){formula=variant.formula;break;}
+    const content=await evaluator.currentContent(context);
+    return {formula,data:{...clone(rollDef.data??{}),...(content?{content:content.fields}:{}),input:clone(context?.variables?.input??{}),...extra}};
+  }
+  /** Roll operand: the Roll's dice (multiplied by a Formula, e.g. 2 on a critical hit) plus a bonus Formula,
+   * then a factor Formula rounded down (half for a resistance), never below the minimum. */
   async #rollOperand(versionId,operand,context,evaluator){
     const ruleset=this.ruleset(versionId),rollDef=ruleset.rolls?.find(x=>x.id===operand.rollRef&&enabled(x));if(!rollDef)throw new Error(`Roll unavailable: ${operand.rollRef}.`);
     const multiplier=operand.multiplierFormulaRef?Number(await evaluator.formula(operand.multiplierFormulaRef,context)):1;
     const bonus=operand.bonusFormulaRef?Number(await evaluator.formula(operand.bonusFormulaRef,context)):0;
     if(!Number.isFinite(bonus))throw new Error(`Roll bonus of ${operand.rollRef} is not a number.`);
-    // The Content the Action is used from lends its fields as @content.<field> (a weapon's damage dice).
-    const content=await evaluator.currentContent(context),data={...clone(rollDef.data??{}),...(content?{content:content.fields}:{})};
-    const roll=await this.roll(multiplyDice(resolveRollData(rollDef.formula,data),multiplier),data);
-    const value=Number(roll.total)+bonus;
-    return {value:Number.isFinite(operand.minimum)?Math.max(operand.minimum,value):value,roll:{formula:String(roll.formula??rollDef.formula),total:Number(roll.total),result:String(roll.result??roll.total??""),bonus}};
+    const factor=operand.factorFormulaRef?Number(await evaluator.formula(operand.factorFormulaRef,context)):1;
+    if(!Number.isFinite(factor))throw new Error(`Roll factor of ${operand.rollRef} is not a number.`);
+    const {formula,data}=await this.#rollFormula(rollDef,context,evaluator);
+    const roll=await this.roll(multiplyDice(resolveRollData(formula,data),multiplier),data);
+    let value=Number(roll.total)+bonus;if(factor!==1)value=Math.floor(value*factor);
+    return {value:Number.isFinite(operand.minimum)?Math.max(operand.minimum,value):value,roll:{formula:String(roll.formula??formula),total:Number(roll.total),result:String(roll.result??roll.total??""),bonus,...(factor!==1?{factor}:{})}};
   }
   async #operand(versionId,operand,context,evaluator){if(operand.kind==="literal")return clone(operand.value);if(operand.kind==="parameter")return evaluator.parameter(operand.id);if(operand.kind==="formula")return await evaluator.formula(operand.id,context);if(operand.kind==="reference")return await this.resolveReference(versionId,operand.reference,context,{staged:evaluator.__staged});throw new Error(`Unsupported Effect operand: ${operand.kind}.`);}
   #writeOutput(state,reference,operation,operand,pool=null){const ds=state.definitionStates?.[reference.objectId];if(!ds)throw new Error(`Definition is not instantiated on RuntimeContainer: ${reference.objectId}.`);const cap=reference.capabilityId,id=reference.outputId;let current;

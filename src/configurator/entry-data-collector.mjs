@@ -14,6 +14,7 @@ import {RULESET_SECTIONS,DEFAULT_RULESET_COLOR} from './ruleset-colors.mjs';
 import {collectTemplateAcquisitions} from './content-template-form.mjs';
 import {collectDefinitionSlots} from './slot-form.mjs';
 import {collectTestInputs} from './test-input-form.mjs';
+import {collectRollVariants} from './rule-cards-form.mjs';
 const slug=value=>String(value??"").trim().toLowerCase().normalize("NFKD").replace(/[^a-z0-9]+/g,"-").replace(/^-|-$/g,"");
 const json=(value,fallback)=>{const text=String(value??"").trim();return text?JSON.parse(text):fallback;};
 const fieldPresent=(fd,key)=>typeof fd.has==="function"?fd.has(key):fd.get(key)!==undefined&&fd.get(key)!==null;
@@ -30,7 +31,7 @@ function readTestTarget(fd){
 /** The shared operand editor: a literal, a Parameter, a Formula, a Reference or (Effects) a Roll. */
 function readOperand(fd,queryOne){
   const kind=String(fd.get("operandKind")??"literal");
-  if(kind==="roll"){const text=name=>String(fd.get(name)??"").trim();return{kind,rollRef:text("operandRollRef"),...(text("operandRollMultiplier")?{multiplierFormulaRef:text("operandRollMultiplier")}:{}),...(text("operandRollBonus")?{bonusFormulaRef:text("operandRollBonus")}:{}),...(text("operandRollMinimum")!==""?{minimum:Number(text("operandRollMinimum"))}:{})};}
+  if(kind==="roll"){const text=name=>String(fd.get(name)??"").trim();return{kind,rollRef:text("operandRollRef"),...(text("operandRollMultiplier")?{multiplierFormulaRef:text("operandRollMultiplier")}:{}),...(text("operandRollBonus")?{bonusFormulaRef:text("operandRollBonus")}:{}),...(text("operandRollFactor")?{factorFormulaRef:text("operandRollFactor")}:{}),...(text("operandRollMinimum")!==""?{minimum:Number(text("operandRollMinimum"))}:{})};}
   if(kind==="literal")return{kind,value:Number(fd.get("operandLiteral")??0)};
   if(kind==="parameter"||kind==="formula")return{kind,id:String(queryOne(`[data-operand-editor="${kind}"] select`)?.value??"")};
   return{kind:"reference",reference:parseRefToken(fd.get("operandReference"))};
@@ -65,7 +66,7 @@ export function collectEntryData(kind,{fd,current,bool,checkedIds,queryOne,query
     if(kind==="formula"){const fallback=json(fd.get("expressionJson"),{type:"literal",value:0});return{...current,nameKey:String(fd.get("nameKey")??"").trim(),descriptionKey:String(fd.get("descriptionKey")??""),enabled:bool("enabled"),resultType:String(fd.get("resultType")??"number"),expression:collectFormulaExpression(fallback),tags:checkedIds("tags")};}
     if(kind==="formulaBinding")return{...current,nameKey:String(fd.get("nameKey")??"").trim(),descriptionKey:String(fd.get("descriptionKey")??""),enabled:bool("enabled"),formulaRef:String(fd.get("formulaRef")??"").trim(),targetRef:parseRefToken(fd.get("targetRef")),tags:checkedIds("tags")};
     if(kind==="condition"){const fallback=json(fd.get("expressionJson"),{type:"literal",value:true});return{...current,nameKey:String(fd.get("nameKey")??"").trim(),descriptionKey:String(fd.get("descriptionKey")??""),enabled:bool("enabled"),expression:collectConditionExpression(fallback),tags:checkedIds("tags")};}
-    if(kind==="roll")return{...current,nameKey:String(fd.get("nameKey")??"").trim(),descriptionKey:String(fd.get("descriptionKey")??""),enabled:bool("enabled"),formula:String(fd.get("rollFormula")??"").trim(),data:json(fd.get("rollDataJson"),{}),tags:checkedIds("tags")};
+    if(kind==="roll")return{...current,nameKey:String(fd.get("nameKey")??"").trim(),descriptionKey:String(fd.get("descriptionKey")??""),enabled:bool("enabled"),formula:String(fd.get("rollFormula")??"").trim(),data:json(fd.get("rollDataJson"),{}),variants:collectRollVariants(queryAll),tags:checkedIds("tags")};
     if(kind==="outcome")return{...current,nameKey:String(fd.get("nameKey")??"").trim(),descriptionKey:String(fd.get("descriptionKey")??""),enabled:bool("enabled"),resultKey:String(fd.get("resultKey")??"outcome").trim(),conditionRef:String(fd.get("conditionRef")??"").trim()||null,tags:checkedIds("tags")};
     if(kind==="test")return{...current,nameKey:String(fd.get("nameKey")??"").trim(),descriptionKey:String(fd.get("descriptionKey")??""),enabled:bool("enabled"),rollRef:String(fd.get("rollRef")??"").trim()||null,inputBindings:collectTestInputs(queryAll),bonusFormulaRef:String(fd.get("bonusFormulaRef")??"").trim()||null,totalFormulaRef:String(fd.get("totalFormulaRef")??"").trim()||null,marginFormulaRef:String(fd.get("marginFormulaRef")??"").trim()||null,...readTestTarget(fd),outcomeRefs:[...(queryOne('[data-ordered-list="outcomeRefs"]')?.querySelectorAll("[data-ordered-item]:not([hidden])")??[])].map(row=>row.dataset.orderedItem),fallbackOutcomeRef:String(fd.get("fallbackOutcomeRef")??"").trim()||null,tags:checkedIds("tags")};
     if(kind==="effect"){const operand=readOperand(fd,queryOne);return{...current,nameKey:String(fd.get("nameKey")??"").trim(),descriptionKey:String(fd.get("descriptionKey")??""),enabled:bool("enabled"),targetRef:parseRefToken(fd.get("targetRef")),targetRole:String(fd.get("targetRole")??"target").trim()||"target",operation:String(fd.get("operation")??"set").trim(),operand,tags:checkedIds("tags")};}

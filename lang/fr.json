@@ -141,7 +141,8 @@
       "ComputedPointsPerTarget": "Points par cible, calculés",
       "OptionCondition": "Filtre des options",
       "AlwaysAvailable": "Toujours disponible",
-      "OpposedBy": "En opposition à {test}"
+      "OpposedBy": "En opposition à {test}",
+      "NoFactor": "×1"
     },
     "FamilyColor": {
       "parameters": "Paramètres",
@@ -536,7 +537,8 @@
       "Availability": "Disponibilité",
       "AvailabilityHint": "Tant que cette Condition est fausse, les Actions d'un contenu de ce type ne peuvent pas être utilisées. Elle peut lire les champs du contenu.",
       "RollMinimum": "Résultat minimal",
-      "NoMinimum": "Aucun"
+      "NoMinimum": "Aucun",
+      "RollFactor": "Facteur après le jet"
     },
     "EditorDisplay": {
       "NoneSelected": "Aucune sélection",
@@ -1022,6 +1024,13 @@
       "CombatTurn": "Début de tour",
       "CombatEnd": "Fin du combat",
       "TimeElapsed": "Temps écoulé"
+    },
+    "Roll": {
+      "Variant": "Variante",
+      "Variants": "Variantes",
+      "VariantsHelp": "Tant que sa Condition est vraie, une variante remplace la formule de dés (deux dés en gardant le meilleur, par exemple). La première variante vraie l'emporte. Une formule peut lire @content.<champ>, @input.<id> et @test.<id>.",
+      "AddVariant": "Ajouter une variante",
+      "VariantPlaceholder": "2d20kh1"
     }
   }
 }
