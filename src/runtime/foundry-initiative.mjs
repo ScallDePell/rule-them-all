@@ -119,3 +119,49 @@ export function installInitiativePasses(CombatClass, getRuntime, {moduleId = "ru
   proto.nextTurn = nextTurn;
   proto.nextRound = nextRound;
 }
+
+/* Turn order changed by an Action (Action.turnOrder): delay, act now as an interruption, or a new initiative. */
+const score = combatant => Number.isFinite(Number(combatant?.initiative)) && combatant?.initiative !== null ? Number(combatant.initiative) : null;
+const byInitiative = (a, b) => (score(b) ?? -Infinity) - (score(a) ?? -Infinity);
+
+/** turns: the combatants in turn order ({id, initiative}); current: the index of the turn in progress (null before
+ * the combat starts). Returns the mover's new initiative and whose turn it is afterwards ({initiative, turnId}).
+ * "now": just ahead of the current combatant, and it acts at once. "last": after everyone. "set" / "add": value.
+ * When the mover was acting and moves later, the turn passes to the next combatant; otherwise it stays put. */
+export function planTurnChange(turns, current, moverId, {move, value = null}) {
+  const mover = turns.find(turn => turn.id === moverId);
+  if (!mover) return null;
+  const acting = Number.isInteger(current) && current >= 0 ? turns[current] : null, own = score(mover), others = turns.filter(turn => turn.id !== moverId).map(score).filter(x => x !== null);
+  let initiative = own;
+  if (move === "now") initiative = acting && acting.id !== moverId ? (score(acting) ?? 0) + 0.01 : own;
+  else if (move === "last") initiative = others.length ? Math.min(...others) - 0.01 : own;
+  else if (move === "set") initiative = Number(value);
+  else if (move === "add") initiative = (own ?? 0) + Number(value);
+  initiative = initiative === null ? null : Math.round(initiative * 100) / 100;
+  if (!acting) return {initiative, turnId: null};
+  const order = turns.map(turn => turn.id === moverId ? {...turn, initiative} : turn).sort(byInitiative);
+  if (move === "now") return {initiative, turnId: moverId};
+  if (acting.id !== moverId) return {initiative, turnId: acting.id};
+  const index = order.findIndex(turn => turn.id === moverId);
+  return {initiative, turnId: index > current ? order[current].id : moverId};
+}
+
+/** The combatant of an Actor (or of a token's Actor) in a combat. */
+export function combatantOf(combat, uuid) {
+  const combatants = typeof combat?.combatants?.values === "function" ? [...combat.combatants.values()] : [...(combat?.combatants ?? [])];
+  return combatants.find(combatant => combatant.actor?.uuid === uuid || combatant.token?.uuid === uuid || combatant.token?.actor?.uuid === uuid) ?? null;
+}
+
+/** Apply a turn order change to a Foundry Combat (GM client): the combatant's initiative, then the turn in progress. */
+export async function applyTurnChange(combat, uuid, change) {
+  const combatant = combatantOf(combat, uuid);
+  if (!combatant) return false;
+  const turns = (combat.turns ?? []).map(turn => ({id: turn.id, initiative: turn.initiative}));
+  const plan = planTurnChange(turns, combat.turn ?? null, combatant.id, change);
+  if (!plan) return false;
+  if (plan.initiative !== score(combatant)) await combatant.update({initiative: plan.initiative});
+  const after = typeof combat.setupTurns === "function" ? combat.setupTurns() : combat.turns ?? [];
+  const turn = plan.turnId ? after.findIndex(entry => entry.id === plan.turnId) : -1;
+  if (turn >= 0 && turn !== combat.turn) await combat.update({turn});
+  return true;
+}

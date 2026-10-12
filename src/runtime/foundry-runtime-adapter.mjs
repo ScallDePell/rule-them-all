@@ -1,3 +1,4 @@
+import {applyTurnChange} from "./foundry-initiative.mjs";
 import {registerRulesetDice} from "./foundry-dice.mjs";
 import {resolveDocumentType} from "../core/system-document-types.mjs";
 import {MODULE_ID} from "../core/module-contract.mjs";
@@ -24,6 +25,8 @@ export class FoundryRuntimeAdapter{
   static registerSettings(settings){settings.register(MODULE_ID,WORLD_SETTING,{scope:"world",config:false,type:Object,default:{}});}
   /** The combat in progress, as a container: its shared Definitions (an escalation die) live in its flags. */
   activeCombat(){const combat=game.combat;return combat?.started?{kind:"combat",id:combat.id}:null;}
+  /** An Action moved a combatant (Action.turnOrder) in the combat in progress. */
+  async changeTurnOrder(ref,change){const combat=game.combat;if(!combat?.started)return false;return applyTurnChange(combat,normalizeRuntimeContainerRef(ref).uuid,change);}
   async resolveDocument(ref){
     const n=normalizeRuntimeContainerRef(ref);
     if(n.uuid){const doc=await globalThis.fromUuid?.(n.uuid);if(!doc)throw new Error(`Foundry Document not found: ${n.uuid}.`);return doc;}

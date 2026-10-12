@@ -215,8 +215,9 @@ function prepareRerollDice(dice){
   return x;
 }
 export const ACTION_TARGETING=Object.freeze(['one','each','shared']);
+export const TURN_ORDER_MOVES=Object.freeze(['now','last','set','add']);
 export function prepareAction(data,options={}){
-  const x={descriptionKey:'',enabled:true,order:0,tags:[],inputs:[],conditionRefs:[],costEffectRefs:[],acquisitions:[],stateRemovals:[],stateApplications:[],modifierApplications:[],effectRefs:[],testRef:null,outcomeMappings:[],tableRef:null,targeting:'one',reroll:null,forEach:null,roleLinks:[],group:null,eventTypeRefs:[],...copyJSON(data)};
+  const x={descriptionKey:'',enabled:true,order:0,tags:[],inputs:[],conditionRefs:[],costEffectRefs:[],acquisitions:[],stateRemovals:[],stateApplications:[],modifierApplications:[],effectRefs:[],testRef:null,outcomeMappings:[],tableRef:null,targeting:'one',reroll:null,forEach:null,roleLinks:[],group:null,turnOrder:null,eventTypeRefs:[],...copyJSON(data)};
   identity(x,'Action',options);
   // targeting: one target, or each of context.targets with its own Effect dice ("each") or the same dice for all ("shared").
   if(!ACTION_TARGETING.includes(x.targeting))throw new Error(`Action.targeting must be one of ${ACTION_TARGETING.join(', ')}.`);
@@ -227,6 +228,9 @@ export function prepareAction(data,options={}){
   // replays it, with new dice or, keepDice, the same ones (a reaction that changes the odds, not the roll).
   // dice: only the kept dice that match (a group, a comparison) are thrown again, or set to a Formula's value; the others stay.
   if(x.reroll!==null){if(!isRecord(x.reroll))throw new Error('Action.reroll must be null or an object.');x.reroll={actionRefs:[],keepDice:false,dice:null,...x.reroll};for(const key of Object.keys(x.reroll))if(!['actionRefs','keepDice','dice'].includes(key))throw new Error(`Action.reroll contains unsupported field: ${key}.`);arr(x.reroll.actionRefs,'Action.reroll.actionRefs');bool(x.reroll.keepDice,'Action.reroll.keepDice');x.reroll.dice=prepareRerollDice(x.reroll.dice);}
+  // turnOrder: {move, formulaRef, role}: in the combat in progress, the role's combatant acts now (before the current
+  // turn), goes last in the round, or gets its initiative set to or raised by a Formula (negative to lower it).
+  if(x.turnOrder!==null){if(!isRecord(x.turnOrder))throw new Error('Action.turnOrder must be null or an object.');x.turnOrder={formulaRef:null,role:'self',...x.turnOrder};for(const key of Object.keys(x.turnOrder))if(!['move','formulaRef','role'].includes(key))throw new Error(`Action.turnOrder contains unsupported field: ${key}.`);if(!TURN_ORDER_MOVES.includes(x.turnOrder.move))throw new Error(`Action.turnOrder.move must be one of ${TURN_ORDER_MOVES.join(', ')}.`);if(!ROLE_NAME.test(String(x.turnOrder.role)))throw new Error('Action.turnOrder.role must be a role name.');if(x.turnOrder.formulaRef==='')x.turnOrder.formulaRef=null;if(['set','add'].includes(x.turnOrder.move)!==nonempty(x.turnOrder.formulaRef))throw new Error(`Action.turnOrder: a Formula is needed to set or raise the initiative, and only then.`);}
   // roleLinks: roles found through a reference collection (the vehicle a pilot crews): role = the first entry of
   // fromRole's Definition collection slot. group: before its own Test, each helper (context.helpers, or the entries
   // of a collection) makes testRef; their results are variables.group (count, best, worst, sum, outcomes by key).

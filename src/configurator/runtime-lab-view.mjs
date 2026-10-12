@@ -41,7 +41,7 @@ export function describeRuntimeResult(kind, data, {i18n = key => key, nameOf = (
         const reason = data.reason === "condition" ? i18n("RTA.Lab.BlockedByCondition", {name: nameOf("conditions", data.conditionId)}) : i18n("RTA.Lab.BlockedByOutcome");
         return card(data.preview ? "ActionPreview" : "ActionExecuted", {tone: "failure", message: reason});
       }
-      const changes = (data.changes ?? []).map(change => ({name: nameOf("effects", change.effectId), before: JSON.stringify(change.before ?? null), after: JSON.stringify(change.after ?? null)}));
+      const changes = (data.changes ?? []).map(change => change.turnOrder ? {name: i18n("RTA.Action.TurnOrderLabel"), before: "", after: `${i18n(`RTA.Action.TurnOrder.${change.turnOrder.move}`)}${change.turnOrder.value === null ? "" : ` ${change.turnOrder.value}`}`} : ({name: nameOf("effects", change.effectId), before: JSON.stringify(change.before ?? null), after: JSON.stringify(change.after ?? null)}));
       // What decided the changes: the Test (per target when there are several), the Table row, the Actions that followed.
       const outcomeOf = test => test?.outcome ? `${nameOf("outcomes", test.outcome.id)} (${test.total})` : null;
       const followed = list => (list ?? []).filter(follow => follow.allowed).flatMap(follow => [nameOf("actions", follow.actionId), ...followed(follow.followUps)]);

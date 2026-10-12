@@ -15,6 +15,8 @@ export class MemoryRuntimeAdapter{
   async nearby(ref,within,side="any"){const me=this.positions?.get(key(ref));if(!me)return NaN;let n=0;for(const [k,p] of this.positions)if(k!==key(ref)&&Math.hypot(p.x-me.x,p.y-me.y)<=within&&(side==="any"||(side==="ally")===(p.disposition===me.disposition)))n++;return n;}
   /** The combat in progress ({kind: "combat", id}), set by tests. */
   activeCombat(){return this.combat??null;}
+  /** Turn order changes asked by Actions, kept for tests. */
+  async changeTurnOrder(ref,change){(this.turnChanges??=[]).push({ref:normalizeRuntimeContainerRef(ref),...copyJSON(change)});return true;}
   /** World clock for Durations, in seconds; tests move it by hand. */
   worldTime(){return this.clock??0;}
   roundSeconds(){return 6;}

@@ -1171,7 +1171,17 @@
       "ForEach": "Repeat for each",
       "ForEachNone": "Once",
       "ForEachWhen": "Only those where",
-      "ForEachAll": "All of them"
+      "ForEachAll": "All of them",
+      "TurnOrderLabel": "Turn order",
+      "TurnOrderWho": "Who moves",
+      "TurnOrderFormula": "Initiative Formula",
+      "TurnOrder": {
+        "none": "Unchanged",
+        "now": "Acts now, before the current turn",
+        "last": "Goes last this round",
+        "set": "Initiative set to",
+        "add": "Initiative raised by"
+      }
     },
     "Progression": {
       "Advancement": "Advancement",

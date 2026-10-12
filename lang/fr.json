@@ -1167,7 +1167,17 @@
       "ForEach": "Répéter pour chaque",
       "ForEachNone": "Une seule fois",
       "ForEachWhen": "Seulement ceux pour qui",
-      "ForEachAll": "Tous"
+      "ForEachAll": "Tous",
+      "TurnOrderLabel": "Ordre du tour",
+      "TurnOrderWho": "Qui change de place",
+      "TurnOrderFormula": "Formula d'initiative",
+      "TurnOrder": {
+        "none": "Inchangé",
+        "now": "Agit tout de suite, avant le tour en cours",
+        "last": "Passe en dernier ce round",
+        "set": "Initiative fixée à",
+        "add": "Initiative augmentée de"
+      }
     },
     "Progression": {
       "Advancement": "Amélioration",

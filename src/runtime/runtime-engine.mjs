@@ -124,7 +124,7 @@ export class RuntimeEngine{
     if(method==="chooseActions"){const [,offer={},ids=[]]=args,refs=ids.flatMap(id=>this.writeTargets("executeAction",[versionId,id,offer.context??{}]));return [...new Map(refs.map(ref=>[this.#refKey(ref),ref])).values()];}
     if(method==="advance"||method==="applyMilestones")return [normalizeRuntimeContainerRef(args[2])];
     if(method!=="executeAction")return [normalizeRuntimeContainerRef(args[1])];
-    const ruleset=this.ruleset(versionId),context=args[2]??{},roles=new Set(),seen=new Set();
+    const ruleset=this.ruleset(versionId),context=args[2]??{},roles=new Set(),seen=new Set();let turnOrder=false;
     const visit=actionId=>{
       if(seen.has(actionId))return;seen.add(actionId);
       const action=ruleset.actions?.find(x=>x.id===actionId);if(!action)return;
@@ -133,11 +133,14 @@ export class RuntimeEngine{
       if(action.tableRef)for(const row of ruleset.tables?.find(x=>x.id===action.tableRef)?.rows??[])(row.actionRefs??[]).forEach(visit);
       const effectIds=[...(action.costEffectRefs??[]),...(action.effectRefs??[]),...(action.outcomeMappings??[]).flatMap(m=>m?.effectRefs??[])];
       for(const id of effectIds){const effect=ruleset.effects?.find(x=>x.id===id);if(effect)roles.add(effect.targetRole??"target");}
+      if(action.turnOrder)turnOrder=true;
       for(const entry of [...(action.stateRemovals??[]),...(action.stateApplications??[]),...(action.modifierApplications??[]),...(action.acquisitions??[])])roles.add(entry.targetRole??"target");
       for(const eventTypeId of action.eventTypeRefs??[])for(const trigger of ruleset.triggers??[])if(trigger.eventTypeId===eventTypeId)(trigger.actionRefs??[]).forEach(visit);
     };
     visit(args[1]);
     const refs=[...roles].map(role=>roleRef(context,role));
+    // Moving a combatant writes the combat, which only the GM may update.
+    if(turnOrder)refs.push(this.adapter.activeCombat?.());
     if(roles.has("target")&&Array.isArray(context.targets))refs.push(...context.targets);
     const unique=new Map(refs.filter(Boolean).map(normalizeRuntimeContainerRef).map(ref=>[this.#refKey(ref),ref]));
     return [...unique.values()];
@@ -749,6 +752,10 @@ export class RuntimeEngine{
     // Effects read the Test under variables.test (total, margin, natural, outcome), e.g. damage that grows with the margin.
     const effectContext=testResult?{...context,variables:{...(context.variables??{}),...testResult.variables,test:{...testResult.variables.test,outcome:testResult.outcome}}}:context;
     for(const effectId of effectRefs)changes.push(await this.previewEffect(versionId,effectId,effectContext,staged,evaluator.__dice));
+    // A turn order change is no container write: it lists who moves and how, and the commit hands it to the combat tracker.
+    if(action.turnOrder){const ref=roleRef(effectContext,action.turnOrder.role);if(!ref)throw new Error(`EvaluationContext role is missing: ${action.turnOrder.role}.`);
+      const value=action.turnOrder.formulaRef?Number(await evaluator.formula(action.turnOrder.formulaRef,effectContext)):null;if(value!==null&&!Number.isFinite(value))throw new Error(`Action ${action.id}: the turn order Formula is not a number.`);
+      changes.push({turnOrder:{move:action.turnOrder.move,value},turnRef:normalizeRuntimeContainerRef(ref)});}
     // Then the Table, whose row adds its Actions to the Outcome's: each follow-up previews on a copy of the
     // staged states, kept only when it is allowed (a follow-up refused by its Conditions changes nothing).
     let tableResult=null,followContext=effectContext;
@@ -774,7 +781,7 @@ export class RuntimeEngine{
     const dice=context[DICE].log;context=plan.context;
     // Staged states were read once by the preview: the commit expects their revision unchanged.
     const tx=this.transaction(versionId,"action",{transactionId,summary:{actionId,outcomeKey:plan.testResult?.outcome?.resultKey??null}});
-    for(const [key,state] of plan.staged){const change=plan.changes.find(x=>this.#refKey(x.containerRef)===key);if(change)tx.stage(change.containerRef,state);}
+    for(const [key,state] of plan.staged){const change=plan.changes.find(x=>x.containerRef&&this.#refKey(x.containerRef)===key);if(change)tx.stage(change.containerRef,state);}
     const committed=await this.#commit(tx);
     const strip=list=>list.map(({context:_context,followUps:inner=[],targets,...rest})=>({...rest,followUps:strip(inner),...(targets?{targets:strip(targets)}:{})})),followUps=strip(plan.followUps);
     // use: what a reroll or a reaction needs to undo and replay this use, the dice thrown included.
@@ -782,6 +789,7 @@ export class RuntimeEngine{
     const choices=(plan.choices??[]).map(choice=>({actionId,count:choice.count,actionIds:choice.actionIds,context:plainContext(choice.context),cause:clone(use)}));
     const result={actionId,allowed:true,testResult:plan.testResult??null,tableResult:plan.tableResult??null,followUps,...(plan.targets?{targets:strip(plan.targets)}:{}),...(plan.each?{each:strip(plan.each)}:{}),choices,changes:plan.changes,acquired:plan.acquired,committed:true,duplicate:committed.duplicate,transactionId:committed.transactionId,ledgerEntryIds:committed.entries.map(entry=>entry.id),use,events:[]};
     if(committed.duplicate)return result;
+    if(this.adapter.activeCombat?.()&&this.adapter.changeTurnOrder)for(const change of plan.changes)if(change.turnOrder)await this.adapter.changeTurnOrder(change.turnRef,change.turnOrder);
     for(const offer of choices)this.hooks?.callAll?.(RUNTIME_HOOKS.choiceOffered,clone(offer));
     this.hooks?.callAll?.(RUNTIME_HOOKS.actionExecuted,clone(result),context);
     await this.#emitActionEvents(versionId,{actionId,testResult:plan.testResult,context:{...context,cause:use},followUps:plan.followUps,targets:plan.targets??plan.each},eventDepth,result.events);return result;
