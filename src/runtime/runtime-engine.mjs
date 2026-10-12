@@ -391,7 +391,8 @@ export class RuntimeEngine{
     // The Content the Action is used from lends its fields as @content.<field> (a weapon's damage dice).
     const content=await evaluator.currentContent(context),data={...clone(rollDef.data??{}),...(content?{content:content.fields}:{})};
     const roll=await this.roll(multiplyDice(resolveRollData(rollDef.formula,data),multiplier),data);
-    return {value:Number(roll.total)+bonus,roll:{formula:String(roll.formula??rollDef.formula),total:Number(roll.total),result:String(roll.result??roll.total??""),bonus}};
+    const value=Number(roll.total)+bonus;
+    return {value:Number.isFinite(operand.minimum)?Math.max(operand.minimum,value):value,roll:{formula:String(roll.formula??rollDef.formula),total:Number(roll.total),result:String(roll.result??roll.total??""),bonus}};
   }
   async #operand(versionId,operand,context,evaluator){if(operand.kind==="literal")return clone(operand.value);if(operand.kind==="parameter")return evaluator.parameter(operand.id);if(operand.kind==="formula")return await evaluator.formula(operand.id,context);if(operand.kind==="reference")return await this.resolveReference(versionId,operand.reference,context,{staged:evaluator.__staged});throw new Error(`Unsupported Effect operand: ${operand.kind}.`);}
   #writeOutput(state,reference,operation,operand,pool=null){const ds=state.definitionStates?.[reference.objectId];if(!ds)throw new Error(`Definition is not instantiated on RuntimeContainer: ${reference.objectId}.`);const cap=reference.capabilityId,id=reference.outputId;let current;

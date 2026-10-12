@@ -538,7 +538,9 @@
       "DiceMultiplier": "Dice multiplier",
       "RollBonus": "Roll bonus",
       "Availability": "Availability",
-      "AvailabilityHint": "While this Condition is false, the Actions of a Content of this type cannot be used. It can read the Content's fields."
+      "AvailabilityHint": "While this Condition is false, the Actions of a Content of this type cannot be used. It can read the Content's fields.",
+      "RollMinimum": "Lowest result",
+      "NoMinimum": "None"
     },
     "EditorDisplay": {
       "NoneSelected": "None selected",

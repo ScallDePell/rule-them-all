@@ -534,7 +534,9 @@
       "DiceMultiplier": "Multiplicateur de dés",
       "RollBonus": "Bonus au jet",
       "Availability": "Disponibilité",
-      "AvailabilityHint": "Tant que cette Condition est fausse, les Actions d'un contenu de ce type ne peuvent pas être utilisées. Elle peut lire les champs du contenu."
+      "AvailabilityHint": "Tant que cette Condition est fausse, les Actions d'un contenu de ce type ne peuvent pas être utilisées. Elle peut lire les champs du contenu.",
+      "RollMinimum": "Résultat minimal",
+      "NoMinimum": "Aucun"
     },
     "EditorDisplay": {
       "NoneSelected": "Aucune sélection",

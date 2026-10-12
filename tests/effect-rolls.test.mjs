@@ -33,7 +33,10 @@ async function setup(){
   await hurt('damage',{kind:'roll',rollRef:'sword',bonusFormulaRef:'might-bonus'});
   await hurt('critical-damage',{kind:'roll',rollRef:'sword',multiplierFormulaRef:'double',bonusFormulaRef:'might-bonus'});
   await hurt('margin-damage',{kind:'formula',id:'margin'});
+  await api.createFormula(v,{id:'armour',nameKey:'Armour',resultType:'number',expression:{type:'literal',value:-20}});
+  await hurt('armoured-damage',{kind:'roll',rollRef:'sword',bonusFormulaRef:'armour',minimum:0});
   await api.createAction(v,{id:'strike',nameKey:'Strike',testRef:'attack',outcomeMappings:[{outcomeId:'critical',effectRefs:['critical-damage']},{outcomeId:'hit',effectRefs:['damage']},{outcomeId:'miss',effectRefs:[]}]});
+  await api.createAction(v,{id:'graze',nameKey:'Graze',effectRefs:['armoured-damage']});
   await api.createAction(v,{id:'push',nameKey:'Push',testRef:'attack',effectRefs:['margin-damage']});
   await api.publishRuleset(v);
   const adapter=new Adapter(),engine=new RuntimeEngine({configurator:api,adapter,hooks:null});
@@ -63,4 +66,10 @@ test('Dice multiplication keeps modifiers and refuses computed counts', ()=>{
   assert.equal(multiplyDice('2d6kh1 + 1d4 + 3',3),'6d6kh1 + 3d4 + 3');
   assert.throws(()=>multiplyDice('(1+1)d6',2),/computed/);
   assert.throws(()=>multiplyDice('1d6',0),/positive integer/);
+});
+
+test('A roll operand minimum keeps armour from turning damage into healing', async()=>{
+  const {v,engine,vitality}=await setup();
+  const result=await engine.executeAction(v,'graze',context);
+  assert.equal(result.changes[0].operand,0);assert.equal(await vitality(),30);
 });
