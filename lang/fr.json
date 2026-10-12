@@ -155,7 +155,17 @@
       "DrawWeightField": "Chance selon le champ",
       "DrawEvenly": "Vide : chaque option a la même chance",
       "DrawRoll": "Jet pour chaque Definition",
-      "NoChosenDefinition": "Aucune"
+      "NoChosenDefinition": "Aucune",
+      "StepWhen": "Condition requise",
+      "StepRoll": "Jet",
+      "Always": "Toujours",
+      "PointCost": "Coût de chaque point",
+      "OnePerPoint": "1 par point",
+      "RepeatSteps": "Répéter les dernières étapes",
+      "NoRepeat": "Vide : jouées une fois",
+      "RepeatMax": "Nombre de termes au plus",
+      "NoLimit": "Sans limite",
+      "RepeatWhile": "Un autre terme tant que"
     },
     "FamilyColor": {
       "parameters": "Paramètres",
@@ -964,7 +974,7 @@
       },
       "creationSystem": {
         "Summary": "Un système de création décrit les étapes de création d'un personnage.",
-        "Usage": "Chaque étape propose un choix de définitions ou de contenus, ou une relecture finale."
+        "Usage": "Chaque étape propose un choix de définitions ou de contenus, des points à répartir, un jet, ou une relecture finale. Une étape peut dépendre d'une Condition, et les dernières étapes peuvent se répéter terme après terme (carrières, parcours de vie)."
       },
       "progressionSystem": {
         "Summary": "Un système de progression dit comment un personnage évolue : améliorations achetées avec de l'XP ou des points, et paliers atteints à un niveau.",

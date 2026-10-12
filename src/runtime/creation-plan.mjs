@@ -21,13 +21,18 @@ export async function planCreationSystem(ruleset,creationSystemId,answers={}){
 /** CP-15 CreationContext projection: every step is checked on its own, so an answer made
  * invalid by an upstream change stays stored and is reported on its step, never dropped.
  * Step bounds, per-target maxima and option Conditions may be Formulas over the earlier steps:
- * variables.creation.<stepId> = {ids, count, fields} (fields: the first selected Content's data),
- * and variables.option = {id, fields} for an option being checked. */
+ * variables.creation.<stepId> = {ids, count, fields, total?, history?} (fields: the first selected Content's data;
+ * total: a roll step's result; history: every term of a repeated step), and variables.option = {id, fields}
+ * for an option being checked.
+ * A step with a conditionRef only applies while it holds (else it is skipped, its answer kept).
+ * A step with repeat {steps, max, continueConditionRef} closes a block of its last `steps` steps played term after
+ * term (careers, lifepaths): their answers are {terms: [answer, …]}, variables.term = {index, count}, and a new
+ * term needs fewer than max terms so far and the continue Condition over the last term. */
 export async function analyzeCreationSystem(ruleset,creationSystemId,answers={}){
   const system=(ruleset.creationSystems??[]).find(entry=>entry.id===creationSystemId&&entry.enabled!==false);
   if(!system)throw new Error(`Creation System unavailable: ${creationSystemId}.`);
   if(!answers || typeof answers!=='object'||Array.isArray(answers))throw new TypeError('Creation answers must be an object.');
-  const steps=system.steps??[],stepIds=new Set(steps.map(s=>s.id));
+  const steps=system.steps??[],stepIds=new Set(steps.map(s=>s.id)),blocks=creationBlocks(steps);
   for(const id of Object.keys(answers))if(!stepIds.has(id))throw new Error(`Unknown Creation System step: ${id}.`);
   const operations=[],selectionSummary={},initialByDefinition={};
   const setInitial=(definitionId,initial)=>{
@@ -36,18 +41,41 @@ export async function analyzeCreationSystem(ruleset,creationSystemId,answers={})
       throw new Error(`Conflicting initial values for Definition ${definitionId} across selected content.`);
     initialByDefinition[definitionId]=copyJSON(initial);
   };
-  const report=[],creation={},bounds={},candidates={};
+  const creation={},bounds={},candidates={};
   const evaluator=new RuntimeEvaluator({ruleset,resolveReference:()=>{throw new Error("A creation Formula cannot read an Actor: use the earlier steps (variables.creation).");}});
-  const context=extra=>({roles:{},variables:{creation,...extra}});
+  let term=null;
+  const context=extra=>({roles:{},variables:{creation,...(term?{term}:{}),...extra}});
   const number=async(formulaRef,fallback,label,extra={})=>{if(!formulaRef)return fallback;const value=Number(await evaluator.formula(formulaRef,context(extra)));if(!Number.isFinite(value))throw new Error(`${label} is not a number.`);return value;};
-  for(const step of steps){
-    const errors=[],mark=operations.length;
-    try{await analyzeStep(step);}catch(error){errors.push(error.message);operations.length=mark;delete selectionSummary[step.id];}
-    report.push({id:step.id,name:step.name,kind:step.kind,answered:Object.hasOwn(answers,step.id),errors});
+  const byStep=new Map(steps.map(step=>[step.id,{id:step.id,name:step.name,kind:step.kind,answered:Object.hasOwn(answers,step.id),errors:[]}]));
+  const play=async(step,answer,index=null)=>{
+    const mark=operations.length,entry=byStep.get(step.id);
+    try{
+      if(step.conditionRef&&!await evaluator.condition(step.conditionRef,context())){entry.skipped=true;creation[step.id]={ids:[],count:0,fields:{},skipped:true};selectionSummary[step.id]=[];return;}
+      delete entry.skipped;
+      await analyzeStep(step,answer);
+    }catch(error){entry.errors.push(index===null?error.message:`Term ${index+1}: ${error.message}`);operations.length=mark;delete selectionSummary[step.id];}
+  };
+  for(let i=0;i<steps.length;){
+    const block=blocks.find(entry=>entry.start===i);
+    if(!block){await play(steps[i],answers[steps[i].id]);i++;continue;}
+    const members=steps.slice(block.start,block.end+1),termsOf=step=>Array.isArray(answers[step.id]?.terms)?answers[step.id].terms:[];
+    const count=Math.max(1,...members.map(step=>termsOf(step).length)),history=new Map(members.map(step=>[step.id,[]]));
+    for(let index=0;index<count;index++){
+      term={index:index+1,count};
+      if(index>0){
+        const max=block.repeat.max??null,more=(max===null||index<max)&&(!block.repeat.continueConditionRef||await evaluator.condition(block.repeat.continueConditionRef,context()));
+        if(!more){for(const step of members)if(termsOf(step).length>index)byStep.get(step.id).errors.push(`Term ${index+1} cannot start: ${max!==null&&index>=max?`at most ${max} term(s)`:"the earlier term ended the series"}.`);break;}
+      }
+      for(const step of members){await play(step,termsOf(step)[index],index);if(creation[step.id]){history.get(step.id).push(copyJSON(creation[step.id]));creation[step.id]={...creation[step.id],history:copyJSON(history.get(step.id))};}}
+    }
+    for(const step of members)selectionSummary[step.id]=history.get(step.id).flatMap(entry=>entry.ids);
+    term=null;i=block.end+1;
   }
+  const report=steps.map(step=>byStep.get(step.id));
   return {creationSystemId:system.id,selectedByStep:selectionSummary,operations,initialByDefinition,steps:report,complete:report.every(step=>!step.errors.length),bounds,options:candidates};
-  async function analyzeStep(step){
-    const answer=answers[step.id]??{},selected=Array.isArray(answer)?answer:answer?.selectedIds??[];
+  async function analyzeStep(step,given){
+    const answer=given??{},selected=Array.isArray(answer)?answer:answer?.selectedIds??[];
+    if(step.kind==='roll')return analyzeRoll(step,given);
     const min=Math.max(await number(step.minFormulaRef,Number(step.min??0),`Creation step ${step.id} minimum`),step.required===true&&!step.minFormulaRef?1:0),max=await number(step.maxFormulaRef,Number(step.max??1),`Creation step ${step.id} maximum`);
     if(!Number.isInteger(min)||!Number.isInteger(max)||max<min)throw new Error(`Invalid Creation step cardinality: ${step.id} (${min} to ${max}).`);
     bounds[step.id]={min,max};
@@ -85,27 +113,51 @@ export async function analyzeCreationSystem(ruleset,creationSystemId,answers={})
     selectionSummary[step.id]=copyJSON(selected);
     creation[step.id]={ids:copyJSON(selected),count:selected.length,fields:copyJSON(registered.get(selected[0])?.data??{})};
   }
+  /** Roll: a throw made at creation (survival, aging, starting money); later steps read its total. */
+  async function analyzeRoll(step,answer){
+    if(!answer||!Number.isFinite(Number(answer.total))){if(step.required===false){creation[step.id]={ids:[],count:0,fields:{},total:null};selectionSummary[step.id]=[];return;}throw new Error(`Creation step ${step.id} has not been rolled.`);}
+    const total=Number(answer.total);
+    selectionSummary[step.id]=[];
+    creation[step.id]={ids:[],count:total,fields:{},total};
+  }
   /** Allocation: points spread over the step's Definitions, between min and max in total,
-   * at most perTargetMax on each; they add to value.base after every Content is acquired. */
+   * at most perTargetMax on each; they add to value.base after every Content is acquired.
+   * With costFormulaRef, min and max bound the cost instead: each point costs that Formula,
+   * which reads variables.allocation = {definitionId, point} (point: 1 for the first point on it). */
   async function analyzeAllocation(step,answer,min,max){
     const source=step.source??{};
     if(source.collection!=='definitions'||!Array.isArray(source.objectIds))throw new Error(`Allocation step ${step.id} must list Definitions.`);
     const allocations=isRecord(answer?.allocations)?answer.allocations:{},permitted=new Set(source.objectIds);
     const perTarget=await number(step.perTargetMaxFormulaRef,step.perTargetMax??null,`Creation step ${step.id} maximum per target`);
-    let total=0;
+    let total=0,spentCost=0;
     for(const [definitionId,points] of Object.entries(allocations)){
       if(!permitted.has(definitionId)||!(ruleset.definitions??[]).some(d=>d.id===definitionId&&d.enabled!==false))throw new Error(`Allocation step ${step.id} cannot raise ${definitionId}.`);
       if(!Number.isInteger(points)||points<0)throw new Error(`Allocation step ${step.id}: points for ${definitionId} must be a whole number of 0 or more.`);
       if(!answer?.drawn&&perTarget!==null&&points>perTarget)throw new Error(`Allocation step ${step.id}: at most ${perTarget} point(s) on ${definitionId}.`);
       total+=points;
+      if(step.costFormulaRef){
+        if(points>1000)throw new Error(`Allocation step ${step.id}: too many points on ${definitionId}.`);
+        for(let point=1;point<=points;point++)spentCost+=await number(step.costFormulaRef,1,`Creation step ${step.id} cost`,{allocation:{definitionId,point}});
+      }
     }
+    const budget=step.costFormulaRef?spentCost:total,unit=step.costFormulaRef?'cost':'point(s)';
     // A drawn allocation keeps what the dice gave; only its targets are checked.
-    if(!answer?.drawn&&(total<min||total>max))throw new Error(min===max?`Allocation step ${step.id} requires exactly ${min} point(s), not ${total}.`:`Allocation step ${step.id} requires ${min} to ${max} point(s), not ${total}.`);
+    if(!answer?.drawn&&(budget<min||budget>max))throw new Error(step.costFormulaRef?`Allocation step ${step.id} costs ${budget}, not ${min===max?min:`${min} to ${max}`}.`:min===max?`Allocation step ${step.id} requires exactly ${min} ${unit}, not ${total}.`:`Allocation step ${step.id} requires ${min} to ${max} ${unit}, not ${total}.`);
     const spent=Object.fromEntries(Object.entries(allocations).filter(([,points])=>points>0));
     operations.push({kind:'allocation',stepId:step.id,allocations:copyJSON(spent)});
     selectionSummary[step.id]=Object.keys(spent);
-    creation[step.id]={ids:Object.keys(spent),count:total,fields:{},allocations:copyJSON(spent)};
+    creation[step.id]={ids:Object.keys(spent),count:total,fields:{},allocations:copyJSON(spent),...(step.costFormulaRef?{cost:spentCost}:{})};
   }
+}
+
+/** The repeated blocks of a step list: {start, end, repeat} for each step carrying repeat (its last `steps` steps). */
+export function creationBlocks(steps){
+  return steps.flatMap((step,end)=>step?.repeat?[{start:end-Math.max(1,Number(step.repeat.steps??1))+1,end,repeat:step.repeat}]:[]);
+}
+/** The block a step belongs to, or null. */
+export function creationBlockOf(steps,stepId){
+  const index=steps.findIndex(step=>step.id===stepId);
+  return creationBlocks(steps).find(block=>index>=block.start&&index<=block.end)??null;
 }
 
 /** A random answer for one step, from the options its earlier answers leave (CP-15 draw).
@@ -115,6 +167,11 @@ export async function analyzeCreationSystem(ruleset,creationSystemId,answers={})
 export async function drawCreationStep(ruleset,creationSystemId,answers,stepId,{random=Math.random,roll}={}){
   const system=(ruleset.creationSystems??[]).find(entry=>entry.id===creationSystemId&&entry.enabled!==false),step=system?.steps?.find(entry=>entry.id===stepId);
   if(!step)throw new Error(`Unknown Creation System step: ${stepId}.`);
+  if(step.kind==='roll'){
+    const rollDef=(ruleset.rolls??[]).find(entry=>entry.id===step.rollRef&&entry.enabled!==false);if(!rollDef)throw new Error(`Roll unavailable: ${step.rollRef}.`);
+    const result=await roll(rollDef.formula);
+    return {answer:{total:Number(result.total),result:String(result.result??result.total),drawn:true},rolls:[{formula:rollDef.formula,total:Number(result.total),result:String(result.result??result.total)}]};
+  }
   if(!step.draw)throw new Error(`Creation step ${step.id} is not drawn at random.`);
   const {[stepId]:_current,...others}=answers,analysis=await analyzeCreationSystem(ruleset,creationSystemId,others);
   if(step.kind==='allocation'){

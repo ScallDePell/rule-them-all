@@ -159,7 +159,17 @@
       "DrawWeightField": "Chance from the data field",
       "DrawEvenly": "Empty: every option has the same chance",
       "DrawRoll": "Roll for each Definition",
-      "NoChosenDefinition": "None"
+      "NoChosenDefinition": "None",
+      "StepWhen": "Required condition",
+      "StepRoll": "Roll",
+      "Always": "Always",
+      "PointCost": "Cost of each point",
+      "OnePerPoint": "1 per point",
+      "RepeatSteps": "Repeat the last steps",
+      "NoRepeat": "Empty: played once",
+      "RepeatMax": "Terms at most",
+      "NoLimit": "No limit",
+      "RepeatWhile": "Another term while"
     },
     "FamilyColor": {
       "parameters": "Parameters",
@@ -968,7 +978,7 @@
       },
       "creationSystem": {
         "Summary": "A creation system describes the steps of creating a character.",
-        "Usage": "Each step offers a choice of definitions or contents, or a final review."
+        "Usage": "Each step offers a choice of definitions or contents, points to spread, a roll, or a final review. A step can depend on a Condition, and the last steps can repeat term after term (careers, lifepaths)."
       },
       "progressionSystem": {
         "Summary": "A progression system says how a character grows: advancements bought with XP or points, and milestones reached at a level.",

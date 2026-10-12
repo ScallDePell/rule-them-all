@@ -46,6 +46,7 @@ import {getCreationSources, getCreationSourceDescriptor} from "./creation-source
 import {diagnosticFocusTargets,saveErrorFocusPath} from "./diagnostic-focus.mjs";
 import {buildTestInputContext,syncTestInputSource} from "./test-input-form.mjs";
 import {dieContext,syncDieFaceCounts} from "./die-form.mjs";
+import {CREATION_STEP_KINDS} from "./rule-contracts.mjs";
 import {rollVariantContext,extraRollContext,actionInputContext,tableRowContext,progressionContext} from "./rule-cards-form.mjs";
 import {syncCard} from "./card-form.mjs";
 
@@ -383,14 +384,17 @@ export class ConfiguratorEntryEditor extends ConfiguratorWindow {
 
   #creationStepHTML(step={}){
     const value={id:uid("step"),name:"",kind:"choice",min:1,max:1,...copy(step)};
-    const kinds=renderCreationKindsOptions(["choice","content","allocation","review"],value.kind);
+    const kinds=renderCreationKindsOptions(CREATION_STEP_KINDS,value.kind);
     // Bounds may be Formulas over the earlier steps; options may be filtered by a Condition.
     const pick=(collection,method,kind,selected,noneLabel)=>renderSelectOptions([{id:"",label:noneLabel,colors:RTA_NEUTRAL_COLOR},...this.#renderList(collection,method).map(entry=>({id:entry.id,label:entry.nameKey||entry.id,colors:selectColorsAttribute(this.#optionColors(kind,entry))}))],{selectedValue:selected??"",colorize:true});
     const computed={min:pick("formulas","listFormulas","formula",value.minFormulaRef,uiText("FixedValue","Fixed value")),max:pick("formulas","listFormulas","formula",value.maxFormulaRef,uiText("FixedValue","Fixed value")),
       perTarget:pick("formulas","listFormulas","formula",value.perTargetMaxFormulaRef,uiText("FixedValue","Fixed value")),condition:pick("conditions","listConditions","condition",value.optionConditionRef,uiText("EveryOption","Every option")),
       // A random draw: optional (the player may change it) or final; its weight field or Roll.
       draw:renderSelectOptions([["","DrawNo","Chosen by the player"],["optional","DrawOptional","Drawn, can be changed"],["locked","DrawLocked","Drawn, final"]].map(([id,key,fallback])=>({id,label:uiText(key,fallback),colors:RTA_NEUTRAL_COLOR})),{selectedValue:value.draw?(value.draw.locked?"locked":"optional"):"",colorize:true}),
-      drawRoll:pick("rolls","listRolls","roll",value.draw?.rollRef,"—")};
+      drawRoll:pick("rolls","listRolls","roll",value.draw?.rollRef,"—"),
+      // Applies when a Condition holds; a roll step's Roll; an allocation's cost per point; another term while a Condition holds.
+      when:pick("conditions","listConditions","condition",value.conditionRef,uiText("Always","Always")),roll:pick("rolls","listRolls","roll",value.rollRef,"—"),
+      cost:pick("formulas","listFormulas","formula",value.costFormulaRef,uiText("OnePerPoint","1 per point")),repeatWhile:pick("conditions","listConditions","condition",value.repeat?.continueConditionRef,uiText("Always","Always"))};
     const source=value.source??{};
     const sourceFamily=String(source.collection??"");
     const selectedIds=Array.isArray(source.objectIds)?source.objectIds:[];
@@ -402,8 +406,10 @@ export class ConfiguratorEntryEditor extends ConfiguratorWindow {
 
   /** Rows that only make sense for some step kinds follow the kind select. */
   #syncCreationKind(target){
-    if(!target?.matches?.('[data-step-prop="kind"], [data-step-prop="draw"]'))return;
-    const step=target.closest("[data-creation-step]"),kind=step?.querySelector('[data-step-prop="kind"]')?.value,drawn=Boolean(step?.querySelector('[data-step-prop="draw"]')?.value);
+    if(!target?.matches?.('[data-step-prop="kind"], [data-step-prop="draw"], [data-step-prop="repeatSteps"]'))return;
+    const step=target.closest("[data-creation-step]");
+    for(const row of step?.querySelectorAll("[data-step-repeat-only]")??[])row.hidden=!step.querySelector('[data-step-prop="repeatSteps"]')?.value;
+    const kind=step?.querySelector('[data-step-prop="kind"]')?.value,drawn=Boolean(step?.querySelector('[data-step-prop="draw"]')?.value);
     // Draw settings show only once the step is drawn.
     for(const row of step?.querySelectorAll("[data-step-kind-only]")??[])row.hidden=!row.dataset.stepKindOnly.split(" ").includes(kind)||(row.dataset.stepDrawOnly!==undefined&&!drawn);
   }

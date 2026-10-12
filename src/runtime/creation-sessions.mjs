@@ -1,7 +1,7 @@
 import {MODULE_ID} from "../core/module-contract.mjs";
 import {copyJSON,isRecord} from "../configurator/configurator-schema.mjs";
 import {resolveRuntimeRuleset} from "./runtime-contracts.mjs";
-import {analyzeCreationSystem,drawCreationStep} from "./creation-plan.mjs";
+import {analyzeCreationSystem,drawCreationStep,creationBlockOf} from "./creation-plan.mjs";
 
 /** CP-15: a CreationSession keeps a player's creation decisions until the character exists.
  * It can be left and resumed; finalizing builds the character in one go and only then
@@ -49,31 +49,53 @@ export class CreationSessions{
     const system=(this.#ruleset(versionId).creationSystems??[]).find(entry=>entry.id===creationSystemId&&entry.enabled!==false);
     if(!system)throw new Error(`Creation System unavailable: ${creationSystemId}.`);
     const at=this.now(),session={id:newId(),creationSystemId,rulesetVersionId:versionId,targetContainerKind,ownerUserId:this.userId(),status:"draft",currentStepId:system.steps?.[0]?.id??null,
-      answers:{},selectedRefs:{},allocations:{},rolls:{},notes:copyJSON(notes),revision:0,createdAt:at,updatedAt:at,validationState:null,result:null};
+      currentTerm:0,answers:{},selectedRefs:{},allocations:{},rolls:{},notes:copyJSON(notes),revision:0,createdAt:at,updatedAt:at,validationState:null,result:null};
     return this.#save(session);
   }
   list(){return this.store.list(this.userId());}
-  /** Record one step's answer and move to the next step. Other answers are kept as they are. */
-  async answer(id,stepId,answer,{revision=null}={}){
+  /** Record one step's answer and move to the next step. Other answers are kept as they are.
+   * term: which term of a repeated step (from 0; the session's current term by default). */
+  async answer(id,stepId,answer,{revision=null,term=null}={}){
     const session=await this.#load(id,{revision});
     const steps=this.#steps(session);if(!steps.some(step=>step.id===stepId))throw new Error(`Unknown Creation System step: ${stepId}.`);
     if(!(Array.isArray(answer)||isRecord(answer)))throw new TypeError("A creation answer is a list of ids or an object.");
-    if(this.#locked(session,steps.find(step=>step.id===stepId)))throw new Error(`Creation step ${stepId} was drawn and cannot be changed.`);
-    session.answers[stepId]=copyJSON(answer);delete session.rolls[stepId];
-    const index=steps.findIndex(step=>step.id===stepId);session.currentStepId=steps[index+1]?.id??stepId;
+    const at=this.#term(session,steps,stepId,term);
+    if(this.#locked(session,steps.find(step=>step.id===stepId),at))throw new Error(`Creation step ${stepId} was drawn and cannot be changed.`);
+    this.#put(session,stepId,at,copyJSON(answer),null);
+    this.#advance(session,steps,stepId);
     return this.#save(session);
   }
+  /** Start another term of the repeated block that `stepId` belongs to: back to its first step. Whether the
+   * term is allowed (its maximum, its continue Condition) is checked with the answers, on the block's steps. */
+  async nextTerm(id,stepId,{revision=null}={}){
+    const session=await this.#load(id,{revision}),steps=this.#steps(session),block=creationBlockOf(steps,stepId);
+    if(!block)throw new Error(`Creation step ${stepId} is not repeated.`);
+    session.currentTerm=Math.max(0,...steps.slice(block.start,block.end+1).map(step=>(session.answers[step.id]?.terms??[]).length));
+    session.currentStepId=steps[block.start].id;
+    return this.#save(session);
+  }
+  /** The term an answer goes to: none outside a repeated block. */
+  #term(session,steps,stepId,term){return creationBlockOf(steps,stepId)?Number(term??session.currentTerm??0):null;}
+  #put(session,stepId,term,answer,rolls){
+    if(term===null){session.answers[stepId]=answer;if(rolls)session.rolls[stepId]=rolls;else delete session.rolls[stepId];return;}
+    const terms=[...(session.answers[stepId]?.terms??[])];while(terms.length<term)terms.push(null);terms[term]=answer;session.answers[stepId]={terms};
+    const kept=[...(session.rolls[stepId]?.terms??[])];while(kept.length<term)kept.push(null);kept[term]=rolls;session.rolls[stepId]={terms:kept};
+  }
+  /** Next step; the last step of a block goes on after the block, and another term starts with nextTerm. */
+  #advance(session,steps,stepId){const index=steps.findIndex(step=>step.id===stepId);session.currentStepId=steps[index+1]?.id??stepId;}
   /** Draw a step at random (its draw settings); the answer is marked drawn and its dice kept under session.rolls. */
-  async draw(id,stepId,{revision=null}={}){
+  async draw(id,stepId,{revision=null,term=null}={}){
     const session=await this.#load(id,{revision}),steps=this.#steps(session),step=steps.find(entry=>entry.id===stepId);
     if(!step)throw new Error(`Unknown Creation System step: ${stepId}.`);
-    if(this.#locked(session,step))throw new Error(`Creation step ${stepId} was already drawn.`);
+    const at=this.#term(session,steps,stepId,term);
+    if(this.#locked(session,step,at))throw new Error(`Creation step ${stepId} was already drawn.`);
     const {answer,rolls}=await drawCreationStep(this.#ruleset(session.rulesetVersionId),session.creationSystemId,session.answers,stepId,{random:this.random,roll:this.roll});
-    session.answers[stepId]=answer;session.rolls[stepId]=rolls;
-    const index=steps.findIndex(entry=>entry.id===stepId);session.currentStepId=steps[index+1]?.id??stepId;
+    this.#put(session,stepId,at,answer,rolls);
+    this.#advance(session,steps,stepId);
     return this.#save(session);
   }
-  #locked(session,step){return step?.draw?.locked===true&&session.answers[step.id]?.drawn===true;}
+  /** A roll step is thrown once; a drawn step marked locked keeps its draw. */
+  #locked(session,step,term=null){const answer=term===null?session.answers[step?.id]:session.answers[step?.id]?.terms?.[term];return (step?.kind==="roll"||step?.draw?.locked===true)&&answer?.drawn===true;}
   async goTo(id,stepId,{revision=null}={}){
     const session=await this.#load(id,{revision});
     if(!this.#steps(session).some(step=>step.id===stepId))throw new Error(`Unknown Creation System step: ${stepId}.`);

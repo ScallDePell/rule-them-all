@@ -432,10 +432,12 @@ export function prepareTable(data,options={}){
   for(let i=1;i<sorted.length;i++)if((sorted[i].min??-Infinity)<=(sorted[i-1].max??Infinity))throw new Error(`Table rows ${sorted[i-1].id} and ${sorted[i].id} overlap.`);
   return x;
 }
+export const CREATION_STEP_KINDS=Object.freeze(['choice','content','allocation','roll','review']);
 export function prepareCreationSystem(data,options={}){
-  const x=prepareNamedGeneric(data,'CreationSystem',{steps:[]},options);arr(x.steps,'CreationSystem.steps');x.steps=x.steps.map((step,i)=>{if(!isRecord(step)||!nonempty(step.id))throw new Error(`CreationSystem.steps[${i}] requires id.`);need(nonempty(step.name),`CreationSystem.steps[${i}] requires name.`,options);const n={kind:'choice',required:true,options:[],min:0,max:1,...copyJSON(step)};if(!['choice','allocation','content','review'].includes(n.kind))throw new Error(`CreationSystem.steps[${i}].kind is invalid.`);arr(n.options,`CreationSystem.steps[${i}].options`);
+  const x=prepareNamedGeneric(data,'CreationSystem',{steps:[]},options);arr(x.steps,'CreationSystem.steps');x.steps=x.steps.map((step,i)=>{if(!isRecord(step)||!nonempty(step.id))throw new Error(`CreationSystem.steps[${i}] requires id.`);need(nonempty(step.name),`CreationSystem.steps[${i}] requires name.`,options);const n={kind:'choice',required:true,options:[],min:0,max:1,...copyJSON(step)};if(!CREATION_STEP_KINDS.includes(n.kind))throw new Error(`CreationSystem.steps[${i}].kind is invalid.`);arr(n.options,`CreationSystem.steps[${i}].options`);
     // Computed bounds and option filter (Formulas and a Condition over the earlier steps); allocation: points per Definition.
-    for(const key of ['minFormulaRef','maxFormulaRef','perTargetMaxFormulaRef','optionConditionRef'])if(n[key]===null||n[key]==='')delete n[key];else if(n[key]!==undefined&&!nonempty(n[key]))throw new Error(`CreationSystem.steps[${i}].${key} must be an id.`);
+    // conditionRef: the step only applies while it holds; costFormulaRef: an allocation's cost per point; rollRef: a roll step's Roll.
+    for(const key of ['minFormulaRef','maxFormulaRef','perTargetMaxFormulaRef','optionConditionRef','conditionRef','costFormulaRef','rollRef'])if(n[key]===null||n[key]==='')delete n[key];else if(n[key]!==undefined&&!nonempty(n[key]))throw new Error(`CreationSystem.steps[${i}].${key} must be an id.`);
     // draw: the step can be drawn at random (choice/content: by an option data field as weight, or evenly;
     // allocation: a Roll per Definition); locked: the drawn answer cannot be changed.
     if(n.draw===undefined||n.draw===null)delete n.draw;else{
@@ -444,10 +446,27 @@ export function prepareCreationSystem(data,options={}){
       bool(n.draw.locked,`CreationSystem.steps[${i}].draw.locked`);
       for(const key of ['weightField','rollRef'])if(n.draw[key]===''||n.draw[key]===null)delete n.draw[key];else if(n.draw[key]!==undefined&&!nonempty(n.draw[key]))throw new Error(`CreationSystem.steps[${i}].draw.${key} must be a name.`);
       if(n.kind==='allocation')need(Boolean(n.draw.rollRef),`CreationSystem.steps[${i}]: a drawn allocation needs a Roll.`,options);
-      if(n.kind==='review')throw new Error(`CreationSystem.steps[${i}]: a review step cannot be drawn.`);
+      if(['review','roll'].includes(n.kind))throw new Error(`CreationSystem.steps[${i}]: a ${n.kind} step has no draw settings.`);
+    }
+    if(n.kind==='roll')need(Boolean(n.rollRef),`CreationSystem.steps[${i}]: a roll step needs a Roll.`,options);else delete n.rollRef;
+    if(n.kind!=='allocation')delete n.costFormulaRef;
+    // repeat: this step closes a block of its last `steps` steps played term after term.
+    if(n.repeat===undefined||n.repeat===null)delete n.repeat;else{
+      const label=`CreationSystem.steps[${i}].repeat`;
+      if(!isRecord(n.repeat))throw new Error(`${label} must be an object.`);
+      n.repeat={steps:1,max:null,continueConditionRef:null,...n.repeat};
+      for(const key of Object.keys(n.repeat))if(!['steps','max','continueConditionRef'].includes(key))throw new Error(`${label} contains unsupported field: ${key}.`);
+      if(!Number.isSafeInteger(n.repeat.steps)||n.repeat.steps<1||n.repeat.steps>i+1)throw new Error(`${label}.steps must be between 1 and ${i+1}.`);
+      if(n.repeat.max!==null&&!(Number.isSafeInteger(n.repeat.max)&&n.repeat.max>=1))throw new Error(`${label}.max must be a whole number of 1 or more, or empty.`);
+      if(n.repeat.continueConditionRef==='')n.repeat.continueConditionRef=null;
+      if(n.repeat.continueConditionRef!==null&&!nonempty(n.repeat.continueConditionRef))throw new Error(`${label}.continueConditionRef must be an id.`);
     }
     if(n.perTargetMax===null||n.perTargetMax==='')delete n.perTargetMax;else if(n.perTargetMax!==undefined&&!(Number.isSafeInteger(n.perTargetMax)&&n.perTargetMax>=0))throw new Error(`CreationSystem.steps[${i}].perTargetMax must be a whole number of 0 or more.`);
-    return n;});return x;
+    return n;});
+  // Repeated blocks do not overlap: a step belongs to one series of terms at most.
+  let reach=-1;
+  for(const [end,step] of x.steps.entries())if(step.repeat){const start=end-step.repeat.steps+1;if(start<=reach)throw new Error(`CreationSystem: the repeated steps ending at ${step.id} overlap another repeated block.`);reach=end;}
+  return x;
 }
 /** Progression: advancements bought with a currency (XP, points) and milestones reached by a Condition (levels).
  * An advancement raises value.base of one of its Definitions by step; its cost Formula reads

@@ -54,6 +54,6 @@ test('A locked draw cannot be redrawn nor replaced by a choice; saving checks th
   await assert.rejects(sessions.answer(session.id,'species',['dwarf']),/cannot be changed/);
   const {prepareCreationSystem}=await import('../src/configurator/rule-contracts.mjs');
   assert.throws(()=>prepareCreationSystem({id:'c',nameKey:'C',steps:[{id:'s',name:'S',kind:'allocation',draw:{}}]},{strict:true}),/needs a Roll/);
-  assert.throws(()=>prepareCreationSystem({id:'c',nameKey:'C',steps:[{id:'s',name:'S',kind:'review',draw:{}}]}),/review step cannot be drawn/);
+  assert.throws(()=>prepareCreationSystem({id:'c',nameKey:'C',steps:[{id:'s',name:'S',kind:'review',draw:{}}]}),/review step has no draw settings/);
   assert.throws(()=>prepareCreationSystem({id:'c',nameKey:'C',steps:[{id:'s',name:'S',draw:{dice:'1d6'}}]}),/unsupported field: dice/);
 });

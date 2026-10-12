@@ -120,6 +120,9 @@ export class DependencyIndex{
     for(const [i,system] of (ruleset.creationSystems??[]).entries())for(const [j,step] of (system?.steps??[]).entries()){
       for(const key of ['minFormulaRef','maxFormulaRef','perTargetMaxFormulaRef'])if(step?.[key])pushRef(this.#edges,{objectKind:'creationSystem',objectId:system.id},{objectKind:'formula',objectId:step[key]},'creationFormula',`creationSystems[${i}].steps[${j}].${key}`);
       if(step?.draw?.rollRef)pushRef(this.#edges,{objectKind:'creationSystem',objectId:system.id},{objectKind:'roll',objectId:step.draw.rollRef},'creationRoll',`creationSystems[${i}].steps[${j}].draw.rollRef`);
+      if(step?.costFormulaRef)pushRef(this.#edges,{objectKind:'creationSystem',objectId:system.id},{objectKind:'formula',objectId:step.costFormulaRef},'creationFormula',`creationSystems[${i}].steps[${j}].costFormulaRef`);
+      if(step?.rollRef)pushRef(this.#edges,{objectKind:'creationSystem',objectId:system.id},{objectKind:'roll',objectId:step.rollRef},'creationRoll',`creationSystems[${i}].steps[${j}].rollRef`);
+      for(const [key,id] of [['conditionRef',step?.conditionRef],['repeat.continueConditionRef',step?.repeat?.continueConditionRef]])if(id)pushRef(this.#edges,{objectKind:'creationSystem',objectId:system.id},{objectKind:'condition',objectId:id},'creationCondition',`creationSystems[${i}].steps[${j}].${key}`);
       if(step?.optionConditionRef)pushRef(this.#edges,{objectKind:'creationSystem',objectId:system.id},{objectKind:'condition',objectId:step.optionConditionRef},'creationCondition',`creationSystems[${i}].steps[${j}].optionConditionRef`);
     }
     for(const holder of ['world','combat'])for(const [k,id] of (ruleset.sharedDefinitions?.[holder]??[]).entries())pushRef(this.#edges,{objectKind:'ruleset',objectId:ruleset.id},{objectKind:'definition',objectId:id},'rulesetShared',`sharedDefinitions.${holder}[${k}]`);

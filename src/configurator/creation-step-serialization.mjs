@@ -12,14 +12,26 @@ export function collectCreationSteps(rows,{sources=[],uid}={}){
     const objectIds=[...row.querySelectorAll('[data-step-prop="sourceObjects"] [data-step-source-object]:checked')].map(input=>input.value);
     const next={...original,id:original.id||uid('step'),name,kind:row.querySelector('[data-step-prop="kind"]')?.value??'choice',required:min>0,min,max};
     // Optional computed values: an empty select or field keeps none.
-    for(const key of ['minFormulaRef','maxFormulaRef','perTargetMaxFormulaRef','optionConditionRef']){const id=String(row.querySelector(`[data-step-prop="${key}"]`)?.value??'').trim();if(id)next[key]=id;else delete next[key];}
+    for(const key of ['minFormulaRef','maxFormulaRef','perTargetMaxFormulaRef','optionConditionRef','conditionRef','costFormulaRef','rollRef']){const id=String(row.querySelector(`[data-step-prop="${key}"]`)?.value??'').trim();if(id)next[key]=id;else delete next[key];}
     const perTarget=String(row.querySelector('[data-step-prop="perTargetMax"]')?.value??'').trim();
     if(perTarget===''||next.kind!=='allocation')delete next.perTargetMax;else{const value=Number(perTarget);if(!Number.isInteger(value)||value<0)throw new Error(`Invalid points per target for step ${name}.`);next.perTargetMax=value;}
-    if(next.kind!=='allocation')delete next.perTargetMaxFormulaRef;
+    if(next.kind!=='allocation'){delete next.perTargetMaxFormulaRef;delete next.costFormulaRef;}
+    if(next.kind!=='roll')delete next.rollRef;
+    // A roll step is thrown once and has no bounds.
+    if(next.kind==='roll'){next.min=1;next.max=1;next.required=true;}
+    // Repeat: this step closes a block of its last N steps, played term after term.
+    const repeatSteps=String(row.querySelector('[data-step-prop="repeatSteps"]')?.value??'').trim();
+    if(!repeatSteps)delete next.repeat;
+    else{
+      const steps=Number(repeatSteps),maxText=String(row.querySelector('[data-step-prop="repeatMax"]')?.value??'').trim(),max=maxText===''?null:Number(maxText);
+      if(!Number.isInteger(steps)||steps<1)throw new Error(`Invalid number of repeated steps for step ${name}.`);
+      if(max!==null&&(!Number.isInteger(max)||max<1))throw new Error(`Invalid number of terms for step ${name}.`);
+      next.repeat={steps,max,continueConditionRef:String(row.querySelector('[data-step-prop="repeatContinueConditionRef"]')?.value??'').trim()||null};
+    }
     if(!['choice','content'].includes(next.kind))delete next.optionConditionRef;
     // Random draw: none, optional or final; options weighted by a data field, or an allocation rolled per Definition.
     const draw=String(row.querySelector('[data-step-prop="draw"]')?.value??'');
-    if(!draw||next.kind==='review')delete next.draw;
+    if(!draw||['review','roll'].includes(next.kind))delete next.draw;
     else{
       const weightField=String(row.querySelector('[data-step-prop="drawWeightField"]')?.value??'').trim(),rollRef=String(row.querySelector('[data-step-prop="drawRollRef"]')?.value??'').trim();
       next.draw={locked:draw==='locked',...(next.kind!=='allocation'&&weightField?{weightField}:{}),...(next.kind==='allocation'&&rollRef?{rollRef}:{})};
