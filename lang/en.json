@@ -699,7 +699,12 @@
           "rollFormula": "Enter a dice formula."
         }
       },
-      "Diagnostics": "Diagnostics"
+      "Diagnostics": "Diagnostics",
+      "ChosenDefinition": "Definition tested",
+      "NoDefinition": "None",
+      "UsedContent": "Content used",
+      "NoContent": "None",
+      "Unavailable": "unavailable"
     },
     "TestInput": {
       "Title": "Inputs",

@@ -695,7 +695,12 @@
           "rollFormula": "Saisissez une formule de dés."
         }
       },
-      "Diagnostics": "Diagnostic"
+      "Diagnostics": "Diagnostic",
+      "ChosenDefinition": "Définition testée",
+      "NoDefinition": "Aucune",
+      "UsedContent": "Contenu utilisé",
+      "NoContent": "Aucun",
+      "Unavailable": "indisponible"
     },
     "TestInput": {
       "Title": "Entrées",

@@ -81,7 +81,7 @@ export class ConfiguratorApp extends ConfiguratorWindow {
   #restoreScroll = false;
   #runtimeResult = null;
   // null: not chosen yet, defaulted on render; "": cleared by the user, kept cleared.
-  #runtimeSelection = {source:null,target:null,actionId:null,formulaId:null,conditionId:null,testId:null,eventTypeId:null,rollFormula:"",sourceType:"",targetType:"",actorRole:"source",tool:"test"};
+  #runtimeSelection = {source:null,target:null,actionId:null,formulaId:null,conditionId:null,testId:null,eventTypeId:null,rollFormula:"",sourceType:"",targetType:"",actorRole:"source",tool:"test",definitionId:"",contentKey:""};
   entryEditor;
 
   async #api() { return game.ruleThemAll?.configurator ?? await game.ruleThemAll?.configuratorReady; }
@@ -301,6 +301,15 @@ export class ConfiguratorApp extends ConfiguratorWindow {
       try{const state=await game.ruleThemAll.runtimeLab.getContainerState(selectedActorRef,{rulesetVersionId:this.#selected});const byId=new Map((ruleset.definitions??[]).map(d=>[d.id,d]));runtimeStateCards=Object.values(state.definitionStates??{}).map(ds=>{const d=byId.get(ds.definitionId);const cap=ds.capabilityStates??{};return {id:ds.definitionId,name:d?localize(api,this.#selected,d.nameKey):ds.definitionId,hasValue:!!cap.value,base:cap.value?.base??0,pools:Object.entries(cap.pool??{}).map(([slotId,pool],_,all)=>({slotId,label:(d?.slots?.pool??[]).find(slot=>slot.id===slotId)?.name??(all.length>1?slotId:""),current:pool?.current??0})),hasState:!!cap.state,active:Boolean(cap.state?.active)};}).sort((a,b)=>a.name.localeCompare(b.name));}catch(error){runtimeStateError=game.i18n?.format?.("RTA.Lab.StateUnreadable",{error:error?.message??String(error)})??String(error);}
     }
     const runtimeTool=this.#runtimeSelection.tool||"test";
+    // A parameterised Test reads the Definition it is asked for (variables.definition); an Action can be used from an owned Content (a weapon).
+    const labTestId=runtimeTool==="action"?(ruleset?.actions??[]).find(x=>x.id===this.#runtimeSelection.actionId)?.testRef:this.#runtimeSelection.testId;
+    const labAsksDefinition=["test","action"].includes(runtimeTool)&&((ruleset?.tests??[]).find(x=>x.id===labTestId)?.inputBindings??[]).some(input=>input.valueType==="reference");
+    const runtimeDefinitionChoices=labAsksDefinition?[{id:"",name:label("RTA.Lab.NoDefinition"),selected:!this.#runtimeSelection.definitionId},...(ruleset.definitions??[]).filter(x=>x.enabled!==false).map(x=>({id:x.id,name:localize(api,this.#selected,x.nameKey),colors:runtimeColors("definition",x),selected:x.id===this.#runtimeSelection.definitionId}))]:[];
+    let runtimeContentChoices=[];
+    if(ruleset&&this.#view==="runtimeLab"&&["test","action"].includes(runtimeTool)&&this.#runtimeSelection.source){
+      try{const owned=await game.ruleThemAll.runtimeLab.listOwnedContents(this.#selected,this.#runtimeSelection.source);const names=new Map((ruleset.contentTemplates??[]).map(t=>[t.id,localize(api,this.#selected,t.nameKey)]));
+        if(owned.length)runtimeContentChoices=[{id:"",name:label("RTA.Lab.NoContent"),selected:!this.#runtimeSelection.contentKey},...owned.map(row=>({id:row.key,name:`${names.get(row.templateId)??row.templateId}${row.available?"":` (${label("RTA.Lab.Unavailable")})`}`,selected:row.key===this.#runtimeSelection.contentKey}))];}catch{runtimeContentChoices=[];}
+    }
     const runtimeModes={isTest:runtimeTool==="test",isAction:runtimeTool==="action",isFormula:runtimeTool==="formula",isCondition:runtimeTool==="condition",isEvent:runtimeTool==="event",isRoll:runtimeTool==="roll",editSource:this.#runtimeSelection.actorRole!=="target",editTarget:this.#runtimeSelection.actorRole==="target"};
     const runtimeLists={test:runtimeTests,action:runtimeActions,formula:runtimeFormulas,condition:runtimeConditions,event:runtimeEvents};
     const runtimeGuide=label(runtimeTool==="roll"||runtimeLists[runtimeTool]?.length?`RTA.Lab.Guide.${runtimeTool}`:`RTA.Lab.Empty.${runtimeTool}`);
@@ -309,7 +318,7 @@ export class ConfiguratorApp extends ConfiguratorWindow {
       error:this.#error,displayLines:this.#displayMode==="lines",displayTiles:this.#displayMode==="tiles",isWorkspace:!!ruleset,isRulesets:!ruleset,view:this.#view,rulesets,navigation,navGroups,currentNavGroup,definitionTypes,contentTypes,
       selectedRuleset:ruleset,selectedRecord:record,rulesetAccent:rulesetColor(ruleset),canOverrideCollection,currentCollection,collectionAccent,collectionCustomAccent,canEditRuleset:record?.status!=="validated",selectedRulesetName:ruleset?localize(api,this.#selected,ruleset.nameKey):"",
       isGeneral:!!ruleset&&this.#view==="general",isCollection:!!ruleset&&Boolean(currentKind),isContentFamily:currentKind==="contentTemplate",isDependencies:!!ruleset&&this.#view==="dependencies",isRuntimeLab:!!ruleset&&this.#view==="runtimeLab",isContentTypes,isContentTemplates,isContentLibraries,
-      currentTitle,currentKind,currentType,canReorder:Boolean(record&&record.status!=="validated"&&currentKind),cards:filteredCards,availableTags,availableCategories,hasFacets:availableTags.length>0||availableCategories.length>0,hasActiveFilters:activeTagIds.size>0||activeCategoryIds.size>0,dependencyGroups:dependencyVisibleGroups,dependencySelected,dependencyGraph,dependencyStats,dependencyAvailableTags,dependencyActiveTagCount:dependencyActiveTags.size,dependencyUnresolvedOnly,actors,runtimeActions,runtimeFormulas,runtimeConditions,runtimeTests,runtimeEvents,runtimeResult:this.#runtimeResult,runtimeStateCards,runtimeSelection:this.#runtimeSelection,runtimeHasActorSubtypes:availableDocumentTypes("Actor").length>1,runtimeActorTypeOptions:availableDocumentTypes("Actor").map(id=>({id,sourceSelected:id===this.#runtimeSelection.sourceType,targetSelected:id===this.#runtimeSelection.targetType})),runtimeTool,runtimeModes,runtimeGuide,runtimeReady,runtimeStateError,runtimeActorNames,
+      currentTitle,currentKind,currentType,canReorder:Boolean(record&&record.status!=="validated"&&currentKind),cards:filteredCards,availableTags,availableCategories,hasFacets:availableTags.length>0||availableCategories.length>0,hasActiveFilters:activeTagIds.size>0||activeCategoryIds.size>0,dependencyGroups:dependencyVisibleGroups,dependencySelected,dependencyGraph,dependencyStats,dependencyAvailableTags,dependencyActiveTagCount:dependencyActiveTags.size,dependencyUnresolvedOnly,actors,runtimeActions,runtimeFormulas,runtimeConditions,runtimeTests,runtimeEvents,runtimeDefinitionChoices,runtimeContentChoices,runtimeResult:this.#runtimeResult,runtimeStateCards,runtimeSelection:this.#runtimeSelection,runtimeHasActorSubtypes:availableDocumentTypes("Actor").length>1,runtimeActorTypeOptions:availableDocumentTypes("Actor").map(id=>({id,sourceSelected:id===this.#runtimeSelection.sourceType,targetSelected:id===this.#runtimeSelection.targetType})),runtimeTool,runtimeModes,runtimeGuide,runtimeReady,runtimeStateError,runtimeActorNames,
       publishReadiness:this.#view==='general'&&record?.status==='draft'?this.#publishReadiness(api,ruleset):null,
       recipes:this.#view==='general'&&record?recipeCards():null,
       lifecycle:record?{isValidated:record.status==="validated",isReady:record.status==="ready",isDraft:record.status==="draft",canMutate:record.status!=="validated",canCreateVersion:record.status==="validated",canActivate:Boolean(record.publishedSnapshot),isActive:record.versionId===activeId,statusLabel:statusLabel(record.status)}:null,
@@ -616,7 +625,9 @@ export class ConfiguratorApp extends ConfiguratorWindow {
     return this.render(false);
   }
 
-  #runtimeContext(){const source=this.#runtimeSelection.source,target=this.#runtimeSelection.target||source;return {roles:{self:source,source,target,subject:target,owner:source},defaultRole:"self",userContext:{userId:game.user?.id??null,isGM:Boolean(game.user?.isGM)}};}
+  #runtimeContext(){const source=this.#runtimeSelection.source,target=this.#runtimeSelection.target||source,{definitionId,contentKey}=this.#runtimeSelection;
+    return {roles:{self:source,source,target,subject:target,owner:source},defaultRole:"self",userContext:{userId:game.user?.id??null,isGM:Boolean(game.user?.isGM)},
+      ...(definitionId?{variables:{definition:{objectKind:"definition",objectId:definitionId}}}:{}),...(contentKey?{content:{key:contentKey,role:"self"}}:{})};}
 
   async #import(event) {
     const file=event.currentTarget.files?.[0]; if(!file)return;
