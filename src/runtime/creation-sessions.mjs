@@ -102,10 +102,13 @@ export class CreationSessions{
     session.currentStepId=stepId;return this.#save(session);
   }
   async abandon(id,{revision=null}={}){const session=await this.#load(id,{revision});session.status="abandoned";return this.#save(session);}
-  /** CreationContext: the session with each step's state, recomputed from the current Ruleset. */
+  /** CreationContext: the session with each step's state, recomputed from the current Ruleset: its answer, errors,
+   * whether its Condition skips it, its bounds (min, max), the options left by the earlier answers, and whether
+   * it is repeated by terms (repeated, endsBlock). */
   async context(id){
     const session=await this.#load(id,{draft:false}),analysis=await this.#validate(session),byId=new Map(analysis.steps.map(step=>[step.id,step]));
-    return {session,complete:analysis.complete,steps:this.#steps(session).map(step=>({...copyJSON(step),answer:copyJSON(session.answers[step.id]??null),current:step.id===session.currentStepId,valid:!byId.get(step.id)?.errors.length,errors:byId.get(step.id)?.errors??[]})),
+    return {session,complete:analysis.complete,steps:this.#steps(session).map(step=>({...copyJSON(step),answer:copyJSON(session.answers[step.id]??null),current:step.id===session.currentStepId,valid:!byId.get(step.id)?.errors.length,errors:byId.get(step.id)?.errors??[],skipped:byId.get(step.id)?.skipped===true,
+      bounds:copyJSON(analysis.bounds[step.id]??null),options:copyJSON(analysis.options[step.id]??null),...this.#blockOf(session,step.id)})),
       preview:analysis.complete?{operations:copyJSON(analysis.operations),initialByDefinition:copyJSON(analysis.initialByDefinition)}:null};
   }
   /** Build the character; the session becomes completed only after that succeeded. */
@@ -117,5 +120,7 @@ export class CreationSessions{
     done.status="completed";done.result={actorUuid:actor?.uuid??null,completedAt:run?.completedAt??this.now()};
     return {session:await this.#save(done),actor,run};
   }
+  /** repeated: the step belongs to a block played term after term; endsBlock: it is the block's last step. */
+  #blockOf(session,stepId){const steps=this.#steps(session),block=creationBlockOf(steps,stepId);return {repeated:Boolean(block),endsBlock:Boolean(block)&&steps[block.end]?.id===stepId};}
   #steps(session){return (this.#ruleset(session.rulesetVersionId).creationSystems??[]).find(entry=>entry.id===session.creationSystemId)?.steps??[];}
 }

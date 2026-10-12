@@ -23,6 +23,7 @@
     "styles/runtime-lab.css",
     "styles/sheet-builder.css",
     "styles/sheet.css",
+    "styles/creation.css",
     "styles/editor.css",
     "styles/choices.css",
     "styles/rule-builder.css",

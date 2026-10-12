@@ -282,7 +282,7 @@
 /* ONE checkbox geometry for the whole module. Foundry draws the box and the
    check mark as ::before/::after icons of --checkbox-size: the input must be
    exactly that size, otherwise the two icon layers drift apart. */
-:is(.rta-config-entry, .rta-configurator, .rta-select__panel, .rta-sheet) input[type="checkbox"] {
+:is(.rta-config-entry, .rta-configurator, .rta-select__panel, .rta-sheet, .rta-creation) input[type="checkbox"] {
   inline-size: var(--checkbox-size, 1.25rem);
   block-size: var(--checkbox-size, 1.25rem);
   flex: 0 0 auto;

@@ -1,0 +1,243 @@
+/* Rule Them'All — creation.css : Création de personnage en jeu (fenêtre pas à pas).
+   L'ordre de chargement (module.json "styles") fait partie de la cascade.
+   Les étapes à gauche, l'étape en cours à droite ; sous 560 px, les étapes passent au-dessus. */
+.rta-creation {
+  container: rta-creation / inline-size;
+  display: flex;
+  flex-direction: column;
+  gap: var(--rta-gap-block);
+  min-block-size: 100%;
+  color: var(--rta-color-text);
+}
+
+.rta-creation__layout {
+  display: grid;
+  flex: 1;
+  grid-template-columns: minmax(10rem, 14rem) minmax(0, 1fr);
+  gap: var(--rta-gap-block);
+  align-items: start;
+}
+
+.rta-creation__steps {
+  display: flex;
+  flex-direction: column;
+  gap: var(--rta-gap-tight);
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.rta-creation__step {
+  display: flex;
+  align-items: center;
+  justify-content: flex-start;
+  gap: var(--rta-gap-row);
+  inline-size: 100%;
+  border: var(--rta-frame-border) solid transparent;
+  border-radius: var(--rta-radius-control);
+  background: none;
+  text-align: start;
+}
+
+.rta-creation__step[aria-current="step"] {
+  border-color: var(--rta-color-border-highlight);
+  background: var(--rta-color-surface-option-light);
+  font-weight: 600;
+}
+
+.rta-creation__step[data-state="skipped"] {
+  opacity: .6;
+}
+
+.rta-creation__number {
+  display: inline-grid;
+  flex: 0 0 auto;
+  place-items: center;
+  inline-size: 1.5rem;
+  block-size: 1.5rem;
+  border: var(--rta-frame-border) solid var(--rta-color-border-tertiary);
+  border-radius: 50%;
+  font-size: var(--rta-type-sm);
+}
+
+.rta-creation__step[data-state="done"] .rta-creation__number {
+  border-color: var(--rta-color-success);
+  color: var(--rta-color-success);
+}
+
+.rta-creation__step[data-state="error"] .rta-creation__number {
+  border-color: var(--rta-color-danger);
+  color: var(--rta-color-danger);
+}
+
+.rta-creation__step-label {
+  min-inline-size: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.rta-creation__panel,
+.rta-creation__section {
+  display: flex;
+  flex-direction: column;
+  gap: var(--rta-gap-row);
+  padding: var(--rta-frame-pad);
+  border: var(--rta-frame-border) solid var(--rta-color-border-subtle);
+  border-radius: var(--rta-radius-panel);
+  background: var(--rta-color-surface-option-light);
+}
+
+.rta-creation__panel-head {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: var(--rta-gap-row);
+}
+
+.rta-creation__title {
+  margin: 0;
+  border: 0;
+  font-size: var(--rta-type-heading);
+}
+
+.rta-creation__term,
+.rta-creation__hint {
+  margin: 0;
+  color: var(--rta-color-text-secondary);
+}
+
+.rta-creation__options {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(12rem, 1fr));
+  gap: var(--rta-gap-tight) var(--rta-gap-block);
+}
+
+.rta-creation__option {
+  display: flex;
+  align-items: center;
+  gap: var(--rta-gap-tight);
+  min-inline-size: 0;
+}
+
+.rta-creation__option > span {
+  min-inline-size: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.rta-creation__group {
+  display: flex;
+  flex-direction: column;
+  gap: var(--rta-gap-row);
+  margin: 0;
+  padding: var(--rta-frame-pad);
+  border: var(--rta-frame-border) solid var(--rta-color-border-tertiary);
+  border-radius: var(--rta-radius-panel);
+}
+
+.rta-creation__points {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(14rem, 1fr));
+  gap: var(--rta-gap-tight) var(--rta-gap-block);
+}
+
+.rta-creation__point,
+.rta-creation__name,
+.rta-creation__draft {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--rta-gap-row);
+}
+
+.rta-creation__point > input {
+  flex: 0 0 auto;
+  inline-size: 4.5rem;
+  text-align: end;
+}
+
+.rta-creation__name > input {
+  flex: 1;
+}
+
+.rta-creation__roll {
+  margin: 0;
+  font-size: var(--rta-type-heading);
+}
+
+.rta-creation__summary {
+  display: grid;
+  grid-template-columns: minmax(8rem, max-content) minmax(0, 1fr);
+  gap: var(--rta-gap-tight) var(--rta-gap-block);
+  margin: 0;
+}
+
+.rta-creation__summary > dt {
+  color: var(--rta-color-text-secondary);
+}
+
+.rta-creation__summary > dd {
+  margin: 0;
+}
+
+.rta-creation__errors {
+  display: flex;
+  flex-direction: column;
+  gap: var(--rta-gap-tight);
+  margin: 0;
+  padding-inline-start: var(--rta-frame-pad);
+  color: var(--rta-color-danger);
+}
+
+.rta-creation__tools,
+.rta-creation__footer {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--rta-gap-row);
+}
+
+.rta-creation__tools > button,
+.rta-creation__footer > button,
+.rta-creation__draft > button {
+  flex: 0 0 auto;
+  inline-size: auto;
+}
+
+.rta-creation__draft > span {
+  flex: 1;
+  min-inline-size: 0;
+}
+
+.rta-creation__primary {
+  font-weight: 600;
+}
+
+.rta-creation__spacer {
+  flex: 1;
+}
+
+.rta-creation__drafts {
+  display: flex;
+  flex-direction: column;
+  gap: var(--rta-gap-row);
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+@container rta-creation (inline-size < 560px) {
+  .rta-creation__layout {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  .rta-creation__steps {
+    flex-flow: row wrap;
+  }
+
+  .rta-creation__step {
+    inline-size: auto;
+  }
+}

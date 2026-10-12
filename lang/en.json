@@ -1415,6 +1415,37 @@
       "Title": "Reaction",
       "Offer": "{name} can react:",
       "Pass": "Let it pass"
+    },
+    "Creation": {
+      "Open": "Create a character",
+      "WindowTitle": "Character creation",
+      "Drafts": "Unfinished characters",
+      "NewCharacter": "New character",
+      "NoSystem": "The active Ruleset has no Creation System.",
+      "Start": "Start",
+      "Resume": "Resume",
+      "Abandon": "Abandon",
+      "AbandonConfirm": "Abandon this character? Its choices are lost.",
+      "Previous": "Previous",
+      "Next": "Next",
+      "Save": "Save",
+      "Finish": "Create the character",
+      "Name": "Name",
+      "DefaultName": "New character",
+      "ChooseExactly": "Choose {count}.",
+      "ChooseUpTo": "Choose up to {count}.",
+      "ChooseBetween": "Choose {min} to {max}.",
+      "SpendExactly": "Spend {count} points.",
+      "SpendBetween": "Spend {min} to {max} points.",
+      "Budget": "Spend {min} to {max} in cost.",
+      "Spent": "Spent: {count}",
+      "NoOption": "Nothing to choose with the earlier choices.",
+      "Skipped": "This step does not apply with the earlier choices.",
+      "NotRolled": "Not rolled yet.",
+      "Roll": "Roll",
+      "Draw": "Draw at random",
+      "AnotherTerm": "Another term",
+      "Term": "Term {number}"
     }
   }
 }

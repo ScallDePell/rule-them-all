@@ -14,6 +14,7 @@ import {installInitiative, installInitiativePasses, rerollEachRound} from "./src
 import {FoundryRuntimeAdapter} from "./src/runtime/foundry-runtime-adapter.mjs";
 import {registerRulesetSheets} from "./src/runtime/foundry-sheets.mjs";
 import {installReactions} from "./src/runtime/foundry-reactions.mjs";
+import {installCreationButton} from "./src/runtime/foundry-creation.mjs";
 
 /** events: () => [{eventTypeId, payload, refs}], emitted in order on the containers they concern. */
 function emitModuleEvents(events) {
@@ -63,6 +64,9 @@ Hooks.once("ready", () => {
     relay.listen(message => game.ruleThemAll.runtime.serveRelay(message));
     // Reactions offered by Triggers are asked of the reacting Actor's player, on their own client.
     installReactions();
+    // Players create their character with the active Ruleset's Creation System, from the Actors directory.
+    installCreationButton();
+    ui.actors?.render?.();
     // GM sandbox only: previews the working draft. Gameplay never uses it.
     game.ruleThemAll.runtimeLab = createRuntimeAPI(api, {rulesetSource: "draft"});
     game.ruleThemAll.content = new FoundryContentBridge(api, game.ruleThemAll.runtime);

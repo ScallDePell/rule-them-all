@@ -7,7 +7,7 @@
    Component-specific geometry (grids, icon sizes, min-width) is
    intentionally kept out of the scale and documented separately.
    ================================================================ */
-:is(.rta-configurator, .rta-config-entry, .rta-sheet, .rta-chat-card) {
+:is(.rta-configurator, .rta-config-entry, .rta-sheet, .rta-chat-card, .rta-creation) {
   --rta-space-1: .125rem;
   /* 2px at a 16px root */
   --rta-space-2: .25rem;
@@ -64,7 +64,7 @@
    variable du thème Foundry quand elle existe, avec UNE seule valeur de repli.
    Ils sont redéclarés sur les racines RTA car Foundry définit son thème sur un
    ancêtre (.theme-dark…), pas sur :root. */
-:root, :is(.rta-configurator, .rta-config-entry, .rta-select__panel, .rta-sheet, .rta-chat-card) {
+:root, :is(.rta-configurator, .rta-config-entry, .rta-select__panel, .rta-sheet, .rta-chat-card, .rta-creation) {
   --rta-color-neutral: #666666; /* = DEFAULT_RULESET_COLOR / RTA_NEUTRAL_COLOR */
   --rta-color-border: var(--color-border-light-primary, #777);
   --rta-color-border-secondary: var(--color-border-light-secondary, #777);

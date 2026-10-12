@@ -1411,6 +1411,37 @@
       "Title": "Réaction",
       "Offer": "{name} peut réagir :",
       "Pass": "Laisser passer"
+    },
+    "Creation": {
+      "Open": "Créer un personnage",
+      "WindowTitle": "Création de personnage",
+      "Drafts": "Personnages en cours",
+      "NewCharacter": "Nouveau personnage",
+      "NoSystem": "Le Ruleset actif n'a pas de système de création.",
+      "Start": "Commencer",
+      "Resume": "Reprendre",
+      "Abandon": "Abandonner",
+      "AbandonConfirm": "Abandonner ce personnage ? Ses choix seront perdus.",
+      "Previous": "Précédent",
+      "Next": "Suivant",
+      "Save": "Enregistrer",
+      "Finish": "Créer le personnage",
+      "Name": "Nom",
+      "DefaultName": "Nouveau personnage",
+      "ChooseExactly": "Choisissez-en {count}.",
+      "ChooseUpTo": "Choisissez-en jusqu'à {count}.",
+      "ChooseBetween": "Choisissez-en de {min} à {max}.",
+      "SpendExactly": "Répartissez {count} points.",
+      "SpendBetween": "Répartissez de {min} à {max} points.",
+      "Budget": "Dépensez de {min} à {max} en coût.",
+      "Spent": "Dépensés : {count}",
+      "NoOption": "Rien à choisir avec les choix précédents.",
+      "Skipped": "Cette étape ne s'applique pas avec les choix précédents.",
+      "NotRolled": "Pas encore lancé.",
+      "Roll": "Lancer",
+      "Draw": "Tirer au hasard",
+      "AnotherTerm": "Un terme de plus",
+      "Term": "Terme {number}"
     }
   }
 }
