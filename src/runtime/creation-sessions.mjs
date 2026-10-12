@@ -106,11 +106,12 @@ export class CreationSessions{
   async abandon(id,{revision=null}={}){const session=await this.#load(id,{revision});session.status="abandoned";return this.#save(session);}
   /** CreationContext: the session with each step's state, recomputed from the current Ruleset: its answer, errors,
    * whether its Condition skips it, its bounds (min, max), the options left by the earlier answers, and whether
-   * it is repeated by terms (repeated, endsBlock). */
+   * it is repeated by terms (repeated, endsBlock); starting: the initial values the chosen Contents give each Definition. */
   async context(id){
     const session=await this.#load(id,{draft:false}),analysis=await this.#validate(session),byId=new Map(analysis.steps.map(step=>[step.id,step]));
     return {session,complete:analysis.complete,steps:this.#steps(session).map(step=>({...copyJSON(step),answer:copyJSON(session.answers[step.id]??null),current:step.id===session.currentStepId,valid:!byId.get(step.id)?.errors.length,errors:byId.get(step.id)?.errors??[],skipped:byId.get(step.id)?.skipped===true,
       bounds:copyJSON(analysis.bounds[step.id]??null),options:copyJSON(analysis.options[step.id]??null),...this.#blockOf(session,step.id)})),
+      starting:copyJSON(analysis.initialByDefinition??{}),
       preview:analysis.complete?{operations:copyJSON(analysis.operations),initialByDefinition:copyJSON(analysis.initialByDefinition)}:null};
   }
   /** Build the character; the session becomes completed only after that succeeded. */

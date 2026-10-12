@@ -1,7 +1,7 @@
 /* Character creation in play (CP-15): a window that walks a player through the active Ruleset's Creation System,
    saved in a CreationSession after each step, so it can be left and resumed. Opened from the Actors directory. */
 import {resolveRuntimeRuleset} from "./runtime-contracts.mjs";
-import {creationView, readCreationAnswer, renderCreationHTML, renderCreationStartHTML} from "../ui/creation-markup.mjs";
+import {creationView, readCreationAnswer, refreshSteppers, renderCreationHTML, renderCreationStartHTML, spentPoints, stepPoints} from "../ui/creation-markup.mjs";
 import {translator} from "./foundry-sheets.mjs";
 import {availableDocumentTypes} from "../core/system-document-types.mjs";
 
@@ -87,9 +87,20 @@ export function createCreationWindow({ApplicationV2}) {
         // One choice at most: ticking another replaces it, and it can still be unticked.
         const single = event.target.closest?.("[data-creation-single]");
         if (single && event.target.checked) for (const other of single.querySelectorAll("input[type=checkbox]")) if (other !== event.target) other.checked = false;
-        const spent = root.querySelector("[data-creation-spent]");
-        if (spent) spent.textContent = globalThis.game.i18n.format("RTA.Creation.Spent", {count: [...root.querySelectorAll("[data-creation-points]")].reduce((sum, input) => sum + Math.max(0, Math.trunc(Number(input.value)) || 0), 0)});
+        this.#refreshPoints();
       });
+      for (const control of root.querySelectorAll("[data-creation-step]")) control.addEventListener("click", event => {
+        if (stepPoints(event.currentTarget)) { this.#dirty = true; this.#refreshPoints(); }
+      });
+      this.#refreshPoints();
+    }
+    /** The points spent so far, and which −/+ buttons still apply. */
+    #refreshPoints() {
+      const root = this.element;
+      if (!root.querySelector("[data-creation-points]")) return;
+      const spent = root.querySelector("[data-creation-spent]");
+      if (spent) spent.textContent = globalThis.game.i18n.format("RTA.Creation.Spent", {count: spentPoints(root)});
+      refreshSteppers(root);
     }
     async #run(work) { try { await work(); } catch (error) { notifyError(error); } this.render(); }
     /** The step in progress, saved when the player changed it. */

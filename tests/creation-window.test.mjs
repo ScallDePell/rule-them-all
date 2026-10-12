@@ -3,7 +3,7 @@ import assert from 'node:assert/strict';
 import {createConfiguratorAPI} from '../src/configurator/configurator-api.mjs';
 import {emptyStorageSnapshot} from '../src/configurator/configurator-storage.mjs';
 import {CreationSessions, MemoryCreationSessionStore} from '../src/runtime/creation-sessions.mjs';
-import {creationView, renderCreationHTML, renderCreationStartHTML, readCreationAnswer} from '../src/ui/creation-markup.mjs';
+import {creationView, renderCreationHTML, renderCreationStartHTML, readCreationAnswer, refreshSteppers, stepPoints} from '../src/ui/creation-markup.mjs';
 import {startableSystems, neighbourStep, createCreationWindow} from '../src/runtime/foundry-creation.mjs';
 class Storage{data=emptyStorageSnapshot();async load(){return structuredClone(this.data)}async save(data){this.data=structuredClone(data)}}
 const grant=(id,objectId)=>({id,operation:'grant',targetRef:{objectKind:'definition',objectId},config:{add:{'value.base':1}}});
@@ -14,7 +14,7 @@ async function build(){
   await api.registerDefinitionType(v,{id:'stat',key:'stat',nameKey:'Stat',allowedCapabilities:['value'],defaultCapabilities:['value'],requiredCapabilities:[],fields:{}});
   for(const [id,name] of [['str','Strength'],['int','Intellect'],['pilot','Pilot'],['gun','Gunnery']])await api.createDefinition(v,{id,key:id,nameKey:name,definitionTypeId:'stat',capabilities:['value'],data:{}});
   await api.createContentType(v,{id:'origin',nameKey:'Origin',storageKind:'item',runtimeMode:'unique'});
-  await api.createContentTemplate(v,{id:'navy',nameKey:'Navy brat',contentTypeId:'origin',relations:[],choiceGroups:[{id:'pick',name:'A skill',min:1,max:1,options:[grant('o-pilot','pilot'),grant('o-gun','gun')]}]});
+  await api.createContentTemplate(v,{id:'navy',nameKey:'Navy brat',contentTypeId:'origin',relations:[{id:'str',operation:'grant',targetRef:{objectKind:'definition',objectId:'str'},config:{initial:{'value.base':1}}}],choiceGroups:[{id:'pick',name:'A skill',min:1,max:1,options:[grant('o-pilot','pilot'),grant('o-gun','gun')]}]});
   await api.createContentTemplate(v,{id:'colony',nameKey:'Colonist',contentTypeId:'origin',relations:[],choiceGroups:[]});
   await api.createRoll(v,{id:'survival',nameKey:'2d6',formula:'2d6'});
   await api.createCreationSystem(v,{id:'creation',nameKey:'Traveller',steps:[
@@ -51,8 +51,13 @@ test('From the first step to the review, as a player clicks through', async()=>{
   await sessions.answer(id,'origin',answer);
   view=creationView(await sessions.context(id),ruleset(),t);
   assert.equal(view.steps[0].state,'done');assert.equal(view.step.id,'attributes');
-  assert.equal(view.step.boundsText,'Spend 4 points.');assert.match(renderCreationHTML(view,{t}),/max="3" data-creation-points="str"/);
-  assert.deepEqual(readCreationAnswer(page([{kind:'data-creation-points',value:'3',dataset:{creationPoints:'str'}},{kind:'data-creation-points',value:'1',dataset:{creationPoints:'int'}}]),view.step),{allocations:{str:3,int:1}});
+  assert.equal(view.step.boundsText,'Spend 4 points.');
+  // Navy brat starts Strength at 1: the field shows the value reached, and only the points above it are spent.
+  assert.deepEqual(view.step.rows.map(row=>[row.id,row.start]),[['str',1],['int',0]]);
+  html=renderCreationHTML(view,{t});
+  assert.match(html,/min="1" step="1" max="4" data-creation-points="str" data-start="1" value="1"/);assert.match(html,/data-creation-budget="4"/);
+  assert.match(html,/data-creation-step="-1"/);assert.match(html,/data-creation-step="1"/);
+  assert.deepEqual(readCreationAnswer(page([{kind:'data-creation-points',value:'4',dataset:{creationPoints:'str',start:'1'}},{kind:'data-creation-points',value:'1',dataset:{creationPoints:'int',start:'0'}}]),view.step),{allocations:{str:3,int:1}});
   await sessions.answer(id,'attributes',{allocations:{str:3,int:1}});
   view=creationView(await sessions.context(id),ruleset(),t);
   assert.equal(view.step.kind,'roll');assert.equal(view.step.canDraw,true);assert.equal(readCreationAnswer(page([]),view.step),null);
@@ -131,4 +136,27 @@ test('A new character asks for the game system Actor subtype when it has several
   assert.match(view,/<select data-creation-actor-type><option value="character">Character<\/option><option value="npc" selected>NPC<\/option><\/select>/);
   assert.doesNotMatch(renderCreationHTML({title:'T',complete:true,index:0,count:1,steps:[],step:{id:'done',kind:'review',label:'Review',errors:[],summary:[],canFinish:true,first:true,last:true}},{t:k=>k,actorTypes:[{value:'character',label:'Character'}]}),/data-creation-actor-type/,'one subtype: nothing to ask');
   delete globalThis.game;delete globalThis.CONFIG;
+});
+
+// A stand-in for one allocation step: fields with their −/+ buttons, under a budget.
+function pointsPage(budget,fields){
+  const inputs=fields.map(([start,value,max])=>{const box={},input={value:String(value),min:String(start),max:max===null?'':String(max),dataset:{creationPoints:'x',start:String(start)},parentElement:box};
+    const less={dataset:{creationStep:'-1'},disabled:false,parentElement:box},more={dataset:{creationStep:'1'},disabled:false,parentElement:box};
+    box.querySelector=selector=>selector.includes('"-1"')?less:selector.includes('"1"')?more:input;return {input,less,more};});
+  return {fields:inputs,root:{querySelector:()=>budget===null?null:{dataset:{creationBudget:String(budget)}},querySelectorAll:()=>inputs.map(field=>field.input)}};
+}
+
+test('The −/+ buttons stay within the starting value, the field maximum and the points left', ()=>{
+  const {root,fields:[str,int]}=pointsPage(4,[[1,1,4],[0,0,3]]);
+  refreshSteppers(root);
+  assert.equal(str.less.disabled,true,'not below the starting value');assert.equal(str.more.disabled,false);
+  for(let i=0;i<3;i++)assert.equal(stepPoints(str.more),true);
+  assert.equal(stepPoints(str.more),false,'not above the field maximum');assert.equal(str.input.value,'4');
+  refreshSteppers(root);assert.equal(str.more.disabled,true);assert.equal(int.more.disabled,false,'one point left');
+  stepPoints(int.more);refreshSteppers(root);
+  assert.equal(int.more.disabled,true,'the budget is spent: every + greys out');assert.equal(int.less.disabled,false);
+  stepPoints(str.less);refreshSteppers(root);
+  assert.equal(int.more.disabled,false,'a point given back frees the + buttons');
+  const costed=pointsPage(null,[[0,9,null]]);refreshSteppers(costed.root);
+  assert.equal(costed.fields[0].more.disabled,false,'no point budget with a cost Formula');
 });

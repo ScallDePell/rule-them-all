@@ -1522,6 +1522,8 @@
       "SpendBetween": "Spend {min} to {max} points.",
       "Budget": "Spend {min} to {max} in cost.",
       "Spent": "Spent: {count}",
+      "Less": "Remove a point from",
+      "More": "Add a point to",
       "NoOption": "Nothing to choose with the earlier choices.",
       "Skipped": "This step does not apply with the earlier choices.",
       "NotRolled": "Not rolled yet.",

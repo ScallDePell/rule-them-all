@@ -157,10 +157,39 @@
   gap: var(--rta-gap-row);
 }
 
-.rta-creation__point > input {
+.rta-creation__value {
+  display: flex;
   flex: 0 0 auto;
-  inline-size: 4.5rem;
-  text-align: end;
+  align-items: center;
+  gap: var(--rta-gap-tight);
+}
+
+/* The −/+ buttons replace the browser's own arrows. */
+.rta-creation__value > input {
+  inline-size: 3.5rem;
+  text-align: center;
+  appearance: textfield;
+}
+
+.rta-creation__value > input::-webkit-inner-spin-button,
+.rta-creation__value > input::-webkit-outer-spin-button {
+  appearance: none;
+  margin: 0;
+}
+
+.rta-creation__stepper {
+  display: inline-grid;
+  flex: 0 0 auto;
+  place-items: center;
+  inline-size: var(--input-height, 1.75rem);
+  block-size: var(--input-height, 1.75rem);
+  padding: 0;
+  line-height: 1;
+}
+
+.rta-creation__stepper:disabled {
+  opacity: .4;
+  cursor: default;
 }
 
 .rta-creation__name > span {

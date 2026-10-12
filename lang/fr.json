@@ -1518,6 +1518,8 @@
       "SpendBetween": "Répartissez de {min} à {max} points.",
       "Budget": "Dépensez de {min} à {max} en coût.",
       "Spent": "Dépensés : {count}",
+      "Less": "Retirer un point à",
+      "More": "Ajouter un point à",
       "NoOption": "Rien à choisir avec les choix précédents.",
       "Skipped": "Cette étape ne s'applique pas avec les choix précédents.",
       "NotRolled": "Pas encore lancé.",

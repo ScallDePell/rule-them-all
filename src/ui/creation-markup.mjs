@@ -2,7 +2,7 @@
    the page shows from a CreationContext (game.ruleThemAll.creation.context) and the Ruleset; renderCreationHTML
    writes it. Data contract read by the window (runtime/foundry-creation.mjs):
    [data-creation-goto] step buttons, [data-creation-option] selected objects, [data-creation-choice] a Content's
-   choices (data-template, data-group), [data-creation-points] points on a Definition, [data-creation-command]
+   choices (data-template, data-group), [data-creation-points] value reached on a Definition (data-start: its value before the points), [data-creation-step] −/+, [data-creation-command]
    previous / next / draw / term / finish / abandon / start / resume, [data-creation-name] the character's name,
    [data-creation-actor-type] its Actor subtype when the game system has several. */
 import {escapeHTML as escape} from "./html-utils.mjs";
@@ -54,9 +54,13 @@ export function creationView(context, ruleset, t) {
     const points = answer?.allocations ?? {}, bounds = step.bounds ?? {min: step.min ?? 0, max: step.max ?? 0};
     panel.boundsText = step.costFormulaRef ? format(t, "RTA.Creation.Budget", {min: bounds.min, max: bounds.max}) : bounds.min === bounds.max ? format(t, "RTA.Creation.SpendExactly", {count: bounds.max}) : format(t, "RTA.Creation.SpendBetween", {min: bounds.min, max: bounds.max});
     panel.perTarget = Number.isInteger(step.perTargetMax) ? step.perTargetMax : null;
-    panel.rows = (step.source?.objectIds ?? []).map(id => ({id, label: nameOf(ruleset, "definitions", id, t), points: Number(points[id] ?? 0)}));
+    // The field shows the value reached: what the earlier choices give (a Content granting 1) plus the points spent.
+    const start = id => Number(context.starting?.[id]?.["value.base"] ?? 0) || 0;
+    panel.rows = (step.source?.objectIds ?? []).map(id => ({id, label: nameOf(ruleset, "definitions", id, t), start: start(id), points: Number(points[id] ?? 0)}));
     panel.spent = panel.rows.reduce((sum, row) => sum + row.points, 0);
     panel.costed = Boolean(step.costFormulaRef);
+    // Without a cost Formula the budget is in points, so + greys out once it is spent; a drawn step keeps what the dice gave.
+    panel.budget = !panel.costed && !answer?.drawn && Number.isFinite(bounds.max) ? bounds.max : null;
   }
   if (step.kind === "roll") { panel.total = answered ? answer.total : null; panel.result = answered ? answer.result ?? "" : ""; panel.canDraw = !answered; }
   if (step.kind === "review") {
@@ -94,7 +98,8 @@ function panelHTML(step, t, {name = "", actorTypes = [], actorType = ""} = {}) {
     for (const group of step.groups) parts.push(`<fieldset class="rta-creation__group"><legend>${escape(group.label)}</legend><p class="rta-creation__hint">${escape(group.boundsText)}</p>${optionList(group.options, {name: "data-creation-choice", extra: ` data-template="${escape(group.templateId)}" data-group="${escape(group.id)}"`, single: group.max === 1})}</fieldset>`);
   } else if (step.rows) {
     parts.push(`<p class="rta-creation__hint">${escape(step.boundsText)}${step.costed ? "" : ` <span data-creation-spent>${escape(format(t, "RTA.Creation.Spent", {count: step.spent}))}</span>`}</p>`);
-    parts.push(`<div class="rta-creation__points">${step.rows.map(row => `<label class="rta-creation__point"><span>${escape(row.label)}</span><input type="number" min="0" step="1"${step.perTarget !== null ? ` max="${step.perTarget}"` : ""} data-creation-points="${escape(row.id)}" value="${row.points}"></label>`).join("")}</div>`);
+    const stepper = (row, delta, label) => `<button type="button" class="rta-creation__stepper" data-creation-step="${delta}" aria-label="${escape(`${label} ${row.label}`)}">${delta < 0 ? "−" : "+"}</button>`;
+    parts.push(`<div class="rta-creation__points"${step.budget !== null ? ` data-creation-budget="${step.budget}"` : ""}>${step.rows.map(row => `<div class="rta-creation__point"><label for="rta-creation-points-${escape(row.id)}">${escape(row.label)}</label><span class="rta-creation__value">${stepper(row, -1, t("RTA.Creation.Less"))}<input type="number" id="rta-creation-points-${escape(row.id)}" min="${row.start}" step="1"${step.perTarget !== null ? ` max="${row.start + step.perTarget}"` : ""} data-creation-points="${escape(row.id)}" data-start="${row.start}" value="${row.start + row.points}">${stepper(row, 1, t("RTA.Creation.More"))}</span></div>`).join("")}</div>`);
   } else if (step.kind === "roll") {
     parts.push(step.total === null ? `<p class="rta-creation__hint">${escape(t("RTA.Creation.NotRolled"))}</p>` : `<p class="rta-creation__roll"><span>${escape(step.result)}</span> <strong>${escape(String(step.total))}</strong></p>`);
   } else if (step.summary) {
@@ -126,11 +131,36 @@ export function renderCreationStartHTML({drafts = [], systems = []}, {t}) {
   return `<div class="rta-creation rta-creation--start">${drafts.length ? `<section class="rta-creation__section"><h3 class="rta-creation__title">${escape(t("RTA.Creation.Drafts"))}</h3><ul class="rta-creation__drafts">${draftRows}</ul></section>` : ""}<section class="rta-creation__section"><h3 class="rta-creation__title">${escape(t("RTA.Creation.NewCharacter"))}</h3>${systems.length ? `<ul class="rta-creation__drafts">${systemRows}</ul>` : `<p class="rta-creation__hint">${escape(t("RTA.Creation.NoSystem"))}</p>`}</section></div>`;
 }
 
+/** Points spent on one field: the value typed minus the value it starts from. */
+const pointsOf = input => { const points = Math.trunc(Number(input.value)) - (Number(input.dataset.start) || 0); return Number.isFinite(points) ? Math.max(0, points) : 0; };
+
+/** Points spent on the allocation step shown in root. */
+export function spentPoints(root) { return [...root.querySelectorAll("[data-creation-points]")].reduce((sum, input) => sum + pointsOf(input), 0); }
+
+/** The −/+ buttons: − greys out at the starting value, + at the field's maximum or once the budget is spent. */
+export function refreshSteppers(root) {
+  const budget = root.querySelector("[data-creation-budget]")?.dataset.creationBudget, full = budget !== undefined && spentPoints(root) >= Number(budget);
+  for (const input of root.querySelectorAll("[data-creation-points]")) {
+    const value = Math.trunc(Number(input.value)) || 0, box = input.parentElement;
+    box.querySelector('[data-creation-step="-1"]').disabled = value <= Number(input.min);
+    box.querySelector('[data-creation-step="1"]').disabled = full || (input.max !== "" && value >= Number(input.max));
+  }
+}
+
+/** One click on − or +: the field moves by one within its bounds (and the budget for +). */
+export function stepPoints(button) {
+  const input = button.parentElement.querySelector("[data-creation-points]"), delta = Number(button.dataset.creationStep);
+  const value = (Math.trunc(Number(input.value)) || 0) + delta;
+  if (value < Number(input.min) || (input.max !== "" && value > Number(input.max))) return false;
+  input.value = String(value);
+  return true;
+}
+
 /** The answer the page holds for the step in progress, in the shape CreationSessions.answer expects. */
 export function readCreationAnswer(root, step) {
   if (step.rows) {
     const allocations = {};
-    for (const input of root.querySelectorAll("[data-creation-points]")) { const points = Math.trunc(Number(input.value)); if (Number.isFinite(points) && points > 0) allocations[input.dataset.creationPoints] = points; }
+    for (const input of root.querySelectorAll("[data-creation-points]")) { const points = pointsOf(input); if (points > 0) allocations[input.dataset.creationPoints] = points; }
     return {allocations};
   }
   if (step.options) {
