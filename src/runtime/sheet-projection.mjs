@@ -122,6 +122,14 @@ export async function projectSheet(engine, versionId, sheet, {actor = null, cont
       if (!view.label && source.kind === "each") Object.assign(view, outputLabel(row.definition, reference));
       await readOutput(view, reference, scope);
       if (node.display === "description") return describe(view, reference);
+      // Dots and gauges of a value count up to its maximum (never fewer than the value, raised by a power).
+      if (reference.capabilityId === "value" && ["dots", "gauge"].includes(node.display) && view.error === undefined && scope.roles?.self) {
+        try {
+          const {minimum, maximum} = await engine.valueBounds(versionId, scope.roles.self, reference.objectId);
+          if (maximum !== null) { if (node.display === "dots" && !node.dots) view.dots = Math.max(maximum, Number(view.value) || 0); else if (node.display === "gauge") view.maximum = maximum; }
+          if (minimum !== null && node.display === "gauge") view.minimum = minimum;
+        } catch { /* no bounds shown */ }
+      }
       if (writer(node) && view.error === undefined && await canWrite(reference, scope)) view.write = {operation: node.write.operation};
       return view;
     }

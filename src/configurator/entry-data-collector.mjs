@@ -12,7 +12,7 @@ import {parseRefToken} from './reference-token.mjs';
 import {collectFieldDefinitions,collectEventPayloadFields,collectDefinitionData} from './entry-field-serialization.mjs';
 import {RULESET_SECTIONS,DEFAULT_RULESET_COLOR} from './ruleset-colors.mjs';
 import {collectTemplateAcquisitions} from './content-template-form.mjs';
-import {collectDefinitionSlots} from './slot-form.mjs';
+import {collectDefinitionSlots, collectValueBounds} from './slot-form.mjs';
 import {collectTestInputs} from './test-input-form.mjs';
 import {collectDie} from './die-form.mjs';
 import {collectRollVariants,collectExtraRolls,collectActionInputs,collectTableRows,collectScaleRows,collectProgression} from './rule-cards-form.mjs';
@@ -92,12 +92,12 @@ export function collectEntryData(kind,{fd,current,bool,checkedIds,queryOne,query
     if(kind==="definitionType"){
       const name=String(fd.get("nameKey")??"").trim(),key=current.key||slug(name)||uid("type");
       const allowed=[],defaults=[],required=[];for(const cap of capabilityTypes){const role=String(fd.get(`capability:${cap.id}`)??"off");if(role==="off")continue;allowed.push(cap.id);if(role==="default")defaults.push(cap.id);if(role==="required")required.push(cap.id);}
-      return{...current,key,nameKey:name,descriptionKey:String(fd.get("descriptionKey")??""),color:fieldPresent(fd,"customColorEnabled")?(fieldPresent(fd,"color")?String(fd.get("color")??"").trim()||null:current.color??null):fieldPresent(fd,"customColorPermission")?null:current.color??null,allowedCapabilities:allowed,defaultCapabilities:defaults,requiredCapabilities:required,scaleRef:String(fd.get("scaleRef")??"")||null,fields:collectFieldDefinitions(queryAll("[data-field-definition-row]"),{makeId:fieldUid}),constraints:readConstraintRows(queryAll("[data-declarative-constraint]")),presentation:readPresentationRows(queryAll("[data-presentation-key]"))};
+      return{...current,key,nameKey:name,descriptionKey:String(fd.get("descriptionKey")??""),color:fieldPresent(fd,"customColorEnabled")?(fieldPresent(fd,"color")?String(fd.get("color")??"").trim()||null:current.color??null):fieldPresent(fd,"customColorPermission")?null:current.color??null,allowedCapabilities:allowed,defaultCapabilities:defaults,requiredCapabilities:required,scaleRef:String(fd.get("scaleRef")??"")||null,valueBounds:collectValueBounds({querySelector:queryOne}),fields:collectFieldDefinitions(queryAll("[data-field-definition-row]"),{makeId:fieldUid}),constraints:readConstraintRows(queryAll("[data-declarative-constraint]")),presentation:readPresentationRows(queryAll("[data-presentation-key]"))};
     }
     if(kind==="definition"){
       const name=String(fd.get("nameKey")??"").trim(),key=current.key||slug(name)||uid("definition"),capabilities=[];
       for(const cap of capabilityTypes)if(bool(`cap:${cap.id}`))capabilities.push(cap.id);
-      return{...current,key,nameKey:name,descriptionKey:String(fd.get("descriptionKey")??""),enabled:bool("enabled"),capabilities,data:collectDefinitionData(queryAll("[data-definition-field]")),slots:collectDefinitionSlots(queryAll,current),categories:checkedIds("categories"),tags:checkedIds("tags"),scaleRef:String(fd.get("scaleRef")??"")||null,presentationProfile:readPresentationRows(queryAll("[data-presentation-key]"))};
+      return{...current,key,nameKey:name,descriptionKey:String(fd.get("descriptionKey")??""),enabled:bool("enabled"),capabilities,data:collectDefinitionData(queryAll("[data-definition-field]")),slots:collectDefinitionSlots(queryAll,current),categories:checkedIds("categories"),tags:checkedIds("tags"),scaleRef:String(fd.get("scaleRef")??"")||null,valueBounds:collectValueBounds({querySelector:queryOne}),presentationProfile:readPresentationRows(queryAll("[data-presentation-key]"))};
     }
     if(kind==="parameter"){const vt=String(fd.get("valueType")??"number"),value=parseEditorValue(vt,"one",false,fd.get("value")??"");return{...current,nameKey:String(fd.get("nameKey")??"").trim(),descriptionKey:String(fd.get("descriptionKey")??""),enabled:bool("enabled"),valueType:vt,value,scope:"ruleset",tags:checkedIds("tags")};}
     if(kind==="formula"){const fallback=json(fd.get("expressionJson"),{type:"literal",value:0});return{...current,nameKey:String(fd.get("nameKey")??"").trim(),descriptionKey:String(fd.get("descriptionKey")??""),enabled:bool("enabled"),resultType:String(fd.get("resultType")??"number"),expression:collectFormulaExpression(fallback),tags:checkedIds("tags")};}

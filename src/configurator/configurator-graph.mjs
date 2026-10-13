@@ -6,7 +6,7 @@ import {resolveFieldContract} from "./capability-type-registry.mjs";
 import {applyFieldContract} from "./field-output-contracts.mjs";
 import {assertValidRuleset} from "./configurator-validation.mjs";
 import {PREPARERS} from "./rule-contracts.mjs";
-import {prepareDefinitionSlots} from "./capability-slots.mjs";
+import {prepareDefinitionSlots, prepareValueBounds} from "./capability-slots.mjs";
 import {planRecipe, RECIPES} from "./recipes.mjs";
 import {analyzeChangeImpact, rulesetWithout, collectionOfKind} from "./change-impact.mjs";
 
@@ -30,6 +30,7 @@ class DefinitionRegistry extends RulesetCollectionRegistry {
     next.data = applyFieldContract(next.data ?? {}, fields, DRAFT);
     if (Object.hasOwn(next, "slots")) next.slots = prepareDefinitionSlots(next.slots, next.capabilities, DRAFT);
     prepareScaleRef(next, "Definition");
+    prepareValueBounds(next, "Definition", DRAFT);
     return next;
   }
 }

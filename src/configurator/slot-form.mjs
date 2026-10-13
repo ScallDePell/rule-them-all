@@ -100,6 +100,28 @@ export function collectDefinitionSlots(queryAll, current = {}) {
   return slots;
 }
 
+/** The minimum and maximum of a value's base: on a type, for all its Definitions; on a Definition, a bound left
+    empty is its type's. */
+export function valueBoundsContext(entry = {}, {formulas = [], colorsOf = () => "", neutral = "", ofType = false} = {}) {
+  formulas = formulas.map(formula => ({id: formula.id, choice: {id: formula.id, label: formula.nameKey || formula.id, colors: colorsOf("formula", formula)}}));
+  const model = source => {
+    const bound = sourceModel(source, formulas, {optional: true, neutral});
+    if (!ofType) bound.kinds = bound.kinds.map(kind => kind.id === "none" ? {...kind, labelKey: "RTA.ValueBounds.OfType"} : kind);
+    return bound;
+  };
+  return {minimum: model(entry.valueBounds?.minimum), maximum: model(entry.valueBounds?.maximum)};
+}
+
+/** Read the value bounds of a Definition or type editor; null when none is set. */
+export function collectValueBounds(root) {
+  const bounds = {};
+  for (const [bound, box] of [["minimum", "valueMinimum"], ["maximum", "valueMaximum"]]) {
+    const source = readSource(root, box);
+    if (source) bounds[bound] = source;
+  }
+  return Object.keys(bounds).length ? bounds : null;
+}
+
 /** Show only the input matching the chosen ValueSource kind. */
 export function syncValueSource(select) {
   const box = select.closest("[data-slot-source]");

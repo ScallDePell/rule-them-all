@@ -1593,6 +1593,11 @@
         "value": "la valeur",
         "percent": "le % du maximum"
       }
+    },
+    "ValueBounds": {
+      "Minimum": "Valeur minimale",
+      "Maximum": "Valeur maximale",
+      "OfType": "Celle du type"
     }
   }
 }

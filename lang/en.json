@@ -1597,6 +1597,11 @@
         "value": "the value",
         "percent": "the % of the maximum"
       }
+    },
+    "ValueBounds": {
+      "Minimum": "Lowest value",
+      "Maximum": "Highest value",
+      "OfType": "That of its type"
     }
   }
 }

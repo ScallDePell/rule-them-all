@@ -98,6 +98,7 @@
           {{> rtaIdentityName}}
           {{> rtaIdentityDescription}}
           <div class="form-group rta-form-row"><label>{{localize "RTA.Template.ScaleRef"}}</label><select name="scaleRef" {{#if readOnly}}disabled{{/if}}>{{#each scaleChoices}}<option value="{{id}}" data-rta-colors="{{colors}}" {{#if selected}}selected{{/if}}>{{label}}</option>{{/each}}</select></div>
+          {{#if valueBounds}}{{> rtaValueSource label=(localize "RTA.ValueBounds.Minimum") bound="valueMinimum" source=valueBounds.minimum}}{{> rtaValueSource label=(localize "RTA.ValueBounds.Maximum") bound="valueMaximum" source=valueBounds.maximum}}{{/if}}
           <div data-color-override-editor>
             <div class="form-group rta-form-row"><label>{{#if isTag}}{{localize "RTA.Template.Color"}}{{else}}{{localize "RTA.Colors.SubsectionColor"}}{{/if}}</label><span class="rta-color-override-control">{{#if allowTypeColor}}<input type="hidden" name="customColorPermission" value="1"><label class="rta-color-override-check"><input data-color-override-toggle type="checkbox" name="customColorEnabled" {{#if hasCustomColor}}checked{{/if}} {{#if readOnly}}disabled{{/if}}> {{localize "RTA.Colors.UseCustomColor"}}</label>{{/if}}<input data-custom-color-input name="color" type="color" value="{{#if data.color}}{{data.color}}{{else}}{{inheritedTypeColor}}{{/if}}" {{#unless allowTypeColor}}disabled{{else}}{{#unless hasCustomColor}}disabled{{/unless}}{{/unless}} {{#if readOnly}}disabled{{/if}}></span></div>
           </div>
@@ -146,6 +147,7 @@
           <div class="form-group rta-form-row"><label>{{localize "RTA.Template.DefinitionType"}}</label><input value="{{type.nameKey}}" readonly></div>
           {{> rtaEnabled}}
           <div class="form-group rta-form-row"><label>{{localize "RTA.Template.ScaleRef"}}</label><select name="scaleRef" {{#if readOnly}}disabled{{/if}}>{{#each scaleChoices}}<option value="{{id}}" data-rta-colors="{{colors}}" {{#if selected}}selected{{/if}}>{{label}}</option>{{/each}}</select></div>
+          {{#if valueBounds}}{{> rtaValueSource label=(localize "RTA.ValueBounds.Minimum") bound="valueMinimum" source=valueBounds.minimum}}{{> rtaValueSource label=(localize "RTA.ValueBounds.Maximum") bound="valueMaximum" source=valueBounds.maximum}}{{/if}}
           {{#each fieldContract}}
             <div class="form-group rta-definition-field" data-definition-field="{{id}}" data-value-type="{{valueType}}" data-cardinality="{{cardinality}}" data-nullable="{{nullable}}" data-required="{{required}}">
               <label>{{label}}</label>

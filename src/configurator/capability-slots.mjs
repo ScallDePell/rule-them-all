@@ -38,6 +38,19 @@ export function prepareValueSource(source, label, options = {}, {required = true
   return copyJSON(source);
 }
 
+/** The bounds of the base of a value (a number or a Formula each; a Formula that gives nothing sets no bound),
+    on a DefinitionType for all its Definitions, or on a Definition: each bound it sets replaces its type's. */
+export function prepareValueBounds(entry, label, options = {}) {
+  const bounds = entry.valueBounds;
+  if (bounds === undefined || bounds === null) { delete entry.valueBounds; return; }
+  if (!isRecord(bounds)) throw new Error(`${label}.valueBounds must be {minimum?, maximum?}.`);
+  for (const key of Object.keys(bounds)) if (!["minimum", "maximum"].includes(key)) throw new Error(`${label}.valueBounds contains unsupported field: ${key}.`);
+  const next = {};
+  for (const key of ["minimum", "maximum"]) { const source = prepareValueSource(bounds[key], `${label}.valueBounds.${key}`, options, {required: false}); if (source) next[key] = source; }
+  if (next.minimum?.literal !== undefined && next.maximum?.literal !== undefined && next.minimum.literal > next.maximum.literal) throw new Error(`${label}.valueBounds: the minimum is above the maximum.`);
+  if (Object.keys(next).length) entry.valueBounds = next; else delete entry.valueBounds;
+}
+
 function slotIdentity(slot, label) {
   if (!isRecord(slot)) throw new Error(`${label} must be an object.`);
   if (!nonempty(slot.id) || !SLOT_ID.test(slot.id)) throw new Error(`${label}.id must start with a letter and use letters, digits, - or _.`);

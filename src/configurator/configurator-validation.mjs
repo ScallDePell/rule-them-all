@@ -8,7 +8,7 @@ import {DependencyIndex} from "./dependency-index.mjs";
 import {normalizeRelations} from "./generic-relations.mjs";
 import {DiagnosticCollector} from "./diagnostics.mjs";
 import {checkRulesetTypes} from "./type-checks.mjs";
-import {prepareDefinitionSlots} from "./capability-slots.mjs";
+import {prepareDefinitionSlots, prepareValueBounds} from "./capability-slots.mjs";
 import {checkReferenceLevels, checkUnsetReferences} from "./reference-checks.mjs";
 
 const nonempty = value => typeof value === "string" && value.trim().length > 0;
@@ -39,7 +39,7 @@ function collecting(d, code, path, run) {
 function checkDefinitionType(entry, path, d) {
   const issue = d.issue;
   if (!checkIdentity(entry, path, issue)) return;
-  exactFields(entry, ["id","key","nameKey","descriptionKey","color","order","allowedCapabilities","defaultCapabilities","requiredCapabilities","fields","constraints","presentation","relations","scaleRef"], path, issue);
+  exactFields(entry, ["id","key","nameKey","descriptionKey","color","order","allowedCapabilities","defaultCapabilities","requiredCapabilities","fields","constraints","presentation","relations","scaleRef","valueBounds"], path, issue);
   if (!nonempty(entry.key)) issue("REQUIRED_STRING", `${path}.key`, "key must be a non-empty string.");
   if (!nonempty(entry.nameKey)) d.incomplete("REQUIRED_STRING", `${path}.nameKey`, "nameKey must be a non-empty string.");
   if (typeof entry.descriptionKey !== "string") issue("STRING_TYPE", `${path}.descriptionKey`, "descriptionKey must be a string.");
@@ -69,7 +69,7 @@ function checkDefinitionType(entry, path, d) {
 function checkDefinition(entry, types, path, d) {
   const issue = d.issue;
   if (!checkIdentity(entry, path, issue)) return;
-  exactFields(entry, ["id","key","definitionTypeId","nameKey","descriptionKey","data","categories","capabilities","slots","enabled","order","tags","presentationProfile","relations","scaleRef"], path, issue);
+  exactFields(entry, ["id","key","definitionTypeId","nameKey","descriptionKey","data","categories","capabilities","slots","enabled","order","tags","presentationProfile","relations","scaleRef","valueBounds"], path, issue);
   if (!nonempty(entry.key)) issue("REQUIRED_STRING", `${path}.key`, "key must be a non-empty string.");
   if (!nonempty(entry.definitionTypeId) || !types.has(entry.definitionTypeId)) issue("DEFINITION_TYPE", `${path}.definitionTypeId`, "definitionTypeId must target an existing DefinitionType.");
   if (!nonempty(entry.nameKey)) d.incomplete("REQUIRED_STRING", `${path}.nameKey`, "nameKey must be a non-empty string.");
@@ -80,6 +80,7 @@ function checkDefinition(entry, types, path, d) {
   if (!Number.isSafeInteger(entry.order)) issue("ORDER", `${path}.order`, "order must be a safe integer.");
   for (const error of validatePresentationContract(entry.presentationProfile,{path:`${path}.presentationProfile`})) issue(error.code,error.path,error.message);
   collecting(d, "SLOT_CONTRACT", `${path}.slots`, options => prepareDefinitionSlots(entry.slots, Array.isArray(entry.capabilities) ? entry.capabilities : [], options));
+  if (entry.valueBounds !== undefined) collecting(d, "VALUE_BOUNDS", `${path}.valueBounds`, options => prepareValueBounds({valueBounds: entry.valueBounds}, "Definition", options));
   const type = types.get(entry.definitionTypeId);
   if (type) {
     const capabilities = new Set(entry.capabilities ?? []), allowed = new Set(type.allowedCapabilities ?? []);

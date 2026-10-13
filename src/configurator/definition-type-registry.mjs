@@ -3,6 +3,7 @@ import {assertValidRuleset} from "./configurator-validation.mjs";
 import {throwIntegrityError} from "./configurator-registry.mjs";
 import {capabilityTypeRegistry, resolveFieldContract} from "./capability-type-registry.mjs";
 import {prepareFieldMap, applyFieldContract} from "./field-output-contracts.mjs";
+import {prepareValueBounds} from "./capability-slots.mjs";
 
 /** Collection CRUD over the Ruleset aggregate; never owns a separate store. */
 export const nextOrder = entries => entries.reduce((max, entry) => Math.max(max, Number.isFinite(entry?.order) ? entry.order : 0), 0) + 10;
@@ -94,6 +95,7 @@ export class DefinitionTypeRegistry extends RulesetCollectionRegistry {
     // Resolve all allowed capability fields now so collisions are rejected at type authoring time.
     resolveFieldContract(next, next.allowedCapabilities);
     prepareScaleRef(next, "DefinitionType");
+    prepareValueBounds(next, "DefinitionType", {get incomplete() { return []; }});
     return next;
   }
   delete(rulesetId, id) {
