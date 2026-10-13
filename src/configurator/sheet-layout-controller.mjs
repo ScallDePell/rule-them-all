@@ -78,6 +78,7 @@ export class SheetLayoutController {
     this.render();
   }
 
+  #viewer = "all";
   get #field() { return this.#host.querySelector("[data-sheet-layout-value]"); }
   get root() { return structuredClone(this.#root); }
   get #target() { return this.#form?.querySelector('[name="sheetTarget"]')?.value ?? "actor"; }
@@ -104,8 +105,8 @@ export class SheetLayoutController {
     const found = locate(this.#root, this.#selected) ?? locate(this.#root, this.#root.id), node = found.node;
     this.#host.querySelector("[data-layout-toolbar]").innerHTML = renderLayoutToolbarHTML({
       canMoveUp: Boolean(found.parent) && found.index > 0, canMoveDown: Boolean(found.parent) && found.index < found.parent.children.length - 1,
-      canRemove: Boolean(found.parent), undo: this.#history.length > 0});
-    const view = previewView(this.#root, this.#ruleset, {target: this.#target, contentTypeIds: this.#contentTypeIds});
+      canRemove: Boolean(found.parent), undo: this.#history.length > 0, viewer: this.#viewer});
+    const view = previewView(this.#root, this.#ruleset, {target: this.#target, contentTypeIds: this.#contentTypeIds, viewer: this.#viewer === "all" ? null : this.#viewer});
     const canvas = this.#host.querySelector("[data-layout-canvas]");
     canvas.innerHTML = renderLayoutPreviewHTML(view, {t: i18n, selectedId: node.id});
     for (const element of canvas.querySelectorAll("[data-layout-node]")) if (element.dataset.layoutNode !== this.#root.id && !element.hasAttribute("data-layout-drop")) element.draggable = true;
@@ -197,6 +198,8 @@ export class SheetLayoutController {
     if (!target.closest?.("[data-layout-toolbar], [data-layout-properties], [data-layout-palette-host]")) return;
     if (target.matches("[data-layout-palette-filter]")) return event.stopPropagation();
     event.stopPropagation();
+    // Preview only: the tree does not change.
+    if (target.matches("[data-layout-viewer]")) { this.#viewer = target.value; return this.render(); }
     if (target.dataset.layoutSeen) {
       // Every box ticked: everyone (stored as nothing). The last box cannot be cleared: a block is for someone.
       const node = locate(this.#root, this.#selected).node, seenBy = ["player", "observer", "gm"].filter(who => this.#host.querySelector(`[data-layout-seen="${who}"]`)?.checked);

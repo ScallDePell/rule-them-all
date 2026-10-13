@@ -71,6 +71,10 @@ const result = await page.evaluate(async ({fixture, en, urls}) => {
   check('a block is always for someone', JSON.stringify(find(layout(), 'stat-value').seenBy) === '["gm"]' && element.querySelector('[data-layout-properties] [data-layout-seen="gm"]').checked);
   await untick('[data-layout-write-by="gm"]');
   check('a value only the GM changes', find(layout(), 'stat-value').write?.by === 'gm');
+  await set('[data-layout-toolbar] [data-layout-viewer]', 'player');
+  check('the preview as the player leaves out a GM block', !element.querySelector('[data-layout-canvas] [data-layout-node="stat-value"]') && JSON.stringify(find(layout(), 'stat-value').seenBy) === '["gm"]');
+  await set('[data-layout-toolbar] [data-layout-viewer]', 'all');
+  check('every block again', Boolean(element.querySelector('[data-layout-canvas] [data-layout-node="stat-value"]')));
   await click('[data-layout-command="undo"]');
   await click('[data-layout-command="undo"]');
   await click('[data-layout-command="undo"]');

@@ -16,10 +16,12 @@ const KIND_LABELS = {tabs: ["RTA.SheetEditor.Kind.tabs", "Tabs"], tab: ["RTA.She
 export const kindText = kind => { const [key, fallback] = KIND_LABELS[kind] ?? [kind, kind], text = globalThis.game?.i18n?.localize?.(key); return text && text !== key ? text : fallback; };
 export const kindLabel = kind => escape(kindText(kind));
 
-/** Toolbar: move the selected block, remove it, undo, start again from AUTO. */
-export function renderLayoutToolbarHTML({canMoveUp = false, canMoveDown = false, canRemove = false, undo = false}) {
+const VIEWERS = [["all", "RTA.SheetEditor.ViewAs.all", "Everyone's blocks"], ["player", "RTA.SheetEditor.ViewAs.player", "The player"], ["observer", "RTA.SheetEditor.ViewAs.observer", "An observer"], ["gm", "RTA.SheetEditor.ViewAs.gm", "The GM"]];
+/** Toolbar: move the selected block, remove it, undo, preview as one person, start again from AUTO. */
+export function renderLayoutToolbarHTML({canMoveUp = false, canMoveDown = false, canRemove = false, undo = false, viewer = "all"}) {
+  const viewAs = `<label class="rta-sheet-editor__view-as">${t("RTA.SheetEditor.ViewAs.label", "View as")}<select data-layout-viewer>${VIEWERS.map(([value, key, fallback]) => `<option value="${value}"${value === viewer ? " selected" : ""}>${t(key, fallback)}</option>`).join("")}</select></label>`;
   const button = (command, icon, label, enabled) => `<button type="button" class="rta-config-action" data-layout-command="${command}" title="${label}" aria-label="${label}"${enabled ? "" : " disabled"}><i class="fa-solid ${icon}"></i></button>`;
-  return `<div class="rta-sheet-editor__toolbar">${button("up", "fa-arrow-up", t("RTA.Template.MoveUp", "Move up"), canMoveUp)}${button("down", "fa-arrow-down", t("RTA.Template.MoveDown", "Move down"), canMoveDown)}${button("remove", "fa-trash", t("RTA.SheetEditor.Remove", "Remove the block"), canRemove)}${button("undo", "fa-rotate-left", t("RTA.SheetEditor.Undo", "Undo"), undo)}<button type="button" data-layout-command="auto"><i class="fa-solid fa-wand-magic-sparkles"></i> ${t("RTA.SheetEditor.Auto", "Automatic layout")}</button></div>`;
+  return `<div class="rta-sheet-editor__toolbar">${button("up", "fa-arrow-up", t("RTA.Template.MoveUp", "Move up"), canMoveUp)}${button("down", "fa-arrow-down", t("RTA.Template.MoveDown", "Move down"), canMoveDown)}${button("remove", "fa-trash", t("RTA.SheetEditor.Remove", "Remove the block"), canRemove)}${button("undo", "fa-rotate-left", t("RTA.SheetEditor.Undo", "Undo"), undo)}${viewAs}<button type="button" data-layout-command="auto"><i class="fa-solid fa-wand-magic-sparkles"></i> ${t("RTA.SheetEditor.Auto", "Automatic layout")}</button></div>`;
 }
 
 const KIND_ICONS = {section: "fa-square", grid: "fa-table-cells", tabs: "fa-folder", tab: "fa-folder-open", repeater: "fa-list", value: "fa-hashtag", gauge: "fa-battery-half", dots: "fa-circle-dot", content: "fa-id-card", action: "fa-dice-d20", text: "fa-font", image: "fa-image", contents: "fa-box-open", spacer: "fa-border-none"};

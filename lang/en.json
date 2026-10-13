@@ -1547,7 +1547,14 @@
         "gm": "The GM"
       },
       "ChangedBy": "Changed by",
-      "DescriptionSample": "Seems in great shape"
+      "DescriptionSample": "Seems in great shape",
+      "ViewAs": {
+        "label": "View as",
+        "all": "Every block",
+        "player": "The player",
+        "observer": "An observer",
+        "gm": "The GM"
+      }
     },
     "Reaction": {
       "Title": "Reaction",

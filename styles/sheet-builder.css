@@ -51,6 +51,18 @@
   gap: var(--rta-gap-tight);
 }
 
+/* "View as": the preview as one person sees it; the tree is not changed. */
+.rta-sheet-editor__view-as {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--rta-gap-tight);
+  white-space: nowrap;
+}
+
+.rta-sheet-editor__view-as > select {
+  inline-size: auto;
+}
+
 .rta-sheet-editor__toolbar > button:not(.rta-config-action) {
   flex: 0 0 auto;
   inline-size: auto;

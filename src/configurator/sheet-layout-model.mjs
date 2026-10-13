@@ -244,9 +244,9 @@ export function contentFields(ruleset, contentTypeIds = []) {
 
 /* Preview: the projection a played sheet would get, with sample values instead of an Actor's. */
 const SAMPLE = {number: 10, integer: 10, boolean: true};
-function previewValue(node, ruleset, row, contentTypeIds) {
+function previewValue(node, ruleset, row, contentTypeIds, viewer = null) {
   const source = node.source, view = {id: node.id, kind: "value", ...(node.span ? {span: node.span} : {}), ...(node.style ? {style: node.style} : {}), ...(node.seenBy ? {seenBy: node.seenBy} : {}),
-    ...(node.display ? {display: node.display} : {}), ...(node.dots ? {dots: node.dots} : {}), label: node.labelKey || "", write: node.write ? {operation: node.write.operation} : null};
+    ...(node.display ? {display: node.display} : {}), ...(node.dots ? {dots: node.dots} : {}), label: node.labelKey || "", write: node.write && !(viewer && viewer !== "gm" && node.write.by === "gm") ? {operation: node.write.operation} : null};
   if (!view.label) Object.assign(view, defaultValueLabel(source, ruleset, {contentTypeIds}));
   let valueType = "number";
   if (source.kind === "output" || source.kind === "each") {
@@ -277,10 +277,13 @@ function previewValue(node, ruleset, row, contentTypeIds) {
   return {...view, valueType, value: SAMPLE[valueType] ?? (["string", "text"].includes(valueType) ? "…" : null)};
 }
 
-export function previewView(root, ruleset, {target = "actor", contentTypeIds = []} = {}) {
+/** viewer: "player", "observer" or "gm" previews the sheet as that person sees it (blocks not for them left out,
+    values only the GM changes read-only for the others); null shows every block. */
+export function previewView(root, ruleset, {target = "actor", contentTypeIds = [], viewer = null} = {}) {
   const walk = (node, row) => {
+    if (viewer && node.seenBy && !node.seenBy.includes(viewer)) return null;
     const base = {id: node.id, kind: node.kind, ...(node.span ? {span: node.span} : {}), ...(node.style ? {style: node.style} : {}), ...(node.seenBy ? {seenBy: node.seenBy} : {})};
-    if (node.kind === "value") return previewValue(node, ruleset, row, contentTypeIds);
+    if (node.kind === "value") return previewValue(node, ruleset, row, contentTypeIds, viewer);
     if (node.kind === "image") return {...base, src: node.src, fit: node.fit ?? "cover", height: node.height ?? "medium", ...(node.shape ? {shape: node.shape} : {})};
     if (node.kind === "text") return {...base, text: node.textKey};
     if (node.kind === "spacer") return base;
@@ -297,9 +300,9 @@ export function previewView(root, ruleset, {target = "actor", contentTypeIds = [
       const type = ruleset.definitionTypes?.find(t => t.id === node.query?.definitionTypeId);
       const held = (ruleset.definitions ?? []).filter(d => enabled(d) && d.definitionTypeId === node.query?.definitionTypeId).slice(0, 2);
       if (!held.length) held.push({id: "", nameKey: type?.nameKey ?? node.query?.definitionTypeId ?? ""});
-      return {...base, columns: node.columns, rows: held.map(definition => ({definitionId: definition.id, label: definition.nameKey ?? definition.id, children: node.children.map(child => walk(child, definition))}))};
+      return {...base, columns: node.columns, rows: held.map(definition => ({definitionId: definition.id, label: definition.nameKey ?? definition.id, children: node.children.map(child => walk(child, definition)).filter(Boolean)}))};
     }
-    return {...base, ...(node.columns ? {columns: node.columns} : {}), ...(node.labelKey !== undefined ? {label: node.labelKey} : {}), children: (node.children ?? []).map(child => walk(child, row))};
+    return {...base, ...(node.columns ? {columns: node.columns} : {}), ...(node.labelKey !== undefined ? {label: node.labelKey} : {}), children: (node.children ?? []).map(child => walk(child, row)).filter(Boolean)};
   };
   return {sheetId: "preview", target, root: walk(root, null)};
 }

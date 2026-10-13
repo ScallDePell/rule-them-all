@@ -114,3 +114,17 @@ test('A block dropped next to another goes before or after it, even next to a co
   assert.deepEqual(moveInto(root,'list','s',{beside:true,before:true}).children.map(c=>c.id),['list','s']);
   assert.equal(canMoveInto(root,'s','v',{beside:true}),false,'not next to its own child');
 });
+
+test('The preview as one person leaves out blocks not for them and the GM-only − / +', async()=>{
+  const {previewView}=await import('../src/configurator/sheet-layout-model.mjs');
+  const pool={objectKind:'definition',objectId:'hp',capabilityId:'pool',slotId:'points',outputId:'pool.current'};
+  const root={id:'root',kind:'section',labelKey:'',columns:1,children:[
+    {id:'gauge',kind:'value',source:{kind:'output',reference:pool},display:'gauge',write:{operation:'adjust',by:'gm'},seenBy:['player','gm']},
+    {id:'words',kind:'value',source:{kind:'output',reference:pool},display:'description',seenBy:['observer']}]};
+  const ruleset={definitions:[{id:'hp',nameKey:'HP'}],definitionTypes:[]};
+  const ids=viewer=>previewView(root,ruleset,{viewer}).root.children.map(n=>`${n.id}${n.write?'+':''}`);
+  assert.deepEqual(ids(null),['gauge+','words']);
+  assert.deepEqual(ids('gm'),['gauge+']);
+  assert.deepEqual(ids('player'),['gauge']);
+  assert.deepEqual(ids('observer'),['words']);
+});
