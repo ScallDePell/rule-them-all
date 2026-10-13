@@ -13,6 +13,8 @@ export function createRuntimeAPI(configurator,{adapter=new FoundryRuntimeAdapter
     instantiateDefinition:write("instantiateDefinition"),
     removeDefinitionState:write("removeDefinitionState"),
     setDefinitionState:write("setDefinitionState"),
+    /** The lowest and highest base of a value Definition on a container (null when unbounded). */
+    valueBounds:(versionId,ref,definitionId)=>engine.valueBounds(versionId,ref,definitionId),
     /** What a sheet shows for an Actor ({actor}) or an Item ({actor?, content: {key} | {templateId}}), Permission applied. */
     projectSheet:(versionId,sheet,subject)=>projectSheet(engine,versionId,sheet,subject),
     writeSheetValue:write("writeSheetValue"),
