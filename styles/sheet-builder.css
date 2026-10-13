@@ -285,3 +285,10 @@
   align-self: flex-start;
   inline-size: auto;
 }
+
+/* The icon typed for a label, shown next to its field. */
+.rta-sheet-editor__icon-preview {
+  flex: none;
+  inline-size: 1.25em;
+  text-align: center;
+}

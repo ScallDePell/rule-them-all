@@ -128,3 +128,21 @@ test('The preview as one person leaves out blocks not for them and the GM-only â
   assert.deepEqual(ids('player'),['gauge']);
   assert.deepEqual(ids('observer'),['words']);
 });
+
+test('labels may show a Font Awesome icon, its text, or both', ()=>{
+  const ruleset={definitions:[],actions:[{id:'attack',nameKey:'Attack'}]};
+  const root=prepareLayout({id:'root',kind:'tabs',children:[{id:'main',kind:'tab',labelKey:'Main',icon:'fa-user',children:[
+    {id:'hit',kind:'action',actionRef:'attack',icon:'fa-regular fa-hand-fist',labelShow:'icon'},
+    {id:'stats',kind:'section',labelKey:'Stats',icon:'fa-solid fa-dice-d20',labelShow:'text',children:[]}]}]});
+  assert.equal(root.children[0].icon,'fa-solid fa-user','fa-solid when no style is named');
+  assert.throws(()=>prepareLayout({id:'root',kind:'grid',children:[{id:'a',kind:'action',actionRef:'attack',icon:'heart'}]}),/Font Awesome/);
+  assert.throws(()=>prepareLayout({id:'root',kind:'grid',children:[{id:'a',kind:'action',actionRef:'attack',labelShow:'big'}]}),/labelShow/);
+  assert.throws(()=>prepareLayout({id:'root',kind:'grid',children:[{id:'t',kind:'text',textKey:'x',icon:'fa-heart'}]}),/unsupported field: icon/);
+  const html=renderLayoutPreviewHTML(previewView(root,ruleset));
+  assert.match(html,/<i class="fa-solid fa-user rta-sheet-icon" aria-hidden="true"><\/i><span>Main<\/span>/,'icon and text');
+  assert.match(html,/title="Attack"[^>]*><i class="fa-regular fa-hand-fist rta-sheet-icon" aria-hidden="true"><\/i><span class="rta-sheet-visually-hidden">Attack<\/span>/,'the icon alone keeps its text for screen readers and as the tooltip');
+  assert.match(html,/<h3 class="rta-sheet-section__title">Stats<\/h3>/,'text only');
+  const props=renderLayoutPropertiesHTML(root.children[0].children[0],{actions:[],defaultLabel:()=>'',parentColumns:1,spanChoices:()=>[]});
+  assert.match(props,/data-layout-prop="icon"[^>]*value="fa-regular fa-hand-fist"/);
+  assert.match(props,/<option value="icon" selected>/);
+});

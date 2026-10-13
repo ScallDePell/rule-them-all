@@ -33,6 +33,9 @@
    seenBy: on any node below the root, who gets it (and what it holds): some of "player" (an owner of the Actor),
            "observer" (anyone else who opens the sheet) and "gm"; all when absent. Nobody writes through a node they do not get.
    style: any node may carry one (colors, background, border, font, size, alignment, margins): layout-style-contract.mjs.
+   icon, labelShow: a tab, section, value or action may show a Font Awesome icon ("fa-solid fa-heart"; fa-solid when no
+           style is named). labelShow: "both" (the default with an icon), "icon" (the icon alone, its text kept for screen
+           readers and as the tooltip) or "text" (the icon kept but not shown).
    span: 1 to the parent's columns (default 1). Node ids are unique in the sheet; the tree is at most 8 levels and 500 nodes deep. */
 
 import {copyJSON, isRecord} from "./configurator-schema.mjs";
@@ -50,6 +53,18 @@ export const LAYOUT_MAX_DOTS = 20;
 /** Sources a sheet can write to. */
 export const LAYOUT_WRITABLE_SOURCES = Object.freeze(["output", "each", "field"]);
 export const LAYOUT_WRITE_OPERATIONS = Object.freeze(["set", "add", "subtract", "adjust"]);
+/** Blocks whose label may carry an icon, and how it shows. */
+export const LAYOUT_LABELLED = Object.freeze(["tab", "section", "value", "action"]);
+export const LAYOUT_LABEL_SHOWS = Object.freeze(["text", "both", "icon"]);
+const FA_STYLES = ["fa-solid", "fa-regular", "fa-brands", "fa-light", "fa-thin", "fa-duotone"];
+/** "fa-heart" or "fa-regular fa-heart" as the classes to render ("fa-solid fa-heart"); null when it names no icon. */
+export function iconClasses(icon) {
+  const parts = String(icon ?? "").trim().toLowerCase().split(/\s+/).filter(Boolean);
+  if (!parts.length || parts.length > 3 || !parts.every(part => /^fa-[a-z0-9-]+$/.test(part))) return null;
+  const glyphs = parts.filter(part => !FA_STYLES.includes(part));
+  if (glyphs.length !== 1) return null;
+  return [parts.find(part => FA_STYLES.includes(part)) ?? "fa-solid", glyphs[0]].join(" ");
+}
 export const LAYOUT_MAX_DEPTH = 8;
 export const LAYOUT_MAX_NODES = 500;
 const MAX_COLUMNS = {section: 4, grid: 6, repeater: 6};
@@ -91,7 +106,7 @@ export function prepareLayout(root) {
     ids.add(node.id);
     if (++count > LAYOUT_MAX_NODES) throw new Error(`A sheet has at most ${LAYOUT_MAX_NODES} nodes.`);
     if (depth > LAYOUT_MAX_DEPTH) throw new Error(`${path}: a sheet is at most ${LAYOUT_MAX_DEPTH} levels deep.`);
-    for (const key of Object.keys(node)) if (!["id", "kind", "span", "style", "seenBy", ...FIELDS[node.kind]].includes(key)) throw new Error(`${path} contains unsupported field: ${key}.`);
+    for (const key of Object.keys(node)) if (!["id", "kind", "span", "style", "seenBy", ...(LAYOUT_LABELLED.includes(node.kind) ? ["icon", "labelShow"] : []), ...FIELDS[node.kind]].includes(key)) throw new Error(`${path} contains unsupported field: ${key}.`);
     if ((node.kind === "tab") !== (parent?.kind === "tabs")) throw new Error(node.kind === "tab" ? `${path}: a tab belongs in tabs.` : `${path}: tabs hold only tabs.`);
     const next = {id: node.id, kind: node.kind};
     const parentColumns = parent && MAX_COLUMNS[parent.kind] ? parent.columns : 1;
@@ -113,6 +128,15 @@ export function prepareLayout(root) {
     if (["tab", "section"].includes(node.kind) || node.labelKey !== undefined && ["value", "action"].includes(node.kind)) {
       if (node.labelKey !== undefined && typeof node.labelKey !== "string") throw new Error(`${path}.labelKey must be text.`);
       next.labelKey = node.labelKey ?? "";
+    }
+    if (node.icon !== undefined && node.icon !== "") {
+      const icon = iconClasses(node.icon);
+      if (!icon) throw new Error(`${path}.icon must be a Font Awesome icon, such as fa-solid fa-heart.`);
+      next.icon = icon;
+    }
+    if (node.labelShow !== undefined) {
+      if (!LAYOUT_LABEL_SHOWS.includes(node.labelShow)) throw new Error(`${path}.labelShow must be ${LAYOUT_LABEL_SHOWS.join(" or ")}.`);
+      next.labelShow = node.labelShow;
     }
     if (node.kind === "repeater") {
       const query = node.query;

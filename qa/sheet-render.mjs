@@ -49,17 +49,17 @@ await adapter.write(hero, {state, ledger: await adapter.loadLedger(hero)});
 const ruleset = engine.ruleset(v);
 
 const tabbed = {id: 'tabbed', target: 'actor', root: {id: 'root', kind: 'tabs', children: [
-  {id: 'main', kind: 'tab', labelKey: 'Character', children: [{id: 'top', kind: 'grid', columns: 2, children: [
+  {id: 'main', kind: 'tab', labelKey: 'Character', icon: 'fa-user', children: [{id: 'top', kind: 'grid', columns: 2, children: [
     {id: 'attrs', kind: 'section', labelKey: 'Attributes', columns: 2, children: ['str', 'dex', 'wit', 'will'].map(id => ({id: `a-${id}`, kind: 'value', source: {kind: 'output', reference: out_(id, 'value', 'value.final')}, write: {operation: 'set'}}))},
-    {id: 'state', kind: 'section', labelKey: 'Condition', columns: 1, children: [
-      {id: 'hurt', kind: 'value', labelKey: 'Health', source: {kind: 'output', reference: out_('hp', 'pool', 'pool.current', 'points')}, write: {operation: 'subtract'}},
+    {id: 'state', kind: 'section', labelKey: 'Condition', icon: 'fa-heart-pulse', columns: 1, children: [
+      {id: 'hurt', kind: 'value', labelKey: 'Health', icon: 'fa-heart', source: {kind: 'output', reference: out_('hp', 'pool', 'pool.current', 'points')}, write: {operation: 'subtract'}},
       {id: 'heal', kind: 'value', labelKey: 'Luck', source: {kind: 'output', reference: out_('luck', 'pool', 'pool.current', 'points')}, write: {operation: 'add'}},
       {id: 'def', kind: 'value', source: {kind: 'formula', formulaRef: 'defence'}}]},
     {id: 'note', kind: 'text', span: 2, textKey: 'Values in bold are computed by the Ruleset.'}]}]},
   {id: 'skills-tab', kind: 'tab', labelKey: 'Skills', children: [{id: 'skills', kind: 'repeater', query: {definitionTypeId: 'skill'}, columns: 3, children: [
     {id: 'rank', kind: 'value', source: {kind: 'each', capabilityId: 'value', outputId: 'value.final'}, write: {operation: 'set'}},
     {id: 'mark', kind: 'value', source: {kind: 'each', capabilityId: 'state', outputId: 'state.active'}, write: {operation: 'set'}},
-    {id: 'roll', kind: 'action', actionRef: 'sneak', labelKey: 'Roll'}]}]}]}};
+    {id: 'roll', kind: 'action', actionRef: 'sneak', labelKey: 'Roll', icon: 'fa-dice-d20', labelShow: 'icon'}]}]}]}};
 
 // Styles set in the sheet editor: tones, an own color with its opacity, a font, labels above and hidden, spacing.
 const styled = {id: 'styled', target: 'actor', root: {id: 'root', kind: 'grid', columns: 2, style: {gap: 'block'}, children: [

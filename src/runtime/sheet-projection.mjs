@@ -111,7 +111,7 @@ export async function projectSheet(engine, versionId, sheet, {actor = null, cont
   };
 
   const value = async (node, scope, row) => {
-    const source = node.source, view = {id: node.id, kind: "value", ...(node.span ? {span: node.span} : {}), ...(node.style ? {style: node.style} : {}),
+    const source = node.source, view = {id: node.id, kind: "value", ...(node.span ? {span: node.span} : {}), ...(node.style ? {style: node.style} : {}), ...(node.icon ? {icon: node.icon} : {}), ...(node.labelShow ? {labelShow: node.labelShow} : {}),
       ...(node.display ? {display: node.display} : {}), ...(node.dots ? {dots: node.dots} : {}), label: node.labelKey || "", value: null, write: null};
     if (source.kind === "output" || source.kind === "each") {
       const reference = source.kind === "output" ? source.reference : eachReference(row?.definition, source);
@@ -197,7 +197,7 @@ export async function projectSheet(engine, versionId, sheet, {actor = null, cont
 
   const walk = async (node, scope, row) => {
     if (node.seenBy && !node.seenBy.includes(viewer)) return null;
-    const base = {id: node.id, kind: node.kind, ...(node.span ? {span: node.span} : {}), ...(node.style ? {style: node.style} : {})};
+    const base = {id: node.id, kind: node.kind, ...(node.span ? {span: node.span} : {}), ...(node.style ? {style: node.style} : {}), ...(node.icon ? {icon: node.icon} : {}), ...(node.labelShow ? {labelShow: node.labelShow} : {})};
     if (node.kind === "value") return value(node, scope, row);
     if (node.kind === "image") return node.src ? {...base, src: node.src, fit: node.fit ?? "cover", height: node.height ?? "medium", ...(node.shape ? {shape: node.shape} : {})} : null;
     if (node.kind === "text") return {...base, text: node.textKey};

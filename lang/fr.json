@@ -1555,6 +1555,14 @@
         "player": "Le joueur",
         "observer": "Un observateur",
         "gm": "Le MJ"
+      },
+      "Icon": "Icône",
+      "IconInvalid": "Ce n'est pas une icône Font Awesome (exemple : fa-solid fa-heart).",
+      "LabelShow": {
+        "label": "Libellé affiché",
+        "both": "Icône et texte",
+        "icon": "Icône seule",
+        "text": "Texte seul"
       }
     },
     "Reaction": {

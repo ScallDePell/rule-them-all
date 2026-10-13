@@ -3,7 +3,7 @@
    into the selection from the palette (or dragged from it onto the sheet), moved with the arrows or dragged onto another
    block (before a leaf when dropped on its top half). The tools sit beside the sheet. The tree is kept in a hidden field the
    entry collector reads ([data-sheet-layout-value]); every change fires an input event so the editor knows it is dirty. */
-import {prepareLayout} from "./layout-contract.mjs";
+import {iconClasses, prepareLayout} from "./layout-contract.mjs";
 import {autoLayout} from "./sheet-auto-layout.mjs";
 import {EACH_OUTPUTS, itemContentTypes, canMoveInto, canPlace, paletteGroups, paletteNode, childKinds, columnsOf, contentFields, defaultValueLabel, insertNode, isContainer, locate, maxColumns, moveInto, moveNode, newNode, outputLabelKey, previewView, removeNode, repeaterOf, updateNode, writableSource} from "./sheet-layout-model.mjs";
 import {refToken, parseRefToken} from "./reference-token.mjs";
@@ -231,6 +231,13 @@ export class SheetLayoutController {
     const number = Number(value);
     if (prop === "columns" || prop === "span") return this.#commit(updateNode(this.#root, node.id, {[prop]: number > 1 || prop === "columns" ? number : undefined}));
     if (prop === "labelKey" || prop === "textKey") return this.#commit(updateNode(this.#root, node.id, {[prop]: value}));
+    // An icon: "fa-heart" is read as "fa-solid fa-heart"; anything that names no icon is refused.
+    if (prop === "icon") {
+      const icon = iconClasses(value);
+      if (value.trim() && !icon) { globalThis.ui?.notifications?.warn?.(i18n("RTA.SheetEditor.IconInvalid")); return this.render(); }
+      return this.#commit(updateNode(this.#root, node.id, {icon: icon ?? undefined, ...(icon ? {} : {labelShow: undefined})}));
+    }
+    if (prop === "labelShow") return this.#commit(updateNode(this.#root, node.id, {labelShow: value === "both" ? undefined : value}));
     if (prop === "definitionTypeId") return this.#commit(this.#retargetRepeater(node, value));
     if (prop === "conditionRef") return this.#commit(updateNode(this.#root, node.id, {query: {...node.query, conditionRef: value || undefined}}));
     // Words in place of the number: nobody writes them.

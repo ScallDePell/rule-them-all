@@ -1559,6 +1559,14 @@
         "player": "The player",
         "observer": "An observer",
         "gm": "The GM"
+      },
+      "Icon": "Icon",
+      "IconInvalid": "This is not a Font Awesome icon (for example: fa-solid fa-heart).",
+      "LabelShow": {
+        "label": "Label shows",
+        "both": "Icon and text",
+        "icon": "Icon only",
+        "text": "Text only"
       }
     },
     "Reaction": {

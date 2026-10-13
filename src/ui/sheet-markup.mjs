@@ -16,6 +16,16 @@ const spanOf = node => node.span ? [`--rta-sheet-span: ${Number(node.span)}`] : 
 const columns = node => `--rta-sheet-columns: ${Number(node.columns ?? 1)}`;
 /** class and style of a node's element: its base class, its span, its style (sheet-style.mjs). */
 const attrs = (node, base, declarations = []) => styledAttributes(node, base, [...spanOf(node), ...declarations]);
+/** How a label shows: "text", "icon" or "both" (an icon is shown with its text unless told otherwise). */
+const labelShow = node => node.icon ? node.labelShow ?? "both" : "text";
+/** A label as text, an icon, or both. An icon alone keeps its text for screen readers; labelTip gives it as the tooltip. */
+const labelHTML = (node, text) => {
+  const show = labelShow(node);
+  if (show === "text") return escape(text);
+  const icon = `<i class="${escape(node.icon)} rta-sheet-icon" aria-hidden="true"></i>`;
+  return show === "icon" ? `${icon}<span class="rta-sheet-visually-hidden">${escape(text)}</span>` : `${icon}<span>${escape(text)}</span>`;
+};
+const labelTip = (node, text) => labelShow(node) === "icon" && text ? ` title="${escape(text)}"` : "";
 
 /** A read value as text: numbers rounded to two decimals, nothing as a dash. */
 export function formatSheetValue(value) {
@@ -104,11 +114,11 @@ function renderNode(node, t, {row = null, solo = false, edit = false, editable =
     const label = node.label ? t(node.label) : node.labelKey ? t(node.labelKey) : "";
     const title = node.error ? ` title="${escape(node.error)}"` : "";
     // A row with a single value already says what it is: its label stays for screen readers only.
-    return `<div ${attrs(node, `rta-sheet-value${node.error ? " rta-sheet-value--unavailable" : ""}`)}${title}${m}><div class="rta-sheet-value__inner"><span class="rta-sheet-value__label${solo ? " rta-sheet-visually-hidden" : ""}">${escape(label)}</span><span class="rta-sheet-value__control">${valueControl(node, t, row, edit)}</span></div></div>`;
+    return `<div ${attrs(node, `rta-sheet-value${node.error ? " rta-sheet-value--unavailable" : ""}`)}${title}${m}><div class="rta-sheet-value__inner"><span class="rta-sheet-value__label${solo ? " rta-sheet-visually-hidden" : ""}"${solo || node.error ? "" : labelTip(node, label)}>${solo ? escape(label) : labelHTML(node, label)}</span><span class="rta-sheet-value__control">${valueControl(node, t, row, edit)}</span></div></div>`;
   }
   // In the editor a button is a plain block: some browsers never drag a button.
-  if (node.kind === "action") return edit ? `<div ${attrs(node, "rta-sheet-action")}${m}>${escape(t(node.label))}</div>`
-    : `<button type="button" ${attrs(node, "rta-sheet-action")} data-sheet-action="${escape(node.actionId)}"${node.definitionId ? ` data-definition-id="${escape(node.definitionId)}"` : ""}${m}>${escape(t(node.label))}</button>`;
+  if (node.kind === "action") return edit ? `<div ${attrs(node, "rta-sheet-action")}${labelTip(node, t(node.label))}${m}>${labelHTML(node, t(node.label))}</div>`
+    : `<button type="button" ${attrs(node, "rta-sheet-action")} data-sheet-action="${escape(node.actionId)}"${node.definitionId ? ` data-definition-id="${escape(node.definitionId)}"` : ""}${labelTip(node, t(node.label))}${m}>${labelHTML(node, t(node.label))}</button>`;
   if (node.kind === "text") return `<p ${attrs(node, "rta-sheet-text")}${m}>${escape(edit && !node.text ? t("RTA.SheetEditor.EmptyText") : t(node.text))}</p>`;
   if (node.kind === "spacer") return `<div ${attrs(node, "rta-sheet-spacer")}${m}></div>`;
   if (node.kind === "image") {
@@ -123,14 +133,14 @@ function renderNode(node, t, {row = null, solo = false, edit = false, editable =
   const children = (list, options, holder = node) => list.length || !edit ? list.map(child => renderNode(child, t, {...options, edit, editable})).join("") : dropZone(holder.id, t);
   if (node.kind === "tabs") {
     const tabs = node.children ?? [];
-    return `<div ${attrs(node, "rta-sheet-tabs")}${m}><nav class="rta-sheet-tabs__nav" role="tablist">${tabs.map((tab, i) => `<${edit ? "div" : `button type="button"`} class="rta-sheet-tabs__tab" role="tab" data-sheet-tab="${escape(tab.id)}" aria-selected="${i === 0}"${mark(tab, edit)}>${escape(tab.label ? t(tab.label) : edit ? t("RTA.SheetEditor.UntitledTab") : "")}</${edit ? "div" : "button"}>`).join("")}</nav>${tabs.map((tab, i) => `<div ${styledAttributes(tab, "rta-sheet-grid rta-sheet-tab", ["--rta-sheet-columns: 1", ...(sheetStyle(tab).gap ? [`gap: ${sheetStyle(tab).gap}`] : [])])} role="tabpanel" data-sheet-panel="${escape(tab.id)}"${i ? " hidden" : ""}${mark(tab, edit)}>${children(tab.children ?? [], {row}, tab)}</div>`).join("")}</div>`;
+    return `<div ${attrs(node, "rta-sheet-tabs")}${m}><nav class="rta-sheet-tabs__nav" role="tablist">${tabs.map((tab, i) => `<${edit ? "div" : `button type="button"`} class="rta-sheet-tabs__tab" role="tab" data-sheet-tab="${escape(tab.id)}" aria-selected="${i === 0}"${labelTip(tab, tab.label ? t(tab.label) : "")}${mark(tab, edit)}>${labelHTML(tab, tab.label ? t(tab.label) : edit ? t("RTA.SheetEditor.UntitledTab") : "")}</${edit ? "div" : "button"}>`).join("")}</nav>${tabs.map((tab, i) => `<div ${styledAttributes(tab, "rta-sheet-grid rta-sheet-tab", ["--rta-sheet-columns: 1", ...(sheetStyle(tab).gap ? [`gap: ${sheetStyle(tab).gap}`] : [])])} role="tabpanel" data-sheet-panel="${escape(tab.id)}"${i ? " hidden" : ""}${mark(tab, edit)}>${children(tab.children ?? [], {row}, tab)}</div>`).join("")}</div>`;
   }
   if (node.kind === "repeater") return renderList(node, t, edit);
   // The grid the children flow in takes the spacing; the block itself takes the rest of the style.
   const gap = sheetStyle(node).gap, bare = node.kind === "grid" && !node.span;
   const grid = [columns(node), ...(gap ? [`gap: ${gap}`] : [])];
   const body = `<div ${bare ? attrs(node, "rta-sheet-grid", grid) : `class="rta-sheet-grid" style="${escape(grid.join("; "))}"`}${bare ? m : ""}>${children(node.children ?? [], {row})}</div>`;
-  if (node.kind === "section") return `<section ${attrs(node, "rta-sheet-section")}${m}>${node.label ? `<h3 class="rta-sheet-section__title">${escape(t(node.label))}</h3>` : ""}${body}</section>`;
+  if (node.kind === "section") return `<section ${attrs(node, "rta-sheet-section")}${m}>${node.label || labelShow(node) !== "text" ? `<h3 class="rta-sheet-section__title"${labelTip(node, t(node.label ?? ""))}>${labelHTML(node, node.label ? t(node.label) : "")}</h3>` : ""}${body}</section>`;
   return node.span ? `<div ${attrs(node, "rta-sheet-block")}${m}>${body}</div>` : body;
 }
 
@@ -145,7 +155,7 @@ function renderList(node, t, edit) {
   if (edit && !rows[0].children.length) rows = rows.map(r => ({...r, children: [{kind: "placeholder", parentId: node.id}]}));
   const cells = rows[0].children, perColumn = `minmax(0, 1fr)${" auto".repeat(cells.length)}`, columnCount = Math.max(1, Number(node.columns ?? 1));
   const head = cells.filter(c => c.kind === "value").length > 1
-    ? `<div class="rta-sheet-row rta-sheet-row--head" aria-hidden="true"><span></span>${cells.map(c => `<span class="rta-sheet-row__head">${escape(cellLabel(c, t))}</span>`).join("")}</div>`.repeat(Math.min(columnCount, rows.length)) : "";
+    ? `<div class="rta-sheet-row rta-sheet-row--head" aria-hidden="true"><span></span>${cells.map(c => `<span class="rta-sheet-row__head"${labelTip(c, cellLabel(c, t))}>${labelHTML(c, cellLabel(c, t))}</span>`).join("")}</div>`.repeat(Math.min(columnCount, rows.length)) : "";
   const style = `--rta-sheet-cells: ${cells.length + 1}; --rta-sheet-list-template: ${Array(columnCount).fill(perColumn).join(" ")}; --rta-sheet-list-medium: ${Array(Math.min(columnCount, 2)).fill(perColumn).join(" ")}; --rta-sheet-list-narrow: ${perColumn}`;
   const body = rows.map(r => `<div class="rta-sheet-row" data-definition-id="${escape(r.definitionId)}"><span class="rta-sheet-row__label" title="${escape(t(r.label))}">${escape(t(r.label))}</span>${r.children.map(child => renderNode(child, t, {row: r.definitionId, solo: true, edit})).join("")}</div>`).join("");
   return `<div ${attrs(node, "rta-sheet-list", [style, ...(sheetStyle(node).gap ? [`row-gap: ${sheetStyle(node).gap}`] : [])])}${mark(node, edit)}>${head}${body}</div>`;

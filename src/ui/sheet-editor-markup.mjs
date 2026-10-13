@@ -10,6 +10,15 @@ const row = (label, control, extra = "") => `<div class="form-group rta-form-row
 const select = (prop, choices, selected) => `<select data-layout-prop="${prop}">${renderSelectOptions(choices, {valueKey: "value", labelKey: "label", colorize: true, selectedValue: selected ?? ""})}</select>`;
 const text = (prop, value, placeholder = "") => `<input type="text" data-layout-prop="${prop}" value="${escape(value ?? "")}"${placeholder ? ` placeholder="${escape(placeholder)}"` : ""}>`;
 const imageField = (prop, value, style = false) => `<div class="rta-sheet-editor__file"><input type="text" ${style ? "data-layout-style" : "data-layout-prop"}="${prop}" value="${escape(value ?? "")}" placeholder="${t("RTA.SheetEditor.ImagePath", "path/to/picture.webp")}"><button type="button" class="rta-config-action" data-layout-pick="${prop}"${style ? " data-layout-pick-style" : ""} title="${t("RTA.SheetEditor.Browse", "Browse")}" aria-label="${t("RTA.SheetEditor.Browse", "Browse")}"><i class="fa-solid fa-folder-open"></i></button></div>`;
+/** Icons offered while typing one (any Font Awesome icon may be typed). */
+const ICON_SUGGESTIONS = ["heart", "heart-pulse", "shield-halved", "khanda", "hand-fist", "crosshairs", "dice-d20", "dice-d6", "brain", "eye", "bolt", "fire", "skull", "star",
+  "coins", "gem", "flask", "wand-sparkles", "hat-wizard", "scroll", "book", "feather", "person-running", "shoe-prints", "moon", "sun", "dragon", "user", "comments", "music"];
+const iconRows = node => {
+  const icon = `<div class="rta-sheet-editor__file"><input type="text" data-layout-prop="icon" list="rta-sheet-icons" value="${escape(node.icon ?? "")}" placeholder="fa-solid fa-heart"><datalist id="rta-sheet-icons">${ICON_SUGGESTIONS.map(name => `<option value="fa-solid fa-${name}"></option>`).join("")}</datalist><span class="rta-sheet-editor__icon-preview" aria-hidden="true">${node.icon ? `<i class="${escape(node.icon)}"></i>` : ""}</span></div>`;
+  const shows = [["both", "RTA.SheetEditor.LabelShow.both", "Icon and text"], ["icon", "RTA.SheetEditor.LabelShow.icon", "Icon only"], ["text", "RTA.SheetEditor.LabelShow.text", "Text only"]];
+  return [row(t("RTA.SheetEditor.Icon", "Icon"), icon),
+    ...(node.icon ? [row(t("RTA.SheetEditor.LabelShow.label", "Label shows"), `<select data-layout-prop="labelShow">${shows.map(([value, key, fallback]) => `<option value="${value}"${value === (node.labelShow ?? "both") ? " selected" : ""}>${t(key, fallback)}</option>`).join("")}</select>`)] : [])];
+};
 const KIND_LABELS = {tabs: ["RTA.SheetEditor.Kind.tabs", "Tabs"], tab: ["RTA.SheetEditor.Kind.tab", "Tab"], section: ["RTA.SheetEditor.Kind.section", "Section"], grid: ["RTA.SheetEditor.Kind.grid", "Grid"],
   repeater: ["RTA.SheetEditor.Kind.repeater", "List of Definitions"], value: ["RTA.SheetEditor.Kind.value", "Value"], action: ["RTA.SheetEditor.Kind.action", "Action button"], text: ["RTA.SheetEditor.Kind.text", "Text"], image: ["RTA.SheetEditor.Kind.image", "Image"], contents: ["RTA.SheetEditor.Kind.contents", "Held Contents"], spacer: ["RTA.SheetEditor.Kind.spacer", "Empty cell"]};
 /** A block kind's name, as plain text. */
@@ -40,6 +49,7 @@ export function renderLayoutPropertiesHTML(node, ctx) {
   if (!node) return `<p class="rta-sheet-editor__hint">${t("RTA.SheetEditor.SelectHint", "Click a block of the sheet to change it.")}</p>`;
   const rows = [];
   if (["tab", "section"].includes(node.kind)) rows.push(row(t("RTA.SheetEditor.Title", "Title"), text("labelKey", node.labelKey)));
+  if (["tab", "section"].includes(node.kind)) rows.push(...iconRows(node));
   if (["tabs", "tab"].includes(node.kind)) rows.push(`<button type="button" class="rta-sheet-editor__wide" data-layout-command="addTab"><i class="fa-solid fa-plus"></i> ${t("RTA.SheetEditor.AddTab", "Add a tab")}</button>`);
   if (["section", "grid", "repeater"].includes(node.kind)) rows.push(row(t("RTA.SheetEditor.Columns", "Columns"), select("columns", ctx.columnChoices(node.kind), node.columns ?? 1)));
   if (node.kind === "repeater") {
@@ -52,6 +62,7 @@ export function renderLayoutPropertiesHTML(node, ctx) {
     const refs = ctx.sourceChoices(source.kind);
     rows.push(row(t("RTA.SheetEditor.Which", "Which one"), select("sourceRef", refs, ctx.sourceToken(source))));
     rows.push(row(t("RTA.SheetEditor.Label", "Label"), text("labelKey", node.labelKey, ctx.defaultLabel(node))));
+    rows.push(...iconRows(node));
     rows.push(row(t("RTA.SheetEditor.LabelPlacement", "Label placed"), select("labelPlace", ctx.labelPlaces, node.style?.label ?? "side")));
     if (ctx.numeric) rows.push(row(t("RTA.SheetEditor.DisplayAs", "Shown as"), select("display", ctx.displays, node.display ?? "field")));
     if (node.display === "dots") rows.push(row(t("RTA.SheetEditor.DotCount", "Dots (without a maximum)"), select("dots", ctx.dotCounts, String(node.dots ?? 5))));
@@ -71,6 +82,7 @@ export function renderLayoutPropertiesHTML(node, ctx) {
   if (node.kind === "action") {
     rows.push(row(t("RTA.SheetEditor.Action", "Action"), select("actionRef", ctx.actions, node.actionRef)));
     rows.push(row(t("RTA.SheetEditor.Label", "Label"), text("labelKey", node.labelKey, ctx.defaultLabel(node))));
+    rows.push(...iconRows(node));
   }
   if (node.kind === "text") rows.push(row(t("RTA.SheetEditor.Text", "Text"), text("textKey", node.textKey)));
   if (node.kind === "image") {

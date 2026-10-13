@@ -205,6 +205,11 @@
   inline-size: 100%;
 }
 
+/* A label's icon, before its text when both show. */
+.rta-sheet-icon + span:not(.rta-sheet-visually-hidden) {
+  margin-inline-start: var(--rta-gap-tight);
+}
+
 .rta-sheet-text,
 .rta-sheet-empty {
   margin: 0;
