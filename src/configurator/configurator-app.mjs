@@ -8,6 +8,7 @@ import {createSelectColorResolver,selectColorsAttribute} from "../ui/select-opti
 import {buildDependencyExplorer,buildDependencyGraph} from "./dependency-explorer.mjs";
 import {confirmRTA, promptRTA} from "./foundry-dialogs.mjs";
 import {openContextMenu} from "../ui/context-menu.mjs";
+import {entryDeletionView,deleteRulesetEntry} from "./entry-deletion.mjs";
 import {ConfiguratorWindow} from "./configurator-window.mjs";
 import {ConfiguratorEntryEditor} from "./configurator-entry-editor.mjs";
 import {buildRuntimeLabDemoProfile} from "../runtime/runtime-demo-profile.mjs";
@@ -486,7 +487,7 @@ export class ConfiguratorApp extends ConfiguratorWindow {
   }
 
   async #openEditor(kind,id=null,extra={}) {
-    this.entryEditor?.close?.();
+    this.entryEditor?.close?.();this.#editorTarget=`${kind}|${id}`;
     this.entryEditor = new ConfiguratorEntryEditor({api:await this.#api(),versionId:this.#selected,kind,id,...extra,onSaved:async result=>{
       if(kind==="ruleset" && result?.versionId){
         if(id){this.#selected=result.versionId;this.#view="general";}
@@ -499,12 +500,13 @@ export class ConfiguratorApp extends ConfiguratorWindow {
   }
 
   /** Right click on an entry: open it, or duplicate it under a name asked first. */
+  #editorTarget="";
   async #entryMenu(event,card) {
     event.preventDefault();
     const kind=card.dataset.kind,id=card.dataset.entryId,name=card.querySelector(".rta-config-card__title")?.textContent?.trim()??id;
     const record=(await this.#api()).getRulesetVersion(this.#selected),i18n=game.i18n;
     const items=[{label:i18n.localize("RTA.UI.Edit"),icon:"fa-solid fa-pen-to-square",run:()=>this.#openEditor(kind,id)}];
-    if(record?.status!=="validated")items.push({label:i18n.localize("RTA.UI.DuplicateEntry"),icon:"fa-solid fa-copy",run:()=>this.#duplicate(kind,id,name)});
+    if(record?.status!=="validated")items.push({label:i18n.localize("RTA.UI.DuplicateEntry"),icon:"fa-solid fa-copy",run:()=>this.#duplicate(kind,id,name)},{label:i18n.localize("RTA.Template.Delete"),icon:"fa-solid fa-trash",run:()=>this.#delete(kind,id,name)});
     openContextMenu(event,items);
   }
   async #duplicate(kind,id,name) {
@@ -516,6 +518,19 @@ export class ConfiguratorApp extends ConfiguratorWindow {
       const copy=await (await this.#api()).duplicateEntry(this.#selected,kind,id,String(copyName).trim());
       await this.render(false);
       return this.#openEditor(kind,copy.id);
+    } catch(error){this.#error=error?.message??String(error);return this.render(false);}
+  }
+
+  /** Delete from the right-click menu: refused ahead with who still uses it, else confirmed first. */
+  async #delete(kind,id,name) {
+    this.#error="";
+    try {
+      const api=await this.#api(),view=entryDeletionView(api,this.#selected,kind,id);
+      if(view.blocked)return ui.notifications?.warn?.(view.reason);
+      if(!await confirmRTA("RTA.UI.DeleteNamedEntry",{name}))return;
+      if(await deleteRulesetEntry(api,this.#selected,kind,id,confirmRTA)===false)return;
+      if(this.#editorTarget===`${kind}|${id}`)this.entryEditor?.close?.();
+      return this.render(false);
     } catch(error){this.#error=error?.message??String(error);return this.render(false);}
   }
 

@@ -39,3 +39,16 @@ test('The right-click menu lists its choices, escaped', ()=>{
   assert.match(html,/<ol class="context-items"><li class="context-item" data-context-item="0"><i class="fa-solid fa-pen"/);
   assert.match(html,/&lt;b&gt;Dupliquer/);
 });
+
+test('Deleting from the menu: refused ahead while something uses the entry, else deleted', async()=>{
+  const {entryDeletionView,deleteRulesetEntry}=await import('../src/configurator/entry-deletion.mjs');
+  const {api,v}=await setup();
+  await api.createFormula(v,{id:'f-force',nameKey:'Force doubled',expression:{type:'multiply',args:[{type:'reference',reference:{objectKind:'definition',objectId:'force',capabilityId:'value',outputId:'value.final'}},{type:'literal',value:2}]}});
+  const i18n={lang:'en',format:(key,data)=>`${key}:${data.list}`};
+  const view=entryDeletionView(api,v,'definition','force',i18n);
+  assert.equal(view.blocked,true);assert.match(view.reason,/Force doubled/);
+  await api.duplicateEntry(v,'definition','force','Spare');
+  assert.equal(entryDeletionView(api,v,'definition','spare',i18n).blocked,false);
+  await deleteRulesetEntry(api,v,'definition','spare',async()=>true);
+  assert.equal(api.listDefinitions(v).some(d=>d.id==='spare'),false);
+});

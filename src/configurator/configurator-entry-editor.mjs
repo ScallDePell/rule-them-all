@@ -35,7 +35,7 @@ import {RTA_NEUTRAL_COLOR} from "../ui/theme-tokens.mjs";
 import {MODULE_ID} from "../core/module-contract.mjs";
 import {createSelectColorResolver,referenceKindTitle,selectColorsAttribute} from "../ui/select-option-presentation.mjs";
 import {confirmRTA} from "./foundry-dialogs.mjs";
-import {describeDeletion,rulesetObjectName} from "./deletion-view.mjs";
+import {entryDeletionView,deleteRulesetEntry} from "./entry-deletion.mjs";
 import {entryHelp} from "./entry-help.mjs";
 import {RTASelect} from "../ui/rta-select.mjs";
 import {relationCatalog,relationRowModel,collectRelationRows} from "./generic-relations.mjs";
@@ -694,22 +694,12 @@ export class ConfiguratorEntryEditor extends ConfiguratorWindow {
     }
   }
   /** CP-31: optional references to the entry are cleared only after the GM confirms which ones. */
-  async #deleteEntry(){
-    const remove=ENTRY_OPERATIONS[this.#kind].delete;
-    try{return await this.#api[remove](this.#versionId,this.#id);}
-    catch(error){
-      if(error?.code!=="OPTIONAL_REFERENCES")throw error;
-      const list=(error.consumers??[]).map(edge=>`${edge.consumerRef.objectKind} ${edge.consumerRef.objectId}`).join(", ");
-      if(!await confirmRTA("RTA.UI.ClearOptionalReferences",{list}))return false;
-      return this.#api[remove](this.#versionId,this.#id,{clearOptionalReferences:true});
-    }
-  }
+  #deleteEntry(){return deleteRulesetEntry(this.#api,this.#versionId,this.#kind,this.#id,confirmRTA);}
   /** Delete is disabled ahead of time when the Core would refuse it (§46). */
   #deletionView(){
-    const i18n=globalThis.game?.i18n,format=(key,data)=>{const text=i18n?.format?.(key,data);return text&&text!==key?text:`${key} ${Object.values(data).join(", ")}`.trim();};
     // Deleting the active version stays possible from the Ruleset list, which deactivates it first.
     if(this.#kind==="ruleset")return {blocked:false,reason:""};
-    const ruleset=this.#api.getRuleset(this.#versionId),fr=i18n?.lang==="fr";
-    return describeDeletion(this.#api.getDeletionStatus(this.#versionId,this.#id,this.#kind),{format,nameOf:(kind,id)=>`${referenceKindTitle(kind,fr)} · ${rulesetObjectName(ruleset,kind,id)}`});
+    return entryDeletionView(this.#api,this.#versionId,this.#kind,this.#id);
   }
+
 }

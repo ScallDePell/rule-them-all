@@ -45,7 +45,8 @@
       "DuplicateEntry": "Duplicate",
       "DuplicateName": "Name of the copy",
       "CopyOf": "{name} (copy)",
-      "DuplicateNameRequired": "Give the copy a name."
+      "DuplicateNameRequired": "Give the copy a name.",
+      "DeleteNamedEntry": "Delete “{name}”? This cannot be undone."
     },
     "Nav": {
       "General": "General",

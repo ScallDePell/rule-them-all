@@ -41,7 +41,8 @@
       "DuplicateEntry": "Dupliquer",
       "DuplicateName": "Nom de la copie",
       "CopyOf": "{name} (copie)",
-      "DuplicateNameRequired": "Donnez un nom à la copie."
+      "DuplicateNameRequired": "Donnez un nom à la copie.",
+      "DeleteNamedEntry": "Supprimer « {name} » ? Cette action est définitive."
     },
     "Nav": {
       "General": "Général",
