@@ -12,9 +12,13 @@ import {combatChangeEvents, timeElapsedPayload} from "./src/configurator/system-
 import {registerRulesetDice} from "./src/runtime/foundry-dice.mjs";
 import {installInitiative, installInitiativePasses, rerollEachRound} from "./src/runtime/foundry-initiative.mjs";
 import {FoundryRuntimeAdapter} from "./src/runtime/foundry-runtime-adapter.mjs";
-import {registerRulesetSheets} from "./src/runtime/foundry-sheets.mjs";
+import {registerRulesetSheets, translator} from "./src/runtime/foundry-sheets.mjs";
+import {resolveRuntimeRuleset} from "./src/runtime/runtime-contracts.mjs";
 import {installReactions} from "./src/runtime/foundry-reactions.mjs";
 import {installCreationButton} from "./src/runtime/foundry-creation.mjs";
+
+// The sheet classes, kept to offer the active Ruleset's own sheets once it is loaded.
+let rulesetSheets = null;
 
 /** events: () => [{eventTypeId, payload, refs}], emitted in order on the containers they concern. */
 function emitModuleEvents(events) {
@@ -47,7 +51,7 @@ Hooks.once("init", () => {
   // Rulesets with initiative passes give a second pass (or more) to the fastest combatants before the round ends.
   installInitiativePasses(CONFIG.Combat.documentClass, () => game.ruleThemAll?.runtime);
   // The Ruleset's sheets (or AUTO ones), offered for every Actor and Item type next to the game system's.
-  registerRulesetSheets();
+  rulesetSheets = registerRulesetSheets();
   Hooks.callAll("ruleThemAllInit", game.ruleThemAll);
   console.log("Rule Them'All | Initialization");
 });
@@ -76,7 +80,10 @@ Hooks.once("ready", () => {
     // Ruleset dice (2dp) known to Foundry, so dice in chat messages rebuild; a roll registers its own Ruleset's again.
     const registerDice = () => { for (const family of api.listRulesetFamilies()) for (const version of family.versions) if (version.publishedSnapshot) registerRulesetDice(family.id, version.publishedSnapshot.dice ?? []); };
     registerDice();
-    api.subscribe(() => { registerDice(); ConfiguratorApp.refreshOpen(); });
+    // The active Ruleset's own sheets, by name, in each Document's sheet choice.
+    const registerSheets = () => { const active = api.getActiveVersionId(); try { rulesetSheets.registerNamed(active ? resolveRuntimeRuleset(api, active) : null, active ? translator(active) : undefined); } catch (error) { console.error("Rule Them'All | Sheet registration failed", error); } };
+    registerSheets();
+    api.subscribe(() => { registerDice(); registerSheets(); ConfiguratorApp.refreshOpen(); });
     // The world's shared Definitions (a GM reserve, clocks) exist as soon as the active Ruleset names them.
     if (game.users.activeGM?.isSelf) Promise.resolve(game.ruleThemAll.runtime.initializeShared()).catch(error => console.error("Rule Them'All | Shared containers failed", error));
     Hooks.callAll("ruleThemAllReady", game.ruleThemAll);

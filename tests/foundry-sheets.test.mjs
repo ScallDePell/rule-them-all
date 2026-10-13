@@ -5,7 +5,7 @@ import {emptyStorageSnapshot} from '../src/configurator/configurator-storage.mjs
 import {MemoryRuntimeAdapter} from '../src/runtime/memory-runtime-adapter.mjs';
 import {createRuntimeAPI} from '../src/runtime/runtime-api.mjs';
 import {RELAYED_METHODS} from '../src/runtime/runtime-relay.mjs';
-import {actionSummary, createRulesetSheets, registerRulesetSheets} from '../src/runtime/foundry-sheets.mjs';
+import {actionSummary, chosenSheet, createRulesetSheets, registerRulesetSheets} from '../src/runtime/foundry-sheets.mjs';
 import {renderSheetHTML, formatSheetValue} from '../src/ui/sheet-markup.mjs';
 
 class Storage{value=emptyStorageSnapshot();async load(){return structuredClone(this.value)}async save(v){this.value=structuredClone(v)}}
@@ -47,6 +47,21 @@ test('sheets are offered for every Actor and Item type, never as the default; sh
   registerRulesetSheets({applications:{sheets:{ActorSheetV2:Base,ItemSheetV2:Base},apps:{DocumentSheetConfig:{registerSheet:(doc,scope,cls,options)=>calls.push([doc,scope,options])}}}},{Actor:'Actor',Item:'Item'});
   assert.deepEqual(calls.map(([doc,scope,options])=>[doc,scope,options.makeDefault,options.types]),[['Actor','rule-them-all',false,undefined],['Item','rule-them-all',false,undefined]]);
   assert.ok(RELAYED_METHODS.includes('writeSheetValue'));
+});
+
+test('the active Ruleset’s sheets are offered by name in the sheet choice, and withdrawn when they go', ()=>{
+  const calls=[],removed=[];
+  const sheets=registerRulesetSheets({applications:{sheets:{ActorSheetV2:Base,ItemSheetV2:Base},apps:{DocumentSheetConfig:{registerSheet:(doc,scope,cls,options)=>calls.push([doc,cls,options.label]),unregisterSheet:(doc,scope,cls)=>removed.push(cls.name)}}}},{Actor:'Actor',Item:'Item'});
+  const ruleset={sheetDefinitions:[{id:'pc',nameKey:'Fiche PJ',target:'actor'},{id:'pc-2',nameKey:'Fiche PJ compacte',target:'actor'},{id:'npc',nameKey:'Fiche PNJ',target:'actor',enabled:false},{id:'weapon',nameKey:'Arme',target:'item',contentTypeIds:['arme']}]};
+  assert.deepEqual(sheets.registerNamed(ruleset,key=>key.toUpperCase()),['RTASheet_pc','RTASheet_pc-2','RTASheet_weapon']);
+  assert.deepEqual(calls.slice(2).map(([doc,cls,label])=>[doc,cls.rtaSheetId,label]),[['Actor','pc','FICHE PJ'],['Actor','pc-2','FICHE PJ COMPACTE'],['Item','weapon','ARME']]);
+  assert.ok(calls[2][1].prototype instanceof sheets.RulesetActorSheet);
+  sheets.registerNamed({sheetDefinitions:[ruleset.sheetDefinitions[0]]});
+  assert.deepEqual(removed,['RTASheet_pc-2','RTASheet_weapon']);
+  // The chosen sheet is shown while the Ruleset has it for this target; otherwise the first that fits.
+  assert.equal(chosenSheet(ruleset,'pc-2',{target:'actor'}).id,'pc-2');
+  assert.equal(chosenSheet(ruleset,'gone',{target:'actor'}).id,'pc');
+  assert.equal(chosenSheet(ruleset,'weapon',{target:'item',contentTypeId:'pouvoir'}).id,'auto');
 });
 
 test('markup: values, bounds, amounts, tabs and the Action chat summary', ()=>{

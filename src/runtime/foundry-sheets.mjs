@@ -1,5 +1,6 @@
 /* Played sheets in Foundry (CP-14): an Actor sheet and an Item sheet that show the Ruleset's SheetDefinition
    (or the AUTO layout), for any game system. Offered in each Document's sheet choice, never forced as the default.
+   Each enabled SheetDefinition of the active Ruleset is also offered there under its own name.
    Every value changed here goes to the runtime (writeSheetValue), never to the Document's data. */
 import {MODULE_ID} from "../core/module-contract.mjs";
 import {sheetFor} from "../configurator/sheet-auto-layout.mjs";
@@ -61,6 +62,14 @@ async function askChoice(offer, t, ruleset) {
   const options = offer.actionIds.map(id => `<label class="checkbox"><input type="checkbox" name="choice" value="${escapeHTML(id)}"> ${escapeHTML(t(ruleset.actions?.find(a => a.id === id)?.nameKey ?? id))}</label>`).join("");
   return Dialog.prompt({window: {title: globalThis.game.i18n.format("RTA.Sheet.ChooseActions", {count: offer.count})}, content: `<div class="rta-sheet-choice">${options}</div>`,
     ok: {callback: (_event, button) => [...button.form.querySelectorAll('input[name="choice"]:checked')].map(input => input.value)}, rejectClose: false});
+}
+
+/** The sheet a window shows: the SheetDefinition it was chosen for (Foundry's sheet choice) when this Ruleset still
+   has it for this target, otherwise the first that fits (or AUTO). */
+export function chosenSheet(ruleset, sheetId, {target, contentTypeId = null}) {
+  const sheet = sheetId ? (ruleset.sheetDefinitions ?? []).find(entry => entry.id === sheetId && entry.enabled !== false && entry.target === target
+    && (target !== "item" || !(entry.contentTypeIds ?? []).length || (entry.contentTypeIds ?? []).includes(contentTypeId))) : null;
+  return sheet ?? sheetFor(ruleset, {target, contentTypeId});
 }
 
 /** The sheet classes, built on Foundry's ActorSheetV2 / ItemSheetV2. */
@@ -225,7 +234,7 @@ export function createRulesetSheets({ActorSheetV2, ItemSheetV2}) {
       const create = {command: "create", label: i18n("RTA.Creation.CreateThis"), icon: "fa-user-plus"};
       if (!stored.rulesetVersionId) return {versionId, notice: i18n(creatable ? "RTA.Sheet.NotCreated" : "RTA.Sheet.NotInitialized"), actor,
         noticeActions: this.isEditable ? [...(creatable ? [create] : []), {command: "initialize", label: i18n(creatable ? "RTA.Sheet.InitializeEmpty" : "RTA.Sheet.Initialize")}] : []};
-      const ruleset = resolveRuntimeRuleset(api, versionId), sheet = sheetFor(ruleset, {target: "actor"});
+      const ruleset = resolveRuntimeRuleset(api, versionId), sheet = chosenSheet(ruleset, this.constructor.rtaSheetId, {target: "actor"});
       const items = [...(doc.items ?? [])].map(item => ({id: item.id, name: item.name, img: item.img, managed: Boolean(item.getFlag?.(MODULE_ID, TEMPLATE_FLAG)?.managed)}));
       return {versionId, ruleset, sheet, actor, headerActions: [...(creatable ? [create] : []), ...(rebind ? [rebind] : [])], view: await runtime.projectSheet(versionId, sheet, {actor, items})};
     }
@@ -240,7 +249,7 @@ export function createRulesetSheets({ActorSheetV2, ItemSheetV2}) {
       const ruleset = resolveRuntimeRuleset(api, flag.versionId), owner = this.document.parent?.documentName === "Actor" ? this.document.parent.uuid : null;
       const owned = owner ? (await runtime.listOwnedContents(flag.versionId, owner)).some(row => row.key === this.document.id) : false;
       const content = owned ? {key: this.document.id} : {templateId: flag.templateId};
-      const sheet = sheetFor(ruleset, {target: "item", contentTypeId: flag.contentTypeId});
+      const sheet = chosenSheet(ruleset, this.constructor.rtaSheetId, {target: "item", contentTypeId: flag.contentTypeId});
       return {versionId: flag.versionId, ruleset, sheet, actor: owned ? owner : null, content, contentTypeId: flag.contentTypeId,
         view: await runtime.projectSheet(flag.versionId, sheet, {actor: owned ? owner : null, content})};
     }
@@ -248,11 +257,31 @@ export function createRulesetSheets({ActorSheetV2, ItemSheetV2}) {
   return {RulesetActorSheet, RulesetItemSheet};
 }
 
+/** Foundry keeps a Document's chosen sheet as "<scope>.<class name>": the class name follows the SheetDefinition id. */
+export const namedSheetClassName = sheetId => `RTASheet_${String(sheetId).replace(/[^A-Za-z0-9_-]/g, "_")}`;
+
 /** Offer both sheets for every Actor and Item type; the user picks them in the sheet choice. */
 export function registerRulesetSheets(foundry = globalThis.foundry, documents = {Actor: globalThis.Actor, Item: globalThis.Item}) {
   const sheets = createRulesetSheets(foundry.applications.sheets);
   const config = foundry.applications.apps.DocumentSheetConfig;
   config.registerSheet(documents.Actor, MODULE_ID, sheets.RulesetActorSheet, {label: "RTA.Sheet.ActorSheet", makeDefault: false});
   config.registerSheet(documents.Item, MODULE_ID, sheets.RulesetItemSheet, {label: "RTA.Sheet.ItemSheet", makeDefault: false});
+  const named = new Map();
+  /** Offers the active Ruleset's SheetDefinitions by name, and withdraws those it no longer has. Called again on every change. */
+  sheets.registerNamed = (ruleset, t = key => key) => {
+    const wanted = new Map();
+    for (const entry of ruleset?.sheetDefinitions ?? []) {
+      if (entry.enabled === false || !["actor", "item"].includes(entry.target)) continue;
+      const Base = entry.target === "actor" ? sheets.RulesetActorSheet : sheets.RulesetItemSheet, name = namedSheetClassName(entry.id);
+      const SheetClass = class extends Base { static rtaSheetId = entry.id; };
+      Object.defineProperty(SheetClass, "name", {value: name});
+      wanted.set(`${entry.target}:${name}`, {document: entry.target === "actor" ? documents.Actor : documents.Item, SheetClass, label: t(entry.nameKey) || entry.id});
+    }
+    for (const [key, old] of named) if (!wanted.has(key)) config.unregisterSheet?.(old.document, MODULE_ID, old.SheetClass);
+    for (const sheet of wanted.values()) config.registerSheet(sheet.document, MODULE_ID, sheet.SheetClass, {label: sheet.label, makeDefault: false});
+    named.clear();
+    for (const [key, sheet] of wanted) named.set(key, sheet);
+    return [...wanted.values()].map(sheet => sheet.SheetClass.name);
+  };
   return sheets;
 }
