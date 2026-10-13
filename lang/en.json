@@ -77,7 +77,8 @@
       "RuntimeLab": "Runtime Lab",
       "Dependencies": "Dependencies",
       "Tables": "Tables",
-      "Dice": "Dice"
+      "Dice": "Dice",
+      "Scales": "Description scales"
     },
     "Dependencies": {
       "Title": "Dependencies",
@@ -169,7 +170,9 @@
       "NoRepeat": "Empty: played once",
       "RepeatMax": "Terms at most",
       "NoLimit": "No limit",
-      "RepeatWhile": "Another term while"
+      "RepeatWhile": "Another term while",
+      "ScaleOfType": "That of its type",
+      "NoScale": "None"
     },
     "FamilyColor": {
       "parameters": "Parameters",
@@ -586,7 +589,9 @@
       "AcquisitionChosen": "Also acquires the Definition named by",
       "World": "World",
       "Combat": "Combat in progress",
-      "Die": "Die"
+      "Die": "Die",
+      "Scale": "Description scale",
+      "ScaleRef": "Description scale"
     },
     "EditorDisplay": {
       "NoneSelected": "None selected",
@@ -1003,6 +1008,10 @@
       "die": {
         "Summary": "A Die has faces of its own: narrative dice with symbols, a d6 whose 1 is a special face, a stunt die.",
         "Usage": "Give it a letter, then its counters and its faces. A Roll throws it with that letter (2dp for two dice). A Formula reads a counter over all the dice thrown; a negative count cancels (a failure counts -1 success)."
+      },
+      "scale": {
+        "Summary": "A Description scale turns a number into words: \"Seems in great shape\", \"Badly hurt\", \"Exceptional\".",
+        "Usage": "Give each band its range and words. Link the scale to a Definition type (all its Definitions) or to one Definition. On a sheet, a value shown \"As a description\" shows these words instead of the number, for observers for instance."
       }
     },
     "CapabilityType": {
@@ -1506,7 +1515,8 @@
       "Display": {
         "field": "Field",
         "gauge": "Gauge",
-        "dots": "Dots"
+        "dots": "Dots",
+        "description": "As a description"
       },
       "DisplayAs": "Shown as",
       "DotCount": "Dots (without a maximum)",
@@ -1525,7 +1535,14 @@
       "FillTo": "Gradient to",
       "DotColor": "Dot color",
       "Seen": "Seen by",
-      "GmOnly": "The GM only"
+      "GmOnly": "The GM only",
+      "Audience": {
+        "player": "Players (owners)",
+        "observer": "Observers",
+        "gm": "The GM"
+      },
+      "ChangedBy": "Changed by",
+      "DescriptionSample": "Seems in great shape"
     },
     "Reaction": {
       "Title": "Reaction",
@@ -1566,6 +1583,20 @@
       "Term": "Term {number}",
       "CreateThis": "Create the character",
       "ActorType": "Actor type"
+    },
+    "Scale": {
+      "Row": "Band",
+      "Rows": "Bands",
+      "RowsHelp": "Each band covers a range and gives the words shown instead of the number. Leave a bound empty for an open range. Ranges must not overlap.",
+      "AddRow": "Add a band",
+      "Min": "From",
+      "Max": "To",
+      "Words": "Description",
+      "BasisLabel": "Ranges compare",
+      "Basis": {
+        "value": "the value",
+        "percent": "the % of the maximum"
+      }
     }
   }
 }

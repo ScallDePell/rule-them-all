@@ -56,3 +56,9 @@ test('old sheet layouts become a LayoutNode tree that the module reads', async (
   readStorageSnapshot(snapshot);
   await createConfiguratorAPI({load:async()=>snapshot,save:async()=>{},subscribe:()=>()=>{}});
 });
+
+test('a block for the GM only (gmOnly) becomes one seen by the GM', () => {
+  const snapshot={rulesetFamilies:[{versions:[{versionId:'v',workingDraft:{sheetDefinitions:[{id:'s',target:'actor',root:{id:'root',kind:'grid',children:[{id:'a',kind:'section',gmOnly:true,children:[{id:'b',kind:'text',textKey:''}]},{id:'c',kind:'spacer'}]}}]}}]}]};
+  const [sheet]=convertSnapshot(snapshot).snapshot.rulesetFamilies[0].versions[0].workingDraft.sheetDefinitions;
+  assert.deepEqual(sheet.root.children.map(n=>[n.id,n.seenBy??null,Object.hasOwn(n,'gmOnly')]),[['a',['gm'],false],['c',null,false]]);
+});

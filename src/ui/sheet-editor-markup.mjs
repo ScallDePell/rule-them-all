@@ -57,11 +57,13 @@ export function renderLayoutPropertiesHTML(node, ctx) {
       rows.push(...colorRows("fill", node.display === "gauge" ? t("RTA.SheetEditor.Fill", "Gauge color") : t("RTA.SheetEditor.DotColor", "Dot color"), node.style ?? {}, ctx.style.tones));
       if (node.display === "gauge") rows.push(...colorRows("fillTo", t("RTA.SheetEditor.FillTo", "Gradient to"), node.style ?? {}, ctx.style.tones));
     }
-    if (ctx.writable) {
+    if (ctx.writable && node.display !== "description") {
       // What a player may do with it: type a value, raise it, lower it (raise and lower together: −/+ buttons).
       const operation = node.write?.operation, on = {set: operation === "set", add: ["add", "adjust"].includes(operation), subtract: ["subtract", "adjust"].includes(operation)};
       const check = (key, label) => `<label class="rta-sheet-editor__check"><input type="checkbox" data-layout-write="${key}"${on[key] ? " checked" : ""}${key !== "set" && on.set ? " disabled" : ""}> ${label}</label>`;
       rows.push(row(t("RTA.SheetEditor.Player", "On the sheet"), `<div class="rta-sheet-editor__checks">${check("set", t("RTA.SheetEditor.Write.set", "Can be changed"))}${check("add", t("RTA.SheetEditor.Write.add", "Can be raised"))}${check("subtract", t("RTA.SheetEditor.Write.subtract", "Can be lowered"))}</div>`));
+      // The players see it; only the GM gets the field or the − and +.
+      if (operation) rows.push(row(t("RTA.SheetEditor.ChangedBy", "Changed by"), `<div class="rta-sheet-editor__checks"><label class="rta-sheet-editor__check"><input type="checkbox" data-layout-write-by="gm"${node.write?.by === "gm" ? " checked" : ""}> ${t("RTA.SheetEditor.GmOnly", "The GM only")}</label></div>`));
     }
   }
   if (node.kind === "action") {
@@ -80,8 +82,11 @@ export function renderLayoutPropertiesHTML(node, ctx) {
     rows.push(row(t("RTA.SheetEditor.ContentTypes", "Content Types (none: all)"), `<select multiple data-layout-prop="contentTypeIds">${ctx.contentTypes.map(choice => `<option value="${escape(choice.value)}" data-rta-colors="${escape(choice.colors)}"${chosen.has(choice.value) ? " selected" : ""}>${escape(choice.label)}</option>`).join("")}</select>`));
   }
   if (ctx.parentColumns > 1) rows.push(row(t("RTA.SheetEditor.Width", "Width"), select("span", ctx.spanChoices(ctx.parentColumns), node.span ?? 1)));
-  // Players never get a block for the GM only, nor what it holds.
-  if (!ctx.isRoot) rows.push(row(t("RTA.SheetEditor.Seen", "Seen by"), `<div class="rta-sheet-editor__checks"><label class="rta-sheet-editor__check"><input type="checkbox" data-layout-prop="gmOnly"${node.gmOnly ? " checked" : ""}> ${t("RTA.SheetEditor.GmOnly", "The GM only")}</label></div>`));
+  // Who gets the block (and what it holds): the Actor's owners, anyone else who opens the sheet, the GM.
+  if (!ctx.isRoot) {
+    const seen = who => `<label class="rta-sheet-editor__check"><input type="checkbox" data-layout-seen="${who}"${!node.seenBy || node.seenBy.includes(who) ? " checked" : ""}> ${t(`RTA.SheetEditor.Audience.${who}`, who)}</label>`;
+    rows.push(row(t("RTA.SheetEditor.Seen", "Seen by"), `<div class="rta-sheet-editor__checks">${["player", "observer", "gm"].map(seen).join("")}</div>`));
+  }
   if (!rows.length) rows.push(`<p class="rta-sheet-editor__hint">${t("RTA.SheetEditor.NothingToSet", "This block has no settings.")}</p>`);
   return `<div class="rta-sheet-editor__properties-head"><strong>${kindLabel(node.kind)}</strong></div>${rows.join("")}${ctx.style ? renderStyleHTML(node, ctx.style) : ""}`;
 }

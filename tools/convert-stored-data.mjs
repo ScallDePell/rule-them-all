@@ -1,4 +1,5 @@
-/** One-shot conversion of a World saved before the 2026-10-11 UI simplification, the RWF gap fixes or the 2026-10-12 progression.
+/** One-shot conversion of a World saved before the 2026-10-11 UI simplification, the RWF gap fixes, the 2026-10-12 progression
+ * or the 2026-10-13 sheet audiences (gmOnly becomes seenBy).
  * The module itself reads only the current format; this tool rewrites stored data once.
  * In the Foundry console, as GM:
  *   const {convertWorld}=await import("/modules/rule-them-all/tools/convert-stored-data.mjs");
@@ -111,8 +112,17 @@ function convertColors(map) {
 
 // 2026-10-12: a SheetDefinition is a LayoutNode tree {target, contentTypeIds, root}. Only the plain old components
 // (section, text, spacer) carry over; the bound ones never rendered and must be rebuilt in the sheet editor.
+// 2026-10-13: a block "for the GM only" (gmOnly: true) is now one seen by the GM (seenBy: ["gm"]).
+function convertSeenBy(node) {
+  if (!isRecord(node)) return node;
+  const next = without(node, ["gmOnly"]);
+  if (node.gmOnly === true) next.seenBy = ["gm"];
+  if (Array.isArray(node.children)) next.children = node.children.map(convertSeenBy);
+  return next;
+}
+
 function convertSheet(sheet, notes) {
-  if (!Object.hasOwn(sheet, "layout") && !Object.hasOwn(sheet, "viewType")) return sheet;
+  if (!Object.hasOwn(sheet, "layout") && !Object.hasOwn(sheet, "viewType")) return isRecord(sheet?.root) ? {...sheet, root: convertSeenBy(sheet.root)} : sheet;
   const columns = sheet.layout?.direction === "grid" ? 2 : 1;
   const used = new Set(["root"]);
   const children = [];

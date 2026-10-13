@@ -15,7 +15,7 @@ import {collectTemplateAcquisitions} from './content-template-form.mjs';
 import {collectDefinitionSlots} from './slot-form.mjs';
 import {collectTestInputs} from './test-input-form.mjs';
 import {collectDie} from './die-form.mjs';
-import {collectRollVariants,collectExtraRolls,collectActionInputs,collectTableRows,collectProgression} from './rule-cards-form.mjs';
+import {collectRollVariants,collectExtraRolls,collectActionInputs,collectTableRows,collectScaleRows,collectProgression} from './rule-cards-form.mjs';
 /** Initiative passes from the Ruleset form: none while the step is empty or 0. */
 const initiativePasses=fd=>{
   const step=Number(String(fd.get("initiativePassStep")??"").trim()||0),threshold=Number(String(fd.get("initiativePassThreshold")??"").trim()||0);
@@ -92,12 +92,12 @@ export function collectEntryData(kind,{fd,current,bool,checkedIds,queryOne,query
     if(kind==="definitionType"){
       const name=String(fd.get("nameKey")??"").trim(),key=current.key||slug(name)||uid("type");
       const allowed=[],defaults=[],required=[];for(const cap of capabilityTypes){const role=String(fd.get(`capability:${cap.id}`)??"off");if(role==="off")continue;allowed.push(cap.id);if(role==="default")defaults.push(cap.id);if(role==="required")required.push(cap.id);}
-      return{...current,key,nameKey:name,descriptionKey:String(fd.get("descriptionKey")??""),color:fieldPresent(fd,"customColorEnabled")?(fieldPresent(fd,"color")?String(fd.get("color")??"").trim()||null:current.color??null):fieldPresent(fd,"customColorPermission")?null:current.color??null,allowedCapabilities:allowed,defaultCapabilities:defaults,requiredCapabilities:required,fields:collectFieldDefinitions(queryAll("[data-field-definition-row]"),{makeId:fieldUid}),constraints:readConstraintRows(queryAll("[data-declarative-constraint]")),presentation:readPresentationRows(queryAll("[data-presentation-key]"))};
+      return{...current,key,nameKey:name,descriptionKey:String(fd.get("descriptionKey")??""),color:fieldPresent(fd,"customColorEnabled")?(fieldPresent(fd,"color")?String(fd.get("color")??"").trim()||null:current.color??null):fieldPresent(fd,"customColorPermission")?null:current.color??null,allowedCapabilities:allowed,defaultCapabilities:defaults,requiredCapabilities:required,scaleRef:String(fd.get("scaleRef")??"")||null,fields:collectFieldDefinitions(queryAll("[data-field-definition-row]"),{makeId:fieldUid}),constraints:readConstraintRows(queryAll("[data-declarative-constraint]")),presentation:readPresentationRows(queryAll("[data-presentation-key]"))};
     }
     if(kind==="definition"){
       const name=String(fd.get("nameKey")??"").trim(),key=current.key||slug(name)||uid("definition"),capabilities=[];
       for(const cap of capabilityTypes)if(bool(`cap:${cap.id}`))capabilities.push(cap.id);
-      return{...current,key,nameKey:name,descriptionKey:String(fd.get("descriptionKey")??""),enabled:bool("enabled"),capabilities,data:collectDefinitionData(queryAll("[data-definition-field]")),slots:collectDefinitionSlots(queryAll,current),categories:checkedIds("categories"),tags:checkedIds("tags"),presentationProfile:readPresentationRows(queryAll("[data-presentation-key]"))};
+      return{...current,key,nameKey:name,descriptionKey:String(fd.get("descriptionKey")??""),enabled:bool("enabled"),capabilities,data:collectDefinitionData(queryAll("[data-definition-field]")),slots:collectDefinitionSlots(queryAll,current),categories:checkedIds("categories"),tags:checkedIds("tags"),scaleRef:String(fd.get("scaleRef")??"")||null,presentationProfile:readPresentationRows(queryAll("[data-presentation-key]"))};
     }
     if(kind==="parameter"){const vt=String(fd.get("valueType")??"number"),value=parseEditorValue(vt,"one",false,fd.get("value")??"");return{...current,nameKey:String(fd.get("nameKey")??"").trim(),descriptionKey:String(fd.get("descriptionKey")??""),enabled:bool("enabled"),valueType:vt,value,scope:"ruleset",tags:checkedIds("tags")};}
     if(kind==="formula"){const fallback=json(fd.get("expressionJson"),{type:"literal",value:0});return{...current,nameKey:String(fd.get("nameKey")??"").trim(),descriptionKey:String(fd.get("descriptionKey")??""),enabled:bool("enabled"),resultType:String(fd.get("resultType")??"number"),expression:collectFormulaExpression(fallback),tags:checkedIds("tags")};}
@@ -136,6 +136,7 @@ export function collectEntryData(kind,{fd,current,bool,checkedIds,queryOne,query
     if(kind==="modifier")return collectModifier(fd,current,{bool,checkedIds,operand:readOperand(fd,queryOne)});
     if(kind==="duration")return collectDuration(fd,current,{bool,checkedIds});
     if(kind==="die")return{...current,nameKey:String(fd.get("nameKey")??"").trim(),descriptionKey:String(fd.get("descriptionKey")??""),enabled:bool("enabled"),denomination:String(fd.get("denomination")??"").trim().toLowerCase(),...collectDie(queryAll),tags:checkedIds("tags")};
+    if(kind==="scale")return{...current,nameKey:String(fd.get("nameKey")??"").trim(),descriptionKey:String(fd.get("descriptionKey")??""),enabled:bool("enabled"),basis:String(fd.get("scaleBasis")??"value"),rows:collectScaleRows(queryAll),tags:checkedIds("tags")};
     if(kind==="table")return{...current,nameKey:String(fd.get("nameKey")??"").trim(),descriptionKey:String(fd.get("descriptionKey")??""),enabled:bool("enabled"),rollRef:String(fd.get("tableRollRef")??"").trim()||null,bonusFormulaRef:String(fd.get("tableBonusFormulaRef")??"").trim()||null,rows:collectTableRows(queryAll),tags:checkedIds("tags")};
     if(kind==="progressionSystem")return{...current,nameKey:String(fd.get("nameKey")??"").trim(),descriptionKey:String(fd.get("descriptionKey")??""),enabled:bool("enabled"),...collectProgression(queryAll),tags:checkedIds("tags")};
     const payload=json(fd.get("genericJson"),{}); if(!payload.id)payload.id=current.id; return payload;

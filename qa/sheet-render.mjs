@@ -35,6 +35,8 @@ await api.createFormula(v, {id: 'defence', nameKey: 'Defence', resultType: 'numb
 for (const [id, name] of [['rest', 'Rest'], ['attack', 'Attack'], ['sneak', 'Sneak']]) await api.createAction(v, {id, nameKey: name, effectRefs: []});
 await api.createContentType(v, {id: 'weapon', nameKey: 'Weapon', storageKind: 'item', runtimeMode: 'unique', fields: {damage: field('damage', 'Damage', 'string'), reach: field('reach', 'Reach', 'number'), equipped: field('equipped', 'Equipped', 'boolean')}});
 await api.createContentTemplate(v, {id: 'sword', nameKey: 'Sword', contentTypeId: 'weapon', data: {damage: '1d8', reach: 1, equipped: true}, relations: [], choiceGroups: []});
+await api.createScale(v, {id: 'health', nameKey: 'Health', basis: 'percent', rows: [{id: 'full', labelKey: 'Seems in great shape', min: 100, max: null}, {id: 'hurt', labelKey: 'Somewhat hurt', min: 50, max: 99.99}, {id: 'bad', labelKey: 'Badly hurt', min: 1, max: 49.99}, {id: 'down', labelKey: 'Down', min: null, max: 0}]});
+await api.updateDefinitionType(v, 'resource', {scaleRef: 'health'});
 await api.publishRuleset(v);
 
 const adapter = new MemoryRuntimeAdapter(), engine = new RuntimeEngine({configurator: api, adapter, hooks: null}), hero = {kind: 'actor', id: 'hero'};
@@ -72,6 +74,7 @@ const styled = {id: 'styled', target: 'actor', root: {id: 'root', kind: 'grid', 
     {id: 'held', kind: 'value', source: {kind: 'content', contentTypeId: 'weapon'}, style: {label: 'top'}},
     {id: 'd-will', kind: 'value', labelKey: 'Will', source: {kind: 'output', reference: out_('dex', 'value', 'value.final')}, display: 'dots', dots: 10, write: {operation: 'set'}},
     {id: 'g-hp', kind: 'value', labelKey: 'Health', source: {kind: 'output', reference: out_('hp', 'pool', 'pool.current', 'points')}, display: 'gauge', write: {operation: 'adjust'}, style: {fill: 'danger', fillTo: '#5fa04b'}},
+    {id: 'words', kind: 'value', labelKey: 'Health (seen by others)', source: {kind: 'output', reference: out_('hp', 'pool', 'pool.current', 'points')}, display: 'description', style: {italic: true}},
     {id: 'tall', kind: 'image', src: 'icons/svg/mystery-man.svg', shape: 'portrait', height: 'small'},
     {id: 'a-wit', kind: 'value', labelKey: 'Wits', source: {kind: 'output', reference: out_('wit', 'value', 'value.final')}, write: {operation: 'adjust'}}]}]}};
 

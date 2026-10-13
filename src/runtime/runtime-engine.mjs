@@ -74,8 +74,8 @@ export class RuntimeEngine{
     return out;
   }
   #subject(ref){return this.adapter.subject(ref?normalizeRuntimeContainerRef(ref):null,this.userId??undefined);}
-  /** Whether this engine's user is a GM (what a sheet marked for the GM only needs). */
-  async isGM(){return Boolean((await this.#subject(null))?.isGM);}
+  /** Who this engine's user is for an Actor's sheet: "gm", "player" (an owner) or "observer" (anyone else). */
+  async viewer(ref){const subject=await this.#subject(ref);return subject?.isGM?"gm":subject?.ownership==="owner"?"player":"observer";}
   /** CP-11 decision for one operation on one Ruleset object, for this engine's user on a container. */
   async authorize(versionId,operation,target,containerRef=null,context=null){
     const subject=await this.#subject(containerRef),evaluator=this.evaluator(versionId);

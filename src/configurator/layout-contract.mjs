@@ -13,11 +13,13 @@
    value     := {kind: "value", source, labelKey?, write?, display?, dots?}   a value shown, editable with write;
                 display: "field" (default: the number or text, or its input) | "gauge" (a bar up to the maximum)
                 | "dots" (one dot per point up to the maximum, or dots: 1-20 when the value has none)
+                | "description" (the words of the Definition's description scale for its value or pool; the number is never sent)
    source    := {kind: "output", reference} | {kind: "formula", formulaRef} | {kind: "parameter", parameterRef}
               | {kind: "each", capabilityId, outputId, slotId?}        the output of the repeater's current Definition (its first slot by default)
               | {kind: "field", fieldId}                               a field of the Content an Item sheet shows
               | {kind: "content", contentTypeId}                       the name of the Content(s) the Actor holds of that type (its Origin…)
-   write     := {operation: "set" | "add" | "subtract" | "adjust"}     only on an output, each or field source (CP-30 WriteBinding);
+   write     := {operation: "set" | "add" | "subtract" | "adjust", by?: "gm"}  only on an output, each or field source (CP-30 WriteBinding);
+                                                                       by "gm": players see the value but only the GM changes it;
                                                                        adjust: raised and lowered by 1 with − and + on each side;
                                                                        a value.final is written through its value.base
    action    := {kind: "action", actionRef, labelKey?}                 a button that uses the Action (on the repeater's Definition inside one)
@@ -28,7 +30,8 @@
    contents  := {kind: "contents", contentTypeIds?}                  the Contents the Actor holds (its Items), of these Content Types (all when none);
                                                                        dropping an Item on the sheet adds one
    spacer    := {kind: "spacer"}
-   gmOnly: true on any node below the root: only a GM sees it (and what it holds) and writes through it.
+   seenBy: on any node below the root, who gets it (and what it holds): some of "player" (an owner of the Actor),
+           "observer" (anyone else who opens the sheet) and "gm"; all when absent. Nobody writes through a node they do not get.
    style: any node may carry one (colors, background, border, font, size, alignment, margins): layout-style-contract.mjs.
    span: 1 to the parent's columns (default 1). Node ids are unique in the sheet; the tree is at most 8 levels and 500 nodes deep. */
 
@@ -39,7 +42,9 @@ export const LAYOUT_CONTAINERS = Object.freeze(["tabs", "tab", "section", "grid"
 export const LAYOUT_LEAVES = Object.freeze(["value", "action", "text", "image", "contents", "spacer"]);
 export const LAYOUT_NODE_KINDS = Object.freeze([...LAYOUT_CONTAINERS, ...LAYOUT_LEAVES]);
 export const LAYOUT_SOURCE_KINDS = Object.freeze(["output", "formula", "parameter", "each", "field", "content"]);
-export const LAYOUT_VALUE_DISPLAYS = Object.freeze(["field", "gauge", "dots"]);
+export const LAYOUT_VALUE_DISPLAYS = Object.freeze(["field", "gauge", "dots", "description"]);
+/** Who a sheet block is for: an owner of the Actor, anyone else who opens it, the GM. */
+export const LAYOUT_AUDIENCES = Object.freeze(["player", "observer", "gm"]);
 export const LAYOUT_IMAGE_SHAPES = Object.freeze(["rounded", "square", "portrait", "landscape", "circle"]);
 export const LAYOUT_MAX_DOTS = 20;
 /** Sources a sheet can write to. */
@@ -86,7 +91,7 @@ export function prepareLayout(root) {
     ids.add(node.id);
     if (++count > LAYOUT_MAX_NODES) throw new Error(`A sheet has at most ${LAYOUT_MAX_NODES} nodes.`);
     if (depth > LAYOUT_MAX_DEPTH) throw new Error(`${path}: a sheet is at most ${LAYOUT_MAX_DEPTH} levels deep.`);
-    for (const key of Object.keys(node)) if (!["id", "kind", "span", "style", "gmOnly", ...FIELDS[node.kind]].includes(key)) throw new Error(`${path} contains unsupported field: ${key}.`);
+    for (const key of Object.keys(node)) if (!["id", "kind", "span", "style", "seenBy", ...FIELDS[node.kind]].includes(key)) throw new Error(`${path} contains unsupported field: ${key}.`);
     if ((node.kind === "tab") !== (parent?.kind === "tabs")) throw new Error(node.kind === "tab" ? `${path}: a tab belongs in tabs.` : `${path}: tabs hold only tabs.`);
     const next = {id: node.id, kind: node.kind};
     const parentColumns = parent && MAX_COLUMNS[parent.kind] ? parent.columns : 1;
@@ -94,9 +99,11 @@ export function prepareLayout(root) {
       if (!Number.isSafeInteger(node.span) || node.span < 1 || node.span > parentColumns) throw new Error(`${path}.span must be between 1 and ${parentColumns}.`);
       if (node.span > 1) next.span = node.span;
     }
-    if (node.gmOnly !== undefined && node.gmOnly !== false) {
-      if (node.gmOnly !== true || !parent) throw new Error(`${path}.gmOnly must be true, below the root.`);
-      next.gmOnly = true;
+    if (node.seenBy !== undefined) {
+      if (!parent) throw new Error(`${path}: the root is seen by all.`);
+      if (!Array.isArray(node.seenBy) || !node.seenBy.length || !node.seenBy.every(who => LAYOUT_AUDIENCES.includes(who))) throw new Error(`${path}.seenBy must list some of ${LAYOUT_AUDIENCES.join(", ")}.`);
+      const seenBy = LAYOUT_AUDIENCES.filter(who => node.seenBy.includes(who));
+      if (seenBy.length < LAYOUT_AUDIENCES.length) next.seenBy = seenBy;
     }
     if (MAX_COLUMNS[node.kind]) {
       const columns = node.columns ?? 1;
@@ -117,13 +124,18 @@ export function prepareLayout(root) {
     if (node.kind === "value") {
       next.source = prepareSource(node.source, `${path}.source`, inRepeater);
       if (node.write !== undefined && node.write !== null) {
-        if (!isRecord(node.write) || !LAYOUT_WRITE_OPERATIONS.includes(node.write.operation) || Object.keys(node.write).some(key => key !== "operation")) throw new Error(`${path}.write must be {operation: ${LAYOUT_WRITE_OPERATIONS.join(" | ")}}.`);
+        if (!isRecord(node.write) || !LAYOUT_WRITE_OPERATIONS.includes(node.write.operation) || Object.keys(node.write).some(key => !["operation", "by"].includes(key))
+          || node.write.by !== undefined && node.write.by !== "gm") throw new Error(`${path}.write must be {operation: ${LAYOUT_WRITE_OPERATIONS.join(" | ")}, by?: "gm"}.`);
         if (!LAYOUT_WRITABLE_SOURCES.includes(next.source.kind)) throw new Error(`${path}: only a Definition output or a Content field can be written from a sheet.`);
-        next.write = {operation: node.write.operation};
+        next.write = {operation: node.write.operation, ...(node.write.by ? {by: node.write.by} : {})};
       }
       if (node.display !== undefined && node.display !== "field") {
         if (!LAYOUT_VALUE_DISPLAYS.includes(node.display)) throw new Error(`${path}.display must be ${LAYOUT_VALUE_DISPLAYS.join(", ")}.`);
         next.display = node.display;
+      }
+      if (next.display === "description") {
+        const capability = next.source.kind === "output" ? next.source.reference?.capabilityId : next.source.kind === "each" ? next.source.capabilityId : null;
+        if (next.write || !["value", "pool"].includes(capability)) throw new Error(`${path}: a description shows the words of a Definition's scale; it reads a value or a pool and is never written.`);
       }
       if (node.dots !== undefined) {
         if (next.display !== "dots" || !Number.isSafeInteger(node.dots) || node.dots < 1 || node.dots > LAYOUT_MAX_DOTS) throw new Error(`${path}.dots must be 1 to ${LAYOUT_MAX_DOTS}, on a value shown as dots.`);

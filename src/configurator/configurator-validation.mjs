@@ -39,7 +39,7 @@ function collecting(d, code, path, run) {
 function checkDefinitionType(entry, path, d) {
   const issue = d.issue;
   if (!checkIdentity(entry, path, issue)) return;
-  exactFields(entry, ["id","key","nameKey","descriptionKey","color","order","allowedCapabilities","defaultCapabilities","requiredCapabilities","fields","constraints","presentation","relations"], path, issue);
+  exactFields(entry, ["id","key","nameKey","descriptionKey","color","order","allowedCapabilities","defaultCapabilities","requiredCapabilities","fields","constraints","presentation","relations","scaleRef"], path, issue);
   if (!nonempty(entry.key)) issue("REQUIRED_STRING", `${path}.key`, "key must be a non-empty string.");
   if (!nonempty(entry.nameKey)) d.incomplete("REQUIRED_STRING", `${path}.nameKey`, "nameKey must be a non-empty string.");
   if (typeof entry.descriptionKey !== "string") issue("STRING_TYPE", `${path}.descriptionKey`, "descriptionKey must be a string.");
@@ -69,7 +69,7 @@ function checkDefinitionType(entry, path, d) {
 function checkDefinition(entry, types, path, d) {
   const issue = d.issue;
   if (!checkIdentity(entry, path, issue)) return;
-  exactFields(entry, ["id","key","definitionTypeId","nameKey","descriptionKey","data","categories","capabilities","slots","enabled","order","tags","presentationProfile","relations"], path, issue);
+  exactFields(entry, ["id","key","definitionTypeId","nameKey","descriptionKey","data","categories","capabilities","slots","enabled","order","tags","presentationProfile","relations","scaleRef"], path, issue);
   if (!nonempty(entry.key)) issue("REQUIRED_STRING", `${path}.key`, "key must be a non-empty string.");
   if (!nonempty(entry.definitionTypeId) || !types.has(entry.definitionTypeId)) issue("DEFINITION_TYPE", `${path}.definitionTypeId`, "definitionTypeId must target an existing DefinitionType.");
   if (!nonempty(entry.nameKey)) d.incomplete("REQUIRED_STRING", `${path}.nameKey`, "nameKey must be a non-empty string.");
@@ -209,7 +209,7 @@ export function validateRuleset(ruleset, {scope = "save"} = {}) {
     ["definitionType", new Set(types.keys())], ["definition", new Set((ruleset.definitions ?? []).map(x => x?.id))],
     ["parameter", new Set((ruleset.parameters ?? []).map(x => x?.id))], ["formula", new Set((ruleset.formulas ?? []).map(x => x?.id))], ["formulaBinding", new Set((ruleset.formulaBindings ?? []).map(x => x?.id))],
     ["condition", new Set((ruleset.conditions ?? []).map(x => x?.id))], ["roll", new Set((ruleset.rolls ?? []).map(x => x?.id))], ["outcome", new Set((ruleset.outcomes ?? []).map(x => x?.id))], ["test", new Set((ruleset.tests ?? []).map(x => x?.id))], ["effect", new Set((ruleset.effects ?? []).map(x => x?.id))],
-    ["action", new Set((ruleset.actions ?? []).map(x => x?.id))], ["permissionPolicy", new Set((ruleset.permissionPolicies ?? []).map(x => x?.id))], ["contentType", new Set((ruleset.contentTypes ?? []).map(x => x?.id))], ["tag", new Set((ruleset.tags ?? []).map(x => x?.id))], ["category", new Set((ruleset.categories ?? []).map(x => x?.id))], ["eventType", new Set((ruleset.eventTypes ?? []).map(x => x?.id))], ["trigger", new Set((ruleset.triggers ?? []).map(x => x?.id))], ["contentTemplate", new Set((ruleset.contentTemplates ?? []).map(x => x?.id))], ["modifier", new Set((ruleset.modifiers ?? []).map(x => x?.id))], ["duration", new Set((ruleset.durations ?? []).map(x => x?.id))], ["die", new Set((ruleset.dice ?? []).map(x => x?.id))], ["table", new Set((ruleset.tables ?? []).map(x => x?.id))], ["creationSystem", new Set((ruleset.creationSystems ?? []).map(x => x?.id))], ["progressionSystem", new Set((ruleset.progressionSystems ?? []).map(x => x?.id))], ["sheetDefinition", new Set((ruleset.sheetDefinitions ?? []).map(x => x?.id))]
+    ["action", new Set((ruleset.actions ?? []).map(x => x?.id))], ["permissionPolicy", new Set((ruleset.permissionPolicies ?? []).map(x => x?.id))], ["contentType", new Set((ruleset.contentTypes ?? []).map(x => x?.id))], ["tag", new Set((ruleset.tags ?? []).map(x => x?.id))], ["category", new Set((ruleset.categories ?? []).map(x => x?.id))], ["eventType", new Set((ruleset.eventTypes ?? []).map(x => x?.id))], ["trigger", new Set((ruleset.triggers ?? []).map(x => x?.id))], ["contentTemplate", new Set((ruleset.contentTemplates ?? []).map(x => x?.id))], ["modifier", new Set((ruleset.modifiers ?? []).map(x => x?.id))], ["duration", new Set((ruleset.durations ?? []).map(x => x?.id))], ["die", new Set((ruleset.dice ?? []).map(x => x?.id))], ["table", new Set((ruleset.tables ?? []).map(x => x?.id))], ["scale", new Set((ruleset.scales ?? []).map(x => x?.id))], ["creationSystem", new Set((ruleset.creationSystems ?? []).map(x => x?.id))], ["progressionSystem", new Set((ruleset.progressionSystems ?? []).map(x => x?.id))], ["sheetDefinition", new Set((ruleset.sheetDefinitions ?? []).map(x => x?.id))]
   ]);
   const definitionsById = new Map((ruleset.definitions ?? []).filter(isRecord).map(entry => [entry.id, entry]));
   // Generic relation scanning re-finds AST references one level deeper (".reference"): report each once.

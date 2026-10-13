@@ -1,6 +1,7 @@
 /* What a sheet shows (CP-14): its LayoutNode tree resolved for one Actor or one Item, as plain data a renderer turns into HTML.
    Values are read through the engine (bindings, Modifiers and pool bounds apply) and filtered by Permission (CP-11):
-   a value the user may not read, an Action they may not use and a block for the GM only are left out, never sent then hidden.
+   a value the user may not read, an Action they may not use and a block not for them (seenBy) are left out, never sent then hidden;
+   a description sends a pool's words, never its number.
    A value the engine cannot read (a Definition the Actor does not hold, a Formula that needs a missing role) keeps its
    place with value null and the reason in error, so the sheet keeps its shape.
 
@@ -10,6 +11,7 @@
    an Item the Ruleset does not know is listed by a contents block that shows every Content Type. */
 import {capabilityTypeRegistry} from "../configurator/capability-type-registry.mjs";
 import {findSlot, SLOT_CAPABILITIES} from "../configurator/capability-slots.mjs";
+import {descriptionScale, scaleWords} from "../configurator/rule-contracts.mjs";
 
 const enabled = entry => entry?.enabled !== false;
 const ERROR = error => String(error?.message ?? error);
@@ -59,7 +61,8 @@ export function outputLabel(definition, reference) {
 export async function projectSheet(engine, versionId, sheet, {actor = null, content = null, items = []} = {}) {
   const ruleset = engine.ruleset(versionId);
   const context = {roles: actor ? {self: actor} : {}, defaultRole: "self", ...(content?.key ? {content: {key: content.key, role: "self"}} : {})};
-  const decisions = new Map(), gm = await engine.isGM();
+  // Who looks: a block not for them is left out, a value only the GM changes is read-only to the others.
+  const decisions = new Map(), viewer = await engine.viewer(actor);
   const allowed = async (operation, objectKind, objectId) => {
     const key = `${operation}|${objectKind}|${objectId}`;
     if (!decisions.has(key)) decisions.set(key, (await engine.authorize(versionId, operation, {objectKind, objectId}, actor, actor ? context : null)).allowed);
@@ -94,6 +97,19 @@ export async function projectSheet(engine, versionId, sheet, {actor = null, cont
     try { await engine.resolveReference(versionId, writableReference(reference), scope, {forWrite: true}); return true; } catch { return false; }
   };
 
+  // A value only the GM changes stays read-only for the others.
+  const writer = node => node.write && (node.write.by !== "gm" || viewer === "gm");
+  /** The words of a Definition's description scale (its own, else its type's) for the value read: the number
+      and its bounds are dropped, never sent. */
+  const describe = (view, reference) => {
+    const scale = descriptionScale(ruleset, reference.objectId);
+    const text = view.error === undefined ? scaleWords(scale, view.value, view.maximum) : null;
+    delete view.minimum; delete view.maximum;
+    Object.assign(view, {valueType: "string", value: text});
+    if (!scale && view.error === undefined) view.error = `${reference.objectId} has no description scale.`;
+    return view;
+  };
+
   const value = async (node, scope, row) => {
     const source = node.source, view = {id: node.id, kind: "value", ...(node.span ? {span: node.span} : {}), ...(node.style ? {style: node.style} : {}),
       ...(node.display ? {display: node.display} : {}), ...(node.dots ? {dots: node.dots} : {}), label: node.labelKey || "", value: null, write: null};
@@ -105,7 +121,8 @@ export async function projectSheet(engine, versionId, sheet, {actor = null, cont
       if (!view.label && source.kind === "output") view.label = ruleset.definitions?.find(d => d.id === reference.objectId)?.nameKey ?? reference.objectId;
       if (!view.label && source.kind === "each") Object.assign(view, outputLabel(row.definition, reference));
       await readOutput(view, reference, scope);
-      if (node.write && view.error === undefined && await canWrite(reference, scope)) view.write = {operation: node.write.operation};
+      if (node.display === "description") return describe(view, reference);
+      if (writer(node) && view.error === undefined && await canWrite(reference, scope)) view.write = {operation: node.write.operation};
       return view;
     }
     if (source.kind === "formula") {
@@ -144,7 +161,7 @@ export async function projectSheet(engine, versionId, sheet, {actor = null, cont
     if (!view.label) view.label = field.name ?? source.fieldId;
     view.valueType = field.valueType;
     view.value = Object.hasOwn(current.fields, source.fieldId) ? current.fields[source.fieldId] : null;
-    if (node.write && content.key && actor && await engine.adapter.canWrite(actor)) view.write = {operation: node.write.operation};
+    if (writer(node) && content.key && actor && await engine.adapter.canWrite(actor)) view.write = {operation: node.write.operation};
     return view;
   };
 
@@ -171,8 +188,7 @@ export async function projectSheet(engine, versionId, sheet, {actor = null, cont
   };
 
   const walk = async (node, scope, row) => {
-    // A block for the GM only is left out for anyone else, with all it holds.
-    if (node.gmOnly && !gm) return null;
+    if (node.seenBy && !node.seenBy.includes(viewer)) return null;
     const base = {id: node.id, kind: node.kind, ...(node.span ? {span: node.span} : {}), ...(node.style ? {style: node.style} : {})};
     if (node.kind === "value") return value(node, scope, row);
     if (node.kind === "image") return node.src ? {...base, src: node.src, fit: node.fit ?? "cover", height: node.height ?? "medium", ...(node.shape ? {shape: node.shape} : {})} : null;

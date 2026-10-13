@@ -54,6 +54,8 @@ function adjustHTML(shown, t, data, edit) {
 
 function valueControl(node, t, row, edit = false) {
   const write = node.write, data = `data-sheet-write="${escape(node.id)}"${row ? ` data-definition-id="${escape(row)}"` : ""} data-operation="${escape(write?.operation ?? "")}"`;
+  // A description: the words of the scale (or the editor's sample), translated.
+  if (node.display === "description") return `<span class="rta-sheet-value__text rta-sheet-value__words">${node.value ? escape(t(node.value)) : "—"}</span>`;
   const numericValue = ["number", "integer"].includes(node.valueType);
   if (node.display === "dots" && numericValue) return dotsControl(node, t, data);
   // A gauge shows the bar; a player who may change the value still gets its field beside it.
@@ -80,8 +82,8 @@ function valueControl(node, t, row, edit = false) {
 
 /* In the editor (edit: true) every node carries data-layout-node so a click selects it, and an empty container
    shows a drop zone; the controls themselves are inert there (sheet.css).
-   A block for the GM only is outlined there (data-layout-gm-only). */
-const mark = (node, edit) => edit ? ` data-layout-node="${escape(node.id)}"${node.gmOnly ? " data-layout-gm-only" : ""}` : "";
+   A block not for everyone is outlined there (data-layout-seen-by: who gets it). */
+const mark = (node, edit) => edit ? ` data-layout-node="${escape(node.id)}"${node.seenBy ? ` data-layout-seen-by="${escape(node.seenBy.join(" "))}"` : ""}` : "";
 const dropZone = (id, t) => `<div class="rta-sheet-drop" data-layout-node="${escape(id)}" data-layout-drop>${escape(t("RTA.SheetEditor.Empty"))}</div>`;
 
 /** The Contents an Actor holds, grouped under their Content Type when there are several types. */

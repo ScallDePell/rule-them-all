@@ -183,18 +183,35 @@ test('a value can show the Content an Actor holds of one type, by name (its Orig
   await assert.rejects(api.deleteContentType(v,'charm'),/still referenced/);
 });
 
-test('a block for the GM only: players never get it nor write through it', async()=>{
+test('who sees what: the player gets the gauge, an observer its words, the GM the gauge and its − and +', async()=>{
   const {api,v,engine,adapter}=await setup();
-  await api.createSheetDefinition(v,{id:'gm',nameKey:'GM',target:'actor',root:{id:'root',kind:'grid',children:[
-    {id:'open',kind:'value',source:{kind:'output',reference:out('str','value','value.final')},write:{operation:'adjust'}},
-    {id:'secret',kind:'section',labelKey:'Secret',gmOnly:true,children:[{id:'hidden',kind:'value',source:{kind:'output',reference:out('str','value','value.final')},write:{operation:'adjust'}}]}]}});
+  await api.createScale(v,{id:'health',nameKey:'Health',basis:'percent',rows:[{id:'a',labelKey:'Seems in great shape',min:100,max:null},{id:'b',labelKey:'Hurt',min:1,max:99.99},{id:'c',labelKey:'Down',min:null,max:0}]});
+  await api.createScale(v,{id:'level',nameKey:'Level',basis:'value',rows:[{id:'a',labelKey:'Weak',min:null,max:5},{id:'b',labelKey:'Strong',min:6,max:null}]});
+  await api.updateDefinitionType(v,'resource',{scaleRef:'health'});
+  await api.updateDefinitionType(v,'attribute',{scaleRef:'level'});
+  await api.updateDefinition(v,'dex',{scaleRef:'health'});
+  const hp=out('hp','pool','pool.current','points');
+  await api.createSheetDefinition(v,{id:'look',nameKey:'Look',target:'actor',root:{id:'root',kind:'grid',children:[
+    {id:'gauge',kind:'value',source:{kind:'output',reference:hp},display:'gauge',seenBy:['player','gm'],write:{operation:'adjust',by:'gm'}},
+    {id:'words',kind:'value',source:{kind:'output',reference:hp},display:'description',seenBy:['observer']},
+    {id:'might',kind:'value',source:{kind:'output',reference:out('str','value','value.final')},display:'description'}]}});
   await api.publishRuleset(v);
   adapter.users.set('p',{role:'player',isGM:false});adapter.ownership.set('actor:hero|p','owner');
-  const sheet=api.getSheetDefinition(v,'gm'),ids=view=>view.root.children.map(c=>c.id);
-  assert.deepEqual(ids(await projectSheet(engine,v,sheet,{actor:hero})),['open','secret'],'the GM sees it');
-  assert.deepEqual(ids(await projectSheet(engine.forUser('p'),v,sheet,{actor:hero})),['open'],'a player does not');
-  await engine.forUser('p').writeSheetValue(v,hero,{sheetId:'gm',nodeId:'open',value:1});
-  await assert.rejects(engine.forUser('p').writeSheetValue(v,hero,{sheetId:'gm',nodeId:'hidden',value:1}),/Only a GM/);
-  await engine.writeSheetValue(v,hero,{sheetId:'gm',nodeId:'hidden',value:-1});
-  assert.throws(()=>prepareLayout({id:'root',kind:'grid',gmOnly:true,children:[]}),/below the root/);
+  adapter.users.set('o',{role:'player',isGM:false});adapter.ownership.set('actor:hero|o','observer');
+  const sheet=api.getSheetDefinition(v,'look'),look=async who=>(await projectSheet(who?engine.forUser(who):engine,v,sheet,{actor:hero})).root.children;
+  const gm=await look(),player=await look('p'),observer=await look('o');
+  assert.deepEqual(gm.map(n=>[n.id,n.write?.operation??null]),[['gauge','adjust'],['might',null]],'the GM: the gauge with its − and +');
+  assert.deepEqual(player.map(n=>[n.id,n.write?.operation??null,n.value]),[['gauge',null,9],['might',null,'Strong']],'the player: the gauge alone');
+  assert.deepEqual(observer.map(n=>[n.id,n.value]),[['words','Hurt'],['might','Strong']],'an observer: words, never the number');
+  assert.equal(['maximum','minimum'].some(key=>Object.hasOwn(observer[0],key)),false);
+  await assert.rejects(engine.forUser('p').writeSheetValue(v,hero,{sheetId:'look',nodeId:'gauge',value:-1}),/Only a GM/);
+  await assert.rejects(engine.forUser('o').writeSheetValue(v,hero,{sheetId:'look',nodeId:'gauge',value:-1}),/not on your sheet/);
+  await engine.writeSheetValue(v,hero,{sheetId:'look',nodeId:'gauge',value:3});
+  assert.equal((await look('o'))[0].value,'Seems in great shape','12/12');
+  assert.throws(()=>prepareLayout({id:'root',kind:'grid',seenBy:['gm'],children:[]}),/root is seen by all/);
+  assert.throws(()=>prepareLayout({id:'root',kind:'grid',children:[{id:'x',kind:'text',textKey:'',seenBy:['owner']}]}),/seenBy must list/);
+  assert.equal(prepareLayout({id:'root',kind:'grid',children:[{id:'x',kind:'text',textKey:'',seenBy:['gm','player','observer']}]}).children[0].seenBy,undefined,'everyone: nothing stored');
+  assert.throws(()=>prepareLayout({id:'root',kind:'grid',children:[{id:'x',kind:'value',source:{kind:'formula',formulaRef:'f'},display:'description'}]}),/description/);
+  await assert.rejects(api.createScale(v,{id:'bad',nameKey:'Bad',rows:[{id:'a',labelKey:'A',min:0,max:5},{id:'b',labelKey:'B',min:5,max:9}]}),/overlap/);
+  await assert.rejects(api.deleteScale(v,'health'),/still referenced|REFERENTIAL|used/i);
 });

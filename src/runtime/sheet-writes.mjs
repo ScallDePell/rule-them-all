@@ -28,7 +28,10 @@ export async function writeSheetValue(engine, versionId, containerRef, intent = 
   if (!sheet) throw new Error(`Sheet unavailable: ${intent.sheetId}.`);
   const path = findPath(sheet.root, intent.nodeId), node = path?.at(-1);
   if (node?.kind !== "value" || !node.write) throw forbidden(`This sheet does not let ${intent.nodeId} be changed.`);
-  if (path.some(entry => entry.gmOnly) && !await engine.isGM()) throw forbidden(`Only a GM can change ${intent.nodeId}.`);
+  // Nobody writes through a block they do not get, nor a value only the GM changes.
+  const viewer = path.some(entry => entry.seenBy) || node.write.by ? await engine.viewer(actor) : null;
+  if (path.some(entry => entry.seenBy && !entry.seenBy.includes(viewer))) throw forbidden(`${intent.nodeId} is not on your sheet.`);
+  if (node.write.by === "gm" && viewer !== "gm") throw forbidden(`Only a GM can change ${intent.nodeId}.`);
   const operation = node.write.operation, source = node.source;
   const context = {roles: {self: actor}, defaultRole: "self"};
 

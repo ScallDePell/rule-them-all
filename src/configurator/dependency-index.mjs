@@ -164,11 +164,14 @@ export class DependencyIndex{
         add('action',m.actionRef,'progressionAction',`milestones[${j}].actionRef`);
       }
     }
-    const tagCollections=['definitions','parameters','formulas','formulaBindings','conditions','rolls','outcomes','tests','effects','actions','eventTypes','triggers','contentTypes','contentTemplates','modifiers','durations','dice','tables','creationSystems','progressionSystems','sheetDefinitions'];
+    const tagCollections=['definitions','parameters','formulas','formulaBindings','conditions','rolls','outcomes','tests','effects','actions','eventTypes','triggers','contentTypes','contentTemplates','modifiers','durations','dice','tables','scales','creationSystems','progressionSystems','sheetDefinitions'];
     for(const collection of tagCollections)for(const [i,entry] of (ruleset[collection]??[]).entries())for(const [j,id] of (entry.tags??[]).entries())pushRef(this.#edges,{objectKind:collection.replace(/s$/,''),objectId:entry.id},{objectKind:'tag',objectId:id},'tag',`${collection}[${i}].tags[${j}]`,'metadata');
     // Category catalog (§47): consumers store catalog ids; a used Category cannot be deleted.
     for(const collection of ['definitions','contentTemplates'])for(const [i,entry] of (ruleset[collection]??[]).entries())for(const [j,id] of (entry.categories??[]).entries())pushRef(this.#edges,{objectKind:collection==='definitions'?'definition':'contentTemplate',objectId:entry.id},{objectKind:'category',objectId:id},'category',`${collection}[${i}].categories[${j}]`,'metadata');
     // Capability slots (CP-26/27): bound Formulas and allowed ContentTypes are dependencies.
+    // Description scales (what a sheet shows instead of a number): a Definition's own, else its type's.
+    for(const [i,definition] of (ruleset.definitions??[]).entries())if(definition?.scaleRef)pushRef(this.#edges,{objectKind:'definition',objectId:definition.id},{objectKind:'scale',objectId:definition.scaleRef},'definitionScale',`definitions[${i}].scaleRef`);
+    for(const [i,type] of (ruleset.definitionTypes??[]).entries())if(type?.scaleRef)pushRef(this.#edges,{objectKind:'definitionType',objectId:type.id},{objectKind:'scale',objectId:type.scaleRef},'definitionTypeScale',`definitionTypes[${i}].scaleRef`);
     for(const [i,definition] of (ruleset.definitions??[]).entries()){
       const consumer={objectKind:'definition',objectId:definition.id};
       for(const [j,slot] of (definition.slots?.pool??[]).entries())for(const bound of ['minimum','maximum','initial'])if(slot?.[bound]?.formulaRef)pushRef(this.#edges,consumer,{objectKind:'formula',objectId:slot[bound].formulaRef},'poolBound',`definitions[${i}].slots.pool[${j}].${bound}.formulaRef`);

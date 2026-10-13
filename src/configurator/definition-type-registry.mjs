@@ -7,6 +7,12 @@ import {prepareFieldMap, applyFieldContract} from "./field-output-contracts.mjs"
 /** Collection CRUD over the Ruleset aggregate; never owns a separate store. */
 export const nextOrder = entries => entries.reduce((max, entry) => Math.max(max, Number.isFinite(entry?.order) ? entry.order : 0), 0) + 10;
 
+/** The description scale a Definition (or every Definition of a type) shows on a sheet instead of its number; none when empty. */
+export function prepareScaleRef(entry, label) {
+  if (entry.scaleRef === undefined || entry.scaleRef === null || entry.scaleRef === "") { delete entry.scaleRef; return; }
+  if (typeof entry.scaleRef !== "string" || !entry.scaleRef.trim()) throw new Error(`${label}.scaleRef must be a Scale id.`);
+}
+
 export class RulesetCollectionRegistry {
   #registry;
   #collection;
@@ -87,6 +93,7 @@ export class DefinitionTypeRegistry extends RulesetCollectionRegistry {
     }
     // Resolve all allowed capability fields now so collisions are rejected at type authoring time.
     resolveFieldContract(next, next.allowedCapabilities);
+    prepareScaleRef(next, "DefinitionType");
     return next;
   }
   delete(rulesetId, id) {

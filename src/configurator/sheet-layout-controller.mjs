@@ -197,11 +197,22 @@ export class SheetLayoutController {
     if (!target.closest?.("[data-layout-toolbar], [data-layout-properties], [data-layout-palette-host]")) return;
     if (target.matches("[data-layout-palette-filter]")) return event.stopPropagation();
     event.stopPropagation();
+    if (target.dataset.layoutSeen) {
+      // Every box ticked: everyone (stored as nothing). The last box cannot be cleared: a block is for someone.
+      const node = locate(this.#root, this.#selected).node, seenBy = ["player", "observer", "gm"].filter(who => this.#host.querySelector(`[data-layout-seen="${who}"]`)?.checked);
+      if (!seenBy.length) return this.render();
+      return this.#commit(updateNode(this.#root, node.id, {seenBy: seenBy.length === 3 ? undefined : seenBy}));
+    }
+    if (target.dataset.layoutWriteBy) {
+      const node = locate(this.#root, this.#selected).node;
+      return this.#commit(updateNode(this.#root, node.id, {write: {operation: node.write.operation, ...(target.checked ? {by: "gm"} : {})}}));
+    }
     if (target.dataset.layoutWrite) {
       // Typing a value covers raising and lowering; raising and lowering together is "adjust".
       const on = key => this.#host.querySelector(`[data-layout-write="${key}"]`)?.checked === true;
       const operation = on("set") ? "set" : on("add") && on("subtract") ? "adjust" : on("add") ? "add" : on("subtract") ? "subtract" : null;
-      return this.#commit(updateNode(this.#root, locate(this.#root, this.#selected).node.id, {write: operation ? {operation} : undefined}));
+      const by = locate(this.#root, this.#selected).node.write?.by;
+      return this.#commit(updateNode(this.#root, locate(this.#root, this.#selected).node.id, {write: operation ? {operation, ...(by ? {by} : {})} : undefined}));
     }
     if (target.dataset.layoutStyleHex) return this.#setStyle(target.dataset.layoutStyleHex, target.value);
     if (target.dataset.layoutStyle) {
@@ -219,14 +230,14 @@ export class SheetLayoutController {
     if (prop === "labelKey" || prop === "textKey") return this.#commit(updateNode(this.#root, node.id, {[prop]: value}));
     if (prop === "definitionTypeId") return this.#commit(this.#retargetRepeater(node, value));
     if (prop === "conditionRef") return this.#commit(updateNode(this.#root, node.id, {query: {...node.query, conditionRef: value || undefined}}));
-    if (prop === "display") return this.#commit(updateNode(this.#root, node.id, {display: value === "field" ? undefined : value, dots: value === "dots" ? node.dots : undefined}));
+    // Words in place of the number: nobody writes them.
+    if (prop === "display") return this.#commit(updateNode(this.#root, node.id, {display: value === "field" ? undefined : value, dots: value === "dots" ? node.dots : undefined, ...(value === "description" ? {write: undefined} : {})}));
     if (prop === "dots") return this.#commit(updateNode(this.#root, node.id, {dots: number === 5 ? undefined : number}));
     if (prop === "shape") return this.#commit(updateNode(this.#root, node.id, {shape: value === "free" ? undefined : value}));
     if (prop === "labelPlace") { const style = {...(node.style ?? {}), label: value === "side" ? undefined : value}; if (!style.label) delete style.label; return this.#commit(updateNode(this.#root, node.id, {style: Object.keys(style).length ? style : undefined})); }
     if (prop === "src") return this.#commit(updateNode(this.#root, node.id, {src: value.trim()}));
     if (prop === "fit" || prop === "height") return this.#commit(updateNode(this.#root, node.id, {[prop]: value === "cover" && prop === "fit" || value === "medium" && prop === "height" ? undefined : value}));
     if (prop === "contentTypeIds") return this.#commit(updateNode(this.#root, node.id, {contentTypeIds: [...target.selectedOptions].map(option => option.value).filter(Boolean)}));
-    if (prop === "gmOnly") return this.#commit(updateNode(this.#root, node.id, {gmOnly: target.checked || undefined}));
     if (prop === "actionRef") return this.#commit(updateNode(this.#root, node.id, {actionRef: value}));
 
     if (prop === "sourceKind") {
@@ -280,6 +291,12 @@ export class SheetLayoutController {
   }
 
   /** Whether a source shows a number (dots and gauges need one). */
+  /** A value or a pool can be shown in words, through its Definition's description scale. */
+  #describable(node) {
+    const source = node.kind === "value" ? node.source : null;
+    const capability = source?.kind === "output" ? source.reference?.capabilityId : source?.kind === "each" ? source.capabilityId : null;
+    return ["value", "pool"].includes(capability);
+  }
   #numeric(source) {
     const r = this.#ruleset;
     if (source?.kind === "output" || source?.kind === "each") { const capabilityId = source.kind === "output" ? source.reference.capabilityId : source.capabilityId, outputId = source.kind === "output" ? source.reference.outputId : source.outputId; return !["state.active"].includes(outputId) && capabilityId !== "collection"; }
@@ -356,7 +373,7 @@ export class SheetLayoutController {
       sourceToken: source => this.#sourceToken(source),
       defaultLabel: n => n.kind === "action" ? r.actions?.find(a => a.id === n.actionRef)?.nameKey ?? "" : label.label || i18n(label.labelKey ?? ""),
       writable: node.kind === "value" && writableSource(node.source),
-      displays: ["field", "gauge", "dots"].map(value => ({value, label: i18n(`RTA.SheetEditor.Display.${value}`), colors: neutral})),
+      displays: ["field", "gauge", "dots", ...(this.#describable(node) ? ["description"] : [])].map(value => ({value, label: i18n(`RTA.SheetEditor.Display.${value}`), colors: neutral})),
       dotCounts: Array.from({length: 10}, (_, i) => ({value: String(i + 1), label: String(i + 1), colors: neutral})),
       numeric: node.kind === "value" && this.#numeric(node.source),
       labelPlaces: SHEET_LABELS.map(label => ({value: label, label: i18n(`RTA.SheetEditor.LabelPlace.${label}`), colors: neutral})),

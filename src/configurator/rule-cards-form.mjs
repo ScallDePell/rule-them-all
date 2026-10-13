@@ -112,3 +112,25 @@ export function collectProgression(queryAll) {
     milestones: milestoneCards.map(card => ({id: card.id || milestoneId("milestone"), labelKey: card.labelKey ?? "", conditionRef: card.conditionRef || null, definitionIds: card.definitionIds ?? [], actionRef: card.actionRef || null}))
   };
 }
+
+/** Scale: one card per row, a range (an empty bound is open) and the words shown for it. */
+export function scaleRowContext(data) {
+  const row = (entry = {}) => ({id: entry.id ?? "", labelKey: entry.labelKey ?? "", min: entry.min ?? "", max: entry.max ?? ""});
+  return {scaleRows: {rows: (data.rows ?? []).map(row), blank: row()}};
+}
+export function collectScaleRows(queryAll) {
+  const cards = collectCards(queryAll, "scaleRow"), used = new Set(cards.map(card => card.id).filter(Boolean));
+  let next = 1;
+  const freshId = () => { while (used.has(`row-${next}`)) next++; used.add(`row-${next}`); return `row-${next}`; };
+  const bound = (value, label) => {
+    const text = String(value ?? "").trim().replace(",", ".");
+    if (text === "") return null;
+    const number = Number(text);
+    if (!Number.isFinite(number)) throw new Error(`${label} must be a number.`);
+    return number;
+  };
+  return cards.map((card, index) => {
+    const label = `Row ${card.labelKey || index + 1}`;
+    return {id: card.id || freshId(), labelKey: String(card.labelKey ?? "").trim(), min: bound(card.min, `${label} minimum`), max: bound(card.max, `${label} maximum`)};
+  });
+}

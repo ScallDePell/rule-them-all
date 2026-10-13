@@ -3,6 +3,7 @@
    values, so what the editor shows is the sheet the players get. Every operation returns a new tree. */
 import {capabilityTypeRegistry} from "./capability-type-registry.mjs";
 import {LAYOUT_CONTAINERS, LAYOUT_WRITABLE_SOURCES} from "./layout-contract.mjs";
+import {descriptionScale, scaleWords} from "./rule-contracts.mjs";
 
 const copy = value => structuredClone(value);
 const enabled = entry => entry?.enabled !== false;
@@ -244,7 +245,7 @@ export function contentFields(ruleset, contentTypeIds = []) {
 /* Preview: the projection a played sheet would get, with sample values instead of an Actor's. */
 const SAMPLE = {number: 10, integer: 10, boolean: true};
 function previewValue(node, ruleset, row, contentTypeIds) {
-  const source = node.source, view = {id: node.id, kind: "value", ...(node.span ? {span: node.span} : {}), ...(node.style ? {style: node.style} : {}), ...(node.gmOnly ? {gmOnly: true} : {}),
+  const source = node.source, view = {id: node.id, kind: "value", ...(node.span ? {span: node.span} : {}), ...(node.style ? {style: node.style} : {}), ...(node.seenBy ? {seenBy: node.seenBy} : {}),
     ...(node.display ? {display: node.display} : {}), ...(node.dots ? {dots: node.dots} : {}), label: node.labelKey || "", write: node.write ? {operation: node.write.operation} : null};
   if (!view.label) Object.assign(view, defaultValueLabel(source, ruleset, {contentTypeIds}));
   let valueType = "number";
@@ -252,6 +253,13 @@ function previewValue(node, ruleset, row, contentTypeIds) {
     const capabilityId = source.kind === "output" ? source.reference.capabilityId : source.capabilityId, outputId = source.kind === "output" ? source.reference.outputId : source.outputId;
     valueType = capabilityTypeRegistry.get(capabilityId)?.outputs?.[outputId]?.valueType ?? "number";
     if (capabilityId === "pool" && outputId === "pool.current") view.maximum = 12;
+    // A description shows the words of the Definition's scale (its own, else its type's) for a high value.
+    if (node.display === "description") {
+      const scale = descriptionScale(ruleset, source.kind === "output" ? source.reference.objectId : row?.id);
+      const {maximum, ...shown} = view;
+      const top = scale ? [...scale.rows].sort((a, b) => (b.min ?? -Infinity) - (a.min ?? -Infinity))[0]?.labelKey : null;
+      return {...shown, valueType: "string", value: scaleWords(scale, 12, 12) ?? top ?? "RTA.SheetEditor.DescriptionSample"};
+    }
 
   } else if (source.kind === "formula") valueType = ruleset.formulas?.find(f => f.id === source.formulaRef)?.resultType ?? "number";
   else if (source.kind === "parameter") {
@@ -271,7 +279,7 @@ function previewValue(node, ruleset, row, contentTypeIds) {
 
 export function previewView(root, ruleset, {target = "actor", contentTypeIds = []} = {}) {
   const walk = (node, row) => {
-    const base = {id: node.id, kind: node.kind, ...(node.span ? {span: node.span} : {}), ...(node.style ? {style: node.style} : {}), ...(node.gmOnly ? {gmOnly: true} : {})};
+    const base = {id: node.id, kind: node.kind, ...(node.span ? {span: node.span} : {}), ...(node.style ? {style: node.style} : {}), ...(node.seenBy ? {seenBy: node.seenBy} : {})};
     if (node.kind === "value") return previewValue(node, ruleset, row, contentTypeIds);
     if (node.kind === "image") return {...base, src: node.src, fit: node.fit ?? "cover", height: node.height ?? "medium", ...(node.shape ? {shape: node.shape} : {})};
     if (node.kind === "text") return {...base, text: node.textKey};

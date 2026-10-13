@@ -25,6 +25,7 @@ export const ENTRY_OPERATIONS=Object.freeze({
   die:{get:"getDie",create:"createDie",update:"updateDie",delete:"deleteDie"},
   duration:{get:"getDuration",create:"createDuration",update:"updateDuration",delete:"deleteDuration"},
   table:{get:"getTable",create:"createTable",update:"updateTable",delete:"deleteTable"},
+  scale:{get:"getScale",create:"createScale",update:"updateScale",delete:"deleteScale"},
   creationSystem:{get:"getCreationSystem",create:"createCreationSystem",update:"updateCreationSystem",delete:"deleteCreationSystem"},
   progressionSystem:{get:"getProgressionSystem",create:"createProgressionSystem",update:"updateProgressionSystem",delete:"deleteProgressionSystem"},
   sheetDefinition:{get:"getSheetDefinition",create:"createSheetDefinition",update:"updateSheetDefinition",delete:"deleteSheetDefinition"}

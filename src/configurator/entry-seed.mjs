@@ -30,6 +30,7 @@ export function createEntrySeed(kind,{uid,definitionTypeId=null,contentTypeId=nu
   if(kind==="duration")return{id:uid("duration"),nameKey:"",descriptionKey:"",enabled:true,tags:[],mode:"untilRemoved",amount:null,unit:null,eventTypeRef:null,conditionRef:null,at:null};
   if(kind==="die")return{id:uid("die"),nameKey:"",descriptionKey:"",enabled:true,tags:[],denomination:"",counters:[],faces:[]};
   if(kind==="table")return{id:uid("table"),nameKey:"",descriptionKey:"",enabled:true,tags:[],rollRef:"",bonusFormulaRef:null,rows:[]};
+  if(kind==="scale")return{id:uid("scale"),nameKey:"",descriptionKey:"",enabled:true,tags:[],basis:"value",rows:[]};
   if(kind==="creationSystem")return{id:uid("creation"),nameKey:"",descriptionKey:"",enabled:true,tags:[],steps:[]};
   if(kind==="progressionSystem")return{id:uid("progression"),nameKey:"",descriptionKey:"",enabled:true,tags:[],advancements:[],milestones:[]};
   if(kind==="sheetDefinition")return{id:uid("sheet"),nameKey:"New Sheet",descriptionKey:"",enabled:true,tags:[],target:"actor",contentTypeIds:[],root:emptyLayout()};

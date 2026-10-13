@@ -437,6 +437,45 @@ export function prepareTable(data,options={}){
   for(let i=1;i<sorted.length;i++)if((sorted[i].min??-Infinity)<=(sorted[i-1].max??Infinity))throw new Error(`Table rows ${sorted[i-1].id} and ${sorted[i].id} overlap.`);
   return x;
 }
+/** Scale: words for a number, by ranges ("Seems in great shape" from 100 %, "In a coma" at 0). A sheet shows them
+ * instead of the number of a Definition linked to it (its own scaleRef, else its type's). basis "value" reads the
+ * number itself, "percent" its share of the maximum (a pool's). A bound left empty is open-ended. */
+export const SCALE_BASES=Object.freeze(['value','percent']);
+export function prepareScale(data,options={}){
+  const x=prepareNamedGeneric(data,'Scale',{basis:'value',rows:[]},options);
+  if(!SCALE_BASES.includes(x.basis))throw new Error(`Scale.basis must be ${SCALE_BASES.join(' or ')}.`);
+  arr(x.rows,'Scale.rows');
+  const ids=new Set();
+  x.rows=x.rows.map((row,i)=>{
+    if(!isRecord(row)||!nonempty(row.id))throw new Error(`Scale.rows[${i}] requires id.`);
+    if(ids.has(row.id))throw new Error(`Duplicate Scale row: ${row.id}.`);ids.add(row.id);
+    const r={labelKey:'',min:null,max:null,...copyJSON(row)};
+    for(const key of Object.keys(r))if(!['id','labelKey','min','max'].includes(key))throw new Error(`Scale.rows[${i}] contains unsupported field: ${key}.`);
+    for(const key of ['min','max'])if(r[key]!==null&&!Number.isFinite(r[key]))throw new Error(`Scale.rows[${i}].${key} must be a number or empty.`);
+    if(r.min!==null&&r.max!==null&&r.min>r.max)throw new Error(`Scale.rows[${i}]: ${r.min} is above ${r.max}.`);
+    if(typeof r.labelKey!=='string')throw new Error(`Scale.rows[${i}].labelKey must be text.`);
+    need(nonempty(r.labelKey),`Scale.rows[${i}] needs its words.`,options);
+    return r;
+  });
+  need(x.rows.length>0,'Scale requires at least one row.',options);
+  const sorted=[...x.rows].sort((a,b)=>(a.min??-Infinity)-(b.min??-Infinity));
+  for(let i=1;i<sorted.length;i++)if((sorted[i].min??-Infinity)<=(sorted[i-1].max??Infinity))throw new Error(`Scale rows ${sorted[i-1].id} and ${sorted[i].id} overlap.`);
+  return x;
+}
+/** The description scale of a Definition: its own, else its type's; null when none (or disabled). */
+export function descriptionScale(ruleset,definitionId){
+  const definition=ruleset.definitions?.find(d=>d.id===definitionId);
+  const type=ruleset.definitionTypes?.find(t=>t.id===definition?.definitionTypeId);
+  const scale=ruleset.scales?.find(s=>s.id===(definition?.scaleRef??type?.scaleRef));
+  return scale&&scale.enabled!==false?scale:null;
+}
+/** The words of a Scale for a number (and the maximum it is a share of), or null when no row holds it. */
+export function scaleWords(scale,value,maximum){
+  if(!scale||typeof value!=='number'||!Number.isFinite(value))return null;
+  const measure=scale.basis==='percent'?(typeof maximum==='number'&&maximum>0?value/maximum*100:null):value;
+  if(measure===null)return null;
+  return (scale.rows??[]).find(row=>(row.min===null||measure>=row.min)&&(row.max===null||measure<=row.max))?.labelKey??null;
+}
 export const CREATION_STEP_KINDS=Object.freeze(['choice','content','allocation','roll','review']);
 export function prepareCreationSystem(data,options={}){
   const x=prepareNamedGeneric(data,'CreationSystem',{steps:[]},options);arr(x.steps,'CreationSystem.steps');x.steps=x.steps.map((step,i)=>{if(!isRecord(step)||!nonempty(step.id))throw new Error(`CreationSystem.steps[${i}] requires id.`);need(nonempty(step.name),`CreationSystem.steps[${i}] requires name.`,options);const n={kind:'choice',required:true,options:[],min:0,max:1,...copyJSON(step)};if(!CREATION_STEP_KINDS.includes(n.kind))throw new Error(`CreationSystem.steps[${i}].kind is invalid.`);arr(n.options,`CreationSystem.steps[${i}].options`);
@@ -523,4 +562,4 @@ export function prepareSheetDefinition(data,options={}){
   return x;
 }
 
-export const PREPARERS={parameters:prepareParameter,formulas:prepareFormula,formulaBindings:prepareFormulaBinding,conditions:prepareCondition,rolls:prepareRoll,outcomes:prepareOutcome,tests:prepareTest,effects:prepareEffect,actions:prepareAction,permissionPolicies:preparePermissionPolicy,eventTypes:prepareEventType,triggers:prepareTrigger,contentTypes:prepareContentType,contentTemplates:prepareContentTemplate,modifiers:prepareModifier,durations:prepareDuration,dice:prepareDie,tables:prepareTable,creationSystems:prepareCreationSystem,progressionSystems:prepareProgressionSystem,sheetDefinitions:prepareSheetDefinition,categories:prepareCategory,tags:prepareTag};
+export const PREPARERS={parameters:prepareParameter,formulas:prepareFormula,formulaBindings:prepareFormulaBinding,conditions:prepareCondition,rolls:prepareRoll,outcomes:prepareOutcome,tests:prepareTest,effects:prepareEffect,actions:prepareAction,permissionPolicies:preparePermissionPolicy,eventTypes:prepareEventType,triggers:prepareTrigger,contentTypes:prepareContentType,contentTemplates:prepareContentTemplate,modifiers:prepareModifier,durations:prepareDuration,dice:prepareDie,tables:prepareTable,scales:prepareScale,creationSystems:prepareCreationSystem,progressionSystems:prepareProgressionSystem,sheetDefinitions:prepareSheetDefinition,categories:prepareCategory,tags:prepareTag};

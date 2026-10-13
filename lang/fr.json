@@ -73,7 +73,8 @@
       "RuntimeLab": "Labo runtime",
       "Dependencies": "Dépendances",
       "Tables": "Tables",
-      "Dice": "Dés"
+      "Dice": "Dés",
+      "Scales": "Échelles descriptives"
     },
     "Dependencies": {
       "Title": "Dépendances",
@@ -165,7 +166,9 @@
       "NoRepeat": "Vide : jouées une fois",
       "RepeatMax": "Nombre de termes au plus",
       "NoLimit": "Sans limite",
-      "RepeatWhile": "Un autre terme tant que"
+      "RepeatWhile": "Un autre terme tant que",
+      "ScaleOfType": "Celle de son type",
+      "NoScale": "Aucune"
     },
     "FamilyColor": {
       "parameters": "Paramètres",
@@ -582,7 +585,9 @@
       "AcquisitionChosen": "Acquiert aussi la Definition donnée par",
       "World": "Monde",
       "Combat": "Combat en cours",
-      "Die": "Dé"
+      "Die": "Dé",
+      "Scale": "Échelle descriptive",
+      "ScaleRef": "Échelle descriptive"
     },
     "EditorDisplay": {
       "NoneSelected": "Aucune sélection",
@@ -999,6 +1004,10 @@
       "die": {
         "Summary": "Un Dé a ses propres faces : dés narratifs à symboles, d6 dont le 1 est une face spéciale, dé d'exploit.",
         "Usage": "Donnez-lui une lettre, puis ses compteurs et ses faces. Un Jet le lance avec cette lettre (2dp pour deux dés). Une Formule lit un compteur sur tous les dés lancés ; un compte négatif annule (un échec compte -1 succès)."
+      },
+      "scale": {
+        "Summary": "Une Échelle descriptive traduit un nombre en mots : « Semble en pleine forme », « Mal en point », « Exceptionnel ».",
+        "Usage": "Donnez à chaque palier sa plage et ses mots. Liez l'échelle à un type de Définition (toutes ses Définitions) ou à une Définition. Sur une feuille, une valeur affichée « En description » montre ces mots au lieu du nombre, par exemple pour les observateurs."
       }
     },
     "CapabilityType": {
@@ -1502,7 +1511,8 @@
       "Display": {
         "field": "Champ",
         "gauge": "Jauge",
-        "dots": "Pastilles"
+        "dots": "Pastilles",
+        "description": "En description"
       },
       "DisplayAs": "Affichage",
       "DotCount": "Pastilles (sans maximum)",
@@ -1521,7 +1531,14 @@
       "FillTo": "Dégradé vers",
       "DotColor": "Couleur des pastilles",
       "Seen": "Visible par",
-      "GmOnly": "Le MJ seulement"
+      "GmOnly": "Le MJ seulement",
+      "Audience": {
+        "player": "Les joueurs (propriétaires)",
+        "observer": "Les observateurs",
+        "gm": "Le MJ"
+      },
+      "ChangedBy": "Modifiée par",
+      "DescriptionSample": "Semble en pleine forme"
     },
     "Reaction": {
       "Title": "Réaction",
@@ -1562,6 +1579,20 @@
       "Term": "Terme {number}",
       "CreateThis": "Créer le personnage",
       "ActorType": "Type d'acteur"
+    },
+    "Scale": {
+      "Row": "Palier",
+      "Rows": "Paliers",
+      "RowsHelp": "Chaque palier couvre une plage et donne les mots affichés à la place du nombre. Laissez une borne vide pour une plage ouverte. Les plages ne doivent pas se chevaucher.",
+      "AddRow": "Ajouter un palier",
+      "Min": "De",
+      "Max": "À",
+      "Words": "Description",
+      "BasisLabel": "Les plages comparent",
+      "Basis": {
+        "value": "la valeur",
+        "percent": "le % du maximum"
+      }
     }
   }
 }

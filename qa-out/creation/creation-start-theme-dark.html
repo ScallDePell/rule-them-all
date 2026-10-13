@@ -2408,6 +2408,25 @@
   cursor: pointer;
 }
 
+/* A block not everyone sees: outlined, an eye struck through in its corner. */
+.rta-sheet--edit [data-layout-seen-by] {
+  position: relative;
+  outline: 1px dashed var(--rta-color-warning);
+  outline-offset: 2px;
+}
+
+.rta-sheet--edit [data-layout-seen-by]::after {
+  content: "\f070";
+  position: absolute;
+  inset-block-start: 0;
+  inset-inline-end: 0;
+  font-family: var(--font-awesome);
+  font-weight: 900;
+  font-size: var(--rta-type-sm);
+  color: var(--rta-color-warning);
+  pointer-events: none;
+}
+
 .rta-sheet--edit [data-layout-node]:hover {
   outline: 1px dashed var(--rta-color-border-highlight);
   outline-offset: 2px;
@@ -2689,10 +2708,6 @@
 .rta-sheet-value__control > input:not([type="checkbox"]) {
   inline-size: 4.5rem;
   text-align: end;
-}
-
-.rta-sheet-value__control > input.rta-sheet-value__amount {
-  inline-size: 3.5rem;
 }
 
 .rta-sheet-value__control > input[type="text"] {
@@ -3052,10 +3067,11 @@ button.rta-sheet-dot {
   border-radius: var(--rta-radius-control);
 }
 
+/* The fill spans the whole bar and is cut at the value: a gradient keeps its colors where they are (half full shows the first half). */
 .rta-sheet-gauge__fill {
   position: absolute;
-  inset-block: 0;
-  inset-inline-start: 0;
+  inset: 0;
+  clip-path: inset(0 calc(100% - var(--rta-gauge-share, 0%)) 0 0);
   background: var(--rta-sheet-fill, var(--rta-color-border-highlight));
   opacity: var(--rta-sheet-fill-opacity, .45);
 }
@@ -4910,4 +4926,4 @@ span.rta-sheet-value__step {
   margin: 0;
 }
 
-body{margin:0;font-family:sans-serif;font-size:14px}.application{position:relative}</style><body class="theme-dark"><div class="application rta-creation-app theme-dark" style="width:var(--qa-width)"><section class="window-content"><div class="rta-creation rta-creation--start"><section class="rta-creation__section"><h3 class="rta-creation__title">Unfinished characters</h3><ul class="rta-creation__drafts"><li class="rta-creation__draft"><span>Player character · 12/10/2026 14:00</span><button type="button" data-creation-command="resume" data-session="creation-cf0587b0-d8ed-4b19-8a1e-6c4b5677c8e2">Resume</button><button type="button" data-creation-command="abandon" data-session="creation-cf0587b0-d8ed-4b19-8a1e-6c4b5677c8e2">Abandon</button></li></ul></section><section class="rta-creation__section"><h3 class="rta-creation__title">New character</h3><ul class="rta-creation__drafts"><li class="rta-creation__draft"><span>Player character</span><button type="button" class="rta-creation__primary" data-creation-command="start" data-system="pc">Start</button></li></ul></section></div></section></div></body></html>
+body{margin:0;font-family:sans-serif;font-size:14px}.application{position:relative}</style><body class="theme-dark"><div class="application rta-creation-app theme-dark" style="width:var(--qa-width)"><section class="window-content"><div class="rta-creation rta-creation--start"><section class="rta-creation__section"><h3 class="rta-creation__title">Unfinished characters</h3><ul class="rta-creation__drafts"><li class="rta-creation__draft"><span>Player character · 12/10/2026 14:00</span><button type="button" data-creation-command="resume" data-session="creation-43d5f700-2ecd-448f-adf1-3d41abe625ef">Resume</button><button type="button" data-creation-command="abandon" data-session="creation-43d5f700-2ecd-448f-adf1-3d41abe625ef">Abandon</button></li></ul></section><section class="rta-creation__section"><h3 class="rta-creation__title">New character</h3><ul class="rta-creation__drafts"><li class="rta-creation__draft"><span>Player character</span><button type="button" class="rta-creation__primary" data-creation-command="start" data-system="pc">Start</button></li></ul></section></div></section></div></body></html>

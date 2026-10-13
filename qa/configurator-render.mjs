@@ -47,6 +47,7 @@ await api.createProgressionSystem(v,{id:'ps1',nameKey:'Career',advancements:[{id
 await api.createDie(v,{id:'dz1',nameKey:'Ability',denomination:'a',counters:[{id:'success',labelKey:'Success'},{id:'advantage',labelKey:'Advantage'}],faces:[{labelKey:'Blank'},{labelKey:'Success',counts:{success:1}},{labelKey:'Advantage',value:2,counts:{advantage:1}}]});
 await api.createFormula(v,{id:'f-dice',nameKey:'Hunger tens',resultType:'number',expression:{type:'add',args:[{type:'dice',read:'count',group:'hunger',compare:'eq',value:{type:'literal',value:10}},{type:'dice',read:'counter',counter:'success'},{type:'distance',from:'self',to:'target'}]}});
 await api.createCondition(v,{id:'c-near',nameKey:'Flanked',expression:{type:'gte',left:{type:'nearby',of:'target',within:{type:'literal',value:2},side:'enemy'},right:{type:'context',path:'variables.test.total'}}});
+await api.createScale(v,{id:'sc1',nameKey:'Health words',basis:'percent',rows:[{id:'full',labelKey:'Seems in great shape',min:100,max:null},{id:'hurt',labelKey:'Hurt',min:1,max:99.99},{id:'down',labelKey:'Down',min:null,max:0}]});
 await api.createTable(v,{id:'tb1',nameKey:'Critical hits',rollRef:'r1',rows:[{id:'low',labelKey:'Scratch',min:null,max:10,actionRefs:['a1']},{id:'high',labelKey:'Severed limb',min:11,max:null,actionRefs:[]}]});
 await api.createAction(v,{id:'a2',nameKey:'Swing',testRef:'t1',conditionRefs:[],costEffectRefs:[],effectRefs:[],tableRef:'tb1',targeting:'shared',reroll:{actionRefs:['a1']},outcomeMappings:[{outcomeId:'o-miss',block:true},{outcomeId:'o-crit',actionRefs:['a1']}]});
 await api.createSheetDefinition(v,{id:'sh1',nameKey:'Character sheet',target:'actor',root:{id:'root',kind:'tabs',children:[{id:'main',kind:'tab',labelKey:'Character',children:[{id:'top',kind:'grid',columns:2,children:[
@@ -76,7 +77,7 @@ console.log('rendered',views.length);
 const {ConfiguratorEntryEditor}=await imp('src/configurator/configurator-entry-editor.mjs');
 const editorTpl=Handlebars.compile(readFileSync(join(root,'templates/configurator/entry-editor.hbs'),'utf8'));
 const selectUrl=pathToFileURL(join(root,'src/ui/rta-select.mjs')).href;
-const editors=[['ruleset',v],['definitionType','stat'],['definition','d0'],['contentType','gear'],['contentTemplate','rope'],['parameter','p1'],['formula','f1'],['condition','c1'],['action','a2'],['tag','tag-a'],['category','cat-core'],['test','t1'],['modifier','m1'],['duration','du1'],['die','dz1'],['formula','f-dice'],['condition','c-near'],['table','tb1'],['progressionSystem','ps1'],['trigger','tr1'],['permissionPolicy','pp1'],['eventType','ev1'],
+const editors=[['ruleset',v],['definitionType','stat'],['definition','d0'],['contentType','gear'],['contentTemplate','rope'],['parameter','p1'],['formula','f1'],['condition','c1'],['action','a2'],['tag','tag-a'],['category','cat-core'],['test','t1'],['modifier','m1'],['duration','du1'],['die','dz1'],['formula','f-dice'],['condition','c-near'],['table','tb1'],['scale','sc1'],['progressionSystem','ps1'],['trigger','tr1'],['permissionPolicy','pp1'],['eventType','ev1'],
  ['sheetDefinition','sh1'],...['formulaBinding','roll','outcome','effect','creationSystem'].map(kind=>[kind,null])];
 for(const [kind,id] of editors){
   const editor=new ConfiguratorEntryEditor({api,versionId:v,kind,id,definitionTypeId:kind==='definition'?'stat':null,contentTypeId:kind==='contentTemplate'?'gear':null});

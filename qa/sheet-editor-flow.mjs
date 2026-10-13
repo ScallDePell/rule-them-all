@@ -63,8 +63,20 @@ const result = await page.evaluate(async ({fixture, en, urls}) => {
   await click('[data-layout-command="undo"]');
   await click('[data-layout-command="undo"]');
   await click('[data-layout-command="undo"]');
-  { const box = element.querySelector('[data-layout-properties] [data-layout-prop="gmOnly"]'); box.checked = true; box.dispatchEvent(new Event('change', {bubbles: true})); await wait(); }
-  check('a block for the GM only', find(layout(), 'stat-value').gmOnly === true && element.querySelector('[data-layout-canvas] [data-layout-node="stat-value"][data-layout-gm-only]'));
+  const untick = async selector => { const box = element.querySelector(`[data-layout-properties] ${selector}`); if (!box) { steps.push(`FAIL nothing matches ${selector}`); return; } box.checked = !box.checked; box.dispatchEvent(new Event('change', {bubbles: true})); await wait(); };
+  await untick('[data-layout-seen="observer"]');
+  check('a block hidden from observers', JSON.stringify(find(layout(), 'stat-value').seenBy) === '["player","gm"]' && element.querySelector('[data-layout-canvas] [data-layout-node="stat-value"][data-layout-seen-by="player gm"]'));
+  await untick('[data-layout-seen="player"]');
+  await untick('[data-layout-seen="gm"]');
+  check('a block is always for someone', JSON.stringify(find(layout(), 'stat-value').seenBy) === '["gm"]' && element.querySelector('[data-layout-properties] [data-layout-seen="gm"]').checked);
+  await untick('[data-layout-write-by="gm"]');
+  check('a value only the GM changes', find(layout(), 'stat-value').write?.by === 'gm');
+  await click('[data-layout-command="undo"]');
+  await click('[data-layout-command="undo"]');
+  await click('[data-layout-command="undo"]');
+  await set('[data-layout-properties] [data-layout-prop="display"]', 'description');
+  check('a value in words', find(layout(), 'stat-value').display === 'description' && !find(layout(), 'stat-value').write
+    && element.querySelector('[data-layout-canvas] [data-layout-node="stat-value"]')?.textContent.includes('Seems in great shape'));
   await click('[data-layout-command="undo"]');
   check('undo', find(layout(), 'stat-value').write?.operation === 'set');
   // Drag the Strike button out of its section into the Stats section.
@@ -183,14 +195,15 @@ if (process.env.RTA_SHOTS) {
   await page.screenshot({path: join(process.env.RTA_SHOTS, 'sheet-editor-scrolled.png')});
   await page.evaluate(() => { const side = document.querySelector('.rta-sheet-editor__side'); side.scrollTop = side.scrollHeight; });
   await page.screenshot({path: join(process.env.RTA_SHOTS, 'sheet-editor-palette.png')});
-  // A value shown as a gradient gauge, raised and lowered, for the GM only.
+  // A value shown as a gradient gauge, hidden from observers, raised and lowered by the GM only.
   await page.evaluate(async () => {
     const wait = () => new Promise(r => setTimeout(r, 60)), fire = (field, value) => { if (typeof value === 'boolean') field.checked = value; else field.value = value; field.dispatchEvent(new Event('change', {bubbles: true})); };
     const props = () => document.querySelector('[data-layout-properties]');
     fire(props().querySelector('[data-layout-prop="display"]'), 'gauge'); await wait();
     for (const [prop, value] of [['fill', 'danger'], ['fillTo', 'warning']]) { fire(props().querySelector(`[data-layout-style="${prop}"]`), value); await wait(); }
     for (const key of ['set', 'add', 'subtract']) { const box = props().querySelector(`[data-layout-write="${key}"]`); if (box) { fire(box, key !== 'set'); await wait(); } }
-    fire(props().querySelector('[data-layout-prop="gmOnly"]'), true); await wait();
+    fire(props().querySelector('[data-layout-seen="observer"]'), false); await wait();
+    fire(props().querySelector('[data-layout-write-by="gm"]'), true); await wait();
     document.querySelector('.rta-sheet-editor__side').scrollTop = 0; document.querySelector('.rta-config-entry__scroll').scrollTop = 0;
   });
   await page.screenshot({path: join(process.env.RTA_SHOTS, 'sheet-editor-gauge.png')});
