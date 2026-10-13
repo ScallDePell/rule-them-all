@@ -22,7 +22,7 @@ const initiativePasses=fd=>{
   if(!Number.isFinite(step)||step<0||!Number.isFinite(threshold))throw new Error("Initiative passes need numbers.");
   return step>0?{step,threshold}:null;
 };
-const slug=value=>String(value??"").trim().toLowerCase().normalize("NFKD").replace(/[^a-z0-9]+/g,"-").replace(/^-|-$/g,"");
+const slug=value=>String(value??"").trim().toLowerCase().normalize("NFKD").replace(/[\u0300-\u036f]/g,"").replace(/[^a-z0-9]+/g,"-").replace(/^-|-$/g,"");
 const json=(value,fallback)=>{const text=String(value??"").trim();return text?JSON.parse(text):fallback;};
 const fieldPresent=(fd,key)=>typeof fd.has==="function"?fd.has(key):fd.get(key)!==undefined&&fd.get(key)!==null;
 const lines=value=>String(value??"").split(/\r?\n/).map(x=>x.trim()).filter(Boolean);

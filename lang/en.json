@@ -41,7 +41,11 @@
       "ClearOptionalReferences": "These entries reference it optionally: {list}. Their reference will be removed. Continue?",
       "DeleteBlocked": "Used by: {list}. Remove these references before deleting.",
       "Filter": "Filter",
-      "ClearFilters": "Clear filters"
+      "ClearFilters": "Clear filters",
+      "DuplicateEntry": "Duplicate",
+      "DuplicateName": "Name of the copy",
+      "CopyOf": "{name} (copy)",
+      "DuplicateNameRequired": "Give the copy a name."
     },
     "Nav": {
       "General": "General",

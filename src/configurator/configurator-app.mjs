@@ -7,6 +7,7 @@ import {MODULE_ID} from "../core/module-contract.mjs";
 import {createSelectColorResolver,selectColorsAttribute} from "../ui/select-option-presentation.mjs";
 import {buildDependencyExplorer,buildDependencyGraph} from "./dependency-explorer.mjs";
 import {confirmRTA, promptRTA} from "./foundry-dialogs.mjs";
+import {openContextMenu} from "../ui/context-menu.mjs";
 import {ConfiguratorWindow} from "./configurator-window.mjs";
 import {ConfiguratorEntryEditor} from "./configurator-entry-editor.mjs";
 import {buildRuntimeLabDemoProfile} from "../runtime/runtime-demo-profile.mjs";
@@ -403,6 +404,7 @@ export class ConfiguratorApp extends ConfiguratorWindow {
   }
   #bind() {
     for (const element of this.element?.querySelectorAll?.("[data-action]") ?? []) element.addEventListener("click", event => this.#action(event));
+    for (const card of this.element?.querySelectorAll?.(".rta-config-card[data-entry-id]") ?? []) card.addEventListener("contextmenu", event => this.#entryMenu(event, card));
     this.element?.querySelector?.("[data-import-file]")?.addEventListener("change", event => this.#import(event));
     const depSearch=this.element?.querySelector?.('[data-dependency-search]');
     if(depSearch){depSearch.value=this.#dependencySearch;depSearch.addEventListener('input',()=>{
@@ -494,6 +496,27 @@ export class ConfiguratorApp extends ConfiguratorWindow {
       await this.render(false);
     }});
     await this.entryEditor.render(true);
+  }
+
+  /** Right click on an entry: open it, or duplicate it under a name asked first. */
+  async #entryMenu(event,card) {
+    event.preventDefault();
+    const kind=card.dataset.kind,id=card.dataset.entryId,name=card.querySelector(".rta-config-card__title")?.textContent?.trim()??id;
+    const record=(await this.#api()).getRulesetVersion(this.#selected),i18n=game.i18n;
+    const items=[{label:i18n.localize("RTA.UI.Edit"),icon:"fa-solid fa-pen-to-square",run:()=>this.#openEditor(kind,id)}];
+    if(record?.status!=="validated")items.push({label:i18n.localize("RTA.UI.DuplicateEntry"),icon:"fa-solid fa-copy",run:()=>this.#duplicate(kind,id,name)});
+    openContextMenu(event,items);
+  }
+  async #duplicate(kind,id,name) {
+    this.#error="";
+    try {
+      const copyName=await promptRTA("RTA.UI.DuplicateName",game.i18n.format("RTA.UI.CopyOf",{name}));
+      if(copyName===null)return;
+      if(!String(copyName).trim())throw new Error(game.i18n.localize("RTA.UI.DuplicateNameRequired"));
+      const copy=await (await this.#api()).duplicateEntry(this.#selected,kind,id,String(copyName).trim());
+      await this.render(false);
+      return this.#openEditor(kind,copy.id);
+    } catch(error){this.#error=error?.message??String(error);return this.render(false);}
   }
 
   async #action(event) {
