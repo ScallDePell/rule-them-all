@@ -261,6 +261,31 @@ export class FoundryContentBridge{
     }
     });
   }
+  /** Move an Actor onto another version of its Ruleset (its own deleted or replaced): the runtime state first
+   * (rebindContainer), then the flags that name the version (acquisitions, origins, creation run, held Items).
+   * The Contents it holds give the Definitions the new version adds to them (a new status granted by the Socle). */
+  async rebindActor(versionId,actorRef){
+    const actor=await this.runtime.adapter.resolveDocument(actorRef);if(actor.documentName!=="Actor")throw new Error("Only an Actor can change its Ruleset version.");
+    const result=await this.runtime.rebindContainer(versionId,actor.uuid),ruleset=this.ruleset(versionId);
+    const templates=new Set((ruleset.contentTemplates??[]).filter(x=>x.enabled!==false).map(x=>x.id));
+    const acquisitions=foundryJSON(actor.getFlag?.(MODULE_ID,ACQUISITIONS_FLAG)??{}),origins={};
+    for(const [key,acquisition] of Object.entries(acquisitions)){
+      if(!templates.has(acquisition?.templateId)){delete acquisitions[key];continue;}
+      acquisition.versionId=versionId;for(const id of acquisition.createdDefinitionIds??[])origins[originKey(versionId,id)]=true;
+    }
+    const held=(await this.runtime.getContainerState(actor.uuid)).definitionStates??{},missing=new Map();
+    for(const acquisition of Object.values(acquisitions)){
+      let plan;try{plan=this.preflightAcquisition(versionId,acquisition.templateId,acquisition.selections??{});}catch{continue;}
+      const template=this.getAcquisitionTemplate(versionId,acquisition.templateId);
+      for(const binding of plan.definitionBindings??[])if(binding?.definitionId&&!held[binding.definitionId]&&!missing.has(binding.definitionId))
+        missing.set(binding.definitionId,{definitionId:binding.definitionId,initial:binding.initial??initialForDefinition(template,binding.definitionId),add:binding.add??{}});
+    }
+    if(missing.size){const granted=await this.runtime.acquire(versionId,actor.uuid,{definitionBindings:[...missing.values()],summary:{rebind:result.from}});result.granted=granted.acquiredDefinitionIds??[...missing.keys()];}
+    await actor.setFlag(MODULE_ID,ACQUISITIONS_FLAG,acquisitions);await actor.setFlag(MODULE_ID,DEFINITION_ORIGINS_FLAG,origins);
+    const run=foundryJSON(actor.getFlag?.(MODULE_ID,"creationRun")??null);if(run?.versionId&&run.versionId!==versionId)await actor.setFlag(MODULE_ID,"creationRun",{...run,versionId});
+    for(const item of actor.items??[]){const flag=foundryJSON(item.getFlag?.(MODULE_ID,TEMPLATE_FLAG)??null);if(flag?.versionId&&flag.versionId!==versionId&&templates.has(flag.templateId))await item.setFlag(MODULE_ID,TEMPLATE_FLAG,{...flag,versionId});}
+    return result;
+  }
   async acquireTemplate(versionId,actorRef,templateId,options={}){
     const actor=await this.runtime.adapter.resolveDocument(actorRef);
     return this.#withActorMutation(actor.uuid,()=>this.#acquireTemplateUnlocked(versionId,actor.uuid,templateId,options));

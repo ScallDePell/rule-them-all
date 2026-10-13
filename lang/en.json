@@ -1380,7 +1380,12 @@
       "Contents": "Contents",
       "OtherItems": "Other Items",
       "Raise": "Raise",
-      "Lower": "Lower"
+      "Lower": "Lower",
+      "VersionGone": "This Actor was made with a Ruleset version that no longer exists.",
+      "Rebind": "Move to {ruleset}",
+      "RebindConfirm": "Move {name} to {ruleset}? Its values are kept for everything this version still defines; the rest is removed.",
+      "Rebound": "Actor moved to {ruleset}: {dropped} element(s) removed, {granted} added.",
+      "ItemVersionGone": "This Item comes from a Ruleset version that no longer exists. Move its Actor to the active Ruleset, or synchronize the content libraries again."
     },
     "SheetEditor": {
       "Layout": "Layout",

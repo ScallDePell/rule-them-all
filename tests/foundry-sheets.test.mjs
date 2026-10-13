@@ -133,3 +133,34 @@ test('markup: the Contents an Actor holds, by type, with their remove buttons on
   assert.match(html,/RTA.Sheet.DropContents/);
   assert.doesNotMatch(renderSheetHTML(view,{name:'Hero'}),/data-sheet-item-remove/);
 });
+
+test('an Actor of a deleted Ruleset version moves onto the active one: values kept, new grants of its Contents added, flags renamed', async()=>{
+  const {FoundryContentBridge}=await import('../src/runtime/foundry-content-bridge.mjs');
+  const {api,v,runtime,adapter}=await world();
+  await runtime.initializeContainer(v,'Actor.old');await runtime.setDefinitionState(v,'Actor.old','str',{base:7});
+  const next=(await api.createRuleset({id:'g2',nameKey:'Game',version:'2'})).versionId;
+  await api.registerDefinitionType(next,{id:'attribute',key:'attribute',nameKey:'Attributes',allowedCapabilities:['value'],defaultCapabilities:['value'],requiredCapabilities:[],fields:{}});
+  await api.registerDefinitionType(next,{id:'status',key:'status',nameKey:'Status',allowedCapabilities:['state'],defaultCapabilities:['state'],requiredCapabilities:[],fields:{}});
+  await api.createDefinition(next,{id:'str',key:'str',definitionTypeId:'attribute',nameKey:'Strength',data:{},capabilities:['value']});
+  await api.createDefinition(next,{id:'pc',key:'pc',definitionTypeId:'status',nameKey:'Player character',data:{},capabilities:['state']});
+  await api.createContentType(next,{id:'base',nameKey:'Base',storageKind:'item',documentSubtype:'',runtimeMode:'unique',fields:{}});
+  await api.createContentTemplate(next,{id:'socle',nameKey:'Socle',contentTypeId:'base',data:{},relations:[{id:'g-pc',operation:'grant',targetRef:{objectKind:'definition',objectId:'pc'},config:{initial:{'state.active':true}}}]});
+  await api.publishRuleset(next);await api.setActiveVersionId(next);await api.deleteRulesetVersion(v);
+  const flags={contentAcquisitions:{'item-1':{templateId:'socle',versionId:v,createdDefinitionIds:['str']}},creationRun:{versionId:v}};
+  const itemFlags={contentTemplate:{versionId:v,templateId:'socle',managed:true}};
+  const item={getFlag:(_s,k)=>itemFlags[k],setFlag:async(_s,k,x)=>{itemFlags[k]=x;}};
+  const doc={uuid:'Actor.old',name:'Old',img:'',documentName:'Actor',items:[item],getFlag:(_s,k)=>flags[k],setFlag:async(_s,k,x)=>{flags[k]=x;}};
+  adapter.resolveDocument=async()=>doc;
+  globalThis.game.i18n.format=(k,d)=>`${k}:${Object.values(d).join('|')}`;
+  const {RulesetActorSheet}=createRulesetSheets({ActorSheetV2:Base,ItemSheetV2:Base});
+  const sheet=new RulesetActorSheet(doc);
+  await sheet._prepareContext({});
+  const html=await sheet._renderHTML();
+  assert.match(html,/RTA.Sheet.VersionGone/);assert.match(html,/data-sheet-command="rebind">RTA.Sheet.Rebind:Game 2/);
+  const result=await new FoundryContentBridge(api,runtime).rebindActor(next,'Actor.old');
+  assert.deepEqual(result.granted,['pc']);
+  const state=await runtime.getContainerState('Actor.old');
+  assert.equal(state.rulesetVersionId,next);assert.equal(state.definitionStates.str.capabilityStates.value.base,7);assert.equal(state.definitionStates.pc.capabilityStates.state.active,true);
+  assert.deepEqual([flags.contentAcquisitions['item-1'].versionId,flags.creationRun.versionId,itemFlags.contentTemplate.versionId],[next,next,next]);
+  delete globalThis.game;
+});

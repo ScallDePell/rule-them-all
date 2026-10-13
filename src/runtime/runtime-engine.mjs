@@ -426,6 +426,19 @@ export class RuntimeEngine{
     if(!check.valid)throw new Error(`Test ${test.id} input ${input.id}: ${check.message}`);
     return value;
   }
+  /** Move a container onto another Ruleset version (its own deleted or replaced): what that version still defines
+   * (Definitions, states, held Contents) keeps its values, the rest is dropped. Returns what was dropped. */
+  async rebindContainer(versionId,containerRef,{transactionId=null}={}){
+    const ruleset=this.ruleset(versionId),ref=normalizeRuntimeContainerRef(containerRef);
+    const tx=this.transaction(versionId,"rebind",{transactionId}),state=await tx.load(ref),from=state.rulesetVersionId;
+    if(from===versionId)return {from,to:versionId,dropped:[]};
+    const defined=new Set((ruleset.definitions??[]).map(d=>d.id)),templates=new Set((ruleset.contentTemplates??[]).map(t=>t.id)),dropped=[];
+    for(const id of Object.keys(state.definitionStates))if(!defined.has(id)){delete state.definitionStates[id];dropped.push({objectKind:"definition",objectId:id});}
+    state.stateInstances=state.stateInstances.filter(instance=>defined.has(instance.definitionId)||!dropped.push({objectKind:"state",objectId:instance.definitionId}));
+    for(const [key,content] of Object.entries(state.contents??{}))if(!templates.has(content.templateId)){delete state.contents[key];dropped.push({objectKind:"contentTemplate",objectId:content.templateId});}
+    state.rulesetVersionId=versionId;
+    await this.#commit(tx);return {from,to:versionId,dropped};
+  }
   async initializeContainer(versionId,containerRef,{definitionIds=null,initialByDefinition={},transactionId=null}={}){
     const ruleset=this.ruleset(versionId),wanted=definitionIds?new Set(definitionIds):null,ref=normalizeRuntimeContainerRef(containerRef);
     const tx=this.transaction(versionId,"initialize",{transactionId}),state=await tx.load(ref);

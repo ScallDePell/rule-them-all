@@ -1376,7 +1376,12 @@
       "Contents": "Contenus",
       "OtherItems": "Autres objets",
       "Raise": "Augmenter",
-      "Lower": "Diminuer"
+      "Lower": "Diminuer",
+      "VersionGone": "Cet Acteur a été fait avec une version du Ruleset qui n’existe plus.",
+      "Rebind": "Passer sur {ruleset}",
+      "RebindConfirm": "Passer {name} sur {ruleset} ? Ses valeurs sont gardées pour tout ce que cette version définit encore ; le reste est retiré.",
+      "Rebound": "Acteur passé sur {ruleset} : {dropped} élément(s) retiré(s), {granted} ajouté(s).",
+      "ItemVersionGone": "Cet objet vient d’une version du Ruleset qui n’existe plus. Passez son Acteur sur le Ruleset actif, ou resynchronisez les bibliothèques de contenus."
     },
     "SheetEditor": {
       "Layout": "Mise en page",

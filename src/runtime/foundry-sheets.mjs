@@ -8,10 +8,12 @@ import {formatSheetValue, renderActionChatHTML, renderSheetHTML} from "../ui/she
 import {escapeHTML} from "../ui/html-utils.mjs";
 import {openCreationWindow, startableSystems} from "./foundry-creation.mjs";
 import {foundryJSON} from "./foundry-data.mjs";
+import {confirmRTA} from "../configurator/foundry-dialogs.mjs";
 
 const TEMPLATE_FLAG = "contentTemplate";
 const rta = () => globalThis.game?.ruleThemAll;
 const i18n = key => globalThis.game?.i18n?.localize?.(key) ?? key;
+const versionName = record => record ? `${record.workingDraft?.nameKey ?? record.publishedSnapshot?.nameKey ?? ""} ${record.version ?? ""}`.trim() : "";
 const notifyError = error => { console.error("Rule Them'All | Sheet", error); globalThis.ui?.notifications?.error?.(error?.message ?? String(error)); };
 
 /** Ruleset text first (world overrides, Ruleset translations), then the module's. */
@@ -193,6 +195,12 @@ export function createRulesetSheets({ActorSheetV2, ItemSheetV2}) {
       try {
         if (command === "initialize") await rta().runtime.initializeContainer(state.versionId, state.actor);
         if (command === "create") { openCreationWindow({actorUuid: this.document.uuid}); return; }
+        if (command === "rebind") {
+          const active = rta().configurator.getRulesetVersion(rta().configurator.getActiveVersionId());
+          if (!await confirmRTA("RTA.Sheet.RebindConfirm", {name: this.document.name, ruleset: versionName(active)})) return;
+          const result = await rta().content.rebindActor(active.versionId, this.document.uuid);
+          globalThis.ui?.notifications?.info?.(globalThis.game.i18n.format("RTA.Sheet.Rebound", {ruleset: versionName(active), dropped: result.dropped.length, granted: result.granted?.length ?? 0}));
+        }
       } catch (error) { notifyError(error); }
       this.render();
     }
@@ -205,8 +213,13 @@ export function createRulesetSheets({ActorSheetV2, ItemSheetV2}) {
       const stored = await runtime.getContainerState(actor);
       const versionId = stored.rulesetVersionId || api.getActiveVersionId();
       if (!versionId) return {notice: i18n("RTA.Sheet.NoRuleset")};
-      // A character not made yet is offered the active Ruleset's creation, as long as it holds no Content.
       const doc = this.document, active = api.getActiveVersionId();
+      // An Actor made with another version of the Ruleset (deleted, or replaced by the active one) can move onto the active one.
+      const rebind = this.isEditable && active && stored.rulesetVersionId && stored.rulesetVersionId !== active
+        ? {command: "rebind", label: globalThis.game.i18n.format("RTA.Sheet.Rebind", {ruleset: versionName(api.getRulesetVersion(active))}), icon: "fa-right-left"} : null;
+      if (stored.rulesetVersionId && !api.getRulesetVersion(stored.rulesetVersionId))
+        return {notice: i18n("RTA.Sheet.VersionGone"), actor, noticeActions: rebind ? [rebind] : []};
+      // A character not made yet is offered the active Ruleset's creation, as long as it holds no Content.
       const creatable = this.isEditable && active && (!stored.rulesetVersionId || stored.rulesetVersionId === active) && !doc.getFlag?.(MODULE_ID, "creationRun")
         && !Object.keys(doc.getFlag?.(MODULE_ID, "contentAcquisitions") ?? {}).length && startableSystems(resolveRuntimeRuleset(api, active), key => key).length > 0;
       const create = {command: "create", label: i18n("RTA.Creation.CreateThis"), icon: "fa-user-plus"};
@@ -214,7 +227,7 @@ export function createRulesetSheets({ActorSheetV2, ItemSheetV2}) {
         noticeActions: this.isEditable ? [...(creatable ? [create] : []), {command: "initialize", label: i18n(creatable ? "RTA.Sheet.InitializeEmpty" : "RTA.Sheet.Initialize")}] : []};
       const ruleset = resolveRuntimeRuleset(api, versionId), sheet = sheetFor(ruleset, {target: "actor"});
       const items = [...(doc.items ?? [])].map(item => ({id: item.id, name: item.name, img: item.img, managed: Boolean(item.getFlag?.(MODULE_ID, TEMPLATE_FLAG)?.managed)}));
-      return {versionId, ruleset, sheet, actor, headerActions: creatable ? [create] : [], view: await runtime.projectSheet(versionId, sheet, {actor, items})};
+      return {versionId, ruleset, sheet, actor, headerActions: [...(creatable ? [create] : []), ...(rebind ? [rebind] : [])], view: await runtime.projectSheet(versionId, sheet, {actor, items})};
     }
   }
 
@@ -223,6 +236,7 @@ export function createRulesetSheets({ActorSheetV2, ItemSheetV2}) {
       const api = rta()?.configurator, runtime = rta()?.runtime, flag = this.document.getFlag?.(MODULE_ID, TEMPLATE_FLAG);
       if (!api || !runtime) return {notice: i18n("RTA.Sheet.NotReady")};
       if (!flag?.versionId) return {notice: i18n("RTA.Sheet.NotContent")};
+      if (!api.getRulesetVersion(flag.versionId)) return {notice: i18n("RTA.Sheet.ItemVersionGone")};
       const ruleset = resolveRuntimeRuleset(api, flag.versionId), owner = this.document.parent?.documentName === "Actor" ? this.document.parent.uuid : null;
       const owned = owner ? (await runtime.listOwnedContents(flag.versionId, owner)).some(row => row.key === this.document.id) : false;
       const content = owned ? {key: this.document.id} : {templateId: flag.templateId};
