@@ -5,7 +5,7 @@ import {emptyStorageSnapshot} from '../src/configurator/configurator-storage.mjs
 import {MemoryRuntimeAdapter} from '../src/runtime/memory-runtime-adapter.mjs';
 import {createRuntimeAPI} from '../src/runtime/runtime-api.mjs';
 import {RELAYED_METHODS} from '../src/runtime/runtime-relay.mjs';
-import {actionSummary, chosenSheet, createRulesetSheets, registerRulesetSheets} from '../src/runtime/foundry-sheets.mjs';
+import {actionSummary, chosenSheet, createRulesetSheets, registerRulesetSheets, repairSheetChoices} from '../src/runtime/foundry-sheets.mjs';
 import {renderSheetHTML, formatSheetValue} from '../src/ui/sheet-markup.mjs';
 
 class Storage{value=emptyStorageSnapshot();async load(){return structuredClone(this.value)}async save(v){this.value=structuredClone(v)}}
@@ -57,11 +57,30 @@ test('the active Ruleset’s sheets are offered by name in the sheet choice, and
   assert.deepEqual(calls.slice(2).map(([doc,cls,label])=>[doc,cls.rtaSheetId,label]),[['Actor','pc','FICHE PJ'],['Actor','pc-2','FICHE PJ COMPACTE'],['Item','weapon','ARME']]);
   assert.ok(calls[2][1].prototype instanceof sheets.RulesetActorSheet);
   sheets.registerNamed({sheetDefinitions:[ruleset.sheetDefinitions[0]]});
-  assert.deepEqual(removed,['RTASheet_pc-2','RTASheet_weapon']);
+  assert.deepEqual(removed,['RulesetActorSheet','RulesetItemSheet','RTASheet_pc-2','RTASheet_weapon'],'with sheets of its own, the Ruleset no longer offers the generic ones');
   // The chosen sheet is shown while the Ruleset has it for this target; otherwise the first that fits.
   assert.equal(chosenSheet(ruleset,'pc-2',{target:'actor'}).id,'pc-2');
   assert.equal(chosenSheet(ruleset,'gone',{target:'actor'}).id,'pc');
   assert.equal(chosenSheet(ruleset,'weapon',{target:'item',contentTypeId:'pouvoir'}).id,'auto');
+});
+
+test('the generic sheet is only offered where the Ruleset leaves a gap; documents on a withdrawn sheet move to the one that fits', async()=>{
+  const offered=new Set();
+  const sheets=registerRulesetSheets({applications:{sheets:{ActorSheetV2:Base,ItemSheetV2:Base},apps:{DocumentSheetConfig:{registerSheet:(doc,scope,cls)=>offered.add(`${doc}:${scope}.${cls.name}`),unregisterSheet:(doc,scope,cls)=>offered.delete(`${doc}:${scope}.${cls.name}`)}}}},{Actor:'Actor',Item:'Item'});
+  const ruleset={contentTypes:[{id:'arme'},{id:'pouvoir'}],sheetDefinitions:[{id:'pc',nameKey:'PJ',target:'actor'},{id:'weapon',nameKey:'Arme',target:'item',contentTypeIds:['arme']}]};
+  sheets.registerNamed(ruleset);
+  assert.deepEqual([...offered].sort(),['Actor:rule-them-all.RTASheet_pc','Item:rule-them-all.RTASheet_weapon','Item:rule-them-all.RulesetItemSheet'],'powers have no sheet of their own: the generic Item sheet stays');
+  const flagged=(sheetClass,extra={})=>({sheetClass,items:[],getFlag(scope,key){return scope==='core'?this.sheetClass:extra[key]},async setFlag(scope,key,value){this.sheetClass=value}});
+  const hero=flagged('rule-them-all.RulesetActorSheet'),system=flagged('dnd5e.CharacterSheet'),sword=flagged('rule-them-all.RulesetItemSheet',{contentTemplate:{contentTypeId:'arme'}}),spell=flagged('rule-them-all.RulesetItemSheet',{contentTemplate:{contentTypeId:'pouvoir'}});
+  hero.items=[sword];
+  assert.equal(await repairSheetChoices(sheets,ruleset,{actors:[hero,system],items:[spell]}),1,'a sheet still offered stays chosen');
+  assert.deepEqual([hero.sheetClass,system.sheetClass,sword.sheetClass,spell.sheetClass],['rule-them-all.RTASheet_pc','dnd5e.CharacterSheet','rule-them-all.RulesetItemSheet','rule-them-all.RulesetItemSheet']);
+  sword.sheetClass='rule-them-all.RTASheet_gone';
+  const bare={...ruleset,sheetDefinitions:[]};
+  sheets.registerNamed(bare);
+  assert.ok(offered.has('Actor:rule-them-all.RulesetActorSheet'),'without Actor sheets, the generic one comes back');
+  assert.equal(await repairSheetChoices(sheets,bare,{actors:[hero]}),2,'the Actor and its sword move to the generic sheets');
+  assert.equal(hero.sheetClass,'rule-them-all.RulesetActorSheet');
 });
 
 test('markup: values, bounds, amounts, tabs and the Action chat summary', ()=>{

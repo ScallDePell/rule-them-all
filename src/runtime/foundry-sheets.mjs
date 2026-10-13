@@ -257,6 +257,22 @@ export function createRulesetSheets({ActorSheetV2, ItemSheetV2}) {
   return {RulesetActorSheet, RulesetItemSheet};
 }
 
+/** Documents that chose a Rule Them'All sheet the Ruleset no longer offers (the generic one, a deleted sheet) move to the
+   one that fits, instead of falling back to the game system's sheet. Active GM only; returns how many moved. */
+export async function repairSheetChoices(sheets, ruleset, {actors = [], items = []} = {}) {
+  const prefix = `${MODULE_ID}.`, updates = [];
+  const check = (document, target) => {
+    const current = document.getFlag?.("core", "sheetClass");
+    if (typeof current !== "string" || !current.startsWith(prefix)) return;
+    const next = sheets.choiceFor(ruleset, current, {target, contentTypeId: target === "item" ? document.getFlag?.(MODULE_ID, TEMPLATE_FLAG)?.contentTypeId ?? null : null});
+    if (next !== current) updates.push(document.setFlag("core", "sheetClass", next));
+  };
+  for (const actor of actors) { check(actor, "actor"); for (const item of actor.items ?? []) check(item, "item"); }
+  for (const item of items) check(item, "item");
+  await Promise.all(updates);
+  return updates.length;
+}
+
 /** Foundry keeps a Document's chosen sheet as "<scope>.<class name>": the class name follows the SheetDefinition id. */
 export const namedSheetClassName = sheetId => `RTASheet_${String(sheetId).replace(/[^A-Za-z0-9_-]/g, "_")}`;
 
@@ -266,12 +282,13 @@ export function registerRulesetSheets(foundry = globalThis.foundry, documents = 
   const config = foundry.applications.apps.DocumentSheetConfig;
   config.registerSheet(documents.Actor, MODULE_ID, sheets.RulesetActorSheet, {label: "RTA.Sheet.ActorSheet", makeDefault: false});
   config.registerSheet(documents.Item, MODULE_ID, sheets.RulesetItemSheet, {label: "RTA.Sheet.ItemSheet", makeDefault: false});
-  const named = new Map();
-  /** Offers the active Ruleset's SheetDefinitions by name, and withdraws those it no longer has. Called again on every change. */
+  const named = new Map(), generic = {actor: true, item: true};
+  const genericSheet = {actor: {document: documents.Actor, SheetClass: sheets.RulesetActorSheet, label: "RTA.Sheet.ActorSheet"}, item: {document: documents.Item, SheetClass: sheets.RulesetItemSheet, label: "RTA.Sheet.ItemSheet"}};
+  /** Offers the active Ruleset's SheetDefinitions by name, and withdraws those it no longer has. Called again on every change.
+     The generic "Rule Them'All sheet" is only offered where the Ruleset leaves a gap: no Actor sheet, or a Content Type no Item sheet fits. */
   sheets.registerNamed = (ruleset, t = key => key) => {
-    const wanted = new Map();
-    for (const entry of ruleset?.sheetDefinitions ?? []) {
-      if (entry.enabled === false || !["actor", "item"].includes(entry.target)) continue;
+    const wanted = new Map(), enabled = (ruleset?.sheetDefinitions ?? []).filter(entry => entry.enabled !== false && ["actor", "item"].includes(entry.target));
+    for (const entry of enabled) {
       const Base = entry.target === "actor" ? sheets.RulesetActorSheet : sheets.RulesetItemSheet, name = namedSheetClassName(entry.id);
       const SheetClass = class extends Base { static rtaSheetId = entry.id; };
       Object.defineProperty(SheetClass, "name", {value: name});
@@ -281,7 +298,24 @@ export function registerRulesetSheets(foundry = globalThis.foundry, documents = 
     for (const sheet of wanted.values()) config.registerSheet(sheet.document, MODULE_ID, sheet.SheetClass, {label: sheet.label, makeDefault: false});
     named.clear();
     for (const [key, sheet] of wanted) named.set(key, sheet);
+    const covers = (entry, contentTypeId) => !(entry.contentTypeIds ?? []).length || entry.contentTypeIds.includes(contentTypeId);
+    const need = {actor: !enabled.some(entry => entry.target === "actor"),
+      item: !ruleset || (ruleset.contentTypes ?? []).some(type => !enabled.some(entry => entry.target === "item" && covers(entry, type.id)))};
+    for (const target of ["actor", "item"]) {
+      if (need[target] === generic[target]) continue;
+      const {document, SheetClass, label} = genericSheet[target];
+      if (need[target]) config.registerSheet(document, MODULE_ID, SheetClass, {label, makeDefault: false});
+      else config.unregisterSheet?.(document, MODULE_ID, SheetClass);
+      generic[target] = need[target];
+    }
     return [...wanted.values()].map(sheet => sheet.SheetClass.name);
+  };
+  /** The Rule Them'All sheet a Document should use: the one it chose while still offered, otherwise the one that fits. */
+  sheets.choiceFor = (ruleset, current, {target, contentTypeId = null}) => {
+    const offered = id => id === `${MODULE_ID}.${genericSheet[target].SheetClass.name}` ? generic[target] : [...named.values()].some(sheet => `${MODULE_ID}.${sheet.SheetClass.name}` === id);
+    if (offered(current)) return current;
+    const fit = chosenSheet(ruleset, null, {target, contentTypeId});
+    return fit.id === "auto" ? `${MODULE_ID}.${genericSheet[target].SheetClass.name}` : `${MODULE_ID}.${namedSheetClassName(fit.id)}`;
   };
   return sheets;
 }

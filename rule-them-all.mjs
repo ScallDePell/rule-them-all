@@ -12,7 +12,7 @@ import {combatChangeEvents, timeElapsedPayload} from "./src/configurator/system-
 import {registerRulesetDice} from "./src/runtime/foundry-dice.mjs";
 import {installInitiative, installInitiativePasses, rerollEachRound} from "./src/runtime/foundry-initiative.mjs";
 import {FoundryRuntimeAdapter} from "./src/runtime/foundry-runtime-adapter.mjs";
-import {registerRulesetSheets, translator} from "./src/runtime/foundry-sheets.mjs";
+import {registerRulesetSheets, repairSheetChoices, translator} from "./src/runtime/foundry-sheets.mjs";
 import {resolveRuntimeRuleset} from "./src/runtime/runtime-contracts.mjs";
 import {installReactions} from "./src/runtime/foundry-reactions.mjs";
 import {installCreationButton} from "./src/runtime/foundry-creation.mjs";
@@ -81,7 +81,15 @@ Hooks.once("ready", () => {
     const registerDice = () => { for (const family of api.listRulesetFamilies()) for (const version of family.versions) if (version.publishedSnapshot) registerRulesetDice(family.id, version.publishedSnapshot.dice ?? []); };
     registerDice();
     // The active Ruleset's own sheets, by name, in each Document's sheet choice.
-    const registerSheets = () => { const active = api.getActiveVersionId(); try { rulesetSheets.registerNamed(active ? resolveRuntimeRuleset(api, active) : null, active ? translator(active) : undefined); } catch (error) { console.error("Rule Them'All | Sheet registration failed", error); } };
+    const registerSheets = () => {
+      const active = api.getActiveVersionId();
+      try {
+        const ruleset = active ? resolveRuntimeRuleset(api, active) : null;
+        rulesetSheets.registerNamed(ruleset, active ? translator(active) : undefined);
+        // Documents on a sheet no longer offered move to the one that fits, written once by the active GM.
+        if (game.users.activeGM?.isSelf) repairSheetChoices(rulesetSheets, ruleset, {actors: game.actors ?? [], items: game.items ?? []}).catch(error => console.error("Rule Them'All | Sheet choice repair failed", error));
+      } catch (error) { console.error("Rule Them'All | Sheet registration failed", error); }
+    };
     registerSheets();
     api.subscribe(() => { registerDice(); registerSheets(); ConfiguratorApp.refreshOpen(); });
     // The world's shared Definitions (a GM reserve, clocks) exist as soon as the active Ruleset names them.
