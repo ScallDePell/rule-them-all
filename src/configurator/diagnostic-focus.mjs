@@ -24,11 +24,11 @@ export function diagnosticFocusTargets(kind, relativePath) {
   const [first = "", second = ""] = segments;
   const targets = [];
   const add = (selector, index = 0) => targets.push({selector, index});
-  // Simple Formula/Condition editors: one row per operand.
+  // Formula/Condition builders: each slot and table row carries its path in the expression, the nearest one is focused.
   if (first === "expression") {
-    const arg = /^expression\.args\[(\d+)\]/.exec(path);
-    if (kind === "formula") add("[data-rule-operand]", arg ? Number(arg[1]) : 0);
-    if (kind === "condition") add("[data-rule-operand]", /^expression\.right/.test(path) ? 1 : 0);
+    const parts = path.replace(/^expression\.?/, "").split(".").filter(Boolean);
+    for (let n = parts.length; n > 0; n--) add(`[data-expr-path="${css(parts.slice(0, n).join("."))}"]`);
+    add(kind === "condition" ? '[name="conditionOperator"]' : '[name="formulaOperator"]');
     add('[name="expressionJson"]');
   }
   // Effects keep their operand in dedicated controls.

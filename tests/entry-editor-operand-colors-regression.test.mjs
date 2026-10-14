@@ -23,11 +23,11 @@ test("all editor contexts render operands with populated catalogs without undefi
   const kinds=[{kind:"parameter",id:"base"},{kind:"formula",id:"computed"},{kind:"condition",id:"condition"},{kind:"formula"},{kind:"condition"}];
   for(const options of kinds){
     const context=await new ConfiguratorEntryEditor({api,versionId,...options})._prepareContext({});
-    assert.equal(context.formulaModel.operands[0].parameterChoices[0].label,"Base");
-    assert.equal(context.formulaModel.operands[0].parameterChoices[0].colors,"#ac391a");
-    assert.equal(context.formulaModel.operands[0].formulaChoices[0].colors,"#395abc");
-    assert.equal(context.conditionModel.left.parameterChoices[0].colors,"#ac391a");
-    assert.equal(context.conditionModel.right.formulaChoices[0].colors,"#395abc");
+    if(options.kind==="parameter"){assert.equal(context.expressionBuilder,null);continue;}
+    assert.equal(context.expressionBuilder.supported,true);
+    if(!options.id){assert.match(context.expressionBuilder.html,/data-expr-root/);continue;}
+    assert.match(context.expressionBuilder.html,/<option value="base" data-rta-colors="#ac391a"[^>]*>Base<\/option>/);
+    assert.match(context.expressionBuilder.html,/<option value="computed" data-rta-colors="#395abc"/);
   }
 });
 
@@ -39,8 +39,8 @@ test("every editor kind prepares an empty draft with populated parameter/formula
   const kinds=["ruleset","definitionType","definition","parameter","formula","formulaBinding","condition","roll","outcome","test","effect","action","permissionPolicy","eventType","trigger","contentType","contentTemplate","tag","reference","modifier","restriction","duration","creationSystem","progressionSystem","sheetDefinition"];
   for(const kind of kinds){
     const context=await new ConfiguratorEntryEditor({api,versionId,kind})._prepareContext({});
-    assert.ok(context.formulaModel,`formula model missing for ${kind}`);
-    assert.ok(context.conditionModel,`condition model missing for ${kind}`);
-    if(kind!=="ruleset")assert.equal(context.formulaModel.operands[0].parameterChoices[0].label,"Parameter",kind);
+    if(kind==="formula")assert.match(context.expressionBuilder.html,/>Parameter<\/option>/,kind);
+    else if(kind==="condition")assert.match(context.expressionBuilder.html,/value="alwaysTrue"[^>]* selected/,kind);
+    else assert.equal(context.expressionBuilder,null,kind);
   }
 });

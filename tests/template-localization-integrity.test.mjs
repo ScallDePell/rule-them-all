@@ -26,10 +26,10 @@ test('search partials use valid Handlebars subexpressions instead of nested must
 
 test('persistent save bindings remain native HBS variables and are not translated', () => {
   const source=templates[1];
-  for(const attribute of ['name="nameKey"', 'name="descriptionKey"','name="formulaOperator"']) {
+  for(const attribute of ['name="nameKey"', 'name="descriptionKey"']) {
     // Historically rendered field names are preserved for form readers.
     assert.ok(source.includes(attribute), `lost stable form binding ${attribute}`);
   }
-  assert.match(source,/data-action="addFormulaOperand"/);
+  assert.match(readFileSync(new URL('../src/ui/expression-builder-markup.mjs',import.meta.url),'utf8'),/name="\$\{name\}" data-expr-operation/);
   assert.match(source,/data-action="saveQuit"/);
 });

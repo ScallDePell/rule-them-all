@@ -1,7 +1,7 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import {refToken,parseRefToken} from '../src/configurator/reference-token.mjs';
-import {simpleFormulaModel,simpleConditionModel,operandEditorRow} from '../src/configurator/entry-expression-model.mjs';
+import {expressionBuilderModel,slotView,formOf} from '../src/configurator/entry-expression-model.mjs';
 
 const sources={
  parameters:[{id:'p',nameKey:'Parameter'}],
@@ -26,9 +26,10 @@ test('reference tokens preserve the old storage format and escape reserved chara
 
 test('pure operand model retains source choices, selected state and category colours',()=>{
  const reference={objectKind:'definition',objectId:'id|with/special',capabilityId:'score'};
- const model=operandEditorRow({type:'reference',reference},1,sources);
- assert.equal(model.operandLabel,'Operand 2');
+ const model=slotView(formOf({type:'reference',reference}),{label:{key:'RTA.Expression.Slot.operand',fallback:'Operand',number:2}},sources);
+ assert.equal(model.label.number,2);
  assert.equal(model.referenceChoices[0].selected,true);
+ assert.equal(model.referenceChoices[0].id,sources.references[0].token,'the option value is the reference token');
  assert.equal(model.parameterChoices[0].colors,'#123456');
  assert.equal(model.formulaChoices[0].colors,'#654321');
  assert.equal(model.parameterChoices[0].selected,false);
@@ -36,24 +37,24 @@ test('pure operand model retains source choices, selected state and category col
 });
 
 test('formula models preserve operand order and supported states without a Foundry global',()=>{
- const model=simpleFormulaModel({type:'add',args:[{type:'parameter',id:'p'},{type:'formula',id:'f'}]},sources);
+ const model=expressionBuilderModel({type:'add',args:[{type:'parameter',id:'p'},{type:'formula',id:'f'}]},'formula',sources);
  assert.equal(model.supported,true);
- assert.equal(model.opAdd,true);
- assert.equal(model.operands[0].parameterChoices[0].selected,true);
- assert.equal(model.operands[1].formulaChoices[0].selected,true);
- const single=simpleFormulaModel({type:'literal',value:3},sources);
- assert.equal(single.opSingle,true);
- assert.equal(single.operands[0].literalValue,'3');
- assert.equal(simpleFormulaModel({type:'custom',unknown:true},sources).supported,false);
+ assert.equal(model.root.operationChoices.find(choice=>choice.selected).id,'add');
+ assert.equal(model.root.leadSlots[0].parameterChoices[0].selected,true);
+ assert.equal(model.root.leadSlots[1].formulaChoices[0].selected,true);
+ const single=expressionBuilderModel({type:'literal',value:3},'formula',sources);
+ assert.equal(single.root.operation,'single');
+ assert.equal(single.root.leadSlots[0].literalValue,'3');
+ assert.equal(expressionBuilderModel({type:'custom',unknown:true},'formula',sources).supported,false);
 });
 
 test('condition model retains binary comparisons and boolean literal decisions',()=>{
- const model=simpleConditionModel({type:'gte',left:{type:'parameter',id:'p'},right:{type:'literal',value:6}},sources);
+ const model=expressionBuilderModel({type:'gte',left:{type:'parameter',id:'p'},right:{type:'literal',value:6}},'condition',sources);
  assert.equal(model.supported,true);
- assert.equal(model.opGte,true);
- assert.equal(model.left.parameterChoices[0].selected,true);
- assert.equal(model.right.literalValue,'6');
- assert.equal(simpleConditionModel({type:'literal',value:true},sources).opAlwaysTrue,true);
- assert.equal(simpleConditionModel({type:'literal',value:false},sources).opAlwaysFalse,true);
- assert.equal(simpleConditionModel({type:'unknown'},sources).supported,false);
+ assert.equal(model.root.operation,'gte');
+ assert.equal(model.root.leadSlots[0].parameterChoices[0].selected,true);
+ assert.equal(model.root.leadSlots[1].literalValue,'6');
+ assert.equal(expressionBuilderModel({type:'literal',value:true},'condition',sources).root.operation,'alwaysTrue');
+ assert.equal(expressionBuilderModel({type:'literal',value:false},'condition',sources).root.operation,'alwaysFalse');
+ assert.equal(expressionBuilderModel({type:'unknown'},'condition',sources).supported,false);
 });
