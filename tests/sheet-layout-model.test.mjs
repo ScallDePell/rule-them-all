@@ -74,7 +74,7 @@ test('the properties offer only what the selected block can take', ()=>{
 test('The palette offers layout blocks, fields, Definition families as lists and the Contents an Actor holds by type', ()=>{
   const groups=paletteGroups({...ruleset,contentTypes:[{id:'origin',nameKey:'Origin',storageKind:'item'}]},{target:'actor'});
   assert.deepEqual(groups.map(group=>group.id),['layout','fields','families','held']);
-  assert.deepEqual(groups[1].items.map(item=>item.kind),['value','gauge','dots','action','contents']);
+  assert.deepEqual(groups[1].items.map(item=>item.kind),['value','gauge','dots','boxes','clock','notes','action','contents']);
   assert.deepEqual(groups[2].items.map(item=>[item.kind,item.label]),[['repeater','Skills']],'one item per family, never each Definition');
   assert.deepEqual(groups[3].items[0].spec,{kind:'value',source:{kind:'content',contentTypeId:'origin'}});
   const root=tree(),list=paletteNode(groups[2].items[0].spec,root,ruleset);

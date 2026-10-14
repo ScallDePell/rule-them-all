@@ -3,7 +3,7 @@
    into the selection from the palette (or dragged from it onto the sheet), moved with the arrows or dragged onto another
    block (before a leaf when dropped on its top half). The tools sit beside the sheet. The tree is kept in a hidden field the
    entry collector reads ([data-sheet-layout-value]); every change fires an input event so the editor knows it is dirty. */
-import {iconClasses, prepareLayout} from "./layout-contract.mjs";
+import {LAYOUT_CLICKABLE, LAYOUT_COUNTED_DISPLAYS, LAYOUT_MAX_ROW_SPAN, LAYOUT_OVERLAYS, LAYOUT_SEPARATOR_LOOKS, LAYOUT_WIDTHS, TEXT_PLACEHOLDER, iconClasses, prepareLayout} from "./layout-contract.mjs";
 import {autoLayout} from "./sheet-auto-layout.mjs";
 import {EACH_OUTPUTS, itemContentTypes, canMoveInto, canPlace, paletteGroups, paletteNode, childKinds, columnsOf, contentFields, defaultValueLabel, insertNode, isContainer, locate, maxColumns, moveInto, moveNode, newNode, outputLabelKey, previewView, removeNode, repeaterOf, updateNode, writableSource} from "./sheet-layout-model.mjs";
 import {refToken, parseRefToken} from "./reference-token.mjs";
@@ -13,7 +13,7 @@ import {kindText, renderLayoutPaletteHTML, renderLayoutPropertiesHTML, renderLay
 import {selectColorsAttribute} from "../ui/select-option-presentation.mjs";
 import {RTA_NEUTRAL_COLOR} from "../ui/theme-tokens.mjs";
 import {LAYOUT_CONTAINERS} from "./layout-contract.mjs";
-import {SHEET_ALIGNS, SHEET_FILL_PROPS, SHEET_GAPS, SHEET_IMAGE_FITS, SHEET_IMAGE_HEIGHTS, SHEET_LABELS, SHEET_NO_COLOR, SHEET_SIZES, SHEET_SPACES, SHEET_TONES} from "./layout-style-contract.mjs";
+import {SHEET_ALIGNS, SHEET_BACKGROUND_FITS, SHEET_BACKGROUND_POSITIONS, SHEET_FILL_PROPS, SHEET_GAPS, SHEET_IMAGE_FITS, SHEET_IMAGE_HEIGHTS, SHEET_LABELS, SHEET_NO_COLOR, SHEET_SIZES, SHEET_SPACES, SHEET_TONES} from "./layout-style-contract.mjs";
 
 /** The fonts Foundry offers (its own and those the world adds in its font settings). */
 function availableFonts() {
@@ -33,7 +33,7 @@ const elementOf = event => event.target?.nodeType === 1 ? event.target : event.t
 const EDGE = 12;
 
 export class SheetLayoutController {
-  #host; #ruleset; #colors; #form; #root; #selected; #history = []; #dragged = null; #readOnly; #paletteOpen = true; #styleOpen = false; #toneHex = null;
+  #host; #ruleset; #colors; #form; #root; #selected; #history = []; #dragged = null; #readOnly; #paletteOpen = true; #styleOpen = false; #moreOpen = false; #toneHex = null;
 
   /** host: [data-sheet-layout-editor]; ruleset: the working draft; colors(kind, entry): option colors; form: the entry form (target, content types). */
   constructor(host, {ruleset, colors = () => [RTA_NEUTRAL_COLOR], form, readOnly = false}) {
@@ -46,7 +46,7 @@ export class SheetLayoutController {
     host.addEventListener("change", event => this.#onChange(event));
     // The opacity slider says its value while it moves; the change is kept when it is let go.
     host.addEventListener("input", event => { if (event.target.matches?.('[data-layout-style="opacity"]')) { event.stopPropagation(); const label = event.target.closest(".rta-form-row")?.querySelector("[data-layout-opacity-value]"); if (label) label.textContent = `${event.target.value} %`; } });
-    host.addEventListener("toggle", event => { if (event.target.matches?.("[data-layout-style-group]")) this.#styleOpen = event.target.open; }, true);
+    host.addEventListener("toggle", event => { if (event.target.matches?.("[data-layout-style-group]")) this.#styleOpen = event.target.open; if (event.target.matches?.("[data-layout-more-group]")) this.#moreOpen = event.target.open; }, true);
     host.addEventListener("click", event => this.#onClick(event));
     // A palette element is not a button: Enter or Space adds it like a click.
     host.addEventListener("keydown", event => { const item = elementOf(event)?.closest("[data-layout-palette]"); if (item && (event.key === "Enter" || event.key === " ")) { event.preventDefault(); this.#add(JSON.parse(item.dataset.layoutPalette), this.#selected); } });
@@ -224,11 +224,25 @@ export class SheetLayoutController {
       if (prop === "opacity") return this.#setStyle(prop, Number(target.value) === 100 ? undefined : Number(target.value));
       // A color of one's own starts from the tone shown before, else from grey.
       if (target.value === "custom") return this.#setStyle(prop, this.#toneToHex(locate(this.#root, this.#selected).node.style?.[prop]) ?? RTA_NEUTRAL_COLOR);
-      return this.#setStyle(prop, ["", "default"].includes(target.value) || target.value === "side" && prop === "label" ? undefined : target.value);
+      // Covering and centred are how a picture shows by default: stored as nothing.
+      return this.#setStyle(prop, ["", "default"].includes(target.value) || target.value === "side" && prop === "label" || target.value === "cover" && prop === "imageFit" || target.value === "center" && prop === "imagePosition" ? undefined : target.value);
     }
     const prop = target.dataset.layoutProp; if (!prop) return;
     const node = locate(this.#root, this.#selected).node, value = target.value;
     const number = Number(value);
+    if (prop === "collapsible") return this.#commit(updateNode(this.#root, node.id, {collapsible: target.checked || undefined}));
+    if (prop === "tooltipDescription") return this.#commit(updateNode(this.#root, node.id, {tooltip: target.checked ? {description: true} : undefined}));
+    if (prop === "tooltip") return this.#commit(updateNode(this.#root, node.id, {tooltip: value.trim() ? {text: value.trim()} : undefined}));
+    if (prop === "rowSpan") return this.#commit(updateNode(this.#root, node.id, {rowSpan: number > 1 ? number : undefined}));
+    if (prop === "width") return this.#commit(updateNode(this.#root, node.id, {width: LAYOUT_WIDTHS[value] ? value : undefined}));
+    if (prop === "visibleIf" || prop === "clickActionRef") return this.#commit(updateNode(this.#root, node.id, {[prop]: value || undefined}));
+    if (prop === "overlay") return this.#commit(updateNode(this.#root, node.id, {overlay: LAYOUT_OVERLAYS.includes(value) ? value : undefined}));
+    if (prop === "format") return this.#commit(updateNode(this.#root, node.id, {format: value === "rich" ? "rich" : undefined}));
+    // A picture separator keeps its picture; another look has none.
+    if (prop === "look") return this.#commit(updateNode(this.#root, node.id, {look: value === "line" ? undefined : value, src: value === "image" ? node.src ?? "" : undefined}));
+    if (prop === "insertValue") return value ? this.#commit(this.#insertTextValue(node, value)) : undefined;
+    // A text keeps only the values it still names.
+    if (prop === "textKey" && node.kind === "text") return this.#commit(updateNode(this.#root, node.id, {textKey: value, values: this.#namedValues(value, node.values)}));
     if (prop === "columns" || prop === "span") return this.#commit(updateNode(this.#root, node.id, {[prop]: number > 1 || prop === "columns" ? number : undefined}));
     if (prop === "labelKey" || prop === "textKey") return this.#commit(updateNode(this.#root, node.id, {[prop]: value}));
     // An icon: "fa-heart" is read as "fa-solid fa-heart"; anything that names no icon is refused.
@@ -241,8 +255,10 @@ export class SheetLayoutController {
     if (prop === "definitionTypeId") return this.#commit(this.#retargetRepeater(node, value));
     if (prop === "conditionRef") return this.#commit(updateNode(this.#root, node.id, {query: {...node.query, conditionRef: value || undefined}}));
     // Words in place of the number: nobody writes them.
-    if (prop === "display") return this.#commit(updateNode(this.#root, node.id, {display: value === "field" ? undefined : value, dots: value === "dots" ? node.dots : undefined, ...(value === "description" ? {write: undefined} : {})}));
-    if (prop === "dots") return this.#commit(updateNode(this.#root, node.id, {dots: number === 5 ? undefined : number}));
+    // A clock starts with 4 segments; dots and boxes with 5 (stored as nothing).
+    if (prop === "display") return this.#commit(updateNode(this.#root, node.id, {display: value === "field" ? undefined : value,
+      dots: LAYOUT_COUNTED_DISPLAYS.includes(value) ? node.dots ?? (value === "clock" ? 4 : undefined) : undefined, ...(value === "description" ? {write: undefined} : {})}));
+    if (prop === "dots") return this.#commit(updateNode(this.#root, node.id, {dots: number === 5 && node.display !== "clock" ? undefined : number}));
     if (prop === "shape") return this.#commit(updateNode(this.#root, node.id, {shape: value === "free" ? undefined : value}));
     if (prop === "labelPlace") { const style = {...(node.style ?? {}), label: value === "side" ? undefined : value}; if (!style.label) delete style.label; return this.#commit(updateNode(this.#root, node.id, {style: Object.keys(style).length ? style : undefined})); }
     if (prop === "src") return this.#commit(updateNode(this.#root, node.id, {src: value.trim()}));
@@ -261,6 +277,8 @@ export class SheetLayoutController {
   #setStyle(prop, value) {
     const node = locate(this.#root, this.#selected).node, style = {...(node.style ?? {})};
     if (value === undefined) delete style[prop]; else style[prop] = value;
+    // Without a background picture, nothing says how it fills its block.
+    if (prop === "image" && value === undefined) { delete style.imageFit; delete style.imagePosition; }
     // A background removed has no opacity left to set.
     if (prop === "background" && (value === undefined || value === SHEET_NO_COLOR) && node.kind !== "section") delete style.opacity;
     // The gauge and dot colors sit with the value's settings, not in the Style group.
@@ -289,8 +307,35 @@ export class SheetLayoutController {
     return this.#toneHex[tone] ?? null;
   }
 
-  /** A new source; a write the new source does not allow is dropped. */
-  #withSource(node, source) { return updateNode(this.#root, node.id, {source, write: node.write && writableSource(source) ? node.write : undefined}); }
+  /** A new source; a write the new source does not allow is dropped, and so is a description tooltip without a Definition. */
+  #withSource(node, source) { return updateNode(this.#root, node.id, {source, write: node.write && writableSource(source) ? node.write : undefined, ...(node.tooltip?.description && !["output", "each"].includes(source.kind) ? {tooltip: undefined} : {})}); }
+
+  /** The values a text may show: Definition outputs, Formulas, Parameters, and in a list its row's outputs; each choice
+      is "kind:token" for #parseSource, labelled by its name. */
+  #textValueChoices(node) {
+    const kinds = ["output", "formula", "parameter", ...(repeaterOf(this.#root, node.id) ? ["each"] : [])];
+    return kinds.flatMap(kind => this.#sourceChoices(kind, node).map(choice => ({...choice, value: `${kind}:${choice.value}`})));
+  }
+  /** "{name}" added at the end of the text; name: the value's own name, numbered when another value already has it. */
+  #insertTextValue(node, choice) {
+    const at = choice.indexOf(":"), kind = choice.slice(0, at), source = this.#parseSource(kind, choice.slice(at + 1));
+    const values = {...(node.values ?? {})}, known = Object.entries(values).find(([, entry]) => JSON.stringify(entry) === JSON.stringify(source));
+    let name = known?.[0];
+    if (!name) {
+      const label = this.#textValueChoices(node).find(entry => entry.value === choice)?.label ?? kind;
+      const stem = (kind === "output" ? i18n(label.split(" · ")[0]) : i18n(label)).replace(/[{}\r\n]/g, "").trim().slice(0, 36) || kind;
+      name = stem; for (let n = 2; Object.hasOwn(values, name); n++) name = `${stem} ${n}`;
+      values[name] = source;
+    }
+    const textKey = `${node.textKey ?? ""}${node.textKey && !/\s$/.test(node.textKey) ? " " : ""}{${name}}`;
+    return updateNode(this.#root, node.id, {textKey, values});
+  }
+  /** The values a text still names. */
+  #namedValues(text, values = {}) {
+    const named = new Set([...String(text).matchAll(TEXT_PLACEHOLDER)].map(match => match[1]));
+    const kept = Object.fromEntries(Object.entries(values).filter(([name]) => named.has(name)));
+    return Object.keys(kept).length ? kept : undefined;
+  }
   /** A repeater of another type: its row values keep only the outputs that type has. */
   #retargetRepeater(node, typeId) {
     let next = updateNode(this.#root, node.id, {query: {definitionTypeId: typeId}});
@@ -360,7 +405,9 @@ export class SheetLayoutController {
       sizes: [byDefault, ...Object.keys(SHEET_SIZES).map(size => choice(size, `RTA.SheetEditor.Size.${size}`))],
       aligns: [byDefault, ...SHEET_ALIGNS.map(align => choice(align, `RTA.SheetEditor.Align.${align}`))],
       paddings: [byDefault, ...Object.keys(SHEET_SPACES).map(space => choice(space, `RTA.SheetEditor.Space.${space}`))],
-      gaps: [byDefault, ...SHEET_GAPS.map(space => choice(space, `RTA.SheetEditor.Space.${space}`))]
+      gaps: [byDefault, ...SHEET_GAPS.map(space => choice(space, `RTA.SheetEditor.Space.${space}`))],
+      imageFits: Object.keys(SHEET_BACKGROUND_FITS).map(fit => choice(fit, `RTA.SheetEditor.BackgroundFit.${fit}`)),
+      imagePositions: SHEET_BACKGROUND_POSITIONS.map(position => choice(position, `RTA.SheetEditor.BackgroundPosition.${position}`))
     };
   }
   /** Everything the properties markup needs for the selected block. */
@@ -384,14 +431,26 @@ export class SheetLayoutController {
       sourceToken: source => this.#sourceToken(source),
       defaultLabel: n => n.kind === "action" ? r.actions?.find(a => a.id === n.actionRef)?.nameKey ?? "" : label.label || i18n(label.labelKey ?? ""),
       writable: node.kind === "value" && writableSource(node.source),
-      displays: ["field", "gauge", "dots", ...(this.#describable(node) ? ["description"] : [])].map(value => ({value, label: i18n(`RTA.SheetEditor.Display.${value}`), colors: neutral})),
+      displays: ["field", "gauge", "dots", "boxes", "clock", ...(this.#describable(node) ? ["description"] : [])].map(value => ({value, label: i18n(`RTA.SheetEditor.Display.${value}`), colors: neutral})),
       dotCounts: Array.from({length: 10}, (_, i) => ({value: String(i + 1), label: String(i + 1), colors: neutral})),
       numeric: node.kind === "value" && this.#numeric(node.source),
       labelPlaces: SHEET_LABELS.map(label => ({value: label, label: i18n(`RTA.SheetEditor.LabelPlace.${label}`), colors: neutral})),
       shapes: ["free", "rounded", "square", "portrait", "landscape", "circle"].map(value => ({value, label: i18n(`RTA.SheetEditor.Shape.${value}`), colors: neutral})),
       fits: SHEET_IMAGE_FITS.map(value => ({value, label: i18n(`RTA.SheetEditor.Fit.${value}`), colors: neutral})),
       heights: Object.keys(SHEET_IMAGE_HEIGHTS).map(value => ({value, label: i18n(`RTA.SheetEditor.Height.${value}`), colors: neutral})),
-      style: this.#styleContext(neutral)
+      style: this.#styleContext(neutral),
+      neutral, moreOpen: this.#moreOpen,
+      inGrid: ["section", "grid", "tab"].includes(found.parent?.kind) && !found.parent?.overlay,
+      rowSpans: Array.from({length: LAYOUT_MAX_ROW_SPAN}, (_, i) => ({value: String(i + 1), label: format("RTA.SheetEditor.RowCount", {count: i + 1}, String(i + 1)), colors: neutral})),
+      widths: ["auto", ...Object.keys(LAYOUT_WIDTHS)].map(value => ({value, label: i18n(`RTA.SheetEditor.FixedWidths.${value}`), colors: neutral})),
+      visibility: [{value: "", label: i18n("RTA.SheetEditor.Always"), colors: neutral}, ...(r.conditions ?? []).map(c => ({value: c.id, label: c.nameKey, colors: selectColorsAttribute(this.#colors("condition", c))}))],
+      describable: node.kind === "value" && ["output", "each"].includes(node.source?.kind),
+      clickable: LAYOUT_CLICKABLE.includes(node.kind),
+      clickActions: [{value: "", label: i18n("RTA.SheetEditor.NoClick"), colors: neutral}, ...(r.actions ?? []).filter(a => a.enabled !== false).map(a => ({value: a.id, label: a.nameKey, colors: selectColorsAttribute(this.#colors("action", a))}))],
+      textValues: node.kind === "text" ? this.#textValueChoices(node) : [],
+      noteFormats: ["plain", "rich"].map(value => ({value, label: i18n(`RTA.SheetEditor.NotesFormat.${value}`), colors: neutral})),
+      separatorLooks: LAYOUT_SEPARATOR_LOOKS.map(value => ({value, label: i18n(`RTA.SheetEditor.SeparatorLook.${value}`), colors: neutral})),
+      overlays: ["none", ...LAYOUT_OVERLAYS].map(value => ({value, label: i18n(`RTA.SheetEditor.Overlay.${value}`), colors: neutral}))
     };
   }
 }

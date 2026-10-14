@@ -1,7 +1,10 @@
 /* What a sheet shows (CP-14): its LayoutNode tree resolved for one Actor or one Item, as plain data a renderer turns into HTML.
    Values are read through the engine (bindings, Modifiers and pool bounds apply) and filtered by Permission (CP-11):
    a value the user may not read, an Action they may not use and a block not for them (seenBy) are left out, never sent then hidden;
-   a description sends a pool's words, never its number.
+   a description sends a pool's words, never its number; a block whose Condition (visibleIf) is false for the Actor
+   (for the row's Definition in a list) is left out too.
+   A text with values gets them read the same way (values: {name: value}, null when unreadable); a notes block gets the
+   text kept on the Actor under its id; a click Action (clickActionRef) is sent only to whoever may use it.
    A value the engine cannot read (a Definition the Actor does not hold, a Formula that needs a missing role) keeps its
    place with value null and the reason in error, so the sheet keeps its shape.
 
@@ -12,6 +15,7 @@
 import {capabilityTypeRegistry} from "../configurator/capability-type-registry.mjs";
 import {findSlot, SLOT_CAPABILITIES} from "../configurator/capability-slots.mjs";
 import {descriptionScale, scaleWords} from "../configurator/rule-contracts.mjs";
+import {LAYOUT_COUNTED_DISPLAYS} from "../configurator/layout-contract.mjs";
 
 const enabled = entry => entry?.enabled !== false;
 const ERROR = error => String(error?.message ?? error);
@@ -110,9 +114,8 @@ export async function projectSheet(engine, versionId, sheet, {actor = null, cont
     return view;
   };
 
-  const value = async (node, scope, row) => {
-    const source = node.source, view = {id: node.id, kind: "value", ...(node.span ? {span: node.span} : {}), ...(node.style ? {style: node.style} : {}), ...(node.icon ? {icon: node.icon} : {}), ...(node.labelShow ? {labelShow: node.labelShow} : {}),
-      ...(node.display ? {display: node.display} : {}), ...(node.dots ? {dots: node.dots} : {}), label: node.labelKey || "", value: null, write: null};
+  const value = async (node, scope, row, base = {id: node.id, kind: "value"}) => {
+    const source = node.source, view = {...base, ...(node.display ? {display: node.display} : {}), ...(node.dots ? {dots: node.dots} : {}), label: node.labelKey || "", value: null, write: null};
     if (source.kind === "output" || source.kind === "each") {
       const reference = source.kind === "output" ? source.reference : eachReference(row?.definition, source);
       // A row whose Definition lacks this capability keeps an empty cell, so the list stays aligned.
@@ -120,13 +123,15 @@ export async function projectSheet(engine, versionId, sheet, {actor = null, cont
       if (!reference || !await allowed("read", "definition", reference.objectId)) return null;
       if (!view.label && source.kind === "output") view.label = ruleset.definitions?.find(d => d.id === reference.objectId)?.nameKey ?? reference.objectId;
       if (!view.label && source.kind === "each") Object.assign(view, outputLabel(row.definition, reference));
+      // The tooltip that tells what the value is: its Definition's description.
+      if (node.tooltip?.description) { const text = ruleset.definitions?.find(d => d.id === reference.objectId)?.descriptionKey; if (text) view.tooltip = {text}; else delete view.tooltip; }
       await readOutput(view, reference, scope);
       if (node.display === "description") return describe(view, reference);
-      // Dots and gauges of a value count up to its maximum (never fewer than the value, raised by a power).
-      if (reference.capabilityId === "value" && ["dots", "gauge"].includes(node.display) && view.error === undefined && scope.roles?.self) {
+      // Dots, boxes, clocks and gauges of a value count up to its maximum (never fewer than the value, raised by a power).
+      if (reference.capabilityId === "value" && [...LAYOUT_COUNTED_DISPLAYS, "gauge"].includes(node.display) && view.error === undefined && scope.roles?.self) {
         try {
           const {minimum, maximum} = await engine.valueBounds(versionId, scope.roles.self, reference.objectId);
-          if (maximum !== null) { if (node.display === "dots" && !node.dots) view.dots = Math.max(maximum, Number(view.value) || 0); else if (node.display === "gauge") view.maximum = maximum; }
+          if (maximum !== null) { if (LAYOUT_COUNTED_DISPLAYS.includes(node.display) && !node.dots) view.dots = Math.max(maximum, Number(view.value) || 0); else if (node.display === "gauge") view.maximum = maximum; }
           if (minimum !== null && node.display === "gauge") view.minimum = minimum;
         } catch { /* no bounds shown */ }
       }
@@ -230,12 +235,47 @@ export async function projectSheet(engine, versionId, sheet, {actor = null, cont
     return {...base, systemId: system.id, advancements, milestones: states.filter(m => m.state !== "ahead" || m === next), apply};
   };
 
+  /** The notes this Actor keeps (by notes block id), read once. */
+  let notes;
+  const noteText = async id => {
+    notes ??= actor ? (await engine.adapter.load(actor, {rulesetVersionId: versionId})).notes ?? {} : {};
+    return notes[id] ?? "";
+  };
+  /** A text's values by name, read like value blocks (null when unreadable). */
+  const textValues = async (node, scope, row) => {
+    const values = {};
+    for (const [name, source] of Object.entries(node.values ?? {})) {
+      const view = await value({id: node.id, kind: "value", source}, scope, row);
+      values[name] = view && view.kind === "value" && view.error === undefined ? view.value : null;
+    }
+    return values;
+  };
+  const visible = async (node, scope) => {
+    if (!node.visibleIf) return true;
+    try { return Boolean(await engine.evaluateCondition(versionId, node.visibleIf, scope)); } catch { return false; }
+  };
+
   const walk = async (node, scope, row) => {
     if (node.seenBy && !node.seenBy.includes(viewer)) return null;
-    const base = {id: node.id, kind: node.kind, ...(node.span ? {span: node.span} : {}), ...(node.style ? {style: node.style} : {}), ...(node.icon ? {icon: node.icon} : {}), ...(node.labelShow ? {labelShow: node.labelShow} : {})};
-    if (node.kind === "value") return value(node, scope, row);
+    // Hidden in one row of a list, a cell keeps its place so the columns stay aligned.
+    if (!await visible(node, scope)) return row ? {id: node.id, kind: "spacer"} : null;
+    const base = {id: node.id, kind: node.kind, ...(node.span ? {span: node.span} : {}), ...(node.rowSpan ? {rowSpan: node.rowSpan} : {}), ...(node.width ? {width: node.width} : {}),
+      ...(node.style ? {style: node.style} : {}), ...(node.icon ? {icon: node.icon} : {}), ...(node.labelShow ? {labelShow: node.labelShow} : {}), ...(node.tooltip?.text ? {tooltip: {text: node.tooltip.text}} : {}),
+      ...(node.collapsible ? {collapsible: true} : {}), ...(node.overlay ? {overlay: node.overlay} : {})};
+    // A click that uses an Action: for whoever may use it, on the row's Definition inside a list.
+    if (node.clickActionRef) {
+      const action = ruleset.actions?.find(a => a.id === node.clickActionRef && enabled(a));
+      if (action && actor && await allowed("execute", "action", action.id)) base.click = {actionId: action.id, definitionId: row?.definition.id ?? null};
+    }
+    if (node.kind === "value") return value(node, scope, row, base);
     if (node.kind === "image") return node.src ? {...base, src: node.src, fit: node.fit ?? "cover", height: node.height ?? "medium", ...(node.shape ? {shape: node.shape} : {})} : null;
-    if (node.kind === "text") return {...base, text: node.textKey};
+    if (node.kind === "text") return {...base, text: node.textKey, ...(node.values ? {values: await textValues(node, scope, row)} : {})};
+    if (node.kind === "separator") return node.look === "image" && !node.src ? null : {...base, look: node.look ?? "line", ...(node.src ? {src: node.src} : {})};
+    if (node.kind === "notes") {
+      if (!actor || !await allowed("read", "sheetNote", node.id)) return null;
+      const write = node.write && writer(node) && await allowed("write", "sheetNote", node.id) ? {operation: "set"} : null;
+      return {...base, label: node.labelKey || "", format: node.format ?? "plain", height: node.height ?? "medium", value: await noteText(node.id), write};
+    }
     if (node.kind === "spacer") return base;
     if (node.kind === "contents") return contents(node, base);
     if (node.kind === "progression") return progression(node, base);

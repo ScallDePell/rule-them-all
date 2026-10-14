@@ -6,6 +6,8 @@
                               background and border may be "none" (a section without its frame)
    opacity                    0-100: the background's opacity (an image block: the image's)
    image                      a background picture (containers): a file path or URL
+   imageFit                   how that picture fills the block: cover (default) | contain | stretch | natural | tile
+   imagePosition              where it sits: center (default) | top | bottom | left | right
    font                       a font family Foundry knows (its own and those the world adds)
    size                       small | normal | large | huge
    bold, italic               true
@@ -33,6 +35,9 @@ export const SHEET_SPACES = Object.freeze({none: "0", tight: "var(--rta-gap-tigh
 export const SHEET_GAPS = Object.freeze(["tight", "row", "block"]);
 export const SHEET_LABELS = Object.freeze(["side", "top", "hidden"]);
 export const SHEET_IMAGE_FITS = Object.freeze(["cover", "contain"]);
+/** A background picture: how it fills its block (as CSS background-size and background-repeat) and where it sits. */
+export const SHEET_BACKGROUND_FITS = Object.freeze({cover: ["cover", "no-repeat"], contain: ["contain", "no-repeat"], stretch: ["100% 100%", "no-repeat"], natural: ["auto", "no-repeat"], tile: ["auto", "repeat"]});
+export const SHEET_BACKGROUND_POSITIONS = Object.freeze(["center", "top", "bottom", "left", "right"]);
 export const SHEET_IMAGE_HEIGHTS = Object.freeze({small: "4rem", medium: "8rem", large: "14rem"});
 export const HEX_COLOR = /^#[0-9a-fA-F]{6}$/;
 /** A font family name as Foundry lists them (its own fonts and those a world adds). */
@@ -41,7 +46,7 @@ export const FONT_NAME = /^[A-Za-z0-9][A-Za-z0-9 _'-]{0,63}$/;
 export const IMAGE_PATH = /^[^"\\<>\r\n]+$/;
 
 
-const CONTAINER_ONLY = ["image", "gap"];
+const CONTAINER_ONLY = ["image", "imageFit", "imagePosition", "gap"];
 /** The checked style of a node of this kind, or undefined when it sets nothing. */
 export function prepareLayoutStyle(style, kind, path, {containers = []} = {}) {
   if (style === undefined || style === null) return undefined;
@@ -55,6 +60,8 @@ export function prepareLayoutStyle(style, kind, path, {containers = []} = {}) {
     }
     else if (key === "opacity") { if (!Number.isInteger(value) || value < 0 || value > 100) fail(key, "0 to 100"); }
     else if (key === "image") { if (typeof value !== "string" || !IMAGE_PATH.test(value)) fail(key, "a file path"); }
+    else if (key === "imageFit") { if (!SHEET_BACKGROUND_FITS[value] || !style.image) fail(key, `${Object.keys(SHEET_BACKGROUND_FITS).join(", ")}, with a background picture`); }
+    else if (key === "imagePosition") { if (!SHEET_BACKGROUND_POSITIONS.includes(value) || !style.image) fail(key, `${SHEET_BACKGROUND_POSITIONS.join(", ")}, with a background picture`); }
     else if (key === "font") { if (typeof value !== "string" || !FONT_NAME.test(value)) fail(key, "a font name"); }
     else if (key === "size") { if (!SHEET_SIZES[value]) fail(key, Object.keys(SHEET_SIZES).join(", ")); }
     else if (key === "bold" || key === "italic") { if (value !== true) fail(key, "true"); }

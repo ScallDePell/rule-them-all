@@ -4,7 +4,12 @@
    - [data-sheet-write=nodeId] (+ data-definition-id, data-operation) is a value the player changes;
      a dot of a value shown as dots carries data-sheet-dot=n (its value once clicked) instead of being a field;
      an adjust value has − and + buttons [data-sheet-adjust=-1|1] on each side of it, by 1;
-   - [data-sheet-action=actionId] (+ data-definition-id) uses an Action;
+   - [data-sheet-action=actionId] (+ data-definition-id) uses an Action (a button, or a value's label, a text, an image
+     or a list row's name that uses one when clicked);
+   - [data-sheet-note-rich=nodeId] is a rich notes block the controller fills (Foundry's enriched text or editor);
+     a plain one is a textarea [data-sheet-write=nodeId] (data-operation "set");
+   - [data-sheet-collapse=nodeId] folds and unfolds its section ([data-sheet-collapsible=nodeId]);
+   - [data-tooltip] is a block's tooltip (Foundry shows it on hover);
    - [data-sheet-tab=id] shows the [data-sheet-panel=id] of its tabs;
    - [data-sheet-item-open=key] opens an owned Item's sheet, [data-sheet-item-remove=key] removes it;
    - [data-sheet-advance=advancementId] (+ data-progression, data-definition-id) buys an advancement,
@@ -13,11 +18,29 @@
 import {escapeHTML as escape} from "./html-utils.mjs";
 import {sheetStyle, styledAttributes} from "./sheet-style.mjs";
 import {SHEET_IMAGE_HEIGHTS} from "../configurator/layout-style-contract.mjs";
+import {LAYOUT_NOTE_HEIGHTS, LAYOUT_OVERLAYS, LAYOUT_WIDTHS, TEXT_PLACEHOLDER} from "../configurator/layout-contract.mjs";
 
-const spanOf = node => node.span ? [`--rta-sheet-span: ${Number(node.span)}`] : [];
+/** Columns and rows a block spans in its parent's grid, and its fixed width. */
+const spanOf = node => [...(node.span ? [`--rta-sheet-span: ${Number(node.span)}`] : []), ...(node.rowSpan ? [`--rta-sheet-row-span: ${Number(node.rowSpan)}`] : []),
+  ...(LAYOUT_WIDTHS[node.width] ? [`--rta-sheet-width: ${LAYOUT_WIDTHS[node.width]}`] : [])];
 const columns = node => `--rta-sheet-columns: ${Number(node.columns ?? 1)}`;
 /** class and style of a node's element: its base class, its span, its style (sheet-style.mjs). */
-const attrs = (node, base, declarations = []) => styledAttributes(node, base, [...spanOf(node), ...declarations]);
+const attrs = (node, base, declarations = []) => styledAttributes(node, `${base}${LAYOUT_WIDTHS[node.width] ? " rta-sheet-sized" : ""}`, [...spanOf(node), ...declarations]);
+/** A block's tooltip: free text or its Definition's description, translated. */
+const tooltip = (node, t) => node.tooltip?.text ? ` data-tooltip="${escape(t(node.tooltip.text))}"` : "";
+/** What a click on a block uses: an Action, on the row's Definition in a list. */
+const clickData = (click, row = click?.definitionId) => `data-sheet-action="${escape(click.actionId)}"${row ? ` data-definition-id="${escape(row)}"` : ""}`;
+/** A text with "{name}" placeholders: each replaced by that value, formatted; the rest escaped. */
+export function textWithValues(text, values) {
+  if (!values) return escape(text);
+  let html = "", last = 0;
+  for (const match of text.matchAll(TEXT_PLACEHOLDER)) {
+    if (!Object.hasOwn(values, match[1])) continue;
+    html += `${escape(text.slice(last, match.index))}<span class="rta-sheet-text__value">${escape(formatSheetValue(values[match[1]]))}</span>`;
+    last = match.index + match[0].length;
+  }
+  return html + escape(text.slice(last));
+}
 /** How a label shows: "text", "icon" or "both" (an icon is shown with its text unless told otherwise). */
 const labelShow = node => node.icon ? node.labelShow ?? "both" : "text";
 /** A label as text, an icon, or both. An icon alone keeps its text for screen readers; labelTip gives it as the tooltip. */
@@ -38,15 +61,29 @@ export function formatSheetValue(value) {
   return String(value);
 }
 
-/** A value as dots: one per point up to its maximum (or node.dots); with a "set" write, a dot sets the value
-   (the last filled one takes a point back). */
+/** A value as dots (or square boxes: a stress track): one per point up to its maximum (or node.dots); with a "set"
+   write, a dot sets the value (the last filled one takes a point back). */
 function dotsControl(node, t, data) {
-  const value = Math.max(0, Math.trunc(Number(node.value) || 0)), count = Math.max(1, Math.min(20, Math.trunc(Number(node.maximum ?? node.dots ?? 5)) || 5));
+  const value = Math.max(0, Math.trunc(Number(node.value) || 0)), count = pointCount(node);
   const settable = node.write?.operation === "set";
   const dot = n => settable
     ? `<button type="button" class="rta-sheet-dot${n <= value ? " rta-sheet-dot--on" : ""}" ${data} data-sheet-dot="${n === value ? n - 1 : n}" aria-label="${escape(String(n))}"></button>`
     : `<span class="rta-sheet-dot${n <= value ? " rta-sheet-dot--on" : ""}"></span>`;
-  return `<span class="rta-sheet-dots" role="img" aria-label="${escape(`${value} / ${count}`)}">${Array.from({length: count}, (_, i) => dot(i + 1)).join("")}</span>`;
+  return `<span class="rta-sheet-dots${node.display === "boxes" ? " rta-sheet-dots--boxes" : ""}" role="img" aria-label="${escape(`${value} / ${count}`)}">${Array.from({length: count}, (_, i) => dot(i + 1)).join("")}</span>`;
+}
+const pointCount = node => Math.max(1, Math.min(20, Math.trunc(Number(node.maximum ?? node.dots ?? 5)) || 5));
+
+/** A value as a clock: a circle cut into one segment per point up to its maximum (or node.dots), filled clockwise
+   from the top; with a "set" write, a segment sets the value like a dot. */
+function clockControl(node, t, data) {
+  const value = Math.max(0, Math.trunc(Number(node.value) || 0)), count = pointCount(node), settable = node.write?.operation === "set";
+  const at = degrees => { const radians = (degrees - 90) * Math.PI / 180; return `${Math.round((18 + 16 * Math.cos(radians)) * 100) / 100} ${Math.round((18 + 16 * Math.sin(radians)) * 100) / 100}`; };
+  const segment = n => {
+    const shape = count === 1 ? `<circle cx="18" cy="18" r="16"` : `<path d="M18 18 L${at((n - 1) * 360 / count)} A16 16 0 0 1 ${at(n * 360 / count)} Z"`;
+    const set = settable ? ` ${data} data-sheet-dot="${n === value ? n - 1 : n}" role="button" aria-label="${escape(String(n))}"` : "";
+    return `${shape} class="rta-sheet-clock__segment${n <= value ? " rta-sheet-clock__segment--on" : ""}"${set}/>`;
+  };
+  return `<svg class="rta-sheet-clock${settable ? " rta-sheet-clock--settable" : ""}" viewBox="0 0 36 36" role="img" aria-label="${escape(`${value} / ${count}`)}">${Array.from({length: count}, (_, i) => segment(i + 1)).join("")}</svg>`;
 }
 
 /** A value as a gauge: a bar filled up to its maximum, the numbers on it. */
@@ -69,7 +106,8 @@ function valueControl(node, t, row, edit = false) {
   // A description: the words of the scale (or the editor's sample), translated.
   if (node.display === "description") return `<span class="rta-sheet-value__text rta-sheet-value__words">${node.value ? escape(t(node.value)) : "—"}</span>`;
   const numericValue = ["number", "integer"].includes(node.valueType);
-  if (node.display === "dots" && numericValue) return dotsControl(node, t, data);
+  if (["dots", "boxes"].includes(node.display) && numericValue) return dotsControl(node, t, data);
+  if (node.display === "clock" && numericValue) return clockControl(node, t, data);
   // A gauge shows the bar; a player who may change the value still gets its field beside it.
   // A gauge already shows the number: raised and lowered, the − and + go on each side of it.
   if (node.display === "gauge" && numericValue) return write?.operation === "adjust" ? adjustHTML(gaugeHTML(node), t, data, edit)
@@ -94,8 +132,8 @@ function valueControl(node, t, row, edit = false) {
 
 /* In the editor (edit: true) every node carries data-layout-node so a click selects it, and an empty container
    shows a drop zone; the controls themselves are inert there (sheet.css).
-   A block not for everyone is outlined there (data-layout-seen-by: who gets it). */
-const mark = (node, edit) => edit ? ` data-layout-node="${escape(node.id)}"${node.seenBy ? ` data-layout-seen-by="${escape(node.seenBy.join(" "))}"` : ""}` : "";
+   A block not for everyone is outlined there (data-layout-seen-by: who gets it); one shown under a Condition is dimmed (data-layout-conditional). */
+const mark = (node, edit) => edit ? ` data-layout-node="${escape(node.id)}"${node.seenBy ? ` data-layout-seen-by="${escape(node.seenBy.join(" "))}"` : ""}${node.visibleIf ? " data-layout-conditional" : ""}` : "";
 const dropZone = (id, t) => `<div class="rta-sheet-drop" data-layout-node="${escape(id)}" data-layout-drop>${escape(t("RTA.SheetEditor.Empty"))}</div>`;
 
 /** The Contents an Actor holds, grouped under their Content Type when there are several types. */
@@ -128,24 +166,59 @@ function renderProgression(node, t, {edit, m}) {
   return `<div ${attrs(node, "rta-sheet-progression")}${title}${m}>${groups.join("") || `<p class="rta-sheet-empty">${escape(t("RTA.Sheet.Progression.Nothing"))}</p>`}</div>`;
 }
 
+/** A notes block: its text kept on the Actor, in a field when it may be changed. A rich one is filled by the sheet
+   controller (Foundry's enriched text, or its editor); here, its text without tags. */
+function renderNotes(node, t, {edit, m}) {
+  const label = node.label ? `<span class="rta-sheet-notes__label">${escape(t(node.label))}</span>` : "";
+  const look = [`--rta-sheet-notes-height: ${LAYOUT_NOTE_HEIGHTS[node.height] ?? LAYOUT_NOTE_HEIGHTS.medium}`];
+  const text = String(node.value ?? "");
+  let body;
+  if (edit) body = `<div class="rta-sheet-notes__text rta-sheet-notes__text--sample">${escape(t(node.format === "rich" ? "RTA.SheetEditor.NotesRichSample" : "RTA.SheetEditor.NotesSample"))}</div>`;
+  else if (node.format === "rich") body = `<div class="rta-sheet-notes__text rta-sheet-notes__rich" data-sheet-note-rich="${escape(node.id)}"${node.write ? " data-sheet-note-editable" : ""}>${escape(text.replace(/<[^>]*>/g, " ").replace(/\s+/g, " ").trim())}</div>`;
+  else if (node.write) body = `<textarea class="rta-sheet-notes__field" data-sheet-write="${escape(node.id)}" data-operation="set"${node.label ? ` aria-label="${escape(t(node.label))}"` : ""}>${escape(text)}</textarea>`;
+  else body = `<div class="rta-sheet-notes__text">${escape(text) || "—"}</div>`;
+  return `<div ${attrs(node, "rta-sheet-notes", look)}${m}>${label}${body}</div>`;
+}
+
+/** A separator: a line, a line with an ornament in its middle, or a picture. */
+function renderSeparator(node, t, {edit, m}) {
+  if (node.look === "image") return node.src ? `<div ${attrs(node, "rta-sheet-separator rta-sheet-separator--image")}${m}><img src="${escape(node.src)}" alt=""></div>`
+    : `<div ${attrs(node, "rta-sheet-separator rta-sheet-image--empty")}${m}><i class="fa-solid fa-image"></i> ${escape(t("RTA.SheetEditor.NoImage"))}</div>`;
+  return `<div ${attrs(node, `rta-sheet-separator${node.look === "ornament" ? " rta-sheet-separator--ornament" : ""}`)} role="separator"${m}>${node.look === "ornament" ? `<i class="fa-solid fa-diamond" aria-hidden="true"></i>` : ""}</div>`;
+}
+
 function renderNode(node, t, {row = null, solo = false, edit = false, editable = false} = {}) {
   if (!node) return "";
-  const m = mark(node, edit);
+  const m = mark(node, edit) + (node.kind === "value" && node.error ? "" : tooltip(node, t));
+  // A click that uses an Action: on the played sheet, the label (or the picture, the text) is a button.
+  const click = !edit && node.click ? node.click : null;
   if (node.kind === "value") {
     const label = node.label ? t(node.label) : node.labelKey ? t(node.labelKey) : "";
     const title = node.error ? ` title="${escape(node.error)}"` : "";
+    const rolls = node.click ? " rta-sheet-roll" : "";
     // A row with a single value already says what it is: its label stays for screen readers only.
-    return `<div ${attrs(node, `rta-sheet-value${node.error ? " rta-sheet-value--unavailable" : ""}`)}${title}${m}><div class="rta-sheet-value__inner"><span class="rta-sheet-value__label${solo ? " rta-sheet-visually-hidden" : ""}"${solo || node.error ? "" : labelTip(node, label)}>${solo ? escape(label) : labelHTML(node, label)}</span><span class="rta-sheet-value__control">${valueControl(node, t, row, edit)}</span></div></div>`;
+    const labelPart = click && !solo ? `<button type="button" class="rta-sheet-value__label${rolls}" ${clickData(click, row ?? click.definitionId)}${node.error ? "" : labelTip(node, label)}>${labelHTML(node, label)}</button>`
+      : `<span class="rta-sheet-value__label${solo ? " rta-sheet-visually-hidden" : rolls}"${solo || node.error ? "" : labelTip(node, label)}>${solo ? escape(label) : labelHTML(node, label)}</span>`;
+    // Alone in a list row, a value read and never written is what one clicks.
+    const control = click && solo && !node.write ? `<button type="button" class="rta-sheet-value__text rta-sheet-roll" ${clickData(click, row ?? click.definitionId)}>${valueControl(node, t, row, edit)}</button>` : valueControl(node, t, row, edit);
+    return `<div ${attrs(node, `rta-sheet-value${node.error ? " rta-sheet-value--unavailable" : ""}`)}${title}${m}><div class="rta-sheet-value__inner">${labelPart}<span class="rta-sheet-value__control">${control}</span></div></div>`;
   }
+  if (node.kind === "notes") return renderNotes(node, t, {edit, m});
+  if (node.kind === "separator") return renderSeparator(node, t, {edit, m});
   // In the editor a button is a plain block: some browsers never drag a button.
   if (node.kind === "action") return edit ? `<div ${attrs(node, "rta-sheet-action")}${labelTip(node, t(node.label))}${m}>${labelHTML(node, t(node.label))}</div>`
     : `<button type="button" ${attrs(node, "rta-sheet-action")} data-sheet-action="${escape(node.actionId)}"${node.definitionId ? ` data-definition-id="${escape(node.definitionId)}"` : ""}${labelTip(node, t(node.label))}${m}>${labelHTML(node, t(node.label))}</button>`;
-  if (node.kind === "text") return `<p ${attrs(node, "rta-sheet-text")}${m}>${escape(edit && !node.text ? t("RTA.SheetEditor.EmptyText") : t(node.text))}</p>`;
+  if (node.kind === "text") {
+    const words = edit && !node.text ? escape(t("RTA.SheetEditor.EmptyText")) : textWithValues(t(node.text), node.values);
+    return click ? `<p ${attrs(node, "rta-sheet-text")}${m}><button type="button" class="rta-sheet-roll" ${clickData(click, row ?? click.definitionId)}>${words}</button></p>`
+      : `<p ${attrs(node, `rta-sheet-text${node.click ? " rta-sheet-roll" : ""}`)}${m}>${words}</p>`;
+  }
   if (node.kind === "spacer") return `<div ${attrs(node, "rta-sheet-spacer")}${m}></div>`;
   if (node.kind === "image") {
     // A picture: a banner, a logo. In the editor, an image block without its picture yet says so.
     const look = [`--rta-sheet-image-height: ${SHEET_IMAGE_HEIGHTS[node.height] ?? SHEET_IMAGE_HEIGHTS.medium}`, `--rta-sheet-image-fit: ${node.fit === "contain" ? "contain" : "cover"}`, ...(node.style?.opacity !== undefined ? [`opacity: ${Number(node.style.opacity) / 100}`] : [])];
     const shape = ["rounded", "square", "portrait", "landscape", "circle"].includes(node.shape) ? ` rta-sheet-image--${node.shape}` : "";
+    if (node.src && click) return `<button type="button" ${attrs(node, `rta-sheet-image rta-sheet-image--button${shape}`, look)} ${clickData(click, row ?? click.definitionId)}${m}><img src="${escape(node.src)}" alt=""></button>`;
     return node.src ? `<div ${attrs(node, `rta-sheet-image${shape}`, look)}${m}><img src="${escape(node.src)}" alt=""></div>` : edit ? `<div ${attrs(node, `rta-sheet-image rta-sheet-image--empty${shape}`, look)}${m}><i class="fa-solid fa-image"></i> ${escape(t("RTA.SheetEditor.NoImage"))}</div>` : "";
   }
   if (node.kind === "contents") return renderContents(node, t, {edit, editable, m});
@@ -159,11 +232,18 @@ function renderNode(node, t, {row = null, solo = false, edit = false, editable =
   }
   if (node.kind === "repeater") return renderList(node, t, edit);
   // The grid the children flow in takes the spacing; the block itself takes the rest of the style.
-  const gap = sheetStyle(node).gap, bare = node.kind === "grid" && !node.span;
-  const grid = [columns(node), ...(gap ? [`gap: ${gap}`] : [])];
-  const body = `<div ${bare ? attrs(node, "rta-sheet-grid", grid) : `class="rta-sheet-grid" style="${escape(grid.join("; "))}"`}${bare ? m : ""}>${children(node.children ?? [], {row})}</div>`;
-  if (node.kind === "section") return `<section ${attrs(node, "rta-sheet-section")}${m}>${node.label || labelShow(node) !== "text" ? `<h3 class="rta-sheet-section__title"${labelTip(node, t(node.label ?? ""))}>${labelHTML(node, node.label ? t(node.label) : "")}</h3>` : ""}${body}</section>`;
-  return node.span ? `<div ${attrs(node, "rta-sheet-block")}${m}>${body}</div>` : body;
+  // Overlaid, its blocks share one cell, one over the other, at the top, centre or bottom.
+  const gap = sheetStyle(node).gap, bare = node.kind === "grid" && !node.span && !node.rowSpan && !node.width;
+  const grid = [columns(node), ...(gap ? [`gap: ${gap}`] : [])], overlay = LAYOUT_OVERLAYS.includes(node.overlay) ? ` rta-sheet-grid--overlay rta-sheet-grid--overlay-${node.overlay}` : "";
+  const body = `<div ${bare ? attrs(node, `rta-sheet-grid${overlay}`, grid) : `class="rta-sheet-grid${overlay}" style="${escape(grid.join("; "))}"`}${bare ? m : ""}${node.collapsible ? ` data-sheet-collapsible="${escape(node.id)}"` : ""}>${children(node.children ?? [], {row})}</div>`;
+  if (node.kind === "section") {
+    // Foldable: its title is a button (a plain title with the same arrow in the editor, where it stays open).
+    const title = labelHTML(node, node.label ? t(node.label) : node.collapsible ? t("RTA.Sheet.Section") : "");
+    const fold = node.collapsible ? (edit ? `<span class="rta-sheet-section__toggle"><i class="fa-solid fa-chevron-down" aria-hidden="true"></i>${title}</span>`
+      : `<button type="button" class="rta-sheet-section__toggle" data-sheet-collapse="${escape(node.id)}" aria-expanded="true"><i class="fa-solid fa-chevron-down" aria-hidden="true"></i>${title}</button>`) : title;
+    return `<section ${attrs(node, "rta-sheet-section")}${m}>${node.label || node.collapsible || labelShow(node) !== "text" ? `<h3 class="rta-sheet-section__title"${labelTip(node, t(node.label ?? ""))}>${fold}</h3>` : ""}${body}</section>`;
+  }
+  return bare ? body : `<div ${attrs(node, "rta-sheet-block")}${m}>${body}</div>`;
 }
 
 const cellLabel = (node, t) => node.kind === "value" ? (node.label ? t(node.label) : node.labelKey ? t(node.labelKey) : "") : "";
@@ -179,7 +259,10 @@ function renderList(node, t, edit) {
   const head = cells.filter(c => c.kind === "value").length > 1
     ? `<div class="rta-sheet-row rta-sheet-row--head" aria-hidden="true"><span></span>${cells.map(c => `<span class="rta-sheet-row__head"${labelTip(c, cellLabel(c, t))}>${labelHTML(c, cellLabel(c, t))}</span>`).join("")}</div>`.repeat(Math.min(columnCount, rows.length)) : "";
   const style = `--rta-sheet-cells: ${cells.length + 1}; --rta-sheet-list-template: ${Array(columnCount).fill(perColumn).join(" ")}; --rta-sheet-list-medium: ${Array(Math.min(columnCount, 2)).fill(perColumn).join(" ")}; --rta-sheet-list-narrow: ${perColumn}`;
-  const body = rows.map(r => `<div class="rta-sheet-row" data-definition-id="${escape(r.definitionId)}"><span class="rta-sheet-row__label" title="${escape(t(r.label))}">${escape(t(r.label))}</span>${r.children.map(child => renderNode(child, t, {row: r.definitionId, solo: true, edit})).join("")}</div>`).join("");
+  // Each row's name uses the list's click Action on that row's Definition.
+  const name = r => node.click && !edit ? `<button type="button" class="rta-sheet-row__label rta-sheet-roll" ${clickData(node.click, r.definitionId)} title="${escape(t(r.label))}">${escape(t(r.label))}</button>`
+    : `<span class="rta-sheet-row__label${node.click ? " rta-sheet-roll" : ""}" title="${escape(t(r.label))}">${escape(t(r.label))}</span>`;
+  const body = rows.map(r => `<div class="rta-sheet-row" data-definition-id="${escape(r.definitionId)}">${name(r)}${r.children.map(child => renderNode(child, t, {row: r.definitionId, solo: true, edit})).join("")}</div>`).join("");
   return `<div ${attrs(node, "rta-sheet-list", [style, ...(sheetStyle(node).gap ? [`row-gap: ${sheetStyle(node).gap}`] : [])])}${mark(node, edit)}>${head}${body}</div>`;
 }
 

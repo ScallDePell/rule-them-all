@@ -1436,7 +1436,8 @@
           "reached": "À appliquer",
           "ahead": "Prochain"
         }
-      }
+      },
+      "Section": "Section"
     },
     "SheetEditor": {
       "Layout": "Mise en page",
@@ -1476,7 +1477,9 @@
         "spacer": "Case vide",
         "contents": "Contenus détenus",
         "image": "Image",
-        "progression": "Progression"
+        "progression": "Progression",
+        "notes": "Zone de texte",
+        "separator": "Séparateur"
       },
       "Source": {
         "output": "Une sortie de Definition",
@@ -1527,7 +1530,9 @@
         "Align": "Alignement",
         "Padding": "Marge intérieure",
         "Gap": "Espace entre les blocs",
-        "Reset": "Style par défaut"
+        "Reset": "Style par défaut",
+        "ImageFit": "Affichage de l'image",
+        "ImagePosition": "Position de l'image"
       },
       "Tone": {
         "text": "Texte",
@@ -1578,7 +1583,9 @@
         "field": "Champ",
         "gauge": "Jauge",
         "dots": "Pastilles",
-        "description": "En description"
+        "description": "En description",
+        "boxes": "Cases",
+        "clock": "Horloge"
       },
       "DisplayAs": "Affichage",
       "DotCount": "Pastilles (sans maximum)",
@@ -1620,7 +1627,64 @@
         "icon": "Icône seule",
         "text": "Texte seul"
       },
-      "ProgressionSystem": "Système de progression"
+      "ProgressionSystem": "Système de progression",
+      "BoxCount": "Cases (sans maximum)",
+      "ClockCount": "Segments (sans maximum)",
+      "InsertValue": "Insérer une valeur",
+      "InsertValueChoose": "Choisir…",
+      "NotesFormat": {
+        "label": "Texte",
+        "plain": "Texte simple",
+        "rich": "Texte enrichi"
+      },
+      "NotesSample": "Notes du joueur…",
+      "NotesRichSample": "Texte enrichi : gras, liens, @UUID, jets en ligne…",
+      "SeparatorLook": {
+        "label": "Aspect",
+        "line": "Trait",
+        "ornament": "Ornement",
+        "image": "Image"
+      },
+      "Overlay": {
+        "label": "Superposer les blocs",
+        "none": "Non",
+        "top": "En haut",
+        "center": "Au centre",
+        "bottom": "En bas"
+      },
+      "Collapsible": "Repliable",
+      "CollapsibleHint": "Son titre la replie",
+      "OnClick": "Au clic : lancer",
+      "NoClick": "Rien",
+      "RowSpan": "Hauteur",
+      "RowCount": "{count} ligne(s)",
+      "FixedWidth": "Largeur fixe",
+      "FixedWidths": {
+        "auto": "Automatique",
+        "small": "Petite",
+        "medium": "Moyenne",
+        "large": "Grande"
+      },
+      "VisibleIf": "Visible si",
+      "Always": "Toujours",
+      "Tooltip": "Info-bulle",
+      "TooltipHint": "Affichée au survol",
+      "TooltipDescription": "Description de la Définition",
+      "More": "Plus de réglages",
+      "BackgroundFit": {
+        "cover": "Couvrir",
+        "contain": "Contenir",
+        "stretch": "Étirer",
+        "natural": "Taille d'origine",
+        "tile": "Mosaïque"
+      },
+      "BackgroundPosition": {
+        "center": "Centre",
+        "top": "Haut",
+        "bottom": "Bas",
+        "left": "Gauche",
+        "right": "Droite"
+      }
     },
     "Reaction": {
       "Title": "Réaction",
