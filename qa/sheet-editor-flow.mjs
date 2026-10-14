@@ -18,13 +18,17 @@ await page.addStyleTag({content: '.application{height:1000px;display:flex;flex-d
 const result = await page.evaluate(async ({fixture, en, urls}) => {
   const lookup = key => key.split('.').reduce((o, k) => o?.[k], en) ?? key;
   class ApplicationV2 { constructor() {} async _prepareContext() { return {}; } async _onRender() {} render() {} close() {} setPosition() {} }
-  globalThis.foundry = {applications: {api: {ApplicationV2, HandlebarsApplicationMixin: B => B, DialogV2: class {}}}};
+  globalThis.foundry = {applications: {api: {ApplicationV2, HandlebarsApplicationMixin: B => B, DialogV2: class { static async prompt() { return globalThis.__answer ?? ''; } static async confirm() { return true; } }}}};
   globalThis.game = {i18n: {lang: 'en', localize: lookup, format: (k, d) => lookup(k).replace(/\{(\w+)\}/g, (_, n) => d?.[n] ?? '')}, settings: {get() {}, set: async () => {}, register() {}}, user: {isGM: true}};
   globalThis.ui = {notifications: {warn: message => { throw new Error(message); }, error: message => { throw new Error(message); }, info() {}}};
   const {createConfiguratorAPI} = await import(urls.api);
   const {ConfiguratorEntryEditor} = await import(urls.editor);
   let snapshot = structuredClone(fixture.snapshot);
   const api = await createConfiguratorAPI({load: async () => structuredClone(snapshot), save: async next => { snapshot = structuredClone(next); }});
+  // Gear with fields, and a card template made of them (an Item's: offered for cards, not in this Actor sheet's palette).
+  const field = (id, name, valueType) => ({id, name, valueType, cardinality: 'one', nullable: false, required: false, constraints: []});
+  await api.updateContentType(fixture.versionId, 'gear', {fields: {weight: field('weight', 'Weight', 'number'), price: field('price', 'Price', 'number')}});
+  await api.createSheetTemplate(fixture.versionId, {id: 'gear-card', nameKey: 'Gear card', root: {id: 'card', kind: 'section', columns: 2, children: [{id: 'card-picture', kind: 'portrait'}, {id: 'card-name', kind: 'name'}, {id: 'card-weight', kind: 'value', source: {kind: 'field', fieldId: 'weight'}}]}});
   const app = new ConfiguratorEntryEditor({api, versionId: fixture.versionId, kind: 'sheetDefinition', id: 'sh1'});
   await app._prepareContext({});
   const element = document.querySelector('.application');
@@ -282,6 +286,64 @@ const result = await page.evaluate(async ({fixture, en, urls}) => {
   await set('[name="sheetWindowHeight"]', '640');
   element.querySelector('[data-entry-form]').requestSubmit(); await new Promise(r => setTimeout(r, 200));
   check('the window size is saved with the sheet', JSON.stringify(api.getSheetDefinition(fixture.versionId, 'sh1').window) === JSON.stringify({width: 500, height: 640}));
+  // Block templates: a section saved as a template, offered in the palette's "Templates", inserted, renamed, exported, deleted.
+  const draft = () => api.getRulesetVersion(fixture.versionId)?.workingDraft ?? api.getRuleset(fixture.versionId);
+  await click('[data-layout-canvas] [data-layout-node="derived"]');
+  globalThis.__answer = 'Derived block';
+  await click('[data-layout-properties] [data-layout-command="saveTemplate"]'); await wait();
+  const kept = draft().sheetTemplates?.find(entry => entry.nameKey === 'Derived block');
+  check('saving a section as a template', kept?.root?.kind === 'section' && kept.root.children.length === find(layout(), 'derived').children.length);
+  const offered = id => element.querySelector(`[data-layout-palette-host] [data-layout-palette-keep] [data-layout-palette*='"templateId":"${id}"']`);
+  check('it is offered in the palette\'s Templates, the card template is not (an Item\'s)', Boolean(offered(kept?.id)) && !offered('gear-card'));
+  await click('[data-layout-canvas] [data-layout-node="top"]');
+  const count = find(layout(), 'top').children.length;
+  await click(`[data-layout-palette-host] [data-layout-palette*='"templateId":"${kept?.id}"']`);
+  { const copy = find(layout(), 'top').children.at(-1);
+    check('a click inserts an independent copy', find(layout(), 'top').children.length === count + 1 && copy.kind === 'section' && copy.id !== 'derived' && copy.children.length === kept.root.children.length && copy.children.every(child => !find(kept.root, child.id))); }
+  await key('z', {ctrlKey: true});
+  globalThis.__answer = 'Derived values block';
+  await click(`[data-layout-template-command="rename"][data-template-id="${kept?.id}"]`);
+  check('renaming a template', draft().sheetTemplates.find(entry => entry.id === kept?.id)?.nameKey === 'Derived values block' && offered(kept?.id)?.textContent.includes('Derived values block'));
+  const downloads = [];
+  foundry.utils = {saveDataToFile: (text, type, name) => downloads.push({text, name})};
+  await click(`[data-layout-template-command="export"][data-template-id="${kept?.id}"]`);
+  check('exporting a template as a file', downloads[0]?.name === 'Derived values block.json' && JSON.parse(downloads[0].text).format === 'rule-them-all.sheet-template');
+  await click(`[data-layout-template-command="delete"][data-template-id="${kept?.id}"]`);
+  check('deleting a template', !draft().sheetTemplates.some(entry => entry.id === kept?.id) && !offered(kept?.id));
+  // Contents as cards: the fields chosen, then a card template; that template cannot be deleted while it draws cards.
+  await click('[data-layout-canvas] [data-layout-node="derived"]');
+  await click('[data-layout-palette-host] [data-layout-palette=\'{"kind":"contents"}\']');
+  const held = find(layout(), 'derived').children.at(-1);
+  check('adding the held Contents', held?.kind === 'contents');
+  await set('[data-layout-properties] [data-layout-prop="cards"]', 'cards');
+  { const fields = element.querySelector('[data-layout-properties] [data-layout-prop="cardFields"]');
+    for (const option of fields?.options ?? []) option.selected = ['weight', 'price'].includes(option.value);
+    fields?.dispatchEvent(new Event('change', {bubbles: true})); await wait(); }
+  check('cards of the fields chosen', JSON.stringify(find(layout(), held.id).cards) === '{"fieldIds":["weight","price"]}' && element.querySelectorAll(`[data-layout-canvas] [data-layout-node="${held.id}"] .rta-sheet-card`).length > 0);
+  await set('[data-layout-properties] [data-layout-prop="cardTemplate"]', 'gear-card');
+  check('cards drawn with a template', find(layout(), held.id).cards?.templateRef === 'gear-card' && element.querySelector(`[data-layout-canvas] [data-layout-node="${held.id}"] .rta-sheet-card .rta-sheet-name`));
+  element.querySelector('[data-entry-form]').requestSubmit(); await new Promise(r => setTimeout(r, 200));
+  check(`saving the cards${(await app._prepareContext({})).error ?? ''}`, JSON.stringify(find(api.getSheetDefinition(fixture.versionId, 'sh1').root, held.id)?.cards) === '{"templateRef":"gear-card"}');
+  { let refused = null; try { await api.deleteSheetTemplate(fixture.versionId, 'gear-card'); } catch (error) { refused = error; }
+    check('a template that draws cards is kept', draft().sheetTemplates.some(entry => entry.id === 'gear-card') && refused?.consumers?.some(edge => edge.consumerRef?.objectId === 'sh1')); }
+  // The sheet's theme, one color of its own, and an image frame on a section.
+  await set('[data-layout-theme-host] [data-layout-theme="id"]', 'parchment');
+  const theme = () => JSON.parse(element.querySelector('[data-sheet-theme-value]').value || 'null');
+  check('choosing the Parchment theme', theme()?.id === 'parchment' && element.querySelector('[data-layout-canvas] .rta-sheet-theme--parchment'));
+  await set('[data-layout-theme-host] [data-layout-theme="accent"]', '#aa2200');
+  check('a color of its own', theme()?.overrides?.accent === '#aa2200' && /--rta-sheet-accent:\s*#aa2200/.test(element.querySelector('[data-layout-canvas] .rta-sheet-themed')?.getAttribute('style') ?? '') && element.querySelector('[data-layout-theme-reset="accent"]'));
+  await click('[data-layout-theme-reset="accent"]');
+  check('back to the theme\'s color', !theme()?.overrides?.accent);
+  await click('[data-layout-canvas] [data-layout-node="stats"]');
+  await set('[data-layout-properties] [data-layout-style="frame"]', 'icons/svg/frame.svg');
+  await set('[data-layout-properties] [data-layout-style="frameWidth"]', 'small');
+  check('an image frame on a section', JSON.stringify(find(layout(), 'stats').style) === '{"frame":"icons/svg/frame.svg","frameWidth":"small"}' && /border-image/.test(element.querySelector('[data-layout-canvas] section[data-layout-node="stats"]')?.getAttribute('style') ?? ''));
+  downloads.length = 0;
+  await click('[data-sheet-file="export"]');
+  { const file = downloads[0] && JSON.parse(downloads[0].text);
+    check('exporting the sheet brings its card template', file?.format === 'rule-them-all.sheet' && file.sheet?.theme?.id === 'parchment' && file.templates?.some(entry => entry.id === 'gear-card')); }
+  element.querySelector('[data-entry-form]').requestSubmit(); await new Promise(r => setTimeout(r, 200));
+  check('saving the theme', api.getSheetDefinition(fixture.versionId, 'sh1').theme?.id === 'parchment');
   // Leave a value selected for the screenshot.
   await click('[data-layout-canvas] [data-layout-node="stat-value"]');
   return steps;

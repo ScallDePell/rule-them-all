@@ -217,7 +217,8 @@
       "categories": "Catégories",
       "tags": "Tags",
       "tables": "Tables",
-      "dice": "Dés"
+      "dice": "Dés",
+      "sheetTemplates": "Modèles de blocs"
     },
     "DynamicMarkup": {
       "NewField": "Nouveau champ",
@@ -1450,7 +1451,8 @@
       "Lock": "Verrouiller la feuille",
       "Unlock": "Déverrouiller la feuille",
       "EditImage": "Changer l'image",
-      "EditToken": "Changer l'image du token"
+      "EditToken": "Changer l'image du token",
+      "OpenContent": "Ouvrir"
     },
     "SheetEditor": {
       "Layout": "Mise en page",
@@ -1826,6 +1828,71 @@
       "CreationTotal": "Création : résultat du jet de l’étape",
       "GroupOutcome": "Test de groupe : membres ayant ce Résultat",
       "EventPayload": "Champ de l’événement"
+    },
+    "SheetTemplate": {
+      "Palette": "Modèles",
+      "Save": "Enregistrer comme modèle",
+      "NamePrompt": "Nom du modèle",
+      "RenamePrompt": "Nouveau nom du modèle",
+      "Rename": "Renommer",
+      "Export": "Exporter dans un fichier",
+      "Delete": "Supprimer le modèle",
+      "DeleteConfirm": "Supprimer le modèle « {name} » ? Les feuilles qui en ont déjà une copie gardent leurs blocs.",
+      "ReplaceConfirm": "Un modèle s'appelle déjà « {name} ». Le remplacer par ce bloc ?",
+      "Saved": "Modèle « {name} » enregistré : il est dans la palette de toutes les feuilles de ce Ruleset.",
+      "NeedsList": "Ce bloc montre les lignes de la liste qui l'entoure : enregistrez la liste entière comme modèle.",
+      "Missing": "Insertion impossible : ce modèle utilise des éléments absents de cette feuille ou de ce Ruleset ({names}).",
+      "InUse": "Ce modèle dessine les cartes de ces feuilles : {names}. Choisissez-y d'abord une autre carte.",
+      "EmptyHint": "Sélectionnez un bloc, puis « Enregistrer comme modèle » (le signet à côté de son nom).",
+      "Import": "Importer un modèle…"
+    },
+    "SheetFile": {
+      "Label": "Fichier",
+      "Export": "Exporter",
+      "Import": "Importer…",
+      "NotSheet": "Ce fichier n'est pas une feuille (un modèle de bloc s'importe depuis la palette).",
+      "NotTemplate": "Ce fichier n'est pas un modèle de bloc (une feuille s'importe depuis les réglages de la feuille).",
+      "MissingConfirm": "Il manque à ce Ruleset des éléments utilisés par le fichier : {names}. L'importer sans les blocs qui les utilisent ?",
+      "ReplaceConfirm": "Remplacer la mise en page, le thème et les réglages de cette feuille par ceux du fichier ? (Annuler rétablit la mise en page.)",
+      "NothingLeft": "Il ne reste rien de ce modèle dans ce Ruleset.",
+      "Imported": "Feuille importée : vérifiez-la, puis enregistrez."
+    },
+    "SheetCards": {
+      "Display": "Affichage",
+      "List": "En liste",
+      "Cards": "En cartes",
+      "Template": "Carte",
+      "ChosenFields": "Image, nom et champs choisis",
+      "Fields": "Champs affichés",
+      "NoFields": "Ces types de contenu n'ont pas de champs."
+    },
+    "SheetTheme": {
+      "Title": "Thème de la feuille",
+      "Theme": "Thème",
+      "None": "Aucun (aspect du module)",
+      "Themes": {
+        "parchment": "Parchemin",
+        "gothic": "Gothique",
+        "scifi": "Science-fiction",
+        "plain": "Sobre"
+      },
+      "Page": "Page",
+      "Text": "Texte",
+      "Accent": "Titres et accents",
+      "Border": "Cadres",
+      "Reset": "Revenir à celle du thème",
+      "Font": "Police du texte",
+      "TitleFont": "Police des titres",
+      "ThemeFont": "Celle du thème",
+      "SectionFrame": "Cadre des sections (image)",
+      "Frame": "Cadre image",
+      "FrameSlice": "Découpe des bords (px)",
+      "FrameWidth": "Épaisseur du cadre",
+      "Width": {
+        "small": "Fin",
+        "medium": "Moyen",
+        "large": "Large"
+      }
     }
   }
 }

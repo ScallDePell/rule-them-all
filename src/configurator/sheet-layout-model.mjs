@@ -2,7 +2,7 @@
    editor shows. The preview goes through the same markup as a played sheet (ui/sheet-markup.mjs), with sample
    values, so what the editor shows is the sheet the players get. Every operation returns a new tree. */
 import {capabilityTypeRegistry} from "./capability-type-registry.mjs";
-import {LAYOUT_CONTAINERS, LAYOUT_DOCUMENT_KINDS, LAYOUT_WRITABLE_SOURCES} from "./layout-contract.mjs";
+import {CARD_EXCLUDED_KINDS, LAYOUT_CONTAINERS, LAYOUT_DOCUMENT_KINDS, LAYOUT_WRITABLE_SOURCES, layoutTarget} from "./layout-contract.mjs";
 import {descriptionScale, scaleWords} from "./rule-contracts.mjs";
 
 const copy = value => structuredClone(value);
@@ -125,13 +125,24 @@ export function paletteGroups(ruleset, {target = "actor", contentTypeIds = []} =
     const offered = contentTypeIds.length ? contentTypeIds : (ruleset.contentTypes ?? []).filter(offeredInSheets).map(type => type.id);
     const contentFieldList = offered.length ? contentFields(ruleset, offered) : [];
     if (contentFieldList.length) groups.push({id: "content-fields", labelKey: "RTA.SheetEditor.Palette.ContentFields", items: contentFieldList.map(field => ({label: field.name ?? field.id, kind: "value", spec: {kind: "value", source: {kind: "field", fieldId: field.id}}}))});
-    return groups;
+    return [...groups, ...templateGroup(ruleset, target)];
   }
   const families = (ruleset.definitionTypes ?? []).filter(type => enabled(type) && offeredInSheets(type) && (ruleset.definitions ?? []).some(d => enabled(d) && d.definitionTypeId === type.id));
   if (families.length) groups.push({id: "families", labelKey: "RTA.SheetEditor.Palette.Families", items: families.map(type => ({label: name(type), kind: "repeater", spec: {kind: "repeater", definitionTypeId: type.id}}))});
   const held = (ruleset.contentTypes ?? []).filter(type => enabled(type) && offeredInSheets(type));
   if (held.length) groups.push({id: "held", labelKey: "RTA.SheetEditor.Palette.Held", items: held.map(type => ({label: name(type), kind: "content", spec: {kind: "value", source: {kind: "content", contentTypeId: type.id}}}))});
-  return groups;
+  return [...groups, ...templateGroup(ruleset, target)];
+}
+
+/** The "Modèles" group: the Ruleset's block templates this sheet can take (none showing what only the other kind of sheet
+    has), less those that name a type the GM does not offer in the sheet editor. Each item is a template (renamed,
+    exported or deleted from the palette); an empty group still shows, so a template can be imported. */
+function templateGroup(ruleset, target) {
+  const types = [...(ruleset.contentTypes ?? []), ...(ruleset.definitionTypes ?? [])], hidden = id => types.some(type => type.id === id && !offeredInSheets(type));
+  const offered = template => ![...nodes(template.root)].some(node => hidden(node.query?.definitionTypeId) || hidden(node.source?.contentTypeId) || (node.contentTypeIds ?? []).some(hidden));
+  const items = (ruleset.sheetTemplates ?? []).filter(template => enabled(template) && [target, "any"].includes(layoutTarget(template.root)) && offered(template))
+    .map(template => ({label: template.nameKey || template.id, kind: "template", template: template.id, spec: {kind: "template", templateId: template.id}}));
+  return [{id: "templates", labelKey: "RTA.SheetTemplate.Palette", items}];
 }
 
 /** The first Definition output a gauge can fill: a pool's current points, else any number. */
@@ -163,6 +174,8 @@ export function paletteNode(spec, root, ruleset, {parentId = root?.id, target = 
     if (spec.display) node.display = spec.display;
     return node;
   }
+  // A template: a copy of its block, to know where it may go (sheet-templates.mjs insertTemplate gives it its ids).
+  if (spec?.kind === "template") { const template = (ruleset.sheetTemplates ?? []).find(entry => entry.id === spec.templateId); return template ? copy(template.root) : null; }
   return spec?.kind ? newNode(spec.kind, root, ruleset, {parentId, target}) : null;
 }
 
@@ -318,11 +331,25 @@ function previewProgression(node, ruleset, viewer = null) {
 
 /** viewer: "player", "observer" or "gm" previews the sheet as that person sees it (blocks not for them left out,
     values only the GM changes read-only for the others); null shows every block. */
-export function previewView(root, ruleset, {target = "actor", contentTypeIds = [], viewer = null, header = "standard"} = {}) {
-  const walk = (node, row) => {
+/** A value of a card (a held Content shown in cards): a Content field reads that Content's value (a Reference by name);
+    any other source shows its usual sample. A field the Content's type lacks is left out. */
+function previewCardValue(node, ruleset, card, viewer) {
+  const view = previewValue(node, ruleset, null, [], viewer);
+  if (node.source?.kind !== "field") return view;
+  const field = card.type?.fields?.[node.source.fieldId];
+  if (!field) return null;
+  const raw = card.fields?.[node.source.fieldId] ?? null, values = Array.isArray(raw) ? raw : raw === null ? [] : [raw];
+  const text = item => item && typeof item === "object" ? ruleset[String(item.objectKind ?? "").replace(/y$/, "ie") + "s"]?.find(entry => entry.id === item.objectId)?.nameKey ?? item.objectId : item;
+  const value = field.valueType === "reference" || Array.isArray(raw) ? (values.length ? values.map(text).join(", ") : null) : raw;
+  return {...view, write: null, label: node.labelKey || field.name || node.source.fieldId, valueType: field.valueType === "reference" || Array.isArray(raw) ? "string" : field.valueType, value};
+}
+
+export function previewView(root, ruleset, {target = "actor", contentTypeIds = [], viewer = null, header = "standard", theme = null} = {}) {
+  const walk = (node, row, card = null) => {
+    if (card && CARD_EXCLUDED_KINDS.includes(node.kind)) return null;
     if (viewer && node.seenBy && !node.seenBy.includes(viewer)) return null;
     const base = {id: node.id, kind: node.kind, ...(node.span ? {span: node.span} : {}), ...(node.style ? {style: node.style} : {}), ...(node.seenBy ? {seenBy: node.seenBy} : {}), ...(node.icon ? {icon: node.icon} : {}), ...(node.labelShow ? {labelShow: node.labelShow} : {})};
-    if (node.kind === "value") return previewValue(node, ruleset, row, contentTypeIds, viewer);
+    if (node.kind === "value") return card ? previewCardValue(node, ruleset, card, viewer) : previewValue(node, ruleset, row, contentTypeIds, viewer);
     if (node.kind === "image") return {...base, src: node.src, fit: node.fit ?? "cover", height: node.height ?? "medium", ...(node.shape ? {shape: node.shape} : {})};
     // The Document's name and pictures: the editor shows samples (renderLayoutPreviewHTML).
     if (node.kind === "portrait" || node.kind === "token") return {...base, fit: node.fit ?? "cover", height: node.height ?? "medium", ...(node.shape ? {shape: node.shape} : {}), ...(node.updatePlaced ? {updatePlaced: true} : {})};
@@ -334,7 +361,15 @@ export function previewView(root, ruleset, {target = "actor", contentTypeIds = [
       const types = itemContentTypes(ruleset).filter(type => !(node.contentTypeIds ?? []).length || node.contentTypeIds.includes(type.id));
       const rows = types.slice(0, 3).flatMap(type => (ruleset.contentTemplates ?? []).filter(t => enabled(t) && t.contentTypeId === type.id).slice(0, 1)
         .map(template => ({key: template.id, label: template.nameKey ?? template.id, img: template.image ?? "", item: true, available: true, type: type.nameKey ?? type.id})));
-      return {...base, rows};
+      if (!node.cards) return {...base, rows};
+      // Cards: the sample Contents' own field values, in the card template or as the fields chosen.
+      const template = node.cards.templateRef ? (ruleset.sheetTemplates ?? []).find(entry => entry.id === node.cards.templateRef) : null;
+      for (const row of rows) {
+        const content = (ruleset.contentTemplates ?? []).find(entry => entry.id === row.key), card = {type: (ruleset.contentTypes ?? []).find(type => type.id === content?.contentTypeId) ?? null, fields: content?.data ?? {}};
+        if (template) row.children = [walk(template.root, null, card)].filter(Boolean);
+        else row.fields = (node.cards.fieldIds ?? []).map(fieldId => previewCardValue({id: `${node.id}-${fieldId}`, kind: "value", source: {kind: "field", fieldId}}, ruleset, card, viewer)).filter(Boolean);
+      }
+      return {...base, rows, cards: template ? "template" : "fields"};
     }
     if (node.kind === "progression") return {...base, ...previewProgression(node, ruleset, viewer)};
     if (node.kind === "action") return {...base, label: node.labelKey || ruleset.actions?.find(a => a.id === node.actionRef)?.nameKey || node.actionRef, actionId: node.actionRef, definitionId: row?.id ?? null};
@@ -345,7 +380,7 @@ export function previewView(root, ruleset, {target = "actor", contentTypeIds = [
       if (!held.length) held.push({id: "", nameKey: type?.nameKey ?? node.query?.definitionTypeId ?? ""});
       return {...base, columns: node.columns, rows: held.map(definition => ({definitionId: definition.id, label: definition.nameKey ?? definition.id, children: node.children.map(child => walk(child, definition)).filter(Boolean)}))};
     }
-    return {...base, ...(node.columns ? {columns: node.columns} : {}), ...(node.labelKey !== undefined ? {label: node.labelKey} : {}), children: (node.children ?? []).map(child => walk(child, row)).filter(Boolean)};
+    return {...base, ...(node.columns ? {columns: node.columns} : {}), ...(node.labelKey !== undefined ? {label: node.labelKey} : {}), children: (node.children ?? []).map(child => walk(child, row, card)).filter(Boolean)};
   };
-  return {sheetId: "preview", target, header, root: walk(root, null)};
+  return {sheetId: "preview", target, header, ...(theme ? {theme} : {}), root: walk(root, null)};
 }

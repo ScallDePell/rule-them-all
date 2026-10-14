@@ -1,6 +1,7 @@
 /* Sheet styles as HTML: a node's style (configurator/layout-style-contract.mjs) written as classes and inline
    declarations that use the module's tokens. Pure: no Foundry access. */
 import {escapeHTML as escape} from "./html-utils.mjs";
+import {frameDeclarations} from "../configurator/sheet-themes.mjs";
 import {FONT_NAME, HEX_COLOR, IMAGE_PATH, SHEET_ALIGNS, SHEET_GAPS, SHEET_NO_COLOR, SHEET_SIZES, SHEET_SPACES, SHEET_TONES} from "../configurator/layout-style-contract.mjs";
 
 const colorValue = value => HEX_COLOR.test(value) ? value : SHEET_TONES[value] ? `var(${SHEET_TONES[value]})` : null;
@@ -19,6 +20,8 @@ export function sheetStyle(node) {
   if (style.border === SHEET_NO_COLOR) css.push("border: 0");
   else if (colorValue(style.border)) css.push(`border: var(--rta-frame-border) solid ${colorValue(style.border)}`);
   if (style.border && style.border !== SHEET_NO_COLOR && !["section"].includes(node.kind)) css.push("border-radius: var(--rta-radius-panel)");
+  // An image frame ("cadre image") is drawn in place of the border.
+  if (style.frame) { css.push(...frameDeclarations(style.frame, style.frameSlice, style.frameWidth)); classes.push("rta-sheet-framed"); }
   if (style.font && FONT_NAME.test(style.font)) { css.push(`font-family: "${style.font}", var(--font-body)`); classes.push("rta-sheet-fonted"); }
   if (SHEET_SIZES[style.size]) css.push(`font-size: var(${SHEET_SIZES[style.size]})`);
   if (style.bold) css.push("font-weight: 700");

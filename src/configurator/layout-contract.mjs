@@ -29,6 +29,9 @@
                 rounded corners; "square", "portrait" (3:4), "landscape" (4:3) and "circle" keep their proportions at that height
    contents  := {kind: "contents", contentTypeIds?}                  the Contents the Actor holds (its Items), of these Content Types (all when none);
                                                                        dropping an Item on the sheet adds one
+                cards: {templateRef?, fieldIds?} shows each one as a card (its picture and name) instead of a row:
+                its body is the block template templateRef (a sheetTemplates entry, its Content fields read from
+                that Content), else the Content fields fieldIds, each with its name
    progression := {kind: "progression", progressionSystemRef}         on an Actor sheet, what the Actor buys with a Progression
                                                                        System: each Definition an advancement raises, its cost and
                                                                        the currency spent, a button per purchase; its milestones and
@@ -82,7 +85,7 @@ export const LAYOUT_MAX_NODES = 500;
 const MAX_COLUMNS = {section: 4, grid: 6, repeater: 6};
 const FIELDS = {
   tabs: ["children"], tab: ["labelKey", "children"], section: ["labelKey", "columns", "children"], grid: ["columns", "children"],
-  repeater: ["query", "columns", "children"], value: ["source", "labelKey", "write", "display", "dots"], action: ["actionRef", "labelKey"], text: ["textKey"], image: ["src", "fit", "height", "shape"], contents: ["contentTypeIds"], progression: ["progressionSystemRef"],
+  repeater: ["query", "columns", "children"], value: ["source", "labelKey", "write", "display", "dots"], action: ["actionRef", "labelKey"], text: ["textKey"], image: ["src", "fit", "height", "shape"], contents: ["contentTypeIds", "cards"], progression: ["progressionSystemRef"],
   name: [], portrait: ["fit", "height", "shape"], token: ["fit", "height", "shape", "updatePlaced"], spacer: []
 };
 const nonempty = value => typeof value === "string" && value.trim().length > 0;
@@ -207,6 +210,13 @@ export function prepareLayout(root) {
       if (!Array.isArray(node.contentTypeIds) || !node.contentTypeIds.every(nonempty)) throw new Error(`${path}.contentTypeIds must be a list of ids.`);
       if (node.contentTypeIds.length) next.contentTypeIds = [...new Set(node.contentTypeIds)];
     }
+    if (node.kind === "contents" && node.cards !== undefined && node.cards !== null) {
+      const cards = node.cards;
+      if (!isRecord(cards) || Object.keys(cards).some(key => !["templateRef", "fieldIds"].includes(key))) throw new Error(`${path}.cards must be {templateRef?, fieldIds?}.`);
+      if (cards.templateRef !== undefined && cards.templateRef !== null && !nonempty(cards.templateRef)) throw new Error(`${path}.cards.templateRef must be an id.`);
+      if (cards.fieldIds !== undefined && (!Array.isArray(cards.fieldIds) || !cards.fieldIds.every(nonempty))) throw new Error(`${path}.cards.fieldIds must be a list of ids.`);
+      next.cards = {...(nonempty(cards.templateRef) ? {templateRef: cards.templateRef} : {}), ...(cards.fieldIds?.length ? {fieldIds: [...new Set(cards.fieldIds)]} : {})};
+    }
     if (LAYOUT_CONTAINERS.includes(node.kind)) {
       if (!Array.isArray(node.children)) throw new Error(`${path}.children must be a list.`);
       next.children = node.children.map((child, i) => walk(child, `${path}.children[${i}]`, depth + 1, next, inRepeater || node.kind === "repeater"));
@@ -222,5 +232,25 @@ export function* layoutNodes(root, path = "root") {
   yield {node: root, path};
   for (const [i, child] of (root.children ?? []).entries()) yield* layoutNodes(child, `${path}.children[${i}]`);
 }
+/** A block template's tree (SheetTemplate.root): any block as it would sit in a sheet (a tab in its tabs, a width up to
+    6 columns), so it needs no list around it ("each" values only inside a list it holds). */
+export function prepareTemplateBlock(block, path = "SheetTemplate.root") {
+  if (!isRecord(block)) throw new Error(`${path} must be a layout node.`);
+  const holder = block.kind === "tab" ? {id: "template-holder", kind: "tabs", children: [block]} : {id: "template-holder", kind: "grid", columns: 6, children: [block]};
+  try { return prepareLayout(holder).children[0]; } catch (error) { throw new Error(`${path}: ${error.message.replace(/^root\.children\[0\]\.?/, "")}`); }
+}
+/** Which sheets a block can go on: "actor" when it shows what only an Actor has (held Contents, a progression, a token
+    image), "item" when it shows a Content field, "any" otherwise; null when it mixes both. */
+export function layoutTarget(root) {
+  let actor = false, item = false;
+  for (const {node} of layoutNodes(root)) {
+    if (["contents", "progression", "token"].includes(node.kind) || node.source?.kind === "content") actor = true;
+    if (node.source?.kind === "field") item = true;
+  }
+  return actor && item ? null : actor ? "actor" : item ? "item" : "any";
+}
+/** Blocks a card of a held-Contents block leaves out: lists, held Contents, progressions, a token, tabs (a card is one
+    Content's, in one piece). */
+export const CARD_EXCLUDED_KINDS = Object.freeze(["repeater", "contents", "progression", "token", "tabs", "tab"]);
 /** An empty sheet: one grid. */
 export const emptyLayout = () => ({id: "root", kind: "grid", columns: 1, children: []});

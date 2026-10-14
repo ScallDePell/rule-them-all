@@ -2,7 +2,7 @@
 export const ENGINE_CONTRACT_VERSION = 3;
 export const COLLECTION_FIELDS = Object.freeze([
   "definitionTypes", "definitions", "parameters", "formulas", "formulaBindings", "conditions", "rolls", "outcomes", "tests", "effects", "actions",
-  "permissionPolicies", "eventTypes", "triggers", "contentTypes", "contentTemplates", "modifiers", "durations", "dice", "tables", "scales", "creationSystems", "progressionSystems", "sheetDefinitions", "categories", "tags"
+  "permissionPolicies", "eventTypes", "triggers", "contentTypes", "contentTemplates", "modifiers", "durations", "dice", "tables", "scales", "creationSystems", "progressionSystems", "sheetDefinitions", "sheetTemplates", "categories", "tags"
 ]);
 export const RULESET_FIELDS = Object.freeze([
   "id", "nameKey", "descriptionKey", "version", "revision", "engineContractVersion", "status", "color", "sectionColors", "sectionColorOverrides", "familyColors", "initiative", "sharedDefinitions", ...COLLECTION_FIELDS

@@ -97,6 +97,25 @@ Une nouvelle feuille démarre vide.
 - Pour l'image du token, cochez **Mettre aussi à jour les tokens déjà posés** dans les réglages du bloc : les tokens de l'Acteur déjà sur les scènes changent avec lui.
 - Un Type de contenu ou un Type de définition dont vous décochez **Proposé dans l'éditeur de feuilles** (Créature, PNJ…) n'apparaît plus dans la palette ; les blocs déjà posés continuent de marcher.
 
+### Modèles de blocs
+- Choisissez un bloc (une section de caractéristiques, un bloc d'arme…), puis le **signet** à côté de son nom dans ses réglages : **Enregistrer comme modèle** demande un nom. Le modèle appartient au Ruleset : il apparaît dans le groupe **Modèles** de la palette de toutes ses feuilles qui peuvent l'accueillir (un modèle avec une image de token ne va que sur une feuille d'Acteur, un modèle de champs de Contenu que sur une feuille d'Objet ou dans des cartes).
+- Un clic sur un modèle l'ajoute dans le bloc choisi, ou faites-le glisser sur la feuille. Le bloc posé est une **copie indépendante** : changer l'un ne change ni le modèle ni les autres copies.
+- Les petits boutons d'un modèle dans la palette le **renomment**, l'**exportent** dans un fichier ou le **suppriment**. Un modèle refusé à l'insertion dit ce qui manque (une Définition supprimée, un champ absent de la feuille…).
+- Une Définition, une Formule ou une Action utilisée par un modèle ne peut pas être supprimée : le contrôle de suppression cite le modèle, comme pour une feuille.
+
+### Contenus en cartes
+Un bloc **Contenus détenus** s'affiche **en liste** ou **en cartes** (réglage **Affichage**). En cartes, chaque Contenu prend :
+- **Image, nom et champs choisis** : son image, son nom et les champs que vous cochez dans **Champs affichés** ;
+- ou un **modèle de carte** : un modèle de blocs fait de champs de Contenu, de blocs Nom et Portrait (qui montrent alors le Contenu, pas l'Acteur), de textes, d'images. Faites-le sur une feuille d'Objet, enregistrez-le comme modèle, puis choisissez-le dans **Carte**. Un modèle qui dessine des cartes ne peut pas être supprimé tant qu'une feuille l'utilise.
+Chaque carte garde ses boutons **Ouvrir** et **Retirer**.
+
+### Thème de la feuille
+Le volet **Thème de la feuille** (sous la palette) habille toute la feuille : **Parchemin**, **Gothique**, **Science-fiction** ou **Sobre** (les couleurs de Foundry, des cadres fins). Pour cette feuille, vous pouvez ensuite changer la couleur de la page, du texte, des titres et des cadres (la flèche revient à celle du thème), la police du texte et des titres (les polices de Foundry et celles ajoutées dans ses réglages de polices), et poser un **cadre des sections** en image.
+Un **cadre image** se pose aussi sur un seul bloc (groupe **Style** de ses réglages) : choisissez l'image, la **découpe des bords** (combien de pixels de chaque bord de l'image forment le cadre, 30 par défaut) et l'**épaisseur** (fin, moyen, large). L'image doit être un cadre dont le centre est vide ou uni.
+
+### Exporter et importer une feuille
+La ligne **Fichier** des réglages de la feuille **exporte** la feuille (mise en page, thème, réglages et modèles de cartes qu'elle utilise) dans un fichier JSON, et en **importe** une, par exemple depuis un autre Ruleset. Si le fichier utilise des éléments absents de ce Ruleset, ils sont listés et vous pouvez importer sans les blocs qui les utilisent. Un modèle de blocs s'importe de même depuis le groupe **Modèles** de la palette. Vérifiez la feuille importée puis enregistrez ; **Annuler** rétablit l'ancienne mise en page.
+
 ### Choisir la feuille d'un Acteur
 Chaque feuille activée du Ruleset actif apparaît sous son nom dans **Configuration de la feuille** (en-tête de la fenêtre de l'Acteur ou de l'Objet). Vous pouvez donc avoir plusieurs feuilles de PJ, une feuille de PNJ, une feuille de créature, et choisir pour chaque Acteur, ou par défaut pour un type d'Acteur.
 

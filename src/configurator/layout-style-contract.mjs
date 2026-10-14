@@ -13,7 +13,9 @@
    padding                    none | tight | row | block (0, 4, 8, 12 px)
    gap                        tight | row | block: between the blocks of a container
    label                      side | top | hidden: where a value shows its label
-   fill, fillTo               a gauge's (or dots') color, and the second color of its gradient (values only) */
+   fill, fillTo               a gauge's (or dots') color, and the second color of its gradient (values only)
+   frame, frameSlice, frameWidth  an image frame ("cadre image"): a picture drawn as the block's border (border-image),
+                              cut frameSlice pixels from its edges (1-200, default 30), frameWidth wide (small, medium, large) */
 import {isRecord} from "./configurator-schema.mjs";
 
 /** Theme tones a color setting can name, each a token of tokens.css. */
@@ -34,6 +36,8 @@ export const SHEET_GAPS = Object.freeze(["tight", "row", "block"]);
 export const SHEET_LABELS = Object.freeze(["side", "top", "hidden"]);
 export const SHEET_IMAGE_FITS = Object.freeze(["cover", "contain"]);
 export const SHEET_IMAGE_HEIGHTS = Object.freeze({small: "4rem", medium: "8rem", large: "14rem"});
+/** How wide an image frame is drawn (a block's, or every section's in a framed theme). */
+export const SHEET_FRAME_WIDTHS = Object.freeze({small: "8px", medium: "16px", large: "24px"});
 export const HEX_COLOR = /^#[0-9a-fA-F]{6}$/;
 /** A font family name as Foundry lists them (its own fonts and those a world adds). */
 export const FONT_NAME = /^[A-Za-z0-9][A-Za-z0-9 _'-]{0,63}$/;
@@ -61,10 +65,14 @@ export function prepareLayoutStyle(style, kind, path, {containers = []} = {}) {
     else if (key === "align") { if (!SHEET_ALIGNS.includes(value)) fail(key, SHEET_ALIGNS.join(", ")); }
     else if (key === "padding") { if (!SHEET_SPACES[value]) fail(key, Object.keys(SHEET_SPACES).join(", ")); }
     else if (key === "gap") { if (!SHEET_GAPS.includes(value)) fail(key, SHEET_GAPS.join(", ")); }
+    else if (key === "frame") { if (typeof value !== "string" || !IMAGE_PATH.test(value)) fail(key, "a file path"); }
+    else if (key === "frameSlice") { if (!Number.isSafeInteger(value) || value < 1 || value > 200) fail(key, "1 to 200"); }
+    else if (key === "frameWidth") { if (!SHEET_FRAME_WIDTHS[value]) fail(key, Object.keys(SHEET_FRAME_WIDTHS).join(", ")); }
     else if (key === "label") { if (!SHEET_LABELS.includes(value) || kind !== "value") fail(key, `${SHEET_LABELS.join(", ")} on a value`); }
     else throw new Error(`${path} contains unsupported field: ${key}.`);
     if (CONTAINER_ONLY.includes(key) && !containers.includes(kind)) throw new Error(`${path}.${key} is only on containers.`);
     next[key] = value;
   }
+  if ((next.frameSlice !== undefined || next.frameWidth !== undefined) && !next.frame) throw new Error(`${path}: a frame size needs a frame picture.`);
   return Object.keys(next).length ? next : undefined;
 }

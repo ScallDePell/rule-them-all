@@ -18,6 +18,7 @@
 import {escapeHTML as escape} from "./html-utils.mjs";
 import {sheetStyle, styledAttributes} from "./sheet-style.mjs";
 import {SHEET_IMAGE_HEIGHTS} from "../configurator/layout-style-contract.mjs";
+import {sheetThemeAttributes} from "../configurator/sheet-themes.mjs";
 
 const spanOf = node => node.span ? [`--rta-sheet-span: ${Number(node.span)}`] : [];
 const columns = node => `--rta-sheet-columns: ${Number(node.columns ?? 1)}`;
@@ -109,9 +110,30 @@ function renderContents(node, t, {edit, editable, m}) {
   const item = r => `<li class="rta-sheet-content${r.available ? "" : " rta-sheet-content--unavailable"}">${r.img ? `<img class="rta-sheet-content__image" src="${escape(r.img)}" alt="">` : `<span class="rta-sheet-content__image"><i class="fa-solid fa-suitcase"></i></span>`}`
     + (r.item && !edit ? `<button type="button" class="rta-sheet-content__name" data-sheet-item-open="${escape(r.key)}">${escape(t(r.label))}</button>` : `<span class="rta-sheet-content__name">${escape(t(r.label))}</span>`)
     + (r.item && editable && !edit ? `<button type="button" class="rta-sheet-content__remove" data-sheet-item-remove="${escape(r.key)}" title="${escape(t("RTA.Sheet.RemoveContent"))}" aria-label="${escape(t("RTA.Sheet.RemoveContent"))}"><i class="fa-solid fa-trash"></i></button>` : "") + "</li>";
+  if (node.cards) return renderCards(node, rows, t, {edit, editable, m});
   const groups = types.length > 1 ? types.map(type => `<p class="rta-sheet-contents__type">${escape(type ? t(type) : t("RTA.Sheet.OtherItems"))}</p><ul class="rta-sheet-contents__list">${rows.filter(r => r.type === type).map(item).join("")}</ul>`).join("")
     : rows.length ? `<ul class="rta-sheet-contents__list">${rows.map(item).join("")}</ul>` : "";
   return `<div ${attrs(node, "rta-sheet-contents")}${m}>${groups || `<p class="rta-sheet-empty">${escape(t("RTA.Sheet.DropContents"))}</p>`}</div>`;
+}
+
+/** The held Contents as cards: each one's picture and name, then the fields chosen (cards: "fields"); or its card
+   template, whose name and portrait blocks show that Content (cards: "template"), with its open and remove buttons below.
+   The blocks of a card are not the sheet's: in the editor a click on them selects the whole held-Contents block. */
+function renderCards(node, rows, t, {edit, editable, m}) {
+  const open = r => r.item && !edit ? `<button type="button" class="rta-sheet-content__name" data-sheet-item-open="${escape(r.key)}">${escape(t(r.label))}</button>` : `<span class="rta-sheet-content__name">${escape(t(r.label))}</span>`;
+  const remove = r => r.item && editable && !edit ? `<button type="button" class="rta-sheet-content__remove" data-sheet-item-remove="${escape(r.key)}" title="${escape(t("RTA.Sheet.RemoveContent"))}" aria-label="${escape(t("RTA.Sheet.RemoveContent"))}"><i class="fa-solid fa-trash"></i></button>` : "";
+  const image = r => r.img ? `<img class="rta-sheet-content__image" src="${escape(r.img)}" alt="">` : `<span class="rta-sheet-content__image"><i class="fa-solid fa-suitcase"></i></span>`;
+  const blocks = (list, r) => list.map(child => renderNode(child, t, {edit, card: true, doc: {name: t(r.label), img: r.img}})).join("");
+  const card = r => {
+    const state = r.available ? "" : " rta-sheet-card--unavailable";
+    if (node.cards === "template") {
+      const opener = r.item && !edit ? `<button type="button" class="rta-sheet-card__open" data-sheet-item-open="${escape(r.key)}" title="${escape(t("RTA.Sheet.OpenContent"))}" aria-label="${escape(`${t("RTA.Sheet.OpenContent")} · ${t(r.label)}`)}"><i class="fa-solid fa-up-right-from-square"></i></button>` : "";
+      return `<li class="rta-sheet-card rta-sheet-card--template${state}"><div class="rta-sheet-card__body">${blocks(r.children ?? [], r)}</div>${opener || remove(r) ? `<div class="rta-sheet-card__tools">${opener}${remove(r)}</div>` : ""}</li>`;
+    }
+    const fields = r.fields ?? [];
+    return `<li class="rta-sheet-card${state}"><div class="rta-sheet-card__head">${image(r)}${open(r)}${remove(r)}</div>${fields.length ? `<div class="rta-sheet-card__fields">${blocks(fields, r)}</div>` : ""}</li>`;
+  };
+  return `<div ${attrs(node, "rta-sheet-contents rta-sheet-contents--cards")}${m}>${rows.length ? `<ul class="rta-sheet-cards">${rows.map(card).join("")}</ul>` : `<p class="rta-sheet-empty">${escape(t("RTA.Sheet.DropContents"))}</p>`}</div>`;
 }
 
 /** A Progression System's purchases: per advancement, each Definition it raises (from → to), the cost in its currency and
@@ -156,11 +178,11 @@ function renderPicture(node, t, {edit, doc, m}) {
   return `<div ${attrs(node, `rta-sheet-image rta-sheet-picture${pictureShape(node)}${src ? "" : " rta-sheet-image--empty"}`, pictureLook(node))}${m}>${body}${camera}</div>`;
 }
 
-function renderNode(node, t, {row = null, solo = false, edit = false, editable = false, doc = {}} = {}) {
+function renderNode(node, t, {row = null, solo = false, edit = false, editable = false, doc = {}, card = false} = {}) {
   if (!node) return "";
-  const m = mark(node, edit);
-  if (node.kind === "name") return renderName(node, t, {edit, doc, m});
-  if (node.kind === "portrait" || node.kind === "token") return renderPicture(node, t, {edit, doc, m});
+  const m = card ? "" : mark(node, edit);
+  if (node.kind === "name") return renderName(node, t, {edit: edit && !card, doc, m});
+  if (node.kind === "portrait" || node.kind === "token") return renderPicture(node, t, {edit: edit && !card, doc, m});
   if (node.kind === "value") {
     const label = node.label ? t(node.label) : node.labelKey ? t(node.labelKey) : "";
     const title = node.error ? ` title="${escape(node.error)}"` : "";
@@ -181,7 +203,7 @@ function renderNode(node, t, {row = null, solo = false, edit = false, editable =
   if (node.kind === "progression") return renderProgression(node, t, {edit, m});
   if (node.kind === "placeholder") return dropZone(node.parentId, t);
   // An empty container shows its own drop zone (an empty tab's, not its tabs').
-  const children = (list, options, holder = node) => list.length || !edit ? list.map(child => renderNode(child, t, {...options, edit, editable, doc})).join("") : dropZone(holder.id, t);
+  const children = (list, options, holder = node) => list.length || !edit || card ? list.map(child => renderNode(child, t, {...options, edit, editable, doc, card})).join("") : dropZone(holder.id, t);
   if (node.kind === "tabs") {
     const tabs = node.children ?? [];
     return `<div ${attrs(node, "rta-sheet-tabs")}${m}><nav class="rta-sheet-tabs__nav" role="tablist">${tabs.map((tab, i) => `<${edit ? "div" : `button type="button"`} class="rta-sheet-tabs__tab" role="tab" data-sheet-tab="${escape(tab.id)}" aria-selected="${i === 0}"${labelTip(tab, tab.label ? t(tab.label) : "")}${mark(tab, edit)}>${labelHTML(tab, tab.label ? t(tab.label) : edit ? t("RTA.SheetEditor.UntitledTab") : "")}</${edit ? "div" : "button"}>`).join("")}</nav>${tabs.map((tab, i) => `<div ${styledAttributes(tab, "rta-sheet-grid rta-sheet-tab", ["--rta-sheet-columns: 1", ...(sheetStyle(tab).gap ? [`gap: ${sheetStyle(tab).gap}`] : [])])} role="tabpanel" data-sheet-panel="${escape(tab.id)}"${i ? " hidden" : ""}${mark(tab, edit)}>${children(tab.children ?? [], {row}, tab)}</div>`).join("")}</div>`;
@@ -224,10 +246,16 @@ function standardHeader(t, {doc = {}, edit = false, commands = ""} = {}) {
   return `<header class="rta-sheet__header">${image || camera ? `<div class="rta-sheet__portrait">${image}${camera}</div>` : ""}${name}${commands}</header>`;
 }
 
+/** class and style of the sheet's element: its theme's class and overrides (configurator/sheet-themes.mjs). */
+function themed(view, base) {
+  const {classes, css} = sheetThemeAttributes(view?.theme);
+  return `class="${[base, ...classes].join(" ")}"${css.length ? ` style="${escape(css.join("; "))}"` : ""}`;
+}
+
 /** The editor's canvas: the sheet as players get it, every node selectable; the standard header (when the sheet has it) as a sample. */
 export function renderLayoutPreviewHTML(view, {t = key => key, selectedId = null} = {}) {
   const header = view?.header === "none" ? "" : standardHeader(t, {edit: true});
-  const html = `<div class="rta-sheet rta-sheet--edit">${header}<div class="rta-sheet__body">${renderNode(view?.root, t, {edit: true})}</div></div>`;
+  const html = `<div ${themed(view, "rta-sheet rta-sheet--edit")}>${header}<div class="rta-sheet__body">${renderNode(view?.root, t, {edit: true})}</div></div>`;
   return selectedId ? html.replaceAll(`data-layout-node="${escape(selectedId)}"`, `data-layout-node="${escape(selectedId)}" data-layout-selected`) : html;
 }
 
@@ -241,7 +269,7 @@ export function renderSheetHTML(view, {t = key => key, name = "", img = "", toke
   const body = notice
     ? `<div class="rta-sheet-notice"><p>${escape(notice)}</p>${noticeActions.length ? `<div class="rta-sheet-notice__actions">${noticeActions.map((action, i) => `<button type="button"${i ? "" : ' class="rta-sheet-notice__primary"'} data-sheet-command="${escape(action.command)}">${escape(action.label)}</button>`).join("")}</div>` : ""}</div>`
     : renderNode(view?.root, t, {editable, doc});
-  return `<div class="rta-sheet" data-sheet-id="${escape(view?.sheetId ?? "")}">${header}<div class="rta-sheet__body">${body}</div></div>`;
+  return `<div ${themed(view, "rta-sheet")} data-sheet-id="${escape(view?.sheetId ?? "")}">${header}<div class="rta-sheet__body">${body}</div></div>`;
 }
 
 /** The chat card of an Action used from a sheet. summary: {title, actor, lines: [{label, value}], outcome}. */

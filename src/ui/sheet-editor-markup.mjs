@@ -5,6 +5,7 @@
 import {escapeHTML as escape} from "./html-utils.mjs";
 import {localizedKeyMarkup as t} from "./ui-localization.mjs";
 import {renderSelectOptions} from "./select-option-markup.mjs";
+import {renderCardSettingsHTML, renderFrameRowsHTML, renderSaveTemplateHTML, renderTemplateFooterHTML, renderTemplateToolsHTML} from "./sheet-template-markup.mjs";
 
 const row = (label, control, extra = "") => `<div class="form-group rta-form-row"${extra}><label>${label}</label>${control}</div>`;
 const select = (prop, choices, selected) => `<select data-layout-prop="${prop}">${renderSelectOptions(choices, {valueKey: "value", labelKey: "label", colorize: true, selectedValue: selected ?? ""})}</select>`;
@@ -71,8 +72,8 @@ const KIND_ICONS = {section: "fa-square", grid: "fa-table-cells", tabs: "fa-fold
    be dragged onto the sheet. groups: paletteGroups (configurator/sheet-layout-model.mjs), labels given by the controller. */
 export function renderLayoutPaletteHTML(groups, {open = true, filter = ""} = {}) {
   // Not a <button>: Firefox never drags a button.
-  const item = entry => `<div class="rta-sheet-editor__palette-item" role="button" tabindex="0" draggable="true" data-layout-palette="${escape(JSON.stringify(entry.spec))}" data-layout-palette-label="${escape(entry.text.toLowerCase())}"><i class="fa-solid ${KIND_ICONS[entry.kind] ?? "fa-square"}"></i><span>${escape(entry.text)}</span></div>`;
-  const body = groups.map(group => `<section class="rta-sheet-editor__palette-group" data-layout-palette-group><p class="rta-sheet-editor__palette-title">${escape(group.text)}</p><div class="rta-sheet-editor__palette-items">${group.items.map(item).join("")}</div></section>`).join("");
+  const item = entry => `<div class="rta-sheet-editor__palette-item" role="button" tabindex="0" draggable="true" data-layout-palette="${escape(JSON.stringify(entry.spec))}" data-layout-palette-label="${escape(entry.text.toLowerCase())}"><i class="fa-solid ${KIND_ICONS[entry.kind] ?? "fa-square"}"></i><span>${escape(entry.text)}</span>${entry.template ? renderTemplateToolsHTML(entry.template) : ""}</div>`;
+  const body = groups.map(group => `<section class="rta-sheet-editor__palette-group" data-layout-palette-group${group.id === "templates" ? " data-layout-palette-keep" : ""}><p class="rta-sheet-editor__palette-title">${escape(group.text)}</p><div class="rta-sheet-editor__palette-items">${group.items.map(item).join("")}</div>${group.id === "templates" ? renderTemplateFooterHTML(!group.items.length) : ""}</section>`).join("");
   return `<details class="rta-sheet-editor__palette" data-layout-palette-panel${open ? " open" : ""}><summary>${t("RTA.SheetEditor.Add", "Add a block")}</summary><p class="rta-sheet-editor__hint">${t("RTA.SheetEditor.Palette.Hint", "Click to add into the selected block, or drag onto the sheet.")}</p><div class="rta-sheet-editor__palette-search"><input type="search" data-layout-palette-filter value="${escape(filter)}" placeholder="${t("RTA.SheetEditor.Palette.Search", "Search")}"></div>${body}</details>`;
 }
 
@@ -129,6 +130,7 @@ export function renderLayoutPropertiesHTML(node, ctx) {
   if (node.kind === "contents") {
     const chosen = new Set(node.contentTypeIds ?? []);
     rows.push(row(t("RTA.SheetEditor.ContentTypes", "Content Types (none: all)"), `<select multiple data-layout-prop="contentTypeIds">${ctx.contentTypes.map(choice => `<option value="${escape(choice.value)}" data-rta-colors="${escape(choice.colors)}"${chosen.has(choice.value) ? " selected" : ""}>${escape(choice.label)}</option>`).join("")}</select>`));
+    if (ctx.cardModes) rows.push(...renderCardSettingsHTML(node, ctx));
   }
   if (node.kind === "progression") rows.push(row(t("RTA.SheetEditor.ProgressionSystem", "Progression System"), select("progressionSystemRef", ctx.progressionSystems, node.progressionSystemRef)));
   if (ctx.parentColumns > 1) rows.push(row(t("RTA.SheetEditor.Width", "Width"), select("span", ctx.spanChoices(ctx.parentColumns), node.span ?? 1)));
@@ -138,7 +140,7 @@ export function renderLayoutPropertiesHTML(node, ctx) {
     rows.push(row(t("RTA.SheetEditor.Seen", "Seen by"), `<div class="rta-sheet-editor__checks">${["player", "observer", "gm"].map(seen).join("")}</div>`));
   }
   if (!rows.length) rows.push(`<p class="rta-sheet-editor__hint">${t("RTA.SheetEditor.NothingToSet", "This block has no settings.")}</p>`);
-  return `<div class="rta-sheet-editor__properties-head"><strong>${kindLabel(node.kind)}</strong></div>${rows.join("")}${ctx.style ? renderStyleHTML(node, ctx.style) : ""}`;
+  return `<div class="rta-sheet-editor__properties-head"><strong>${kindLabel(node.kind)}</strong>${ctx.saveTemplate ? renderSaveTemplateHTML() : ""}</div>${rows.join("")}${ctx.style ? renderStyleHTML(node, ctx.style) : ""}`;
 }
 
 /** A color setting: a theme tone or a color of one's own ("custom": its picker shows below). */
@@ -166,6 +168,7 @@ export function renderStyleHTML(node, ctx) {
   }
   if (container) rows.push(row(t("RTA.SheetEditor.Style.Image", "Background picture"), imageField("image", style.image, true)));
   color("border", t("RTA.SheetEditor.Style.Border", "Border"));
+  if (ctx.frameWidths) rows.push(...renderFrameRowsHTML(style, ctx));
   if (!picture && node.kind !== "spacer") {
     rows.push(row(t("RTA.SheetEditor.Style.Font", "Font"), styleSelect("font", ctx.fonts(style.font), style.font ?? "default")));
     rows.push(row(t("RTA.SheetEditor.Style.Size", "Size"), styleSelect("size", ctx.sizes, style.size ?? "default")));

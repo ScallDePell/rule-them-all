@@ -105,3 +105,89 @@
   --rta-graph-label: #f1e9df;
   --rta-graph-label-strong: #fff;
 }
+
+/* Thèmes de feuille (configurator/sheet-themes.mjs) : chaque thème pose ses couleurs, polices et cadres sur la
+   feuille (.rta-sheet-theme--<id>) ; un réglage du MJ redéfinit le même jeton en ligne (--rta-sheet-page…).
+   Les jetons du module et ceux de Foundry (champs, boutons) suivent alors la feuille. « Sobre » garde les
+   couleurs du thème Foundry. */
+.rta-sheet-theme--parchment {
+  --rta-sheet-page: #efe2c3;
+  --rta-sheet-panel: #f7efdc;
+  --rta-sheet-text: #3a2a18;
+  --rta-sheet-accent: #8b2e16;
+  --rta-sheet-border: #9c7b4f;
+  --rta-sheet-field: #fbf6ea;
+  --rta-sheet-font-body: "Amiri";
+  --rta-sheet-font-title: "Modesto Condensed";
+  --rta-sheet-frame-style: double;
+  --rta-sheet-frame-width: 3px;
+}
+
+.rta-sheet-theme--gothic {
+  --rta-sheet-page: #1c1416;
+  --rta-sheet-panel: #2a1e21;
+  --rta-sheet-text: #e6dccb;
+  --rta-sheet-accent: #b3282d;
+  --rta-sheet-border: #6e5a3a;
+  --rta-sheet-field: #120d0e;
+  --rta-sheet-font-body: "Amiri";
+  --rta-sheet-font-title: "Modesto Condensed";
+  --rta-sheet-frame-style: groove;
+  --rta-sheet-frame-width: 3px;
+}
+
+.rta-sheet-theme--scifi {
+  --rta-sheet-page: #0d1822;
+  --rta-sheet-panel: #12283a;
+  --rta-sheet-text: #d4f1ff;
+  --rta-sheet-accent: #2fd3ff;
+  --rta-sheet-border: #2a7fa8;
+  --rta-sheet-field: #081018;
+  --rta-sheet-font-body: "Signika";
+  --rta-sheet-font-title: "Bruno Ace";
+  --rta-sheet-frame-style: solid;
+  --rta-sheet-frame-width: 1px;
+}
+
+.rta-sheet-theme--plain {
+  --rta-sheet-panel: transparent;
+  --rta-sheet-font-body: "Signika";
+  --rta-sheet-font-title: "Signika";
+  --rta-sheet-frame-style: solid;
+  --rta-sheet-frame-width: 1px;
+}
+
+.rta-sheet.rta-sheet-themed {
+  --rta-color-text: var(--rta-sheet-text, var(--color-text-primary));
+  --rta-color-text-secondary: color-mix(in srgb, var(--rta-color-text) 72%, transparent);
+  --rta-color-accent-warm: var(--rta-sheet-accent, var(--color-warm-2));
+  --rta-color-border-highlight: var(--rta-sheet-accent, var(--color-border-highlight, #947f9c));
+  --rta-color-border-subtle: var(--rta-sheet-border, var(--color-border-light-2));
+  --rta-color-border-tertiary: color-mix(in srgb, var(--rta-color-border-subtle) 55%, transparent);
+  --rta-color-surface: var(--rta-sheet-page, var(--color-cool-5, #17141e));
+  --rta-color-surface-option-light: var(--rta-sheet-panel, var(--color-bg-option, rgba(255, 255, 255, .35)));
+}
+
+/* Un thème coloré (tout sauf « Sobre ») habille aussi les champs et les boutons de Foundry. */
+.rta-sheet.rta-sheet-themed--colored {
+  --color-text-primary: var(--rta-sheet-text);
+  --color-text-secondary: color-mix(in srgb, var(--rta-sheet-text) 72%, transparent);
+  --color-text-emphatic: var(--rta-sheet-text);
+}
+/* Foundry pose les couleurs des champs et des boutons sur ces éléments eux-mêmes : le thème les y remplace. */
+.rta-sheet.rta-sheet-themed--colored :is(input, select, textarea) {
+  --input-text-color: var(--rta-sheet-text);
+  --input-background-color: var(--rta-sheet-field);
+  --input-border-color: var(--rta-sheet-border);
+  --input-placeholder-color: color-mix(in srgb, var(--rta-sheet-text) 50%, transparent);
+  --checkbox-background-color: var(--rta-sheet-field);
+  --checkbox-checked-color: var(--rta-sheet-accent);
+}
+.rta-sheet.rta-sheet-themed--colored button {
+  --button-text-color: var(--rta-sheet-text);
+  --button-background-color: var(--rta-sheet-panel);
+  --button-border-color: var(--rta-sheet-border);
+  --button-hover-text-color: var(--rta-sheet-page);
+  --button-hover-background-color: var(--rta-sheet-accent);
+  --button-hover-border-color: var(--rta-sheet-accent);
+}

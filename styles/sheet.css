@@ -337,6 +337,77 @@ button.rta-sheet-content__name {
   color: var(--rta-color-text-secondary);
 }
 
+/* Held Contents as cards (a weapon, a spell): as many columns as the block's width takes. */
+.rta-sheet-cards {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(min(100%, 12rem), 1fr));
+  gap: var(--rta-gap-row);
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.rta-sheet-card {
+  display: flex;
+  flex-direction: column;
+  gap: var(--rta-gap-tight);
+  min-inline-size: 0;
+  padding: var(--rta-gap-row);
+  border: var(--rta-frame-border) solid var(--rta-color-border-subtle);
+  border-radius: var(--rta-radius-panel);
+  background: var(--rta-color-surface-option-light);
+}
+
+.rta-sheet-card--unavailable {
+  opacity: .6;
+}
+
+.rta-sheet-card__head {
+  display: flex;
+  align-items: center;
+  gap: var(--rta-gap-row);
+  min-inline-size: 0;
+  font-weight: 600;
+}
+
+.rta-sheet-card__fields, .rta-sheet-card__body {
+  display: flex;
+  flex-direction: column;
+  gap: var(--rta-gap-tight);
+  min-inline-size: 0;
+}
+
+.rta-sheet-card__fields > .rta-sheet-value {
+  container: rta-sheet-value / inline-size;
+}
+
+/* The card is the frame: a section at the top of its template does not draw another one. */
+.rta-sheet-card .rta-sheet-card__body > .rta-sheet-section {
+  padding: 0;
+  border: 0;
+  border-image: none;
+  background: none;
+}
+
+/* A card's name is a heading, not the sheet's title. */
+.rta-sheet-card .rta-sheet-name {
+  font-size: var(--rta-type-heading);
+}
+
+.rta-sheet-card__tools {
+  display: flex;
+  justify-content: flex-end;
+  gap: var(--rta-gap-tight);
+}
+
+.rta-sheet-card__open {
+  flex: 0 0 auto;
+  inline-size: auto;
+  border: 0;
+  background: none;
+  color: var(--rta-color-text-secondary);
+}
+
 .rta-sheet--drop .rta-sheet-contents {
   outline: 2px dashed var(--rta-color-border-highlight);
   outline-offset: 4px;
@@ -785,4 +856,41 @@ button.rta-sheet-dot {
 span.rta-sheet-value__step {
   border: var(--rta-frame-border) solid var(--rta-color-border-highlight);
   border-radius: var(--rta-radius-control);
+}
+
+/* Sheet themes (tokens.css: .rta-sheet-theme--<id>): the page, the fonts, the section frames. */
+.rta-sheet-themed {
+  padding: var(--rta-frame-pad);
+  background: var(--rta-sheet-page, transparent);
+  font-family: var(--rta-sheet-font-body), var(--font-body);
+}
+
+/* A themed sheet fills its window: Foundry's margin around it would show the window's own color. */
+.rta-sheet-app .window-content:has(> .rta-sheet-themed) {
+  padding: 0;
+}
+
+.rta-sheet-themed :is(.rta-sheet__name, .rta-sheet-name__text, .rta-sheet-section__title, .rta-sheet-tabs__tab, .rta-sheet-contents__type) {
+  font-family: var(--rta-sheet-font-title), var(--font-body);
+}
+
+.rta-sheet-themed .rta-sheet-section {
+  border-style: var(--rta-sheet-frame-style, solid);
+  border-width: var(--rta-sheet-frame-width, var(--rta-frame-border));
+}
+
+.rta-sheet-themed .rta-sheet-section__title {
+  color: var(--rta-color-accent-warm);
+}
+
+/* A frame picture chosen for the theme: every section takes it instead of its line. */
+.rta-sheet-themed--framed .rta-sheet-section {
+  border-style: solid;
+  border-width: var(--rta-sheet-section-frame-width);
+  border-image: var(--rta-sheet-section-frame);
+}
+
+/* A block framed by a picture (style "frame") keeps its corners square: the picture draws them. */
+.rta-sheet-framed {
+  border-radius: 0;
 }

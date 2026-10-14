@@ -5,7 +5,8 @@ import {prepareFieldMap} from './field-output-contracts.mjs';
 import {assertSafeRollFormula, FOUNDRY_DIE_LETTERS} from './roll-grammar.mjs';
 import {DICE_COMPARATORS} from './dice-reading.mjs';
 import {need} from './diagnostics.mjs';
-import {prepareLayout,emptyLayout,layoutNodes} from './layout-contract.mjs';
+import {prepareLayout,prepareTemplateBlock,layoutTarget,emptyLayout,layoutNodes} from './layout-contract.mjs';
+import {prepareSheetTheme} from './sheet-themes.mjs';
 import {preparePermissionRules} from './permission-contract.mjs';
 import {validateFormulaAst, effectOperationRegistry} from './operation-registries.mjs';
 
@@ -573,7 +574,7 @@ export const SHEET_HEADERS=Object.freeze(['standard','none']);
 export const SHEET_WINDOW_LIMITS=Object.freeze({width:[320,2400],height:[240,1600]});
 export function prepareSheetDefinition(data,options={}){
   const x=prepareNamedGeneric(data,'SheetDefinition',{target:'actor',contentTypeIds:[],header:'standard',root:emptyLayout()},options);
-  for(const key of Object.keys(x))if(!['id','nameKey','descriptionKey','enabled','order','tags','target','contentTypeIds','header','root','window'].includes(key))throw new Error(`Unsupported SheetDefinition field: ${key}.`);
+  for(const key of Object.keys(x))if(!['id','nameKey','descriptionKey','enabled','order','tags','target','contentTypeIds','header','theme','root','window'].includes(key))throw new Error(`Unsupported SheetDefinition field: ${key}.`);
   if(!SHEET_TARGETS.includes(x.target))throw new Error(`SheetDefinition.target must be ${SHEET_TARGETS.join(' or ')}.`);
   // window: the played sheet's default window size, in pixels (either one may be left to Foundry).
   if(x.window===undefined||x.window===null)delete x.window;
@@ -590,7 +591,19 @@ export function prepareSheetDefinition(data,options={}){
   if(x.target==='item')for(const {node,path} of layoutNodes(x.root))if(node.kind==='progression')throw new Error(`${path}: a progression is only on Actor sheets.`);
   if(x.target==='item')for(const {node,path} of layoutNodes(x.root))if(node.kind==='contents')throw new Error(`${path}: held Contents are only on Actor sheets.`);
   if(x.target==='item')for(const {node,path} of layoutNodes(x.root))if(node.kind==='token')throw new Error(`${path}: a token image is only on Actor sheets.`);
+  // theme: a ready look (sheet-themes.mjs), with its overrides; none: the module's own look.
+  const theme=prepareSheetTheme(x.theme);if(theme)x.theme=theme;else delete x.theme;
+  return x;
+}
+/** SheetTemplate ("Modèle de bloc"): a block saved from a sheet to be inserted again, in any sheet of the Ruleset, as an
+ * independent copy (a card of a held-Contents block uses it too). root: the block and all it holds (layout-contract.mjs);
+ * it shows what only an Actor has, or Content fields, never both. */
+export function prepareSheetTemplate(data,options={}){
+  const x=prepareNamedGeneric(data,'SheetTemplate',{root:null},options);
+  for(const key of Object.keys(x))if(!['id','nameKey','descriptionKey','enabled','order','tags','root'].includes(key))throw new Error(`Unsupported SheetTemplate field: ${key}.`);
+  x.root=prepareTemplateBlock(x.root);
+  if(!layoutTarget(x.root))throw new Error('SheetTemplate.root shows Content fields and what only an Actor has: it fits no sheet.');
   return x;
 }
 
-export const PREPARERS={parameters:prepareParameter,formulas:prepareFormula,formulaBindings:prepareFormulaBinding,conditions:prepareCondition,rolls:prepareRoll,outcomes:prepareOutcome,tests:prepareTest,effects:prepareEffect,actions:prepareAction,permissionPolicies:preparePermissionPolicy,eventTypes:prepareEventType,triggers:prepareTrigger,contentTypes:prepareContentType,contentTemplates:prepareContentTemplate,modifiers:prepareModifier,durations:prepareDuration,dice:prepareDie,tables:prepareTable,scales:prepareScale,creationSystems:prepareCreationSystem,progressionSystems:prepareProgressionSystem,sheetDefinitions:prepareSheetDefinition,categories:prepareCategory,tags:prepareTag};
+export const PREPARERS={parameters:prepareParameter,formulas:prepareFormula,formulaBindings:prepareFormulaBinding,conditions:prepareCondition,rolls:prepareRoll,outcomes:prepareOutcome,tests:prepareTest,effects:prepareEffect,actions:prepareAction,permissionPolicies:preparePermissionPolicy,eventTypes:prepareEventType,triggers:prepareTrigger,contentTypes:prepareContentType,contentTemplates:prepareContentTemplate,modifiers:prepareModifier,durations:prepareDuration,dice:prepareDie,tables:prepareTable,scales:prepareScale,creationSystems:prepareCreationSystem,progressionSystems:prepareProgressionSystem,sheetDefinitions:prepareSheetDefinition,sheetTemplates:prepareSheetTemplate,categories:prepareCategory,tags:prepareTag};

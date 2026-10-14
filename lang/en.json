@@ -221,7 +221,8 @@
       "categories": "Categories",
       "tags": "Tags",
       "tables": "Tables",
-      "dice": "Dice"
+      "dice": "Dice",
+      "sheetTemplates": "Block templates"
     },
     "DynamicMarkup": {
       "NewField": "New field",
@@ -1454,7 +1455,8 @@
       "Lock": "Lock the sheet",
       "Unlock": "Unlock the sheet",
       "EditImage": "Change the image",
-      "EditToken": "Change the token image"
+      "EditToken": "Change the token image",
+      "OpenContent": "Open"
     },
     "SheetEditor": {
       "Layout": "Layout",
@@ -1830,6 +1832,71 @@
       "CreationTotal": "Creation: roll result of the step",
       "GroupOutcome": "Group Test: members with this Outcome",
       "EventPayload": "Event field"
+    },
+    "SheetTemplate": {
+      "Palette": "Templates",
+      "Save": "Save as template",
+      "NamePrompt": "Template name",
+      "RenamePrompt": "New name of the template",
+      "Rename": "Rename",
+      "Export": "Export as a file",
+      "Delete": "Delete the template",
+      "DeleteConfirm": "Delete the template “{name}”? Sheets that already use a copy of it keep their blocks.",
+      "ReplaceConfirm": "A template is already named “{name}”. Replace it with this block?",
+      "Saved": "Template “{name}” saved: it is in the palette of every sheet of this Ruleset.",
+      "NeedsList": "This block shows the rows of the list around it: save the whole list as a template.",
+      "Missing": "Cannot insert: this template uses elements this sheet or this Ruleset does not have ({names}).",
+      "InUse": "This template draws the cards of these sheets: {names}. Choose another card there first.",
+      "EmptyHint": "Select a block, then “Save as template” (the bookmark next to its name).",
+      "Import": "Import a template…"
+    },
+    "SheetFile": {
+      "Label": "File",
+      "Export": "Export",
+      "Import": "Import…",
+      "NotSheet": "This file is not a sheet (a block template is imported from the palette).",
+      "NotTemplate": "This file is not a block template (a sheet is imported from the sheet's settings).",
+      "MissingConfirm": "This Ruleset lacks elements the file uses: {names}. Import it without the blocks that use them?",
+      "ReplaceConfirm": "Replace this sheet's layout, theme and settings with the file's? (Undo takes the layout back.)",
+      "NothingLeft": "Nothing is left of this template in this Ruleset.",
+      "Imported": "Sheet imported: check it, then save."
+    },
+    "SheetCards": {
+      "Display": "Shown as",
+      "List": "A list",
+      "Cards": "Cards",
+      "Template": "Card",
+      "ChosenFields": "Picture, name and the fields chosen",
+      "Fields": "Fields shown",
+      "NoFields": "These Content Types have no fields."
+    },
+    "SheetTheme": {
+      "Title": "Sheet theme",
+      "Theme": "Theme",
+      "None": "None (the module's look)",
+      "Themes": {
+        "parchment": "Parchment",
+        "gothic": "Gothic",
+        "scifi": "Science fiction",
+        "plain": "Plain"
+      },
+      "Page": "Page",
+      "Text": "Text",
+      "Accent": "Titles and highlights",
+      "Border": "Frames",
+      "Reset": "Back to the theme's",
+      "Font": "Text font",
+      "TitleFont": "Title font",
+      "ThemeFont": "The theme's",
+      "SectionFrame": "Section frame (picture)",
+      "Frame": "Image frame",
+      "FrameSlice": "Cut from the edges (px)",
+      "FrameWidth": "Frame width",
+      "Width": {
+        "small": "Thin",
+        "medium": "Medium",
+        "large": "Wide"
+      }
     }
   }
 }

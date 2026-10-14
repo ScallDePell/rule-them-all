@@ -438,3 +438,85 @@
   inline-size: 1.25em;
   text-align: center;
 }
+
+/* The selected block's name, and the button that saves it as a block template. */
+.rta-sheet-editor__properties-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--rta-gap-row);
+}
+
+.rta-sheet-editor__properties-head > button {
+  flex: 0 0 auto;
+  inline-size: auto;
+}
+
+/* A block template of the palette: its rename, export and delete buttons after its name. */
+.rta-sheet-editor__template-tools {
+  display: inline-flex;
+  flex: 0 0 auto;
+  gap: var(--rta-gap-tight);
+}
+
+.rta-sheet-editor__template-tool {
+  flex: 0 0 auto;
+  inline-size: auto;
+  min-block-size: 0;
+  padding: 0;
+  border: 0;
+  background: none;
+  color: var(--rta-color-text-secondary);
+  line-height: 1;
+}
+
+.rta-sheet-editor__template-tool:hover,
+.rta-sheet-editor__template-tool:focus-visible {
+  color: var(--rta-color-text);
+}
+
+[data-layout-palette-keep] > .rta-sheet-editor__wide {
+  margin-block-start: var(--rta-gap-row);
+}
+
+/* The sheet's theme: its own panel under the palette. */
+.rta-sheet-editor__theme {
+  padding: var(--rta-frame-pad);
+  border: var(--rta-frame-border) solid var(--rta-color-border-subtle);
+  border-radius: var(--rta-radius-panel);
+}
+
+.rta-sheet-editor__theme > summary {
+  cursor: pointer;
+  font-weight: 600;
+}
+
+.rta-sheet-editor__theme-color {
+  display: flex;
+  flex: 1;
+  align-items: center;
+  gap: var(--rta-gap-tight);
+}
+
+.rta-sheet-editor__theme-color > input[type="color"] {
+  inline-size: 4rem;
+  padding: 0;
+}
+
+.rta-sheet-editor__theme-color > button {
+  flex: 0 0 auto;
+  inline-size: auto;
+}
+
+/* The sheet as a file: export, import. */
+.rta-sheet-file {
+  display: flex;
+  flex: 1;
+  flex-wrap: wrap;
+  gap: var(--rta-gap-row);
+}
+
+.rta-sheet-file > button {
+  flex: 0 0 auto;
+  inline-size: auto;
+}

@@ -12,6 +12,7 @@
 import {capabilityTypeRegistry} from "../configurator/capability-type-registry.mjs";
 import {findSlot, SLOT_CAPABILITIES} from "../configurator/capability-slots.mjs";
 import {descriptionScale, scaleWords} from "../configurator/rule-contracts.mjs";
+import {CARD_EXCLUDED_KINDS} from "../configurator/layout-contract.mjs";
 
 const enabled = entry => entry?.enabled !== false;
 const ERROR = error => String(error?.message ?? error);
@@ -110,7 +111,17 @@ export async function projectSheet(engine, versionId, sheet, {actor = null, cont
     return view;
   };
 
-  const value = async (node, scope, row) => {
+  /** A Content field on a card: read-only, a Reference by the name of what it names (a list joined). */
+  const fieldView = (view, field) => {
+    delete view.target;
+    if (field.valueType === "reference") {
+      const name = ref => ruleset[String(ref?.objectKind ?? "").replace(/y$/, "ie") + "s"]?.find(entry => entry.id === ref?.objectId)?.nameKey ?? ref?.objectId ?? "";
+      const values = Array.isArray(view.value) ? view.value : view.value ? [view.value] : [];
+      Object.assign(view, {valueType: "string", value: values.length ? values.map(name).join(", ") : null});
+    } else if (Array.isArray(view.value)) Object.assign(view, {valueType: "string", value: view.value.join(", ")});
+    return view;
+  };
+  const value = async (node, scope, row, card = null) => {
     const source = node.source, view = {id: node.id, kind: "value", ...(node.span ? {span: node.span} : {}), ...(node.style ? {style: node.style} : {}), ...(node.icon ? {icon: node.icon} : {}), ...(node.labelShow ? {labelShow: node.labelShow} : {}),
       ...(node.display ? {display: node.display} : {}), ...(node.dots ? {dots: node.dots} : {}), label: node.labelKey || "", value: null, write: null};
     if (source.kind === "output" || source.kind === "each") {
@@ -163,19 +174,20 @@ export async function projectSheet(engine, versionId, sheet, {actor = null, cont
     }
     // field: a field of the Content this Item sheet shows; only an owned Content keeps its own values.
     // A sheet shared by several Content Types leaves out the fields this one does not have.
-    const current = await shownContent(), field = current?.type?.fields?.[source.fieldId];
+    const current = card ?? await shownContent(), field = current?.type?.fields?.[source.fieldId];
     if (!field) return null;
     view.target = {fieldId: source.fieldId};
     if (!view.label) view.label = field.name ?? source.fieldId;
     view.valueType = field.valueType;
     view.value = Object.hasOwn(current.fields, source.fieldId) ? current.fields[source.fieldId] : null;
+    if (card) return fieldView(view, field);
     if (writer(node) && content.key && actor && await engine.adapter.canWrite(actor)) view.write = {operation: node.write.operation};
     return view;
   };
 
   /** The Contents a contents block lists, by Content Type in Ruleset order; an unavailable one is still listed. */
   let owned;
-  const contents = async (node, base) => {
+  const contents = async (node, base, scope) => {
     if (!actor) return null;
     owned ??= await engine.listOwnedContents(versionId, actor);
     const types = node.contentTypeIds ?? [], byId = new Map(items.map(item => [item.id, item]));
@@ -192,7 +204,16 @@ export async function projectSheet(engine, versionId, sheet, {actor = null, cont
       const known = new Set(owned.map(row => row.key));
       for (const item of items) if (!known.has(item.id) && !item.managed) rows.push({key: item.id, label: item.name, img: item.img ?? "", item: true, available: true, type: ""});
     }
-    return {...base, rows};
+    if (!node.cards) return {...base, rows};
+    // Cards: each Content's picture and name, then its card template (its fields read from that Content) or the fields chosen.
+    const template = node.cards.templateRef ? ruleset.sheetTemplates?.find(entry => entry.id === node.cards.templateRef && enabled(entry)) : null;
+    for (const row of rows) {
+      const found = owned.find(entry => entry.key === row.key), type = ruleset.contentTypes?.find(entry => entry.id === found?.contentTypeId) ?? null;
+      const card = {type, fields: {...(ruleset.contentTemplates?.find(entry => entry.id === found?.templateId)?.data ?? {}), ...(found?.fields ?? {})}};
+      if (template) row.children = [await walk(template.root, scope, null, card)].filter(Boolean);
+      else row.fields = (await Promise.all((node.cards.fieldIds ?? []).map(fieldId => value({id: `${node.id}-${fieldId}`, kind: "value", source: {kind: "field", fieldId}}, scope, null, card)))).filter(Boolean);
+    }
+    return {...base, rows, cards: template ? "template" : "fields"};
   };
 
   /** What the Actor can buy with a Progression System (engine.describeProgression), with only the Definitions this user
@@ -230,24 +251,25 @@ export async function projectSheet(engine, versionId, sheet, {actor = null, cont
     return {...base, systemId: system.id, advancements, milestones: states.filter(m => m.state !== "ahead" || m === next), apply};
   };
 
-  const walk = async (node, scope, row) => {
+  const walk = async (node, scope, row, card = null) => {
+    if (card && CARD_EXCLUDED_KINDS.includes(node.kind)) return null;
     if (node.seenBy && !node.seenBy.includes(viewer)) return null;
     const base = {id: node.id, kind: node.kind, ...(node.span ? {span: node.span} : {}), ...(node.style ? {style: node.style} : {}), ...(node.icon ? {icon: node.icon} : {}), ...(node.labelShow ? {labelShow: node.labelShow} : {})};
-    if (node.kind === "value") return value(node, scope, row);
+    if (node.kind === "value") return value(node, scope, row, card);
     if (node.kind === "image") return node.src ? {...base, src: node.src, fit: node.fit ?? "cover", height: node.height ?? "medium", ...(node.shape ? {shape: node.shape} : {})} : null;
     if (node.kind === "text") return {...base, text: node.textKey};
     if (node.kind === "spacer") return base;
     // The Document's name and pictures: the sheet fills them in from the Document (renderSheetHTML).
     if (node.kind === "name") return base;
     if (node.kind === "portrait" || node.kind === "token") return {...base, fit: node.fit ?? "cover", height: node.height ?? "medium", ...(node.shape ? {shape: node.shape} : {}), ...(node.updatePlaced ? {updatePlaced: true} : {})};
-    if (node.kind === "contents") return contents(node, base);
+    if (node.kind === "contents") return contents(node, base, scope);
     if (node.kind === "progression") return progression(node, base);
     if (node.kind === "action") {
       const action = ruleset.actions?.find(a => a.id === node.actionRef && enabled(a));
       if (!action || !actor || !await allowed("execute", "action", action.id)) return null;
       return {...base, label: node.labelKey || action.nameKey || action.id, actionId: action.id, definitionId: row?.definition.id ?? null};
     }
-    const children = async (nodes, s, r) => (await Promise.all(nodes.map(child => walk(child, s, r)))).filter(Boolean);
+    const children = async (nodes, s, r) => (await Promise.all(nodes.map(child => walk(child, s, r, card)))).filter(Boolean);
     if (node.kind === "repeater") {
       const rows = [];
       for (const found of await repeaterRows(engine, versionId, ruleset, node.query, scope)) {
@@ -258,5 +280,5 @@ export async function projectSheet(engine, versionId, sheet, {actor = null, cont
     }
     return {...base, ...(node.columns ? {columns: node.columns} : {}), ...(node.labelKey !== undefined ? {label: node.labelKey} : {}), children: await children(node.children, scope, row)};
   };
-  return {sheetId: sheet.id, target: sheet.target, header: sheet.header ?? "standard", root:await walk(sheet.root, context, null)};
+  return {sheetId: sheet.id, target: sheet.target, header: sheet.header ?? "standard", ...(sheet.theme ? {theme: sheet.theme} : {}), root: await walk(sheet.root, context, null)};
 }

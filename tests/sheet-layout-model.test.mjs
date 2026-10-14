@@ -73,7 +73,7 @@ test('the properties offer only what the selected block can take', ()=>{
 
 test('The palette offers layout blocks, fields, Definition families as lists and the Contents an Actor holds by type', ()=>{
   const groups=paletteGroups({...ruleset,contentTypes:[{id:'origin',nameKey:'Origin',storageKind:'item'}]},{target:'actor'});
-  assert.deepEqual(groups.map(group=>group.id),['layout','document','fields','families','held']);
+  assert.deepEqual(groups.map(group=>group.id),['layout','document','fields','families','held','templates']);
   assert.deepEqual(groups[2].items.map(item=>item.kind),['value','gauge','dots','action','contents']);
   assert.deepEqual(groups[3].items.map(item=>[item.kind,item.label]),[['repeater','Skills']],'one item per family, never each Definition');
   assert.deepEqual(groups[4].items[0].spec,{kind:'value',source:{kind:'content',contentTypeId:'origin'}});
@@ -84,7 +84,7 @@ test('The palette offers layout blocks, fields, Definition families as lists and
   const gauge=paletteNode({kind:'value',display:'gauge'},root,ruleset,{parentId:'s'});
   assert.equal(gauge.display,'gauge');assert.equal(gauge.source.reference.outputId,'pool.current','a gauge starts on a pool');
   assert.equal(locate(root,gauge.id),null,'a fresh id');
-  assert.deepEqual(paletteGroups(ruleset,{target:'item'}).map(group=>group.id),['layout','document','fields','content-fields']);
+  assert.deepEqual(paletteGroups(ruleset,{target:'item'}).map(group=>group.id),['layout','document','fields','content-fields','templates']);
 });
 
 test('Values as dots or gauges, the Contents held, image shapes: checked by the layout contract', ()=>{

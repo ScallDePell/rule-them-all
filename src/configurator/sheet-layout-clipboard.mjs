@@ -52,28 +52,37 @@ export function pastePlace(root, node, selectedId, {after = false} = {}) {
    a Definition, a Formula, a Parameter, an Action, a Progression System, a Definition type, a Condition, a Content
    Type, a Content field, and the row output a list's Definitions do not give. Blocks only an Actor sheet (or only an
    Item sheet) has count too. */
-export function missingReferences(root, nodeId, ruleset, {target = "actor", contentTypeIds = []} = {}) {
+export function missingReferences(root, nodeId, ruleset, options = {}) {
+  const missing = new Set();
+  for (const node of nodes(locate(root, nodeId)?.node)) for (const id of nodeMissing(root, node, ruleset, options)) missing.add(id);
+  return [...missing];
+}
+
+/** What one block itself (not what it holds) names that this Ruleset or this sheet does not have; see missingReferences. */
+export function nodeMissing(root, node, ruleset, {target = "actor", contentTypeIds = []} = {}) {
   const missing = new Set(), has = (list, id) => (ruleset[list] ?? []).some(entry => entry.id === id);
   const need = (ok, id) => { if (!ok) missing.add(id); };
-  const placed = locate(root, nodeId)?.node;
-  for (const node of nodes(placed)) {
-    const source = node.source;
-    if (source?.kind === "output") need(has("definitions", source.reference?.objectId), source.reference?.objectId);
-    if (source?.kind === "formula") need(has("formulas", source.formulaRef), source.formulaRef);
-    if (source?.kind === "parameter") need(has("parameters", source.parameterRef), source.parameterRef);
-    if (source?.kind === "content") need(target === "actor" && has("contentTypes", source.contentTypeId), source.contentTypeId);
-    if (source?.kind === "field") need(target === "item" && contentFields(ruleset, contentTypeIds).some(field => field.id === source.fieldId), source.fieldId);
-    if (source?.kind === "each") {
-      const typeId = repeaterOf(root, node.id)?.query?.definitionTypeId;
-      need((ruleset.definitions ?? []).some(d => d.definitionTypeId === typeId && (d.capabilities ?? []).includes(source.capabilityId)), source.outputId);
-    }
-    if (node.kind === "action") need(has("actions", node.actionRef), node.actionRef);
-    if (node.kind === "progression") need(target === "actor" && has("progressionSystems", node.progressionSystemRef), node.progressionSystemRef);
-    if (node.kind === "contents") { need(target === "actor", node.kind); for (const id of node.contentTypeIds ?? []) need(has("contentTypes", id), id); }
-    if (node.kind === "repeater") {
-      need(has("definitionTypes", node.query?.definitionTypeId), node.query?.definitionTypeId);
-      if (node.query?.conditionRef) need(has("conditions", node.query.conditionRef), node.query.conditionRef);
-    }
+  const source = node.source;
+  if (source?.kind === "output") need(has("definitions", source.reference?.objectId), source.reference?.objectId);
+  if (source?.kind === "formula") need(has("formulas", source.formulaRef), source.formulaRef);
+  if (source?.kind === "parameter") need(has("parameters", source.parameterRef), source.parameterRef);
+  if (source?.kind === "content") need(target === "actor" && has("contentTypes", source.contentTypeId), source.contentTypeId);
+  if (source?.kind === "field") need(target === "item" && contentFields(ruleset, contentTypeIds).some(field => field.id === source.fieldId), source.fieldId);
+  if (source?.kind === "each") {
+    const typeId = repeaterOf(root, node.id)?.query?.definitionTypeId;
+    need((ruleset.definitions ?? []).some(d => d.definitionTypeId === typeId && (d.capabilities ?? []).includes(source.capabilityId)), source.outputId);
+  }
+  if (node.kind === "action") need(has("actions", node.actionRef), node.actionRef);
+  if (node.kind === "progression") need(target === "actor" && has("progressionSystems", node.progressionSystemRef), node.progressionSystemRef);
+  if (node.kind === "contents") {
+    need(target === "actor", node.kind);
+    for (const id of node.contentTypeIds ?? []) need(has("contentTypes", id), id);
+    if (node.cards?.templateRef) need(has("sheetTemplates", node.cards.templateRef), node.cards.templateRef);
+  }
+  if (node.kind === "token") need(target === "actor", node.kind);
+  if (node.kind === "repeater") {
+    need(has("definitionTypes", node.query?.definitionTypeId), node.query?.definitionTypeId);
+    if (node.query?.conditionRef) need(has("conditions", node.query.conditionRef), node.query.conditionRef);
   }
   return [...missing].filter(Boolean);
 }

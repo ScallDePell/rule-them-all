@@ -48,6 +48,10 @@ await api.createProgressionSystem(v, {id: 'growth', nameKey: 'Growth', advanceme
   {id: 'attr', labelKey: 'Attribute advance', definitionTypeId: 'attribute', currencyRef: out_('xp', 'value', 'value.base'), costFormulaRef: 'attr-cost', maximumFormulaRef: 'attr-max'},
   {id: 'skill', labelKey: 'Skill advance', definitionTypeId: 'skill', currencyRef: out_('xp', 'value', 'value.base'), costFormulaRef: 'skill-cost', step: 5}],
   milestones: [{id: 'seasoned', labelKey: 'Seasoned', conditionRef: 'seasoned', definitionIds: ['hide']}, {id: 'veteran', labelKey: 'Veteran', conditionRef: 'veteran', definitionIds: ['swim']}]});
+// A block template drawing each weapon held as a card: its picture, its name and two of its fields.
+await api.createSheetTemplate(v, {id: 'weapon-card', nameKey: 'Weapon card', root: {id: 'card', kind: 'section', columns: 2, children: [
+  {id: 'card-face', kind: 'portrait', height: 'small'}, {id: 'card-name', kind: 'name'},
+  {id: 'card-damage', kind: 'value', source: {kind: 'field', fieldId: 'damage'}}, {id: 'card-reach', kind: 'value', source: {kind: 'field', fieldId: 'reach'}}]}});
 await api.publishRuleset(v);
 
 const adapter = new MemoryRuntimeAdapter(), engine = new RuntimeEngine({configurator: api, adapter, hooks: null}), hero = {kind: 'actor', id: 'hero'};
@@ -100,6 +104,17 @@ const custom = {id: 'custom', target: 'actor', header: 'none', root: {id: 'root'
 // Pictures for the Document: a portrait and a round token (data URLs, so the page needs no file).
 const picture = (fill, round) => `data:image/svg+xml,${encodeURIComponent(`<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 90 120"><rect width="90" height="120" fill="${fill}"/>${round ? '<circle cx="45" cy="60" r="40" fill="#e8d9b0"/>' : '<circle cx="45" cy="45" r="22" fill="#e8d9b0"/><rect x="18" y="74" width="54" height="46" rx="20" fill="#e8d9b0"/>'}</svg>`)}`;
 const doc = {img: picture('#5a4a7a', false), token: picture('#3b6b4a', true)};
+// Themed sheets: the weapons held as cards (from the template, and from the fields chosen), a section in an image frame.
+const frame = `data:image/svg+xml,${encodeURIComponent('<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 90 90"><rect x="3" y="3" width="84" height="84" fill="none" stroke="#7a4f22" stroke-width="6"/><rect x="11" y="11" width="68" height="68" fill="none" stroke="#b8893c" stroke-width="2"/><circle cx="8" cy="8" r="7" fill="#7a4f22"/><circle cx="82" cy="8" r="7" fill="#7a4f22"/><circle cx="8" cy="82" r="7" fill="#7a4f22"/><circle cx="82" cy="82" r="7" fill="#7a4f22"/></svg>')}`;
+const themed = (id, theme) => ({id, target: 'actor', theme, root: {id: 'root', kind: 'grid', columns: 2, children: [
+  {id: 'attrs', kind: 'section', labelKey: 'Attributes', columns: 2, children: ['str', 'dex', 'wit', 'will'].map(id => ({id: `t-${id}`, kind: 'value', source: {kind: 'output', reference: out_(id, 'value', 'value.final')}, write: {operation: 'set'}}))},
+  {id: 'state', kind: 'section', labelKey: 'Condition', columns: 1, style: {frame, frameSlice: 30, frameWidth: 'small'}, children: [
+    {id: 't-hp', kind: 'value', labelKey: 'Health', source: {kind: 'output', reference: out_('hp', 'pool', 'pool.current', 'points')}, display: 'gauge', write: {operation: 'adjust'}},
+    {id: 't-def', kind: 'value', source: {kind: 'formula', formulaRef: 'defence'}},
+    {id: 't-act', kind: 'action', actionRef: 'sneak', labelKey: 'Sneak', icon: 'fa-dice-d20'}]},
+  {id: 'arms', kind: 'section', labelKey: 'Weapons', span: 2, columns: 1, children: [{id: 'arms-cards', kind: 'contents', contentTypeIds: ['weapon'], cards: {templateRef: 'weapon-card'}}]},
+  {id: 'arms-fields', kind: 'section', labelKey: 'Weapons (fields)', span: 2, columns: 1, children: [{id: 'arms-list', kind: 'contents', contentTypeIds: ['weapon'], cards: {fieldIds: ['damage', 'reach']}}]}]}});
+const held = [{id: 'sword-1', name: 'Grandfather\'s sword', img: picture('#6b3b2a', true), managed: true}];
 
 const foundryCss = process.env.RTA_FOUNDRY_CSS ? readFileSync(process.env.RTA_FOUNDRY_CSS, 'utf8') + '\n' : '';
 const css = foundryCss + JSON.parse(readFileSync(join(root, 'module.json'), 'utf8')).styles.map(p => readFileSync(join(root, p), 'utf8')).join('\n');
@@ -113,7 +128,11 @@ const sheets = [
   // Unlocked (the lock open in the window header): the name is a field, the camera buttons sit on the pictures.
   ['actor-auto-unlocked', await projectSheet(engine, v, sheetFor(ruleset, {target: 'actor'}), {actor: hero}), 'Ayla the Brave', {unlocked: true}],
   ['actor-custom', await projectSheet(engine, v, custom, {actor: hero}), 'Ayla the Brave'],
-  ['actor-custom-unlocked', await projectSheet(engine, v, custom, {actor: hero}), 'Ayla the Brave', {unlocked: true}]
+  ['actor-custom-unlocked', await projectSheet(engine, v, custom, {actor: hero}), 'Ayla the Brave', {unlocked: true}],
+  ['actor-parchment', await projectSheet(engine, v, themed('parchment', {id: 'parchment'}), {actor: hero, items: held}), 'Ayla the Brave'],
+  ['actor-gothic', await projectSheet(engine, v, themed('gothic', {id: 'gothic', overrides: {accent: '#c0392b', titleFont: 'Amiri', frame, frameWidth: 'small'}}), {actor: hero, items: held}), 'Ayla the Brave'],
+  ['actor-scifi', await projectSheet(engine, v, themed('scifi', {id: 'scifi'}), {actor: hero, items: held}), 'Ayla the Brave'],
+  ['actor-plain', await projectSheet(engine, v, themed('plain', {id: 'plain'}), {actor: hero, items: held}), 'Ayla the Brave']
 ];
 const english = JSON.parse(readFileSync(join(root, 'lang/en.json'), 'utf8'));
 const t = key => key?.split('.').reduce((node, part) => node?.[part], english) ?? key;

@@ -119,10 +119,13 @@ export class DependencyIndex{
       if(policy.scope?.objectKind&&policy.scope.objectKind!=='ruleset'&&policy.scope.objectId)pushRef(this.#edges,consumer,{objectKind:policy.scope.objectKind,objectId:policy.scope.objectId},'permissionScope',`permissionPolicies[${i}].scope`);
       for(const [j,rule] of (policy.rules??[]).entries())if(rule?.conditionRef)pushRef(this.#edges,consumer,{objectKind:'condition',objectId:rule.conditionRef},'permissionCondition',`permissionPolicies[${i}].rules[${j}].conditionRef`);
     }
-    for(const [i,sheet] of (ruleset.sheetDefinitions??[]).entries()){
-      const consumer={objectKind:'sheetDefinition',objectId:sheet.id},at=`sheetDefinitions[${i}]`;
+    // Sheets and block templates name what their blocks show; a held-Contents block in cards names its card template.
+    const layouts=[...(ruleset.sheetDefinitions??[]).map((sheet,i)=>[sheet,'sheetDefinition',`sheetDefinitions[${i}]`]),...(ruleset.sheetTemplates??[]).map((template,i)=>[template,'sheetTemplate',`sheetTemplates[${i}]`])];
+    for(const [sheet,kind,at] of layouts){
+      const consumer={objectKind:kind,objectId:sheet.id};
       for(const [j,id] of (sheet.contentTypeIds??[]).entries())pushRef(this.#edges,consumer,{objectKind:'contentType',objectId:id},'sheetContentType',`${at}.contentTypeIds[${j}]`);
       for(const {node,path} of layoutNodes(sheet.root,`${at}.root`)){
+        if(node.kind==='contents'&&node.cards?.templateRef)pushRef(this.#edges,consumer,{objectKind:'sheetTemplate',objectId:node.cards.templateRef},'sheetCard',`${path}.cards.templateRef`);
         const s=node.source;
         if(s?.kind==='output')pushRef(this.#edges,consumer,s.reference,'sheetValue',`${path}.source.reference`);
         if(s?.kind==='formula')pushRef(this.#edges,consumer,{objectKind:'formula',objectId:s.formulaRef},'sheetValue',`${path}.source.formulaRef`);
@@ -166,7 +169,7 @@ export class DependencyIndex{
         add('action',m.actionRef,'progressionAction',`milestones[${j}].actionRef`);
       }
     }
-    const tagCollections=['definitions','parameters','formulas','formulaBindings','conditions','rolls','outcomes','tests','effects','actions','eventTypes','triggers','contentTypes','contentTemplates','modifiers','durations','dice','tables','scales','creationSystems','progressionSystems','sheetDefinitions'];
+    const tagCollections=['definitions','parameters','formulas','formulaBindings','conditions','rolls','outcomes','tests','effects','actions','eventTypes','triggers','contentTypes','contentTemplates','modifiers','durations','dice','tables','scales','creationSystems','progressionSystems','sheetDefinitions','sheetTemplates'];
     for(const collection of tagCollections)for(const [i,entry] of (ruleset[collection]??[]).entries())for(const [j,id] of (entry.tags??[]).entries())pushRef(this.#edges,{objectKind:collection.replace(/s$/,''),objectId:entry.id},{objectKind:'tag',objectId:id},'tag',`${collection}[${i}].tags[${j}]`,'metadata');
     // Category catalog (§47): consumers store catalog ids; a used Category cannot be deleted.
     for(const collection of ['definitions','contentTemplates'])for(const [i,entry] of (ruleset[collection]??[]).entries())for(const [j,id] of (entry.categories??[]).entries())pushRef(this.#edges,{objectKind:collection==='definitions'?'definition':'contentTemplate',objectId:entry.id},{objectKind:'category',objectId:id},'category',`${collection}[${i}].categories[${j}]`,'metadata');
