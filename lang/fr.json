@@ -245,7 +245,8 @@
       "Duplicate": "Dupliquer",
       "Remove": "Supprimer",
       "Operand": "Opérande",
-      "Score": "Score"
+      "Score": "Score",
+      "PayloadFieldIdFromName": "Son identifiant sera tiré de son nom à l'enregistrement."
     },
     "Select": {
       "Single": "Sélectionner un {label}",
@@ -296,7 +297,6 @@
       "Constraints": "Contraintes",
       "Content": "Contenu",
       "ContentType": "Type de contenu",
-      "ContextRoles": "Rôles du contexte",
       "CostEffects": "Effets de coût",
       "CreationSteps": "Étapes de création",
       "Current": "Actuel",
@@ -593,7 +593,8 @@
       "Combat": "Combat en cours",
       "Die": "Dé",
       "Scale": "Échelle descriptive",
-      "ScaleRef": "Échelle descriptive"
+      "ScaleRef": "Échelle descriptive",
+      "PayloadFieldIdHint": "Identifiant : {id}. Une Condition ou une Formule le lit dans event.payload.{id}."
     },
     "EditorDisplay": {
       "NoneSelected": "Aucune sélection",
@@ -1121,7 +1122,8 @@
         "actor": "Chaque personnage concerné",
         "combat": "Le combat, une fois",
         "world": "Le monde, une fois"
-      }
+      },
+      "OutcomeKeyField": "Clé du Résultat"
     },
     "OutcomeMapping": {
       "Title": "Selon le résultat",
@@ -1204,7 +1206,10 @@
         "last": "Passe en dernier ce round",
         "set": "Initiative fixée à",
         "add": "Initiative augmentée de"
-      }
+      },
+      "EventPayloads": "Contenu des événements émis",
+      "EventPayloadsHelp": "Chaque champ d'un événement coché prend la valeur d'une Formule, calculée pour cette Action une fois ses Effets appliqués, ou une valeur fixe. L'événement porte toujours aussi la clé du Résultat obtenu.",
+      "EventValueNone": "Non rempli"
     },
     "Progression": {
       "Advancement": "Amélioration",

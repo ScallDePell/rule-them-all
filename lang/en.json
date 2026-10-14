@@ -249,7 +249,8 @@
       "Duplicate": "Duplicate",
       "Remove": "Remove",
       "Operand": "Operand",
-      "Score": "Score"
+      "Score": "Score",
+      "PayloadFieldIdFromName": "Its id is taken from its name when you save."
     },
     "Select": {
       "Single": "Select a {label}",
@@ -300,7 +301,6 @@
       "Constraints": "Constraints",
       "Content": "Content",
       "ContentType": "Content Type",
-      "ContextRoles": "Context roles",
       "CostEffects": "Cost Effects",
       "CreationSteps": "Creation steps",
       "Current": "Current",
@@ -597,7 +597,8 @@
       "Combat": "Combat in progress",
       "Die": "Die",
       "Scale": "Description scale",
-      "ScaleRef": "Description scale"
+      "ScaleRef": "Description scale",
+      "PayloadFieldIdHint": "Id: {id}. A Condition or a Formula reads it as event.payload.{id}."
     },
     "EditorDisplay": {
       "NoneSelected": "None selected",
@@ -1125,7 +1126,8 @@
         "actor": "Each character concerned",
         "combat": "The combat, once",
         "world": "The world, once"
-      }
+      },
+      "OutcomeKeyField": "Outcome key"
     },
     "OutcomeMapping": {
       "Title": "On each outcome",
@@ -1208,7 +1210,10 @@
         "last": "Goes last this round",
         "set": "Initiative set to",
         "add": "Initiative raised by"
-      }
+      },
+      "EventPayloads": "Content of the events emitted",
+      "EventPayloadsHelp": "Each field of a ticked event takes the value of a Formula, computed for this Action once its Effects are applied, or a fixed value. The event always carries the key of the Outcome too.",
+      "EventValueNone": "Not set"
     },
     "Progression": {
       "Advancement": "Advancement",

@@ -23,6 +23,8 @@ const roleRef=(context,role)=>context?.roles?.[role]??null;
  * {log: [{formula, roll}], keep: Map formula -> [roll]}. A replay that keeps the dice takes back a logged roll of the same formula. */
 const DICE=Symbol("rta.dice");
 /** The roles seen from the other side: the target acts on the former self (a reaction). */
+/** The context of what follows a Test: its variables (variables.test, with the Outcome). */
+const withTestResult=(context,testResult)=>testResult?{...context,variables:{...(context.variables??{}),...testResult.variables,test:{...testResult.variables.test,outcome:testResult.outcome}}}:context;
 const swapRoles=context=>{const self=roleRef(context,"self"),target=roleRef(context,"target");return {...context,roles:{...(context.roles??{}),self:target,source:target,target:self,subject:self},defaultRole:"self"};};
 /** A context as it can be kept and replayed later: no event, cause or dice. */
 const plainContext=context=>clone(Object.fromEntries(Object.entries(context).filter(([key])=>key!=="event"&&key!=="cause")));
@@ -797,7 +799,7 @@ export class RuntimeEngine{
     if(action.testRef){testResult=await this.executeTest(versionId,action.testRef,context,{staged});const mapping=(action.outcomeMappings??[]).find(m=>m?.outcomeId===testResult.outcome?.id||m?.resultKey===testResult.outcome?.resultKey);if(mapping){if(Array.isArray(mapping.effectRefs))effectRefs=mapping.effectRefs;if(mapping.block===true)return {allowed:false,reason:"outcome",testResult};next=[...(mapping.actionRefs??[])];choice=mapping.choice??null;}}
     await this.#stageStates(versionId,ruleset,action,context,staged,evaluator,changes);
     // Effects read the Test under variables.test (total, margin, natural, outcome), e.g. damage that grows with the margin.
-    const effectContext=testResult?{...context,variables:{...(context.variables??{}),...testResult.variables,test:{...testResult.variables.test,outcome:testResult.outcome}}}:context;
+    const effectContext=withTestResult(context,testResult);
     for(const effectId of effectRefs)changes.push(await this.previewEffect(versionId,effectId,effectContext,staged,evaluator.__dice));
     // A turn order change is no container write: it lists who moves and how, and the commit hands it to the combat tracker.
     if(action.turnOrder){const ref=roleRef(effectContext,action.turnOrder.role);if(!ref)throw new Error(`EvaluationContext role is missing: ${action.turnOrder.role}.`);
@@ -1008,13 +1010,20 @@ export class RuntimeEngine{
     const reason=maximum!==null&&next>maximum?"maximum":advancement.conditionRef&&!await evaluator.condition(advancement.conditionRef,scope)?"condition":funds<cost?"cost":null;
     return {current,next,cost,maximum,funds,allowed:!reason,reason};
   }
+  /** The payload fields the Action gives an event it emits: each declared field the Action sets, from a Formula
+   * (computed in the Action's context, after its Effects) or a fixed value. */
+  async #eventPayload(versionId,action,eventTypeId,context){
+    const fields=this.ruleset(versionId).eventTypes?.find(x=>x.id===eventTypeId)?.payloadFields??{},values=action.eventPayloads?.[eventTypeId]??{},payload={};
+    for(const fieldId of Object.keys(fields)){const source=values[fieldId];if(!source)continue;payload[fieldId]=Object.hasOwn(source,"literal")?clone(source.literal):await this.evaluateFormula(versionId,source.formulaRef,context);}
+    return payload;
+  }
   /** After the commit: the events of the Action, then those of each follow-up that ran, each with its own context.
    * An Action on several targets emits its events once per target its Outcome let through. */
   async #emitActionEvents(versionId,{actionId,testResult,context,followUps=[],targets=null},eventDepth,out){
     const cause=context?.cause??null,withCause=entry=>({...entry,context:{...(entry.context??{}),cause}});
     if(targets){for(const run of targets)if(run.allowed)await this.#emitActionEvents(versionId,withCause({actionId,...run}),eventDepth,out);return;}
     const action=this.ruleset(versionId).actions?.find(x=>x.id===actionId);
-    for(const eventTypeId of action?.eventTypeRefs??[]){const emitted=await this.emitEvent(versionId,eventTypeId,{actionId,outcomeKey:testResult?.outcome?.resultKey??null},context,{depth:eventDepth+1});out.push({eventTypeId,actionId,triggered:emitted.triggered});}
+    for(const eventTypeId of action?.eventTypeRefs??[]){const payload={...await this.#eventPayload(versionId,action,eventTypeId,withTestResult(context,testResult)),actionId,outcomeKey:testResult?.outcome?.resultKey??null};const emitted=await this.emitEvent(versionId,eventTypeId,payload,context,{depth:eventDepth+1});out.push({eventTypeId,actionId,triggered:emitted.triggered});}
     for(const follow of followUps)if(follow.allowed)await this.#emitActionEvents(versionId,withCause(follow),eventDepth,out);
   }
 }

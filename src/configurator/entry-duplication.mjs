@@ -5,8 +5,8 @@ import {ENTRY_OPERATIONS} from "./entry-operations.mjs";
 
 const COLLECTION = {die: "dice", category: "categories", tag: "tags"};
 export const entryCollection = kind => COLLECTION[kind] ?? `${kind}s`;
-const slug = value => String(value ?? "").trim().toLowerCase().normalize("NFKD").replace(/[\u0300-\u036f]/g, "").replace(/[^a-z0-9]+/g, "-").replace(/^-|-$/g, "");
-const free = (base, taken) => { let id = base, n = 2; while (taken.has(id)) id = `${base}-${n++}`; return id; };
+export const slug = value => String(value ?? "").trim().toLowerCase().normalize("NFKD").replace(/[\u0300-\u036f]/g, "").replace(/[^a-z0-9]+/g, "-").replace(/^-|-$/g, "");
+export const free = (base, taken) => { let id = base, n = 2; while (taken.has(id)) id = `${base}-${n++}`; return id; };
 
 /** The copy of `entry` named `name`, with an id (and key) not used by its collection. */
 export function duplicateEntryData(ruleset, kind, entry, name) {

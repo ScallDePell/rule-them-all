@@ -78,6 +78,7 @@ export class DependencyIndex{
       for(const [j,id] of (a.conditionRefs??[]).entries())pushRef(this.#edges,{objectKind:'action',objectId:a.id},{objectKind:'condition',objectId:id},'actionCondition',`actions[${i}].conditionRefs[${j}]`);
       for(const k of ['costEffectRefs','effectRefs'])for(const [j,id] of (a[k]??[]).entries())pushRef(this.#edges,{objectKind:'action',objectId:a.id},{objectKind:'effect',objectId:id},k,`actions[${i}].${k}[${j}]`);
       for(const [j,id] of (a.eventTypeRefs??[]).entries())pushRef(this.#edges,{objectKind:'action',objectId:a.id},{objectKind:'eventType',objectId:id},'actionEvent',`actions[${i}].eventTypeRefs[${j}]`);
+      for(const [eventTypeId,values] of Object.entries(a.eventPayloads??{}))for(const [fieldId,source] of Object.entries(values??{}))if(source?.formulaRef)pushRef(this.#edges,{objectKind:'action',objectId:a.id},{objectKind:'formula',objectId:source.formulaRef},'actionEventValue',`actions[${i}].eventPayloads.${eventTypeId}.${fieldId}.formulaRef`);
       for(const [j,application] of (a.stateApplications??[]).entries()){
         pushRef(this.#edges,{objectKind:'action',objectId:a.id},{objectKind:'definition',objectId:application?.definitionId},'actionState',`actions[${i}].stateApplications[${j}].definitionId`);
         if(application?.durationRef)pushRef(this.#edges,{objectKind:'action',objectId:a.id},{objectKind:'duration',objectId:application.durationRef},'actionDuration',`actions[${i}].stateApplications[${j}].durationRef`);

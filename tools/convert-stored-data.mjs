@@ -1,6 +1,6 @@
 /** One-shot conversion of a World saved before the 2026-10-11 UI simplification, the RWF gap fixes, the 2026-10-12 progression
  * the 2026-10-13 sheet audiences (gmOnly becomes seenBy), or the 2026-10-14 split storage (one world setting per
- * RulesetVersion instead of a single one).
+ * RulesetVersion instead of a single one), or the 2026-10-14 Event Types without roles.
  * The module itself reads only the current format; this tool rewrites stored data once.
  * In the Foundry console, as GM:
  *   const {convertWorld}=await import("/modules/rule-them-all/tools/convert-stored-data.mjs");
@@ -161,7 +161,8 @@ export function convertRuleset(source) {
     fields: convertFields(t.fields, notes, `definitionTypes.${t.id}.fields`)}));
   r.definitions = (r.definitions ?? []).map(d => ({...d, capabilities: cap(d.capabilities)}));
   r.contentTypes = (r.contentTypes ?? []).map(t => ({...t, fields: convertFields(t.fields, notes, `contentTypes.${t.id}.fields`)}));
-  r.eventTypes = (r.eventTypes ?? []).map(t => ({...t, payloadFields: convertFields(t.payloadFields, notes, `eventTypes.${t.id}.payloadFields`)}));
+  // 2026-10-14: an Event Type's roles were read by nothing; its events take the roles of the Action that emits them.
+  r.eventTypes = (r.eventTypes ?? []).map(t => ({...without(t, ["roles"]), payloadFields: convertFields(t.payloadFields, notes, `eventTypes.${t.id}.payloadFields`)}));
   r.parameters = (r.parameters ?? []).map(p => without(p, ["nullable"]));
   r.actions = (r.actions ?? []).map(a => without(a, ["purpose"]));
   r.tags = (r.tags ?? []).map(t => without(t, ["enabled"]));
