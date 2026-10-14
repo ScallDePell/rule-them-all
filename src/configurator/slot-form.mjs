@@ -1,6 +1,7 @@
 /* Definition editor <-> Definition.slots (pool and collection slots, CP-26/27).
    Context building is pure; collection reads the rendered slot cards. */
 import {COLLECTION_ENTRY_MODES, POOL_BOUND_POLICIES, POOL_MAXIMUM_POLICIES} from "./capability-slots.mjs";
+import {valueTypeChoices, valueTypeLabel} from "./entry-field-models.mjs";
 
 const SOURCE_KINDS = ["none", "literal", "formula"];
 
@@ -24,14 +25,14 @@ export function buildSlotFormContext({definition = {}, permittedCapabilities = [
     id: slot.id ?? "", name: slot.name ?? "",
     maximumPolicies: options(POOL_MAXIMUM_POLICIES, slot.maximumPolicy ?? "keepMissing", "RTA.Slots.MaximumPolicy", neutral),
     minimum: sourceModel(slot.minimum, formulas, {neutral}), maximum: sourceModel(slot.maximum, formulas, {neutral}), initial: sourceModel(slot.initial, formulas, {optional: true, neutral}),
-    valueTypes: options(["number", "integer"], slot.valueType ?? "number", null, neutral),
+    valueTypes: valueTypeChoices(["number", "integer"], slot.valueType ?? "number", {colors: neutral}),
     underflow: options(POOL_BOUND_POLICIES, slot.underflowPolicy ?? "clamp", "RTA.Slots.Policy", neutral), overflow: options(POOL_BOUND_POLICIES, slot.overflowPolicy ?? "clamp", "RTA.Slots.Policy", neutral)
   });
   const collectionRow = slot => ({
     id: slot.id ?? "",
     entryModes: options(COLLECTION_ENTRY_MODES, slot.entryMode ?? "owned", "RTA.Slots.Mode", neutral), isValueMode: slot.entryMode === "value",
     contentKinds: contentTypes.map(type => ({id: type.id, label: type.nameKey || type.id, colors: colorsOf("contentType", type), selected: (slot.allowedKinds ?? []).includes(type.id)})),
-    valueKinds: valueTypes.map(type => ({id: type.id, label: type.id, colors: neutral, selected: (slot.allowedKinds ?? []).includes(type.id)})),
+    valueKinds: valueTypes.map(type => ({id: type.id, label: valueTypeLabel(type.id), colors: neutral, selected: (slot.allowedKinds ?? []).includes(type.id)})),
     minimumEntries: slot.minimumEntries ?? "", maximumEntries: slot.maximumEntries ?? "",
     capacity: formulas.map(formula => ({...formula.choice, selected: formula.id === slot.capacityFormulaRef})),
     unique: slot.unique === true

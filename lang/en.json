@@ -8,7 +8,20 @@
       "Rule": "Rule",
       "Value": "Value",
       "PresentationHelp": "Properties without overrides inherit from the previous level. Visibility never replaces permissions.",
-      "Override": "Override"
+      "Override": "Override",
+      "Kinds": {
+        "required": "Required",
+        "min": "Minimum",
+        "max": "Maximum",
+        "lengthMin": "Minimum length",
+        "lengthMax": "Maximum length",
+        "equals": "Equals",
+        "notEquals": "Differs from",
+        "fieldEquals": "Equals field",
+        "fieldNotEquals": "Differs from field",
+        "relationCount": "Number of relations"
+      },
+      "Relations": "Relations"
     },
     "Settings": {
       "Configurator": {
@@ -177,7 +190,14 @@
       "NoLimit": "No limit",
       "RepeatWhile": "Another term while",
       "ScaleOfType": "That of its type",
-      "NoScale": "None"
+      "NoScale": "None",
+      "AlwaysFallback": "Always (fallback result)",
+      "NoEntries": "No entries available.",
+      "StepId": "Identifier",
+      "StepIdHint": "Use it in Formulas and Conditions: variables.creation.{id}",
+      "StepIdPlaceholder": "Empty: taken from the step name",
+      "CopyStepId": "Copy the identifier",
+      "StepIdCopied": "Identifier copied: {id}"
     },
     "FamilyColor": {
       "parameters": "Parameters",
@@ -1666,6 +1686,22 @@
       "Minimum": "Lowest value",
       "Maximum": "Highest value",
       "OfType": "That of its type"
+    },
+    "ValueTypes": {
+      "integer": "Whole number",
+      "number": "Number",
+      "boolean": "Yes or no",
+      "string": "Text",
+      "reference": "Reference",
+      "duration": "Duration",
+      "dateTime": "Date and time"
+    },
+    "CreationStepKind": {
+      "choice": "Choice",
+      "content": "Content",
+      "allocation": "Point allocation",
+      "roll": "Roll",
+      "review": "Review"
     }
   }
 }

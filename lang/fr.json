@@ -11,7 +11,20 @@
       "Rule": "Règle",
       "Value": "Valeur",
       "PresentationHelp": "Les propriétés sans surcharge héritent du niveau précédent. La visibilité ne remplace jamais les permissions.",
-      "Override": "Surcharger"
+      "Override": "Surcharger",
+      "Kinds": {
+        "required": "Obligatoire",
+        "min": "Minimum",
+        "max": "Maximum",
+        "lengthMin": "Longueur minimale",
+        "lengthMax": "Longueur maximale",
+        "equals": "Égal à",
+        "notEquals": "Différent de",
+        "fieldEquals": "Égal au champ",
+        "fieldNotEquals": "Différent du champ",
+        "relationCount": "Nombre de relations"
+      },
+      "Relations": "Relations"
     },
     "UI": {
       "NewRuleset": "Nouveau Ruleset",
@@ -173,7 +186,14 @@
       "NoLimit": "Sans limite",
       "RepeatWhile": "Un autre terme tant que",
       "ScaleOfType": "Celle de son type",
-      "NoScale": "Aucune"
+      "NoScale": "Aucune",
+      "AlwaysFallback": "Toujours (résultat par défaut)",
+      "NoEntries": "Aucune entrée disponible.",
+      "StepId": "Identifiant",
+      "StepIdHint": "À utiliser dans les Formules et les Conditions : variables.creation.{id}",
+      "StepIdPlaceholder": "Vide : tiré du nom de l’étape",
+      "CopyStepId": "Copier l’identifiant",
+      "StepIdCopied": "Identifiant copié : {id}"
     },
     "FamilyColor": {
       "parameters": "Paramètres",
@@ -1662,6 +1682,22 @@
       "Minimum": "Valeur minimale",
       "Maximum": "Valeur maximale",
       "OfType": "Celle du type"
+    },
+    "ValueTypes": {
+      "integer": "Nombre entier",
+      "number": "Nombre",
+      "boolean": "Oui ou non",
+      "string": "Texte",
+      "reference": "Référence",
+      "duration": "Durée",
+      "dateTime": "Date et heure"
+    },
+    "CreationStepKind": {
+      "choice": "Choix",
+      "content": "Contenu",
+      "allocation": "Répartition de points",
+      "roll": "Jet",
+      "review": "Relecture"
     }
   }
 }

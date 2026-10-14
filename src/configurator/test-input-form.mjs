@@ -1,6 +1,7 @@
 /* Test editor <-> TestDefinition.inputBindings (CP-29). Context building is
    pure; collection reads the rendered input cards. */
 import {refToken, parseRefToken} from "./reference-token.mjs";
+import {valueTypeChoices} from "./entry-field-models.mjs";
 
 /** Value types a Test input can take from the editor (scalars). */
 export const TEST_INPUT_VALUE_TYPES = Object.freeze(["number", "integer", "boolean", "string"]);
@@ -15,7 +16,7 @@ export function buildTestInputContext({inputs = [], formulas = [], references = 
     const kind = sourceKind(input.source), token = kind === "reference" ? refToken(input.source.reference ?? {}) : "";
     return {
       id: input.id ?? "",
-      valueTypes: TEST_INPUT_VALUE_TYPES.map(id => ({id, colors: neutral, selected: id === (input.valueType ?? "number")})),
+      valueTypes: valueTypeChoices(TEST_INPUT_VALUE_TYPES, input.valueType ?? "number", {colors: neutral}),
       sourceKinds: SOURCE_KINDS.map(id => ({id, colors: neutral, labelKey: `RTA.TestInput.Sources.${id}`, selected: id === kind})),
       isLiteral: kind === "literal", isFormula: kind === "formula", isReference: kind === "reference",
       literal: kind === "literal" ? show(input.source?.literal) : "",

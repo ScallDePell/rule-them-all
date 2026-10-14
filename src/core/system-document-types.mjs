@@ -10,6 +10,12 @@ export function availableDocumentTypes(documentName,{system=globalThis.game?.sys
   return [...new Set(types.filter(type=>typeof type==="string"&&type.trim().length))];
 }
 
+/** The Game System's own word for a subtype (CONFIG.<Document>.typeLabels), or the subtype itself. */
+export function documentTypeLabel(documentName,type,{config=globalThis.CONFIG,i18n=globalThis.game?.i18n}={}) {
+  const key=config?.[documentName]?.typeLabels?.[type];
+  return key?(i18n?.localize?.(key)??key):type;
+}
+
 export function resolveDocumentType(documentName,{requestedType=null,system=globalThis.game?.system,config=globalThis.CONFIG}={}) {
   const types=availableDocumentTypes(documentName,{system,config});
   if(requestedType!==null&&requestedType!==undefined&&requestedType!=="") {

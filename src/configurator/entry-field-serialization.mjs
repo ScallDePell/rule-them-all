@@ -3,7 +3,7 @@
  */
 import {parseEditorValue} from './editor-value.mjs';
 import {parseRefToken} from './reference-token.mjs';
-import {slug,free} from './entry-duplication.mjs';
+import {readableId as slug,freeId as free} from './identity.mjs';
 
 export function collectFieldDefinitions(rows,{makeId}={}){
   const fields={};

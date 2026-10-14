@@ -839,3 +839,24 @@
 .rta-config-entry .rta-trigger-filter > label { min-width: 0; display: grid; gap: var(--rta-gap-tight); }
 
 .rta-config-entry .rta-trigger-filter > label > :is(input, select) { min-width: 0; width: 100%; height: var(--rta-form-control-height); min-height: var(--rta-form-control-height); }
+
+/* A creation step's id, shown to copy into variables.creation.<id>. */
+.rta-step-id {
+  display: flex;
+  align-items: center;
+  gap: var(--rta-gap-tight);
+}
+
+.rta-step-id code {
+  overflow-wrap: anywhere;
+  user-select: all;
+}
+
+.rta-step-id button {
+  flex: none;
+  width: auto;
+}
+
+.rta-step-id + .hint {
+  margin: var(--rta-gap-tight) 0 0;
+}

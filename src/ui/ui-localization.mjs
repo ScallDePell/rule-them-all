@@ -14,3 +14,9 @@ export function localizedKeyMarkup(key,fallback){
   const localized=globalThis.game?.i18n?.localize?.(key);
   return escapeHTML(localized&&localized!==key?localized:fallback);
 }
+
+/** The same, as plain text for a template or a model (the caller escapes it). */
+export function localizedText(key,fallback){
+  const localized=globalThis.game?.i18n?.localize?.(key);
+  return localized&&localized!==key?localized:fallback;
+}
