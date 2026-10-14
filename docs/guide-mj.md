@@ -4,6 +4,8 @@ Rule Them'All est un module Foundry VTT v14. Il permet de décrire les règles d
 
 Ce guide suit l'ordre d'une mise en place : installer, construire ou importer un Ruleset, le publier, l'activer, puis jouer.
 
+Des exemples pas à pas, famille par famille et tirés de jeux connus, sont dans [exemples-configuration.md](exemples-configuration.md).
+
 ## 1. Installer et ouvrir le module
 
 1. Installez le module, puis activez-le dans le monde (Gérer les modules).
