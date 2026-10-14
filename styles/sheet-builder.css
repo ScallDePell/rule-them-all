@@ -44,29 +44,175 @@
   }
 }
 
+/* The toolbar: one row of icon buttons that always fits the column (they shrink when it is narrow), then "View as" on
+   its own row. */
 .rta-sheet-editor__toolbar {
   display: flex;
-  flex-wrap: wrap;
-  align-items: center;
+  flex-direction: column;
+  gap: var(--rta-gap-row);
+}
+
+.rta-sheet-editor__tools {
+  display: grid;
+  grid-template-columns: repeat(9, minmax(0, 2.25rem));
   gap: var(--rta-gap-tight);
+}
+
+.rta-sheet-editor__tools > .rta-config-action {
+  width: auto;
+  min-width: 0;
+  margin: 0;
+}
+
+/* The style brush while it is loaded: pressed, and the sheet shows a brush cursor. */
+.rta-sheet-editor__tools > [aria-pressed="true"],
+.rta-sheet-editor__widths > [aria-pressed="true"] {
+  border-color: var(--rta-color-border-highlight);
+  box-shadow: inset 0 0 0 1px var(--rta-color-border-highlight);
+}
+
+.rta-sheet-editor__canvas[data-layout-brush] [data-layout-node] {
+  cursor: copy;
 }
 
 /* "View as": the preview as one person sees it; the tree is not changed. */
 .rta-sheet-editor__view-as {
-  display: inline-flex;
+  display: flex;
   align-items: center;
-  gap: var(--rta-gap-tight);
+  gap: var(--rta-gap-row);
   white-space: nowrap;
 }
 
 .rta-sheet-editor__view-as > select {
-  inline-size: auto;
+  flex: 1;
+  min-inline-size: 0;
 }
 
-.rta-sheet-editor__toolbar > button:not(.rta-config-action) {
-  flex: 0 0 auto;
-  inline-size: auto;
-  margin-inline-start: auto;
+/* Above the sheet: the width it is previewed at. */
+.rta-sheet-editor__stage {
+  display: flex;
+  flex-direction: column;
+  gap: var(--rta-gap-row);
+  min-inline-size: 0;
+}
+
+.rta-sheet-editor__widths {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: var(--rta-gap-tight);
+  color: var(--rta-color-text-secondary);
+}
+
+.rta-sheet-editor__widths > span {
+  margin-inline-end: var(--rta-gap-tight);
+}
+
+.rta-sheet-editor__canvas[data-layout-width="narrow"] {
+  inline-size: 100%;
+  max-inline-size: 25rem;
+}
+
+.rta-sheet-editor__canvas[data-layout-width="window"] {
+  inline-size: 100%;
+  max-inline-size: var(--rta-preview-width);
+}
+
+.rta-sheet-editor__canvas:focus,
+[data-layout-layers-host]:focus {
+  outline: none;
+}
+
+/* Layers: the blocks as a tree, one row each, indented by depth. */
+.rta-sheet-editor__layers {
+  padding: var(--rta-frame-pad);
+  border: var(--rta-frame-border) solid var(--rta-color-border-subtle);
+  border-radius: var(--rta-radius-panel);
+}
+
+.rta-sheet-editor__layers > summary {
+  cursor: pointer;
+  font-weight: 600;
+}
+
+.rta-sheet-layers {
+  display: flex;
+  flex-direction: column;
+  gap: var(--rta-gap-tight);
+  max-block-size: 16rem;
+  margin-block-start: var(--rta-gap-row);
+  overflow-y: auto;
+}
+
+.rta-sheet-layers__row {
+  display: flex;
+  align-items: center;
+  gap: var(--rta-gap-tight);
+  min-block-size: 1.5rem;
+  padding-inline: calc(var(--rta-layer-depth) * var(--rta-gap-block)) var(--rta-gap-tight);
+  border-radius: var(--rta-radius-compact);
+  cursor: pointer;
+  user-select: none;
+}
+
+.rta-sheet-layers__row:hover {
+  background: var(--rta-color-surface-option-light);
+}
+
+.rta-sheet-layers__row[aria-selected="true"] {
+  outline: 1px solid var(--rta-color-border-highlight);
+  background: var(--rta-color-surface-option-light);
+}
+
+.rta-sheet-layers__row[data-layout-drop-target="into"] {
+  outline: 2px solid var(--rta-color-border-highlight);
+}
+
+.rta-sheet-layers__row[data-layout-drop-target="before"] {
+  box-shadow: 0 -2px 0 var(--rta-color-border-highlight);
+}
+
+.rta-sheet-layers__row[data-layout-drop-target="after"] {
+  box-shadow: 0 2px 0 var(--rta-color-border-highlight);
+}
+
+.rta-sheet-layers__toggle {
+  flex: none;
+  inline-size: 1rem;
+  min-inline-size: 0;
+  block-size: 1rem;
+  margin: 0;
+  padding: 0;
+  border: none;
+  background: none;
+  line-height: 1;
+}
+
+.rta-sheet-layers__name {
+  flex: 1;
+  min-inline-size: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.rta-sheet-layers__rename {
+  flex: 1;
+  min-inline-size: 0;
+  block-size: 1.5rem;
+}
+
+/* A sheet's window size: width × height, side by side. */
+.rta-sheet-window-size {
+  display: flex;
+  flex: 1;
+  align-items: center;
+  gap: var(--rta-gap-row);
+}
+
+.rta-sheet-window-size > input {
+  flex: 0 1 8rem;
+  min-inline-size: 0;
 }
 
 /* What can be added: blocks, then the Ruleset's elements, each a small chip that can be clicked or dragged. */

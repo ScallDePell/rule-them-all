@@ -14,7 +14,12 @@
    - [data-sheet-item-open=key] opens an owned Item's sheet, [data-sheet-item-remove=key] removes it;
    - [data-sheet-advance=advancementId] (+ data-progression, data-definition-id) buys an advancement,
      [data-sheet-milestones=progressionSystemId] applies the milestones reached;
-   - [data-sheet-command] runs a sheet command (initialize, create). */
+   - [data-sheet-command] runs a sheet command (initialize, create);
+   - [data-sheet-name] is the Document's name, a field only while the sheet is unlocked;
+   - [data-sheet-edit-image=img|token] (the camera button on a portrait, only while unlocked) opens Foundry's file picker
+     for the Document's image or its prototype token's, [data-sheet-update-placed] also for the tokens already placed.
+   doc: {name, img, token, editable, unlocked}: the Document a played sheet shows (token: its prototype token's image),
+   whether the user may change it and whether its lock is open. */
 import {escapeHTML as escape} from "./html-utils.mjs";
 import {sheetStyle, styledAttributes} from "./sheet-style.mjs";
 import {SHEET_IMAGE_HEIGHTS} from "../configurator/layout-style-contract.mjs";
@@ -166,6 +171,29 @@ function renderProgression(node, t, {edit, m}) {
   return `<div ${attrs(node, "rta-sheet-progression")}${title}${m}>${groups.join("") || `<p class="rta-sheet-empty">${escape(t("RTA.Sheet.Progression.Nothing"))}</p>`}</div>`;
 }
 
+/** How an image block, a portrait or a token image is framed: its height, fit, shape and opacity. */
+const pictureLook = node => [`--rta-sheet-image-height: ${SHEET_IMAGE_HEIGHTS[node.height] ?? SHEET_IMAGE_HEIGHTS.medium}`, `--rta-sheet-image-fit: ${node.fit === "contain" ? "contain" : "cover"}`, ...(node.style?.opacity !== undefined ? [`opacity: ${Number(node.style.opacity) / 100}`] : [])];
+const pictureShape = node => ["rounded", "square", "portrait", "landscape", "circle"].includes(node.shape) ? ` rta-sheet-image--${node.shape}` : "";
+/** Foundry's camera button at the bottom right of a portrait: it changes the image, only while the sheet is unlocked. */
+const cameraButton = (which, t, placed = false) => {
+  const label = escape(t(which === "token" ? "RTA.Sheet.EditToken" : "RTA.Sheet.EditImage"));
+  return `<button type="button" class="rta-sheet-picture__edit" data-sheet-edit-image="${which}"${placed ? " data-sheet-update-placed" : ""} title="${label}" aria-label="${label}"><i class="fa-solid fa-camera" aria-hidden="true"></i></button>`;
+};
+/** The Document's name: a field while the sheet is unlocked, a title otherwise; a sample in the editor. */
+function renderName(node, t, {edit, doc, m}) {
+  const inner = edit ? `<span class="rta-sheet-name__text">${escape(t("RTA.SheetEditor.SampleName"))}</span>`
+    : doc.editable && doc.unlocked ? `<input class="rta-sheet-name__input" type="text" data-sheet-name value="${escape(doc.name ?? "")}" aria-label="${escape(t("RTA.Template.Name"))}">`
+      : `<h2 class="rta-sheet-name__text">${escape(doc.name ?? "")}</h2>`;
+  return `<div ${attrs(node, "rta-sheet-name")}${m}>${inner}</div>`;
+}
+/** The Document's portrait, or (Actor) its prototype token's image, framed like an image block; the camera changes it. */
+function renderPicture(node, t, {edit, doc, m}) {
+  const token = node.kind === "token", src = edit ? "" : token ? doc.token : doc.img, label = t(token ? "RTA.SheetEditor.Kind.token" : "RTA.SheetEditor.Kind.portrait");
+  const body = src ? `<img src="${escape(src)}" alt="${escape(label)}">` : `<i class="fa-solid ${token ? "fa-chess-pawn" : "fa-user"}" aria-hidden="true"></i>${edit ? `<span>${escape(label)}</span>` : ""}`;
+  const camera = !edit && doc.editable && doc.unlocked ? cameraButton(token ? "token" : "img", t, token && node.updatePlaced) : "";
+  return `<div ${attrs(node, `rta-sheet-image rta-sheet-picture${pictureShape(node)}${src ? "" : " rta-sheet-image--empty"}`, pictureLook(node))}${m}>${body}${camera}</div>`;
+}
+
 /** A notes block: its text kept on the Actor, in a field when it may be changed. A rich one is filled by the sheet
    controller (Foundry's enriched text, or its editor); here, its text without tags. */
 function renderNotes(node, t, {edit, m}) {
@@ -187,9 +215,11 @@ function renderSeparator(node, t, {edit, m}) {
   return `<div ${attrs(node, `rta-sheet-separator${node.look === "ornament" ? " rta-sheet-separator--ornament" : ""}`)} role="separator"${m}>${node.look === "ornament" ? `<i class="fa-solid fa-diamond" aria-hidden="true"></i>` : ""}</div>`;
 }
 
-function renderNode(node, t, {row = null, solo = false, edit = false, editable = false} = {}) {
+function renderNode(node, t, {row = null, solo = false, edit = false, editable = false, doc = {}} = {}) {
   if (!node) return "";
   const m = mark(node, edit) + (node.kind === "value" && node.error ? "" : tooltip(node, t));
+  if (node.kind === "name") return renderName(node, t, {edit, doc, m});
+  if (node.kind === "portrait" || node.kind === "token") return renderPicture(node, t, {edit, doc, m});
   // A click that uses an Action: on the played sheet, the label (or the picture, the text) is a button.
   const click = !edit && node.click ? node.click : null;
   if (node.kind === "value") {
@@ -216,8 +246,7 @@ function renderNode(node, t, {row = null, solo = false, edit = false, editable =
   if (node.kind === "spacer") return `<div ${attrs(node, "rta-sheet-spacer")}${m}></div>`;
   if (node.kind === "image") {
     // A picture: a banner, a logo. In the editor, an image block without its picture yet says so.
-    const look = [`--rta-sheet-image-height: ${SHEET_IMAGE_HEIGHTS[node.height] ?? SHEET_IMAGE_HEIGHTS.medium}`, `--rta-sheet-image-fit: ${node.fit === "contain" ? "contain" : "cover"}`, ...(node.style?.opacity !== undefined ? [`opacity: ${Number(node.style.opacity) / 100}`] : [])];
-    const shape = ["rounded", "square", "portrait", "landscape", "circle"].includes(node.shape) ? ` rta-sheet-image--${node.shape}` : "";
+    const look = pictureLook(node), shape = pictureShape(node);
     if (node.src && click) return `<button type="button" ${attrs(node, `rta-sheet-image rta-sheet-image--button${shape}`, look)} ${clickData(click, row ?? click.definitionId)}${m}><img src="${escape(node.src)}" alt=""></button>`;
     return node.src ? `<div ${attrs(node, `rta-sheet-image${shape}`, look)}${m}><img src="${escape(node.src)}" alt=""></div>` : edit ? `<div ${attrs(node, `rta-sheet-image rta-sheet-image--empty${shape}`, look)}${m}><i class="fa-solid fa-image"></i> ${escape(t("RTA.SheetEditor.NoImage"))}</div>` : "";
   }
@@ -225,7 +254,7 @@ function renderNode(node, t, {row = null, solo = false, edit = false, editable =
   if (node.kind === "progression") return renderProgression(node, t, {edit, m});
   if (node.kind === "placeholder") return dropZone(node.parentId, t);
   // An empty container shows its own drop zone (an empty tab's, not its tabs').
-  const children = (list, options, holder = node) => list.length || !edit ? list.map(child => renderNode(child, t, {...options, edit, editable})).join("") : dropZone(holder.id, t);
+  const children = (list, options, holder = node) => list.length || !edit ? list.map(child => renderNode(child, t, {...options, edit, editable, doc})).join("") : dropZone(holder.id, t);
   if (node.kind === "tabs") {
     const tabs = node.children ?? [];
     return `<div ${attrs(node, "rta-sheet-tabs")}${m}><nav class="rta-sheet-tabs__nav" role="tablist">${tabs.map((tab, i) => `<${edit ? "div" : `button type="button"`} class="rta-sheet-tabs__tab" role="tab" data-sheet-tab="${escape(tab.id)}" aria-selected="${i === 0}"${labelTip(tab, tab.label ? t(tab.label) : "")}${mark(tab, edit)}>${labelHTML(tab, tab.label ? t(tab.label) : edit ? t("RTA.SheetEditor.UntitledTab") : "")}</${edit ? "div" : "button"}>`).join("")}</nav>${tabs.map((tab, i) => `<div ${styledAttributes(tab, "rta-sheet-grid rta-sheet-tab", ["--rta-sheet-columns: 1", ...(sheetStyle(tab).gap ? [`gap: ${sheetStyle(tab).gap}`] : [])])} role="tabpanel" data-sheet-panel="${escape(tab.id)}"${i ? " hidden" : ""}${mark(tab, edit)}>${children(tab.children ?? [], {row}, tab)}</div>`).join("")}</div>`;
@@ -266,18 +295,35 @@ function renderList(node, t, edit) {
   return `<div ${attrs(node, "rta-sheet-list", [style, ...(sheetStyle(node).gap ? [`row-gap: ${sheetStyle(node).gap}`] : [])])}${mark(node, edit)}>${head}${body}</div>`;
 }
 
-/** The editor's canvas: the sheet as players get it, every node selectable. */
+/** The standard header: the portrait (with Foundry's camera button while unlocked) and the name, then the sheet commands.
+    In the editor (edit) a sample stands for the Document. */
+function standardHeader(t, {doc = {}, edit = false, commands = ""} = {}) {
+  const image = edit ? `<span class="rta-sheet__image rta-sheet__image--sample"><i class="fa-solid fa-user" aria-hidden="true"></i></span>`
+    : doc.img ? `<img class="rta-sheet__image" src="${escape(doc.img)}" alt="">` : "";
+  const camera = !edit && doc.editable && doc.unlocked ? cameraButton("img", t) : "";
+  const name = edit ? `<h2 class="rta-sheet__name">${escape(t("RTA.SheetEditor.SampleName"))}</h2>`
+    : doc.editable && doc.unlocked ? `<input class="rta-sheet__name" type="text" data-sheet-name value="${escape(doc.name ?? "")}" aria-label="${escape(t("RTA.Template.Name"))}">`
+      : `<h2 class="rta-sheet__name">${escape(doc.name ?? "")}</h2>`;
+  return `<header class="rta-sheet__header">${image || camera ? `<div class="rta-sheet__portrait">${image}${camera}</div>` : ""}${name}${commands}</header>`;
+}
+
+/** The editor's canvas: the sheet as players get it, every node selectable; the standard header (when the sheet has it) as a sample. */
 export function renderLayoutPreviewHTML(view, {t = key => key, selectedId = null} = {}) {
-  const html = `<div class="rta-sheet rta-sheet--edit"><div class="rta-sheet__body">${renderNode(view?.root, t, {edit: true})}</div></div>`;
+  const header = view?.header === "none" ? "" : standardHeader(t, {edit: true});
+  const html = `<div class="rta-sheet rta-sheet--edit">${header}<div class="rta-sheet__body">${renderNode(view?.root, t, {edit: true})}</div></div>`;
   return selectedId ? html.replaceAll(`data-layout-node="${escape(selectedId)}"`, `data-layout-node="${escape(selectedId)}" data-layout-selected`) : html;
 }
 
-/** The whole sheet: header (image, editable name), then the layout. notice: a message shown instead of the layout. */
-export function renderSheetHTML(view, {t = key => key, name = "", img = "", editable = false, notice = "", noticeActions = [], headerActions = []} = {}) {
-  const header = `<header class="rta-sheet__header">${img ? `<img class="rta-sheet__image" src="${escape(img)}" alt="">` : ""}${editable ? `<input class="rta-sheet__name" type="text" data-sheet-name value="${escape(name)}" aria-label="${escape(t("RTA.Template.Name"))}">` : `<h2 class="rta-sheet__name">${escape(name)}</h2>`}${headerActions.map(action => `<button type="button" class="rta-sheet__command" data-sheet-command="${escape(action.command)}"><i class="fa-solid ${escape(action.icon ?? "fa-wand-magic-sparkles")}"></i> ${escape(action.label)}</button>`).join("")}</header>`;
+/** The whole sheet: header (image and name, unless the sheet places them itself), then the layout. notice: a message shown instead of the layout.
+    editable: the user may change the Document; unlocked: its lock is open (name and images can be changed). token: its prototype token's image. */
+export function renderSheetHTML(view, {t = key => key, name = "", img = "", token = "", editable = false, unlocked = false, notice = "", noticeActions = [], headerActions = []} = {}) {
+  const doc = {name, img, token, editable, unlocked};
+  const commands = headerActions.map(action => `<button type="button" class="rta-sheet__command" data-sheet-command="${escape(action.command)}"><i class="fa-solid ${escape(action.icon ?? "fa-wand-magic-sparkles")}"></i> ${escape(action.label)}</button>`).join("");
+  // Without the standard header, the commands keep a row of their own.
+  const header = notice || view?.header !== "none" ? standardHeader(t, {doc, commands}) : commands ? `<header class="rta-sheet__header rta-sheet__header--commands">${commands}</header>` : "";
   const body = notice
     ? `<div class="rta-sheet-notice"><p>${escape(notice)}</p>${noticeActions.length ? `<div class="rta-sheet-notice__actions">${noticeActions.map((action, i) => `<button type="button"${i ? "" : ' class="rta-sheet-notice__primary"'} data-sheet-command="${escape(action.command)}">${escape(action.label)}</button>`).join("")}</div>` : ""}</div>`
-    : renderNode(view?.root, t, {editable});
+    : renderNode(view?.root, t, {editable, doc});
   return `<div class="rta-sheet" data-sheet-id="${escape(view?.sheetId ?? "")}">${header}<div class="rta-sheet__body">${body}</div></div>`;
 }
 

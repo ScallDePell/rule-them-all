@@ -81,8 +81,33 @@ Le Configurateur range le Ruleset en rubriques. Chaque élément est une carte :
 Dans **Systèmes → Feuilles**, créez une feuille d'Acteur ou d'Objet (pour des Types de contenu précis, ou pour tous). L'éditeur montre la feuille telle qu'en jeu :
 - la **palette** à gauche ajoute des blocs (sections, onglets, grilles, listes d'une famille de Définitions, valeurs, jauges, pastilles, boutons d'Action, Systèmes de progression, images, textes) par clic ou glisser-déposer ;
 - le **panneau de propriétés** règle le bloc choisi : libellé, icône Font Awesome (texte, icône ou les deux), affichage (champ, jauge, pastilles, description), ce que le joueur peut changer (saisir, augmenter, diminuer), **Visible par** (joueur, observateur, MJ) et **Modifiée par : le MJ seulement**, couleurs, police, marges ;
-- **Voir comme** montre la feuille telle que la verra un joueur, un observateur ou le MJ ;
-- **Mise en page automatique** repart d'une feuille tirée des Définitions (avec une section par Système de progression).
+- la **barre d'outils** (une ligne de boutons) monte et descend le bloc, le **copie**, le **colle**, le **duplique**, prend son style au **pinceau**, le supprime, **annule** et **rétablit** ; dessous, **Voir comme** montre la feuille telle que la verra un joueur, un observateur ou le MJ ;
+- **Copier / coller** : un bloc copié garde ses enfants et son style ; collé, il va dans le bloc choisi si c'est un conteneur qui l'accepte, sinon juste après. Le presse-papiers sert pour toutes les feuilles ouvertes pendant la session, même d'un autre Ruleset : un bloc qui utilise une Définition, une Formule, une Action… absente de ce Ruleset (ou un champ de Contenu sur une feuille d'Acteur) est refusé avec un message ;
+- le **pinceau de style** prend le style du bloc choisi ; chaque bloc cliqué ensuite le reçoit (ce que son genre de bloc ne peut pas porter est laissé de côté). Échap ou un nouveau clic sur le pinceau le repose ;
+- les **Calques** listent les blocs en arbre : un clic choisit un bloc, un double-clic renomme un onglet, une section, une valeur ou un bouton, la flèche replie ce qu'un conteneur contient, et on fait glisser une ligne pour déplacer le bloc (haut ou bas de la ligne : à côté ; milieu d'un conteneur : dedans) ;
+- **raccourcis clavier** (hors champ de saisie) : Ctrl+C, Ctrl+V, Ctrl+D (dupliquer), Ctrl+Z, Ctrl+Y ou Ctrl+Maj+Z (rétablir), Suppr, flèches haut et bas (déplacer), F2 (renommer), Échap (ne plus rien choisir) ;
+- **Aperçu** (au-dessus de la feuille) : fenêtre étroite, taille de la fenêtre de la feuille, ou toute la largeur ;
+- **Fenêtre (px)** : la largeur et la hauteur à l'ouverture de la feuille en jeu (vide : taille de Foundry).
+
+Une nouvelle feuille démarre vide.
+
+### En-tête, nom et images
+- L'option **En-tête** de la feuille vaut **Standard** (l'image et le nom en haut, comme d'habitude) ou **Aucun** : vous placez alors vous-même les blocs **Nom** et **Portrait** (groupe « Nom et images » de la palette) où vous voulez, avec le style que vous voulez. Sur une feuille d'Acteur, le bloc **Image du token** montre l'image que prend son token sur la scène.
+- En jeu, un **cadenas** dans l'en-tête de la fenêtre verrouille la feuille, comme les feuilles de Foundry. Verrouillée (à l'ouverture), on joue : nom et images ne bougent pas. Déverrouillée, le nom se modifie et le bouton **appareil photo** en bas à droite d'un portrait ouvre le sélecteur de fichiers de Foundry. Les valeurs de la feuille restent utilisables dans les deux cas. Seuls ceux qui peuvent modifier l'Acteur ou l'Objet voient le cadenas.
+- Pour l'image du token, cochez **Mettre aussi à jour les tokens déjà posés** dans les réglages du bloc : les tokens de l'Acteur déjà sur les scènes changent avec lui.
+- Un Type de contenu ou un Type de définition dont vous décochez **Proposé dans l'éditeur de feuilles** (Créature, PNJ…) n'apparaît plus dans la palette ; les blocs déjà posés continuent de marcher.
+
+### Mise en page et blocs dynamiques
+- **Image de fond** d'une section, d'une grille ou d'un onglet (groupe Style) : **Affichage de l'image** vaut Couvrir, Contenir, Étirer, Taille d'origine ou Mosaïque, et **Position de l'image** Centre, Haut, Bas, Gauche ou Droite.
+- **Zone de texte** (groupe Champs) : un texte libre de plusieurs lignes gardé sur l'Acteur (notes, historique). **Texte simple** ou **Texte enrichi** (l'éditeur de Foundry : gras, liens, @UUID, jets en ligne), une hauteur, **Visible par**, et **Modifiée par : le MJ seulement**. L'écriture suit les Permissions du Ruleset comme une valeur. Pas sur une feuille d'Objet ni dans une liste.
+- **Séparateur** (groupe Mise en page) : un trait, un ornement ou une image.
+- **Plus de réglages** (replié, pour tout bloc) : **Lignes occupées** (dans une grille), **Largeur fixe** (petite, moyenne, grande) et **Info-bulle** : un texte libre, ou pour une valeur, la **Description de la Définition**.
+- Une section peut être **Repliable** : son titre la replie en jeu, et chaque joueur retrouve ses sections comme il les a laissées.
+- **Superposer les blocs** (section, grille) : les blocs s'empilent au même endroit, en haut, au centre ou en bas, par exemple une valeur posée sur une image.
+- **Visible si** : le bloc ne s'affiche que quand une Condition est vraie pour l'Acteur (dans une liste : pour chaque ligne). Dans l'éditeur, un tel bloc apparaît atténué.
+- **Insérer une valeur** (bloc Texte) : choisissez une valeur, une Formule ou un Paramètre ; son nom s'ajoute entre accolades, par exemple « Défense {Défense} », et la feuille montre le nombre à sa place. Effacer le nom du texte retire la valeur.
+- **Au clic : lancer** (valeur, texte, image, liste) : un clic sur le libellé, le texte, l'image ou le nom d'une ligne lance l'Action choisie, pour ceux qui ont le droit de l'utiliser.
+- **Cases** et **Horloge** (groupe Champs) : une valeur affichée en cases à cocher ou en horloge à segments ; leur nombre vient du maximum de la valeur, sinon du réglage du bloc.
 
 ### Choisir la feuille d'un Acteur
 Chaque feuille activée du Ruleset actif apparaît sous son nom dans **Configuration de la feuille** (en-tête de la fenêtre de l'Acteur ou de l'Objet). Vous pouvez donc avoir plusieurs feuilles de PJ, une feuille de PNJ, une feuille de créature, et choisir pour chaque Acteur, ou par défaut pour un type d'Acteur.

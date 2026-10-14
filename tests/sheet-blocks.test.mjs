@@ -178,7 +178,7 @@ test('the editor offers the new blocks and shows a block under a Condition dimme
   const ruleset={definitions:[{id:'str',definitionTypeId:'attribute',nameKey:'Strength',descriptionKey:'Raw might',capabilities:['value']}],definitionTypes:[{id:'attribute',nameKey:'Attributes'}],parameters:[{id:'level',nameKey:'Level',valueType:'number',value:3}],actions:[{id:'roll',nameKey:'Roll'}],conditions:[{id:'strong',nameKey:'Strong'}]};
   const groups=paletteGroups(ruleset,{target:'actor'});
   assert.ok(groups[0].items.some(item=>item.kind==='separator'));
-  assert.deepEqual(groups[1].items.filter(item=>['boxes','clock','notes'].includes(item.kind)).map(item=>item.spec),[{kind:'value',display:'boxes'},{kind:'value',display:'clock'},{kind:'notes'}]);
+  assert.deepEqual(groups.find(group=>group.id==='fields').items.filter(item=>['boxes','clock','notes'].includes(item.kind)).map(item=>item.spec),[{kind:'value',display:'boxes'},{kind:'value',display:'clock'},{kind:'notes'}]);
   assert.ok(!paletteGroups(ruleset,{target:'item'})[1].items.some(item=>item.kind==='notes'),'notes are an Actor\'s');
   const root={id:'root',kind:'grid',columns:1,children:[{id:'list',kind:'repeater',query:{definitionTypeId:'attribute'},columns:1,children:[]}]};
   assert.equal(newNode('notes',root,ruleset,{target:'item'}),null);

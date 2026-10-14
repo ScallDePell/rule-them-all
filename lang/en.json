@@ -602,7 +602,8 @@
       "Die": "Die",
       "Scale": "Description scale",
       "ScaleRef": "Description scale",
-      "PayloadFieldIdHint": "Id: {id}. A Condition or a Formula reads it as event.payload.{id}."
+      "PayloadFieldIdHint": "Id: {id}. A Condition or a Formula reads it as event.payload.{id}.",
+      "SheetPalette": "Offered in the sheet editor"
     },
     "EditorDisplay": {
       "NoneSelected": "None selected",
@@ -1002,7 +1003,7 @@
       },
       "sheetDefinition": {
         "Summary": "A sheet is what players see on an Actor or an Item: tabs, sections, lists of the Definitions they hold, values and Action buttons.",
-        "Usage": "Click a block of the sheet to change it in the tools on the left. Under “Add”, click a block or an element of the Ruleset to add it into the selection, or drag it onto the sheet; drag the sheet's blocks to move them. Without any sheet, Actors and Items show the automatic layout. Players choose “Rule Them'All sheet” in Foundry's sheet choice."
+        "Usage": "Click a block of the sheet (or in the Layers) to change it in the tools on the left. Under “Add”, click a block or an element of the Ruleset to add it into the selection, or drag it onto the sheet; drag the blocks to move them. Copy, paste and duplicate work from one sheet to another (Ctrl+C, Ctrl+V, Ctrl+D). Without any sheet, Actors and Items show an automatic sheet. Players choose the sheet in Foundry's sheet choice."
       },
       "category": {
         "Summary": "A category classifies Definitions and contents for filtering.",
@@ -1441,6 +1442,19 @@
           "ahead": "Next"
         }
       },
+      "WindowSize": "Window (px)",
+      "WindowSizeHint": "The window size when the sheet opens: width × height. Empty: Foundry's size.",
+      "WindowWidth": "Width",
+      "WindowHeight": "Height",
+      "Header": {
+        "label": "Header",
+        "standard": "Standard (image and name)",
+        "none": "None (Name and Portrait blocks)"
+      },
+      "Lock": "Lock the sheet",
+      "Unlock": "Unlock the sheet",
+      "EditImage": "Change the image",
+      "EditToken": "Change the token image",
       "Section": "Section"
     },
     "SheetEditor": {
@@ -1450,9 +1464,8 @@
       "UntitledTab": "Tab",
       "ExampleRow": "Example",
       "Add": "Add",
-      "Remove": "Remove the block",
-      "Undo": "Undo",
-      "Auto": "Automatic layout",
+      "Remove": "Remove the block (Delete)",
+      "Undo": "Undo (Ctrl+Z)",
       "SelectHint": "Click a block of the sheet to change it.",
       "NothingToSet": "This block has no settings.",
       "Title": "Title",
@@ -1482,6 +1495,9 @@
         "contents": "Held Contents",
         "image": "Image",
         "progression": "Progression",
+        "name": "Name",
+        "portrait": "Portrait",
+        "token": "Token image",
         "notes": "Text area",
         "separator": "Separator"
       },
@@ -1581,7 +1597,8 @@
         "Held": "Held Content, by type",
         "Hint": "Click to add into the selected block, or drag onto the sheet. A family adds the list of its Definitions.",
         "Search": "Search",
-        "CannotGo": "This element cannot go there."
+        "CannotGo": "This element cannot go there.",
+        "Document": "Name and images"
       },
       "Display": {
         "field": "Field",
@@ -1632,6 +1649,34 @@
         "text": "Text only"
       },
       "ProgressionSystem": "Progression System",
+      "MoveUp": "Move up (Up arrow)",
+      "MoveDown": "Move down (Down arrow)",
+      "Copy": "Copy the block (Ctrl+C)",
+      "Paste": "Paste (Ctrl+V): into the selected block, or right after it",
+      "Duplicate": "Duplicate (Ctrl+D)",
+      "Brush": "Style brush: takes this block's style, then click the blocks to restyle (Escape to finish)",
+      "Redo": "Redo (Ctrl+Y)",
+      "Copied": "Block copied: paste it here or in another sheet.",
+      "PasteMissing": "Cannot paste: this block uses elements this sheet or this Ruleset does not have ({names}).",
+      "Layers": {
+        "Title": "Layers",
+        "Sheet": "The sheet",
+        "Rename": "Double-click to rename",
+        "Fold": "Fold",
+        "Unfold": "Unfold"
+      },
+      "PreviewWidth": {
+        "label": "Preview",
+        "narrow": "Narrow window",
+        "window": "The sheet's window size",
+        "wide": "Full width"
+      },
+      "SampleName": "Name",
+      "NameHint": "The Actor's or Item's name. It is changed on the unlocked sheet.",
+      "PortraitHint": "The Actor's or Item's image. It is changed on the unlocked sheet (camera button).",
+      "TokenHint": "The image of the Actor's token, the one it shows on the scene. It is changed on the unlocked sheet.",
+      "PlacedTokens": "Placed tokens",
+      "UpdatePlaced": "Also update the tokens already placed",
       "BoxCount": "Boxes (without a maximum)",
       "ClockCount": "Segments (without a maximum)",
       "InsertValue": "Insert a value",

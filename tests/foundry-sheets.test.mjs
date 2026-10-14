@@ -35,7 +35,9 @@ test('the Actor sheet offers to use the Ruleset, then shows and writes its AUTO 
   html=await sheet._renderHTML();
   assert.match(html,/data-sheet-write="each-attribute-value" data-definition-id="str" data-operation="set"/);
   assert.match(html,/data-sheet-action="rest"/);
-  assert.match(html,/<input class="rta-sheet__name" type="text" data-sheet-name value="Hero"/);
+  assert.match(html,/<h2 class="rta-sheet__name">Hero<\/h2>/,'locked by default: the name is fixed');
+  sheet.rtaToggleLock();
+  assert.match(await sheet._renderHTML(),/<input class="rta-sheet__name" type="text" data-sheet-name value="Hero"/,'unlocked: the name is a field');
   await runtime.writeSheetValue(v,'Actor.hero',{sheetId:'auto',nodeId:'each-attribute-value',definitionId:'str',value:15});
   await sheet._prepareContext({});
   assert.match(await sheet._renderHTML(),/data-definition-id="str" data-operation="set" value="15"/);
@@ -197,4 +199,73 @@ test('an Actor of a deleted Ruleset version moves onto the active one: values ke
   assert.equal(state.rulesetVersionId,next);assert.equal(state.definitionStates.str.capabilityStates.value.base,7);assert.equal(state.definitionStates.pc.capabilityStates.state.active,true);
   assert.deepEqual([flags.contentAcquisitions['item-1'].versionId,flags.creationRun.versionId,itemFlags.contentTemplate.versionId],[next,next,next]);
   delete globalThis.game;
+});
+
+test('header and lock: no header leaves name and portrait to the layout; they and the camera buttons follow the lock', ()=>{
+  const view={sheetId:'s',header:'none',root:{id:'root',kind:'grid',columns:2,children:[
+    {id:'n',kind:'name',style:{size:'huge'}},{id:'p',kind:'portrait',fit:'cover',height:'large',shape:'portrait'},{id:'t',kind:'token',fit:'cover',height:'small',shape:'circle',updatePlaced:true}]}};
+  const doc={name:'Hero',img:'hero.webp',token:'hero-token.webp'};
+  const locked=renderSheetHTML(view,{...doc,editable:true});
+  assert.doesNotMatch(locked,/rta-sheet__header/,'no header and no command: nothing above the layout');
+  assert.match(locked,/<div class="rta-sheet-name" style="font-size: var\(--rta-type-display\)"><h2 class="rta-sheet-name__text">Hero<\/h2><\/div>/);
+  assert.match(locked,/class="rta-sheet-image rta-sheet-picture rta-sheet-image--portrait"[^>]*><img src="hero.webp" alt="RTA.SheetEditor.Kind.portrait"><\/div>/);
+  assert.match(locked,/<img src="hero-token.webp"/);
+  assert.doesNotMatch(locked,/data-sheet-edit-image|data-sheet-name/,'locked: nothing to change');
+  const open=renderSheetHTML(view,{...doc,editable:true,unlocked:true});
+  assert.match(open,/<input class="rta-sheet-name__input" type="text" data-sheet-name value="Hero"/);
+  assert.match(open,/data-sheet-edit-image="img" title="RTA.Sheet.EditImage"/);
+  assert.match(open,/data-sheet-edit-image="token" data-sheet-update-placed/);
+  assert.doesNotMatch(renderSheetHTML(view,{...doc,editable:false,unlocked:true}),/data-sheet-edit-image|data-sheet-name/,'only for a user who may change the Document');
+  const commands=renderSheetHTML(view,{...doc,headerActions:[{command:'create',label:'Create'}]});
+  assert.match(commands,/<header class="rta-sheet__header rta-sheet__header--commands"><button type="button" class="rta-sheet__command" data-sheet-command="create">/,'the commands keep their row');
+  const standard=renderSheetHTML({...view,header:'standard'},{...doc,editable:true,unlocked:true});
+  assert.match(standard,/<header class="rta-sheet__header"><div class="rta-sheet__portrait"><img class="rta-sheet__image" src="hero.webp" alt=""><button type="button" class="rta-sheet-picture__edit" data-sheet-edit-image="img"/);
+});
+
+test('the lock sits in the window header for those who may change the Document; the camera opens Foundry’s file picker; a token image can reach the placed tokens', async()=>{
+  const {v,runtime}=await world();
+  await runtime.initializeContainer(v,'Actor.hero');
+  const updates=[],picked=[];
+  class FakePicker{constructor(options){this.options=options;picked.push(options);}browse(){return this.options.callback('new.webp');}}
+  globalThis.foundry={applications:{apps:{FilePicker:{implementation:FakePicker}}}};
+  globalThis.document={createElement:()=>({dataset:{},attributes:{},listeners:{},setAttribute(k,x){this.attributes[k]=x;},addEventListener(type,fn){this.listeners[type]=fn;}})};
+  const inserted=[];
+  const header={querySelector:()=>null,insertBefore:el=>inserted.push(el)};
+  class Framed extends Base{async _renderFrame(){return {querySelector:selector=>selector==='.window-header'?header:null};}}
+  const {RulesetActorSheet}=createRulesetSheets({ActorSheetV2:Framed,ItemSheetV2:Framed});
+  const doc={uuid:'Actor.hero',id:'hero',name:'Hero',img:'old.webp',documentName:'Actor',items:[],getFlag:()=>undefined,prototypeToken:{texture:{src:'old-token.webp'}},
+    async update(data){updates.push(data);if(data.img)this.img=data.img;if(data['prototypeToken.texture.src'])this.prototypeToken.texture.src=data['prototypeToken.texture.src'];}};
+  const sheet=new RulesetActorSheet(doc);
+  await sheet._renderFrame({});
+  assert.equal(inserted.length,1);
+  assert.equal(inserted[0].className,'header-control icon fa-solid fa-lock','locked by default');
+  assert.equal(inserted[0].attributes['aria-label'],'RTA.Sheet.Unlock');
+  inserted[0].listeners.click({preventDefault(){},stopPropagation(){}});
+  assert.equal(sheet.rtaUnlocked,true);
+  // The camera of the portrait and of the token image, once rendered unlocked.
+  const buttons=[];
+  Object.defineProperty(sheet,'element',{value:{querySelector:()=>null,querySelectorAll:selector=>selector==='[data-sheet-edit-image]'?buttons:[]}});
+  const camera=(which,placed=false)=>({dataset:{sheetEditImage:which},hasAttribute:name=>name==='data-sheet-update-placed'&&placed,listeners:{},addEventListener(type,fn){this.listeners[type]=fn;}});
+  buttons.push(camera('img'),camera('token',true));
+  globalThis.game.scenes=[{tokens:[{id:'a',actorId:'hero',actorLink:true,texture:{src:'old-token.webp'}},{id:'b',actorId:'hero',actorLink:false,texture:{src:'old-token.webp'}},{id:'c',actorId:'hero',actorLink:false,texture:{src:'wolf-2.webp'}},{id:'d',actorId:'other',actorLink:true,texture:{src:'x.webp'}}],
+    updateEmbeddedDocuments:async(name,changes)=>updates.push([name,changes])}];
+  sheet._onRender({},{});
+  const settle=()=>new Promise(resolve=>setTimeout(resolve,0));
+  buttons[0].listeners.click({preventDefault(){}});await settle();
+  assert.equal(picked[0].type,'image');assert.equal(picked[0].current,'old.webp');
+  assert.deepEqual(updates[0],{img:'new.webp'});
+  buttons[1].listeners.click({preventDefault(){}});await settle();
+  assert.equal(picked[1].current,'old-token.webp');
+  assert.deepEqual(updates[1],{'prototypeToken.texture.src':'new.webp'});
+  assert.deepEqual(updates[2],['Token',[{_id:'a','texture.src':'new.webp'},{_id:'b','texture.src':'new.webp'}]],'linked tokens and those still showing the old image; never another Actor’s');
+  // Locked again: nothing changes.
+  sheet.rtaToggleLock();
+  buttons[0].listeners.click({preventDefault(){}});await settle();
+  assert.equal(picked.length,2);
+  // A user who may not change the Actor gets no lock.
+  const watcher=new RulesetActorSheet(doc);watcher.isEditable=false;
+  inserted.length=0;await watcher._renderFrame({});
+  assert.equal(inserted.length,0);
+  watcher.rtaToggleLock();assert.equal(watcher.rtaUnlocked,false);
+  delete globalThis.game;delete globalThis.foundry;delete globalThis.document;
 });

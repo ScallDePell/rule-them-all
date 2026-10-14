@@ -112,6 +112,17 @@ const blocks = {id: 'blocks', target: 'actor', root: {id: 'root', kind: 'grid', 
   {id: 'b-plain', kind: 'separator'},
   {id: 'b-skills', kind: 'section', labelKey: 'Skills', span: 2, style: {image: 'icons/svg/d20-grey.svg', imageFit: 'tile', imagePosition: 'top', opacity: 80}, children: [
     {id: 'b-list', kind: 'repeater', query: {definitionTypeId: 'skill'}, columns: 2, clickActionRef: 'sneak', children: [{id: 'b-rank', kind: 'value', source: {kind: 'each', capabilityId: 'value', outputId: 'value.final'}}]}]}]}};
+// No standard header: the name, the portrait and the token image placed in the layout, styled like any block.
+const custom = {id: 'custom', target: 'actor', header: 'none', root: {id: 'root', kind: 'grid', columns: 3, children: [
+  {id: 'face', kind: 'portrait', shape: 'portrait', height: 'large'},
+  {id: 'who', kind: 'section', columns: 2, span: 2, style: {background: 'none', border: 'none'}, children: [
+    {id: 'name', kind: 'name', span: 2, style: {size: 'huge', font: 'Amiri', color: 'accent'}},
+    {id: 'pawn', kind: 'token', shape: 'circle', height: 'small', updatePlaced: true},
+    {id: 'c-def', kind: 'value', source: {kind: 'formula', formulaRef: 'defence'}},
+    ...['str', 'dex'].map(id => ({id: `c-${id}`, kind: 'value', source: {kind: 'output', reference: out_(id, 'value', 'value.final')}, write: {operation: 'set'}}))]}]}};
+// Pictures for the Document: a portrait and a round token (data URLs, so the page needs no file).
+const picture = (fill, round) => `data:image/svg+xml,${encodeURIComponent(`<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 90 120"><rect width="90" height="120" fill="${fill}"/>${round ? '<circle cx="45" cy="60" r="40" fill="#e8d9b0"/>' : '<circle cx="45" cy="45" r="22" fill="#e8d9b0"/><rect x="18" y="74" width="54" height="46" rx="20" fill="#e8d9b0"/>'}</svg>`)}`;
+const doc = {img: picture('#5a4a7a', false), token: picture('#3b6b4a', true)};
 
 const foundryCss = process.env.RTA_FOUNDRY_CSS ? readFileSync(process.env.RTA_FOUNDRY_CSS, 'utf8') + '\n' : '';
 const css = foundryCss + JSON.parse(readFileSync(join(root, 'module.json'), 'utf8')).styles.map(p => readFileSync(join(root, p), 'utf8')).join('\n');
@@ -122,14 +133,18 @@ const sheets = [
   ['actor-styled', await projectSheet(engine, v, styled, {actor: hero, items: [{id: 'sword-1', name: 'Grandfather\'s sword', img: '', managed: true}]}), 'Ayla the Brave'],
   ['actor-blocks', await projectSheet(engine, v, blocks, {actor: hero}), 'Ayla the Brave'],
   ['actor-progression', await projectSheet(engine, v, {id: 'growth', target: 'actor', root: {id: 'root', kind: 'section', labelKey: 'Growth', columns: 1, children: [{id: 'buy', kind: 'progression', progressionSystemRef: 'growth'}]}}, {actor: hero}), 'Ayla the Brave'],
-  ['item-owned', await projectSheet(engine, v, sheetFor(ruleset, {target: 'item', contentTypeId: 'weapon'}), {actor: hero, content: {key: 'sword-1'}}), 'Sword']
+  ['item-owned', await projectSheet(engine, v, sheetFor(ruleset, {target: 'item', contentTypeId: 'weapon'}), {actor: hero, content: {key: 'sword-1'}}), 'Sword'],
+  // Unlocked (the lock open in the window header): the name is a field, the camera buttons sit on the pictures.
+  ['actor-auto-unlocked', await projectSheet(engine, v, sheetFor(ruleset, {target: 'actor'}), {actor: hero}), 'Ayla the Brave', {unlocked: true}],
+  ['actor-custom', await projectSheet(engine, v, custom, {actor: hero}), 'Ayla the Brave'],
+  ['actor-custom-unlocked', await projectSheet(engine, v, custom, {actor: hero}), 'Ayla the Brave', {unlocked: true}]
 ];
 const english = JSON.parse(readFileSync(join(root, 'lang/en.json'), 'utf8'));
 const t = key => key?.split('.').reduce((node, part) => node?.[part], english) ?? key;
 const files = [];
-for (const [name, view, title] of sheets) for (const theme of ['theme-dark', 'theme-light']) {
+for (const [name, view, title, options = {}] of sheets) for (const theme of ['theme-dark', 'theme-light']) {
   const file = join(out, `sheet-${name}-${theme}.html`);
-  writeFileSync(file, page(renderSheetHTML(view, {t, name: title, editable: true}), theme));
+  writeFileSync(file, page(renderSheetHTML(view, {t, name: title, editable: true, ...doc, ...options}), theme));
   files.push([`${name}-${theme}`, file]);
 }
 const chat = join(out, 'chat-card.html');
@@ -152,6 +167,12 @@ for (const [name, file] of files) for (const width of [640, 420]) {
       if (lefts.size > 1) issues.push(`list columns not aligned: ${[...lefts]}`);
     }
     for (const box of document.querySelectorAll('.rta-sheet input[type="checkbox"]:not([hidden] *)')) { const r = box.getBoundingClientRect(); if (r.width < 10 || r.height < 10) issues.push(`checkbox ${r.width}x${r.height}`); }
+    // The camera button sits in the bottom right corner of its picture.
+    for (const camera of document.querySelectorAll('.rta-sheet-picture__edit')) {
+      const c = camera.getBoundingClientRect(), p = camera.parentElement.getBoundingClientRect();
+      if (Math.abs(c.right - p.right) > 1 || Math.abs(c.bottom - p.bottom) > 1 || c.width > p.width / 2) issues.push(`camera button not at the corner of its picture (${Math.round(c.right - p.right)}, ${Math.round(c.bottom - p.bottom)})`);
+    }
+    for (const picture of document.querySelectorAll('.rta-sheet-picture')) { const r = picture.getBoundingClientRect(); if (r.width < 16 || r.height < 16) issues.push(`picture ${r.width}x${r.height}`); }
     return issues;
   });
   // The same sheet in a short window: what does not fit is reached by scrolling the body.

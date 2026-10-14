@@ -218,16 +218,110 @@ const result = await page.evaluate(async ({fixture, en, urls}) => {
   check('a clock', find(layout(), 'derived').children.at(-1).display === 'clock' && element.querySelectorAll('[data-layout-canvas] .rta-sheet-clock path').length === 4);
   await click('[data-layout-palette-host] [data-layout-palette=\'{"kind":"value","display":"boxes"}\']');
   check('a track of boxes', find(layout(), 'derived').children.at(-1).display === 'boxes' && element.querySelector('[data-layout-canvas] .rta-sheet-dots--boxes'));
+  // The header: standard (shown as a sample above the canvas) or none, with the name, portrait and token image placed as blocks.
+  check('the standard header is previewed', Boolean(element.querySelector('[data-layout-canvas] .rta-sheet__header')));
+  const headerField = element.querySelector('[name="sheetHeader"]');
+  headerField.value = 'none'; headerField.dispatchEvent(new Event('change', {bubbles: true})); await wait();
+  check('no header: none previewed', !element.querySelector('[data-layout-canvas] .rta-sheet__header'));
+  await click('[data-layout-canvas] [data-layout-node="derived"]');
+  for (const kind of ['name', 'portrait', 'token']) await click(`[data-layout-palette-host] [data-layout-palette='{"kind":"${kind}"}']`);
+  const placed = find(layout(), 'derived').children.slice(-3);
+  check('adding the name, portrait and token blocks', JSON.stringify(placed.map(c => c.kind)) === '["name","portrait","token"]' && element.querySelector('[data-layout-canvas] .rta-sheet-name') && element.querySelectorAll('[data-layout-canvas] .rta-sheet-picture').length === 2);
+  await untick('[data-layout-prop="updatePlaced"]');
+  check('the token image also updates the placed tokens', find(layout(), placed[2].id).updatePlaced === true);
+  await click(`[data-layout-canvas] [data-layout-node="${placed[1].id}"]`);
+  await set('[data-layout-properties] [data-layout-prop="shape"]', 'circle');
+  check('a round portrait', find(layout(), placed[1].id).shape === 'circle' && element.querySelector(`[data-layout-canvas] [data-layout-node="${placed[1].id}"].rta-sheet-image--circle`));
+  check('the editor never changes the Document', !element.querySelector('[data-layout-canvas] [data-sheet-edit-image], [data-layout-canvas] [data-sheet-name]'));
   element.querySelector('[data-entry-form]').requestSubmit(); await new Promise(r => setTimeout(r, 200));
   const saved = api.getSheetDefinition(fixture.versionId, 'sh1');
+  check('saving keeps the header choice', saved.header === 'none');
   const canonical = value => JSON.stringify(value, (key, v) => v && typeof v === 'object' && !Array.isArray(v) ? Object.fromEntries(Object.keys(v).sort().map(k => [k, v[k]])) : v);
   check(`saving keeps the edited tree${canonical(saved.root) === canonical(layout()) ? '' : `: ${(await app._prepareContext({})).error || 'not saved'}`}`, canonical(saved.root) === canonical(layout()));
-  await click('[data-layout-command="auto"]');
-  check('automatic layout replaces the tree', layout().children.some(c => c.kind === 'section'));
+  check('no automatic layout any more', !element.querySelector('[data-layout-command="auto"]'));
+  // The toolbar: its nine buttons on one row, "View as" alone below them.
+  { const buttons = [...element.querySelectorAll('[data-layout-toolbar] [data-layout-command]')].map(b => b.getBoundingClientRect()), viewAs = element.querySelector('.rta-sheet-editor__view-as').getBoundingClientRect();
+    check('the toolbar buttons sit on one row, "View as" below', buttons.length === 9 && buttons.every(b => Math.abs(b.top - buttons[0].top) < 1) && viewAs.top >= buttons[0].bottom && buttons.at(-1).right <= element.querySelector('.rta-sheet-editor__side').getBoundingClientRect().right); }
+  const key = async (name, options = {}) => { (document.activeElement && element.contains(document.activeElement) ? document.activeElement : element.querySelector('[data-layout-canvas]')).dispatchEvent(new KeyboardEvent('keydown', {key: name, bubbles: true, cancelable: true, ...options})); await wait(); };
+  const top = () => find(layout(), 'top').children;
+  // Copy and paste: a section pasted while a section is selected goes into it, with new ids and its style.
+  await click('[data-layout-canvas] [data-layout-node="derived"]');
+  check('after a click the keyboard is on the sheet', document.activeElement === element.querySelector('[data-layout-canvas]'));
+  await click('[data-layout-command="copy"]');
+  check('copying a block allows pasting', element.querySelector('[data-layout-command="paste"]')?.disabled === false);
+  await click('[data-layout-command="paste"]');
+  { const pasted = find(layout(), 'derived').children.at(-1), source = find(layout(), 'derived');
+    check('pasting a section into the selected section, with new ids, its children and its style', pasted?.kind === 'section' && pasted.id !== 'derived' && pasted.children.length === source.children.length - 1 && pasted.children.every(c => !['total', 'strike'].includes(c.id)) && JSON.stringify(pasted.style) === JSON.stringify(source.style)); }
+  await key('z', {ctrlKey: true});
+  check('Ctrl+Z undoes the paste', find(layout(), 'derived').children.every(c => c.kind !== 'section'));
+  await key('y', {ctrlKey: true});
+  check('Ctrl+Y redoes it', find(layout(), 'derived').children.at(-1)?.kind === 'section');
+  await key('z', {ctrlKey: true, shiftKey: false});
+  await click('[data-layout-canvas] [data-layout-node="derived"]');
+  await key('d', {ctrlKey: true});
+  const copy = top().at(-1);
+  check('Ctrl+D duplicates the section right after it', top().length === 3 && top()[1].id === 'derived' && copy.kind === 'section' && copy.labelKey === 'Derived' && element.querySelector('[data-layout-selected]')?.dataset.layoutNode === copy.id);
+  await key('ArrowUp');
+  check('the up arrow moves the block up', top()[1].id === copy.id && top()[2].id === 'derived');
+  await key('Delete');
+  check('Delete removes it', !find(layout(), copy.id) && top().length === 2);
+  await key('z', {ctrlKey: true, shiftKey: true});
+  check('Ctrl+Shift+Z redoes too', !find(layout(), copy.id));
+  { const field = element.querySelector('[data-layout-palette-filter]'); field.focus(); const count = JSON.stringify(layout()); field.dispatchEvent(new KeyboardEvent('keydown', {key: 'Delete', bubbles: true, cancelable: true})); await wait();
+    check('keys typed in a field are left alone', JSON.stringify(layout()) === count); }
+  await click('[data-layout-canvas] [data-layout-node="derived"]');
+  await key('Escape');
+  check('Escape leaves nothing selected', !element.querySelector('[data-layout-selected]') && element.querySelector('[data-layout-command="remove"]').disabled && !element.querySelector('[data-layout-properties] [data-layout-prop]'));
+  // A block from another Ruleset whose elements this one lacks is refused, with a message.
+  const {copyToClipboard} = await import(urls.clipboard), warnings = [], warn = ui.notifications.warn;
+  ui.notifications.warn = message => warnings.push(message);
+  copyToClipboard({id: 'x', kind: 'value', source: {kind: 'formula', formulaRef: 'elsewhere'}});
+  const unchanged = JSON.stringify(layout());
+  await click('[data-layout-canvas] [data-layout-node="derived"]');
+  await click('[data-layout-command="paste"]');
+  ui.notifications.warn = warn;
+  check(`pasting what the Ruleset lacks is refused${warnings[0] ? `: ${warnings[0]}` : ''}`, JSON.stringify(layout()) === unchanged && /elsewhere/.test(warnings[0] ?? ''));
+  // The style brush: the section's style onto a value (what a value cannot take is left out); Escape puts it down.
+  await click('[data-layout-command="brush"]');
+  check('the brush is loaded', element.querySelector('[data-layout-command="brush"]').getAttribute('aria-pressed') === 'true' && element.querySelector('[data-layout-canvas]').hasAttribute('data-layout-brush'));
+  await click('[data-layout-canvas] [data-layout-node="total"]');
+  { const style = find(layout(), 'total').style, from = find(layout(), 'derived').style;
+    check('a click gives a block the brush\'s style', style?.font === from.font && style?.background === from.background && !style.gap); }
+  await key('Escape');
+  check('Escape puts the brush down', element.querySelector('[data-layout-command="brush"]').getAttribute('aria-pressed') === 'false');
+  await key('z', {ctrlKey: true});
+  // Layers: select, rename, fold, drag into another section.
+  const layer = id => element.querySelector(`[data-layout-layers] [data-layer-node="${id}"]`);
+  check('the Layers list every block', ['root', 'main', 'top', 'stats', 'derived', 'total'].every(layer));
+  await click('[data-layout-layers] [data-layer-node="total"]');
+  check('a click in the Layers selects the block', element.querySelector('[data-layout-selected]')?.dataset.layoutNode === 'total' && layer('total').getAttribute('aria-selected') === 'true');
+  layer('derived').querySelector('[data-layer-renamable]').dispatchEvent(new MouseEvent('dblclick', {bubbles: true})); await wait();
+  { const input = element.querySelector('[data-layer-rename="derived"]'); check('a double click renames in place', document.activeElement === input);
+    if (input) { input.value = 'Derived values'; input.dispatchEvent(new KeyboardEvent('keydown', {key: 'Enter', bubbles: true, cancelable: true})); await wait(); } }
+  check('the new name is the section\'s title', find(layout(), 'derived').labelKey === 'Derived values' && layer('derived').textContent.includes('Derived values'));
+  await click('[data-layout-layers] [data-layer-toggle="derived"]');
+  check('folding a section hides its rows', !layer('total') && layer('derived').getAttribute('aria-expanded') === 'false');
+  await click('[data-layout-layers] [data-layer-toggle="derived"]');
+  await drag(layer('total'), layer('stats'));
+  check('dragging a row onto a section in the Layers moves the block into it', find(layout(), 'stats').children.some(c => c.id === 'total'));
+  await key('z', {ctrlKey: true});
+  // Preview widths, and the sheet's own window width.
+  const canvasWidth = () => Math.round(element.querySelector('[data-layout-canvas]').getBoundingClientRect().width);
+  check(`the preview starts at the sheet's window width (${canvasWidth()}px)`, canvasWidth() === 640);
+  await click('[data-layout-widths] [data-layout-width="narrow"]');
+  check(`a narrow preview (${canvasWidth()}px)`, canvasWidth() === 400);
+  await set('[name="sheetWindowWidth"]', '500');
+  await click('[data-layout-widths] [data-layout-width="window"]');
+  check(`a preview at the sheet's window width (${canvasWidth()}px)`, canvasWidth() === 500);
+  await click('[data-layout-widths] [data-layout-width="wide"]');
+  check(`the whole width (${canvasWidth()}px)`, canvasWidth() > 640);
+  await set('[name="sheetWindowHeight"]', '640');
+  element.querySelector('[data-entry-form]').requestSubmit(); await new Promise(r => setTimeout(r, 200));
+  check('the window size is saved with the sheet', JSON.stringify(api.getSheetDefinition(fixture.versionId, 'sh1').window) === JSON.stringify({width: 500, height: 640}));
   // Leave a value selected for the screenshot.
-  await click('[data-layout-canvas] [data-layout-node^="each-"]');
+  await click('[data-layout-canvas] [data-layout-node="stat-value"]');
   return steps;
-}, {fixture, en, urls: {api: url('src/configurator/configurator-api.mjs'), editor: url('src/configurator/configurator-entry-editor.mjs')}});
+}, {fixture, en, urls: {api: url('src/configurator/configurator-api.mjs'), editor: url('src/configurator/configurator-entry-editor.mjs'), clipboard: url('src/configurator/sheet-layout-clipboard.mjs')}});
 if (process.env.RTA_SHOTS) {
   await page.screenshot({path: join(process.env.RTA_SHOTS, 'sheet-editor-flow.png')});
   // Scrolled down: the tools stay beside the sheet; then the bottom of the tools column, with the palette.
@@ -257,6 +351,20 @@ if (process.env.RTA_SHOTS) {
     document.querySelector('.rta-sheet-editor__side').scrollTop = 0;
   });
   await page.screenshot({path: join(process.env.RTA_SHOTS, 'sheet-editor-blocks.png')});
+  // A sheet without the standard header: name, portrait and token image placed at the top of the first tab's grid, the token selected.
+  await page.evaluate(async () => {
+    const wait = () => new Promise(r => setTimeout(r, 60)), header = document.querySelector('[name="sheetHeader"]');
+    header.value = 'none'; header.dispatchEvent(new Event('change', {bubbles: true})); await wait();
+    document.querySelector('[data-layer-node="top"]')?.click(); await wait();
+    for (const kind of ['name', 'portrait', 'token']) { document.querySelector(`[data-layout-palette-host] [data-layout-palette='{"kind":"${kind}"}']`).click(); await wait(); }
+    for (const kind of ['token', 'portrait', 'name']) {
+      document.querySelector(`[data-layout-canvas] .rta-sheet-${kind === 'name' ? 'name' : `picture[data-layout-node^="${kind}"]`}`)?.click(); await wait();
+      while (!document.querySelector('[data-layout-command="up"]')?.disabled) { document.querySelector('[data-layout-command="up"]').click(); await wait(); }
+    }
+    document.querySelector('[data-layout-canvas] [data-layout-node^="token"]')?.click(); await wait();
+    document.querySelector('.rta-sheet-editor__side').scrollTop = 0; document.querySelector('.rta-config-entry__scroll').scrollTop = 0;
+  });
+  await page.screenshot({path: join(process.env.RTA_SHOTS, 'sheet-editor-document.png')});
 }
 await browser.close();
 for (const line of [...result, ...errors.map(e => `FAIL error: ${e}`)]) console.log(line);

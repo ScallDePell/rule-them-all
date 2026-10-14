@@ -39,8 +39,9 @@ function collecting(d, code, path, run) {
 function checkDefinitionType(entry, path, d) {
   const issue = d.issue;
   if (!checkIdentity(entry, path, issue)) return;
-  exactFields(entry, ["id","key","nameKey","descriptionKey","color","order","allowedCapabilities","defaultCapabilities","requiredCapabilities","fields","constraints","presentation","relations","scaleRef","valueBounds"], path, issue);
+  exactFields(entry, ["id","key","nameKey","descriptionKey","color","order","allowedCapabilities","defaultCapabilities","requiredCapabilities","fields","constraints","presentation","relations","scaleRef","valueBounds","sheetPalette"], path, issue);
   if (!nonempty(entry.key)) issue("REQUIRED_STRING", `${path}.key`, "key must be a non-empty string.");
+  if (entry.sheetPalette !== undefined && entry.sheetPalette !== false) issue("BOOLEAN_TYPE", `${path}.sheetPalette`, "sheetPalette is stored only when false.");
   if (!nonempty(entry.nameKey)) d.incomplete("REQUIRED_STRING", `${path}.nameKey`, "nameKey must be a non-empty string.");
   if (typeof entry.descriptionKey !== "string") issue("STRING_TYPE", `${path}.descriptionKey`, "descriptionKey must be a string.");
   if (!(entry.color === null || nonempty(entry.color))) issue("COLOR", `${path}.color`, "color must be null or a non-empty string.");
