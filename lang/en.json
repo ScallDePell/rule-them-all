@@ -1002,7 +1002,7 @@
       },
       "sheetDefinition": {
         "Summary": "A sheet is what players see on an Actor or an Item: tabs, sections, lists of the Definitions they hold, values and Action buttons.",
-        "Usage": "Click a block of the sheet to change it in the tools on the left. Under “Add”, click a block or an element of the Ruleset to add it into the selection, or drag it onto the sheet; drag the sheet's blocks to move them. Without any sheet, Actors and Items show the automatic layout. Players choose “Rule Them'All sheet” in Foundry's sheet choice."
+        "Usage": "Click a block of the sheet (or in the Layers) to change it in the tools on the left. Under “Add”, click a block or an element of the Ruleset to add it into the selection, or drag it onto the sheet; drag the blocks to move them. Copy, paste and duplicate work from one sheet to another (Ctrl+C, Ctrl+V, Ctrl+D). Without any sheet, Actors and Items show an automatic sheet. Players choose the sheet in Foundry's sheet choice."
       },
       "category": {
         "Summary": "A category classifies Definitions and contents for filtering.",
@@ -1440,7 +1440,11 @@
           "reached": "To apply",
           "ahead": "Next"
         }
-      }
+      },
+      "WindowSize": "Window (px)",
+      "WindowSizeHint": "The window size when the sheet opens: width × height. Empty: Foundry's size.",
+      "WindowWidth": "Width",
+      "WindowHeight": "Height"
     },
     "SheetEditor": {
       "Layout": "Layout",
@@ -1449,9 +1453,8 @@
       "UntitledTab": "Tab",
       "ExampleRow": "Example",
       "Add": "Add",
-      "Remove": "Remove the block",
-      "Undo": "Undo",
-      "Auto": "Automatic layout",
+      "Remove": "Remove the block (Delete)",
+      "Undo": "Undo (Ctrl+Z)",
       "SelectHint": "Click a block of the sheet to change it.",
       "NothingToSet": "This block has no settings.",
       "Title": "Title",
@@ -1624,7 +1627,29 @@
         "icon": "Icon only",
         "text": "Text only"
       },
-      "ProgressionSystem": "Progression System"
+      "ProgressionSystem": "Progression System",
+      "MoveUp": "Move up (Up arrow)",
+      "MoveDown": "Move down (Down arrow)",
+      "Copy": "Copy the block (Ctrl+C)",
+      "Paste": "Paste (Ctrl+V): into the selected block, or right after it",
+      "Duplicate": "Duplicate (Ctrl+D)",
+      "Brush": "Style brush: takes this block's style, then click the blocks to restyle (Escape to finish)",
+      "Redo": "Redo (Ctrl+Y)",
+      "Copied": "Block copied: paste it here or in another sheet.",
+      "PasteMissing": "Cannot paste: this block uses elements this sheet or this Ruleset does not have ({names}).",
+      "Layers": {
+        "Title": "Layers",
+        "Sheet": "The sheet",
+        "Rename": "Double-click to rename",
+        "Fold": "Fold",
+        "Unfold": "Unfold"
+      },
+      "PreviewWidth": {
+        "label": "Preview",
+        "narrow": "Narrow window",
+        "window": "The sheet's window size",
+        "wide": "Full width"
+      }
     },
     "Reaction": {
       "Title": "Reaction",

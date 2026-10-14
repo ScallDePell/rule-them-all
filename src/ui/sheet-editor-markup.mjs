@@ -26,11 +26,40 @@ export const kindText = kind => { const [key, fallback] = KIND_LABELS[kind] ?? [
 export const kindLabel = kind => escape(kindText(kind));
 
 const VIEWERS = [["all", "RTA.SheetEditor.ViewAs.all", "Everyone's blocks"], ["player", "RTA.SheetEditor.ViewAs.player", "The player"], ["observer", "RTA.SheetEditor.ViewAs.observer", "An observer"], ["gm", "RTA.SheetEditor.ViewAs.gm", "The GM"]];
-/** Toolbar: move the selected block, remove it, undo, preview as one person, start again from AUTO. */
-export function renderLayoutToolbarHTML({canMoveUp = false, canMoveDown = false, canRemove = false, undo = false, viewer = "all"}) {
+/** The commands of the first toolbar row, in order: [command, icon, label key, fallback]. */
+const TOOLS = [["up", "fa-arrow-up", "RTA.SheetEditor.MoveUp", "Move up (Up arrow)"], ["down", "fa-arrow-down", "RTA.SheetEditor.MoveDown", "Move down (Down arrow)"],
+  ["copy", "fa-copy", "RTA.SheetEditor.Copy", "Copy the block (Ctrl+C)"], ["paste", "fa-paste", "RTA.SheetEditor.Paste", "Paste (Ctrl+V)"], ["duplicate", "fa-clone", "RTA.SheetEditor.Duplicate", "Duplicate (Ctrl+D)"],
+  ["brush", "fa-paintbrush", "RTA.SheetEditor.Brush", "Style brush"], ["remove", "fa-trash", "RTA.SheetEditor.Remove", "Remove the block (Delete)"],
+  ["undo", "fa-rotate-left", "RTA.SheetEditor.Undo", "Undo (Ctrl+Z)"], ["redo", "fa-rotate-right", "RTA.SheetEditor.Redo", "Redo (Ctrl+Y)"]];
+/** Toolbar: one row of icon buttons (move, copy, paste, duplicate, style brush, remove, undo, redo), then "View as" on
+   its own row. enabled: {command: boolean}; brush: the style brush is loaded (its button shows pressed). */
+export function renderLayoutToolbarHTML({enabled = {}, brush = false, viewer = "all"} = {}) {
+  const button = ([command, icon, key, fallback]) => `<button type="button" class="rta-config-action" data-layout-command="${command}" title="${t(key, fallback)}" aria-label="${t(key, fallback)}"${command === "brush" ? ` aria-pressed="${brush}"` : ""}${enabled[command] ? "" : " disabled"}><i class="fa-solid ${icon}"></i></button>`;
   const viewAs = `<label class="rta-sheet-editor__view-as">${t("RTA.SheetEditor.ViewAs.label", "View as")}<select data-layout-viewer>${VIEWERS.map(([value, key, fallback]) => `<option value="${value}"${value === viewer ? " selected" : ""}>${t(key, fallback)}</option>`).join("")}</select></label>`;
-  const button = (command, icon, label, enabled) => `<button type="button" class="rta-config-action" data-layout-command="${command}" title="${label}" aria-label="${label}"${enabled ? "" : " disabled"}><i class="fa-solid ${icon}"></i></button>`;
-  return `<div class="rta-sheet-editor__toolbar">${button("up", "fa-arrow-up", t("RTA.Template.MoveUp", "Move up"), canMoveUp)}${button("down", "fa-arrow-down", t("RTA.Template.MoveDown", "Move down"), canMoveDown)}${button("remove", "fa-trash", t("RTA.SheetEditor.Remove", "Remove the block"), canRemove)}${button("undo", "fa-rotate-left", t("RTA.SheetEditor.Undo", "Undo"), undo)}${viewAs}<button type="button" data-layout-command="auto"><i class="fa-solid fa-wand-magic-sparkles"></i> ${t("RTA.SheetEditor.Auto", "Automatic layout")}</button></div>`;
+  return `<div class="rta-sheet-editor__toolbar"><div class="rta-sheet-editor__tools">${TOOLS.map(button).join("")}</div>${viewAs}</div>`;
+}
+
+const WIDTHS = [["narrow", "fa-mobile-screen", "RTA.SheetEditor.PreviewWidth.narrow", "Narrow window"], ["window", "fa-window-maximize", "RTA.SheetEditor.PreviewWidth.window", "The sheet's window"], ["wide", "fa-display", "RTA.SheetEditor.PreviewWidth.wide", "Wide window"]];
+/** Above the sheet: the width it is previewed at (the tree is not changed). */
+export function renderPreviewWidthHTML(width = "window") {
+  return `<div class="rta-sheet-editor__widths" role="group" aria-label="${t("RTA.SheetEditor.PreviewWidth.label", "Preview width")}"><span>${t("RTA.SheetEditor.PreviewWidth.label", "Preview width")}</span>${WIDTHS.map(([value, icon, key, fallback]) => `<button type="button" class="rta-config-action" data-layout-width="${value}" title="${t(key, fallback)}" aria-label="${t(key, fallback)}" aria-pressed="${value === width}"><i class="fa-solid ${icon}"></i></button>`).join("")}</div>`;
+}
+
+/** Layers: the blocks as a tree, to select one, rename it (double click, when it has a label), drag it elsewhere and fold
+   what a container holds. root: the layout; ctx: {selectedId, collapsed: Set of ids, label(node) → text, renaming: id}. */
+export function renderLayoutLayersHTML(root, {selectedId = null, collapsed = new Set(), label = node => node.id, renaming = null, open = true} = {}) {
+  const LABELLED = ["tab", "section", "value", "action"];
+  const row = (node, depth) => {
+    const children = node.children ?? [], folded = collapsed.has(node.id) && children.length > 0;
+    const toggle = children.length ? `<button type="button" class="rta-sheet-layers__toggle" data-layer-toggle="${escape(node.id)}" aria-label="${folded ? t("RTA.SheetEditor.Layers.Unfold", "Unfold") : t("RTA.SheetEditor.Layers.Fold", "Fold")}" aria-expanded="${!folded}"><i class="fa-solid ${folded ? "fa-caret-right" : "fa-caret-down"}"></i></button>` : `<span class="rta-sheet-layers__toggle" aria-hidden="true"></span>`;
+    const name = renaming === node.id && LABELLED.includes(node.kind)
+      ? `<input type="text" class="rta-sheet-layers__rename" data-layer-rename="${escape(node.id)}" value="${escape(node.labelKey ?? "")}" placeholder="${escape(label(node))}">`
+      : `<span class="rta-sheet-layers__name"${LABELLED.includes(node.kind) ? ` data-layer-renamable title="${t("RTA.SheetEditor.Layers.Rename", "Double-click to rename")}"` : ""}>${escape(label(node))}</span>`;
+    // Not a <button>: Firefox never drags a button.
+    const self = `<div class="rta-sheet-layers__row" role="treeitem" tabindex="-1" style="--rta-layer-depth: ${depth}" data-layer-node="${escape(node.id)}"${node.id === selectedId ? ` aria-selected="true"` : ""}${children.length ? ` aria-expanded="${!folded}"` : ""}${depth ? ` draggable="true"` : ""}>${toggle}<i class="fa-solid ${KIND_ICONS[node.kind] ?? "fa-square"}" aria-hidden="true"></i>${name}</div>`;
+    return self + (folded ? "" : children.map(child => row(child, depth + 1)).join(""));
+  };
+  return `<details class="rta-sheet-editor__layers" data-layout-layers-panel${open ? " open" : ""}><summary>${t("RTA.SheetEditor.Layers.Title", "Layers")}</summary><div class="rta-sheet-layers" role="tree" data-layout-layers>${row(root, 0)}</div></details>`;
 }
 
 const KIND_ICONS = {section: "fa-square", grid: "fa-table-cells", tabs: "fa-folder", tab: "fa-folder-open", repeater: "fa-list", value: "fa-hashtag", gauge: "fa-battery-half", dots: "fa-circle-dot", content: "fa-id-card", action: "fa-dice-d20", text: "fa-font", image: "fa-image", contents: "fa-box-open", progression: "fa-arrow-trend-up", spacer: "fa-border-none"};

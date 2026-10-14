@@ -558,12 +558,21 @@ export function prepareProgressionSystem(data,options={}){
   return x;
 }
 /** SheetDefinition (CP-14): which Actors or Items it shows (target, and the ContentTypes of that kind; none listed: all),
- * and its layout tree (layout-contract.mjs). */
+ * its layout tree (layout-contract.mjs) and, optionally, the size its window opens at (window: {width?, height?}). */
 export const SHEET_TARGETS=Object.freeze(['actor','item']);
+/** The window size a sheet may ask for: [smallest, largest] in pixels. */
+export const SHEET_WINDOW_LIMITS=Object.freeze({width:[320,2400],height:[240,1600]});
 export function prepareSheetDefinition(data,options={}){
   const x=prepareNamedGeneric(data,'SheetDefinition',{target:'actor',contentTypeIds:[],root:emptyLayout()},options);
-  for(const key of Object.keys(x))if(!['id','nameKey','descriptionKey','enabled','order','tags','target','contentTypeIds','root'].includes(key))throw new Error(`Unsupported SheetDefinition field: ${key}.`);
+  for(const key of Object.keys(x))if(!['id','nameKey','descriptionKey','enabled','order','tags','target','contentTypeIds','root','window'].includes(key))throw new Error(`Unsupported SheetDefinition field: ${key}.`);
   if(!SHEET_TARGETS.includes(x.target))throw new Error(`SheetDefinition.target must be ${SHEET_TARGETS.join(' or ')}.`);
+  // window: the played sheet's default window size, in pixels (either one may be left to Foundry).
+  if(x.window===undefined||x.window===null)delete x.window;
+  else{
+    if(!isRecord(x.window)||Object.keys(x.window).some(key=>!['width','height'].includes(key)))throw new Error('SheetDefinition.window must be {width?, height?}.');
+    for(const [key,[min,max]] of Object.entries(SHEET_WINDOW_LIMITS))if(x.window[key]!==undefined&&(!Number.isSafeInteger(x.window[key])||x.window[key]<min||x.window[key]>max))throw new Error(`SheetDefinition.window.${key} must be a whole number of pixels from ${min} to ${max}.`);
+    if(!Object.keys(x.window).length)delete x.window;
+  }
   arr(x.contentTypeIds,'SheetDefinition.contentTypeIds');
   x.root=prepareLayout(x.root);
   if(x.target!=='item')for(const {node,path} of layoutNodes(x.root))if(node.source?.kind==='field')throw new Error(`${path}: Content fields are only on Item sheets.`);

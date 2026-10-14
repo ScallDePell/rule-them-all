@@ -27,6 +27,8 @@ const slug=value=>String(value??"").trim().toLowerCase().normalize("NFKD").repla
 const json=(value,fallback)=>{const text=String(value??"").trim();return text?JSON.parse(text):fallback;};
 const fieldPresent=(fd,key)=>typeof fd.has==="function"?fd.has(key):fd.get(key)!==undefined&&fd.get(key)!==null;
 const lines=value=>String(value??"").split(/\r?\n/).map(x=>x.trim()).filter(Boolean);
+/** A sheet's window size: the width and height typed (an empty box keeps Foundry's); undefined when neither is. */
+const sheetWindow=fd=>{const size=Object.fromEntries([["width","sheetWindowWidth"],["height","sheetWindowHeight"]].map(([key,name])=>[key,String(fd.get(name)??"").trim()]).filter(([,value])=>value).map(([key,value])=>[key,Number(value)]));return Object.keys(size).length?size:undefined;};
 
 /** A Test target is none, a fixed value, a Formula or the total of an opposed Test, chosen in one select. */
 function readTestTarget(fd){
@@ -135,7 +137,7 @@ export function collectEntryData(kind,{fd,current,bool,checkedIds,queryOne,query
     }
     if(kind==="category")return{...current,nameKey:String(fd.get("nameKey")??"").trim(),descriptionKey:String(fd.get("descriptionKey")??"")};
     if(kind==="tag")return{...current,nameKey:String(fd.get("nameKey")??"").trim(),descriptionKey:String(fd.get("descriptionKey")??""),color:fieldPresent(fd,"customColorEnabled")?(String(fd.get("color")??"").trim()||current.color||null):fieldPresent(fd,"customColorPermission")?null:current.color??null};
-    if(kind==="sheetDefinition"){const target=String(fd.get("sheetTarget")??current.target??"actor");return{...current,nameKey:String(fd.get("nameKey")??"").trim(),descriptionKey:String(fd.get("descriptionKey")??""),enabled:bool("enabled"),target,contentTypeIds:target==="item"?checkedIds("sheetContentTypes"):[],root:json(queryOne("[data-sheet-layout-value]")?.value,current.root)};}
+    if(kind==="sheetDefinition"){const target=String(fd.get("sheetTarget")??current.target??"actor"),{window:_window,...kept}=current,size=sheetWindow(fd);return{...kept,...(size?{window:size}:{}),nameKey:String(fd.get("nameKey")??"").trim(),descriptionKey:String(fd.get("descriptionKey")??""),enabled:bool("enabled"),target,contentTypeIds:target==="item"?checkedIds("sheetContentTypes"):[],root:json(queryOne("[data-sheet-layout-value]")?.value,current.root)};}
     if(kind==="creationSystem")return collectCreation();
     if(kind==="modifier")return collectModifier(fd,current,{bool,checkedIds,operand:readOperand(fd,queryOne)});
     if(kind==="duration")return collectDuration(fd,current,{bool,checkedIds});

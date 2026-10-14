@@ -323,7 +323,8 @@ export function registerRulesetSheets(foundry = globalThis.foundry, documents = 
     const wanted = new Map(), enabled = (ruleset?.sheetDefinitions ?? []).filter(entry => entry.enabled !== false && ["actor", "item"].includes(entry.target));
     for (const entry of enabled) {
       const Base = entry.target === "actor" ? sheets.RulesetActorSheet : sheets.RulesetItemSheet, name = namedSheetClassName(entry.id);
-      const SheetClass = class extends Base { static rtaSheetId = entry.id; };
+      // The window opens at the size the sheet asks for (Foundry merges these options over the base sheet's).
+      const SheetClass = class extends Base { static rtaSheetId = entry.id; static DEFAULT_OPTIONS = entry.window ? {position: {...entry.window}} : {}; };
       Object.defineProperty(SheetClass, "name", {value: name});
       wanted.set(`${entry.target}:${name}`, {document: entry.target === "actor" ? documents.Actor : documents.Item, SheetClass, label: t(entry.nameKey) || entry.id});
     }

@@ -81,8 +81,15 @@ Le Configurateur range le Ruleset en rubriques. Chaque élément est une carte :
 Dans **Systèmes → Feuilles**, créez une feuille d'Acteur ou d'Objet (pour des Types de contenu précis, ou pour tous). L'éditeur montre la feuille telle qu'en jeu :
 - la **palette** à gauche ajoute des blocs (sections, onglets, grilles, listes d'une famille de Définitions, valeurs, jauges, pastilles, boutons d'Action, Systèmes de progression, images, textes) par clic ou glisser-déposer ;
 - le **panneau de propriétés** règle le bloc choisi : libellé, icône Font Awesome (texte, icône ou les deux), affichage (champ, jauge, pastilles, description), ce que le joueur peut changer (saisir, augmenter, diminuer), **Visible par** (joueur, observateur, MJ) et **Modifiée par : le MJ seulement**, couleurs, police, marges ;
-- **Voir comme** montre la feuille telle que la verra un joueur, un observateur ou le MJ ;
-- **Mise en page automatique** repart d'une feuille tirée des Définitions (avec une section par Système de progression).
+- la **barre d'outils** (une ligne de boutons) monte et descend le bloc, le **copie**, le **colle**, le **duplique**, prend son style au **pinceau**, le supprime, **annule** et **rétablit** ; dessous, **Voir comme** montre la feuille telle que la verra un joueur, un observateur ou le MJ ;
+- **Copier / coller** : un bloc copié garde ses enfants et son style ; collé, il va dans le bloc choisi si c'est un conteneur qui l'accepte, sinon juste après. Le presse-papiers sert pour toutes les feuilles ouvertes pendant la session, même d'un autre Ruleset : un bloc qui utilise une Définition, une Formule, une Action… absente de ce Ruleset (ou un champ de Contenu sur une feuille d'Acteur) est refusé avec un message ;
+- le **pinceau de style** prend le style du bloc choisi ; chaque bloc cliqué ensuite le reçoit (ce que son genre de bloc ne peut pas porter est laissé de côté). Échap ou un nouveau clic sur le pinceau le repose ;
+- les **Calques** listent les blocs en arbre : un clic choisit un bloc, un double-clic renomme un onglet, une section, une valeur ou un bouton, la flèche replie ce qu'un conteneur contient, et on fait glisser une ligne pour déplacer le bloc (haut ou bas de la ligne : à côté ; milieu d'un conteneur : dedans) ;
+- **raccourcis clavier** (hors champ de saisie) : Ctrl+C, Ctrl+V, Ctrl+D (dupliquer), Ctrl+Z, Ctrl+Y ou Ctrl+Maj+Z (rétablir), Suppr, flèches haut et bas (déplacer), F2 (renommer), Échap (ne plus rien choisir) ;
+- **Aperçu** (au-dessus de la feuille) : fenêtre étroite, taille de la fenêtre de la feuille, ou toute la largeur ;
+- **Fenêtre (px)** : la largeur et la hauteur à l'ouverture de la feuille en jeu (vide : taille de Foundry).
+
+Une nouvelle feuille démarre vide.
 
 ### Choisir la feuille d'un Acteur
 Chaque feuille activée du Ruleset actif apparaît sous son nom dans **Configuration de la feuille** (en-tête de la fenêtre de l'Acteur ou de l'Objet). Vous pouvez donc avoir plusieurs feuilles de PJ, une feuille de PNJ, une feuille de créature, et choisir pour chaque Acteur, ou par défaut pour un type d'Acteur.

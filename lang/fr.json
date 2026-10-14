@@ -998,7 +998,7 @@
       },
       "sheetDefinition": {
         "Summary": "Une feuille est ce que les joueurs voient sur un Acteur ou un Objet : onglets, sections, listes des Definitions détenues, valeurs et boutons d'Action.",
-        "Usage": "Clique sur un bloc de la feuille pour le régler dans les outils à gauche. Sous « Ajouter », clique sur un bloc ou un élément du Ruleset pour l'ajouter dans la sélection, ou fais-le glisser sur la feuille ; fais glisser les blocs de la feuille pour les déplacer. Sans feuille, Acteurs et Objets montrent la mise en page automatique. Les joueurs choisissent « Feuille Rule Them'All » dans le choix de feuille de Foundry."
+        "Usage": "Clique sur un bloc de la feuille (ou dans les Calques) pour le régler dans les outils à gauche. Sous « Ajouter », clique sur un bloc ou un élément du Ruleset pour l'ajouter dans la sélection, ou fais-le glisser sur la feuille ; fais glisser les blocs pour les déplacer. Copier, coller et dupliquer marchent d'une feuille à l'autre (Ctrl+C, Ctrl+V, Ctrl+D). Sans feuille, Acteurs et Objets montrent une feuille automatique. Les joueurs choisissent la feuille dans le choix de feuille de Foundry."
       },
       "category": {
         "Summary": "Une catégorie classe les Definitions et les contenus pour les filtrer.",
@@ -1436,7 +1436,11 @@
           "reached": "À appliquer",
           "ahead": "Prochain"
         }
-      }
+      },
+      "WindowSize": "Fenêtre (px)",
+      "WindowSizeHint": "Taille de la fenêtre à l’ouverture de la feuille : largeur × hauteur. Vide : taille de Foundry.",
+      "WindowWidth": "Largeur",
+      "WindowHeight": "Hauteur"
     },
     "SheetEditor": {
       "Layout": "Mise en page",
@@ -1445,9 +1449,8 @@
       "UntitledTab": "Onglet",
       "ExampleRow": "Exemple",
       "Add": "Ajouter",
-      "Remove": "Retirer le bloc",
-      "Undo": "Annuler la dernière modification",
-      "Auto": "Mise en page automatique",
+      "Remove": "Supprimer le bloc (Suppr)",
+      "Undo": "Annuler (Ctrl+Z)",
       "SelectHint": "Clique sur un bloc de la feuille pour le modifier.",
       "NothingToSet": "Ce bloc n'a pas de réglage.",
       "Title": "Titre",
@@ -1620,7 +1623,29 @@
         "icon": "Icône seule",
         "text": "Texte seul"
       },
-      "ProgressionSystem": "Système de progression"
+      "ProgressionSystem": "Système de progression",
+      "MoveUp": "Monter (flèche haut)",
+      "MoveDown": "Descendre (flèche bas)",
+      "Copy": "Copier le bloc (Ctrl+C)",
+      "Paste": "Coller (Ctrl+V) : dans le bloc choisi, ou juste après",
+      "Duplicate": "Dupliquer (Ctrl+D)",
+      "Brush": "Pinceau de style : prend le style de ce bloc, puis clique les blocs à styler (Échap pour finir)",
+      "Redo": "Rétablir (Ctrl+Y)",
+      "Copied": "Bloc copié : colle-le ici ou dans une autre feuille.",
+      "PasteMissing": "Impossible de coller : ce bloc utilise des éléments absents de cette feuille ou de ce Ruleset ({names}).",
+      "Layers": {
+        "Title": "Calques",
+        "Sheet": "La feuille",
+        "Rename": "Double-clic pour renommer",
+        "Fold": "Replier",
+        "Unfold": "Déplier"
+      },
+      "PreviewWidth": {
+        "label": "Aperçu",
+        "narrow": "Fenêtre étroite",
+        "window": "Taille de la fenêtre de la feuille",
+        "wide": "Toute la largeur"
+      }
     },
     "Reaction": {
       "Title": "Réaction",
