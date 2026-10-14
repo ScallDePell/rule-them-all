@@ -174,7 +174,7 @@ function renderNotes(node, t, {edit, m}) {
   const text = String(node.value ?? "");
   let body;
   if (edit) body = `<div class="rta-sheet-notes__text rta-sheet-notes__text--sample">${escape(t(node.format === "rich" ? "RTA.SheetEditor.NotesRichSample" : "RTA.SheetEditor.NotesSample"))}</div>`;
-  else if (node.format === "rich") body = `<div class="rta-sheet-notes__text rta-sheet-notes__rich" data-sheet-note-rich="${escape(node.id)}"${node.write ? " data-sheet-note-editable" : ""}>${escape(text.replace(/<[^>]*>/g, " ").replace(/\s+/g, " ").trim())}</div>`;
+  else if (node.format === "rich") body = `<div class="rta-sheet-notes__text rta-sheet-notes__rich" data-sheet-note-rich="${escape(node.id)}"${node.write ? " data-sheet-note-editable" : ""}>${escape(text.replace(/<\/?(?:p|div|br|li|h[1-6]|blockquote|tr)\b[^>]*>/gi, " ").replace(/<[^>]*>/g, "").replace(/\s+/g, " ").trim())}</div>`;
   else if (node.write) body = `<textarea class="rta-sheet-notes__field" data-sheet-write="${escape(node.id)}" data-operation="set"${node.label ? ` aria-label="${escape(t(node.label))}"` : ""}>${escape(text)}</textarea>`;
   else body = `<div class="rta-sheet-notes__text">${escape(text) || "—"}</div>`;
   return `<div ${attrs(node, "rta-sheet-notes", look)}${m}>${label}${body}</div>`;

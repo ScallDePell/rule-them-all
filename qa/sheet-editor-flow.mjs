@@ -182,6 +182,42 @@ const result = await page.evaluate(async ({fixture, en, urls}) => {
   check('back to the default style', !find(layout(), 'derived').style);
   await click('[data-layout-command="undo"]');
   check('undo brings the style back', find(layout(), 'derived').style?.font === 'Amiri');
+  // A background picture tiled from the top; a foldable section.
+  await set('[data-layout-properties] [data-layout-style="image"]', 'icons/svg/d20.svg');
+  await set('[data-layout-properties] [data-layout-style="imageFit"]', 'tile');
+  await set('[data-layout-properties] [data-layout-style="imagePosition"]', 'top');
+  check('a tiled background picture at the top', find(layout(), 'derived').style?.imageFit === 'tile' && /background-repeat: repeat; background-position: top/.test(element.querySelector('[data-layout-canvas] section[data-layout-node="derived"]')?.getAttribute('style') ?? ''));
+  const fold = element.querySelector('[data-layout-properties] [data-layout-prop="collapsible"]'); fold.checked = true; fold.dispatchEvent(new Event('change', {bubbles: true})); await wait();
+  check('a foldable section', find(layout(), 'derived').collapsible === true && element.querySelector('[data-layout-canvas] section[data-layout-node="derived"] .rta-sheet-section__toggle'));
+  // A text with a value in it, a click Action, a Condition, a tooltip, a fixed width.
+  await click('[data-layout-palette-host] [data-layout-palette=\'{"kind":"text"}\']');
+  const line = find(layout(), 'derived').children.at(-1);
+  await set('[data-layout-properties] [data-layout-prop="textKey"]', 'Total:');
+  const insert = element.querySelector('[data-layout-properties] [data-layout-prop="insertValue"]');
+  await set('[data-layout-properties] [data-layout-prop="insertValue"]', [...(insert?.options ?? [])].find(option => option.value && option.value !== ':none')?.value ?? '');
+  { const text = find(layout(), line.id); check(`a value in a text: ${text.textKey}`, /^Total: \{[^}]+\}$/.test(text.textKey) && Object.keys(text.values ?? {}).length === 1 && element.querySelector(`[data-layout-canvas] [data-layout-node="${line.id}"] .rta-sheet-text__value`)); }
+  await set('[data-layout-properties] [data-layout-prop="textKey"]', 'No value');
+  check('a text keeps only the values it names', !find(layout(), line.id).values);
+  await click('[data-layout-command="undo"]');
+  await set('[data-layout-properties] [data-layout-prop="clickActionRef"]', 'a1');
+  await set('[data-layout-properties] [data-layout-prop="visibleIf"]', 'c1');
+  check('a click Action and a Condition', find(layout(), line.id).clickActionRef === 'a1' && element.querySelector(`[data-layout-canvas] [data-layout-node="${line.id}"][data-layout-conditional]`));
+  await set('[data-layout-properties] [data-layout-prop="tooltip"]', 'What it costs');
+  await set('[data-layout-properties] [data-layout-prop="width"]', 'medium');
+  check('a tooltip and a fixed width', find(layout(), line.id).tooltip?.text === 'What it costs' && find(layout(), line.id).width === 'medium' && element.querySelector('[data-layout-more-group]')?.open !== undefined);
+  // A text area kept on the Actor, a separator with an ornament, a clock and a track of boxes.
+  await click('[data-layout-palette-host] [data-layout-palette=\'{"kind":"notes"}\']');
+  const notes = find(layout(), 'derived').children.at(-1);
+  await set('[data-layout-properties] [data-layout-prop="format"]', 'rich');
+  check('a rich text area', notes.kind === 'notes' && find(layout(), notes.id).format === 'rich' && element.querySelector('[data-layout-canvas] .rta-sheet-notes__text--sample'));
+  await click('[data-layout-palette-host] [data-layout-palette=\'{"kind":"separator"}\']');
+  const separator = find(layout(), 'derived').children.at(-1);
+  await set('[data-layout-properties] [data-layout-prop="look"]', 'ornament');
+  check('an ornament separator', find(layout(), separator.id).look === 'ornament' && element.querySelector('[data-layout-canvas] .rta-sheet-separator--ornament'));
+  await click('[data-layout-palette-host] [data-layout-palette=\'{"kind":"value","display":"clock"}\']');
+  check('a clock', find(layout(), 'derived').children.at(-1).display === 'clock' && element.querySelectorAll('[data-layout-canvas] .rta-sheet-clock path').length === 4);
+  await click('[data-layout-palette-host] [data-layout-palette=\'{"kind":"value","display":"boxes"}\']');
+  check('a track of boxes', find(layout(), 'derived').children.at(-1).display === 'boxes' && element.querySelector('[data-layout-canvas] .rta-sheet-dots--boxes'));
   element.querySelector('[data-entry-form]').requestSubmit(); await new Promise(r => setTimeout(r, 200));
   const saved = api.getSheetDefinition(fixture.versionId, 'sh1');
   const canonical = value => JSON.stringify(value, (key, v) => v && typeof v === 'object' && !Array.isArray(v) ? Object.fromEntries(Object.keys(v).sort().map(k => [k, v[k]])) : v);
@@ -211,6 +247,16 @@ if (process.env.RTA_SHOTS) {
     document.querySelector('.rta-sheet-editor__side').scrollTop = 0; document.querySelector('.rta-config-entry__scroll').scrollTop = 0;
   });
   await page.screenshot({path: join(process.env.RTA_SHOTS, 'sheet-editor-gauge.png')});
+  // The section with a text that shows a value, a rich text area, a separator, a clock and boxes; the text's settings.
+  await page.evaluate(async () => {
+    const wait = () => new Promise(r => setTimeout(r, 60));
+    while (!document.querySelector('[data-layout-canvas] section[data-layout-node="derived"] .rta-sheet-notes') && !document.querySelector('[data-layout-command="undo"]').disabled) { document.querySelector('[data-layout-command="undo"]').click(); await wait(); }
+    document.querySelector('[data-layout-canvas] section[data-layout-node="derived"] .rta-sheet-text')?.click(); await wait();
+    const more = document.querySelector('[data-layout-more-group]'); if (more) more.open = true;
+    document.querySelector('[data-layout-canvas] section[data-layout-node="derived"]')?.scrollIntoView();
+    document.querySelector('.rta-sheet-editor__side').scrollTop = 0;
+  });
+  await page.screenshot({path: join(process.env.RTA_SHOTS, 'sheet-editor-blocks.png')});
 }
 await browser.close();
 for (const line of [...result, ...errors.map(e => `FAIL error: ${e}`)]) console.log(line);

@@ -6,6 +6,8 @@ import {escapeHTML as escape} from "./html-utils.mjs";
 import {localizedKeyMarkup as t, localizedText} from "./ui-localization.mjs";
 import {renderSelectOptions} from "./select-option-markup.mjs";
 
+/** The choice that sets nothing (no Condition, no click Action, no value to insert): never empty, an RTA Select shows that as its placeholder. */
+export const NONE = ":none";
 const row = (label, control, extra = "") => `<div class="form-group rta-form-row"${extra}><label>${label}</label>${control}</div>`;
 const select = (prop, choices, selected) => `<select data-layout-prop="${prop}">${renderSelectOptions(choices, {valueKey: "value", labelKey: "label", colorize: true, selectedValue: selected ?? ""})}</select>`;
 const text = (prop, value, placeholder = "") => `<input type="text" data-layout-prop="${prop}" value="${escape(value ?? "")}"${placeholder ? ` placeholder="${escape(placeholder)}"` : ""}>`;
@@ -89,7 +91,7 @@ export function renderLayoutPropertiesHTML(node, ctx) {
   if (node.kind === "text") {
     rows.push(row(t("RTA.SheetEditor.Text", "Text"), text("textKey", node.textKey)));
     // A value shown in the text: picked here, it adds "{its name}" at the end of the text.
-    if (ctx.textValues?.length) rows.push(row(t("RTA.SheetEditor.InsertValue", "Insert a value"), select("insertValue", [{value: "", label: localizedText("RTA.SheetEditor.InsertValueChoose", "Choose…"), colors: ctx.neutral}, ...ctx.textValues], "")));
+    if (ctx.textValues?.length) rows.push(row(t("RTA.SheetEditor.InsertValue", "Insert a value"), select("insertValue", [{value: NONE, label: localizedText("RTA.SheetEditor.InsertValueChoose", "Choose…"), colors: ctx.neutral}, ...ctx.textValues], NONE)));
   }
   if (node.kind === "notes") {
     rows.push(row(t("RTA.SheetEditor.Label", "Label"), text("labelKey", node.labelKey)));
@@ -105,7 +107,7 @@ export function renderLayoutPropertiesHTML(node, ctx) {
   }
   if (["section", "grid"].includes(node.kind)) rows.push(row(t("RTA.SheetEditor.Overlay.label", "Stack the blocks"), select("overlay", ctx.overlays, node.overlay ?? "none")));
   if (node.kind === "section") rows.push(row(t("RTA.SheetEditor.Collapsible", "Foldable"), `<div class="rta-sheet-editor__checks"><label class="rta-sheet-editor__check"><input type="checkbox" data-layout-prop="collapsible"${node.collapsible ? " checked" : ""}> ${t("RTA.SheetEditor.CollapsibleHint", "Its title folds it")}</label></div>`));
-  if (ctx.clickable && ctx.clickActions?.length > 1) rows.push(row(t("RTA.SheetEditor.OnClick", "On click, use"), select("clickActionRef", ctx.clickActions, node.clickActionRef ?? "")));
+  if (ctx.clickable && ctx.clickActions?.length > 1) rows.push(row(t("RTA.SheetEditor.OnClick", "On click, use"), select("clickActionRef", ctx.clickActions, node.clickActionRef ?? NONE)));
   if (node.kind === "image") {
     rows.push(row(t("RTA.SheetEditor.Image", "Image"), imageField("src", node.src)));
     rows.push(row(t("RTA.SheetEditor.ImageShape", "Shape"), select("shape", ctx.shapes, node.shape ?? "free")));
@@ -124,9 +126,9 @@ export function renderLayoutPropertiesHTML(node, ctx) {
   if (!ctx.isRoot) {
     const seen = who => `<label class="rta-sheet-editor__check"><input type="checkbox" data-layout-seen="${who}"${!node.seenBy || node.seenBy.includes(who) ? " checked" : ""}> ${t(`RTA.SheetEditor.Audience.${who}`, who)}</label>`;
     rows.push(row(t("RTA.SheetEditor.Seen", "Seen by"), `<div class="rta-sheet-editor__checks">${["player", "observer", "gm"].map(seen).join("")}</div>`));
-    if (ctx.visibility?.length > 1 || node.visibleIf) rows.push(row(t("RTA.SheetEditor.VisibleIf", "Shown only if"), select("visibleIf", ctx.visibility ?? [], node.visibleIf ?? "")));
+    if (ctx.visibility?.length > 1 || node.visibleIf) rows.push(row(t("RTA.SheetEditor.VisibleIf", "Shown only if"), select("visibleIf", ctx.visibility ?? [], node.visibleIf ?? NONE)));
     // More settings, folded: the rows of the parent's grid it spans, a fixed width, a tooltip.
-    if (ctx.inGrid) more.push(row(t("RTA.SheetEditor.RowSpan", "Height"), select("rowSpan", ctx.rowSpans, String(node.rowSpan ?? 1))));
+    if (ctx.inGrid) more.push(row(t("RTA.SheetEditor.RowSpan", "Rows spanned"), select("rowSpan", ctx.rowSpans, String(node.rowSpan ?? 1))));
     more.push(row(t("RTA.SheetEditor.FixedWidth", "Fixed width"), select("width", ctx.widths ?? [], node.width ?? "auto")));
     const described = node.tooltip?.description === true;
     more.push(row(t("RTA.SheetEditor.Tooltip", "Tooltip"), `${described ? "" : text("tooltip", node.tooltip?.text ?? "", localizedText("RTA.SheetEditor.TooltipHint", "Shown on hover"))}${ctx.describable ? `<label class="rta-sheet-editor__check"><input type="checkbox" data-layout-prop="tooltipDescription"${described ? " checked" : ""}> ${t("RTA.SheetEditor.TooltipDescription", "The Definition's description")}</label>` : ""}`));

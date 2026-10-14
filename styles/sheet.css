@@ -136,6 +136,7 @@
 .rta-sheet-section__toggle {
   display: flex;
   align-items: center;
+  justify-content: flex-start;
   gap: var(--rta-gap-row);
   inline-size: 100%;
   min-block-size: 0;
@@ -345,6 +346,7 @@ button.rta-sheet-image {
 .rta-sheet-notes__field {
   inline-size: 100%;
   block-size: var(--rta-sheet-notes-height);
+  font-family: inherit;
   resize: vertical;
 }
 
@@ -863,8 +865,10 @@ button.rta-sheet-dot {
   stroke-linejoin: round;
 }
 
+/* Filled a little lighter than its lines, so the segments stay apart when the clock is full. */
 .rta-sheet-clock__segment--on {
   fill: var(--rta-sheet-fill-solid, var(--rta-color-border-highlight));
+  fill-opacity: .55;
 }
 
 .rta-sheet-clock--settable > .rta-sheet-clock__segment {

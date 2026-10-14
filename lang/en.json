@@ -1660,7 +1660,7 @@
       "CollapsibleHint": "Its title folds it",
       "OnClick": "On click, use",
       "NoClick": "Nothing",
-      "RowSpan": "Height",
+      "RowSpan": "Rows spanned",
       "RowCount": "{count} row(s)",
       "FixedWidth": "Fixed width",
       "FixedWidths": {

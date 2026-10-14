@@ -9,7 +9,7 @@ import {EACH_OUTPUTS, itemContentTypes, canMoveInto, canPlace, paletteGroups, pa
 import {refToken, parseRefToken} from "./reference-token.mjs";
 import {findSlot} from "./capability-slots.mjs";
 import {renderLayoutPreviewHTML} from "../ui/sheet-markup.mjs";
-import {kindText, renderLayoutPaletteHTML, renderLayoutPropertiesHTML, renderLayoutToolbarHTML} from "../ui/sheet-editor-markup.mjs";
+import {NONE, kindText, renderLayoutPaletteHTML, renderLayoutPropertiesHTML, renderLayoutToolbarHTML} from "../ui/sheet-editor-markup.mjs";
 import {selectColorsAttribute} from "../ui/select-option-presentation.mjs";
 import {RTA_NEUTRAL_COLOR} from "../ui/theme-tokens.mjs";
 import {LAYOUT_CONTAINERS} from "./layout-contract.mjs";
@@ -235,12 +235,12 @@ export class SheetLayoutController {
     if (prop === "tooltip") return this.#commit(updateNode(this.#root, node.id, {tooltip: value.trim() ? {text: value.trim()} : undefined}));
     if (prop === "rowSpan") return this.#commit(updateNode(this.#root, node.id, {rowSpan: number > 1 ? number : undefined}));
     if (prop === "width") return this.#commit(updateNode(this.#root, node.id, {width: LAYOUT_WIDTHS[value] ? value : undefined}));
-    if (prop === "visibleIf" || prop === "clickActionRef") return this.#commit(updateNode(this.#root, node.id, {[prop]: value || undefined}));
+    if (prop === "visibleIf" || prop === "clickActionRef") return this.#commit(updateNode(this.#root, node.id, {[prop]: value && value !== NONE ? value : undefined}));
     if (prop === "overlay") return this.#commit(updateNode(this.#root, node.id, {overlay: LAYOUT_OVERLAYS.includes(value) ? value : undefined}));
     if (prop === "format") return this.#commit(updateNode(this.#root, node.id, {format: value === "rich" ? "rich" : undefined}));
     // A picture separator keeps its picture; another look has none.
     if (prop === "look") return this.#commit(updateNode(this.#root, node.id, {look: value === "line" ? undefined : value, src: value === "image" ? node.src ?? "" : undefined}));
-    if (prop === "insertValue") return value ? this.#commit(this.#insertTextValue(node, value)) : undefined;
+    if (prop === "insertValue") return value && value !== NONE ? this.#commit(this.#insertTextValue(node, value)) : undefined;
     // A text keeps only the values it still names.
     if (prop === "textKey" && node.kind === "text") return this.#commit(updateNode(this.#root, node.id, {textKey: value, values: this.#namedValues(value, node.values)}));
     if (prop === "columns" || prop === "span") return this.#commit(updateNode(this.#root, node.id, {[prop]: number > 1 || prop === "columns" ? number : undefined}));
@@ -443,10 +443,10 @@ export class SheetLayoutController {
       inGrid: ["section", "grid", "tab"].includes(found.parent?.kind) && !found.parent?.overlay,
       rowSpans: Array.from({length: LAYOUT_MAX_ROW_SPAN}, (_, i) => ({value: String(i + 1), label: format("RTA.SheetEditor.RowCount", {count: i + 1}, String(i + 1)), colors: neutral})),
       widths: ["auto", ...Object.keys(LAYOUT_WIDTHS)].map(value => ({value, label: i18n(`RTA.SheetEditor.FixedWidths.${value}`), colors: neutral})),
-      visibility: [{value: "", label: i18n("RTA.SheetEditor.Always"), colors: neutral}, ...(r.conditions ?? []).map(c => ({value: c.id, label: c.nameKey, colors: selectColorsAttribute(this.#colors("condition", c))}))],
+      visibility: [{value: NONE, label: i18n("RTA.SheetEditor.Always"), colors: neutral}, ...(r.conditions ?? []).map(c => ({value: c.id, label: c.nameKey, colors: selectColorsAttribute(this.#colors("condition", c))}))],
       describable: node.kind === "value" && ["output", "each"].includes(node.source?.kind),
       clickable: LAYOUT_CLICKABLE.includes(node.kind),
-      clickActions: [{value: "", label: i18n("RTA.SheetEditor.NoClick"), colors: neutral}, ...(r.actions ?? []).filter(a => a.enabled !== false).map(a => ({value: a.id, label: a.nameKey, colors: selectColorsAttribute(this.#colors("action", a))}))],
+      clickActions: [{value: NONE, label: i18n("RTA.SheetEditor.NoClick"), colors: neutral}, ...(r.actions ?? []).filter(a => a.enabled !== false).map(a => ({value: a.id, label: a.nameKey, colors: selectColorsAttribute(this.#colors("action", a))}))],
       textValues: node.kind === "text" ? this.#textValueChoices(node) : [],
       noteFormats: ["plain", "rich"].map(value => ({value, label: i18n(`RTA.SheetEditor.NotesFormat.${value}`), colors: neutral})),
       separatorLooks: LAYOUT_SEPARATOR_LOOKS.map(value => ({value, label: i18n(`RTA.SheetEditor.SeparatorLook.${value}`), colors: neutral})),

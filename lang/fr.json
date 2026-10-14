@@ -1656,7 +1656,7 @@
       "CollapsibleHint": "Son titre la replie",
       "OnClick": "Au clic : lancer",
       "NoClick": "Rien",
-      "RowSpan": "Hauteur",
+      "RowSpan": "Lignes occupées",
       "RowCount": "{count} ligne(s)",
       "FixedWidth": "Largeur fixe",
       "FixedWidths": {
