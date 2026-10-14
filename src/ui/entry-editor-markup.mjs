@@ -19,11 +19,17 @@ export const renderRuleOperandHTML=({index,parameters,formulas,references,row=op
   +`<span class="rta-rule-operand__parts" data-rule-operand-editor="nearby" hidden><select data-operand-part="of">${options(row.nearbyOfChoices)}</select><input type="number" min="0" step="any" data-operand-part="within" placeholder="${localizedKeyMarkup("RTA.Operand.Within","Within distance")}"><select data-operand-part="side">${options(row.nearbySideChoices)}</select></span>`
   +`<button type="button" data-action="removeRuleOperand" class="rta-config-action" title="${t('RemoveOperand','Remove operand')}"><i class="fa-solid fa-trash"></i></button></div></div>`;
 
+/* A saved step keeps its id: shown to copy into variables.creation.<id>. A new one may be given a readable id, else it is taken from its name. */
+const renderStepIdHTML=(id,uiText)=>id
+  ?`<div class="form-group"><label class="rta-form-row__label">${escape(uiText("StepId","Identifier"))}</label><div><span class="rta-step-id"><code>${escape(id)}</code><button type="button" data-action="copyStepId" data-step-id="${escape(id)}" title="${escape(uiText("CopyStepId","Copy the identifier"))}" aria-label="${escape(uiText("CopyStepId","Copy the identifier"))}"><i class="fa-solid fa-copy"></i></button></span><p class="hint">${escape(uiText("StepIdHint","Use it in Formulas and Conditions: variables.creation.{id}").replace("{id}",id))}</p></div></div>`
+  :`<div class="form-group"><label class="rta-form-row__label">${escape(uiText("StepId","Identifier"))}</label><input data-step-prop="id" placeholder="${escape(uiText("StepIdPlaceholder","Empty: taken from the step name"))}"></div>`;
+
 export const renderCreationStepHTML=({value,kinds,computed,sourceFamilies,sourcePicker,sourceDescriptor,uiText})=>`<article class="rta-field-editor" data-creation-step data-original="${escape(JSON.stringify(value))}">
       <details class="rta-field-editor__details" open>
-        <summary><span><strong>${escape(value.name||"New step")}</strong></span></summary>
+        <summary><span><strong>${escape(value.name||uiText("NewStep","New step"))}</strong></span></summary>
         <div class="rta-field-editor__body rta-form-stack">
           <div class="form-group"><label class="rta-form-row__label">${escape(uiText("StepName","Step name"))}</label><input data-step-prop="name" value="${escape(value.name)}" required></div>
+          ${renderStepIdHTML(value.id,uiText)}
           <div class="form-group"><label class="rta-form-row__label">${t('Kind','Kind')}</label><select data-step-prop="kind">${kinds}</select></div>
           <div class="form-group"><label class="rta-form-row__label">${escape(uiText("StepWhen","Required condition"))}</label><select data-step-prop="conditionRef">${computed.when}</select></div>
           <div class="form-group" data-step-kind-only="roll" ${value.kind==="roll"?"":"hidden"}><label class="rta-form-row__label">${escape(uiText("StepRoll","Roll"))}</label><select data-step-prop="rollRef">${computed.roll}</select></div>

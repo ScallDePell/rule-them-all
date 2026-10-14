@@ -116,24 +116,31 @@ test('formula and condition AST serializers preserve typed literal, reference an
   assert.deepEqual(collectConditionExpression(fakeBuilder('eq',[numeric,boolean]),fallback),{type:'eq',left:{type:'literal',value:3.5},right:{type:'literal',value:true}});
 });
 
-function creationRow({name='Step',min='0',max='1',source='definitions',objects=['x'],original='{}'}={}){
+function creationRow({name='Step',min='0',max='1',source='definitions',objects=['x'],original='{}',id=''}={}){
   return {dataset:{original},querySelector:selector=>{
     if(selector.includes('"name"'))return input(name);
     if(selector.includes('"min"'))return input(min);
     if(selector.includes('"max"'))return input(max);
     if(selector.includes('source-family'))return source?input(source):null;
     if(selector.includes('"kind"'))return input('choice');
+    if(selector.includes('"id"'))return input(id);
     return null;
   },querySelectorAll:selector=>selector.includes('sourceObjects')?objects.map(input):[]};
 }
 test('creation steps validate sources, cardinality and duplicate ids, and keep the step id',()=>{
-  const sources=[{id:'definitions',items:[{id:'x'}]}];const uid=kind=>kind+'-new';
-  const args={sources,uid};
+  const sources=[{id:'definitions',items:[{id:'x'}]}];
+  const args={sources};
   const [step]=collectCreationSteps([creationRow()],args);
   assert.deepEqual(step.source,{collection:'definitions',objectIds:['x']});
   assert.throws(()=>collectCreationSteps([creationRow({objects:['gone']})],args),/Missing Ruleset object/);
   assert.throws(()=>collectCreationSteps([creationRow({min:'3',max:'1'})],args),/Invalid minimum/);
-  assert.throws(()=>collectCreationSteps([creationRow(),creationRow()],args),/unique/);
+  const saved='{"id":"same"}';
+  assert.throws(()=>collectCreationSteps([creationRow({original:saved}),creationRow({original:saved})],args),/unique/);
+  // A new step's id is readable: typed, else taken from its name (accents stripped), never one already used.
+  const named=collectCreationSteps([creationRow({name:'Élève doué',original:'{"id":"eleve-doue"}'}),creationRow({name:'Élève doué'}),creationRow({name:'Survie',id:'survie-1'}),creationRow({name:'!!'})],args);
+  assert.deepEqual(named.map(x=>x.id),['eleve-doue','eleve-doue-2','survie-1','step']);
+  assert.throws(()=>collectCreationSteps([creationRow({original:'{"id":"survie"}'}),creationRow({id:'survie'})],args),/already used/);
+  assert.throws(()=>collectCreationSteps([creationRow({id:'Survie !'})],args),/Invalid step identifier/);
   const [cleared]=collectCreationSteps([creationRow({source:'',original:'{"id":"keep","source":{"collection":"retired","objectIds":["old"]}}'})],args);
   assert.equal(cleared.id,'keep');
   assert.equal(cleared.source,undefined);

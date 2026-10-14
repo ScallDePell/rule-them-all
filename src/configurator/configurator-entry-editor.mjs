@@ -5,7 +5,8 @@ import {collectEntryData} from "./entry-data-collector.mjs";
 import {constraintRowModel,presentationRowModel} from "./declarative-editor.mjs";
 import {CONSTRAINT_KINDS} from "./declarative-contracts.mjs";
 import {assertPersistedRelations} from "./relation-persistence.mjs";
-import {buildFieldRow,buildNewFieldRow,buildEventFieldRow,buildDefinitionFieldModel} from "./entry-field-models.mjs";
+import {buildFieldRow,buildNewFieldRow,buildEventFieldRow,buildDefinitionFieldModel,valueTypeChoices,valueTypeLabel} from "./entry-field-models.mjs";
+import {localizedText} from "../ui/ui-localization.mjs";
 import {buildRuleReferenceChoices} from "./entry-reference-catalog.mjs";
 import {buildSlotFormContext,syncValueSource,syncEntryMode,valueBoundsContext} from "./slot-form.mjs";
 import {wireOrderedLists} from "../ui/ordered-list.mjs";
@@ -15,7 +16,7 @@ import {triggerFilterContext} from "./trigger-filter-form.mjs";
 import {SYSTEM_EVENT_TYPES} from "./system-events.mjs";
 import {outcomeMappingContext} from "./action-outcome-form.mjs";
 import {capabilityRole,capabilityRoleFlags,capabilityLabel} from "./capability-type-registry.mjs";
-import {availableDocumentTypes} from "../core/system-document-types.mjs";
+import {availableDocumentTypes,documentTypeLabel} from "../core/system-document-types.mjs";
 
 import {pickerSummary,missingTargetLabel,editorDisplayTitle} from "../ui/editor-display-text.mjs";
 import {refToken,parseRefToken} from "./reference-token.mjs";
@@ -60,6 +61,10 @@ const copy=value=>value===undefined?undefined:JSON.parse(JSON.stringify(value));
 const json=(value,fallback)=>{const text=String(value??"").trim();return text?JSON.parse(text):fallback;};
 const checked=form=>name=>form.querySelector(`[name="${CSS.escape(name)}"]`)?.checked===true;
 const uiText=(key,fallback)=>{const i18n=globalThis.game?.i18n;const translated=i18n?.localize?.(`RTA.DynamicUI.${key}`);return translated&&translated!==`RTA.DynamicUI.${key}`?translated:fallback;};
+// A constraint field in words: its name, or "Relations".
+const constraintFieldLabel=(data,id)=>id==="relations"?localizedText("RTA.Declarative.Relations","Relations"):data.fields?.[id]?.name||id;
+// A capability contract row, with its value type and cardinality in words.
+const contractRow=item=>({...item,valueTypeLabel:valueTypeLabel(item.valueType),cardinalityLabel:localizedText(item.cardinality==="many"?"RTA.Template.Many":"RTA.Template.One",item.cardinality??"one")});
 const selection=(items,selected=[])=>{const set=new Set(selected??[]);return items.map(item=>({...item,selected:set.has(item.id)}));};
 export class ConfiguratorEntryEditor extends ConfiguratorWindow {
   static DEFAULT_OPTIONS={window:{title:"Rule Them'All Entry",resizable:true},position:{width:760,height:760}};
@@ -141,7 +146,7 @@ export class ConfiguratorEntryEditor extends ConfiguratorWindow {
     const capabilityChoices=capabilityTypes.map(cap=>({
       ...cap,label:capabilityLabel(cap.id),...capabilityRoleFlags(capabilityRole(data,cap.id)),
       selected:(data.capabilities??[]).includes(cap.id),permitted:!type||(type.allowedCapabilities??[]).includes(cap.id),forced:!!type&&(type.requiredCapabilities??[]).includes(cap.id),
-      fieldItems:Object.values(cap.fields??{}),outputItems:Object.values(cap.outputs??{}),hasContract:Object.keys(cap.fields??{}).length>0||Object.keys(cap.outputs??{}).length>0
+      fieldItems:Object.values(cap.fields??{}).map(contractRow),outputItems:Object.values(cap.outputs??{}).map(contractRow),hasContract:Object.keys(cap.fields??{}).length>0||Object.keys(cap.outputs??{}).length>0
     }));
     const hasForcedCapabilities=capabilityChoices.some(cap=>cap.permitted&&cap.forced);
     const hasOptionalCapabilities=capabilityChoices.some(cap=>cap.permitted&&!cap.forced);
@@ -170,8 +175,8 @@ export class ConfiguratorEntryEditor extends ConfiguratorWindow {
     const initiativeSourceChoices=this.#kind==="ruleset"?[...tests.map(x=>({id:`test:${x.id}`,label:x.nameKey,...withColors("test",x),selected:x.id===initiative?.testRef})),...list("listTables").map(x=>({id:`table:${x.id}`,label:x.nameKey,...withColors("table",x),selected:x.id===initiative?.tableRef}))]:[];
     const initiativeTieBreakChoices=this.#kind==="ruleset"?formulas.map(x=>({id:x.id,label:x.nameKey,...withColors("formula",x),selected:x.id===initiative?.tieBreakFormulaRef})):[];
     const availabilityChoices=[{id:"",label:uiText("AlwaysAvailable","Always available"),colors:selectColorsAttribute([RTA_NEUTRAL_COLOR]),selected:!data.availabilityConditionRef},...conditions.map(x=>({id:x.id,label:x.nameKey,...withColors("condition",x),selected:x.id===data.availabilityConditionRef}))];
-    const outcomeConditionChoices=[{id:"",label:"Always / fallback",selected:!data.conditionRef},...conditions.map(x=>({id:x.id,label:x.nameKey,selected:x.id===data.conditionRef}))];
-    const bonusFormulaChoices=[{id:"",label:"None",selected:!data.bonusFormulaRef},...formulas.map(x=>({id:x.id,label:x.nameKey,...withColors("formula",x),selected:x.id===data.bonusFormulaRef}))];
+    const outcomeConditionChoices=[{id:"",label:uiText("AlwaysFallback","Always (fallback result)"),selected:!data.conditionRef},...conditions.map(x=>({id:x.id,label:x.nameKey,selected:x.id===data.conditionRef}))];
+    const bonusFormulaChoices=[{id:"",label:uiText("NoBonus","No bonus"),selected:!data.bonusFormulaRef},...formulas.map(x=>({id:x.id,label:x.nameKey,...withColors("formula",x),selected:x.id===data.bonusFormulaRef}))];
     const fallbackOutcomeChoices=[{id:"",label:uiText("NoFallbackOutcome","No fallback: fail explicitly"),selected:!data.fallbackOutcomeRef},...outcomes.map(x=>({id:x.id,label:x.nameKey,...withColors("outcome",x),selected:x.id===data.fallbackOutcomeRef}))];
     // One "Target" control: none, a fixed value, or a Formula.
     const fixedTarget=!data.targetFormulaRef&&!data.opposedTestRef&&data.targetValue!==null&&data.targetValue!==undefined;
@@ -227,12 +232,12 @@ export class ConfiguratorEntryEditor extends ConfiguratorWindow {
     const categoryChoices=selection([...categories.map(x=>({id:x.id,label:x.nameKey,...withColors("category",x)})),...(data.categories??[]).filter(id=>!categoryIds.has(id)).map(id=>({id,label:id,colors:RTA_NEUTRAL_COLOR}))],data.categories);
     const categorySummary=pickerSummary(categoryChoices);
     const eventFieldRows=this.#kind==="eventType"?Object.entries(data.payloadFields??{}).map(([id,field])=>buildEventFieldRow(id,field,this.#api.listValueTypes())):[];
-    const roleChoices=["self","source","target","subject","owner"].map(id=>({id,label:id,selected:(data.roles??[]).includes(id)}));
+    const roleChoices=["self","source","target","subject","owner"].map(id=>({id,label:localizedText(`RTA.Template.${id[0].toUpperCase()}${id.slice(1)}`,id),selected:(data.roles??[]).includes(id)}));
     // An Effect acts on the target unless told otherwise; a binding reads its own container.
     const role=data.targetRole||(this.#kind==="effect"?"target":"self"),roleSelf=role==="self",roleSource=role==="source",roleTarget=role==="target",roleSubject=role==="subject",roleOwner=role==="owner",roleWorld=role==="world",roleCombat=role==="combat";
     const conditionSummary=pickerSummary(conditionChoices),costEffectSummary=pickerSummary(effectChoices,"costSelected"),effectSummary=pickerSummary(effectChoices,"effectSelected"),actionSummary=pickerSummary(actionChoices);
-    Object.assign(context,{error:this.#error,kind:this.#kind,creating,readOnly:isValidated,deletion:creating?{blocked:false,reason:""}:this.#deletionView(),help:entryHelp(this.#kind,{definitionType:type}),data,type,fieldContract,fieldRows,newFieldRow,capabilityChoices,colorSectionChoices,rulesetMainColor:rulesetColor(data),allowTypeColor,inheritedTypeColor,hasCustomColor:!!data.color,valueTypes:this.#api.listValueTypes().map(v=>({...v,selected:v.id===(data.valueType??data.resultType)})),
-      documentActorTypes:availableDocumentTypes("Actor").map(id=>({id,selected:data.storageKind==="actor"&&data.documentSubtype===id})),documentItemTypes:availableDocumentTypes("Item").map(id=>({id,selected:data.storageKind!=="actor"&&data.documentSubtype===id})),
+    Object.assign(context,{error:this.#error,kind:this.#kind,creating,readOnly:isValidated,deletion:creating?{blocked:false,reason:""}:this.#deletionView(),help:entryHelp(this.#kind,{definitionType:type}),data,type,fieldContract,fieldRows,newFieldRow,capabilityChoices,colorSectionChoices,rulesetMainColor:rulesetColor(data),allowTypeColor,inheritedTypeColor,hasCustomColor:!!data.color,valueTypes:valueTypeChoices(this.#api.listValueTypes().map(v=>v.id),data.valueType??data.resultType),
+      documentActorTypes:availableDocumentTypes("Actor").map(id=>({id,label:documentTypeLabel("Actor",id),selected:data.storageKind==="actor"&&data.documentSubtype===id})),documentItemTypes:availableDocumentTypes("Item").map(id=>({id,label:documentTypeLabel("Item",id),selected:data.storageKind!=="actor"&&data.documentSubtype===id})),
       hasForcedCapabilities,hasOptionalCapabilities,conditionChoices,acquiredDefinitionChoices,acquisitionActionChoices,appliedStateChoices,removedStateChoices,appliedModifierChoices,stateDurationChoices,rollChoices,outcomeRows,fallbackOutcomeChoices,testChoices,bindingFormulaChoices,tagChoices,tagSummary,categoryChoices,categorySummary,eventFieldRows,roleChoices,contentTypeChoices,relationRows,hasRelations:RELATION_KINDS.includes(this.#kind),roleSelf,roleSource,roleTarget,roleSubject,roleOwner,roleWorld,roleCombat,outcomeConditionChoices,bonusFormulaChoices,targetSourceChoices,fixedTarget,showTestCalculation,effectChoices,actionChoices,eventTypeChoices,choiceGroupRows,conditionSummary,costEffectSummary,effectSummary,actionSummary,formulaModel,conditionModel,conditionOperands:[conditionModel.left,conditionModel.right],...(this.#kind==="sheetDefinition"?(()=>{const choices=selection(this.#renderList("contentTypes","listContentTypes").map(x=>({id:x.id,label:x.nameKey,...withColors("contentType",x)})),data.contentTypeIds??[]);return {sheetIsItem:data.target==="item",sheetContentTypeChoices:choices,sheetContentTypeSummary:pickerSummary(choices),sheetLayoutJSON:JSON.stringify(data.root??null)};})():{}),sheetTargetChoices:SHEET_TARGETS.map(id=>({id,labelKey:`RTA.Sheet.Target${id[0].toUpperCase()}${id.slice(1)}`,colors:selectColorsAttribute([RTA_NEUTRAL_COLOR]),selected:(data.target??"actor")===id})),
       referenceChoices:referenceChoices.map(x=>({...x,selected:x.token===referenceTargetToken})),
       bindingTargetChoices:referenceChoices.filter(x=>parseRefToken(x.token).capabilityId).map(x=>({...x,selected:x.token===bindingTargetToken})),
@@ -257,7 +262,7 @@ export class ConfiguratorEntryEditor extends ConfiguratorWindow {
       ...(this.#kind==="scale"?{...scaleRowContext(data),scaleBasisChoices:["value","percent"].map(id=>({id,labelKey:`RTA.Scale.Basis.${id}`,colors:neutralColors,selected:id===(data.basis??"value")}))}:{}),
       ...(this.#kind==="table"?{...tableRowContext(data,{actions,withColors}),tableRollChoices:rolls.map(x=>({id:x.id,label:x.nameKey,...withColors("roll",x),selected:x.id===data.rollRef})),tableBonusChoices:optionalFormula(data.bonusFormulaRef,"NoBonus","No bonus")}:{}),
       ...(this.#kind==="trigger"?{triggerHolderChoices:["actor","combat","world"].map(id=>({id,labelKey:`RTA.Trigger.Holders.${id}`,colors:selectColorsAttribute([RTA_NEUTRAL_COLOR]),selected:id===(data.holder??"actor")})),triggerActingChoices:["self","target"].map(id=>({id,labelKey:`RTA.Trigger.Acting.${id}`,colors:selectColorsAttribute([RTA_NEUTRAL_COLOR]),selected:id===(data.actingRole??"self")})),triggerModeChoices:["automatic","offer"].map(id=>({id,labelKey:`RTA.Trigger.Modes.${id}`,colors:selectColorsAttribute([RTA_NEUTRAL_COLOR]),selected:id===(data.mode??"automatic")}))}:{}),
-      ...(this.#kind==="action"?(()=>{const raise=(data.acquisitions??[]).find(a=>a?.ifAbsent);return {acquisitionFormulaChoices:optionalFormula((data.acquisitions??[]).find(a=>a?.definitionFormulaRef)?.definitionFormulaRef,"NoChosenDefinition","None"),acquisitionRaises:Boolean(raise),acquisitionRaise:String(raise?.add?.["value.base"]??1),acquisitionRepeatChoices:["refuse","raise"].map(id=>({id,labelKey:`RTA.Template.AcquisitionRepeats.${id}`,colors:selectColorsAttribute([RTA_NEUTRAL_COLOR]),selected:id===(raise?"raise":"refuse")}))};})():{}),
+      ...(this.#kind==="action"?(()=>{const raise=(data.acquisitions??[]).find(a=>a?.ifAbsent);return {acquisitionFormulaChoices:optionalFormula((data.acquisitions??[]).find(a=>a?.definitionFormulaRef)?.definitionFormulaRef,"NoChosenDefinition","No Definition"),acquisitionRaises:Boolean(raise),acquisitionRaise:String(raise?.add?.["value.base"]??1),acquisitionRepeatChoices:["refuse","raise"].map(id=>({id,labelKey:`RTA.Template.AcquisitionRepeats.${id}`,colors:selectColorsAttribute([RTA_NEUTRAL_COLOR]),selected:id===(raise?"raise":"refuse")}))};})():{}),
       ...(this.#kind==="action"?(()=>{
         // Reference collections that can hold Actors: where group members and linked roles are found.
         const collections=definitions.flatMap(d=>(d.slots?.collection??[]).filter(slot=>slot.entryMode==="reference").map(slot=>({id:`${d.id}/${slot.id}`,label:`${d.nameKey} › ${slot.id}`,...withColors("definition",d)})));
@@ -274,10 +279,10 @@ export class ConfiguratorEntryEditor extends ConfiguratorWindow {
       constraintRows:(data.constraints??[]).filter(rule=>CONSTRAINT_KINDS.includes(rule?.kind)).map(rule=>{
         const model=constraintRowModel(rule);
         const names=[...new Set([...Object.keys(data.fields??{}),'relations',model.field])].filter(Boolean);
-        model.fields=names.map(id=>({id,colors:RTA_NEUTRAL_COLOR,selected:id===model.field}));
+        model.fields=names.map(id=>({id,label:constraintFieldLabel(data,id),colors:RTA_NEUTRAL_COLOR,selected:id===model.field}));
         return model;
       }),
-      constraintFieldOptions:[...new Set([...Object.keys(data.fields??{}),'relations'])].map(id=>({id,colors:RTA_NEUTRAL_COLOR})),
+      constraintFieldOptions:[...new Set([...Object.keys(data.fields??{}),'relations'])].map(id=>({id,label:constraintFieldLabel(data,id),colors:RTA_NEUTRAL_COLOR})),
       presentationRows:presentationRowModel(this.#kind==="definition"?data.presentationProfile:data.presentation),
       imagePreview:data.image||"icons/svg/mystery-man.svg",
       dataJson:JSON.stringify(data.data??{},null,2),genericJson:JSON.stringify(data,null,2),
@@ -385,7 +390,7 @@ export class ConfiguratorEntryEditor extends ConfiguratorWindow {
 
   // Shared visible checkbox-list renderer for Ruleset-backed creation choices.
   // Both collection and object pickers use the same canonical rta-picker__body structure.
-  #creationCheckboxList({property,items,selected=[],single=false,emptyMessage="No entries available."}){
+  #creationCheckboxList({property,items,selected=[],single=false,emptyMessage=uiText("NoEntries","No entries available.")}){
     return renderCreationCheckboxPicker({property,items,selected,single,emptyMessage});
   }
 
@@ -401,7 +406,7 @@ export class ConfiguratorEntryEditor extends ConfiguratorWindow {
   }
 
   #creationStepHTML(step={}){
-    const value={id:uid("step"),name:"",kind:"choice",min:1,max:1,...copy(step)};
+    const value={name:"",kind:"choice",min:1,max:1,...copy(step)};
     const kinds=renderCreationKindsOptions(CREATION_STEP_KINDS,value.kind);
     // Bounds may be Formulas over the earlier steps; options may be filtered by a Condition.
     const pick=(collection,method,kind,selected,noneLabel)=>renderSelectOptions([{id:"",label:noneLabel,colors:RTA_NEUTRAL_COLOR},...this.#renderList(collection,method).map(entry=>({id:entry.id,label:entry.nameKey||entry.id,colors:selectColorsAttribute(this.#optionColors(kind,entry))}))],{selectedValue:selected??"",colorize:true});
@@ -449,7 +454,7 @@ export class ConfiguratorEntryEditor extends ConfiguratorWindow {
 
   #collectCreation(){
     const form=this.element.querySelector('[data-entry-form]'),fd=new FormData(form),current=this.#read()??this.#freshSeed();
-    const steps=collectCreationSteps(this.element.querySelectorAll('[data-creation-step]'),{sources:this.#creationSources(),uid});
+    const steps=collectCreationSteps(this.element.querySelectorAll('[data-creation-step]'),{sources:this.#creationSources()});
     return {...current,nameKey:String(fd.get('nameKey')??'').trim(),descriptionKey:String(fd.get('descriptionKey')??''),enabled:form.querySelector('[name="enabled"]')?.checked===true,steps};
   }
 
@@ -578,7 +583,7 @@ export class ConfiguratorEntryEditor extends ConfiguratorWindow {
 
   #newEventFieldRow(){
     const id=fieldUid(),row=document.createElement("article");row.className="rta-field-editor";row.dataset.eventFieldRow="";row.dataset.eventFieldId=id;
-    const options=renderSelectOptions(this.#api.listValueTypes(),{labelKey:"id"});
+    const options=renderSelectOptions(valueTypeChoices(this.#api.listValueTypes().map(type=>type.id),"string"),{selectedValue:"string"});
     row.innerHTML=renderNewEventFieldInnerHTML(id,options);
     return row;
   }
@@ -626,6 +631,11 @@ export class ConfiguratorEntryEditor extends ConfiguratorWindow {
       for(const button of list.lastElementChild.querySelectorAll("[data-action]"))button.addEventListener("click",event=>this.#action(event));
       this.#dirty=true;this.#syncFooter();return;
     }
+    if(action==="copyStepId"){
+      const id=event.currentTarget.dataset.stepId;
+      await (game.clipboard?.copyPlainText?.(id)??navigator.clipboard?.writeText?.(id));
+      ui.notifications?.info?.(uiText("StepIdCopied","Identifier copied: {id}").replace("{id}",id));return;
+    }
     if(["removeStep","duplicateStep","stepUp","stepDown"].includes(action)){
       const row=event.currentTarget.closest("[data-creation-step]");if(!row)return;
       if(action==="removeStep")row.remove();
@@ -635,13 +645,13 @@ export class ConfiguratorEntryEditor extends ConfiguratorWindow {
         const advanced=json(row.dataset.original,{});
         const sourceCollection=row.querySelector('[data-step-source-family]:checked')?.value??"";
         const sourceIds=[...row.querySelectorAll('[data-step-prop="sourceObjects"] [data-step-source-object]:checked')].map(input=>input.value);
-        const duplicate={...advanced,...(sourceCollection?{source:{...(advanced.source??{}),collection:sourceCollection,objectIds:sourceIds}}:{}),id:uid("step"),name:`${row.querySelector('[data-step-prop="name"]')?.value??"Step"} (copy)`,kind:row.querySelector('[data-step-prop="kind"]')?.value,min:Number(row.querySelector('[data-step-prop="min"]')?.value??0),max:Number(row.querySelector('[data-step-prop="max"]')?.value??1)};
+        const duplicate={...advanced,...(sourceCollection?{source:{...(advanced.source??{}),collection:sourceCollection,objectIds:sourceIds}}:{}),id:undefined,name:game.i18n.format("RTA.UI.CopyOf",{name:row.querySelector('[data-step-prop="name"]')?.value??""}),kind:row.querySelector('[data-step-prop="kind"]')?.value,min:Number(row.querySelector('[data-step-prop="min"]')?.value??0),max:Number(row.querySelector('[data-step-prop="max"]')?.value??1)};
         row.insertAdjacentHTML("afterend",this.#creationStepHTML(duplicate));
         for(const button of row.nextElementSibling.querySelectorAll("[data-action]"))button.addEventListener("click",event=>this.#action(event));
       }
       this.#dirty=true;this.#syncFooter();return;
     }
-    if(action==="addDeclarativeConstraint"){const list=this.element.querySelector("[data-declarative-constraints]");if(list){const row=document.createElement("div");row.className="rta-declarative-constraint";row.dataset.declarativeConstraint="";row.innerHTML=renderDeclarativeConstraintRow({fields:[...(this.element.querySelector("template[data-constraint-field-options]")?.content.querySelectorAll("option")??[])].map(option=>({id:option.value,colors:option.dataset.rtaColors??RTA_NEUTRAL_COLOR})),labels:{field:game?.i18n?.localize?.("RTA.Declarative.Field")??"Field",rule:game?.i18n?.localize?.("RTA.Declarative.Rule")??"Rule",value:game?.i18n?.localize?.("RTA.Declarative.Value")??"Value",remove:game?.i18n?.localize?.("RTA.Declarative.DeleteConstraint")??"Remove constraint"}});list.append(row);RTASelect.enhance(this.element);row.querySelector("[data-action]").addEventListener("click",event=>this.#action(event));this.#dirty=true;this.#syncFooter();}return;}
+    if(action==="addDeclarativeConstraint"){const list=this.element.querySelector("[data-declarative-constraints]");if(list){const row=document.createElement("div");row.className="rta-declarative-constraint";row.dataset.declarativeConstraint="";row.innerHTML=renderDeclarativeConstraintRow({fields:[...(this.element.querySelector("template[data-constraint-field-options]")?.content.querySelectorAll("option")??[])].map(option=>({id:option.value,label:option.textContent,colors:option.dataset.rtaColors??RTA_NEUTRAL_COLOR})),labels:{field:game?.i18n?.localize?.("RTA.Declarative.Field")??"Field",rule:game?.i18n?.localize?.("RTA.Declarative.Rule")??"Rule",value:game?.i18n?.localize?.("RTA.Declarative.Value")??"Value",remove:game?.i18n?.localize?.("RTA.Declarative.DeleteConstraint")??"Remove constraint"}});list.append(row);RTASelect.enhance(this.element);row.querySelector("[data-action]").addEventListener("click",event=>this.#action(event));this.#dirty=true;this.#syncFooter();}return;}
     if(action==="removeDeclarativeConstraint"){event.currentTarget.closest("[data-declarative-constraint]")?.remove();this.#dirty=true;this.#syncFooter();return;}
     if(action==="addField"){
       const list=this.element.querySelector("[data-field-definition-list]");if(list){const row=this.#newFieldRow();row.querySelector('[data-action="removeField"]')?.addEventListener("click",event=>this.#action(event));list.append(row);this.#dirty=true;this.#syncFooter();}return;

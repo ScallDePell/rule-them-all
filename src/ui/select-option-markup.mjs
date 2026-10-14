@@ -1,4 +1,5 @@
 import {escapeHTML as escape} from "./html-utils.mjs";
+import {localizedText} from "./ui-localization.mjs";
 /** Shared, HTML-safe native option renderer. This only formats presentational
  * markup: identifiers and user-facing labels always come from the caller.
  */
@@ -10,6 +11,8 @@ export function renderSelectOptions(items,{valueKey="id",labelKey="label",colori
     return `<option value="${escape(value)}"${color}${selected}>${escape(label)}</option>`;
   }).join("");
 }
+/** A creation step's kind in words (RTA.CreationStepKind.<id>); the option value stays the id. */
+const STEP_KIND_WORDS={choice:"Choice",content:"Content",allocation:"Point allocation",roll:"Roll",review:"Review"};
 export function renderCreationKindsOptions(kinds,selectedValue){
-  return renderSelectOptions(kinds.map(value=>({id:value,label:value})),{selectedValue});
+  return renderSelectOptions(kinds.map(value=>({id:value,label:localizedText(`RTA.CreationStepKind.${value}`,STEP_KIND_WORDS[value]??value)})),{selectedValue});
 }

@@ -10,3 +10,8 @@ export function createStableId(length = 16) {
   for (const byte of bytes) id += ALPHABET[byte % ALPHABET.length];
   return id;
 }
+
+/** A readable id from a name: lower case, accents stripped, words joined by "-". */
+export const readableId = value => String(value ?? "").trim().toLowerCase().normalize("NFKD").replace(/[̀-ͯ]/g, "").replace(/[^a-z0-9]+/g, "-").replace(/^-|-$/g, "");
+/** `base`, or `base-2`, `base-3`… when it is already taken. */
+export const freeId = (base, taken) => { let id = base, n = 2; while (taken.has(id)) id = `${base}-${n++}`; return id; };

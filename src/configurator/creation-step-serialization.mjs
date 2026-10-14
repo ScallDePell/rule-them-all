@@ -1,7 +1,10 @@
 /** Creation System form -> portable steps. No Foundry or Ruleset storage access. */
+import {readableId,freeId} from './identity.mjs';
 const json=(value,fallback)=>{const text=String(value??'').trim();return text?JSON.parse(text):fallback;};
-export function collectCreationSteps(rows,{sources=[],uid}={}){
+export function collectCreationSteps(rows,{sources=[]}={}){
   const choices=new Map(sources.map(source=>[source.id,source]));
+  // A saved step keeps its id; a new one takes the id typed for it, else one made from its name.
+  const taken=new Set([...rows].map(row=>json(row.dataset?.original,{}).id).filter(Boolean));
   const steps=[...rows].map(row=>{
     const original=json(row.dataset?.original,{});
     const name=String(row.querySelector('[data-step-prop="name"]')?.value??'').trim();
@@ -10,7 +13,14 @@ export function collectCreationSteps(rows,{sources=[],uid}={}){
     if(!Number.isInteger(min)||!Number.isInteger(max)||min<0||max<min)throw new Error(`Invalid minimum/maximum for step ${name}.`);
     const family=row.querySelector('[data-step-source-family]:checked')?.value??'';
     const objectIds=[...row.querySelectorAll('[data-step-prop="sourceObjects"] [data-step-source-object]:checked')].map(input=>input.value);
-    const next={...original,id:original.id||uid('step'),name,kind:row.querySelector('[data-step-prop="kind"]')?.value??'choice',required:min>0,min,max};
+    let id=original.id;
+    if(!id){
+      const typed=String(row.querySelector('[data-step-prop="id"]')?.value??'').trim();
+      if(typed&&readableId(typed)!==typed)throw new Error(`Invalid step identifier ${typed}: use lower-case letters, digits and dashes (${readableId(typed)||'step'}).`);
+      if(typed&&taken.has(typed))throw new Error(`The step identifier ${typed} is already used.`);
+      id=typed||freeId(readableId(name)||'step',taken);taken.add(id);
+    }
+    const next={...original,id,name,kind:row.querySelector('[data-step-prop="kind"]')?.value??'choice',required:min>0,min,max};
     // Optional computed values: an empty select or field keeps none.
     for(const key of ['minFormulaRef','maxFormulaRef','perTargetMaxFormulaRef','optionConditionRef','conditionRef','costFormulaRef','rollRef']){const id=String(row.querySelector(`[data-step-prop="${key}"]`)?.value??'').trim();if(id)next[key]=id;else delete next[key];}
     const perTarget=String(row.querySelector('[data-step-prop="perTargetMax"]')?.value??'').trim();

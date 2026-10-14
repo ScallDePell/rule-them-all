@@ -23,7 +23,7 @@ Dans L'Appel de Cthulhu 7e, FOR, CON, DEX, APP, POU, TAI, INT et ÉDU sont des v
 2. Dans Nom, saisissez « Caractéristique ». Dans Description, écrivez une aide courte : elle s'affichera dans l'éditeur de chaque caractéristique.
 3. Dans Capacités, réglez Valeur sur Requise et laissez Réserve, Collection et État sur Indisponible.
 4. Dans Valeur minimale, choisissez Nombre et saisissez 0. Dans Valeur maximale, choisissez Nombre et saisissez 99.
-5. Dans Champs, cliquez sur Ajouter un champ : Nom « Abréviation », Type de valeur string, Cardinalité un, Obligatoire coché.
+5. Dans Champs, cliquez sur Ajouter un champ : Nom « Abréviation », Type de valeur Texte, Cardinalité un, Obligatoire coché.
 6. Cliquez sur Enregistrer et quitter. Une nouvelle rubrique « Caractéristique » apparaît sous Types de définition.
 
 Les valeurs Difficile (la moitié) et Extrême (le cinquième) ne se règlent pas ici : ce sont deux Formules, dans la famille Formules de la section Règles.
@@ -61,7 +61,7 @@ Dans Vampire V5, la Soif est une jauge de 0 à 5 ; un vampire nouvellement cré�
 1. Il faut un type de définition dont la Réserve est Requise, par exemple un type « Ressource ».
 2. Dans la section Définitions, ouvrez la rubrique « Ressource » et cliquez sur Créer. Dans Nom, saisissez « Soif ».
 3. Réserve apparaît sous Capacités obligatoires (imposées par le type). Dans la partie Réserves, cliquez sur Ajouter une réserve.
-4. Remplissez ID du slot « soif », Libellé « Soif » et Type de valeur integer.
+4. Remplissez ID du slot « soif », Libellé « Soif » et Type de valeur Nombre entier.
 5. Dans Minimum, choisissez Nombre et saisissez 0. Dans Maximum, choisissez Nombre et saisissez 5. Dans Valeur de départ, choisissez Nombre et saisissez 1.
 6. Laissez Sous le minimum et Au-dessus du maximum sur Ramener à la borne : une Soif qui monterait à 6 reste à 5.
 7. Cliquez sur Enregistrer et quitter.
@@ -86,7 +86,7 @@ La gêne au-delà de Force + 8 est une Condition (famille Conditions) qui compar
 
 Dans Cyberpunk RED, chaque compétence s'ajoute à une Stat, et quelques-unes, comme les Arts martiaux, coûtent le double à améliorer.
 
-1. Le type « Compétence » porte deux champs, ajoutés dans son éditeur avec Ajouter un champ. Le premier : Nom « Stat », Type de valeur reference, Cible de référence Définition, Type de définition « Stat ». Le second : Nom « Coût doublé », Type de valeur boolean, Valeur par défaut false.
+1. Le type « Compétence » porte deux champs, ajoutés dans son éditeur avec Ajouter un champ. Le premier : Nom « Stat », Type de valeur Référence, Cible de référence Définition, Type de définition « Stat ». Le second : Nom « Coût doublé », Type de valeur Oui ou non, Valeur par défaut false.
 2. Dans la section Définitions, ouvrez la rubrique « Compétence » et cliquez sur Créer.
 3. Dans Nom, saisissez « Arts martiaux ». Le champ Type de définition, en lecture seule, rappelle « Compétence ».
 4. Les champs du type s'affichent dans le formulaire : dans Stat, choisissez « DEX » ; dans Coût doublé, choisissez oui.
@@ -105,7 +105,7 @@ Dans Pathfinder 2, on possède souvent plusieurs exemplaires d'un même consomma
 1. Dans la section Contenus, ouvrez la rubrique Types de contenu et cliquez sur Créer. Dans Nom, saisissez « Consommable ».
 2. Dans Stockage Foundry, choisissez Objet, puis le sous-type voulu dans Sous-type Foundry Item s'il y en a plusieurs.
 3. Dans Mode d’exécution par défaut, choisissez Cumulable : un personnage pourra acquérir le même consommable plusieurs fois.
-4. Dans Champs, ajoutez avec Ajouter un champ : « Niveau » (integer), « Prix en po » (number), « Encombrement » (string) et « Traits » (string, Cardinalité plusieurs).
+4. Dans Champs, ajoutez avec Ajouter un champ : « Niveau » (Nombre entier), « Prix en po » (Nombre), « Encombrement » (Texte) et « Traits » (Texte, Cardinalité plusieurs).
 5. Cliquez sur Enregistrer et quitter. Une rubrique « Consommable » apparaît sous Types de contenu.
 
 #### Les vaisseaux de Traveller (stockés comme Acteurs)
@@ -116,7 +116,7 @@ Dans Traveller, un vaisseau a sa propre fiche et son propre jeton sur la carte, 
 2. Dans Stockage Foundry, choisissez Acteur.
 3. Dans Sous-type Foundry Actor, choisissez le sous-type d'acteur prévu par le système Foundry utilisé (obligatoire s'il y en a plusieurs).
 4. Laissez Mode d’exécution par défaut sur Unique.
-5. Dans Champs, ajoutez « Tonnage », « Indice de saut », « Indice de manœuvre », « Coque » et « Blindage », tous en integer.
+5. Dans Champs, ajoutez « Tonnage », « Indice de saut », « Indice de manœuvre », « Coque » et « Blindage », tous en Nombre entier.
 6. Cliquez sur Enregistrer et quitter.
 
 #### Les sorts de Shadowrun (réservés aux Éveillés)
@@ -126,7 +126,7 @@ Dans Shadowrun, seul un personnage qui possède l'attribut Magie peut lancer un 
 1. Créez d'abord, dans la famille Conditions (section Règles), une Condition « Personnage éveillé » qui vérifie que la Magie est supérieure à 0.
 2. Dans Types de contenu, cliquez sur Créer et saisissez « Sort » dans Nom. Gardez Stockage Foundry sur Objet.
 3. Dans Disponibilité, choisissez « Personnage éveillé ». Tant que cette Condition est fausse, les Actions d'un sort ne peuvent pas être utilisées.
-4. Dans Champs, ajoutez « Catégorie », « Type (physique ou mana) », « Portée » et « Durée » en string, et « Drain » en integer.
+4. Dans Champs, ajoutez « Catégorie », « Type (physique ou mana) », « Portée » et « Durée » en Texte, et « Drain » en Nombre entier.
 5. Cliquez sur Enregistrer et quitter.
 
 La Condition de Disponibilité peut aussi lire les champs du sort lui-même.
@@ -188,7 +188,7 @@ En D&D 5e, une valeur passive (la Perception passive, par exemple) vaut 10 plus 
 
 1. Dans **Paramètres**, cliquez sur **Créer**.
 2. **Nom** : « Base des valeurs passives ».
-3. **Type de valeur** : `integer`.
+3. **Type de valeur** : Nombre entier.
 4. **Valeur** : `10`.
 5. Enregistrez. Le Paramètre sera lu par la Formule de la Perception passive (voir l'exemple de D&D 5e dans Sorties dérivées).
 
@@ -196,8 +196,8 @@ En D&D 5e, une valeur passive (la Perception passive, par exemple) vaut 10 plus 
 
 Dans L'Appel de Cthulhu, une réussite difficile demande un jet sous la moitié de la compétence, une réussite extrême sous le cinquième.
 
-1. Créez un premier Paramètre. **Nom** : « Diviseur difficile », **Type de valeur** : `integer`, **Valeur** : `2`.
-2. Créez un second Paramètre. **Nom** : « Diviseur extrême », **Type de valeur** : `integer`, **Valeur** : `5`.
+1. Créez un premier Paramètre. **Nom** : « Diviseur difficile », **Type de valeur** : Nombre entier, **Valeur** : `2`.
+2. Créez un second Paramètre. **Nom** : « Diviseur extrême », **Type de valeur** : Nombre entier, **Valeur** : `5`.
 3. Ces deux Paramètres servent dans les Formules de seuil (voir l'exemple de L'Appel de Cthulhu dans Formules).
 
 #### Le seuil de réussite de Savage Worlds
@@ -206,7 +206,7 @@ Dans Savage Worlds, un jet réussit à 4 ou plus, et chaque tranche de 4 au-dess
 
 1. Dans **Paramètres**, cliquez sur **Créer**.
 2. **Nom** : « Seuil de Savage Worlds ».
-3. **Type de valeur** : `integer`.
+3. **Type de valeur** : Nombre entier.
 4. **Valeur** : `4`.
 5. Enregistrez. Le même Paramètre sert deux fois : comme cible du Test, au travers d'une Formule **Valeur unique** qui le lit, et dans la Condition de la prouesse (voir l'exemple de Savage Worlds dans Résultats).
 
@@ -219,7 +219,7 @@ Une Formule calcule une valeur. On choisit une **Opération** (Valeur unique, Ad
 Dans Warhammer Fantasy 4e, on lance 1d100 sous la compétence, augmentée ou réduite par la difficulté (de +40 à −30).
 
 1. Dans **Formules**, cliquez sur **Créer**. **Nom** : « Cible de Corps à corps ».
-2. **Type de résultat** : `integer`.
+2. **Type de résultat** : Nombre entier.
 3. **Opération** : **Additionner**.
 4. Opérande 1 : **Référence**, puis « Corps à corps · value · value.final ».
 5. Cliquez sur **Ajouter un opérande**. Opérande 2 : **Valeur du contexte**, chemin `variables.input.difficulte`.
@@ -230,7 +230,7 @@ Dans Warhammer Fantasy 4e, on lance 1d100 sous la compétence, augmentée ou ré
 Le seuil extrême est la compétence divisée par 5, le seuil difficile la compétence divisée par 2.
 
 1. Dans **Formules**, cliquez sur **Créer**. **Nom** : « Seuil extrême ».
-2. **Type de résultat** : `number`.
+2. **Type de résultat** : Nombre.
 3. **Opération** : **Diviser**.
 4. Opérande 1 : **Valeur du contexte**, chemin `variables.test.target` (la cible du Test en cours, donc la compétence testée).
 5. Opérande 2 : **Paramètre**, « Diviseur extrême ».
@@ -242,7 +242,7 @@ Le seuil extrême est la compétence divisée par 5, le seuil difficile la comp�
 Dans Shadowrun, on lance autant de d6 que l'attribut plus la compétence.
 
 1. Dans **Formules**, cliquez sur **Créer**. **Nom** : « Réserve d'attaque ».
-2. **Type de résultat** : `integer`.
+2. **Type de résultat** : Nombre entier.
 3. **Opération** : **Additionner**.
 4. Opérande 1 : **Référence**, « Agilité · value · value.final ».
 5. Opérande 2 : **Référence**, « Armes à feu · value · value.final ».
@@ -404,7 +404,7 @@ On lance 1d100 sous la compétence. Un 01 est un critique, un 100 une maladresse
 Dans Shadowrun, l'attaquant lance sa réserve de d6 (5 et 6 sont des succès) contre la réserve de défense de la cible. Il touche s'il obtient plus de succès qu'elle.
 
 1. Créez le Jet « Réserve de d6 » : **Formule de dés** `(@test.reserve)d6cs>=5`.
-2. Créez le Test « Défense » : dans **Entrées**, cliquez sur **Ajouter une entrée**, **ID de l'entrée** `reserve`, **Type de valeur** `integer`, **Source** **Formule** « Réserve de défense ». **Jet** : « Réserve de d6 ». **Cible** : **Pas de cible**.
+2. Créez le Test « Défense » : dans **Entrées**, cliquez sur **Ajouter une entrée**, **ID de l'entrée** `reserve`, **Type de valeur** Nombre entier, **Source** **Formule** « Réserve de défense ». **Jet** : « Réserve de d6 ». **Cible** : **Pas de cible**.
 3. Créez le Test « Attaque à distance » avec la même entrée `reserve`, de Source **Formule** « Réserve d'attaque », et le même Jet.
 4. **Cible** : **En opposition à Défense**. La cible de l'Action joue alors le Test « Défense » avec ses propres valeurs, et son total devient la cible de l'attaque.
 5. Ajoutez le Résultat « Touché » (Condition `variables.test.margin` **Supérieur à** `0`) et mettez « Raté » en **Résultat par défaut**. Une égalité va donc au défenseur.
@@ -721,7 +721,7 @@ Beaucoup d'effets de D&D 5e durent « jusqu'à la fin de votre prochain repos lo
 
 1. Dans la famille Types d’événement, créez une entrée de **Nom** « Repos long » et cochez **Activé**.
 2. Ne mettez aucun champ sous **Champs du contenu événementiel** : le fait suffit.
-3. Dans **Rôles du contexte**, cochez self : seul le personnage qui se repose est concerné.
+3. Dans **Rôles du contexte**, cochez Soi : seul le personnage qui se repose est concerné.
 4. Dans la famille Actions, ouvrez l'Action « Prendre un repos long » et cochez « Repos long » dans **Événements déclenchés**.
 5. Dans la famille Durées, créez « Jusqu'au repos long » avec le **Mode** « Jusqu'à un événement » et le **Type d’événement** « Repos long ». Chaque état qui utilise cette Durée prend fin quand le personnage se repose.
 
@@ -729,7 +729,7 @@ Beaucoup d'effets de D&D 5e durent « jusqu'à la fin de votre prochain repos lo
 
 Quand un jet donne un échec bestial, la Bête prend le dessus et le personnage subit une Compulsion.
 
-1. Créez le type d'événement « Jet résolu », sans champ, avec self dans **Rôles du contexte**.
+1. Créez le type d'événement « Jet résolu », sans champ, avec Soi dans **Rôles du contexte**.
 2. Cochez « Jet résolu » dans les **Événements déclenchés** de chaque Action qui fait un Test avec des dés de Faim.
 3. Dans la famille Résultats, l'échec bestial porte la **Clé de résultat** « echec-bestial ».
 4. Dans la famille Conditions, créez « Échec bestial » qui compare la **Valeur du contexte** event.payload.outcomeKey au texte « echec-bestial ».
@@ -793,11 +793,11 @@ Le joueur dispose de 27 points pour acheter ses six caractéristiques, qui parte
 
 1. Dans la famille Formules (section Règles), créez « Coût d'un point d'achat ». Elle lit la « Valeur du contexte » `variables.allocation.point`, qui vaut 1 pour le premier point posé sur une caractéristique, 2 pour le deuxième, et ainsi de suite. Elle doit valoir 1 pour les points 1 à 5 et 2 pour les points 6 et 7. Le constructeur visuel ne fait qu'une opération par Formule : enchaînez donc de petites Formules qui calculent 1 + min(1, max(0, point − 5)).
 2. Dans Systèmes de création, créez le système, donnez-lui un « Nom », puis cliquez sur « Ajouter une étape ».
-3. Première étape, « Socle » : « Nature » content, « Source du Ruleset » Modèles de contenu, et dans « Modèles de contenu autorisés » un contenu qui donne les six caractéristiques à 8. Ce contenu se prépare dans la section Contenus.
-4. Deuxième étape, « Caractéristiques » : « Nature » allocation, « Source du Ruleset » Définitions, puis cochez les six caractéristiques dans « Définitions autorisées ».
+3. Première étape, « Socle » : « Nature » Contenu, « Source du Ruleset » Modèles de contenu, et dans « Modèles de contenu autorisés » un contenu qui donne les six caractéristiques à 8. Ce contenu se prépare dans la section Contenus.
+4. Deuxième étape, « Caractéristiques » : « Nature » Répartition de points, « Source du Ruleset » Définitions, puis cochez les six caractéristiques dans « Définitions autorisées ».
 5. Réglez « Minimum » et « Maximum » sur 27 et « Coût de chaque point » sur la Formule de l'étape 1. Avec un coût, ces deux bornes comptent le coût total et non plus le nombre de points.
 6. Réglez « Points par cible, au plus » sur 7 : aucune caractéristique ne peut alors dépasser 15.
-7. Dernière étape, « Relecture » : « Nature » review, « Minimum » 0 et « Maximum » 0. Le joueur y relit son personnage avant « Créer le personnage ».
+7. Dernière étape, « Relecture » : « Nature » Relecture, « Minimum » 0 et « Maximum » 0. Le joueur y relit son personnage avant « Créer le personnage ».
 
 #### L'espèce et les caractéristiques tirées de Warhammer Fantasy 4e
 
@@ -805,9 +805,9 @@ L'espèce se tire sur une table (90 % d'humains, puis halflings, nains et elfes)
 
 1. Dans la section Contenus, donnez au type de contenu « Espèce » un champ numérique « chance ». Chaque espèce y porte son poids (90 pour Humain, 4 pour Halfling, 4 pour Nain, 1 pour chaque elfe) et donne ses caractéristiques à leur base, par exemple 20 pour un humain.
 2. Dans la famille Jets (section Règles), créez un Jet « 2d10 ».
-3. Étape « Espèce » : « Nature » content, « Source du Ruleset » Modèles de contenu, puis cochez les cinq espèces. Réglez « Minimum » et « Maximum » sur 1.
+3. Étape « Espèce » : « Nature » Contenu, « Source du Ruleset » Modèles de contenu, puis cochez les cinq espèces. Réglez « Minimum » et « Maximum » sur 1.
 4. Réglez « Tirage aléatoire » sur « Tiré, modifiable » et écrivez `chance` dans « Chance selon le champ ». Le joueur clique sur « Tirer au hasard » et peut encore changer d'avis. Le bonus d'XP que Warhammer accorde à qui garde son tirage n'est pas calculé par l'étape : il se gère à part.
-5. Étape « Caractéristiques » : « Nature » allocation, « Source du Ruleset » Définitions, puis cochez les dix caractéristiques dans « Définitions autorisées ».
+5. Étape « Caractéristiques » : « Nature » Répartition de points, « Source du Ruleset » Définitions, puis cochez les dix caractéristiques dans « Définitions autorisées ».
 6. Réglez « Tirage aléatoire » sur « Tiré, définitif » et « Jet pour chaque Definition » sur le Jet 2d10. Chaque caractéristique reçoit son propre jet, qui s'ajoute à la base donnée par l'espèce. Le joueur ne peut plus le changer, et les bornes « Minimum » et « Maximum » ne s'appliquent pas aux points tirés.
 
 #### La création par carrières de Traveller
@@ -815,9 +815,9 @@ L'espèce se tire sur une table (90 % d'humains, puis halflings, nains et elfes)
 Le personnage enchaîne des termes de quatre ans : il choisit une carrière, lance sa survie, et ne commence un nouveau terme que s'il a survécu, avec au plus sept termes.
 
 1. Dans la section Contenus, créez un contenu par carrière (Marine, Marchand, Éclaireur…). Chacun donne ses compétences et porte un champ numérique « survie », le seuil à atteindre.
-2. Étape « Carrière » : « Nature » content, « Source du Ruleset » Modèles de contenu, cochez les carrières, puis réglez « Minimum » et « Maximum » sur 1.
-3. Étape « Survie » : « Nature » roll et « Jet » 2d6, un Jet créé dans la famille Jets. Ses autres réglages disparaissent : une étape de jet se lance une fois.
-4. Dans la famille Conditions, créez « A survécu ». Elle compare deux « Valeur du contexte » : `variables.creation.<identifiant de l'étape Survie>.total` doit être au moins égal à `variables.creation.<identifiant de l'étape Carrière>.fields.survie`.
+2. Étape « Carrière » : « Nature » Contenu, « Source du Ruleset » Modèles de contenu, cochez les carrières, puis réglez « Minimum » et « Maximum » sur 1. Laissez « Identifiant » vide : il sera tiré du nom, soit `carriere`.
+3. Étape « Survie » : « Nature » Jet et « Jet » 2d6, un Jet créé dans la famille Jets. Ses autres réglages disparaissent : une étape de jet se lance une fois. Son identifiant sera `survie`. Enregistrez : chaque étape affiche alors son « Identifiant », avec un bouton pour le copier.
+4. Dans la famille Conditions, créez « A survécu ». Elle compare deux « Valeur du contexte » : `variables.creation.survie.total` doit être au moins égal à `variables.creation.carriere.fields.survie`.
 5. Revenez sur l'étape « Survie », la dernière du bloc, et écrivez 2 dans « Répéter les dernières étapes ». « Carrière » et « Survie » forment alors un terme.
 6. Réglez « Nombre de termes au plus » sur 7 et « Un autre terme tant que » sur la Condition « A survécu ».
 7. Dans la fenêtre de création, le joueur voit « Terme 1 », puis clique sur « Un terme de plus » tant que la Condition reste vraie. Une étape facultative peut aussi porter une « Condition requise », par exemple une Condition qui lit `variables.term.index` pour n'intervenir qu'à partir du quatrième terme.

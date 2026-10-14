@@ -4,7 +4,7 @@ const numeric=new Set(['min','max','lengthMin','lengthMax','relationCount']);
 const record=value=>value!==null&&typeof value==='object'&&!Array.isArray(value);
 export function constraintRowModel(rule={}) {
  const kind=CONSTRAINT_KINDS.includes(rule.kind)?rule.kind:'required';
- return {field:String(rule.field??''),value:(rule.kind==='fieldEquals'||rule.kind==='fieldNotEquals')?String(rule.otherField??''):rule.value===undefined?'':String(rule.value),kinds:CONSTRAINT_KINDS.map(id=>({id,colors:"#666666",selected:id===kind})),kind,legacy:false};
+ return {field:String(rule.field??''),value:(rule.kind==='fieldEquals'||rule.kind==='fieldNotEquals')?String(rule.otherField??''):rule.value===undefined?'':String(rule.value),kinds:CONSTRAINT_KINDS.map(id=>({id,labelKey:`RTA.Declarative.Kinds.${id}`,colors:"#666666",selected:id===kind})),kind,legacy:false};
 }
 export function presentationRowModel(value) {
  const source=record(value)?value:{};
