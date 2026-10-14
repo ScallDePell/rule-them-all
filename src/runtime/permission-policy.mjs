@@ -10,9 +10,9 @@ function scopeRank(scope,target){
   return scope.objectId===target.objectId?3:-1;
 }
 function subjectMatches(rule,subject){
-  if(rule.roles.length&&!rule.roles.includes(subject.role))return false;
+  if(rule.roles?.length&&!rule.roles.includes(subject.role))return false;
   if(rule.minimumOwnership&&OWNERSHIP_LEVELS.indexOf(subject.ownership??"none")<OWNERSHIP_LEVELS.indexOf(rule.minimumOwnership))return false;
-  if(rule.userIds.length&&!rule.userIds.includes(subject.userId))return false;
+  if(rule.userIds?.length&&!rule.userIds.includes(subject.userId))return false;
   return true;
 }
 

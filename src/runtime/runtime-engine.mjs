@@ -62,11 +62,12 @@ function assertDefinitionContract(ruleset,definition){
 
 
 export class RuntimeEngine{
+  #creating;
   /** userId: the user the rules are checked for (null = the adapter's current user). */
-  constructor({configurator,adapter,hooks=globalThis.Hooks,rulesetSource="published",userId=null}={}){if(!configurator)throw new Error("RuntimeEngine requires configurator API.");if(!adapter)throw new Error("RuntimeEngine requires a runtime adapter.");this.configurator=configurator;this.adapter=adapter;this.hooks=hooks;this.rulesetSource=rulesetSource;this.userId=userId;}
+  constructor({configurator,adapter,hooks=globalThis.Hooks,rulesetSource="published",userId=null,creating=new Set()}={}){if(!configurator)throw new Error("RuntimeEngine requires configurator API.");if(!adapter)throw new Error("RuntimeEngine requires a runtime adapter.");this.configurator=configurator;this.adapter=adapter;this.hooks=hooks;this.rulesetSource=rulesetSource;this.userId=userId;this.#creating=creating;}
   ruleset(versionId){return resolveRuntimeRuleset(this.configurator,versionId,{source:this.rulesetSource});}
   /** Same engine, checking the rules for another user (the GM serving a player's request). */
-  forUser(userId){return new RuntimeEngine({configurator:this.configurator,adapter:this.adapter,hooks:this.hooks,rulesetSource:this.rulesetSource,userId});}
+  forUser(userId){return new RuntimeEngine({configurator:this.configurator,adapter:this.adapter,hooks:this.hooks,rulesetSource:this.rulesetSource,userId,creating:this.#creating});}
   /** The world and current combat roles, unless the caller set them. */
   #shared(context={}){
     const roles=context.roles??{};if(roles.world&&(roles.combat||!this.adapter.activeCombat))return context;
@@ -112,10 +113,17 @@ export class RuntimeEngine{
     return state;
   }
   #hasRuleset(versionId){try{this.ruleset(versionId);return true;}catch{return false;}}
+  /** Containers being built by a Creation System: the creation's own rules bound what it writes, so the Ruleset's
+     write Permissions (meant for play, such as "only the GM changes characteristics") do not apply to it. */
+  async duringCreation(ref,build){
+    const key=this.#refKey(normalizeRuntimeContainerRef(ref));
+    this.#creating.add(key);
+    try{return await build();}finally{this.#creating.delete(key);}
+  }
   /** Every persistent runtime write goes through one transaction (CP-08, CP-18). */
   transaction(versionId,kind,{transactionId=null,summary=null,corrects=null}={}){
     const target=change=>change.scope==="content"?{objectKind:"contentTemplate",objectId:(change.after??change.before)?.templateId}:{objectKind:"definition",objectId:change.scope==="definition"?change.id:(change.after??change.before)?.definitionId};
-    const authorize=async(ref,changes)=>{for(const change of changes)await this.#require(versionId,"write",target(change),ref);};
+    const authorize=async(ref,changes)=>{if(this.#creating.has(this.#refKey(normalizeRuntimeContainerRef(ref))))return;for(const change of changes)await this.#require(versionId,"write",target(change),ref);};
     const prepare=(ref,state)=>this.#followMaxima(versionId,ref,state);
     return new RuntimeTransaction(this.adapter,{kind,rulesetVersionId:versionId,transactionId,summary,corrects,authorize,prepare,...(this.userId?{userId:this.userId}:{})});
   }

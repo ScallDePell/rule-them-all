@@ -108,32 +108,7 @@ export class FoundryContentBridge{
       if(!actor?.uuid||actor.documentName!=="Actor")throw new Error("Foundry did not return a created Actor.");
     }
     try{
-      const created=new Set(),acquisitions=[];
-      // Every Definition chosen in the steps is instantiated in one runtime transaction.
-      const chosen=[...new Set(plan.operations.filter(operation=>operation.kind==="definition").map(operation=>operation.definitionId))];
-      if(chosen.length){const result=await this.runtime.acquire(versionId,actor.uuid,{definitionBindings:chosen.map(definitionId=>({definitionId,initial:plan.initialByDefinition[definitionId]??{}})),summary:{creationSystemId}});for(const id of result.acquiredDefinitionIds)created.add(id);}
-      for(const operation of plan.operations.filter(operation=>operation.kind==="content")){
-        // A Content kept as an Item becomes a real Item of the Actor, as if it had been dropped on its sheet.
-        const type=(ruleset.contentTypes??[]).find(entry=>entry.id===(ruleset.contentTemplates??[]).find(template=>template.id===operation.templateId)?.contentTypeId);
-        const asItem=typeof actor.createEmbeddedDocuments==="function"&&type&&type.storageKind!=="actor";
-        const result=asItem
-          ?(await this.createOwnedContentItem(versionId,actor.uuid,operation.templateId,{selections:operation.selections??{}})).acquisition
-          :await this.acquireTemplate(versionId,actor.uuid,operation.templateId,{
-            sourceItemId:`creation:${creationSystemId}:${operation.stepId}:${operation.templateId}`,
-            selections:operation.selections
-          });
-        for(const id of result.createdDefinitionIds??[])created.add(id);
-        acquisitions.push({templateId:operation.templateId,stepId:operation.stepId,alreadyApplied:result.alreadyApplied===true});
-      }
-      // Allocated points come last: they add to what the Contents granted.
-      for(const operation of plan.operations.filter(operation=>operation.kind==="allocation")){
-        const result=await this.runtime.acquire(versionId,actor.uuid,{definitionBindings:Object.entries(operation.allocations).map(([definitionId,points])=>({definitionId,initial:{},add:{"value.base":points}})),summary:{creationSystemId,stepId:operation.stepId}});
-        for(const id of result.acquiredDefinitionIds)created.add(id);
-      }
-      const run={versionId,creationSystemId,sessionId,selectedByStep:plan.selectedByStep,createdDefinitionIds:[...created],acquisitions,completedAt:Date.now()};
-      await actor.setFlag(MODULE_ID,"creationRun",run);
-      this.hooks?.callAll?.("ruleThemAllCreationCompleted",actor,clone(run));
-      return {actor,run:clone(run)};
+      return await this.runtime.duringCreation(actor.uuid,()=>this.#buildCreation(versionId,creationSystemId,{actor,plan,ruleset,sessionId}));
     }catch(error){
       if(actorUuid)throw error;
       try{await actor.delete();}catch(rollbackError){
@@ -141,6 +116,35 @@ export class FoundryContentBridge{
       }
       throw error;
     }
+  }
+  /** The steps' choices written on the Actor: chosen Definitions, Contents, then allocated points. */
+  async #buildCreation(versionId,creationSystemId,{actor,plan,ruleset,sessionId}){
+    const created=new Set(),acquisitions=[];
+    // Every Definition chosen in the steps is instantiated in one runtime transaction.
+    const chosen=[...new Set(plan.operations.filter(operation=>operation.kind==="definition").map(operation=>operation.definitionId))];
+    if(chosen.length){const result=await this.runtime.acquire(versionId,actor.uuid,{definitionBindings:chosen.map(definitionId=>({definitionId,initial:plan.initialByDefinition[definitionId]??{}})),summary:{creationSystemId}});for(const id of result.acquiredDefinitionIds)created.add(id);}
+    for(const operation of plan.operations.filter(operation=>operation.kind==="content")){
+      // A Content kept as an Item becomes a real Item of the Actor, as if it had been dropped on its sheet.
+      const type=(ruleset.contentTypes??[]).find(entry=>entry.id===(ruleset.contentTemplates??[]).find(template=>template.id===operation.templateId)?.contentTypeId);
+      const asItem=typeof actor.createEmbeddedDocuments==="function"&&type&&type.storageKind!=="actor";
+      const result=asItem
+        ?(await this.createOwnedContentItem(versionId,actor.uuid,operation.templateId,{selections:operation.selections??{}})).acquisition
+        :await this.acquireTemplate(versionId,actor.uuid,operation.templateId,{
+          sourceItemId:`creation:${creationSystemId}:${operation.stepId}:${operation.templateId}`,
+          selections:operation.selections
+        });
+      for(const id of result.createdDefinitionIds??[])created.add(id);
+      acquisitions.push({templateId:operation.templateId,stepId:operation.stepId,alreadyApplied:result.alreadyApplied===true});
+    }
+    // Allocated points come last: they add to what the Contents granted.
+    for(const operation of plan.operations.filter(operation=>operation.kind==="allocation")){
+      const result=await this.runtime.acquire(versionId,actor.uuid,{definitionBindings:Object.entries(operation.allocations).map(([definitionId,points])=>({definitionId,initial:{},add:{"value.base":points}})),summary:{creationSystemId,stepId:operation.stepId}});
+      for(const id of result.acquiredDefinitionIds)created.add(id);
+    }
+    const run={versionId,creationSystemId,sessionId,selectedByStep:plan.selectedByStep,createdDefinitionIds:[...created],acquisitions,completedAt:Date.now()};
+    await actor.setFlag(MODULE_ID,"creationRun",run);
+    this.hooks?.callAll?.("ruleThemAllCreationCompleted",actor,clone(run));
+    return {actor,run:clone(run)};
   }
   async syncContentType(versionId,contentTypeId){
     const ruleset=this.ruleset(versionId),contentType=(ruleset.contentTypes??[]).find(x=>x.id===contentTypeId&&x.enabled!==false);if(!contentType)throw new Error(`Content Type unavailable: ${contentTypeId}.`);

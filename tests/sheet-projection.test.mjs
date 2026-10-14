@@ -215,3 +215,18 @@ test('who sees what: the player gets the gauge, an observer its words, the GM th
   await assert.rejects(api.createScale(v,{id:'bad',nameKey:'Bad',rows:[{id:'a',labelKey:'A',min:0,max:5},{id:'b',labelKey:'B',min:5,max:9}]}),/overlap/);
   await assert.rejects(api.deleteScale(v,'health'),/still referenced|REFERENTIAL|used/i);
 });
+
+test('a type-scoped Permission binds play writes, not character creation', async()=>{
+  const {api,v,engine,adapter}=await setup();
+  await api.createSheetDefinition(v,{id:'main',nameKey:'Main',target:'actor',root:{id:'root',kind:'grid',children:[
+    {id:'str',kind:'value',source:{kind:'output',reference:out('str','value','value.final')},write:{operation:'set'}}]}});
+  await api.createPermissionPolicy(v,{id:'gm-attributes',nameKey:'GM attributes',defaultEffect:'DENY',scope:{objectKind:'definitionType',objectId:'attribute'},
+    rules:[{id:'read',effect:'ALLOW',operations:['read','execute'],priority:0}]});
+  await api.publishRuleset(v);
+  adapter.users.set('p',{role:'player',isGM:false});adapter.ownership.set('actor:hero|p','owner');
+  const player=engine.forUser('p');
+  await assert.rejects(player.writeSheetValue(v,hero,{sheetId:'main',nodeId:'str',value:3}),/Permission denied/);
+  await engine.duringCreation(hero,()=>player.setDefinitionState(v,hero,'str',{base:3}));
+  assert.equal(await engine.resolveReference(v,out('str','value','value.final'),{roles:{self:hero},defaultRole:'self'}),3);
+  await assert.rejects(player.writeSheetValue(v,hero,{sheetId:'main',nodeId:'str',value:4}),/Permission denied/,'the exemption ends with the creation');
+});
