@@ -29,7 +29,7 @@ export const insideRepeater = (root, id) => Boolean(locate(root, id)?.path.slice
 export const repeaterOf = (root, id) => locate(root, id)?.path.slice(0, -1).findLast(node => node.kind === "repeater") ?? null;
 export const isContainer = node => LAYOUT_CONTAINERS.includes(node?.kind);
 /** The kinds a container accepts: tabs hold only tabs; a tab is only in tabs. */
-export const childKinds = parent => !isContainer(parent) ? [] : parent.kind === "tabs" ? ["tab"] : ["section", "grid", "tabs", "repeater", "value", "action", "text", "image", "contents", "spacer"];
+export const childKinds = parent => !isContainer(parent) ? [] : parent.kind === "tabs" ? ["tab"] : ["section", "grid", "tabs", "repeater", "value", "action", "text", "image", "contents", "progression", "spacer"];
 export const columnsOf = node => MAX_COLUMNS[node?.kind] ? node.columns ?? 1 : 1;
 export const maxColumns = kind => MAX_COLUMNS[kind] ?? 1;
 
@@ -87,11 +87,16 @@ export function newNode(kind, root, ruleset, {parentId = root?.id, target = "act
     if (target === "item" || parent?.path.some(node => node.kind === "repeater") || !itemContentTypes(ruleset).length) return null;
     return {id, kind};
   }
+  if (kind === "progression") {
+    // What the Actor buys: not on an Item sheet, not once per row of a list.
+    const system = (ruleset.progressionSystems ?? []).find(enabled), parent = locate(root, parentId);
+    return system && target !== "item" && !parent?.path.some(node => node.kind === "repeater") ? {id, kind, progressionSystemRef: system.id} : null;
+  }
   return {id, kind: "spacer"};
 }
 
-/** What the editor offers to add, grouped: layout blocks, fields (a value, a gauge, dots, an Action button, the held
-   Contents), a list per Definition family, and on an Actor sheet the Content it holds of each type (its Origin…);
+/** What the editor offers to add, grouped: layout blocks, fields (a value, a gauge, dots, an Action button, the held Contents,
+   each Progression System), a list per Definition family, and on an Actor sheet the Content it holds of each type (its Origin…);
    on an Item sheet, the Content fields. Each item: {label | labelKey, kind, spec}; paletteNode turns a spec into a node.
    A single Definition, Formula or Action is chosen in the block's settings once it is placed. */
 export function paletteGroups(ruleset, {target = "actor", contentTypeIds = []} = {}) {
@@ -101,7 +106,8 @@ export function paletteGroups(ruleset, {target = "actor", contentTypeIds = []} =
     {kind: "value", labelKey: "RTA.SheetEditor.Kind.value", spec: {kind: "value"}},
     ...(target === "actor" ? [{kind: "gauge", labelKey: "RTA.SheetEditor.Display.gauge", spec: {kind: "value", display: "gauge"}}, {kind: "dots", labelKey: "RTA.SheetEditor.Display.dots", spec: {kind: "value", display: "dots"}}] : []),
     ...((ruleset.actions ?? []).some(enabled) ? [{kind: "action", spec: {kind: "action"}}] : []),
-    ...(target === "actor" && itemContentTypes(ruleset).length ? [{kind: "contents", spec: {kind: "contents"}}] : [])];
+    ...(target === "actor" && itemContentTypes(ruleset).length ? [{kind: "contents", spec: {kind: "contents"}}] : []),
+    ...(target === "actor" ? (ruleset.progressionSystems ?? []).filter(enabled).map(system => ({label: name(system), kind: "progression", spec: {kind: "progression", progressionSystemRef: system.id}})) : [])];
   groups.push({id: "fields", labelKey: "RTA.SheetEditor.Palette.Fields", items: fields});
   if (target === "item") {
     const contentFieldList = contentFields(ruleset, contentTypeIds);
@@ -131,6 +137,10 @@ export function paletteNode(spec, root, ruleset, {parentId = root?.id, target = 
     const output = EACH_OUTPUTS.find(o => (ruleset.definitions ?? []).some(d => d.definitionTypeId === spec.definitionTypeId && (d.capabilities ?? []).includes(o.capabilityId)));
     if (output) node.children.push({id: `${id}-value`, kind: "value", source: {kind: "each", capabilityId: output.capabilityId, outputId: output.outputId}});
     return node;
+  }
+  if (spec?.kind === "progression" && spec.progressionSystemRef) {
+    const node = newNode("progression", root, ruleset, {parentId, target});
+    return node && {...node, progressionSystemRef: spec.progressionSystemRef};
   }
   if (spec?.kind === "value") {
     const node = spec.source ? {id: freshId(root, "value"), kind: "value", source: copy(spec.source)} : newNode("value", root, ruleset, {parentId, target});
@@ -179,7 +189,7 @@ export function canPlace(root, node, targetId, {beside = false} = {}) {
   // An "each" value only exists in a repeater; held Contents are never once per row.
   const inRepeater = [...(holder === target.node ? target.path : target.path.slice(0, -1))].some(entry => entry.kind === "repeater");
   // Inside the node itself, a list it holds counts too: a new list's row value is in that list.
-  const fits = (entry, listed) => !(entry.source?.kind === "each" && !listed || entry.kind === "contents" && listed)
+  const fits = (entry, listed) => !(entry.source?.kind === "each" && !listed || ["contents", "progression"].includes(entry.kind) && listed)
     && (entry.children ?? []).every(child => fits(child, listed || entry.kind === "repeater"));
   return fits(node, inRepeater);
 }
@@ -277,6 +287,22 @@ function previewValue(node, ruleset, row, contentTypeIds, viewer = null) {
   return {...view, valueType, value: SAMPLE[valueType] ?? (["string", "text"].includes(valueType) ? "…" : null)};
 }
 
+/** A Progression System as the sheet shows it, with sample rows: two Definitions per advancement (raised from 2 to 3 for
+    10 of its currency, the second already at its maximum), then its first milestones, one reached and the next one ahead.
+    An observer reads it without the buttons (by default only the owners and the GM write). */
+function previewProgression(node, ruleset, viewer = null) {
+  const buy = viewer !== "observer";
+  const system = (ruleset.progressionSystems ?? []).find(entry => entry.id === node.progressionSystemRef);
+  const name = id => ruleset.definitions?.find(d => d.id === id)?.nameKey ?? id;
+  const advancements = (system?.advancements ?? []).map(advancement => {
+    const targets = (ruleset.definitions ?? []).filter(d => enabled(d) && ((advancement.definitionIds ?? []).includes(d.id) || d.definitionTypeId === advancement.definitionTypeId)).slice(0, 2);
+    return {id: advancement.id, label: advancement.labelKey || advancement.id, currency: name(advancement.currencyRef?.objectId ?? ""), funds: 25,
+      rows: targets.map((d, i) => ({definitionId: d.id, label: d.nameKey ?? d.id, current: 2, next: 3, cost: 10, buy, ...(i && buy ? {reason: "maximum"} : {})}))};
+  }).filter(advancement => advancement.rows.length);
+  const milestones = (system?.milestones ?? []).slice(0, 2).map((milestone, i) => ({id: milestone.id, label: milestone.labelKey || milestone.id, state: i ? "ahead" : "reached"}));
+  return {systemId: system?.id ?? "", advancements, milestones, apply: buy && milestones.length > 0};
+}
+
 /** viewer: "player", "observer" or "gm" previews the sheet as that person sees it (blocks not for them left out,
     values only the GM changes read-only for the others); null shows every block. */
 export function previewView(root, ruleset, {target = "actor", contentTypeIds = [], viewer = null} = {}) {
@@ -294,6 +320,7 @@ export function previewView(root, ruleset, {target = "actor", contentTypeIds = [
         .map(template => ({key: template.id, label: template.nameKey ?? template.id, img: template.image ?? "", item: true, available: true, type: type.nameKey ?? type.id})));
       return {...base, rows};
     }
+    if (node.kind === "progression") return {...base, ...previewProgression(node, ruleset, viewer)};
     if (node.kind === "action") return {...base, label: node.labelKey || ruleset.actions?.find(a => a.id === node.actionRef)?.nameKey || node.actionRef, actionId: node.actionRef, definitionId: row?.id ?? null};
     if (node.kind === "repeater") {
       // Two Definitions of the type stand for what an Actor would hold.

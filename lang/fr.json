@@ -1381,7 +1381,26 @@
       "Rebind": "Passer sur {ruleset}",
       "RebindConfirm": "Passer {name} sur {ruleset} ? Ses valeurs sont gardées pour tout ce que cette version définit encore ; le reste est retiré.",
       "Rebound": "Acteur passé sur {ruleset} : {dropped} élément(s) retiré(s), {granted} ajouté(s).",
-      "ItemVersionGone": "Cet objet vient d’une version du Ruleset qui n’existe plus. Passez son Acteur sur le Ruleset actif, ou resynchronisez les bibliothèques de contenus."
+      "ItemVersionGone": "Cet objet vient d’une version du Ruleset qui n’existe plus. Passez son Acteur sur le Ruleset actif, ou resynchronisez les bibliothèques de contenus.",
+      "Progression": {
+        "Buy": "Acheter",
+        "Spent": "Dépensé",
+        "Milestones": "Paliers",
+        "Apply": "Appliquer les paliers atteints",
+        "Applied": "Paliers appliqués",
+        "Nothing": "Rien à acheter pour l’instant.",
+        "Stopped": "Paliers arrêtés à {name} : son Action n’est pas permise.",
+        "Refused": {
+          "cost": "Pas assez",
+          "maximum": "Au maximum",
+          "condition": "Pas maintenant"
+        },
+        "State": {
+          "applied": "Appliqué",
+          "reached": "À appliquer",
+          "ahead": "Prochain"
+        }
+      }
     },
     "SheetEditor": {
       "Layout": "Mise en page",
@@ -1420,7 +1439,8 @@
         "text": "Texte",
         "spacer": "Case vide",
         "contents": "Contenus détenus",
-        "image": "Image"
+        "image": "Image",
+        "progression": "Progression"
       },
       "Source": {
         "output": "Une sortie de Definition",
@@ -1563,7 +1583,8 @@
         "both": "Icône et texte",
         "icon": "Icône seule",
         "text": "Texte seul"
-      }
+      },
+      "ProgressionSystem": "Système de progression"
     },
     "Reaction": {
       "Title": "Réaction",

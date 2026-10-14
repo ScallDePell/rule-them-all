@@ -132,6 +132,7 @@ export class DependencyIndex{
           if(node.query?.conditionRef)pushRef(this.#edges,consumer,{objectKind:'condition',objectId:node.query.conditionRef},'sheetRepeater',`${path}.query.conditionRef`);
         }
         if(node.kind==='action')pushRef(this.#edges,consumer,{objectKind:'action',objectId:node.actionRef},'sheetAction',`${path}.actionRef`);
+        if(node.kind==='progression')pushRef(this.#edges,consumer,{objectKind:'progressionSystem',objectId:node.progressionSystemRef},'sheetProgression',`${path}.progressionSystemRef`);
         for(const [j,id] of (node.contentTypeIds??[]).entries())pushRef(this.#edges,consumer,{objectKind:'contentType',objectId:id},'sheetContentType',`${path}.contentTypeIds[${j}]`);
       }
     }

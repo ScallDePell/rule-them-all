@@ -834,7 +834,8 @@ Monter un attribut coûte cinq fois le nouveau niveau en XP, sans dépasser 5.
 4. Remplissez « Libellé » (« Attribut »), puis « Augmente les Definitions du type » : Attribut. Laissez « Augmentée de » à 1.
 5. « Payée avec » : l'Expérience. « Coût » : « Coût d'un attribut ». « Valeur maximale » : la Formule « Cinq ».
 6. Ajoutez une seconde amélioration « Compétence » sur le type Compétence, avec une Formule de coût qui multiplie par 3.
-7. Pour vérifier, ouvrez le Labo runtime, choisissez l'outil Progression et cliquez sur « Acheter ». Un refus explique si l'XP manque ou si la valeur est déjà au maximum.
+7. Sur la feuille, le joueur achète lui-même : la feuille automatique montre une section au nom du système, et dans l'éditeur de feuilles le système s'ajoute depuis « Ajouter », groupe « Champs ». Chaque attribut détenu y paraît avec son niveau actuel, le niveau visé, le coût en XP et un bouton « Acheter ». Si l'XP manque ou si la valeur est au maximum, la ligne le dit à la place du bouton. L'achat poste une carte dans le chat.
+8. Pour essayer sans joueur, le Labo runtime garde l'outil Progression et son bouton « Acheter ».
 
 #### Les points d'amélioration de Cyberpunk RED
 
@@ -855,7 +856,7 @@ Monter une compétence coûte 20 PA fois le niveau visé, et le double pour les 
 2. Dans le système de progression, cliquez sur « Ajouter un palier ».
 3. « Libellé » : Niveau 2. « Atteint quand » : « 300 XP ou plus ». Dans « Donne », cochez la Definition « Fougue ».
 4. Ajoutez un palier « Niveau 4 », « Atteint quand » sur la Condition des 2 700 XP. Dans « Puis lance », choisissez une Action « Amélioration ou don ». Ses choix, qui se règlent dans la famille Actions, laissent le joueur choisir.
-5. Chaque palier ne s'applique qu'une fois par personnage. Dans le Labo runtime, « Appliquer les paliers atteints » applique d'un coup tous les paliers dont la Condition est devenue vraie.
+5. Chaque palier ne s'applique qu'une fois par personnage. Sur la feuille, le bloc du système liste les paliers appliqués, ceux à appliquer et le prochain. Le bouton « Appliquer les paliers atteints » applique d'un coup tous les paliers dont la Condition est devenue vraie, après avoir demandé au joueur les choix de leurs Actions (le don du niveau 4). Le Labo runtime offre le même bouton au MJ.
 
 ### Feuilles
 

@@ -7,6 +7,8 @@
    - [data-sheet-action=actionId] (+ data-definition-id) uses an Action;
    - [data-sheet-tab=id] shows the [data-sheet-panel=id] of its tabs;
    - [data-sheet-item-open=key] opens an owned Item's sheet, [data-sheet-item-remove=key] removes it;
+   - [data-sheet-advance=advancementId] (+ data-progression, data-definition-id) buys an advancement,
+     [data-sheet-milestones=progressionSystemId] applies the milestones reached;
    - [data-sheet-command] runs a sheet command (initialize, create). */
 import {escapeHTML as escape} from "./html-utils.mjs";
 import {sheetStyle, styledAttributes} from "./sheet-style.mjs";
@@ -107,6 +109,25 @@ function renderContents(node, t, {edit, editable, m}) {
   return `<div ${attrs(node, "rta-sheet-contents")}${m}>${groups || `<p class="rta-sheet-empty">${escape(t("RTA.Sheet.DropContents"))}</p>`}</div>`;
 }
 
+/** A Progression System's purchases: per advancement, each Definition it raises (from → to), the cost in its currency and
+   a button (or why it cannot be bought now); then the milestones, with a button that applies those reached.
+   In the editor the buttons are plain marks, so the block still drags. */
+const MILESTONE_ICONS = {applied: "fa-circle-check", reached: "fa-circle-exclamation", ahead: "fa-circle"};
+function renderProgression(node, t, {edit, m}) {
+  const button = (label, data) => edit ? `<span class="rta-sheet-progression__button">${escape(label)}</span>` : `<button type="button" class="rta-sheet-progression__button" ${data}>${escape(label)}</button>`;
+  const row = (advancement, r) => `<li class="rta-sheet-progression__row"><span class="rta-sheet-progression__name" title="${escape(t(r.label))}">${escape(t(r.label))}</span>`
+    + `<span class="rta-sheet-progression__step">${escape(formatSheetValue(r.current))} → ${escape(formatSheetValue(r.next))}</span>`
+    + `<span class="rta-sheet-progression__cost">${escape(formatSheetValue(r.cost))} ${escape(t(advancement.currency))}</span>`
+    + (!r.buy ? "<span></span>" : r.reason ? `<span class="rta-sheet-progression__reason">${escape(t(`RTA.Sheet.Progression.Refused.${r.reason}`))}</span>`
+      : button(t("RTA.Sheet.Progression.Buy"), `data-sheet-advance="${escape(advancement.id)}" data-progression="${escape(node.systemId)}" data-definition-id="${escape(r.definitionId)}" aria-label="${escape(`${t("RTA.Sheet.Progression.Buy")} · ${t(r.label)}`)}"`)) + "</li>";
+  const groups = (node.advancements ?? []).map(a => `<div class="rta-sheet-progression__group"><p class="rta-sheet-progression__title"><span>${escape(t(a.label))}</span>${a.funds === null || a.funds === undefined ? "" : `<span class="rta-sheet-progression__funds">${escape(t(a.currency))} ${escape(formatSheetValue(a.funds))}</span>`}</p><ul class="rta-sheet-progression__list">${a.rows.map(r => row(a, r)).join("")}</ul></div>`);
+  const milestones = node.milestones ?? [];
+  if (milestones.length) groups.push(`<div class="rta-sheet-progression__group"><p class="rta-sheet-progression__title"><span>${escape(t("RTA.Sheet.Progression.Milestones"))}</span></p><ul class="rta-sheet-progression__milestones">${milestones.map(ms => `<li class="rta-sheet-progression__milestone rta-sheet-progression__milestone--${escape(ms.state)}"><i class="fa-solid ${MILESTONE_ICONS[ms.state] ?? "fa-circle"}" aria-hidden="true"></i><span>${escape(t(ms.label))}</span><span class="rta-sheet-progression__state">${escape(t(`RTA.Sheet.Progression.State.${ms.state}`))}</span></li>`).join("")}</ul>`
+    + (node.apply ? button(t("RTA.Sheet.Progression.Apply"), `data-sheet-milestones="${escape(node.systemId)}"`) : "") + "</div>");
+  const title = node.error ? ` title="${escape(node.error)}"` : "";
+  return `<div ${attrs(node, "rta-sheet-progression")}${title}${m}>${groups.join("") || `<p class="rta-sheet-empty">${escape(t("RTA.Sheet.Progression.Nothing"))}</p>`}</div>`;
+}
+
 function renderNode(node, t, {row = null, solo = false, edit = false, editable = false} = {}) {
   if (!node) return "";
   const m = mark(node, edit);
@@ -128,6 +149,7 @@ function renderNode(node, t, {row = null, solo = false, edit = false, editable =
     return node.src ? `<div ${attrs(node, `rta-sheet-image${shape}`, look)}${m}><img src="${escape(node.src)}" alt=""></div>` : edit ? `<div ${attrs(node, `rta-sheet-image rta-sheet-image--empty${shape}`, look)}${m}><i class="fa-solid fa-image"></i> ${escape(t("RTA.SheetEditor.NoImage"))}</div>` : "";
   }
   if (node.kind === "contents") return renderContents(node, t, {edit, editable, m});
+  if (node.kind === "progression") return renderProgression(node, t, {edit, m});
   if (node.kind === "placeholder") return dropZone(node.parentId, t);
   // An empty container shows its own drop zone (an empty tab's, not its tabs').
   const children = (list, options, holder = node) => list.length || !edit ? list.map(child => renderNode(child, t, {...options, edit, editable})).join("") : dropZone(holder.id, t);

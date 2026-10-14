@@ -20,7 +20,7 @@ const iconRows = node => {
     ...(node.icon ? [row(t("RTA.SheetEditor.LabelShow.label", "Label shows"), `<select data-layout-prop="labelShow">${shows.map(([value, key, fallback]) => `<option value="${value}"${value === (node.labelShow ?? "both") ? " selected" : ""}>${t(key, fallback)}</option>`).join("")}</select>`)] : [])];
 };
 const KIND_LABELS = {tabs: ["RTA.SheetEditor.Kind.tabs", "Tabs"], tab: ["RTA.SheetEditor.Kind.tab", "Tab"], section: ["RTA.SheetEditor.Kind.section", "Section"], grid: ["RTA.SheetEditor.Kind.grid", "Grid"],
-  repeater: ["RTA.SheetEditor.Kind.repeater", "List of Definitions"], value: ["RTA.SheetEditor.Kind.value", "Value"], action: ["RTA.SheetEditor.Kind.action", "Action button"], text: ["RTA.SheetEditor.Kind.text", "Text"], image: ["RTA.SheetEditor.Kind.image", "Image"], contents: ["RTA.SheetEditor.Kind.contents", "Held Contents"], spacer: ["RTA.SheetEditor.Kind.spacer", "Empty cell"]};
+  repeater: ["RTA.SheetEditor.Kind.repeater", "List of Definitions"], value: ["RTA.SheetEditor.Kind.value", "Value"], action: ["RTA.SheetEditor.Kind.action", "Action button"], text: ["RTA.SheetEditor.Kind.text", "Text"], image: ["RTA.SheetEditor.Kind.image", "Image"], contents: ["RTA.SheetEditor.Kind.contents", "Held Contents"], progression: ["RTA.SheetEditor.Kind.progression", "Progression"], spacer: ["RTA.SheetEditor.Kind.spacer", "Empty cell"]};
 /** A block kind's name, as plain text. */
 export const kindText = kind => { const [key, fallback] = KIND_LABELS[kind] ?? [kind, kind], text = globalThis.game?.i18n?.localize?.(key); return text && text !== key ? text : fallback; };
 export const kindLabel = kind => escape(kindText(kind));
@@ -33,7 +33,7 @@ export function renderLayoutToolbarHTML({canMoveUp = false, canMoveDown = false,
   return `<div class="rta-sheet-editor__toolbar">${button("up", "fa-arrow-up", t("RTA.Template.MoveUp", "Move up"), canMoveUp)}${button("down", "fa-arrow-down", t("RTA.Template.MoveDown", "Move down"), canMoveDown)}${button("remove", "fa-trash", t("RTA.SheetEditor.Remove", "Remove the block"), canRemove)}${button("undo", "fa-rotate-left", t("RTA.SheetEditor.Undo", "Undo"), undo)}${viewAs}<button type="button" data-layout-command="auto"><i class="fa-solid fa-wand-magic-sparkles"></i> ${t("RTA.SheetEditor.Auto", "Automatic layout")}</button></div>`;
 }
 
-const KIND_ICONS = {section: "fa-square", grid: "fa-table-cells", tabs: "fa-folder", tab: "fa-folder-open", repeater: "fa-list", value: "fa-hashtag", gauge: "fa-battery-half", dots: "fa-circle-dot", content: "fa-id-card", action: "fa-dice-d20", text: "fa-font", image: "fa-image", contents: "fa-box-open", spacer: "fa-border-none"};
+const KIND_ICONS = {section: "fa-square", grid: "fa-table-cells", tabs: "fa-folder", tab: "fa-folder-open", repeater: "fa-list", value: "fa-hashtag", gauge: "fa-battery-half", dots: "fa-circle-dot", content: "fa-id-card", action: "fa-dice-d20", text: "fa-font", image: "fa-image", contents: "fa-box-open", progression: "fa-arrow-trend-up", spacer: "fa-border-none"};
 
 /** What can be added: blocks, then the Ruleset's own elements. A click adds an item into the selection; it can also
    be dragged onto the sheet. groups: paletteGroups (configurator/sheet-layout-model.mjs), labels given by the controller. */
@@ -95,6 +95,7 @@ export function renderLayoutPropertiesHTML(node, ctx) {
     const chosen = new Set(node.contentTypeIds ?? []);
     rows.push(row(t("RTA.SheetEditor.ContentTypes", "Content Types (none: all)"), `<select multiple data-layout-prop="contentTypeIds">${ctx.contentTypes.map(choice => `<option value="${escape(choice.value)}" data-rta-colors="${escape(choice.colors)}"${chosen.has(choice.value) ? " selected" : ""}>${escape(choice.label)}</option>`).join("")}</select>`));
   }
+  if (node.kind === "progression") rows.push(row(t("RTA.SheetEditor.ProgressionSystem", "Progression System"), select("progressionSystemRef", ctx.progressionSystems, node.progressionSystemRef)));
   if (ctx.parentColumns > 1) rows.push(row(t("RTA.SheetEditor.Width", "Width"), select("span", ctx.spanChoices(ctx.parentColumns), node.span ?? 1)));
   // Who gets the block (and what it holds): the Actor's owners, anyone else who opens the sheet, the GM.
   if (!ctx.isRoot) {

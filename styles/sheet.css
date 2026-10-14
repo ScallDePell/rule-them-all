@@ -322,6 +322,133 @@ button.rta-sheet-content__name {
   outline-offset: 4px;
 }
 
+/* A Progression System's purchases: one line per Definition (name, from → to, cost, button), its columns lined up. */
+.rta-sheet-progression {
+  display: flex;
+  flex-direction: column;
+  gap: var(--rta-gap-block);
+}
+
+.rta-sheet-progression__group {
+  display: flex;
+  flex-direction: column;
+  gap: var(--rta-gap-tight);
+}
+
+.rta-sheet-progression__title {
+  display: flex;
+  justify-content: space-between;
+  gap: var(--rta-gap-row);
+  margin: 0;
+  color: var(--rta-color-text-secondary);
+  font-size: var(--rta-type-sm);
+  text-transform: uppercase;
+}
+
+.rta-sheet-progression__funds {
+  font-weight: 600;
+  text-transform: none;
+}
+
+.rta-sheet-progression__list,
+.rta-sheet-progression__milestones {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.rta-sheet-progression__list {
+  display: grid;
+  /* The last column keeps one width in every group, so the buttons line up from one advancement to the next. */
+  grid-template-columns: minmax(0, 1fr) auto auto minmax(6rem, auto);
+  column-gap: var(--rta-gap-row);
+  align-items: center;
+}
+
+.rta-sheet-progression__row {
+  display: grid;
+  grid-column: 1 / -1;
+  grid-template-columns: subgrid;
+  align-items: center;
+  padding-block: var(--rta-gap-tight);
+  border-block-end: 1px solid var(--rta-color-border-tertiary);
+}
+
+.rta-sheet-progression__name {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.rta-sheet-progression__step,
+.rta-sheet-progression__cost {
+  text-align: end;
+  white-space: nowrap;
+}
+
+.rta-sheet-progression__step {
+  font-weight: 600;
+}
+
+.rta-sheet-progression__cost,
+.rta-sheet-progression__reason,
+.rta-sheet-progression__state {
+  color: var(--rta-color-text-secondary);
+}
+
+.rta-sheet-progression__reason {
+  font-size: var(--rta-type-sm);
+  font-style: italic;
+  text-align: end;
+}
+
+.rta-sheet-progression__button {
+  inline-size: auto;
+  white-space: nowrap;
+}
+
+.rta-sheet-progression__row > .rta-sheet-progression__button {
+  inline-size: 100%;
+}
+
+.rta-sheet-progression__group > .rta-sheet-progression__button {
+  align-self: flex-start;
+}
+
+.rta-sheet-progression__milestone {
+  display: flex;
+  align-items: center;
+  gap: var(--rta-gap-row);
+  padding-block: var(--rta-gap-tight);
+}
+
+.rta-sheet-progression__state {
+  margin-inline-start: auto;
+  font-size: var(--rta-type-sm);
+}
+
+.rta-sheet-progression__milestone--reached {
+  font-weight: 600;
+}
+
+.rta-sheet-progression__milestone--reached > i {
+  color: var(--rta-color-border-highlight);
+}
+
+.rta-sheet-progression__milestone--ahead {
+  color: var(--rta-color-text-secondary);
+}
+
+/* In the editor the buttons are marks drawn like buttons. */
+span.rta-sheet-progression__button {
+  display: inline-flex;
+  align-items: center;
+  min-block-size: var(--input-height, 1.75rem);
+  padding: 0 var(--rta-gap-row);
+  border: var(--rta-frame-border) solid var(--rta-color-border-tertiary);
+  border-radius: var(--rta-radius-control);
+}
+
 /* Styles set in the sheet editor (inline, from ui/sheet-style.mjs). A colored block colors its labels and titles too. */
 .rta-sheet-colored :is(.rta-sheet-value__label, .rta-sheet-row__label, .rta-sheet-row__head, .rta-sheet-section__title, .rta-sheet-contents__type, .rta-sheet-value__bound) {
   color: inherit;

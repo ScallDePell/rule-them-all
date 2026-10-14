@@ -91,3 +91,25 @@ test('The Runtime Lab lists what can be bought and the choices a reached milesto
   assert.deepEqual(rows.milestones[0].inputs[0].options.find(option=>option.selected).value,'tough');
   assert.deepEqual(rows.milestones[1].inputs,[],'level 3 is not reached');
 });
+
+test('A sheet shows what the Actor can buy and the milestones reached; an observer gets no button', async()=>{
+  const {projectSheet}=await import('../src/runtime/sheet-projection.mjs');
+  const {prepareLayout}=await import('../src/configurator/layout-contract.mjs');
+  const {autoLayout,sheetActionIds}=await import('../src/configurator/sheet-auto-layout.mjs');
+  const {api,v,engine}=await setup();
+  await engine.setDefinitionState(v,hero,'level',{base:2});await engine.setDefinitionState(v,hero,'xp',{base:20});
+  const sheet={id:'s',target:'actor',root:prepareLayout({id:'root',kind:'grid',children:[{id:'buy',kind:'progression',progressionSystemRef:'career'}]})};
+  const look=async who=>(await projectSheet(who?engine.forUser(who):engine,v,sheet,{actor:hero})).root.children[0];
+  const gm=await look();
+  assert.deepEqual(gm.advancements.map(a=>[a.id,a.currency,a.funds,a.rows.map(r=>[r.definitionId,r.current,r.next,r.cost,r.buy,r.reason??null])]),[['stats','xp',20,[['ws',4,5,25,true,'cost']]]]);
+  assert.deepEqual(gm.milestones.map(m=>[m.id,m.state]),[['l2','reached'],['l3','ahead']]);
+  assert.equal(gm.apply,true);
+  engine.adapter.users.set('o',{role:'player',isGM:false});engine.adapter.ownership.set('actor:hero|o','observer');
+  const observer=await look('o');
+  assert.deepEqual([observer.advancements[0].rows[0].buy,observer.apply],[false,false],'reads it, buys nothing');
+  assert.throws(()=>prepareLayout({id:'root',kind:'repeater',query:{definitionTypeId:'stat'},children:[{id:'p',kind:'progression',progressionSystemRef:'career'}]}),/never once per row/);
+  await assert.rejects(api.createSheetDefinition(v,{id:'it',nameKey:'It',target:'item',root:{id:'root',kind:'grid',children:[{id:'p',kind:'progression',progressionSystemRef:'career'}]}}),/only on Actor sheets/);
+  const auto=autoLayout(engine.ruleset(v));
+  assert.ok(auto.children.some(section=>(section.children??[]).some(node=>node.kind==='progression'&&node.progressionSystemRef==='career')),'AUTO shows the purchases');
+  assert.equal(sheetActionIds(engine.ruleset(v)).includes('pick-feat'),false,'a milestone Action is not a sheet button');
+});

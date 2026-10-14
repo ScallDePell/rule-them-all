@@ -79,10 +79,10 @@ Le Configurateur range le Ruleset en rubriques. Chaque élément est une carte :
 
 ### Éditeur de feuilles
 Dans **Systèmes → Feuilles**, créez une feuille d'Acteur ou d'Objet (pour des Types de contenu précis, ou pour tous). L'éditeur montre la feuille telle qu'en jeu :
-- la **palette** à gauche ajoute des blocs (sections, onglets, grilles, listes d'une famille de Définitions, valeurs, jauges, pastilles, boutons d'Action, images, textes) par clic ou glisser-déposer ;
+- la **palette** à gauche ajoute des blocs (sections, onglets, grilles, listes d'une famille de Définitions, valeurs, jauges, pastilles, boutons d'Action, Systèmes de progression, images, textes) par clic ou glisser-déposer ;
 - le **panneau de propriétés** règle le bloc choisi : libellé, icône Font Awesome (texte, icône ou les deux), affichage (champ, jauge, pastilles, description), ce que le joueur peut changer (saisir, augmenter, diminuer), **Visible par** (joueur, observateur, MJ) et **Modifiée par : le MJ seulement**, couleurs, police, marges ;
 - **Voir comme** montre la feuille telle que la verra un joueur, un observateur ou le MJ ;
-- **Mise en page automatique** repart d'une feuille tirée des Définitions.
+- **Mise en page automatique** repart d'une feuille tirée des Définitions (avec une section par Système de progression).
 
 ### Choisir la feuille d'un Acteur
 Chaque feuille activée du Ruleset actif apparaît sous son nom dans **Configuration de la feuille** (en-tête de la fenêtre de l'Acteur ou de l'Objet). Vous pouvez donc avoir plusieurs feuilles de PJ, une feuille de PNJ, une feuille de créature, et choisir pour chaque Acteur, ou par défaut pour un type d'Acteur.
@@ -96,6 +96,7 @@ Le bouton de création se trouve dans l'onglet **Acteurs**. Le joueur suit les �
 ## 6. En jeu
 
 - Les **boutons d'Action** de la feuille lancent l'Action, demandent ses entrées s'il y en a, et postent une carte dans le chat. Les choix après le résultat sont proposés dans une fenêtre.
+- Le bloc d'un **Système de progression** montre ce que l'Acteur peut acheter (niveau actuel et visé, coût, monnaie dépensée) avec un bouton par achat, puis ses paliers et le bouton « Appliquer les paliers atteints ». Le joueur achète lui-même, sans passer par le Labo runtime . Quand une permission du Ruleset le laisse acheter pour un Acteur qu'il ne possède pas, l'achat passe par le MJ connecté. Un observateur voit les coûts sans les boutons.
 - Les **valeurs** se changent sur la feuille dans les limites du Ruleset (bornes, permissions). Un joueur qui modifie un Acteur qu'il ne possède pas passe par le MJ connecté.
 - Glisser un **Objet** sur la feuille le donne à l'Acteur ; un Contenu du Ruleset pose alors ses choix et accorde ce qu'il accorde. Le retirer reprend ce qu'il avait accordé.
 - Le **combat** : l'initiative du Ruleset, ses passes et l'ordre du round sont gérés par le traqueur de combat de Foundry.

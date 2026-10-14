@@ -37,7 +37,7 @@ export function actionSummary(result, {t, ruleset}) {
   return {title: result.rerollActionId ? `${name(result.rerollActionId)} · ${name(result.actionId)}` : name(result.actionId), lines, outcome: test?.outcome ? t(test.outcome.labelKey) : ""};
 }
 
-async function askInputs(inputs, t) {
+async function askInputs(inputs, t, title = i18n("RTA.Sheet.ActionInputs")) {
   const Dialog = globalThis.foundry.applications.api.DialogV2;
   const field = input => {
     const label = escapeHTML(t(input.labelKey)), name = `input-${escapeHTML(input.id)}`, current = input.defaultValue ?? "";
@@ -45,7 +45,7 @@ async function askInputs(inputs, t) {
     if (input.valueType === "boolean") return `<div class="form-group"><label>${label}</label><input type="checkbox" name="${name}" ${current ? "checked" : ""}></div>`;
     return `<div class="form-group"><label>${label}</label><input type="${["number", "integer"].includes(input.valueType) ? "number" : "text"}" name="${name}" value="${escapeHTML(current)}"></div>`;
   };
-  return Dialog.prompt({window: {title: i18n("RTA.Sheet.ActionInputs")}, content: inputs.map(field).join(""), ok: {callback: (_event, button) => {
+  return Dialog.prompt({window: {title}, content: inputs.map(field).join(""), ok: {callback: (_event, button) => {
     const values = {};
     for (const input of inputs) {
       const element = button.form.elements[`input-${input.id}`];
@@ -107,6 +107,8 @@ export function createRulesetSheets({ActorSheetV2, ItemSheetV2}) {
       // A dot of a value shown as dots sets the value it carries.
       for (const dot of root.querySelectorAll("[data-sheet-dot]")) dot.addEventListener("click", event => { const button = event.currentTarget; this.#write({dataset: button.dataset, type: "number", value: button.dataset.sheetDot}); });
       for (const button of root.querySelectorAll("[data-sheet-action]")) button.addEventListener("click", event => this.#use(event.currentTarget));
+      for (const button of root.querySelectorAll("[data-sheet-advance]")) button.addEventListener("click", event => this.#advance(event.currentTarget));
+      for (const button of root.querySelectorAll("[data-sheet-milestones]")) button.addEventListener("click", event => this.#milestones(event.currentTarget.dataset.sheetMilestones));
       for (const button of root.querySelectorAll("[data-sheet-command]")) button.addEventListener("click", event => this.#command(event.currentTarget.dataset.sheetCommand));
       for (const button of root.querySelectorAll("[data-sheet-tab]")) button.addEventListener("click", event => this.#showTab(event.currentTarget));
       for (const button of root.querySelectorAll("[data-sheet-item-open]")) button.addEventListener("click", event => this.#ownedItem(event.currentTarget.dataset.sheetItemOpen)?.sheet?.render(true));
@@ -190,12 +192,43 @@ export function createRulesetSheets({ActorSheetV2, ItemSheetV2}) {
         }
         const result = await runtime.executeAction(state.versionId, actionId, context);
         if (!result.allowed) throw new Error(result.reason ?? i18n("RTA.Sheet.NotAllowed"));
-        await globalThis.ChatMessage.create({speaker: globalThis.ChatMessage.getSpeaker({actor: this.document.documentName === "Actor" ? this.document : this.document.parent}),
-          content: renderActionChatHTML(actionSummary(result, {t, ruleset: state.ruleset}))});
+        await globalThis.ChatMessage.create({speaker: this.#speaker(), content: renderActionChatHTML(actionSummary(result, {t, ruleset: state.ruleset}))});
         for (const offer of result.choices ?? []) {
           const picked = await askChoice(offer, t, state.ruleset);
           if (picked?.length) await runtime.chooseActions(state.versionId, offer, picked);
         }
+      } catch (error) { notifyError(error); }
+      this.render();
+    }
+    #speaker() { return globalThis.ChatMessage.getSpeaker({actor: this.document.documentName === "Actor" ? this.document : this.document.parent}); }
+    /** Buy one advancement through the runtime (the GM client writes it for a player who cannot); the chat says what it cost. */
+    async #advance(button) {
+      const state = this.#state, t = translator(state.versionId), {sheetAdvance: advancementId, progression: systemId, definitionId} = button.dataset;
+      try {
+        const result = await rta().runtime.advance(state.versionId, systemId, state.actor, advancementId, definitionId);
+        if (!result.allowed) throw new Error(i18n(`RTA.Sheet.Progression.Refused.${result.reason}`));
+        const advancement = state.ruleset.progressionSystems?.find(s => s.id === systemId)?.advancements?.find(a => a.id === advancementId);
+        const name = id => t(state.ruleset.definitions?.find(d => d.id === id)?.nameKey ?? id);
+        await globalThis.ChatMessage.create({speaker: this.#speaker(), content: renderActionChatHTML({title: t(advancement?.labelKey || advancementId),
+          lines: [{label: name(definitionId), value: `${formatSheetValue(result.before)} → ${formatSheetValue(result.after)}`}, {label: i18n("RTA.Sheet.Progression.Spent"), value: `${formatSheetValue(result.cost)} ${name(advancement?.currencyRef?.objectId)}`}]})});
+      } catch (error) { notifyError(error); }
+      this.render();
+    }
+    /** Apply the milestones reached: the choices of their Actions (a feat) are asked first. */
+    async #milestones(systemId) {
+      const state = this.#state, runtime = rta().runtime, t = translator(state.versionId), choices = {};
+      try {
+        const described = await runtime.describeProgression(state.versionId, systemId, state.actor);
+        for (const milestone of described.milestones.filter(m => m.reached && !m.applied && m.inputs.length)) {
+          const values = await askInputs(milestone.inputs, t, t(milestone.labelKey));
+          if (!values) return;
+          choices[milestone.id] = values;
+        }
+        const result = await runtime.applyMilestones(state.versionId, systemId, state.actor, {choices});
+        const label = id => t(described.milestones.find(m => m.id === id)?.labelKey ?? id);
+        if (result.applied.length) await globalThis.ChatMessage.create({speaker: this.#speaker(), content: renderActionChatHTML({title: i18n("RTA.Sheet.Progression.Applied"),
+          lines: result.applied.map(id => ({label: label(id), value: "✓"}))})});
+        if (result.stopped) globalThis.ui?.notifications?.warn?.(globalThis.game.i18n.format("RTA.Sheet.Progression.Stopped", {name: label(result.stopped.milestoneId)}));
       } catch (error) { notifyError(error); }
       this.render();
     }

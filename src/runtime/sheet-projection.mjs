@@ -195,6 +195,41 @@ export async function projectSheet(engine, versionId, sheet, {actor = null, cont
     return {...base, rows};
   };
 
+  /** What the Actor can buy with a Progression System (engine.describeProgression), with only the Definitions this user
+      may read. A purchase is offered to whoever may write both the Definition it raises and its currency; a refused one
+      keeps its button, disabled, with the reason. The currency's amount is shown to whoever may read it. */
+  const progression = async (node, base) => {
+    const system = ruleset.progressionSystems?.find(entry => entry.id === node.progressionSystemRef && enabled(entry));
+    if (!actor || !system) return null;
+    const name = id => ruleset.definitions?.find(d => d.id === id)?.nameKey ?? id;
+    let described;
+    try { described = await engine.describeProgression(versionId, system.id, actor); } catch (error) { return {...base, systemId: system.id, advancements: [], milestones: [], error: ERROR(error)}; }
+    const advancements = [];
+    for (const found of described.advancements) {
+      const currency = system.advancements.find(a => a.id === found.id)?.currencyRef, pays = await allowed("write", "definition", currency.objectId);
+      const rows = [];
+      for (const target of found.targets) {
+        if (!await allowed("read", "definition", target.definitionId)) continue;
+        const buy = pays && await allowed("write", "definition", target.definitionId);
+        rows.push({definitionId: target.definitionId, label: name(target.definitionId), current: target.current, next: target.next, cost: target.cost, buy, ...(buy && !target.allowed ? {reason: target.reason} : {})});
+      }
+      if (!rows.length) continue;
+      advancements.push({id: found.id, label: found.labelKey, currency: name(currency.objectId), funds: await allowed("read", "definition", currency.objectId) ? found.targets[0].funds : null, rows});
+    }
+    // Applying grants the milestones' Definitions and runs their Actions: offered to whoever may do all of it.
+    let apply = false;
+    const pending = system.milestones.filter(m => described.milestones.some(d => d.id === m.id && d.reached && !d.applied));
+    if (pending.length) {
+      apply = true;
+      for (const milestone of pending) for (const [operation, kind, id] of [...milestone.definitionIds.map(id => ["write", "definition", id]), ...(milestone.actionRef ? [["execute", "action", milestone.actionRef]] : [])])
+        if (!await allowed(operation, kind, id)) apply = false;
+    }
+    // The milestones behind the Actor, those to apply, and the next one ahead (not every level to come).
+    const states = described.milestones.map(m => ({id: m.id, label: m.labelKey, state: m.applied ? "applied" : m.reached ? "reached" : "ahead"}));
+    const next = states.find(m => m.state === "ahead");
+    return {...base, systemId: system.id, advancements, milestones: states.filter(m => m.state !== "ahead" || m === next), apply};
+  };
+
   const walk = async (node, scope, row) => {
     if (node.seenBy && !node.seenBy.includes(viewer)) return null;
     const base = {id: node.id, kind: node.kind, ...(node.span ? {span: node.span} : {}), ...(node.style ? {style: node.style} : {}), ...(node.icon ? {icon: node.icon} : {}), ...(node.labelShow ? {labelShow: node.labelShow} : {})};
@@ -203,6 +238,7 @@ export async function projectSheet(engine, versionId, sheet, {actor = null, cont
     if (node.kind === "text") return {...base, text: node.textKey};
     if (node.kind === "spacer") return base;
     if (node.kind === "contents") return contents(node, base);
+    if (node.kind === "progression") return progression(node, base);
     if (node.kind === "action") {
       const action = ruleset.actions?.find(a => a.id === node.actionRef && enabled(a));
       if (!action || !actor || !await allowed("execute", "action", action.id)) return null;

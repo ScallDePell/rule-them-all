@@ -37,11 +37,22 @@ await api.createContentType(v, {id: 'weapon', nameKey: 'Weapon', storageKind: 'i
 await api.createContentTemplate(v, {id: 'sword', nameKey: 'Sword', contentTypeId: 'weapon', data: {damage: '1d8', reach: 1, equipped: true}, relations: [], choiceGroups: []});
 await api.createScale(v, {id: 'health', nameKey: 'Health', basis: 'percent', rows: [{id: 'full', labelKey: 'Seems in great shape', min: 100, max: null}, {id: 'hurt', labelKey: 'Somewhat hurt', min: 50, max: 99.99}, {id: 'bad', labelKey: 'Badly hurt', min: 1, max: 49.99}, {id: 'down', labelKey: 'Down', min: null, max: 0}]});
 await api.updateDefinitionType(v, 'resource', {scaleRef: 'health'});
+// Advancements bought with XP (an attribute costs twice its next value, at most 15; a skill 5 points), and two levels.
+await api.registerDefinitionType(v, {id: 'experience', key: 'experience', nameKey: 'Experience', allowedCapabilities: ['value'], defaultCapabilities: ['value'], requiredCapabilities: [], fields: {}});
+await api.createDefinition(v, {id: 'xp', key: 'xp', definitionTypeId: 'experience', nameKey: 'Experience points', data: {}, capabilities: ['value']});
+await api.createFormula(v, {id: 'attr-cost', nameKey: 'Attribute cost', resultType: 'number', expression: {type: 'multiply', args: [{type: 'literal', value: 2}, {type: 'context', path: 'variables.advance.next'}]}});
+await api.createFormula(v, {id: 'skill-cost', nameKey: 'Skill cost', resultType: 'number', expression: {type: 'literal', value: 5}});
+await api.createFormula(v, {id: 'attr-max', nameKey: 'Attribute maximum', resultType: 'number', expression: {type: 'literal', value: 14}});
+for (const [id, name, xp] of [['seasoned', 'Seasoned', 20], ['veteran', 'Veteran', 200]]) await api.createCondition(v, {id, nameKey: name, expression: {type: 'gte', left: {type: 'reference', reference: out_('xp', 'value', 'value.final')}, right: {type: 'literal', value: xp}}});
+await api.createProgressionSystem(v, {id: 'growth', nameKey: 'Growth', advancements: [
+  {id: 'attr', labelKey: 'Attribute advance', definitionTypeId: 'attribute', currencyRef: out_('xp', 'value', 'value.base'), costFormulaRef: 'attr-cost', maximumFormulaRef: 'attr-max'},
+  {id: 'skill', labelKey: 'Skill advance', definitionTypeId: 'skill', currencyRef: out_('xp', 'value', 'value.base'), costFormulaRef: 'skill-cost', step: 5}],
+  milestones: [{id: 'seasoned', labelKey: 'Seasoned', conditionRef: 'seasoned', definitionIds: ['hide']}, {id: 'veteran', labelKey: 'Veteran', conditionRef: 'veteran', definitionIds: ['swim']}]});
 await api.publishRuleset(v);
 
 const adapter = new MemoryRuntimeAdapter(), engine = new RuntimeEngine({configurator: api, adapter, hooks: null}), hero = {kind: 'actor', id: 'hero'};
-await engine.initializeContainer(v, hero, {definitionIds: ['str', 'dex', 'wit', 'will', 'hp', 'luck', 'climb', 'spot', 'ride', 'lore', 'heal']});
-for (const [id, base] of [['str', 12], ['dex', 9], ['wit', 14], ['will', 10], ['climb', 45], ['spot', 60]]) await engine.setDefinitionState(v, hero, id, {base});
+await engine.initializeContainer(v, hero, {definitionIds: ['str', 'dex', 'wit', 'will', 'hp', 'luck', 'climb', 'spot', 'ride', 'lore', 'heal', 'xp']});
+for (const [id, base] of [['str', 12], ['dex', 9], ['wit', 14], ['will', 10], ['climb', 45], ['spot', 60], ['xp', 24]]) await engine.setDefinitionState(v, hero, id, {base});
 await engine.setDefinitionState(v, hero, 'hp', {pools: {points: 8}});
 await engine.setDefinitionState(v, hero, 'climb', {active: true});
 const state = await adapter.load(hero, {rulesetVersionId: v}); state.contents = {'sword-1': {templateId: 'sword', contentTypeId: 'weapon', fields: {damage: '1d8+1', reach: 1, equipped: true}}};
@@ -85,6 +96,7 @@ const sheets = [
   ['actor-auto', await projectSheet(engine, v, sheetFor(ruleset, {target: 'actor'}), {actor: hero, items: [{id: 'sword-1', name: 'Grandfather\'s sword', img: '', managed: true}, {id: 'rope', name: 'Rope (15 m)', img: '', managed: false}]}), 'Ayla the Brave'],
   ['actor-tabbed', await projectSheet(engine, v, tabbed, {actor: hero}), 'Ayla the Brave'],
   ['actor-styled', await projectSheet(engine, v, styled, {actor: hero, items: [{id: 'sword-1', name: 'Grandfather\'s sword', img: '', managed: true}]}), 'Ayla the Brave'],
+  ['actor-progression', await projectSheet(engine, v, {id: 'growth', target: 'actor', root: {id: 'root', kind: 'section', labelKey: 'Growth', columns: 1, children: [{id: 'buy', kind: 'progression', progressionSystemRef: 'growth'}]}}, {actor: hero}), 'Ayla the Brave'],
   ['item-owned', await projectSheet(engine, v, sheetFor(ruleset, {target: 'item', contentTypeId: 'weapon'}), {actor: hero, content: {key: 'sword-1'}}), 'Sword']
 ];
 const english = JSON.parse(readFileSync(join(root, 'lang/en.json'), 'utf8'));

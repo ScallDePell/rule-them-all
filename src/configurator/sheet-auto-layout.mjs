@@ -1,7 +1,8 @@
 /* AUTO sheets (CP-14): the layout a Ruleset gets when it has no SheetDefinition for an Actor or an Item,
    and the starting point the sheet editor offers. Built from the Ruleset alone, so it follows its changes.
    Actor: one section per Definition Type, listing the Definitions the Actor holds with what their capabilities give
-   (value, pools, active state, collection size), then the Contents it holds (its Items), then the Actions a player starts.
+   (value, pools, active state, collection size), then the Contents it holds (its Items), then what it buys with each
+   Progression System, then the Actions a player starts.
    Item: every field of its Content Types. */
 import {prepareLayout} from "./layout-contract.mjs";
 
@@ -15,7 +16,7 @@ const ROW_OUTPUTS = [
   {capabilityId: "collection", outputId: "collection.count", write: false}
 ];
 
-/** Actions a player starts from a sheet: not a follow-up of another Action, a Trigger, a Table, an acquisition or a Progression. */
+/** Actions a player starts from a sheet: not a follow-up of another Action, a Trigger, a Table, an acquisition or a milestone. */
 export function sheetActionIds(ruleset) {
   const followUps = new Set();
   for (const action of ruleset.actions ?? []) {
@@ -25,7 +26,7 @@ export function sheetActionIds(ruleset) {
   for (const trigger of ruleset.triggers ?? []) for (const id of trigger.actionRefs ?? []) followUps.add(id);
   for (const table of ruleset.tables ?? []) for (const row of table.rows ?? []) for (const id of row.actionRefs ?? []) followUps.add(id);
   for (const entry of [...(ruleset.definitions ?? []), ...(ruleset.contentTemplates ?? []), ...(ruleset.contentTypes ?? [])]) if (entry?.acquisitionActionRef) followUps.add(entry.acquisitionActionRef);
-  for (const system of ruleset.progressionSystems ?? []) for (const advancement of system.advancements ?? []) if (advancement?.actionRef) followUps.add(advancement.actionRef);
+  for (const system of ruleset.progressionSystems ?? []) for (const milestone of system.milestones ?? []) if (milestone?.actionRef) followUps.add(milestone.actionRef);
   return (ruleset.actions ?? []).filter(action => enabled(action) && !followUps.has(action.id) && !action.reroll).map(action => action.id);
 }
 
@@ -50,6 +51,8 @@ function actorLayout(ruleset) {
   }
   // The Actor's Items: what it carries and what made it (a background, a career…). Dropping an Item on the sheet adds one.
   if ((ruleset.contentTypes ?? []).some(type => enabled(type) && type.storageKind !== "actor")) sections.push({id: "contents", kind: "section", labelKey: "RTA.Sheet.Contents", columns: 1, span: 2, children: [{id: "contents-list", kind: "contents"}]});
+  for (const system of (ruleset.progressionSystems ?? []).filter(enabled)) sections.push({id: nodeId("progression", system.id), kind: "section", labelKey: system.nameKey ?? system.id, columns: 1, span: 2,
+    children: [{id: nodeId("progression", system.id, "purchases"), kind: "progression", progressionSystemRef: system.id}]});
   const actions = sheetActionIds(ruleset).map(id => ({id: nodeId("action", id), kind: "action", actionRef: id}));
   if (actions.length) sections.push({id: "actions", kind: "section", labelKey: "RTA.Sheet.Actions", columns: Math.min(4, actions.length), span: 2, children: actions});
   const columns = sections.length > 1 ? 2 : 1;

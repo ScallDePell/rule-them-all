@@ -248,7 +248,7 @@ export class SheetLayoutController {
     if (prop === "src") return this.#commit(updateNode(this.#root, node.id, {src: value.trim()}));
     if (prop === "fit" || prop === "height") return this.#commit(updateNode(this.#root, node.id, {[prop]: value === "cover" && prop === "fit" || value === "medium" && prop === "height" ? undefined : value}));
     if (prop === "contentTypeIds") return this.#commit(updateNode(this.#root, node.id, {contentTypeIds: [...target.selectedOptions].map(option => option.value).filter(Boolean)}));
-    if (prop === "actionRef") return this.#commit(updateNode(this.#root, node.id, {actionRef: value}));
+    if (prop === "actionRef" || prop === "progressionSystemRef") return this.#commit(updateNode(this.#root, node.id, {[prop]: value}));
 
     if (prop === "sourceKind") {
       const first = this.#sourceChoices(value, node)[0];
@@ -378,6 +378,7 @@ export class SheetLayoutController {
       conditions: [{value: "", label: i18n("RTA.SheetEditor.AllOfThem"), colors: neutral}, ...(r.conditions ?? []).map(c => ({value: c.id, label: c.nameKey, colors: selectColorsAttribute(this.#colors("condition", c))}))],
       contentTypes: itemContentTypes(r).map(type => ({value: type.id, label: type.nameKey, colors: selectColorsAttribute(this.#colors("contentType", type))})),
       actions: (r.actions ?? []).map(a => ({value: a.id, label: a.nameKey, colors: selectColorsAttribute(this.#colors("action", a))})),
+      progressionSystems: (r.progressionSystems ?? []).map(s => ({value: s.id, label: s.nameKey, colors: selectColorsAttribute(this.#colors("progressionSystem", s))})),
       sourceKinds: kinds.map(([value, key]) => ({value, label: i18n(key), colors: neutral})),
       sourceChoices: kind => this.#sourceChoices(kind, node),
       sourceToken: source => this.#sourceToken(source),

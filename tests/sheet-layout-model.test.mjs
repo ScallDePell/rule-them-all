@@ -146,3 +146,23 @@ test('labels may show a Font Awesome icon, its text, or both', ()=>{
   assert.match(props,/data-layout-prop="icon"[^>]*value="fa-regular fa-hand-fist"/);
   assert.match(props,/<option value="icon" selected>/);
 });
+
+test('a progression block: offered per Progression System, never in a list, previewed with sample purchases', ()=>{
+  const r={...ruleset,definitions:[...ruleset.definitions,{id:'xp',nameKey:'XP',definitionTypeId:'empty',capabilities:['value']}],
+    progressionSystems:[{id:'career',nameKey:'Career',advancements:[{id:'skills',labelKey:'Skill advance',definitionTypeId:'skill',definitionIds:[],currencyRef:{objectKind:'definition',objectId:'xp',capabilityId:'value',outputId:'value.base'}}],milestones:[{id:'l2',labelKey:'Level 2'},{id:'l3',labelKey:'Level 3'}]}]};
+  const fields=paletteGroups(r).find(g=>g.id==='fields').items;
+  assert.deepEqual(fields.filter(i=>i.kind==='progression').map(i=>[i.label,i.spec.progressionSystemRef]),[['Career','career']]);
+  assert.equal(paletteGroups(r,{target:'item'}).find(g=>g.id==='fields').items.some(i=>i.kind==='progression'),false,'not on an Item sheet');
+  const root=tree(),node=paletteNode({kind:'progression',progressionSystemRef:'career'},root,r);
+  assert.deepEqual(node,{id:'progression-1',kind:'progression',progressionSystemRef:'career'});
+  assert.equal(canPlace(root,node,'list'),false,'never once per row');
+  const next=insertNode(root,'s',node);
+  const view=previewView(next,r).root.children[0].children.find(n=>n.kind==='progression');
+  assert.deepEqual(view.advancements[0].rows.map(row=>[row.label,row.cost,row.reason??null]),[['Climb',10,null],['Swim',10,'maximum']]);
+  assert.deepEqual(view.milestones.map(m=>m.state),['reached','ahead']);
+  const html=renderLayoutPreviewHTML(previewView(next,r));
+  assert.match(html,/data-layout-node="progression-1"/);
+  assert.doesNotMatch(html,/<button/,'the editor draws marks, not buttons');
+  const observer=previewView(next,r,{viewer:'observer'}).root.children[0].children.find(n=>n.kind==='progression');
+  assert.deepEqual([observer.advancements[0].rows[0].buy,observer.apply],[false,false]);
+});

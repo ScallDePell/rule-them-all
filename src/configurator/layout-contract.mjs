@@ -3,7 +3,7 @@
    into columns; a child may span several of them. The renderer stacks the columns on a narrow sheet.
 
    SheetDefinition.root := node
-   node      := tabs | tab | section | grid | repeater | value | action | text | spacer, each {id, span?}
+   node      := tabs | tab | section | grid | repeater | value | action | text | image | contents | progression | spacer, each {id, span?}
    tabs      := {kind: "tabs", children: tab[]}                       one page per tab
    tab       := {kind: "tab", labelKey, children: node[]}              only inside tabs
    section   := {kind: "section", labelKey?, columns: 1-4, children}   a titled block
@@ -29,6 +29,10 @@
                 rounded corners; "square", "portrait" (3:4), "landscape" (4:3) and "circle" keep their proportions at that height
    contents  := {kind: "contents", contentTypeIds?}                  the Contents the Actor holds (its Items), of these Content Types (all when none);
                                                                        dropping an Item on the sheet adds one
+   progression := {kind: "progression", progressionSystemRef}         on an Actor sheet, what the Actor buys with a Progression
+                                                                       System: each Definition an advancement raises, its cost and
+                                                                       the currency spent, a button per purchase; its milestones and
+                                                                       a button that applies those reached. Never inside a repeater.
    spacer    := {kind: "spacer"}
    seenBy: on any node below the root, who gets it (and what it holds): some of "player" (an owner of the Actor),
            "observer" (anyone else who opens the sheet) and "gm"; all when absent. Nobody writes through a node they do not get.
@@ -42,7 +46,7 @@ import {copyJSON, isRecord} from "./configurator-schema.mjs";
 import {IMAGE_PATH, SHEET_IMAGE_FITS, SHEET_IMAGE_HEIGHTS, prepareLayoutStyle} from "./layout-style-contract.mjs";
 
 export const LAYOUT_CONTAINERS = Object.freeze(["tabs", "tab", "section", "grid", "repeater"]);
-export const LAYOUT_LEAVES = Object.freeze(["value", "action", "text", "image", "contents", "spacer"]);
+export const LAYOUT_LEAVES = Object.freeze(["value", "action", "text", "image", "contents", "progression", "spacer"]);
 export const LAYOUT_NODE_KINDS = Object.freeze([...LAYOUT_CONTAINERS, ...LAYOUT_LEAVES]);
 export const LAYOUT_SOURCE_KINDS = Object.freeze(["output", "formula", "parameter", "each", "field", "content"]);
 export const LAYOUT_VALUE_DISPLAYS = Object.freeze(["field", "gauge", "dots", "description"]);
@@ -70,7 +74,7 @@ export const LAYOUT_MAX_NODES = 500;
 const MAX_COLUMNS = {section: 4, grid: 6, repeater: 6};
 const FIELDS = {
   tabs: ["children"], tab: ["labelKey", "children"], section: ["labelKey", "columns", "children"], grid: ["columns", "children"],
-  repeater: ["query", "columns", "children"], value: ["source", "labelKey", "write", "display", "dots"], action: ["actionRef", "labelKey"], text: ["textKey"], image: ["src", "fit", "height", "shape"], contents: ["contentTypeIds"], spacer: []
+  repeater: ["query", "columns", "children"], value: ["source", "labelKey", "write", "display", "dots"], action: ["actionRef", "labelKey"], text: ["textKey"], image: ["src", "fit", "height", "shape"], contents: ["contentTypeIds"], progression: ["progressionSystemRef"], spacer: []
 };
 const nonempty = value => typeof value === "string" && value.trim().length > 0;
 const NODE_ID = /^[A-Za-z0-9][A-Za-z0-9_-]*$/;
@@ -167,6 +171,11 @@ export function prepareLayout(root) {
       }
     }
     if (node.kind === "action") { if (!nonempty(node.actionRef)) throw new Error(`${path}.actionRef must be an id.`); next.actionRef = node.actionRef; }
+    if (node.kind === "progression") {
+      if (!nonempty(node.progressionSystemRef)) throw new Error(`${path}.progressionSystemRef must be an id.`);
+      if (inRepeater) throw new Error(`${path}: a progression is the Actor's, never once per row of a list.`);
+      next.progressionSystemRef = node.progressionSystemRef;
+    }
     if (node.kind === "text") { if (typeof node.textKey !== "string") throw new Error(`${path}.textKey must be text.`); next.textKey = node.textKey; }
     if (node.kind === "image") {
       // An image block without a picture yet is a draft: it shows nothing in play.
