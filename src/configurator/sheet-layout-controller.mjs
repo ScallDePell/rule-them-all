@@ -7,7 +7,7 @@
    ([data-sheet-layout-value]); every change fires an input event so the editor knows it is dirty. */
 import {iconClasses, prepareLayout} from "./layout-contract.mjs";
 import {copyToClipboard, pasteBlock, readClipboard, styleFor} from "./sheet-layout-clipboard.mjs";
-import {EACH_OUTPUTS, itemContentTypes, canMoveInto, canPlace, paletteGroups, paletteNode, childKinds, columnsOf, contentFields, defaultValueLabel, insertNode, isContainer, locate, maxColumns, moveInto, moveNode, newNode, outputLabelKey, previewView, removeNode, repeaterOf, updateNode, writableSource} from "./sheet-layout-model.mjs";
+import {EACH_OUTPUTS, itemContentTypes, offeredInSheets, canMoveInto, canPlace, paletteGroups, paletteNode, childKinds, columnsOf, contentFields, defaultValueLabel, insertNode, isContainer, locate, maxColumns, moveInto, moveNode, newNode, outputLabelKey, previewView, removeNode, repeaterOf, updateNode, writableSource} from "./sheet-layout-model.mjs";
 import {refToken, parseRefToken} from "./reference-token.mjs";
 import {findSlot} from "./capability-slots.mjs";
 import {renderLayoutPreviewHTML} from "../ui/sheet-markup.mjs";
@@ -54,7 +54,7 @@ export class SheetLayoutController {
     this.#root = JSON.parse(this.#field.value || "null") ?? {id: "root", kind: "grid", columns: 1, children: []};
     this.#selected = this.#root.id;
     this.#form?.addEventListener("change", event => {
-      if (event.target.matches?.('[name="sheetTarget"], [name="sheetContentTypes"]')) { this.#renderPalette(); this.render(); }
+      if (event.target.matches?.('[name="sheetTarget"], [name="sheetContentTypes"], [name="sheetHeader"]')) { this.#renderPalette(); this.render(); }
       if (event.target.matches?.('[name="sheetWindowWidth"]') && !this.#readOnly) this.#renderWidth();
     });
     // A validated Ruleset shows its sheet, read-only.
@@ -102,6 +102,7 @@ export class SheetLayoutController {
   get #field() { return this.#host.querySelector("[data-sheet-layout-value]"); }
   get root() { return structuredClone(this.#root); }
   get #target() { return this.#form?.querySelector('[name="sheetTarget"]')?.value ?? "actor"; }
+  get #header() { return this.#form?.querySelector('[name="sheetHeader"]')?.value ?? "standard"; }
   get #contentTypeIds() { return this.#target === "item" ? [...(this.#form?.querySelectorAll('[name="sheetContentTypes"]:checked') ?? [])].map(input => input.value) : []; }
 
   select(id) {
@@ -137,14 +138,14 @@ export class SheetLayoutController {
 
   render() {
     if (this.#readOnly) {
-      this.#host.querySelector("[data-layout-canvas]").innerHTML = renderLayoutPreviewHTML(previewView(this.#root, this.#ruleset, {target: this.#target, contentTypeIds: this.#contentTypeIds}), {t: i18n});
+      this.#host.querySelector("[data-layout-canvas]").innerHTML = renderLayoutPreviewHTML(previewView(this.#root, this.#ruleset, {target: this.#target, contentTypeIds: this.#contentTypeIds, header: this.#header}), {t: i18n});
       return;
     }
     const found = this.#selected ? locate(this.#root, this.#selected) : null, node = found?.node ?? null, child = Boolean(found?.parent);
     this.#host.querySelector("[data-layout-toolbar]").innerHTML = renderLayoutToolbarHTML({viewer: this.#viewer, brush: Boolean(this.#brush), enabled: {
       up: child && found.index > 0, down: child && found.index < found.parent.children.length - 1, copy: Boolean(node), paste: Boolean(readClipboard()),
       duplicate: child, brush: Boolean(node) || Boolean(this.#brush), remove: child, undo: this.#history.length > 0, redo: this.#future.length > 0}});
-    const view = previewView(this.#root, this.#ruleset, {target: this.#target, contentTypeIds: this.#contentTypeIds, viewer: this.#viewer === "all" ? null : this.#viewer});
+    const view = previewView(this.#root, this.#ruleset, {target: this.#target, contentTypeIds: this.#contentTypeIds, header: this.#header, viewer: this.#viewer === "all" ? null : this.#viewer});
     const canvas = this.#host.querySelector("[data-layout-canvas]");
     canvas.innerHTML = renderLayoutPreviewHTML(view, {t: i18n, selectedId: node?.id ?? null});
     canvas.toggleAttribute("data-layout-brush", Boolean(this.#brush));
@@ -412,6 +413,7 @@ export class SheetLayoutController {
     if (prop === "src") return this.#commit(updateNode(this.#root, node.id, {src: value.trim()}));
     if (prop === "fit" || prop === "height") return this.#commit(updateNode(this.#root, node.id, {[prop]: value === "cover" && prop === "fit" || value === "medium" && prop === "height" ? undefined : value}));
     if (prop === "contentTypeIds") return this.#commit(updateNode(this.#root, node.id, {contentTypeIds: [...target.selectedOptions].map(option => option.value).filter(Boolean)}));
+    if (prop === "updatePlaced") return this.#commit(updateNode(this.#root, node.id, {updatePlaced: target.checked || undefined}));
     if (prop === "actionRef" || prop === "progressionSystemRef") return this.#commit(updateNode(this.#root, node.id, {[prop]: value}));
 
     if (prop === "sourceKind") {
@@ -493,7 +495,8 @@ export class SheetLayoutController {
     if (kind === "formula") return (r.formulas ?? []).map(f => ({value: f.id, label: f.nameKey, colors: color("formula", f)}));
     if (kind === "parameter") return (r.parameters ?? []).map(p => ({value: p.id, label: p.nameKey, colors: color("parameter", p)}));
     if (kind === "each") return this.#eachOutputs(repeaterOf(this.#root, node.id)?.query?.definitionTypeId).map(o => ({value: `${o.capabilityId}|${o.outputId}`, label: i18n(outputLabelKey(o.capabilityId, o.outputId)), colors: selectColorsAttribute([RTA_NEUTRAL_COLOR])}));
-    if (kind === "content") return (r.contentTypes ?? []).filter(type => type.enabled !== false).map(type => ({value: type.id, label: type.nameKey ?? type.id, colors: color("contentType", type)}));
+    // A type not offered in the sheet editor stays listed only for the block that already shows it.
+    if (kind === "content") return (r.contentTypes ?? []).filter(type => type.enabled !== false && (offeredInSheets(type) || node.source?.contentTypeId === type.id)).map(type => ({value: type.id, label: type.nameKey ?? type.id, colors: color("contentType", type)}));
     if (kind === "field") return contentFields(r, this.#contentTypeIds).map(f => ({value: f.id, label: f.name || f.id, colors: color("contentType", r.contentTypes?.find(t => t.id === f.contentTypeId))}));
     return [];
   }
@@ -538,9 +541,9 @@ export class SheetLayoutController {
       parentColumns: found.parent ? columnsOf(found.parent) : 1, isRoot: !found.parent,
       columnChoices: kind => Array.from({length: maxColumns(kind)}, (_, i) => ({value: String(i + 1), label: format("RTA.SheetEditor.ColumnCount", {count: i + 1}, String(i + 1)), colors: neutral})),
       spanChoices: count => Array.from({length: count}, (_, i) => ({value: String(i + 1), label: format("RTA.SheetEditor.SpanCount", {count: i + 1}, String(i + 1)), colors: neutral})),
-      definitionTypes: (r.definitionTypes ?? []).filter(t => (r.definitions ?? []).some(d => d.definitionTypeId === t.id)).map(t => ({value: t.id, label: t.nameKey, colors: selectColorsAttribute(this.#colors("definitionType", t))})),
+      definitionTypes: (r.definitionTypes ?? []).filter(t => (r.definitions ?? []).some(d => d.definitionTypeId === t.id) && (offeredInSheets(t) || node.query?.definitionTypeId === t.id)).map(t => ({value: t.id, label: t.nameKey, colors: selectColorsAttribute(this.#colors("definitionType", t))})),
       conditions: [{value: "", label: i18n("RTA.SheetEditor.AllOfThem"), colors: neutral}, ...(r.conditions ?? []).map(c => ({value: c.id, label: c.nameKey, colors: selectColorsAttribute(this.#colors("condition", c))}))],
-      contentTypes: itemContentTypes(r).map(type => ({value: type.id, label: type.nameKey, colors: selectColorsAttribute(this.#colors("contentType", type))})),
+      contentTypes: itemContentTypes(r).filter(type => offeredInSheets(type) || (node.contentTypeIds ?? []).includes(type.id)).map(type => ({value: type.id, label: type.nameKey, colors: selectColorsAttribute(this.#colors("contentType", type))})),
       actions: (r.actions ?? []).map(a => ({value: a.id, label: a.nameKey, colors: selectColorsAttribute(this.#colors("action", a))})),
       progressionSystems: (r.progressionSystems ?? []).map(s => ({value: s.id, label: s.nameKey, colors: selectColorsAttribute(this.#colors("progressionSystem", s))})),
       sourceKinds: kinds.map(([value, key]) => ({value, label: i18n(key), colors: neutral})),

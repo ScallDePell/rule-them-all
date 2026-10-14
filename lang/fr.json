@@ -598,7 +598,8 @@
       "Die": "Dé",
       "Scale": "Échelle descriptive",
       "ScaleRef": "Échelle descriptive",
-      "PayloadFieldIdHint": "Identifiant : {id}. Une Condition ou une Formule le lit dans event.payload.{id}."
+      "PayloadFieldIdHint": "Identifiant : {id}. Une Condition ou une Formule le lit dans event.payload.{id}.",
+      "SheetPalette": "Proposé dans l'éditeur de feuilles"
     },
     "EditorDisplay": {
       "NoneSelected": "Aucune sélection",
@@ -1440,7 +1441,16 @@
       "WindowSize": "Fenêtre (px)",
       "WindowSizeHint": "Taille de la fenêtre à l’ouverture de la feuille : largeur × hauteur. Vide : taille de Foundry.",
       "WindowWidth": "Largeur",
-      "WindowHeight": "Hauteur"
+      "WindowHeight": "Hauteur",
+      "Header": {
+        "label": "En-tête",
+        "standard": "Standard (image et nom)",
+        "none": "Aucun (blocs Nom et Portrait)"
+      },
+      "Lock": "Verrouiller la feuille",
+      "Unlock": "Déverrouiller la feuille",
+      "EditImage": "Changer l'image",
+      "EditToken": "Changer l'image du token"
     },
     "SheetEditor": {
       "Layout": "Mise en page",
@@ -1479,7 +1489,10 @@
         "spacer": "Case vide",
         "contents": "Contenus détenus",
         "image": "Image",
-        "progression": "Progression"
+        "progression": "Progression",
+        "name": "Nom",
+        "portrait": "Portrait",
+        "token": "Image du token"
       },
       "Source": {
         "output": "Une sortie de Definition",
@@ -1575,7 +1588,8 @@
         "Held": "Contenu détenu, par type",
         "Hint": "Clique pour ajouter dans le bloc sélectionné, ou glisse sur la feuille. Une famille ajoute la liste de ses Définitions.",
         "Search": "Rechercher",
-        "CannotGo": "Cet élément ne peut pas aller à cet endroit."
+        "CannotGo": "Cet élément ne peut pas aller à cet endroit.",
+        "Document": "Nom et images"
       },
       "Display": {
         "field": "Champ",
@@ -1645,7 +1659,13 @@
         "narrow": "Fenêtre étroite",
         "window": "Taille de la fenêtre de la feuille",
         "wide": "Toute la largeur"
-      }
+      },
+      "SampleName": "Nom",
+      "NameHint": "Le nom de l'Acteur ou de l'Objet. Il se change sur la feuille déverrouillée.",
+      "PortraitHint": "L'image de l'Acteur ou de l'Objet. Elle se change sur la feuille déverrouillée (bouton appareil photo).",
+      "TokenHint": "L'image du token de l'Acteur, celle qu'il prend sur la scène. Elle se change sur la feuille déverrouillée.",
+      "PlacedTokens": "Tokens posés",
+      "UpdatePlaced": "Mettre aussi à jour les tokens déjà posés"
     },
     "Reaction": {
       "Title": "Réaction",

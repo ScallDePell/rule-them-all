@@ -91,6 +91,12 @@ Dans **Systèmes → Feuilles**, créez une feuille d'Acteur ou d'Objet (pour de
 
 Une nouvelle feuille démarre vide.
 
+### En-tête, nom et images
+- L'option **En-tête** de la feuille vaut **Standard** (l'image et le nom en haut, comme d'habitude) ou **Aucun** : vous placez alors vous-même les blocs **Nom** et **Portrait** (groupe « Nom et images » de la palette) où vous voulez, avec le style que vous voulez. Sur une feuille d'Acteur, le bloc **Image du token** montre l'image que prend son token sur la scène.
+- En jeu, un **cadenas** dans l'en-tête de la fenêtre verrouille la feuille, comme les feuilles de Foundry. Verrouillée (à l'ouverture), on joue : nom et images ne bougent pas. Déverrouillée, le nom se modifie et le bouton **appareil photo** en bas à droite d'un portrait ouvre le sélecteur de fichiers de Foundry. Les valeurs de la feuille restent utilisables dans les deux cas. Seuls ceux qui peuvent modifier l'Acteur ou l'Objet voient le cadenas.
+- Pour l'image du token, cochez **Mettre aussi à jour les tokens déjà posés** dans les réglages du bloc : les tokens de l'Acteur déjà sur les scènes changent avec lui.
+- Un Type de contenu ou un Type de définition dont vous décochez **Proposé dans l'éditeur de feuilles** (Créature, PNJ…) n'apparaît plus dans la palette ; les blocs déjà posés continuent de marcher.
+
 ### Choisir la feuille d'un Acteur
 Chaque feuille activée du Ruleset actif apparaît sous son nom dans **Configuration de la feuille** (en-tête de la fenêtre de l'Acteur ou de l'Objet). Vous pouvez donc avoir plusieurs feuilles de PJ, une feuille de PNJ, une feuille de créature, et choisir pour chaque Acteur, ou par défaut pour un type d'Acteur.
 

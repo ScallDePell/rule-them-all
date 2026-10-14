@@ -20,7 +20,10 @@ const iconRows = node => {
     ...(node.icon ? [row(t("RTA.SheetEditor.LabelShow.label", "Label shows"), `<select data-layout-prop="labelShow">${shows.map(([value, key, fallback]) => `<option value="${value}"${value === (node.labelShow ?? "both") ? " selected" : ""}>${t(key, fallback)}</option>`).join("")}</select>`)] : [])];
 };
 const KIND_LABELS = {tabs: ["RTA.SheetEditor.Kind.tabs", "Tabs"], tab: ["RTA.SheetEditor.Kind.tab", "Tab"], section: ["RTA.SheetEditor.Kind.section", "Section"], grid: ["RTA.SheetEditor.Kind.grid", "Grid"],
-  repeater: ["RTA.SheetEditor.Kind.repeater", "List of Definitions"], value: ["RTA.SheetEditor.Kind.value", "Value"], action: ["RTA.SheetEditor.Kind.action", "Action button"], text: ["RTA.SheetEditor.Kind.text", "Text"], image: ["RTA.SheetEditor.Kind.image", "Image"], contents: ["RTA.SheetEditor.Kind.contents", "Held Contents"], progression: ["RTA.SheetEditor.Kind.progression", "Progression"], spacer: ["RTA.SheetEditor.Kind.spacer", "Empty cell"]};
+  repeater: ["RTA.SheetEditor.Kind.repeater", "List of Definitions"], value: ["RTA.SheetEditor.Kind.value", "Value"], action: ["RTA.SheetEditor.Kind.action", "Action button"], text: ["RTA.SheetEditor.Kind.text", "Text"], image: ["RTA.SheetEditor.Kind.image", "Image"], contents: ["RTA.SheetEditor.Kind.contents", "Held Contents"], progression: ["RTA.SheetEditor.Kind.progression", "Progression"], spacer: ["RTA.SheetEditor.Kind.spacer", "Empty cell"],
+  name: ["RTA.SheetEditor.Kind.name", "Name"], portrait: ["RTA.SheetEditor.Kind.portrait", "Portrait"], token: ["RTA.SheetEditor.Kind.token", "Token image"]};
+/** Blocks framed as a picture: an image, the Document's portrait, its token's image. */
+const PICTURES = ["image", "portrait", "token"];
 /** A block kind's name, as plain text. */
 export const kindText = kind => { const [key, fallback] = KIND_LABELS[kind] ?? [kind, kind], text = globalThis.game?.i18n?.localize?.(key); return text && text !== key ? text : fallback; };
 export const kindLabel = kind => escape(kindText(kind));
@@ -62,7 +65,7 @@ export function renderLayoutLayersHTML(root, {selectedId = null, collapsed = new
   return `<details class="rta-sheet-editor__layers" data-layout-layers-panel${open ? " open" : ""}><summary>${t("RTA.SheetEditor.Layers.Title", "Layers")}</summary><div class="rta-sheet-layers" role="tree" data-layout-layers>${row(root, 0)}</div></details>`;
 }
 
-const KIND_ICONS = {section: "fa-square", grid: "fa-table-cells", tabs: "fa-folder", tab: "fa-folder-open", repeater: "fa-list", value: "fa-hashtag", gauge: "fa-battery-half", dots: "fa-circle-dot", content: "fa-id-card", action: "fa-dice-d20", text: "fa-font", image: "fa-image", contents: "fa-box-open", progression: "fa-arrow-trend-up", spacer: "fa-border-none"};
+const KIND_ICONS = {section: "fa-square", grid: "fa-table-cells", tabs: "fa-folder", tab: "fa-folder-open", repeater: "fa-list", value: "fa-hashtag", gauge: "fa-battery-half", dots: "fa-circle-dot", content: "fa-id-card", action: "fa-dice-d20", text: "fa-font", image: "fa-image", contents: "fa-box-open", progression: "fa-arrow-trend-up", spacer: "fa-border-none", name: "fa-signature", portrait: "fa-image-portrait", token: "fa-chess-pawn"};
 
 /** What can be added: blocks, then the Ruleset's own elements. A click adds an item into the selection; it can also
    be dragged onto the sheet. groups: paletteGroups (configurator/sheet-layout-model.mjs), labels given by the controller. */
@@ -114,12 +117,15 @@ export function renderLayoutPropertiesHTML(node, ctx) {
     rows.push(...iconRows(node));
   }
   if (node.kind === "text") rows.push(row(t("RTA.SheetEditor.Text", "Text"), text("textKey", node.textKey)));
-  if (node.kind === "image") {
-    rows.push(row(t("RTA.SheetEditor.Image", "Image"), imageField("src", node.src)));
+  if (PICTURES.includes(node.kind)) {
+    if (node.kind === "image") rows.push(row(t("RTA.SheetEditor.Image", "Image"), imageField("src", node.src)));
+    if (node.kind !== "image") rows.push(`<p class="rta-sheet-editor__hint">${node.kind === "token" ? t("RTA.SheetEditor.TokenHint", "The image of the Actor's token; changed on the sheet once unlocked.") : t("RTA.SheetEditor.PortraitHint", "The Actor's or Item's image; changed on the sheet once unlocked.")}</p>`);
     rows.push(row(t("RTA.SheetEditor.ImageShape", "Shape"), select("shape", ctx.shapes, node.shape ?? "free")));
     rows.push(row(t("RTA.SheetEditor.ImageFit", "Fit"), select("fit", ctx.fits, node.fit ?? "cover")));
     rows.push(row(t("RTA.SheetEditor.ImageHeight", "Height"), select("height", ctx.heights, node.height ?? "medium")));
+    if (node.kind === "token") rows.push(row(t("RTA.SheetEditor.PlacedTokens", "Placed tokens"), `<div class="rta-sheet-editor__checks"><label class="rta-sheet-editor__check"><input type="checkbox" data-layout-prop="updatePlaced"${node.updatePlaced ? " checked" : ""}> ${t("RTA.SheetEditor.UpdatePlaced", "Also change the tokens already placed")}</label></div>`));
   }
+  if (node.kind === "name") rows.push(`<p class="rta-sheet-editor__hint">${t("RTA.SheetEditor.NameHint", "The Actor's or Item's name; changed on the sheet once unlocked.")}</p>`);
   if (node.kind === "contents") {
     const chosen = new Set(node.contentTypeIds ?? []);
     rows.push(row(t("RTA.SheetEditor.ContentTypes", "Content Types (none: all)"), `<select multiple data-layout-prop="contentTypeIds">${ctx.contentTypes.map(choice => `<option value="${escape(choice.value)}" data-rta-colors="${escape(choice.colors)}"${chosen.has(choice.value) ? " selected" : ""}>${escape(choice.label)}</option>`).join("")}</select>`));
@@ -146,21 +152,21 @@ export function colorRows(prop, label, style, tones) {
 /** The Style group: how the selected block looks. ctx: {open, containers, tones(prop), fonts, sizes, aligns, paddings, gaps}.
    A color is a theme tone or a color of one's own ("custom": its picker shows below). */
 export function renderStyleHTML(node, ctx) {
-  const style = node.style ?? {}, rows = [], container = ctx.containers.includes(node.kind);
+  const style = node.style ?? {}, rows = [], container = ctx.containers.includes(node.kind), picture = PICTURES.includes(node.kind);
   const styleSelect = (prop, choices, selected) => `<select data-layout-style="${prop}">${renderSelectOptions(choices, {valueKey: "value", labelKey: "label", colorize: true, selectedValue: selected ?? ""})}</select>`;
   const color = (prop, label) => rows.push(...colorRows(prop, label, style, ctx.tones));
-  if (node.kind !== "image") {
+  if (!picture) {
     color("color", t("RTA.SheetEditor.Style.Color", "Text color"));
     color("background", t("RTA.SheetEditor.Style.Background", "Background"));
   }
-  if (node.kind === "image" || style.background && style.background !== "none" || node.kind === "section") {
+  if (picture || style.background && style.background !== "none" || node.kind === "section") {
     const value = style.opacity ?? 100;
-    rows.push(row(`${node.kind === "image" ? t("RTA.SheetEditor.Style.ImageOpacity", "Opacity") : t("RTA.SheetEditor.Style.Opacity", "Background opacity")} <span data-layout-opacity-value>${escape(String(value))} %</span>`,
+    rows.push(row(`${picture ? t("RTA.SheetEditor.Style.ImageOpacity", "Opacity") : t("RTA.SheetEditor.Style.Opacity", "Background opacity")} <span data-layout-opacity-value>${escape(String(value))} %</span>`,
       `<input type="range" min="0" max="100" step="5" data-layout-style="opacity" value="${escape(String(value))}">`));
   }
   if (container) rows.push(row(t("RTA.SheetEditor.Style.Image", "Background picture"), imageField("image", style.image, true)));
   color("border", t("RTA.SheetEditor.Style.Border", "Border"));
-  if (node.kind !== "image" && node.kind !== "spacer") {
+  if (!picture && node.kind !== "spacer") {
     rows.push(row(t("RTA.SheetEditor.Style.Font", "Font"), styleSelect("font", ctx.fonts(style.font), style.font ?? "default")));
     rows.push(row(t("RTA.SheetEditor.Style.Size", "Size"), styleSelect("size", ctx.sizes, style.size ?? "default")));
     const check = (prop, label) => `<label class="rta-sheet-editor__check"><input type="checkbox" data-layout-style="${prop}"${style[prop] ? " checked" : ""}> ${label}</label>`;

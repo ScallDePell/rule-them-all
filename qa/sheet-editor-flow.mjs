@@ -182,8 +182,24 @@ const result = await page.evaluate(async ({fixture, en, urls}) => {
   check('back to the default style', !find(layout(), 'derived').style);
   await click('[data-layout-command="undo"]');
   check('undo brings the style back', find(layout(), 'derived').style?.font === 'Amiri');
+  // The header: standard (shown as a sample above the canvas) or none, with the name, portrait and token image placed as blocks.
+  check('the standard header is previewed', Boolean(element.querySelector('[data-layout-canvas] .rta-sheet__header')));
+  const headerField = element.querySelector('[name="sheetHeader"]');
+  headerField.value = 'none'; headerField.dispatchEvent(new Event('change', {bubbles: true})); await wait();
+  check('no header: none previewed', !element.querySelector('[data-layout-canvas] .rta-sheet__header'));
+  await click('[data-layout-canvas] [data-layout-node="derived"]');
+  for (const kind of ['name', 'portrait', 'token']) await click(`[data-layout-palette-host] [data-layout-palette='{"kind":"${kind}"}']`);
+  const placed = find(layout(), 'derived').children.slice(-3);
+  check('adding the name, portrait and token blocks', JSON.stringify(placed.map(c => c.kind)) === '["name","portrait","token"]' && element.querySelector('[data-layout-canvas] .rta-sheet-name') && element.querySelectorAll('[data-layout-canvas] .rta-sheet-picture').length === 2);
+  await untick('[data-layout-prop="updatePlaced"]');
+  check('the token image also updates the placed tokens', find(layout(), placed[2].id).updatePlaced === true);
+  await click(`[data-layout-canvas] [data-layout-node="${placed[1].id}"]`);
+  await set('[data-layout-properties] [data-layout-prop="shape"]', 'circle');
+  check('a round portrait', find(layout(), placed[1].id).shape === 'circle' && element.querySelector(`[data-layout-canvas] [data-layout-node="${placed[1].id}"].rta-sheet-image--circle`));
+  check('the editor never changes the Document', !element.querySelector('[data-layout-canvas] [data-sheet-edit-image], [data-layout-canvas] [data-sheet-name]'));
   element.querySelector('[data-entry-form]').requestSubmit(); await new Promise(r => setTimeout(r, 200));
   const saved = api.getSheetDefinition(fixture.versionId, 'sh1');
+  check('saving keeps the header choice', saved.header === 'none');
   const canonical = value => JSON.stringify(value, (key, v) => v && typeof v === 'object' && !Array.isArray(v) ? Object.fromEntries(Object.keys(v).sort().map(k => [k, v[k]])) : v);
   check(`saving keeps the edited tree${canonical(saved.root) === canonical(layout()) ? '' : `: ${(await app._prepareContext({})).error || 'not saved'}`}`, canonical(saved.root) === canonical(layout()));
   check('no automatic layout any more', !element.querySelector('[data-layout-command="auto"]'));
@@ -289,6 +305,20 @@ if (process.env.RTA_SHOTS) {
     document.querySelector('.rta-sheet-editor__side').scrollTop = 0; document.querySelector('.rta-config-entry__scroll').scrollTop = 0;
   });
   await page.screenshot({path: join(process.env.RTA_SHOTS, 'sheet-editor-gauge.png')});
+  // A sheet without the standard header: name, portrait and token image placed at the top of the first tab's grid, the token selected.
+  await page.evaluate(async () => {
+    const wait = () => new Promise(r => setTimeout(r, 60)), header = document.querySelector('[name="sheetHeader"]');
+    header.value = 'none'; header.dispatchEvent(new Event('change', {bubbles: true})); await wait();
+    document.querySelector('[data-layer-node="top"]')?.click(); await wait();
+    for (const kind of ['name', 'portrait', 'token']) { document.querySelector(`[data-layout-palette-host] [data-layout-palette='{"kind":"${kind}"}']`).click(); await wait(); }
+    for (const kind of ['token', 'portrait', 'name']) {
+      document.querySelector(`[data-layout-canvas] .rta-sheet-${kind === 'name' ? 'name' : `picture[data-layout-node^="${kind}"]`}`)?.click(); await wait();
+      while (!document.querySelector('[data-layout-command="up"]')?.disabled) { document.querySelector('[data-layout-command="up"]').click(); await wait(); }
+    }
+    document.querySelector('[data-layout-canvas] [data-layout-node^="token"]')?.click(); await wait();
+    document.querySelector('.rta-sheet-editor__side').scrollTop = 0; document.querySelector('.rta-config-entry__scroll').scrollTop = 0;
+  });
+  await page.screenshot({path: join(process.env.RTA_SHOTS, 'sheet-editor-document.png')});
 }
 await browser.close();
 for (const line of [...result, ...errors.map(e => `FAIL error: ${e}`)]) console.log(line);

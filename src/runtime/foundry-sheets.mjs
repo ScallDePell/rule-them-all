@@ -64,6 +64,27 @@ async function askChoice(offer, t, ruleset) {
     ok: {callback: (_event, button) => [...button.form.querySelectorAll('input[name="choice"]:checked')].map(input => input.value)}, rejectClose: false});
 }
 
+/** The image an Actor's tokens take when placed (its prototype token's); for a token's own Actor (an unlinked token), that token's. */
+export function tokenImage(document) {
+  if (document?.documentName !== "Actor") return "";
+  return (document.isToken ? document.token?.texture?.src : document.prototypeToken?.texture?.src) ?? "";
+}
+
+/** A new token image for an Actor: its prototype token's (a token's own Actor: that token's). placed: also the tokens of this
+   Actor already in the scenes, those linked to it and those that still showed its previous image. Foundry Document
+   updates, like the name and the portrait: not runtime state. */
+export async function setTokenImage(actor, path, {placed = false, scenes = globalThis.game?.scenes} = {}) {
+  if (actor.isToken) return actor.token?.update({"texture.src": path});
+  const previous = actor.prototypeToken?.texture?.src ?? null;
+  await actor.update({"prototypeToken.texture.src": path});
+  if (!placed) return;
+  for (const scene of scenes ?? []) {
+    const changes = [...(scene.tokens ?? [])].filter(token => token.actorId === actor.id && (token.actorLink || token.texture?.src === previous) && token.texture?.src !== path)
+      .map(token => ({_id: token.id, "texture.src": path}));
+    if (changes.length) await scene.updateEmbeddedDocuments("Token", changes);
+  }
+}
+
 /** The sheet a window shows: the SheetDefinition it was chosen for (Foundry's sheet choice) when this Ruleset still
    has it for this target, otherwise the first that fits (or AUTO). */
 export function chosenSheet(ruleset, sheetId, {target, contentTypeId = null}) {
@@ -90,14 +111,70 @@ export function createRulesetSheets({ActorSheetV2, ItemSheetV2}) {
     }
     async _renderHTML() {
       const state = this.#state ?? {}, t = state.versionId ? translator(state.versionId) : i18n;
-      return renderSheetHTML(state.view, {t, name: this.document.name, img: this.document.img, editable: this.isEditable, notice: state.notice ?? "", noticeActions: state.noticeActions ?? [], headerActions: state.headerActions ?? []});
+      return renderSheetHTML(state.view, {t, name: this.document.name, img: this.document.img, token: tokenImage(this.document), editable: this.isEditable, unlocked: this.rtaUnlocked,
+        notice: state.notice ?? "", noticeActions: state.noticeActions ?? [], headerActions: state.headerActions ?? []});
+    }
+
+    /* The lock, as on Foundry's own sheets: locked (the default), the sheet is played and the name and images stay as they
+       are; unlocked, the name is a field and a camera button on each portrait opens Foundry's file picker. Values of the
+       layout work either way: they are play controls, governed by Permissions. Only for a user who may change the Document. */
+    #unlocked = false;
+    get rtaUnlocked() { return Boolean(this.isEditable && this.#unlocked); }
+    /** The lock button sits in the window header, before Foundry's own controls. */
+    async _renderFrame(options) {
+      const frame = await super._renderFrame?.(options);
+      const header = frame?.querySelector?.(".window-header");
+      if (header && this.isEditable) {
+        const button = globalThis.document.createElement("button");
+        button.type = "button";
+        button.dataset.rtaSheetLock = "";
+        button.addEventListener("click", event => { event.preventDefault(); event.stopPropagation(); this.rtaToggleLock(); });
+        header.insertBefore(button, header.querySelector('[data-action="toggleControls"], [data-action="close"]'));
+        this.#lockButton(button);
+      }
+      return frame;
+    }
+    #lockButton(button = this.element?.querySelector?.(".window-header [data-rta-sheet-lock]")) {
+      if (!button) return;
+      const label = i18n(this.#unlocked ? "RTA.Sheet.Lock" : "RTA.Sheet.Unlock");
+      button.className = `header-control icon fa-solid ${this.#unlocked ? "fa-lock-open" : "fa-lock"}`;
+      button.hidden = !this.isEditable;
+      button.setAttribute("aria-pressed", String(this.#unlocked));
+      button.setAttribute("aria-label", label);
+      button.dataset.tooltip = label;
+    }
+    rtaToggleLock() {
+      if (!this.isEditable) return;
+      this.#unlocked = !this.#unlocked;
+      this.#lockButton();
+      this.render();
+    }
+    /** Foundry's file picker for the Document's image ("img") or its prototype token's ("token"), as its own sheets do. */
+    async #editImage(button) {
+      if (!this.rtaUnlocked) return;
+      const FilePicker = globalThis.foundry?.applications?.apps?.FilePicker?.implementation ?? globalThis.FilePicker;
+      if (!FilePicker) return;
+      const which = button.dataset.sheetEditImage, current = which === "token" ? tokenImage(this.document) : this.document.img;
+      const placed = button.hasAttribute("data-sheet-update-placed");
+      const picker = new FilePicker({type: "image", current, callback: path => this.#setImage(which, path, {placed}).catch(notifyError),
+        ...(Number.isFinite(this.position?.top) ? {position: {top: this.position.top + 40, left: this.position.left + 10}} : {})});
+      return picker.browse?.(current);
+    }
+    async #setImage(which, path, {placed = false} = {}) {
+      if (!path || !this.rtaUnlocked) return;
+      if (which === "token") await setTokenImage(this.document, path, {placed});
+      else await this.document.update({img: path});
+      this.render();
     }
     _replaceHTML(result, content) { content.innerHTML = result; }
 
     _onRender(context, options) {
       super._onRender?.(context, options);
       const root = this.element;
-      root.querySelector("[data-sheet-name]")?.addEventListener("change", event => this.document.update({name: event.currentTarget.value}).catch(notifyError));
+      // The name and the images change only while the sheet is unlocked (the markup gives them only then).
+      for (const input of root.querySelectorAll("[data-sheet-name]")) input.addEventListener("change", event => { if (this.rtaUnlocked) this.document.update({name: event.currentTarget.value}).catch(notifyError); });
+      for (const button of root.querySelectorAll("[data-sheet-edit-image]")) button.addEventListener("click", event => { event.preventDefault(); this.#editImage(button).catch(notifyError); });
+      this.#lockButton();
       for (const input of root.querySelectorAll("[data-sheet-write]:not([data-sheet-dot], [data-sheet-adjust])")) input.addEventListener("change", event => this.#write(event.currentTarget));
       // − and + of a value that can go both ways: one less, one more.
       for (const step of root.querySelectorAll("[data-sheet-adjust]")) step.addEventListener("click", event => {

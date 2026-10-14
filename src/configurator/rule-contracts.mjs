@@ -15,6 +15,12 @@ const bool=(v,label)=>{if(typeof v!=='boolean')throw new Error(`${label} must be
 /* id and types are structural; nameKey and the references an object needs to run
    are completeness requirements (need): a draft may lack them, publish may not.
    Pass {incomplete:[]} to collect them instead of throwing. */
+/** Offered in the sheet editor's palette (a Content Type, a Definition Type): stored only when not (false). */
+export function prepareSheetPalette(x,label){
+  if(x.sheetPalette===undefined||x.sheetPalette===null||x.sheetPalette===true){delete x.sheetPalette;return x;}
+  if(x.sheetPalette!==false)throw new Error(`${label}.sheetPalette must be true or false.`);
+  return x;
+}
 const identity=(x,label,options)=>{if(!nonempty(x.id))throw new Error(`${label} requires id.`);need(nonempty(x.nameKey),`${label} requires nameKey.`,options);};
 
 export function prepareParameter(data,options={}){
@@ -319,6 +325,7 @@ export function prepareContentType(data,options={}){
   if(typeof x.documentSubtype!=='string')throw new Error('ContentType.documentSubtype must be a string.');
   if(!['unique','stackable'].includes(x.runtimeMode))throw new Error('ContentType.runtimeMode must be unique or stackable.');
   x.fields=prepareFieldMap(x.fields??{});
+  prepareSheetPalette(x,'ContentType');
   bool(x.enabled,'ContentType.enabled');arr(x.tags,'ContentType.tags');return x;
 }
 
@@ -558,13 +565,15 @@ export function prepareProgressionSystem(data,options={}){
   return x;
 }
 /** SheetDefinition (CP-14): which Actors or Items it shows (target, and the ContentTypes of that kind; none listed: all),
- * its layout tree (layout-contract.mjs) and, optionally, the size its window opens at (window: {width?, height?}). */
+ * its header (standard: the Document's image and name above the layout; none: the layout places name and portrait blocks
+ * itself), its layout tree (layout-contract.mjs) and, optionally, the size its window opens at (window: {width?, height?}). */
 export const SHEET_TARGETS=Object.freeze(['actor','item']);
+export const SHEET_HEADERS=Object.freeze(['standard','none']);
 /** The window size a sheet may ask for: [smallest, largest] in pixels. */
 export const SHEET_WINDOW_LIMITS=Object.freeze({width:[320,2400],height:[240,1600]});
 export function prepareSheetDefinition(data,options={}){
-  const x=prepareNamedGeneric(data,'SheetDefinition',{target:'actor',contentTypeIds:[],root:emptyLayout()},options);
-  for(const key of Object.keys(x))if(!['id','nameKey','descriptionKey','enabled','order','tags','target','contentTypeIds','root','window'].includes(key))throw new Error(`Unsupported SheetDefinition field: ${key}.`);
+  const x=prepareNamedGeneric(data,'SheetDefinition',{target:'actor',contentTypeIds:[],header:'standard',root:emptyLayout()},options);
+  for(const key of Object.keys(x))if(!['id','nameKey','descriptionKey','enabled','order','tags','target','contentTypeIds','header','root','window'].includes(key))throw new Error(`Unsupported SheetDefinition field: ${key}.`);
   if(!SHEET_TARGETS.includes(x.target))throw new Error(`SheetDefinition.target must be ${SHEET_TARGETS.join(' or ')}.`);
   // window: the played sheet's default window size, in pixels (either one may be left to Foundry).
   if(x.window===undefined||x.window===null)delete x.window;
@@ -574,11 +583,13 @@ export function prepareSheetDefinition(data,options={}){
     if(!Object.keys(x.window).length)delete x.window;
   }
   arr(x.contentTypeIds,'SheetDefinition.contentTypeIds');
+  if(!SHEET_HEADERS.includes(x.header))throw new Error(`SheetDefinition.header must be ${SHEET_HEADERS.join(' or ')}.`);
   x.root=prepareLayout(x.root);
   if(x.target!=='item')for(const {node,path} of layoutNodes(x.root))if(node.source?.kind==='field')throw new Error(`${path}: Content fields are only on Item sheets.`);
   if(x.target==='item')for(const {node,path} of layoutNodes(x.root))if(node.source?.kind==='content')throw new Error(`${path}: the Contents an Actor holds are only on Actor sheets.`);
   if(x.target==='item')for(const {node,path} of layoutNodes(x.root))if(node.kind==='progression')throw new Error(`${path}: a progression is only on Actor sheets.`);
   if(x.target==='item')for(const {node,path} of layoutNodes(x.root))if(node.kind==='contents')throw new Error(`${path}: held Contents are only on Actor sheets.`);
+  if(x.target==='item')for(const {node,path} of layoutNodes(x.root))if(node.kind==='token')throw new Error(`${path}: a token image is only on Actor sheets.`);
   return x;
 }
 

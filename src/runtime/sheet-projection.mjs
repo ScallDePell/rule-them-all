@@ -237,6 +237,9 @@ export async function projectSheet(engine, versionId, sheet, {actor = null, cont
     if (node.kind === "image") return node.src ? {...base, src: node.src, fit: node.fit ?? "cover", height: node.height ?? "medium", ...(node.shape ? {shape: node.shape} : {})} : null;
     if (node.kind === "text") return {...base, text: node.textKey};
     if (node.kind === "spacer") return base;
+    // The Document's name and pictures: the sheet fills them in from the Document (renderSheetHTML).
+    if (node.kind === "name") return base;
+    if (node.kind === "portrait" || node.kind === "token") return {...base, fit: node.fit ?? "cover", height: node.height ?? "medium", ...(node.shape ? {shape: node.shape} : {}), ...(node.updatePlaced ? {updatePlaced: true} : {})};
     if (node.kind === "contents") return contents(node, base);
     if (node.kind === "progression") return progression(node, base);
     if (node.kind === "action") {
@@ -255,5 +258,5 @@ export async function projectSheet(engine, versionId, sheet, {actor = null, cont
     }
     return {...base, ...(node.columns ? {columns: node.columns} : {}), ...(node.labelKey !== undefined ? {label: node.labelKey} : {}), children: await children(node.children, scope, row)};
   };
-  return {sheetId: sheet.id, target: sheet.target, root: await walk(sheet.root, context, null)};
+  return {sheetId: sheet.id, target: sheet.target, header: sheet.header ?? "standard", root:await walk(sheet.root, context, null)};
 }

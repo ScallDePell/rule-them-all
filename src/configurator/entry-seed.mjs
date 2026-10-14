@@ -33,7 +33,7 @@ export function createEntrySeed(kind,{uid,definitionTypeId=null,contentTypeId=nu
   if(kind==="scale")return{id:uid("scale"),nameKey:"",descriptionKey:"",enabled:true,tags:[],basis:"value",rows:[]};
   if(kind==="creationSystem")return{id:uid("creation"),nameKey:"",descriptionKey:"",enabled:true,tags:[],steps:[]};
   if(kind==="progressionSystem")return{id:uid("progression"),nameKey:"",descriptionKey:"",enabled:true,tags:[],advancements:[],milestones:[]};
-  if(kind==="sheetDefinition")return{id:uid("sheet"),nameKey:"New Sheet",descriptionKey:"",enabled:true,tags:[],target:"actor",contentTypeIds:[],root:emptyLayout()};
+  if(kind==="sheetDefinition")return{id:uid("sheet"),nameKey:"New Sheet",descriptionKey:"",enabled:true,tags:[],target:"actor",contentTypeIds:[],header:"standard",root:emptyLayout()};
   return{id:uid(kind),nameKey:"",descriptionKey:"",enabled:true,tags:[]};
   }
 

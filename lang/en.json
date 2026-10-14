@@ -602,7 +602,8 @@
       "Die": "Die",
       "Scale": "Description scale",
       "ScaleRef": "Description scale",
-      "PayloadFieldIdHint": "Id: {id}. A Condition or a Formula reads it as event.payload.{id}."
+      "PayloadFieldIdHint": "Id: {id}. A Condition or a Formula reads it as event.payload.{id}.",
+      "SheetPalette": "Offered in the sheet editor"
     },
     "EditorDisplay": {
       "NoneSelected": "None selected",
@@ -1444,7 +1445,16 @@
       "WindowSize": "Window (px)",
       "WindowSizeHint": "The window size when the sheet opens: width × height. Empty: Foundry's size.",
       "WindowWidth": "Width",
-      "WindowHeight": "Height"
+      "WindowHeight": "Height",
+      "Header": {
+        "label": "Header",
+        "standard": "Standard (image and name)",
+        "none": "None (Name and Portrait blocks)"
+      },
+      "Lock": "Lock the sheet",
+      "Unlock": "Unlock the sheet",
+      "EditImage": "Change the image",
+      "EditToken": "Change the token image"
     },
     "SheetEditor": {
       "Layout": "Layout",
@@ -1483,7 +1493,10 @@
         "spacer": "Empty cell",
         "contents": "Held Contents",
         "image": "Image",
-        "progression": "Progression"
+        "progression": "Progression",
+        "name": "Name",
+        "portrait": "Portrait",
+        "token": "Token image"
       },
       "Source": {
         "output": "A Definition output",
@@ -1579,7 +1592,8 @@
         "Held": "Held Content, by type",
         "Hint": "Click to add into the selected block, or drag onto the sheet. A family adds the list of its Definitions.",
         "Search": "Search",
-        "CannotGo": "This element cannot go there."
+        "CannotGo": "This element cannot go there.",
+        "Document": "Name and images"
       },
       "Display": {
         "field": "Field",
@@ -1649,7 +1663,13 @@
         "narrow": "Narrow window",
         "window": "The sheet's window size",
         "wide": "Full width"
-      }
+      },
+      "SampleName": "Name",
+      "NameHint": "The Actor's or Item's name. It is changed on the unlocked sheet.",
+      "PortraitHint": "The Actor's or Item's image. It is changed on the unlocked sheet (camera button).",
+      "TokenHint": "The image of the Actor's token, the one it shows on the scene. It is changed on the unlocked sheet.",
+      "PlacedTokens": "Placed tokens",
+      "UpdatePlaced": "Also update the tokens already placed"
     },
     "Reaction": {
       "Title": "Reaction",
