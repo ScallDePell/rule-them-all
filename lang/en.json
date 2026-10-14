@@ -453,6 +453,7 @@
       "NoDefinitionsAvailable": "No Definitions available.",
       "DefineGuidedChoicesMadeWhenThisContentIsAcquiredThePlayerGmSelectsTheRequiredNumberOfDefinitionsOrActionsTechnicalIdsStayHidden": "Define guided choices made when this content is acquired. The player/GM selects the required number of Definitions or Actions; technical IDs stay hidden.",
       "AddChoice": "Add choice",
+      "ChoiceBonusHint": "Bonus added to the value of the chosen option (empty: none). Bonuses from several Contents add up.",
       "NoAcquisitionChoicesThisContentIsAppliedDirectly": "No acquisition choices. This content is applied directly.",
       "Sheet": "Sheet",
       "ConstrainedVisualCompositionComponentsReferenceConfiguredRulesetObjectsNoHtmlCssOrJavascriptIsStored": "Constrained visual composition. Components reference configured ruleset objects; no HTML, CSS or JavaScript is stored.",
@@ -1065,7 +1066,11 @@
     "Permission": {
       "ScopeRuleset": "Whole Ruleset",
       "ScopeAllDefinitions": "All Definitions",
+      "ScopeDefinitionType": "Definition type: {name}",
       "ScopeDefinition": "Definition: {name}",
+      "ScopeAllContents": "All Contents",
+      "ScopeContentType": "Content type: {name}",
+      "ScopeContentTemplate": "Content: {name}",
       "ScopeAllActions": "All Actions",
       "ScopeAction": "Action: {name}",
       "Effect": "Effect",
@@ -1176,6 +1181,14 @@
       "NoActions": "No Action yet."
     },
     "Action": {
+      "StateStackingTitle": "If the State is already there",
+      "StateStacks": "Stacks applied",
+      "StateStacking": {
+        "refresh": "Renew its duration",
+        "stack": "Add the stacks and renew its duration",
+        "separate": "Add another copy",
+        "ignore": "Do nothing"
+      },
       "Targets": "Targets",
       "Targeting": {
         "one": "One target",

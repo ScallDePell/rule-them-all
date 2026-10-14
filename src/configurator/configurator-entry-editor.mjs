@@ -46,7 +46,7 @@ import {getCreationSources, getCreationSourceDescriptor} from "./creation-source
 import {diagnosticFocusTargets,saveErrorFocusPath} from "./diagnostic-focus.mjs";
 import {buildTestInputContext,syncTestInputSource} from "./test-input-form.mjs";
 import {dieContext,syncDieFaceCounts} from "./die-form.mjs";
-import {CREATION_STEP_KINDS,SHEET_TARGETS} from "./rule-contracts.mjs";
+import {CREATION_STEP_KINDS,SHEET_TARGETS,STATE_STACKING} from "./rule-contracts.mjs";
 import {SheetLayoutController} from "./sheet-layout-controller.mjs";
 import {rollVariantContext,extraRollContext,actionInputContext,tableRowContext,scaleRowContext,progressionContext} from "./rule-cards-form.mjs";
 import {syncCard} from "./card-form.mjs";
@@ -152,7 +152,7 @@ export class ConfiguratorEntryEditor extends ConfiguratorWindow {
     const fieldKinds=["definitionType","contentType"].includes(this.#kind),fieldDefinitionTypes=fieldKinds?selectableDefinitionTypes.map(type=>({...type,colors:selectColorsAttribute(this.#optionColors("definitionType",type))})):[];
     const fieldRows=fieldKinds?Object.entries(data.fields??{}).map(([id,field])=>buildFieldRow(id,field,this.#api.listValueTypes(),fieldDefinitionTypes)):[];
     const newFieldRow=fieldKinds?buildNewFieldRow(this.#api.listValueTypes(),fieldDefinitionTypes):null;
-    const lists={listParameters:"parameters",listFormulas:"formulas",listFormulaBindings:"formulaBindings",listConditions:"conditions",listRolls:"rolls",listOutcomes:"outcomes",listTests:"tests",listEffects:"effects",listActions:"actions",listEventTypes:"eventTypes",listContentTypes:"contentTypes",listDefinitions:"definitions",listCategories:"categories",listTags:"tags",listModifiers:"modifiers",listDurations:"durations",listDice:"dice",listTables:"tables",listScales:"scales"};
+    const lists={listParameters:"parameters",listFormulas:"formulas",listFormulaBindings:"formulaBindings",listConditions:"conditions",listRolls:"rolls",listOutcomes:"outcomes",listTests:"tests",listEffects:"effects",listActions:"actions",listEventTypes:"eventTypes",listContentTypes:"contentTypes",listContentTemplates:"contentTemplates",listDefinitions:"definitions",listCategories:"categories",listTags:"tags",listModifiers:"modifiers",listDurations:"durations",listDice:"dice",listTables:"tables",listScales:"scales"};
     const list=method=>(this.#kind==="ruleset" && !this.#id)?[]:this.#renderList(lists[method],method);
     const parameters=list("listParameters"), formulas=list("listFormulas"), formulaBindings=list("listFormulaBindings"), conditions=list("listConditions"), rolls=list("listRolls"), outcomes=list("listOutcomes"), tests=list("listTests"), effects=list("listEffects"), actions=list("listActions"), eventTypes=list("listEventTypes"), contentTypes=list("listContentTypes"), definitions=list("listDefinitions"), categories=list("listCategories"), tags=list("listTags");
     const conditionChoices=selection(conditions.map(x=>({id:x.id,label:x.nameKey,...withColors("condition",x)})),data.conditionRefs);
@@ -185,7 +185,9 @@ export class ConfiguratorEntryEditor extends ConfiguratorWindow {
     const acquiredDefinitionChoices=definitions.map(x=>({id:x.id,label:x.nameKey,...withColors("definition",x),selected:(data.acquisitions??[]).some(a=>a?.definitionId===x.id)}));
     // CP-28: states an Action applies or removes, Modifiers it makes persistent, and how long they last.
     const actionKind=this.#kind==="action",stateDefinitions=actionKind?definitions.filter(x=>(x.capabilities??[]).includes("state")):[],modifiers=actionKind?list("listModifiers"):[],durations=actionKind?list("listDurations"):[];
-    const appliedStateChoices=stateDefinitions.map(x=>({id:x.id,label:x.nameKey,...withColors("definition",x),selected:(data.stateApplications??[]).some(a=>a?.definitionId===x.id)}));
+    // Each applied state says what happens when the target already has it, and how many stacks it adds.
+    const appliedStateChoices=stateDefinitions.map(x=>{const applied=(data.stateApplications??[]).find(a=>a?.definitionId===x.id);return {id:x.id,label:x.nameKey,...withColors("definition",x),selected:Boolean(applied),stacks:applied?.stacks??1,
+      stackingChoices:STATE_STACKING.map(id=>({id,labelKey:`RTA.Action.StateStacking.${id}`,colors:selectColorsAttribute([RTA_NEUTRAL_COLOR]),selected:id===(applied?.stacking??"refresh")}))};});
     const removedStateChoices=stateDefinitions.map(x=>({id:x.id,label:x.nameKey,...withColors("definition",x),selected:(data.stateRemovals??[]).some(a=>a?.definitionId===x.id)}));
     const appliedModifierChoices=modifiers.map(x=>({id:x.id,label:x.nameKey,...withColors("modifier",x),selected:(data.modifierApplications??[]).some(a=>a?.modifierRef===x.id)}));
     const appliedDurationRef=[...(data.stateApplications??[]),...(data.modifierApplications??[])].find(a=>a?.durationRef)?.durationRef??null;
@@ -198,13 +200,15 @@ export class ConfiguratorEntryEditor extends ConfiguratorWindow {
     const relationTargetChoices=relationCatalog(this.#renderCatalog??{}).map(x=>({
       id:refToken(x),label:`${referenceKindTitle(x.objectKind,globalThis.game?.i18n?.lang==='fr')} · ${x.label}`,
       colors:selectColorsAttribute(this.#optionColors(x.objectKind,x.entry)),
-      objectKind:x.objectKind,objectId:x.objectId
+      objectKind:x.objectKind,objectId:x.objectId,valued:x.objectKind==="definition"&&(x.entry?.capabilities??[]).includes("value")
     }));
+    // A granted value Definition can come with a bonus to its value (config.add["value.base"]).
     const choiceGroupRows=(data.choiceGroups??[]).map(group=>{
-      const currentRefs=new Set((group.options??[]).map(option=>refToken(option.targetRef??{})));
+      const currentOptions=new Map((group.options??[]).map(option=>[refToken(option.targetRef??{}),option]));
       const operation=group.options?.[0]?.operation??'grant';
-      return {...group,operation,isGrant:operation==='grant',isUnlock:operation==='unlock',isLink:operation==='link',
-        targetOptions:relationTargetChoices.map(option=>({...option,selected:currentRefs.has(option.id)}))};
+      const bonusRows=relationTargetChoices.filter(option=>option.valued).map(option=>({...option,selected:currentOptions.has(option.id),bonus:currentOptions.get(option.id)?.config?.add?.["value.base"]??""}));
+      return {...group,operation,isGrant:operation==='grant',isUnlock:operation==='unlock',isLink:operation==='link',bonusRows,showBonuses:operation==='grant'&&bonusRows.some(row=>row.selected),
+        targetOptions:relationTargetChoices.map(option=>({...option,selected:currentOptions.has(option.id)}))};
     });
     const referenceChoices=this.#referenceChoices(),mutableReferenceChoices=this.#referenceChoices({mutableOnly:true});
     // An Effect's operand and a Modifier's value source share one editor.
@@ -233,7 +237,7 @@ export class ConfiguratorEntryEditor extends ConfiguratorWindow {
     const conditionSummary=pickerSummary(conditionChoices),costEffectSummary=pickerSummary(effectChoices,"costSelected"),effectSummary=pickerSummary(effectChoices,"effectSelected"),actionSummary=pickerSummary(actionChoices);
     Object.assign(context,{error:this.#error,kind:this.#kind,creating,readOnly:isValidated,deletion:creating?{blocked:false,reason:""}:this.#deletionView(),help:entryHelp(this.#kind,{definitionType:type}),data,type,fieldContract,fieldRows,newFieldRow,capabilityChoices,colorSectionChoices,rulesetMainColor:rulesetColor(data),allowTypeColor,inheritedTypeColor,hasCustomColor:!!data.color,valueTypes:this.#api.listValueTypes().map(v=>({...v,selected:v.id===(data.valueType??data.resultType)})),
       documentActorTypes:availableDocumentTypes("Actor").map(id=>({id,selected:data.storageKind==="actor"&&data.documentSubtype===id})),documentItemTypes:availableDocumentTypes("Item").map(id=>({id,selected:data.storageKind!=="actor"&&data.documentSubtype===id})),
-      hasForcedCapabilities,hasOptionalCapabilities,conditionChoices,acquiredDefinitionChoices,acquisitionActionChoices,appliedStateChoices,removedStateChoices,appliedModifierChoices,stateDurationChoices,rollChoices,outcomeRows,fallbackOutcomeChoices,testChoices,bindingFormulaChoices,tagChoices,tagSummary,categoryChoices,categorySummary,eventFieldRows,roleChoices,contentTypeChoices,relationRows,hasRelations:RELATION_KINDS.includes(this.#kind),roleSelf,roleSource,roleTarget,roleSubject,roleOwner,roleWorld,roleCombat,outcomeConditionChoices,bonusFormulaChoices,targetSourceChoices,fixedTarget,showTestCalculation,effectChoices,actionChoices,eventTypeChoices,choiceGroupRows,conditionSummary,costEffectSummary,effectSummary,actionSummary,formulaModel,conditionModel,conditionOperands:[conditionModel.left,conditionModel.right],...(this.#kind==="sheetDefinition"?(()=>{const choices=selection(this.#renderList("contentTypes","listContentTypes").map(x=>({id:x.id,label:x.nameKey,...withColors("contentType",x)})),data.contentTypeIds??[]);return {sheetIsItem:data.target==="item",sheetContentTypeChoices:choices,sheetContentTypeSummary:pickerSummary(choices),sheetLayoutJSON:JSON.stringify(data.root??null)};})():{}),sheetTargetChoices:SHEET_TARGETS.map(id=>({id,labelKey:`RTA.Sheet.Target${id[0].toUpperCase()}${id.slice(1)}`,colors:selectColorsAttribute([RTA_NEUTRAL_COLOR]),selected:(data.target??"actor")===id})),
+      hasForcedCapabilities,hasOptionalCapabilities,conditionChoices,acquiredDefinitionChoices,acquisitionActionChoices,appliedStateChoices,hasAppliedStates:appliedStateChoices.some(x=>x.selected),removedStateChoices,appliedModifierChoices,stateDurationChoices,rollChoices,outcomeRows,fallbackOutcomeChoices,testChoices,bindingFormulaChoices,tagChoices,tagSummary,categoryChoices,categorySummary,eventFieldRows,roleChoices,contentTypeChoices,relationRows,hasRelations:RELATION_KINDS.includes(this.#kind),roleSelf,roleSource,roleTarget,roleSubject,roleOwner,roleWorld,roleCombat,outcomeConditionChoices,bonusFormulaChoices,targetSourceChoices,fixedTarget,showTestCalculation,effectChoices,actionChoices,eventTypeChoices,choiceGroupRows,conditionSummary,costEffectSummary,effectSummary,actionSummary,formulaModel,conditionModel,conditionOperands:[conditionModel.left,conditionModel.right],...(this.#kind==="sheetDefinition"?(()=>{const choices=selection(this.#renderList("contentTypes","listContentTypes").map(x=>({id:x.id,label:x.nameKey,...withColors("contentType",x)})),data.contentTypeIds??[]);return {sheetIsItem:data.target==="item",sheetContentTypeChoices:choices,sheetContentTypeSummary:pickerSummary(choices),sheetLayoutJSON:JSON.stringify(data.root??null)};})():{}),sheetTargetChoices:SHEET_TARGETS.map(id=>({id,labelKey:`RTA.Sheet.Target${id[0].toUpperCase()}${id.slice(1)}`,colors:selectColorsAttribute([RTA_NEUTRAL_COLOR]),selected:(data.target??"actor")===id})),
       referenceChoices:referenceChoices.map(x=>({...x,selected:x.token===referenceTargetToken})),
       bindingTargetChoices:referenceChoices.filter(x=>parseRefToken(x.token).capabilityId).map(x=>({...x,selected:x.token===bindingTargetToken})),
       effectTargetChoices:mutableReferenceChoices.map(x=>({...x,selected:x.token===targetToken})),
@@ -270,7 +274,7 @@ export class ConfiguratorEntryEditor extends ConfiguratorWindow {
       ...(this.#kind==="effect"?{targetDefinitionFormulaChoices:optionalFormula(data.targetDefinitionFormulaRef,"FixedTargetDefinition","The target above")}:{}),
       ...(this.#kind==="action"?outcomeMappingContext(data,{tests,outcomes,effects,actions:actions.filter(x=>x.id!==data.id),withColors}):{}),
       ...(this.#kind==="trigger"?{...triggerFilterContext(data,{eventTypes:[...eventTypes,...systemEvents]}),triggerEventChoices}:{}),
-      ...(this.#kind==="permissionPolicy"?permissionFormContext(data,{definitions,actions,conditions,withColors}):{}),dirty:this.#dirty,canPersist:!isValidated&&this.#dirty,
+      ...(this.#kind==="permissionPolicy"?permissionFormContext(data,{definitionTypes:selectableDefinitionTypes,definitions,contentTypes,contentTemplates:list("listContentTemplates"),actions,conditions,withColors}):{}),dirty:this.#dirty,canPersist:!isValidated&&this.#dirty,
       constraintRows:(data.constraints??[]).filter(rule=>CONSTRAINT_KINDS.includes(rule?.kind)).map(rule=>{
         const model=constraintRowModel(rule);
         const names=[...new Set([...Object.keys(data.fields??{}),'relations',model.field])].filter(Boolean);
@@ -306,6 +310,11 @@ export class ConfiguratorEntryEditor extends ConfiguratorWindow {
     form.addEventListener("change",event=>{if(event.target.matches?.("[data-step-source-family]")&&event.target.checked){const group=event.target.closest("[data-step-prop=sourceCollection]");for(const other of group?.querySelectorAll("[data-step-source-family]")??[])if(other!==event.target)other.checked=false;}this.#syncCreationSource(event.target);this.#syncCreationKind(event.target);mark();if(event.target.matches?.("[data-presentation-override]")){const row=event.target.closest("[data-presentation-key]");const control=row?.querySelector(".rta-declarative-presentation__value");if(control)control.hidden=!event.target.checked;}this.#syncFieldRow(event.target);this.#syncModeRows(event.target);this.#syncOperandEditor(event.target);this.#syncRuleOperandEditor(event.target);this.#syncDiceRead(event.target);this.#syncPickerSummary(event.target);this.#syncStorageKind(event.target);if(event.target.matches?.("[data-color-override-toggle]")){const input=event.target.closest("[data-color-override-editor]")?.querySelector("[data-custom-color-input]");if(input)input.disabled=!event.target.checked;}});
     form.addEventListener("change",event=>{const card=event.target.closest?.("[data-card]");if(card)syncCard(card);if(event.target.matches?.("[data-source-kind]"))syncValueSource(event.target);if(event.target.matches?.('[data-input-prop="sourceKind"]'))syncTestInputSource(event.target);if(event.target.matches?.('[data-slot-prop="entryMode"]'))syncEntryMode(event.target);// Tie-break, reroll and sides only matter once an initiative roll is chosen.
       if(event.target.matches?.("[data-mapping-choice]")){const mapping=event.target.closest("[data-outcome-mapping]"),row=mapping?.querySelector("[data-mapping-choice-count-row]");if(row)row.hidden=!mapping.querySelector("[data-mapping-choice]:checked");}
+      // A choice option's bonus field shows once a granted value Definition is chosen.
+      if(event.target.matches?.('[name="choiceTargetRef"],[data-choice-prop="operation"]')){const group=event.target.closest("[data-choice-group]"),grant=group?.querySelector('[data-choice-prop="operation"]')?.value==="grant";let shown=false;
+        for(const row of group?.querySelectorAll("[data-choice-bonus-row]")??[]){row.hidden=![...group.querySelectorAll('[name="choiceTargetRef"]:checked')].some(input=>input.value===row.dataset.choiceBonusRow);shown||=!row.hidden;}
+        const bonuses=group?.querySelector("[data-choice-bonuses]");if(bonuses)bonuses.hidden=!(grant&&shown);}
+      if(event.target.matches?.('[name="stateApplicationIds"]')){for(const row of form.querySelectorAll(`[data-state-stacking="${CSS.escape(event.target.value)}"]`))row.hidden=!event.target.checked;const list=form.querySelector("[data-state-stacking-list]");if(list)list.hidden=!form.querySelector('[name="stateApplicationIds"]:checked');}
       if(event.target.matches?.('[name="groupTestRef"]'))for(const row of form.querySelectorAll("[data-group-only]"))row.hidden=!event.target.value;
       if(event.target.matches?.('[name="linkFrom"]'))for(const row of form.querySelectorAll("[data-link-only]"))row.hidden=!event.target.value;
       if(event.target.matches?.('[name="turnOrderMove"]')){for(const row of form.querySelectorAll("[data-turn-order-only]"))row.hidden=!event.target.value;for(const row of form.querySelectorAll("[data-turn-order-formula]"))row.hidden=!["set","add"].includes(event.target.value);}
@@ -522,10 +531,10 @@ export class ConfiguratorEntryEditor extends ConfiguratorWindow {
     const id=uid('choice'),ruleset=this.#api.getRuleset(this.#versionId);
     const options=relationCatalog(ruleset).map(x=>({
       id:refToken(x),label:`${referenceKindTitle(x.objectKind,globalThis.game?.i18n?.lang==='fr')} · ${x.label}`,
-      colors:selectColorsAttribute(this.#optionColors(x.objectKind,x.entry))
+      colors:selectColorsAttribute(this.#optionColors(x.objectKind,x.entry)),valued:x.objectKind==="definition"&&(x.entry?.capabilities??[]).includes("value")
     }));
     const choices=renderChoiceListBody(options,{name:'choiceTargetRef',placeholder:uiText('SearchRelations','Search Ruleset objects…'),emptyMessage:uiText('NoChoiceTargets','No selectable Ruleset entries for this choice.')});
-    return renderChoiceGroupHTML({id,choices});
+    return renderChoiceGroupHTML({id,choices,bonuses:options.filter(x=>x.valued)});
   }
 
   #newFieldRow(){

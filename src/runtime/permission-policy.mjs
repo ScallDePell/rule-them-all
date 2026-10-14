@@ -1,11 +1,13 @@
 import {OWNERSHIP_LEVELS,PERMISSION_OPERATIONS} from "../configurator/permission-contract.mjs";
 
-/** 0 = whole Ruleset, 1 = a kind of object, 2 = one object. */
+/** 0 = whole Ruleset, 1 = a kind of object, 2 = one type of it, 3 = one object.
+ * target.typeRef names the target's type: a Definition's definitionType, a Content Template's contentType. */
 function scopeRank(scope,target){
   if(scope.objectKind==="ruleset")return 0;
+  if(target.typeRef&&scope.objectKind===target.typeRef.objectKind)return scope.objectId===target.typeRef.objectId?2:-1;
   if(scope.objectKind!==target.objectKind)return -1;
   if(!scope.objectId)return 1;
-  return scope.objectId===target.objectId?2:-1;
+  return scope.objectId===target.objectId?3:-1;
 }
 function subjectMatches(rule,subject){
   if(rule.roles.length&&!rule.roles.includes(subject.role))return false;

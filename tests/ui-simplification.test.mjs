@@ -106,6 +106,34 @@ test('a Permission policy saves its scope from one select and its rules from row
   assert.deepEqual(collectPermissionRules([row]),[{id:'r1',userIds:['u1'],effect:'DENY',operations:['execute'],roles:['player','trusted'],minimumOwnership:'owner',conditionRef:null,priority:5,messageKey:'Too tired'}]);
 });
 
+test('the Permission scope offers every scope the engine checks, types included', async () => {
+  const {permissionFormContext,parseScopeToken}=await import('../src/configurator/permission-form.mjs');
+  const one=id=>[{id,nameKey:id}];
+  const context=permissionFormContext({scope:{objectKind:'contentType',objectId:'weapon'},rules:[]},{definitionTypes:one('trait'),definitions:one('str'),contentTypes:one('weapon'),contentTemplates:one('sword'),actions:one('strike')});
+  assert.deepEqual(context.permissionScopeChoices.map(x=>x.token),['ruleset','definition:','definitionType:trait','definition:str','contentTemplate:','contentType:weapon','contentTemplate:sword','action:','action:strike']);
+  assert.equal(context.permissionScopeChoices.find(x=>x.selected).labelKey,'RTA.Permission.ScopeContentType');
+  assert.deepEqual(parseScopeToken('definitionType:trait'),{objectKind:'definitionType',objectId:'trait'});
+});
+
+test('each state an Action applies saves its stacking and its stacks', () => {
+  const current={id:'a',nameKey:'A',stateApplications:[{definitionId:'tired',targetRole:'self',stacking:'refresh',stacks:1,severity:null,modifierRefs:[]}]};
+  const saved=collectEntryData('action',{...form({nameKey:'A','stateStacking.tired':'stack','stateStacks.tired':'2','stateStacking.prone':'ignore','stateStacks.prone':'1'},{stateApplicationIds:['tired','prone']}),current});
+  assert.deepEqual(saved.stateApplications,[{definitionId:'tired',targetRole:'self',stacking:'stack',stacks:2,severity:null,modifierRefs:[],durationRef:null},{definitionId:'prone',targetRole:'target',stacking:'ignore',stacks:1,durationRef:null}]);
+  assert.throws(()=>collectEntryData('action',{...form({nameKey:'A','stateStacks.tired':'0'},{stateApplicationIds:['tired']}),current}),/stacks/);
+});
+
+test('an acquisition choice option saves the bonus it adds to a granted value', async () => {
+  const {collectTemplateAcquisitions}=await import('../src/configurator/content-template-form.mjs');
+  const fields={'definition|athletics|||':'1','definition|stealth|||':'','definition|arcana|||':'0'};
+  const row=operation=>({dataset:{choiceGroup:'skills',choiceInitialOperation:'grant'},
+    querySelector:selector=>({value:selector.includes('operation')?operation:selector.includes('name')?'Skills':'1'}),
+    querySelectorAll:selector=>selector.includes('choiceTargetRef')?Object.keys(fields).map(value=>({value})):selector.includes('choice-bonus')?Object.entries(fields).map(([choiceBonus,value])=>({value,dataset:{choiceBonus}})):[]});
+  const current={choiceGroups:[{id:'skills',options:[{id:'s',operation:'grant',targetRef:{objectKind:'definition',objectId:'stealth'},config:{initial:{'value.base':2},add:{'value.base':3}}}]}]};
+  const options=collectTemplateAcquisitions({current,choiceRows:[row('grant')]}).choiceGroups[0].options;
+  assert.deepEqual(options.map(x=>x.config),[{add:{'value.base':1}},{initial:{'value.base':2}},{}]);
+  assert.deepEqual(collectTemplateAcquisitions({current,choiceRows:[row('unlock')]}).choiceGroups[0].options.map(x=>x.config),[{},{initial:{'value.base':2}},{}],'only a grant adds a bonus');
+});
+
 test('a Trigger filter is built from payload-field rows typed by the field', async () => {
   const {collectTriggerFilter,triggerFilterContext}=await import('../src/configurator/trigger-filter-form.mjs');
   const row=(key,valueType,value,disabled=false)=>({querySelector:selector=>selector==='[data-filter-field]'?{value:key,selectedOptions:[{disabled,dataset:{valueType}}]}:{value}});

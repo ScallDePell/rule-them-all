@@ -54,7 +54,7 @@ test('CP-11: PermissionPolicy rules are a closed contract', () => {
   assert.throws(()=>preparePermissionPolicy({id:'p',nameKey:'P',rules:[rule('a','ALLOW',['read']),rule('a','DENY',['read'])]}),/Duplicate permission rule/);
 });
 
-async function world(){
+async function world(extra=async()=>{}){
   const api=await createConfiguratorAPI(new Storage());
   const v=(await api.createRuleset({id:'perm',nameKey:'Perm',version:'1'})).versionId;
   await api.registerDefinitionType(v,{id:'body',key:'body',nameKey:'Body',descriptionKey:'',color:null,allowedCapabilities:['pool','value'],defaultCapabilities:['pool'],requiredCapabilities:[],fields:{},constraints:[]});
@@ -65,6 +65,7 @@ async function world(){
   await api.createAction(v,{id:'strike',nameKey:'Strike',effectRefs:['hurt'],enabled:true,tags:[]});
   await api.createPermissionPolicy(v,{id:'combat',nameKey:'Combat',scope:{objectKind:'definition',objectId:'hero'},defaultEffect:'DENY',rules:[rule('anyone-reads','ALLOW',['read']),rule('players-hurt','ALLOW',['write'],{roles:['player'],conditionRef:'always'})]});
   await api.createPermissionPolicy(v,{id:'hidden',nameKey:'Hidden',scope:{objectKind:'definition',objectId:'secret'},defaultEffect:'DENY',rules:[]});
+  await extra(api,v);
   await api.publishRuleset(v);
   // Two clients over the same world: the GM's and the player's (who owns A, not B).
   const gmAdapter=new MemoryRuntimeAdapter();
@@ -140,4 +141,26 @@ test('CP-11: a DENY rule carries the message that explains the refusal (former R
   assert.equal(decision.allowed,false);
   assert.equal(decision.messageKey,'You are stunned.');
   assert.throws(()=>preparePermissionRule({id:'x',effect:'DENY',operations:['read'],messageKey:3}),/messageKey/);
+});
+
+test('CP-11: a definitionType or contentType scope sits between the kind and the object', async () => {
+  const typed={...def,typeRef:{objectKind:'definitionType',objectId:'body'}};
+  const kind=policy('defs',{objectKind:'definition'},[],'ALLOW'),type=policy('bodies',{objectKind:'definitionType',objectId:'body'},[],'DENY');
+  assert.deepEqual(await decide([kind,type],'write',typed),{allowed:false,reason:'default',policyId:'bodies',ruleId:null});
+  assert.equal((await decide([kind,type,policy('hero',{objectKind:'definition',objectId:'hero'},[],'ALLOW')],'write',typed)).allowed,true);
+  assert.equal((await decide([kind,policy('minds',{objectKind:'definitionType',objectId:'mind'},[],'DENY')],'write',typed)).allowed,true);
+  const content={objectKind:'contentTemplate',objectId:'sword',typeRef:{objectKind:'contentType',objectId:'weapon'}};
+  assert.equal((await decide([policy('weapons',{objectKind:'contentType',objectId:'weapon'},[],'DENY')],'write',content)).allowed,false);
+});
+
+test('CP-11: the engine puts each Definition in the scope of its definitionType', async () => {
+  const {api,v,playerAdapter}=await world(async(api,v)=>{
+    await api.createDefinition(v,{id:'mind',key:'mind',definitionTypeId:'body',nameKey:'Mind',descriptionKey:'',data:{},capabilities:['value'],enabled:true,tags:[]});
+    await api.createPermissionPolicy(v,{id:'bodies',nameKey:'Bodies',scope:{objectKind:'definitionType',objectId:'body'},defaultEffect:'DENY',rules:[rule('owners-read','ALLOW',['read'],{minimumOwnership:'owner'})]});
+  });
+  const engine=createRuntimeAPI(api,{adapter:playerAdapter,hooks:null});
+  assert.equal((await engine.authorize(v,'read',{objectKind:'definition',objectId:'mind'},{kind:'actor',id:'a'})).policyId,'bodies');
+  assert.equal((await engine.authorize(v,'read',{objectKind:'definition',objectId:'mind'},{kind:'actor',id:'b'})).allowed,false);
+  // hero keeps its own, more precise policy.
+  assert.equal((await engine.authorize(v,'read',{objectKind:'definition',objectId:'hero'},{kind:'actor',id:'b'})).policyId,'combat');
 });
