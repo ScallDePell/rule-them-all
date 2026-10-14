@@ -201,7 +201,8 @@
    one row gap between children, however many rows a script appends. */
 .rta-config-entry :is([data-slot-list], [data-choice-group-list], [data-relation-list], [data-declarative-constraints], [data-test-input-list], [data-card-list-body], .rta-generic-relation, .rta-generic-relation__fields),
 .rta-config-entry :is(.rta-binding-card, .rta-outcome-mapping, .rta-die-face-counts),
-.rta-config-entry [data-mapping-actions]:not([hidden]) {
+.rta-config-entry [data-mapping-actions]:not([hidden]),
+.rta-config-entry [data-event-payload-field] {
   display: flex;
   flex-direction: column;
   gap: var(--rta-gap-row);

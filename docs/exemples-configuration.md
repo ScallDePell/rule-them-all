@@ -713,7 +713,7 @@ Un personnage Secoué ne peut rien entreprendre, à part tenter de se reprendre 
 
 ### Types d’événement
 
-Un type d'événement décrit un fait du jeu. Une Action l'émet quand on le coche dans ses **Événements déclenchés** (famille Actions), et les Déclencheurs ou les Durées « Jusqu'à un événement » y réagissent. Quand c'est une Action qui l'émet, l'événement porte toujours l'Action utilisée et la clé du Résultat obtenu, que les Conditions lisent dans event.payload.actionId et event.payload.outcomeKey. Le module émet en plus ses propres événements de combat et de temps, sans rien créer.
+Un type d'événement décrit un fait du jeu. Une Action l'émet quand on le coche dans ses **Événements déclenchés** (famille Actions), et les Déclencheurs ou les Durées « Jusqu'à un événement » y réagissent. Quand c'est une Action qui l'émet, l'événement porte toujours l'Action utilisée et la clé du Résultat obtenu, et la section **Seulement si** d'un Déclencheur propose « Clé du Résultat ». Chaque champ ajouté sous **Champs du contenu événementiel** reçoit un identifiant tiré de son nom, affiché sur le champ : une Condition ou une Formule le lit dans event.payload.<identifiant>. L'Action qui émet l'événement remplit ces champs dans sa section **Contenu des événements émis**. Les rôles de l'événement sont ceux de l'Action : le Déclencheur choisit qui agit. Le module émet en plus ses propres événements de combat et de temps, sans rien créer.
 
 #### Le repos long de D&D 5e : un événement qui met fin aux effets
 
@@ -721,19 +721,28 @@ Beaucoup d'effets de D&D 5e durent « jusqu'à la fin de votre prochain repos lo
 
 1. Dans la famille Types d’événement, créez une entrée de **Nom** « Repos long » et cochez **Activé**.
 2. Ne mettez aucun champ sous **Champs du contenu événementiel** : le fait suffit.
-3. Dans **Rôles du contexte**, cochez self : seul le personnage qui se repose est concerné.
-4. Dans la famille Actions, ouvrez l'Action « Prendre un repos long » et cochez « Repos long » dans **Événements déclenchés**.
-5. Dans la famille Durées, créez « Jusqu'au repos long » avec le **Mode** « Jusqu'à un événement » et le **Type d’événement** « Repos long ». Chaque état qui utilise cette Durée prend fin quand le personnage se repose.
+3. Dans la famille Actions, ouvrez l'Action « Prendre un repos long » et cochez « Repos long » dans **Événements déclenchés**. L'événement concerne le personnage qui se repose.
+4. Dans la famille Durées, créez « Jusqu'au repos long » avec le **Mode** « Jusqu'à un événement » et le **Type d’événement** « Repos long ». Chaque état qui utilise cette Durée prend fin quand le personnage se repose.
 
 #### L'échec bestial de Vampire la Mascarade V5 : lire le Résultat dans l'événement
 
 Quand un jet donne un échec bestial, la Bête prend le dessus et le personnage subit une Compulsion.
 
-1. Créez le type d'événement « Jet résolu », sans champ, avec self dans **Rôles du contexte**.
+1. Créez le type d'événement « Jet résolu », sans champ.
 2. Cochez « Jet résolu » dans les **Événements déclenchés** de chaque Action qui fait un Test avec des dés de Faim.
 3. Dans la famille Résultats, l'échec bestial porte la **Clé de résultat** « echec-bestial ».
-4. Dans la famille Conditions, créez « Échec bestial » qui compare la **Valeur du contexte** event.payload.outcomeKey au texte « echec-bestial ».
-5. Un Déclencheur sur « Jet résolu » avec cette Condition lance l'Action « Subir une Compulsion » (voir la famille Déclencheurs). Un seul type d'événement sert ainsi à toutes les Actions et à tous les Résultats.
+4. Créez un Déclencheur sur « Jet résolu » qui lance l'Action « Subir une Compulsion » (voir la famille Déclencheurs). Dans sa section **Seulement si**, choisissez **Champ de l'événement** « Clé du Résultat » et **Vaut** « echec-bestial ».
+5. Un seul type d'événement sert ainsi à toutes les Actions et à tous les Résultats, sans créer de Condition.
+
+#### La perte de Santé mentale de L'Appel de Cthulhu : un événement qui porte un nombre
+
+Un investigateur qui perd 5 points de Santé mentale ou plus en un seul jet sombre dans une folie passagère.
+
+1. Créez le type d'événement « Perte de Santé mentale ». Sous **Champs du contenu événementiel**, ajoutez le champ **Nom** « Perte », **Type de valeur** « integer ». Après l'enregistrement, le champ affiche son identifiant : perte.
+2. Dans la famille Actions, ouvrez « Jet de Santé mentale » et cochez « Perte de Santé mentale » dans **Événements déclenchés**.
+3. La section **Contenu des événements émis** apparaît : pour « Perte », choisissez la Formule « Perte subie », celle que l'Effet de l'Action retire déjà à la Santé mentale. Elle est calculée une fois les Effets appliqués. Un champ peut aussi prendre une **Valeur fixe**.
+4. Dans la famille Conditions, créez « Grosse perte », vraie quand la **Valeur du contexte** event.payload.perte est supérieure ou égale à 5.
+5. Créez le Déclencheur « Folie passagère » sur « Perte de Santé mentale », avec la Condition « Grosse perte » et l'Action « Folie temporaire » (voir la famille Tables). Pour une valeur exacte, la section **Seulement si** suffit : **Champ de l'événement** « Perte », **Vaut** « 5 ».
 
 #### Les événements du module dans Real World Fantasy : combat et temps qui passe
 
@@ -757,7 +766,7 @@ Quand une attaque le touche, le magicien peut dépenser sa réaction pour gagner
 1. Préparez dans la famille Actions l'Action « Bouclier » : dans **Relance**, cochez **Relance une autre Action** et **Garder les mêmes dés**, puis cochez « Attaque » dans **Actions qu'elle peut relancer**. Dans **Modificateurs appliqués**, cochez « Bouclier : +5 CA » ; ses **Effets de coût** dépensent la réaction et un emplacement de niveau 1.
 2. L'Action « Attaque » coche le type d'événement « Attaque portée » dans ses **Événements déclenchés**.
 3. Dans la famille Déclencheurs, créez « Réagir avec Bouclier » : **Type d’événement** « Attaque portée », **Qui agit** « Celui qui était visé (réaction) », **Entendu par** « Chaque personnage concerné », **Quand** « Proposé à qui agit ».
-4. Dans **Conditions**, cochez « Attaque touchée » (event.payload.outcomeKey vaut la clé du Résultat de touche), « Réaction disponible » et « Connaît Bouclier ». Ces Conditions lisent le défenseur comme self.
+4. Dans **Seulement si**, choisissez **Champ de l'événement** « Clé du Résultat » et **Vaut** la clé du Résultat de touche, par exemple « touche ». Dans **Conditions**, cochez « Réaction disponible » et « Connaît Bouclier ». Ces Conditions lisent le défenseur comme self.
 5. Dans **Actions**, cochez « Bouclier ».
 6. En jeu, le joueur du défenseur voit la fenêtre « Réaction » avec un bouton « Bouclier » et un bouton « Laisser passer ». S'il choisit Bouclier, l'attaque est rejouée avec les mêmes dés contre la nouvelle CA.
 

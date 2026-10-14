@@ -217,7 +217,7 @@ function prepareRerollDice(dice){
 export const ACTION_TARGETING=Object.freeze(['one','each','shared']);
 export const TURN_ORDER_MOVES=Object.freeze(['now','last','set','add']);
 export function prepareAction(data,options={}){
-  const x={descriptionKey:'',enabled:true,order:0,tags:[],inputs:[],conditionRefs:[],costEffectRefs:[],acquisitions:[],stateRemovals:[],stateApplications:[],modifierApplications:[],effectRefs:[],testRef:null,outcomeMappings:[],tableRef:null,targeting:'one',reroll:null,forEach:null,roleLinks:[],group:null,turnOrder:null,eventTypeRefs:[],...copyJSON(data)};
+  const x={descriptionKey:'',enabled:true,order:0,tags:[],inputs:[],conditionRefs:[],costEffectRefs:[],acquisitions:[],stateRemovals:[],stateApplications:[],modifierApplications:[],effectRefs:[],testRef:null,outcomeMappings:[],tableRef:null,targeting:'one',reroll:null,forEach:null,roleLinks:[],group:null,turnOrder:null,eventTypeRefs:[],eventPayloads:{},...copyJSON(data)};
   identity(x,'Action',options);
   // targeting: one target, or each of context.targets with its own Effect dice ("each") or the same dice for all ("shared").
   if(!ACTION_TARGETING.includes(x.targeting))throw new Error(`Action.targeting must be one of ${ACTION_TARGETING.join(', ')}.`);
@@ -248,6 +248,14 @@ export function prepareAction(data,options={}){
   // choice: {count, actionRefs}: once the result is known, the player picks count of these Actions (offered, not run).
   x.outcomeMappings.forEach((mapping,i)=>{if(!isRecord(mapping))throw new Error(`Action.outcomeMappings[${i}] must be an object.`);if(mapping.actionRefs!==undefined)arr(mapping.actionRefs,`Action.outcomeMappings[${i}].actionRefs`);
     if(mapping.choice!==undefined){const c=mapping.choice;if(!isRecord(c))throw new Error(`Action.outcomeMappings[${i}].choice must be an object.`);for(const key of Object.keys(c))if(!['count','actionRefs'].includes(key))throw new Error(`Action.outcomeMappings[${i}].choice contains unsupported field: ${key}.`);arr(c.actionRefs,`Action.outcomeMappings[${i}].choice.actionRefs`);if(!c.actionRefs.length)throw new Error(`Action.outcomeMappings[${i}].choice needs Actions to choose from.`);if(!Number.isInteger(c.count)||c.count<1||c.count>c.actionRefs.length)throw new Error(`Action.outcomeMappings[${i}].choice.count must be from 1 to the number of Actions offered.`);}});
+  // eventPayloads: {eventTypeId: {fieldId: {formulaRef} | {literal}}}: the value each payload field of an emitted event takes,
+  // a Formula computed in the Action's context once its Effects are done, or a fixed value.
+  if(!isRecord(x.eventPayloads))throw new Error('Action.eventPayloads must be an object.');
+  for(const [eventTypeId,values] of Object.entries(x.eventPayloads)){
+    if(!x.eventTypeRefs.includes(eventTypeId))throw new Error(`Action.eventPayloads: the Action does not emit ${eventTypeId}.`);
+    if(!isRecord(values))throw new Error(`Action.eventPayloads.${eventTypeId} must be an object.`);
+    for(const [fieldId,source] of Object.entries(values)){const at=`Action.eventPayloads.${eventTypeId}.${fieldId}`;if(!isRecord(source)||Object.keys(source).length!==1)throw new Error(`${at} must be {formulaRef} or {literal}.`);if(Object.hasOwn(source,'formulaRef')){if(!nonempty(source.formulaRef))throw new Error(`${at}.formulaRef must be a Formula id.`);}else if(!Object.hasOwn(source,'literal'))throw new Error(`${at} must be {formulaRef} or {literal}.`);}
+  }
   if(new Set(x.inputs.map(input=>input.id)).size!==x.inputs.length)throw new Error('Action.inputs lists the same id twice.');
   x.acquisitions=x.acquisitions.map(prepareActionAcquisition);
   x.stateRemovals=x.stateRemovals.map(prepareStateRemoval);x.stateApplications=x.stateApplications.map(prepareStateApplication);x.modifierApplications=x.modifierApplications.map(prepareModifierApplication);
@@ -278,11 +286,13 @@ export function prepareCategory(data,options={}){
   return x;
 }
 export function prepareEventType(data,options={}){
-  const x={descriptionKey:'',enabled:true,order:0,tags:[],payloadFields:{},roles:[],...copyJSON(data)};
+  const x={descriptionKey:'',enabled:true,order:0,tags:[],payloadFields:{},...copyJSON(data)};
   identity(x,'EventType',options);
+  // The roles of an event are those of the Action that emits it; a Trigger's acting role picks among them.
+  if(Object.hasOwn(x,'roles'))throw new Error('Unsupported EventType field: roles.');
   if(String(x.id).startsWith(SYSTEM_EVENT_PREFIX))throw new Error(`EventType ids starting with ${SYSTEM_EVENT_PREFIX} are kept for the module's own events.`);
   if(!isRecord(x.payloadFields))throw new Error('EventType.payloadFields must be an object.');
-  arr(x.roles,'EventType.roles'); arr(x.tags,'EventType.tags'); bool(x.enabled,'EventType.enabled'); return x;
+  arr(x.tags,'EventType.tags'); bool(x.enabled,'EventType.enabled'); return x;
 }
 export const TRIGGER_HOLDERS=Object.freeze(['actor','combat','world']);
 export function prepareTrigger(data,options={}){

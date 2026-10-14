@@ -3,7 +3,7 @@
  * The combat container hears the combat events and the world container the passing time, once each. */
 const field = (id, name, valueType) => ({id, name, valueType, cardinality: "one", nullable: false, required: true, constraints: []});
 const combat = [field("combatId", "Combat", "string"), field("round", "Round", "integer")];
-const type = (id, nameKey, fields) => Object.freeze({id, nameKey, system: true, roles: ["self"], payloadFields: Object.freeze(Object.fromEntries(fields.map(f => [f.id, f])))});
+const type = (id, nameKey, fields) => Object.freeze({id, nameKey, system: true, payloadFields: Object.freeze(Object.fromEntries(fields.map(f => [f.id, f])))});
 
 export const SYSTEM_EVENT_PREFIX = "rta.";
 export const SYSTEM_EVENT_TYPES = Object.freeze([

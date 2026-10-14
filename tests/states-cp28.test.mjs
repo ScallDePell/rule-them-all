@@ -17,7 +17,7 @@ async function setup({publish=true}={}){
   await api.registerDefinitionType(v,{id:'trait',key:'trait',nameKey:'Trait',descriptionKey:'',color:null,allowedCapabilities:['value','state'],defaultCapabilities:['value'],requiredCapabilities:[],fields:{},constraints:[]});
   await api.createDefinition(v,{id:'might',key:'might',definitionTypeId:'trait',nameKey:'Might',descriptionKey:'',data:{},capabilities:['value'],enabled:true,tags:[]});
   await api.createDefinition(v,{id:'poisoned',key:'poisoned',definitionTypeId:'trait',nameKey:'Poisoned',descriptionKey:'',data:{},capabilities:['state'],enabled:true,tags:[]});
-  await api.createEventType(v,{id:'rest',nameKey:'Rest',descriptionKey:'',payloadFields:{},roles:[],enabled:true});
+  await api.createEventType(v,{id:'rest',nameKey:'Rest',descriptionKey:'',payloadFields:{},enabled:true});
   await api.createDuration(v,{id:'two-rounds',nameKey:'Two rounds',mode:'fixed',amount:2,unit:'round'});
   await api.createDuration(v,{id:'until-rest',nameKey:'Until rest',mode:'untilEvent',eventTypeRef:'rest'});
   const modifier={conditionRefs:[],stacking:{mode:'stack',group:''},priority:0,enabled:true,tags:[]};

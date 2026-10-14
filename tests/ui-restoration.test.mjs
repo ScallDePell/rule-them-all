@@ -113,7 +113,7 @@ test('v0.6.1 Derived Outputs open in the standard editor and Events/Tags use vis
  assert.match(ops,/formulaBinding:\{get:"getFormulaBinding"/);
  assert.match(html,/\{\{#if isFormulaBinding\}\}/);
  assert.match(html,/data-event-field-list/);
- assert.match(html,/name="roles" value="\{\{id\}\}"/);
+ assert.doesNotMatch(html,/name="roles"/,'an Event Type has no roles: its events take those of the Action');
  assert.doesNotMatch(html,/textarea name="payloadFieldsJson"/);
  assert.doesNotMatch(html,/textarea name="tags"/);
  assert.match(app,/kind:"tag"/);

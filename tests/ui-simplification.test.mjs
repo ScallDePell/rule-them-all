@@ -112,7 +112,9 @@ test('a Trigger filter is built from payload-field rows typed by the field', asy
   assert.deepEqual(collectTriggerFilter([row('amount','number','5'),row('kind','string','fire'),row('crit','boolean','true')]),{payloadMatches:{amount:5,kind:'fire',crit:true}});
   assert.equal(collectTriggerFilter([row('amount','number','5',true)]),null,'a field of another Event Type is dropped');
   const context=triggerFilterContext({eventTypeId:'hit',eventFilter:{payloadMatches:{amount:5}}},{eventTypes:[{id:'hit',payloadFields:{amount:{name:'Amount',valueType:'number'}}},{id:'heal',payloadFields:{gain:{name:'Gain',valueType:'number'}}}]});
-  assert.deepEqual(context.triggerFilterRows[0].fieldChoices.map(x=>[x.id,x.selected,x.disabled]),[['amount',true,false],['gain',false,true]]);
+  assert.deepEqual(context.triggerFilterRows[0].fieldChoices.map(x=>[x.id,x.selected,x.disabled]),[['outcomeKey',false,false],['amount',true,false],['outcomeKey',false,true],['gain',false,true]]);
+  const system=triggerFilterContext({eventTypeId:'rta.combat.round'},{eventTypes:[{id:'rta.combat.round',system:true,payloadFields:{round:{name:'Round',valueType:'integer'}}}]});
+  assert.deepEqual(system.newTriggerFilterRow.fieldChoices.map(x=>x.id),['round'],'a module event carries no Outcome key');
 });
 
 test('a Test target is chosen in one select: none, a fixed value or a Formula', () => {

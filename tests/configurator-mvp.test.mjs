@@ -24,7 +24,7 @@ test('Configurator MVP supports Parameter Formula Condition Effect Action chain'
 test('Configurator MVP supports Permission Event Trigger and ContentTemplate contracts',async()=>{
  const api=await createConfiguratorAPI(new MemoryStorage()); const v=(await api.createRuleset(base())).versionId;
  await api.createPermissionPolicy(v,{id:'owner-read',nameKey:'Owner read',scope:{objectKind:'definition'},rules:[{id:'owner',operations:['read'],effect:'ALLOW',subjects:{ownershipLevels:['OWNER']},priority:10}],defaultEffect:'DENY',enabled:true,order:10});
- await api.createEventType(v,{id:'damage-applied',nameKey:'Damage applied',payloadFields:{amount:{valueType:'number'}},roles:['source','target'],enabled:true,order:10});
+ await api.createEventType(v,{id:'damage-applied',nameKey:'Damage applied',payloadFields:{amount:{valueType:'number'}},enabled:true,order:10});
  await api.createCondition(v,{id:'always',nameKey:'Always',expression:{type:'literal',value:true},enabled:true,order:10,tags:[]});
  await api.createAction(v,{id:'noop',nameKey:'Noop',conditionRefs:[],costEffectRefs:[],effectRefs:[],enabled:true,order:10,tags:[]});
  await api.createTrigger(v,{id:'damage-trigger',nameKey:'Damage trigger',eventTypeId:'damage-applied',eventFilter:null,conditionRefs:['always'],actionRefs:['noop'],enabled:true,order:10,tags:[]});

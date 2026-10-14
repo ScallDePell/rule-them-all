@@ -101,7 +101,7 @@ test("Creation System sources localize via FR/EN while retaining stable collecti
 });
 
 test("dynamic editor markup lives in pure generators and preserves data-* contracts",()=>{
- const event=renderNewEventFieldInnerHTML("e123",'<option>boolean</option>');
+ const event=renderNewEventFieldInnerHTML('<option>boolean</option>');
  assert.match(event,/data-event-field-prop="name"/);assert.match(event,/data-action="removeEventField"/);
  assert.doesNotMatch(read("src/ui/entry-editor-markup.mjs"),/globalThis\.game|game\.settings|fromUuid|this\.#api/);
 });
