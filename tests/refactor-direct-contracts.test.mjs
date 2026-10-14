@@ -72,6 +72,8 @@ test('content subtype choice survives Content Type serialization and preserves u
   const item=collectEntryData('contentType',deps({nameKey:'Inventory',storageKind:'item',documentSubtypeActor:'pilot',documentSubtypeItem:'gear'}));
   assert.equal(item.documentSubtype,'gear');
   assert.throws(()=>prepareContentType({...item,id:'type-1',documentSubtype:33}),/ContentType.documentSubtype/);
+  assert.equal(item.sheetPalette,false,'"Offered in the sheet editor" unticked is stored');
+  assert.equal('sheetPalette' in collectEntryData('contentType',deps({nameKey:'Inventory',storageKind:'item',sheetPalette:true})),false,'ticked (the default) stores nothing');
 });
 
 test('content subtypes are unique-or-explicit, never first-in-list when ambiguous',()=>{

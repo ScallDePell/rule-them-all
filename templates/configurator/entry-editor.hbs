@@ -90,6 +90,7 @@
           {{> rtaIdentityDescription}}
           <div class="form-group rta-form-row"><label>{{localize "RTA.Template.ScaleRef"}}</label><select name="scaleRef" {{#if readOnly}}disabled{{/if}}>{{#each scaleChoices}}<option value="{{id}}" data-rta-colors="{{colors}}" {{#if selected}}selected{{/if}}>{{label}}</option>{{/each}}</select></div>
           {{#if valueBounds}}{{> rtaValueSource label=(localize "RTA.ValueBounds.Minimum") bound="valueMinimum" source=valueBounds.minimum}}{{> rtaValueSource label=(localize "RTA.ValueBounds.Maximum") bound="valueMaximum" source=valueBounds.maximum}}{{/if}}
+          <div class="form-group rta-form-row"><label>{{localize "RTA.Template.SheetPalette"}}</label><input name="sheetPalette" type="checkbox" {{#if sheetPaletteOffered}}checked{{/if}} {{#if readOnly}}disabled{{/if}}></div>
           <div data-color-override-editor>
             <div class="form-group rta-form-row"><label>{{#if isTag}}{{localize "RTA.Template.Color"}}{{else}}{{localize "RTA.Colors.SubsectionColor"}}{{/if}}</label><span class="rta-color-override-control">{{#if allowTypeColor}}<input type="hidden" name="customColorPermission" value="1"><label class="rta-color-override-check"><input data-color-override-toggle type="checkbox" name="customColorEnabled" {{#if hasCustomColor}}checked{{/if}} {{#if readOnly}}disabled{{/if}}> {{localize "RTA.Colors.UseCustomColor"}}</label>{{/if}}<input data-custom-color-input name="color" type="color" value="{{#if data.color}}{{data.color}}{{else}}{{inheritedTypeColor}}{{/if}}" {{#unless allowTypeColor}}disabled{{else}}{{#unless hasCustomColor}}disabled{{/unless}}{{/unless}} {{#if readOnly}}disabled{{/if}}></span></div>
           </div>
@@ -392,6 +393,7 @@
           <div class="form-group rta-form-row"><label>{{localize "RTA.Template.DefaultRuntimeMode"}}</label><select name="runtimeMode" {{#if readOnly}}disabled{{/if}}><option value="unique" {{#if isUnique}}selected{{/if}}>{{localize "RTA.Template.Unique"}}</option><option value="stackable" {{#if isStackable}}selected{{/if}}>{{localize "RTA.Template.Stackable"}}</option></select></div>
           <div class="form-group rta-form-row"><label>{{localize "RTA.Template.Availability"}}</label><select name="availabilityConditionRef" {{#if readOnly}}disabled{{/if}}>{{#each availabilityChoices}}<option value="{{id}}" data-rta-colors="{{colors}}" {{#if selected}}selected{{/if}}>{{label}}</option>{{/each}}</select></div>
           <p class="hint">{{localize "RTA.Template.AvailabilityHint"}}</p>
+          <div class="form-group rta-form-row"><label>{{localize "RTA.Template.SheetPalette"}}</label><input name="sheetPalette" type="checkbox" {{#if sheetPaletteOffered}}checked{{/if}} {{#if readOnly}}disabled{{/if}}></div>
           {{> rtaEnabled}}
         </fieldset>
         <details class="rta-config-entry__section" open><summary>{{localize "RTA.Template.Fields"}}</summary>
@@ -427,6 +429,7 @@
         <fieldset><legend>{{localize "RTA.Template.Sheet"}}</legend>
           {{> rtaIdentityName}}
           <div class="form-group rta-form-row"><label>{{localize "RTA.Sheet.Target"}}</label><select name="sheetTarget" {{#if readOnly}}disabled{{/if}}>{{#each sheetTargetChoices}}<option value="{{id}}" data-rta-colors="{{colors}}" {{#if selected}}selected{{/if}}>{{localize labelKey}}</option>{{/each}}</select></div>
+          <div class="form-group rta-form-row"><label>{{localize "RTA.Sheet.Header.label"}}</label><select name="sheetHeader" {{#if readOnly}}disabled{{/if}}>{{#each sheetHeaderChoices}}<option value="{{id}}" data-rta-colors="{{colors}}" {{#if selected}}selected{{/if}}>{{localize labelKey}}</option>{{/each}}</select></div>
           <div data-sheet-item-only {{#unless sheetIsItem}}hidden{{/unless}}><details class="rta-picker rta-config-entry__section" data-picker><summary><strong>{{localize "RTA.Sheet.ContentTypes"}}</strong><span data-picker-summary>{{sheetContentTypeSummary}}</span></summary><div class="rta-picker__body rta-choice-list">{{#each sheetContentTypeChoices}}<label data-picker-option data-picker-label="{{label}}" data-rta-colors="{{colors}}"><input type="checkbox" name="sheetContentTypes" value="{{id}}" {{#if selected}}checked{{/if}} {{#if ../readOnly}}disabled{{/if}}> {{label}}</label>{{else}}<p>{{localize "RTA.Sheet.NoContentTypes"}}</p>{{/each}}</div></details></div>
           <div class="form-group rta-form-row"><label>{{localize "RTA.Template.Description"}}</label><textarea name="descriptionKey" rows="2" {{#if readOnly}}readonly{{/if}}>{{data.descriptionKey}}</textarea></div>
           {{> rtaEnabled}}

@@ -49,7 +49,7 @@ import {getCreationSources, getCreationSourceDescriptor} from "./creation-source
 import {diagnosticFocusTargets,saveErrorFocusPath} from "./diagnostic-focus.mjs";
 import {buildTestInputContext,syncTestInputSource} from "./test-input-form.mjs";
 import {dieContext,syncDieFaceCounts} from "./die-form.mjs";
-import {CREATION_STEP_KINDS,SHEET_TARGETS,STATE_STACKING} from "./rule-contracts.mjs";
+import {CREATION_STEP_KINDS,SHEET_HEADERS,SHEET_TARGETS,STATE_STACKING} from "./rule-contracts.mjs";
 import {SheetLayoutController} from "./sheet-layout-controller.mjs";
 import {rollVariantContext,extraRollContext,actionInputContext,tableRowContext,scaleRowContext,progressionContext} from "./rule-cards-form.mjs";
 import {syncCard} from "./card-form.mjs";
@@ -252,6 +252,8 @@ export class ConfiguratorEntryEditor extends ConfiguratorWindow {
       ...(this.#kind==="ruleset"?Object.fromEntries(["world","combat"].map(holder=>[`shared${holder[0].toUpperCase()}${holder.slice(1)}Choices`,definitions.map(x=>({id:x.id,label:x.nameKey,...withColors("definition",x),selected:(data.sharedDefinitions?.[holder]??[]).includes(x.id)}))])):{}),isDefinitionType:this.#kind==="definitionType",isDefinition:this.#kind==="definition",
       isParameter:this.#kind==="parameter",isFormula:this.#kind==="formula",isFormulaBinding:this.#kind==="formulaBinding",isCondition:this.#kind==="condition",isRoll:this.#kind==="roll",isOutcome:this.#kind==="outcome",isTest:this.#kind==="test",isEffect:this.#kind==="effect",isAction:this.#kind==="action",isTable:this.#kind==="table",isScale:this.#kind==="scale",scaleChoices,isDie:this.#kind==="die",
       isPermissionPolicy:this.#kind==="permissionPolicy",isSheetDefinition:this.#kind==="sheetDefinition",isTag:this.#kind==="tag",isCategory:this.#kind==="category",
+      sheetPaletteOffered:data.sheetPalette!==false,
+      sheetHeaderChoices:SHEET_HEADERS.map(id=>({id,labelKey:`RTA.Sheet.Header.${id}`,colors:selectColorsAttribute([RTA_NEUTRAL_COLOR]),selected:(data.header??"standard")===id})),
       valueBounds:this.#kind==="definitionType"||this.#kind==="definition"&&capabilityChoices.some(cap=>cap.id==="value"&&cap.permitted)?valueBoundsContext(data,{formulas,ofType:this.#kind==="definitionType",colorsOf:(kind,entry)=>withColors(kind,entry).colors,neutral:selectColorsAttribute([RTA_NEUTRAL_COLOR])}):null,
       slots:this.#kind==="definition"?buildSlotFormContext({definition:data,permittedCapabilities:capabilityChoices.filter(cap=>cap.permitted).map(cap=>cap.id),formulas,contentTypes,valueTypes:this.#api.listValueTypes(),colorsOf:(kind,entry)=>withColors(kind,entry).colors,neutral:selectColorsAttribute([RTA_NEUTRAL_COLOR])}):null,testInputs:this.#kind==="test"?buildTestInputContext({inputs:data.inputBindings??[],formulas:formulas.map(x=>({id:x.id,label:x.nameKey,...withColors("formula",x)})),references:this.#referenceChoices(),neutral:selectColorsAttribute([RTA_NEUTRAL_COLOR])}):null,totalFormulaChoices,marginFormulaChoices,isEventType:this.#kind==="eventType",isTrigger:this.#kind==="trigger",isContentType:this.#kind==="contentType",availabilityChoices,isContentTemplate:this.#kind==="contentTemplate",
       isCreationSystem:this.#kind==="creationSystem",creationStepRows:this.#kind==="creationSystem"?(data.steps??[]).map(step=>({html:this.#creationStepHTML(step)})):[],isGeneric:false,isProgressionSystem:this.#kind==="progressionSystem",isModifier:this.#kind==="modifier",isDuration:this.#kind==="duration",

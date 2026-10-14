@@ -2,11 +2,14 @@
    editor shows. The preview goes through the same markup as a played sheet (ui/sheet-markup.mjs), with sample
    values, so what the editor shows is the sheet the players get. Every operation returns a new tree. */
 import {capabilityTypeRegistry} from "./capability-type-registry.mjs";
-import {LAYOUT_CONTAINERS, LAYOUT_WRITABLE_SOURCES} from "./layout-contract.mjs";
+import {LAYOUT_CONTAINERS, LAYOUT_DOCUMENT_KINDS, LAYOUT_WRITABLE_SOURCES} from "./layout-contract.mjs";
 import {descriptionScale, scaleWords} from "./rule-contracts.mjs";
 
 const copy = value => structuredClone(value);
 const enabled = entry => entry?.enabled !== false;
+/** A Content Type or Definition Type the GM leaves out of the sheet editor's palette ("Proposé dans l'éditeur de feuilles"
+    unticked); blocks already placed with it keep working. */
+export const offeredInSheets = type => type?.sheetPalette !== false;
 const MAX_COLUMNS = {section: 4, grid: 6, repeater: 6};
 /** Capability outputs a repeater row can show, with whether a sheet may write them. */
 export const EACH_OUTPUTS = Object.freeze([
@@ -29,7 +32,7 @@ export const insideRepeater = (root, id) => Boolean(locate(root, id)?.path.slice
 export const repeaterOf = (root, id) => locate(root, id)?.path.slice(0, -1).findLast(node => node.kind === "repeater") ?? null;
 export const isContainer = node => LAYOUT_CONTAINERS.includes(node?.kind);
 /** The kinds a container accepts: tabs hold only tabs; a tab is only in tabs. */
-export const childKinds = parent => !isContainer(parent) ? [] : parent.kind === "tabs" ? ["tab"] : ["section", "grid", "tabs", "repeater", "value", "action", "text", "image", "contents", "progression", "spacer"];
+export const childKinds = parent => !isContainer(parent) ? [] : parent.kind === "tabs" ? ["tab"] : ["section", "grid", "tabs", "repeater", "value", "action", "text", "image", "contents", "progression", "name", "portrait", "token", "spacer"];
 export const columnsOf = node => MAX_COLUMNS[node?.kind] ? node.columns ?? 1 : 1;
 export const maxColumns = kind => MAX_COLUMNS[kind] ?? 1;
 
@@ -81,6 +84,12 @@ export function newNode(kind, root, ruleset, {parentId = root?.id, target = "act
   if (kind === "action") { const action = (ruleset.actions ?? []).find(enabled); return action ? {id, kind, actionRef: action.id} : null; }
   if (kind === "text") return {id, kind, textKey: ""};
   if (kind === "image") return {id, kind, src: ""};
+  if (LAYOUT_DOCUMENT_KINDS.includes(kind)) {
+    // The Document's name and pictures: not once per row of a list; a token is an Actor's.
+    const parent = locate(root, parentId);
+    if (parent?.path.some(node => node.kind === "repeater") || kind === "token" && target === "item") return null;
+    return kind === "portrait" ? {id, kind, shape: "portrait"} : kind === "token" ? {id, kind, shape: "circle", height: "small"} : {id, kind};
+  }
   if (kind === "contents") {
     // An Actor's Items: not on an Item sheet, not once per row of a list.
     const parent = locate(root, parentId);
@@ -95,28 +104,32 @@ export function newNode(kind, root, ruleset, {parentId = root?.id, target = "act
   return {id, kind: "spacer"};
 }
 
-/** What the editor offers to add, grouped: layout blocks, fields (a value, a gauge, dots, an Action button, the held Contents,
-   each Progression System), a list per Definition family, and on an Actor sheet the Content it holds of each type (its Origin…);
-   on an Item sheet, the Content fields. Each item: {label | labelKey, kind, spec}; paletteNode turns a spec into a node.
+/** What the editor offers to add, grouped: layout blocks, the Document's own (its name, its portrait, an Actor's token image),
+   fields (a value, a gauge, dots, an Action button, the held Contents, each Progression System), a list per Definition family,
+   and on an Actor sheet the Content it holds of each type (its Origin…); on an Item sheet, the Content fields.
+   A Content Type or Definition Type the GM does not offer in the sheet editor (offeredInSheets) is left out. Each item: {label | labelKey, kind, spec}; paletteNode turns a spec into a node.
    A single Definition, Formula or Action is chosen in the block's settings once it is placed. */
 export function paletteGroups(ruleset, {target = "actor", contentTypeIds = []} = {}) {
   const groups = [], name = entry => entry.nameKey ?? entry.id;
   groups.push({id: "layout", labelKey: "RTA.SheetEditor.Palette.Layout", items: ["section", "grid", "tabs", "text", "image", "spacer"].map(kind => ({kind, spec: {kind}}))});
+  groups.push({id: "document", labelKey: "RTA.SheetEditor.Palette.Document", items: ["name", "portrait", ...(target === "actor" ? ["token"] : [])].map(kind => ({kind, spec: {kind}}))});
   const fields = [
     {kind: "value", labelKey: "RTA.SheetEditor.Kind.value", spec: {kind: "value"}},
     ...(target === "actor" ? [{kind: "gauge", labelKey: "RTA.SheetEditor.Display.gauge", spec: {kind: "value", display: "gauge"}}, {kind: "dots", labelKey: "RTA.SheetEditor.Display.dots", spec: {kind: "value", display: "dots"}}] : []),
     ...((ruleset.actions ?? []).some(enabled) ? [{kind: "action", spec: {kind: "action"}}] : []),
-    ...(target === "actor" && itemContentTypes(ruleset).length ? [{kind: "contents", spec: {kind: "contents"}}] : []),
+    ...(target === "actor" && itemContentTypes(ruleset).some(offeredInSheets) ? [{kind: "contents", spec: {kind: "contents"}}] : []),
     ...(target === "actor" ? (ruleset.progressionSystems ?? []).filter(enabled).map(system => ({label: name(system), kind: "progression", spec: {kind: "progression", progressionSystemRef: system.id}})) : [])];
   groups.push({id: "fields", labelKey: "RTA.SheetEditor.Palette.Fields", items: fields});
   if (target === "item") {
-    const contentFieldList = contentFields(ruleset, contentTypeIds);
+    // A sheet for every Content Type offers the fields of those offered in the sheet editor; one that names its types, theirs.
+    const offered = contentTypeIds.length ? contentTypeIds : (ruleset.contentTypes ?? []).filter(offeredInSheets).map(type => type.id);
+    const contentFieldList = offered.length ? contentFields(ruleset, offered) : [];
     if (contentFieldList.length) groups.push({id: "content-fields", labelKey: "RTA.SheetEditor.Palette.ContentFields", items: contentFieldList.map(field => ({label: field.name ?? field.id, kind: "value", spec: {kind: "value", source: {kind: "field", fieldId: field.id}}}))});
     return groups;
   }
-  const families = (ruleset.definitionTypes ?? []).filter(type => enabled(type) && (ruleset.definitions ?? []).some(d => enabled(d) && d.definitionTypeId === type.id));
+  const families = (ruleset.definitionTypes ?? []).filter(type => enabled(type) && offeredInSheets(type) && (ruleset.definitions ?? []).some(d => enabled(d) && d.definitionTypeId === type.id));
   if (families.length) groups.push({id: "families", labelKey: "RTA.SheetEditor.Palette.Families", items: families.map(type => ({label: name(type), kind: "repeater", spec: {kind: "repeater", definitionTypeId: type.id}}))});
-  const held = (ruleset.contentTypes ?? []).filter(enabled);
+  const held = (ruleset.contentTypes ?? []).filter(type => enabled(type) && offeredInSheets(type));
   if (held.length) groups.push({id: "held", labelKey: "RTA.SheetEditor.Palette.Held", items: held.map(type => ({label: name(type), kind: "content", spec: {kind: "value", source: {kind: "content", contentTypeId: type.id}}}))});
   return groups;
 }
@@ -189,7 +202,7 @@ export function canPlace(root, node, targetId, {beside = false} = {}) {
   // An "each" value only exists in a repeater; held Contents are never once per row.
   const inRepeater = [...(holder === target.node ? target.path : target.path.slice(0, -1))].some(entry => entry.kind === "repeater");
   // Inside the node itself, a list it holds counts too: a new list's row value is in that list.
-  const fits = (entry, listed) => !(entry.source?.kind === "each" && !listed || ["contents", "progression"].includes(entry.kind) && listed)
+  const fits = (entry, listed) => !(entry.source?.kind === "each" && !listed || ["contents", "progression", ...LAYOUT_DOCUMENT_KINDS].includes(entry.kind) && listed)
     && (entry.children ?? []).every(child => fits(child, listed || entry.kind === "repeater"));
   return fits(node, inRepeater);
 }
@@ -305,12 +318,15 @@ function previewProgression(node, ruleset, viewer = null) {
 
 /** viewer: "player", "observer" or "gm" previews the sheet as that person sees it (blocks not for them left out,
     values only the GM changes read-only for the others); null shows every block. */
-export function previewView(root, ruleset, {target = "actor", contentTypeIds = [], viewer = null} = {}) {
+export function previewView(root, ruleset, {target = "actor", contentTypeIds = [], viewer = null, header = "standard"} = {}) {
   const walk = (node, row) => {
     if (viewer && node.seenBy && !node.seenBy.includes(viewer)) return null;
     const base = {id: node.id, kind: node.kind, ...(node.span ? {span: node.span} : {}), ...(node.style ? {style: node.style} : {}), ...(node.seenBy ? {seenBy: node.seenBy} : {}), ...(node.icon ? {icon: node.icon} : {}), ...(node.labelShow ? {labelShow: node.labelShow} : {})};
     if (node.kind === "value") return previewValue(node, ruleset, row, contentTypeIds, viewer);
     if (node.kind === "image") return {...base, src: node.src, fit: node.fit ?? "cover", height: node.height ?? "medium", ...(node.shape ? {shape: node.shape} : {})};
+    // The Document's name and pictures: the editor shows samples (renderLayoutPreviewHTML).
+    if (node.kind === "portrait" || node.kind === "token") return {...base, fit: node.fit ?? "cover", height: node.height ?? "medium", ...(node.shape ? {shape: node.shape} : {}), ...(node.updatePlaced ? {updatePlaced: true} : {})};
+    if (node.kind === "name") return base;
     if (node.kind === "text") return {...base, text: node.textKey};
     if (node.kind === "spacer") return base;
     if (node.kind === "contents") {
@@ -331,5 +347,5 @@ export function previewView(root, ruleset, {target = "actor", contentTypeIds = [
     }
     return {...base, ...(node.columns ? {columns: node.columns} : {}), ...(node.labelKey !== undefined ? {label: node.labelKey} : {}), children: (node.children ?? []).map(child => walk(child, row)).filter(Boolean)};
   };
-  return {sheetId: "preview", target, root: walk(root, null)};
+  return {sheetId: "preview", target, header, root: walk(root, null)};
 }

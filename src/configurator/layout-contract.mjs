@@ -3,7 +3,7 @@
    into columns; a child may span several of them. The renderer stacks the columns on a narrow sheet.
 
    SheetDefinition.root := node
-   node      := tabs | tab | section | grid | repeater | value | action | text | image | contents | progression | spacer, each {id, span?}
+   node      := tabs | tab | section | grid | repeater | value | action | text | image | contents | progression | name | portrait | token | spacer, each {id, span?}
    tabs      := {kind: "tabs", children: tab[]}                       one page per tab
    tab       := {kind: "tab", labelKey, children: node[]}              only inside tabs
    section   := {kind: "section", labelKey?, columns: 1-4, children}   a titled block
@@ -33,6 +33,12 @@
                                                                        System: each Definition an advancement raises, its cost and
                                                                        the currency spent, a button per purchase; its milestones and
                                                                        a button that applies those reached. Never inside a repeater.
+   name      := {kind: "name"}                                          the Actor's or Item's name; changed on the sheet once it is unlocked
+   portrait  := {kind: "portrait", fit?, height?, shape?}               its image (the Document's img), framed like an image block; changed
+                                                                       with Foundry's file picker (the camera button) once the sheet is unlocked
+   token     := {kind: "token", fit?, height?, shape?, updatePlaced?}   on an Actor sheet, the image of its prototype token; updatePlaced: true
+                                                                       also changes the tokens of that Actor already placed in scenes.
+                name, portrait and token are never inside a repeater: they are the Document's, not a row's.
    spacer    := {kind: "spacer"}
    seenBy: on any node below the root, who gets it (and what it holds): some of "player" (an owner of the Actor),
            "observer" (anyone else who opens the sheet) and "gm"; all when absent. Nobody writes through a node they do not get.
@@ -46,7 +52,9 @@ import {copyJSON, isRecord} from "./configurator-schema.mjs";
 import {IMAGE_PATH, SHEET_IMAGE_FITS, SHEET_IMAGE_HEIGHTS, prepareLayoutStyle} from "./layout-style-contract.mjs";
 
 export const LAYOUT_CONTAINERS = Object.freeze(["tabs", "tab", "section", "grid", "repeater"]);
-export const LAYOUT_LEAVES = Object.freeze(["value", "action", "text", "image", "contents", "progression", "spacer"]);
+export const LAYOUT_LEAVES = Object.freeze(["value", "action", "text", "image", "contents", "progression", "name", "portrait", "token", "spacer"]);
+/** Blocks that show the Document itself (its name, its image, its token's image): never once per row of a list. */
+export const LAYOUT_DOCUMENT_KINDS = Object.freeze(["name", "portrait", "token"]);
 export const LAYOUT_NODE_KINDS = Object.freeze([...LAYOUT_CONTAINERS, ...LAYOUT_LEAVES]);
 export const LAYOUT_SOURCE_KINDS = Object.freeze(["output", "formula", "parameter", "each", "field", "content"]);
 export const LAYOUT_VALUE_DISPLAYS = Object.freeze(["field", "gauge", "dots", "description"]);
@@ -74,7 +82,8 @@ export const LAYOUT_MAX_NODES = 500;
 const MAX_COLUMNS = {section: 4, grid: 6, repeater: 6};
 const FIELDS = {
   tabs: ["children"], tab: ["labelKey", "children"], section: ["labelKey", "columns", "children"], grid: ["columns", "children"],
-  repeater: ["query", "columns", "children"], value: ["source", "labelKey", "write", "display", "dots"], action: ["actionRef", "labelKey"], text: ["textKey"], image: ["src", "fit", "height", "shape"], contents: ["contentTypeIds"], progression: ["progressionSystemRef"], spacer: []
+  repeater: ["query", "columns", "children"], value: ["source", "labelKey", "write", "display", "dots"], action: ["actionRef", "labelKey"], text: ["textKey"], image: ["src", "fit", "height", "shape"], contents: ["contentTypeIds"], progression: ["progressionSystemRef"],
+  name: [], portrait: ["fit", "height", "shape"], token: ["fit", "height", "shape", "updatePlaced"], spacer: []
 };
 const nonempty = value => typeof value === "string" && value.trim().length > 0;
 const NODE_ID = /^[A-Za-z0-9][A-Za-z0-9_-]*$/;
@@ -177,10 +186,17 @@ export function prepareLayout(root) {
       next.progressionSystemRef = node.progressionSystemRef;
     }
     if (node.kind === "text") { if (typeof node.textKey !== "string") throw new Error(`${path}.textKey must be text.`); next.textKey = node.textKey; }
-    if (node.kind === "image") {
+    if (LAYOUT_DOCUMENT_KINDS.includes(node.kind) && inRepeater) throw new Error(`${path}: a ${node.kind} block is the Document's, never once per row of a list.`);
+    if (node.kind === "token" && node.updatePlaced !== undefined) {
+      if (typeof node.updatePlaced !== "boolean") throw new Error(`${path}.updatePlaced must be true or false.`);
+      if (node.updatePlaced) next.updatePlaced = true;
+    }
+    if (["image", "portrait", "token"].includes(node.kind)) {
       // An image block without a picture yet is a draft: it shows nothing in play.
-      if (typeof node.src !== "string" || node.src && !IMAGE_PATH.test(node.src)) throw new Error(`${path}.src must be a file path.`);
-      next.src = node.src;
+      if (node.kind === "image") {
+        if (typeof node.src !== "string" || node.src && !IMAGE_PATH.test(node.src)) throw new Error(`${path}.src must be a file path.`);
+        next.src = node.src;
+      }
       if (node.fit !== undefined) { if (!SHEET_IMAGE_FITS.includes(node.fit)) throw new Error(`${path}.fit must be ${SHEET_IMAGE_FITS.join(" or ")}.`); next.fit = node.fit; }
       if (node.height !== undefined) { if (!SHEET_IMAGE_HEIGHTS[node.height]) throw new Error(`${path}.height must be ${Object.keys(SHEET_IMAGE_HEIGHTS).join(", ")}.`); next.height = node.height; }
       if (node.shape !== undefined) { if (!LAYOUT_IMAGE_SHAPES.includes(node.shape)) throw new Error(`${path}.shape must be ${LAYOUT_IMAGE_SHAPES.join(" or ")}.`); next.shape = node.shape; }

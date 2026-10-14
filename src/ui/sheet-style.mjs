@@ -14,7 +14,7 @@ export function sheetStyle(node) {
   const color = colorValue(style.color);
   if (color) { css.push(`color: ${color}`); classes.push("rta-sheet-colored"); }
   if (background === SHEET_NO_COLOR) css.push("background: none");
-  else if (colorValue(background) && node.kind !== "image") css.push(`background-color: ${style.opacity === undefined ? colorValue(background) : `color-mix(in srgb, ${colorValue(background)} ${percent(style.opacity)}%, transparent)`}`);
+  else if (colorValue(background) && !["image", "portrait", "token"].includes(node.kind)) css.push(`background-color: ${style.opacity === undefined ? colorValue(background) : `color-mix(in srgb, ${colorValue(background)} ${percent(style.opacity)}%, transparent)`}`);
   if (style.image && IMAGE_PATH.test(style.image)) css.push(`background-image: url("${style.image}")`, "background-size: cover", "background-position: center");
   if (style.border === SHEET_NO_COLOR) css.push("border: 0");
   else if (colorValue(style.border)) css.push(`border: var(--rta-frame-border) solid ${colorValue(style.border)}`);

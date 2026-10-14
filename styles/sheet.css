@@ -32,6 +32,26 @@
   font-size: var(--rta-type-display);
 }
 
+/* The portrait of the standard header carries Foundry's camera button while the sheet is unlocked. */
+.rta-sheet__portrait {
+  position: relative;
+  flex: 0 0 auto;
+}
+
+/* The editor's stand-in for the Document's portrait. */
+.rta-sheet__image--sample {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-style: dashed;
+  color: var(--rta-color-text-secondary);
+}
+
+/* A sheet without the standard header keeps its commands on a row of their own. */
+.rta-sheet__header--commands {
+  justify-content: flex-end;
+}
+
 .rta-sheet__body {
   display: flex;
   flex: 1;
@@ -545,6 +565,53 @@ span.rta-sheet-progression__button {
   gap: var(--rta-gap-row);
   border: var(--rta-frame-border) dashed var(--rta-color-border-tertiary);
   color: var(--rta-color-text-secondary);
+}
+
+/* The Document's portrait or token image: the picture takes the frame's shape, the camera button sits on its bottom right corner. */
+.rta-sheet-picture {
+  position: relative;
+  overflow: visible;
+}
+
+.rta-sheet-picture > img {
+  border-radius: inherit;
+}
+
+.rta-sheet-picture__edit {
+  position: absolute;
+  inset-block-end: 0;
+  inset-inline-end: 0;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  inline-size: 1.5rem;
+  block-size: 1.5rem;
+  min-block-size: 0;
+  padding: 0;
+  border-radius: 50%;
+  font-size: var(--rta-type-sm);
+}
+
+/* The Document's name, placed in the layout: a title, a field once the sheet is unlocked; it takes the block's style. */
+.rta-sheet-name {
+  min-inline-size: 0;
+  font-size: var(--rta-type-display);
+}
+
+.rta-sheet-name__text,
+.rta-sheet-name__input {
+  display: block;
+  margin: 0;
+  overflow: hidden;
+  font: inherit;
+  color: inherit;
+  text-align: inherit;
+  text-overflow: ellipsis;
+}
+
+.rta-sheet-name__input {
+  inline-size: 100%;
+  block-size: auto;
 }
 
 .rta-sheet-choice {

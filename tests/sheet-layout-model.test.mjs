@@ -73,18 +73,18 @@ test('the properties offer only what the selected block can take', ()=>{
 
 test('The palette offers layout blocks, fields, Definition families as lists and the Contents an Actor holds by type', ()=>{
   const groups=paletteGroups({...ruleset,contentTypes:[{id:'origin',nameKey:'Origin',storageKind:'item'}]},{target:'actor'});
-  assert.deepEqual(groups.map(group=>group.id),['layout','fields','families','held']);
-  assert.deepEqual(groups[1].items.map(item=>item.kind),['value','gauge','dots','action','contents']);
-  assert.deepEqual(groups[2].items.map(item=>[item.kind,item.label]),[['repeater','Skills']],'one item per family, never each Definition');
-  assert.deepEqual(groups[3].items[0].spec,{kind:'value',source:{kind:'content',contentTypeId:'origin'}});
-  const root=tree(),list=paletteNode(groups[2].items[0].spec,root,ruleset);
+  assert.deepEqual(groups.map(group=>group.id),['layout','document','fields','families','held']);
+  assert.deepEqual(groups[2].items.map(item=>item.kind),['value','gauge','dots','action','contents']);
+  assert.deepEqual(groups[3].items.map(item=>[item.kind,item.label]),[['repeater','Skills']],'one item per family, never each Definition');
+  assert.deepEqual(groups[4].items[0].spec,{kind:'value',source:{kind:'content',contentTypeId:'origin'}});
+  const root=tree(),list=paletteNode(groups[3].items[0].spec,root,ruleset);
   assert.deepEqual(list.query,{definitionTypeId:'skill'});
   assert.equal(canPlace(root,list,'root'),true,'a new list goes on the sheet with its row value');
   assert.equal(canPlace(root,list,'list'),true,'and next to another list');assert.equal(list.children[0].source.kind,'each','a new list shows each row\'s value');
   const gauge=paletteNode({kind:'value',display:'gauge'},root,ruleset,{parentId:'s'});
   assert.equal(gauge.display,'gauge');assert.equal(gauge.source.reference.outputId,'pool.current','a gauge starts on a pool');
   assert.equal(locate(root,gauge.id),null,'a fresh id');
-  assert.deepEqual(paletteGroups(ruleset,{target:'item'}).map(group=>group.id),['layout','fields','content-fields']);
+  assert.deepEqual(paletteGroups(ruleset,{target:'item'}).map(group=>group.id),['layout','document','fields','content-fields']);
 });
 
 test('Values as dots or gauges, the Contents held, image shapes: checked by the layout contract', ()=>{
@@ -165,4 +165,66 @@ test('a progression block: offered per Progression System, never in a list, prev
   assert.doesNotMatch(html,/<button/,'the editor draws marks, not buttons');
   const observer=previewView(next,r,{viewer:'observer'}).root.children[0].children.find(n=>n.kind==='progression');
   assert.deepEqual([observer.advancements[0].rows[0].buy,observer.apply],[false,false]);
+});
+
+test('a Content Type or Definition Type not offered in the sheet editor leaves the palette; blocks already placed keep working', async()=>{
+  const {prepareContentType}=await import('../src/configurator/rule-contracts.mjs');
+  assert.equal('sheetPalette' in prepareContentType({id:'a',nameKey:'A',sheetPalette:true}),false,'offered is the default: stored only when not');
+  assert.equal(prepareContentType({id:'a',nameKey:'A',sheetPalette:false}).sheetPalette,false);
+  assert.throws(()=>prepareContentType({id:'a',nameKey:'A',sheetPalette:'no'}),/sheetPalette must be true or false/);
+  const r={...ruleset,definitionTypes:[{id:'skill',nameKey:'Skills',sheetPalette:false}],contentTypes:[{id:'origin',nameKey:'Origin',storageKind:'item',fields:{lore:{name:'Lore',valueType:'string'}}},{id:'npc',nameKey:'NPC',storageKind:'item',sheetPalette:false,fields:{threat:{name:'Threat',valueType:'number'}}}]};
+  const groups=paletteGroups(r,{target:'actor'});
+  assert.equal(groups.some(g=>g.id==='families'),false,'the family is gone');
+  assert.deepEqual(groups.find(g=>g.id==='held').items.map(i=>i.label),['Origin']);
+  assert.deepEqual(paletteGroups(r,{target:'item'}).find(g=>g.id==='content-fields').items.map(i=>i.label),['Lore'],'an Item sheet for every type offers the fields of the offered ones');
+  assert.deepEqual(paletteGroups(r,{target:'item',contentTypeIds:['npc']}).find(g=>g.id==='content-fields').items.map(i=>i.label),['Threat'],'a sheet that names its type keeps its fields');
+  // A Definition Type keeps the choice the same way.
+  const {createConfiguratorAPI}=await import('../src/configurator/configurator-api.mjs');
+  const {emptyStorageSnapshot}=await import('../src/configurator/configurator-storage.mjs');
+  const api=await createConfiguratorAPI({value:emptyStorageSnapshot(),async load(){return structuredClone(this.value);},async save(v){this.value=structuredClone(v);}});
+  const v=(await api.createRuleset({id:'g',nameKey:'Game',version:'1'})).versionId;
+  const type={id:'skill',key:'skill',nameKey:'Skills',allowedCapabilities:[],defaultCapabilities:[],requiredCapabilities:[],fields:{}};
+  assert.equal((await api.registerDefinitionType(v,{...type,sheetPalette:false})).sheetPalette,false);
+  assert.equal('sheetPalette' in await api.updateDefinitionType(v,'skill',{sheetPalette:true}),false);
+  // A list of that family placed before still shows its rows.
+  const view=previewView(tree(),r).root.children.find(n=>n.kind==='repeater');
+  assert.deepEqual(view.rows.map(row=>row.label),['Climb','Swim']);
+});
+
+test('name, portrait and token blocks: the Document itself, placed anywhere but in a list; token only on an Actor sheet', async()=>{
+  const {prepareSheetDefinition}=await import('../src/configurator/rule-contracts.mjs');
+  const leaf=node=>prepareLayout({id:'root',kind:'grid',columns:1,children:[node]}).children[0];
+  assert.deepEqual(leaf({id:'n',kind:'name',style:{size:'huge',align:'center'}}),{id:'n',kind:'name',style:{size:'huge',align:'center'}});
+  assert.deepEqual(leaf({id:'p',kind:'portrait',shape:'circle',height:'large',fit:'contain'}),{id:'p',kind:'portrait',fit:'contain',height:'large',shape:'circle'});
+  assert.deepEqual(leaf({id:'t',kind:'token',updatePlaced:true}),{id:'t',kind:'token',updatePlaced:true});
+  assert.deepEqual(leaf({id:'t',kind:'token',updatePlaced:false}),{id:'t',kind:'token'});
+  assert.throws(()=>leaf({id:'p',kind:'portrait',src:'a.png'}),/unsupported field: src/);
+  assert.throws(()=>prepareLayout({id:'root',kind:'repeater',query:{definitionTypeId:'skill'},children:[{id:'n',kind:'name'}]}),/never once per row/);
+  const sheet=(target,root,extra={})=>prepareSheetDefinition({id:'s',nameKey:'S',target,root,...extra});
+  assert.equal(sheet('actor',{id:'root',kind:'grid',children:[]}).header,'standard');
+  assert.equal(sheet('actor',{id:'root',kind:'grid',children:[]},{header:'none'}).header,'none');
+  assert.throws(()=>sheet('actor',{id:'root',kind:'grid',children:[]},{header:'big'}),/header must be standard or none/);
+  assert.throws(()=>sheet('item',{id:'root',kind:'grid',children:[{id:'t',kind:'token'}]}),/token image is only on Actor sheets/);
+  assert.equal(sheet('item',{id:'root',kind:'grid',children:[{id:'n',kind:'name'},{id:'p',kind:'portrait'}]}).root.children.length,2);
+  // The palette offers them; a new portrait is framed as one, a token as a small circle.
+  assert.deepEqual(paletteGroups(ruleset).find(g=>g.id==='document').items.map(i=>i.kind),['name','portrait','token']);
+  assert.deepEqual(paletteGroups(ruleset,{target:'item'}).find(g=>g.id==='document').items.map(i=>i.kind),['name','portrait']);
+  const root=tree();
+  assert.deepEqual(paletteNode({kind:'portrait'},root,ruleset),{id:'portrait-1',kind:'portrait',shape:'portrait'});
+  assert.deepEqual(paletteNode({kind:'token'},root,ruleset),{id:'token-1',kind:'token',shape:'circle',height:'small'});
+  assert.equal(paletteNode({kind:'token'},root,ruleset,{target:'item'}),null);
+  assert.equal(paletteNode({kind:'name'},root,ruleset,{parentId:'list'}),null,'not once per row');
+  assert.equal(canPlace(root,{id:'x',kind:'name'},'list'),false);
+  assert.equal(canPlace(root,{id:'x',kind:'name'},'s'),true);
+  // The editor previews samples, the standard header when the sheet has it, and the settings of each block.
+  const next=insertNode(insertNode(insertNode(root,'s',{id:'n',kind:'name'}),'s',{id:'p',kind:'portrait',shape:'portrait'}),'s',{id:'t',kind:'token',updatePlaced:true});
+  const html=renderLayoutPreviewHTML(previewView(next,ruleset));
+  assert.match(html,/<header class="rta-sheet__header"><div class="rta-sheet__portrait"><span class="rta-sheet__image rta-sheet__image--sample">/);
+  assert.doesNotMatch(renderLayoutPreviewHTML(previewView(next,ruleset,{header:'none'})),/rta-sheet__header/);
+  assert.match(html,/<div class="rta-sheet-name" data-layout-node="n"><span class="rta-sheet-name__text">RTA.SheetEditor.SampleName<\/span><\/div>/);
+  assert.match(html,/class="rta-sheet-image rta-sheet-picture rta-sheet-image--portrait rta-sheet-image--empty"[^>]*data-layout-node="p"><i class="fa-solid fa-user"/);
+  assert.doesNotMatch(html,/data-sheet-edit-image|data-sheet-name/,'the editor never changes the Document');
+  const ctx={columnChoices:()=>[],spanChoices:()=>[],shapes:[],fits:[],heights:[],parentColumns:1,isRoot:false};
+  assert.match(renderLayoutPropertiesHTML({id:'t',kind:'token',updatePlaced:true},ctx),/data-layout-prop="updatePlaced" checked/);
+  assert.doesNotMatch(renderLayoutPropertiesHTML({id:'p',kind:'portrait'},ctx),/updatePlaced|data-layout-prop="src"/);
 });
