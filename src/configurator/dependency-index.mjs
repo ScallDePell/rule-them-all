@@ -126,11 +126,15 @@ export class DependencyIndex{
       for(const [j,id] of (sheet.contentTypeIds??[]).entries())pushRef(this.#edges,consumer,{objectKind:'contentType',objectId:id},'sheetContentType',`${at}.contentTypeIds[${j}]`);
       for(const {node,path} of layoutNodes(sheet.root,`${at}.root`)){
         if(node.kind==='contents'&&node.cards?.templateRef)pushRef(this.#edges,consumer,{objectKind:'sheetTemplate',objectId:node.cards.templateRef},'sheetCard',`${path}.cards.templateRef`);
-        const s=node.source;
-        if(s?.kind==='output')pushRef(this.#edges,consumer,s.reference,'sheetValue',`${path}.source.reference`);
-        if(s?.kind==='formula')pushRef(this.#edges,consumer,{objectKind:'formula',objectId:s.formulaRef},'sheetValue',`${path}.source.formulaRef`);
-        if(s?.kind==='content')pushRef(this.#edges,consumer,{objectKind:'contentType',objectId:s.contentTypeId},'sheetValue',`${path}.source.contentTypeId`);
-        if(s?.kind==='parameter')pushRef(this.#edges,consumer,{objectKind:'parameter',objectId:s.parameterRef},'sheetValue',`${path}.source.parameterRef`);
+        // A value's source, and the values a text shows by name.
+        for(const [s,at] of [[node.source,`${path}.source`],...Object.entries(node.values??{}).map(([name,source])=>[source,`${path}.values.${name}`])]){
+          if(s?.kind==='output')pushRef(this.#edges,consumer,s.reference,'sheetValue',`${at}.reference`);
+          if(s?.kind==='formula')pushRef(this.#edges,consumer,{objectKind:'formula',objectId:s.formulaRef},'sheetValue',`${at}.formulaRef`);
+          if(s?.kind==='content')pushRef(this.#edges,consumer,{objectKind:'contentType',objectId:s.contentTypeId},'sheetValue',`${at}.contentTypeId`);
+          if(s?.kind==='parameter')pushRef(this.#edges,consumer,{objectKind:'parameter',objectId:s.parameterRef},'sheetValue',`${at}.parameterRef`);
+        }
+        if(node.visibleIf)pushRef(this.#edges,consumer,{objectKind:'condition',objectId:node.visibleIf},'sheetCondition',`${path}.visibleIf`);
+        if(node.clickActionRef)pushRef(this.#edges,consumer,{objectKind:'action',objectId:node.clickActionRef},'sheetAction',`${path}.clickActionRef`);
         if(node.kind==='repeater'){
           pushRef(this.#edges,consumer,{objectKind:'definitionType',objectId:node.query?.definitionTypeId},'sheetRepeater',`${path}.query.definitionTypeId`);
           if(node.query?.conditionRef)pushRef(this.#edges,consumer,{objectKind:'condition',objectId:node.query.conditionRef},'sheetRepeater',`${path}.query.conditionRef`);

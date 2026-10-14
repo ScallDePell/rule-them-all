@@ -15,6 +15,7 @@ import {findSlot, slotInitialKey} from "../configurator/capability-slots.mjs";
 import {systemEventType} from "../configurator/system-events.mjs";
 import {rerollSomeDice} from "./dice-results.mjs";
 import {writeSheetValue} from "./sheet-writes.mjs";
+import {LAYOUT_NOTE_LENGTH as NOTE_LENGTH} from "../configurator/layout-contract.mjs";
 import {SLOT_CAPABILITIES,requireSlot,poolSlotState,collectionSlotState,boundPoolValue,initialSlotStates,prepareCollectionEntry,assertCollectionRoom,assertCollectionMinimum} from "./capability-slot-runtime.mjs";
 
 const clone=v=>copyJSON(v);
@@ -122,7 +123,7 @@ export class RuntimeEngine{
   }
   /** Every persistent runtime write goes through one transaction (CP-08, CP-18). */
   transaction(versionId,kind,{transactionId=null,summary=null,corrects=null}={}){
-    const target=change=>change.scope==="content"?{objectKind:"contentTemplate",objectId:(change.after??change.before)?.templateId}:{objectKind:"definition",objectId:change.scope==="definition"?change.id:(change.after??change.before)?.definitionId};
+    const target=change=>change.scope==="note"?{objectKind:"sheetNote",objectId:change.id}:change.scope==="content"?{objectKind:"contentTemplate",objectId:(change.after??change.before)?.templateId}:{objectKind:"definition",objectId:change.scope==="definition"?change.id:(change.after??change.before)?.definitionId};
     const authorize=async(ref,changes)=>{if(this.#creating.has(this.#refKey(normalizeRuntimeContainerRef(ref))))return;for(const change of changes)await this.#require(versionId,"write",target(change),ref);};
     const prepare=(ref,state)=>this.#followMaxima(versionId,ref,state);
     return new RuntimeTransaction(this.adapter,{kind,rulesetVersionId:versionId,transactionId,summary,corrects,authorize,prepare,...(this.userId?{userId:this.userId}:{})});
@@ -349,6 +350,16 @@ export class RuntimeEngine{
     const field=ruleset.contentTypes?.find(type=>type.id===content.contentTypeId)?.fields?.[fieldId];if(!field)throw new Error(`Content Type ${content.contentTypeId} has no field ${fieldId}.`);
     const check=validateTypedValue(field.valueType,field.cardinality??"one",field.nullable===true,value);if(!check.valid)throw new Error(`Content field ${fieldId}: ${check.message}`);
     (content.fields??={})[fieldId]=clone(value);await this.#commit(tx);return clone(content);
+  }
+  /** The text of a sheet's notes block on a container (its node id), written like any other runtime value:
+   * one transaction, the write Permission of the whole Ruleset (or Foundry ownership), the GM relay. Empty text removes it. */
+  async setNote(versionId,containerRef,noteId,text,{transactionId=null}={}){
+    if(typeof noteId!=="string"||!noteId)throw new Error("A note needs the id of its sheet block.");
+    if(typeof text!=="string")throw new Error("A note is text.");
+    if(text.length>NOTE_LENGTH)throw new Error(`A note holds at most ${NOTE_LENGTH} characters.`);
+    const tx=this.transaction(versionId,"note",{transactionId,summary:{noteId}}),state=await tx.load(containerRef);
+    state.notes??={};if(text)state.notes[noteId]=text;else delete state.notes[noteId];
+    await this.#commit(tx);return text;
   }
   /** Forget an owned Content (its Item was removed). Definitions it granted are released by the caller. */
   async releaseContent(versionId,containerRef,key,{transactionId=null}={}){

@@ -4,6 +4,8 @@
    intent: {sheetId, nodeId, value, definitionId?, contentKey?, contentTypeId?}
    - definitionId: the repeater row the value belongs to;
    - contentKey: the owned Content an Item sheet shows; contentTypeId picks the AUTO Item sheet.
+   A notes block takes its new text as value (stored on the Actor under the block's id, engine.setNote).
+   A block hidden by its Condition (visibleIf) is not written through either.
    With add or subtract, value is the amount; with adjust, a signed amount (−1 lowers by 1); with set, the new value. Setting a value.final moves its value.base by the difference. */
 import {sheetFor} from "../configurator/sheet-auto-layout.mjs";
 import {normalizeRuntimeContainerRef} from "./runtime-contracts.mjs";
@@ -27,13 +29,22 @@ export async function writeSheetValue(engine, versionId, containerRef, intent = 
     : (ruleset.sheetDefinitions ?? []).find(entry => entry.id === intent.sheetId && entry.enabled !== false && entry.target === target);
   if (!sheet) throw new Error(`Sheet unavailable: ${intent.sheetId}.`);
   const path = findPath(sheet.root, intent.nodeId), node = path?.at(-1);
-  if (node?.kind !== "value" || !node.write) throw forbidden(`This sheet does not let ${intent.nodeId} be changed.`);
+  if (!["value", "notes"].includes(node?.kind) || !node.write) throw forbidden(`This sheet does not let ${intent.nodeId} be changed.`);
   // Nobody writes through a block they do not get, nor a value only the GM changes.
   const viewer = path.some(entry => entry.seenBy) || node.write.by ? await engine.viewer(actor) : null;
   if (path.some(entry => entry.seenBy && !entry.seenBy.includes(viewer))) throw forbidden(`${intent.nodeId} is not on your sheet.`);
   if (node.write.by === "gm" && viewer !== "gm") throw forbidden(`Only a GM can change ${intent.nodeId}.`);
   const operation = node.write.operation, source = node.source;
   const context = {roles: {self: actor}, defaultRole: "self"};
+  // Inside a list, a block's Condition is evaluated for the row's Definition (variables.each), as the sheet showed it.
+  const listed = path.findLastIndex(entry => entry.kind === "repeater");
+  const rowScope = listed >= 0 && intent.definitionId ? {...context, variables: {each: {definitionId: intent.definitionId, definition: {objectKind: "definition", objectId: intent.definitionId}}}} : context;
+  for (const [i, entry] of path.entries()) if (entry.visibleIf && !await engine.evaluateCondition(versionId, entry.visibleIf, listed >= 0 && i > listed ? rowScope : context)) throw forbidden(`${intent.nodeId} is not on your sheet.`);
+  if (node.kind === "notes") {
+    if (target !== "actor") throw forbidden("Notes are kept on an Actor.");
+    if (typeof intent.value !== "string") throw new Error("A note is text.");
+    return engine.setNote(versionId, actor, node.id, intent.value);
+  }
 
   if (source.kind === "field") {
     if (!intent.contentKey) throw new Error("A Content field needs the owned Content it belongs to.");

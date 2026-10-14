@@ -3,10 +3,12 @@
    {value, label, colors}. Data contract: [data-layout-prop] fields, [data-layout-command] buttons,
    [data-layout-palette] an element to add (its spec as JSON), [data-layout-palette-filter] the palette search. */
 import {escapeHTML as escape} from "./html-utils.mjs";
-import {localizedKeyMarkup as t} from "./ui-localization.mjs";
+import {localizedKeyMarkup as t, localizedText} from "./ui-localization.mjs";
 import {renderSelectOptions} from "./select-option-markup.mjs";
 import {renderCardSettingsHTML, renderFrameRowsHTML, renderSaveTemplateHTML, renderTemplateFooterHTML, renderTemplateToolsHTML} from "./sheet-template-markup.mjs";
 
+/** The choice that sets nothing (no Condition, no click Action, no value to insert): never empty, an RTA Select shows that as its placeholder. */
+export const NONE = ":none";
 const row = (label, control, extra = "") => `<div class="form-group rta-form-row"${extra}><label>${label}</label>${control}</div>`;
 const select = (prop, choices, selected) => `<select data-layout-prop="${prop}">${renderSelectOptions(choices, {valueKey: "value", labelKey: "label", colorize: true, selectedValue: selected ?? ""})}</select>`;
 const text = (prop, value, placeholder = "") => `<input type="text" data-layout-prop="${prop}" value="${escape(value ?? "")}"${placeholder ? ` placeholder="${escape(placeholder)}"` : ""}>`;
@@ -22,6 +24,7 @@ const iconRows = node => {
 };
 const KIND_LABELS = {tabs: ["RTA.SheetEditor.Kind.tabs", "Tabs"], tab: ["RTA.SheetEditor.Kind.tab", "Tab"], section: ["RTA.SheetEditor.Kind.section", "Section"], grid: ["RTA.SheetEditor.Kind.grid", "Grid"],
   repeater: ["RTA.SheetEditor.Kind.repeater", "List of Definitions"], value: ["RTA.SheetEditor.Kind.value", "Value"], action: ["RTA.SheetEditor.Kind.action", "Action button"], text: ["RTA.SheetEditor.Kind.text", "Text"], image: ["RTA.SheetEditor.Kind.image", "Image"], contents: ["RTA.SheetEditor.Kind.contents", "Held Contents"], progression: ["RTA.SheetEditor.Kind.progression", "Progression"], spacer: ["RTA.SheetEditor.Kind.spacer", "Empty cell"],
+  notes: ["RTA.SheetEditor.Kind.notes", "Text area"], separator: ["RTA.SheetEditor.Kind.separator", "Separator"],
   name: ["RTA.SheetEditor.Kind.name", "Name"], portrait: ["RTA.SheetEditor.Kind.portrait", "Portrait"], token: ["RTA.SheetEditor.Kind.token", "Token image"]};
 /** Blocks framed as a picture: an image, the Document's portrait, its token's image. */
 const PICTURES = ["image", "portrait", "token"];
@@ -66,7 +69,8 @@ export function renderLayoutLayersHTML(root, {selectedId = null, collapsed = new
   return `<details class="rta-sheet-editor__layers" data-layout-layers-panel${open ? " open" : ""}><summary>${t("RTA.SheetEditor.Layers.Title", "Layers")}</summary><div class="rta-sheet-layers" role="tree" data-layout-layers>${row(root, 0)}</div></details>`;
 }
 
-const KIND_ICONS = {section: "fa-square", grid: "fa-table-cells", tabs: "fa-folder", tab: "fa-folder-open", repeater: "fa-list", value: "fa-hashtag", gauge: "fa-battery-half", dots: "fa-circle-dot", content: "fa-id-card", action: "fa-dice-d20", text: "fa-font", image: "fa-image", contents: "fa-box-open", progression: "fa-arrow-trend-up", spacer: "fa-border-none", name: "fa-signature", portrait: "fa-image-portrait", token: "fa-chess-pawn"};
+const KIND_ICONS = {section: "fa-square", grid: "fa-table-cells", tabs: "fa-folder", tab: "fa-folder-open", repeater: "fa-list", value: "fa-hashtag", gauge: "fa-battery-half", dots: "fa-circle-dot", content: "fa-id-card", action: "fa-dice-d20", text: "fa-font", image: "fa-image", contents: "fa-box-open", progression: "fa-arrow-trend-up", spacer: "fa-border-none", name: "fa-signature", portrait: "fa-image-portrait", token: "fa-chess-pawn",
+  notes: "fa-note-sticky", separator: "fa-grip-lines", boxes: "fa-square-check", clock: "fa-clock"};
 
 /** What can be added: blocks, then the Ruleset's own elements. A click adds an item into the selection; it can also
    be dragged onto the sheet. groups: paletteGroups (configurator/sheet-layout-model.mjs), labels given by the controller. */
@@ -98,8 +102,8 @@ export function renderLayoutPropertiesHTML(node, ctx) {
     rows.push(...iconRows(node));
     rows.push(row(t("RTA.SheetEditor.LabelPlacement", "Label placed"), select("labelPlace", ctx.labelPlaces, node.style?.label ?? "side")));
     if (ctx.numeric) rows.push(row(t("RTA.SheetEditor.DisplayAs", "Shown as"), select("display", ctx.displays, node.display ?? "field")));
-    if (node.display === "dots") rows.push(row(t("RTA.SheetEditor.DotCount", "Dots (without a maximum)"), select("dots", ctx.dotCounts, String(node.dots ?? 5))));
-    if (["gauge", "dots"].includes(node.display) && ctx.numeric && ctx.style) {
+    if (["dots", "boxes", "clock"].includes(node.display)) rows.push(row(t({dots: "RTA.SheetEditor.DotCount", boxes: "RTA.SheetEditor.BoxCount", clock: "RTA.SheetEditor.ClockCount"}[node.display], "Points (without a maximum)"), select("dots", ctx.dotCounts, String(node.dots ?? (node.display === "clock" ? 4 : 5)))));
+    if (["gauge", "dots", "boxes", "clock"].includes(node.display) && ctx.numeric && ctx.style) {
       rows.push(...colorRows("fill", node.display === "gauge" ? t("RTA.SheetEditor.Fill", "Gauge color") : t("RTA.SheetEditor.DotColor", "Dot color"), node.style ?? {}, ctx.style.tones));
       if (node.display === "gauge") rows.push(...colorRows("fillTo", t("RTA.SheetEditor.FillTo", "Gradient to"), node.style ?? {}, ctx.style.tones));
     }
@@ -117,7 +121,26 @@ export function renderLayoutPropertiesHTML(node, ctx) {
     rows.push(row(t("RTA.SheetEditor.Label", "Label"), text("labelKey", node.labelKey, ctx.defaultLabel(node))));
     rows.push(...iconRows(node));
   }
-  if (node.kind === "text") rows.push(row(t("RTA.SheetEditor.Text", "Text"), text("textKey", node.textKey)));
+  if (node.kind === "text") {
+    rows.push(row(t("RTA.SheetEditor.Text", "Text"), text("textKey", node.textKey)));
+    // A value shown in the text: picked here, it adds "{its name}" at the end of the text.
+    if (ctx.textValues?.length) rows.push(row(t("RTA.SheetEditor.InsertValue", "Insert a value"), select("insertValue", [{value: NONE, label: localizedText("RTA.SheetEditor.InsertValueChoose", "Choose…"), colors: ctx.neutral}, ...ctx.textValues], NONE)));
+  }
+  if (node.kind === "notes") {
+    rows.push(row(t("RTA.SheetEditor.Label", "Label"), text("labelKey", node.labelKey)));
+    rows.push(row(t("RTA.SheetEditor.NotesFormat.label", "Text"), select("format", ctx.noteFormats, node.format ?? "plain")));
+    rows.push(row(t("RTA.SheetEditor.ImageHeight", "Height"), select("height", ctx.heights, node.height ?? "medium")));
+    const check = `<label class="rta-sheet-editor__check"><input type="checkbox" data-layout-write="set"${node.write ? " checked" : ""}> ${t("RTA.SheetEditor.Write.set", "Can be changed")}</label>`;
+    rows.push(row(t("RTA.SheetEditor.Player", "On the sheet"), `<div class="rta-sheet-editor__checks">${check}</div>`));
+    if (node.write) rows.push(row(t("RTA.SheetEditor.ChangedBy", "Changed by"), `<div class="rta-sheet-editor__checks"><label class="rta-sheet-editor__check"><input type="checkbox" data-layout-write-by="gm"${node.write?.by === "gm" ? " checked" : ""}> ${t("RTA.SheetEditor.GmOnly", "The GM only")}</label></div>`));
+  }
+  if (node.kind === "separator") {
+    rows.push(row(t("RTA.SheetEditor.SeparatorLook.label", "Look"), select("look", ctx.separatorLooks, node.look ?? "line")));
+    if (node.look === "image") rows.push(row(t("RTA.SheetEditor.Image", "Image"), imageField("src", node.src)));
+  }
+  if (["section", "grid"].includes(node.kind)) rows.push(row(t("RTA.SheetEditor.Overlay.label", "Stack the blocks"), select("overlay", ctx.overlays, node.overlay ?? "none")));
+  if (node.kind === "section") rows.push(row(t("RTA.SheetEditor.Collapsible", "Foldable"), `<div class="rta-sheet-editor__checks"><label class="rta-sheet-editor__check"><input type="checkbox" data-layout-prop="collapsible"${node.collapsible ? " checked" : ""}> ${t("RTA.SheetEditor.CollapsibleHint", "Its title folds it")}</label></div>`));
+  if (ctx.clickable && ctx.clickActions?.length > 1) rows.push(row(t("RTA.SheetEditor.OnClick", "On click, use"), select("clickActionRef", ctx.clickActions, node.clickActionRef ?? NONE)));
   if (PICTURES.includes(node.kind)) {
     if (node.kind === "image") rows.push(row(t("RTA.SheetEditor.Image", "Image"), imageField("src", node.src)));
     if (node.kind !== "image") rows.push(`<p class="rta-sheet-editor__hint">${node.kind === "token" ? t("RTA.SheetEditor.TokenHint", "The image of the Actor's token; changed on the sheet once unlocked.") : t("RTA.SheetEditor.PortraitHint", "The Actor's or Item's image; changed on the sheet once unlocked.")}</p>`);
@@ -134,13 +157,22 @@ export function renderLayoutPropertiesHTML(node, ctx) {
   }
   if (node.kind === "progression") rows.push(row(t("RTA.SheetEditor.ProgressionSystem", "Progression System"), select("progressionSystemRef", ctx.progressionSystems, node.progressionSystemRef)));
   if (ctx.parentColumns > 1) rows.push(row(t("RTA.SheetEditor.Width", "Width"), select("span", ctx.spanChoices(ctx.parentColumns), node.span ?? 1)));
-  // Who gets the block (and what it holds): the Actor's owners, anyone else who opens the sheet, the GM.
+  // Who gets the block (and what it holds): the Actor's owners, anyone else who opens the sheet, the GM;
+  // and the Condition that shows it (a Magic tab only for a mage).
+  const more = [];
   if (!ctx.isRoot) {
     const seen = who => `<label class="rta-sheet-editor__check"><input type="checkbox" data-layout-seen="${who}"${!node.seenBy || node.seenBy.includes(who) ? " checked" : ""}> ${t(`RTA.SheetEditor.Audience.${who}`, who)}</label>`;
     rows.push(row(t("RTA.SheetEditor.Seen", "Seen by"), `<div class="rta-sheet-editor__checks">${["player", "observer", "gm"].map(seen).join("")}</div>`));
+    if (ctx.visibility?.length > 1 || node.visibleIf) rows.push(row(t("RTA.SheetEditor.VisibleIf", "Shown only if"), select("visibleIf", ctx.visibility ?? [], node.visibleIf ?? NONE)));
+    // More settings, folded: the rows of the parent's grid it spans, a fixed width, a tooltip.
+    if (ctx.inGrid) more.push(row(t("RTA.SheetEditor.RowSpan", "Rows spanned"), select("rowSpan", ctx.rowSpans, String(node.rowSpan ?? 1))));
+    more.push(row(t("RTA.SheetEditor.FixedWidth", "Fixed width"), select("width", ctx.widths ?? [], node.width ?? "auto")));
+    const described = node.tooltip?.description === true;
+    more.push(row(t("RTA.SheetEditor.Tooltip", "Tooltip"), `${described ? "" : text("tooltip", node.tooltip?.text ?? "", localizedText("RTA.SheetEditor.TooltipHint", "Shown on hover"))}${ctx.describable ? `<label class="rta-sheet-editor__check"><input type="checkbox" data-layout-prop="tooltipDescription"${described ? " checked" : ""}> ${t("RTA.SheetEditor.TooltipDescription", "The Definition's description")}</label>` : ""}`));
   }
   if (!rows.length) rows.push(`<p class="rta-sheet-editor__hint">${t("RTA.SheetEditor.NothingToSet", "This block has no settings.")}</p>`);
-  return `<div class="rta-sheet-editor__properties-head"><strong>${kindLabel(node.kind)}</strong>${ctx.saveTemplate ? renderSaveTemplateHTML() : ""}</div>${rows.join("")}${ctx.style ? renderStyleHTML(node, ctx.style) : ""}`;
+  const moreGroup = more.length ? `<details class="rta-sheet-editor__style" data-layout-more-group${ctx.moreOpen ? " open" : ""}><summary>${t("RTA.SheetEditor.More", "More settings")}</summary><div class="rta-sheet-editor__style-body">${more.join("")}</div></details>` : "";
+  return `<div class="rta-sheet-editor__properties-head"><strong>${kindLabel(node.kind)}</strong>${ctx.saveTemplate ? renderSaveTemplateHTML() : ""}</div>${rows.join("")}${moreGroup}${ctx.style ? renderStyleHTML(node, ctx.style) : ""}`;
 }
 
 /** A color setting: a theme tone or a color of one's own ("custom": its picker shows below). */
@@ -167,6 +199,10 @@ export function renderStyleHTML(node, ctx) {
       `<input type="range" min="0" max="100" step="5" data-layout-style="opacity" value="${escape(String(value))}">`));
   }
   if (container) rows.push(row(t("RTA.SheetEditor.Style.Image", "Background picture"), imageField("image", style.image, true)));
+  if (container && style.image) {
+    rows.push(row(t("RTA.SheetEditor.Style.ImageFit", "Picture fit"), styleSelect("imageFit", ctx.imageFits, style.imageFit ?? "cover")));
+    rows.push(row(t("RTA.SheetEditor.Style.ImagePosition", "Picture position"), styleSelect("imagePosition", ctx.imagePositions, style.imagePosition ?? "center")));
+  }
   color("border", t("RTA.SheetEditor.Style.Border", "Border"));
   if (ctx.frameWidths) rows.push(...renderFrameRowsHTML(style, ctx));
   if (!picture && node.kind !== "spacer") {

@@ -2,7 +2,7 @@
    declarations that use the module's tokens. Pure: no Foundry access. */
 import {escapeHTML as escape} from "./html-utils.mjs";
 import {frameDeclarations} from "../configurator/sheet-themes.mjs";
-import {FONT_NAME, HEX_COLOR, IMAGE_PATH, SHEET_ALIGNS, SHEET_GAPS, SHEET_NO_COLOR, SHEET_SIZES, SHEET_SPACES, SHEET_TONES} from "../configurator/layout-style-contract.mjs";
+import {FONT_NAME, HEX_COLOR, IMAGE_PATH, SHEET_ALIGNS, SHEET_BACKGROUND_FITS, SHEET_BACKGROUND_POSITIONS, SHEET_GAPS, SHEET_NO_COLOR, SHEET_SIZES, SHEET_SPACES, SHEET_TONES} from "../configurator/layout-style-contract.mjs";
 
 const colorValue = value => HEX_COLOR.test(value) ? value : SHEET_TONES[value] ? `var(${SHEET_TONES[value]})` : null;
 const percent = value => Math.max(0, Math.min(100, Number(value)));
@@ -16,7 +16,10 @@ export function sheetStyle(node) {
   if (color) { css.push(`color: ${color}`); classes.push("rta-sheet-colored"); }
   if (background === SHEET_NO_COLOR) css.push("background: none");
   else if (colorValue(background) && !["image", "portrait", "token"].includes(node.kind)) css.push(`background-color: ${style.opacity === undefined ? colorValue(background) : `color-mix(in srgb, ${colorValue(background)} ${percent(style.opacity)}%, transparent)`}`);
-  if (style.image && IMAGE_PATH.test(style.image)) css.push(`background-image: url("${style.image}")`, "background-size: cover", "background-position: center");
+  if (style.image && IMAGE_PATH.test(style.image)) {
+    const [size, repeat] = SHEET_BACKGROUND_FITS[style.imageFit] ?? SHEET_BACKGROUND_FITS.cover;
+    css.push(`background-image: url("${style.image}")`, `background-size: ${size}`, `background-repeat: ${repeat}`, `background-position: ${SHEET_BACKGROUND_POSITIONS.includes(style.imagePosition) ? style.imagePosition : "center"}`);
+  }
   if (style.border === SHEET_NO_COLOR) css.push("border: 0");
   else if (colorValue(style.border)) css.push(`border: var(--rta-frame-border) solid ${colorValue(style.border)}`);
   if (style.border && style.border !== SHEET_NO_COLOR && !["section"].includes(node.kind)) css.push("border-radius: var(--rta-radius-panel)");

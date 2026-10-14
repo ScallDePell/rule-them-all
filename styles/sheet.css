@@ -1,6 +1,6 @@
 /* Rule Them'All — sheet.css : Feuilles jouées (Acteurs et Objets) et carte de chat des Actions.
    L'ordre de chargement (module.json "styles") fait partie de la cascade.
-   Les blocs se rangent en colonnes (--rta-sheet-columns) ; un bloc en occupe --rta-sheet-span.
+   Les blocs se rangent en colonnes (--rta-sheet-columns) ; un bloc en occupe --rta-sheet-span, et --rta-sheet-row-span lignes.
    Sous 480 px de large, tout passe sur une colonne. */
 .rta-sheet {
   container: rta-sheet / inline-size;
@@ -77,8 +77,58 @@
   initial-value: 1;
 }
 
+@property --rta-sheet-row-span {
+  syntax: "<integer>";
+  inherits: false;
+  initial-value: 1;
+}
+
 .rta-sheet-grid > * {
   grid-column: span var(--rta-sheet-span);
+  grid-row: span var(--rta-sheet-row-span);
+}
+
+.rta-sheet-grid[hidden] {
+  display: none;
+}
+
+/* A block of a fixed width: never wider than its cell. */
+.rta-sheet-sized {
+  inline-size: var(--rta-sheet-width);
+  max-inline-size: 100%;
+}
+
+/* Blocks stacked in one cell, one over the other (a value over a picture): the last on top. */
+.rta-sheet-grid.rta-sheet-grid--overlay {
+  grid-template-columns: minmax(0, 1fr);
+}
+
+.rta-sheet-grid.rta-sheet-grid--overlay > * {
+  grid-area: 1 / 1;
+}
+
+.rta-sheet-grid--overlay-top {
+  align-items: start;
+}
+
+.rta-sheet-grid--overlay-center {
+  align-items: center;
+}
+
+.rta-sheet-grid--overlay-bottom {
+  align-items: end;
+}
+
+.rta-sheet-grid--overlay > .rta-sheet-align-start {
+  justify-self: start;
+}
+
+.rta-sheet-grid--overlay > .rta-sheet-align-center {
+  justify-self: center;
+}
+
+.rta-sheet-grid--overlay > .rta-sheet-align-end {
+  justify-self: end;
 }
 
 /* A value in a block measures its own cell: too narrow, its label goes above the control. */
@@ -100,6 +150,34 @@
   margin: 0;
   border: 0;
   font-size: var(--rta-type-heading);
+}
+
+/* A foldable section: its title is a button, its arrow turns when it is folded. */
+.rta-sheet-section__toggle {
+  display: flex;
+  align-items: center;
+  justify-content: flex-start;
+  gap: var(--rta-gap-row);
+  inline-size: 100%;
+  min-block-size: 0;
+  block-size: auto;
+  margin: 0;
+  padding: 0;
+  border: 0;
+  background: none;
+  color: inherit;
+  font: inherit;
+  line-height: inherit;
+  text-align: start;
+}
+
+.rta-sheet-section__toggle > i {
+  font-size: var(--rta-type-sm);
+  transition: transform .15s;
+}
+
+.rta-sheet-section__toggle[aria-expanded="false"] > i {
+  transform: rotate(-90deg);
 }
 
 .rta-sheet-tabs {
@@ -233,6 +311,122 @@
 .rta-sheet-text,
 .rta-sheet-empty {
   margin: 0;
+}
+
+.rta-sheet-text__value {
+  font-weight: 600;
+}
+
+/* What a click uses an Action from (a skill's name, a value's label, a text, a picture): underlined, plain otherwise. */
+.rta-sheet-roll {
+  text-decoration: underline dotted;
+  text-underline-offset: .2em;
+  cursor: pointer;
+}
+
+button.rta-sheet-roll {
+  display: inline;
+  inline-size: auto;
+  min-block-size: 0;
+  block-size: auto;
+  margin: 0;
+  padding: 0;
+  border: 0;
+  background: none;
+  color: inherit;
+  font: inherit;
+  line-height: inherit;
+  text-align: inherit;
+}
+
+button.rta-sheet-roll:hover {
+  color: var(--rta-color-border-highlight);
+}
+
+button.rta-sheet-image {
+  inline-size: auto;
+  padding: 0;
+  border: 0;
+  background: none;
+  cursor: pointer;
+}
+
+/* A text of several lines kept on the Actor: notes, background. */
+.rta-sheet-notes {
+  display: flex;
+  flex-direction: column;
+  gap: var(--rta-gap-tight);
+  min-inline-size: 0;
+}
+
+.rta-sheet-notes__label {
+  color: var(--rta-color-text-secondary);
+}
+
+.rta-sheet-notes__field {
+  inline-size: 100%;
+  block-size: var(--rta-sheet-notes-height);
+  font-family: inherit;
+  resize: vertical;
+}
+
+.rta-sheet-notes__text {
+  max-block-size: var(--rta-sheet-notes-height);
+  overflow-y: auto;
+  overflow-wrap: anywhere;
+  white-space: pre-wrap;
+}
+
+.rta-sheet-notes__rich {
+  white-space: normal;
+}
+
+.rta-sheet-notes__editor {
+  min-block-size: var(--rta-sheet-notes-height);
+}
+
+.rta-sheet-notes__text--sample {
+  min-block-size: var(--rta-sheet-notes-height);
+  padding: var(--rta-gap-tight) var(--rta-gap-row);
+  border: var(--rta-frame-border) dashed var(--rta-color-border-tertiary);
+  border-radius: var(--rta-radius-control);
+  color: var(--rta-color-text-secondary);
+  font-style: italic;
+}
+
+/* A separator: a line, a line broken by an ornament, or a picture. */
+.rta-sheet-separator {
+  display: flex;
+  align-items: center;
+  gap: var(--rta-gap-row);
+  min-block-size: var(--rta-gap-block);
+  color: var(--rta-color-border-highlight);
+}
+
+.rta-sheet-separator::before,
+.rta-sheet-separator--ornament::after {
+  content: "";
+  flex: 1;
+  border-block-start: var(--rta-frame-border) solid currentColor;
+}
+
+.rta-sheet-separator--ornament > i {
+  font-size: var(--rta-type-sm);
+}
+
+.rta-sheet-separator.rta-sheet-separator--image::before {
+  content: none;
+}
+
+.rta-sheet-separator--image {
+  justify-content: center;
+}
+
+.rta-sheet-separator--image > img {
+  max-inline-size: 100%;
+  block-size: 1.5rem;
+  object-fit: contain;
+  border: 0;
 }
 
 .rta-sheet-empty {
@@ -746,6 +940,7 @@ span.rta-sheet-progression__button {
 
   .rta-sheet-grid > * {
     grid-column: auto;
+    grid-row: auto;
   }
 }
 
@@ -786,6 +981,35 @@ span.rta-sheet-progression__button {
 }
 
 button.rta-sheet-dot {
+  cursor: pointer;
+}
+
+/* Boxes: a track of squares (stress, wounds). */
+.rta-sheet-dots--boxes > .rta-sheet-dot {
+  border-radius: var(--rta-radius-compact);
+}
+
+/* A clock: a circle cut into segments, filled clockwise from the top. */
+.rta-sheet-clock {
+  flex: 0 0 auto;
+  inline-size: 2.5rem;
+  block-size: 2.5rem;
+}
+
+.rta-sheet-clock__segment {
+  fill: transparent;
+  stroke: var(--rta-sheet-fill-solid, var(--rta-color-border-highlight));
+  stroke-width: 1.5;
+  stroke-linejoin: round;
+}
+
+/* Filled a little lighter than its lines, so the segments stay apart when the clock is full. */
+.rta-sheet-clock__segment--on {
+  fill: var(--rta-sheet-fill-solid, var(--rta-color-border-highlight));
+  fill-opacity: .55;
+}
+
+.rta-sheet-clock--settable > .rta-sheet-clock__segment {
   cursor: pointer;
 }
 

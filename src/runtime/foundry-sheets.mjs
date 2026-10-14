@@ -17,6 +17,52 @@ const i18n = key => globalThis.game?.i18n?.localize?.(key) ?? key;
 const versionName = record => record ? `${record.workingDraft?.nameKey ?? record.publishedSnapshot?.nameKey ?? ""} ${record.version ?? ""}`.trim() : "";
 const notifyError = error => { console.error("Rule Them'All | Sheet", error); globalThis.ui?.notifications?.error?.(error?.message ?? String(error)); };
 
+/** Tags and attributes rich notes keep; the rest is dropped (scripts, frames, forms, event handlers, javascript: links). */
+const RICH_TAGS = new Set(["p", "br", "strong", "b", "em", "i", "u", "s", "del", "span", "div", "section", "h1", "h2", "h3", "h4", "h5", "h6", "ul", "ol", "li", "blockquote",
+  "code", "pre", "a", "img", "table", "thead", "tbody", "tr", "th", "td", "hr", "sup", "sub", "figure", "figcaption"]);
+const RICH_DROPPED = new Set(["script", "style", "iframe", "object", "embed", "link", "meta", "form", "input", "button", "textarea", "select", "template", "svg", "math"]);
+const RICH_ATTRIBUTES = new Set(["href", "src", "alt", "title", "class", "id", "colspan", "rowspan", "target", "rel"]);
+/** Rich text a player wrote, as it may be shown to anyone (the GM included): only plain formatting, links and pictures. */
+export function sanitizeRichText(html, doc = globalThis.document) {
+  const template = doc.createElement("template");
+  template.innerHTML = String(html ?? "");
+  const clean = parent => {
+    for (const child of [...parent.childNodes]) {
+      if (child.nodeType === 3) continue;
+      if (child.nodeType !== 1) { child.remove(); continue; }
+      const tag = child.tagName.toLowerCase();
+      if (RICH_DROPPED.has(tag)) { child.remove(); continue; }
+      clean(child);
+      if (!RICH_TAGS.has(tag)) { child.replaceWith(...child.childNodes); continue; }
+      for (const attribute of [...child.attributes]) {
+        const name = attribute.name.toLowerCase(), value = attribute.value.trim().toLowerCase();
+        if (!RICH_ATTRIBUTES.has(name) || ["href", "src"].includes(name) && /^(javascript|vbscript|data):/.test(value.replace(/\s/g, ""))) child.removeAttribute(attribute.name);
+      }
+    }
+  };
+  clean(template.content);
+  return template.innerHTML;
+}
+/** A node of a projected sheet by id (list rows included). */
+function viewNode(node, id) {
+  if (!node) return null;
+  if (node.id === id) return node;
+  for (const child of [...(node.children ?? []), ...(node.rows ?? []).flatMap(row => row.children)]) { const found = viewNode(child, id); if (found) return found; }
+  return null;
+}
+/** The sections a user folded, per sheet, kept in this browser. */
+const COLLAPSED_KEY = `${MODULE_ID}.collapsedSections`;
+const collapsedKey = () => `${COLLAPSED_KEY}.${globalThis.game?.user?.id ?? ""}`;
+function collapsedSections() { try { return JSON.parse(globalThis.localStorage?.getItem(collapsedKey()) ?? "{}") ?? {}; } catch { return {}; } }
+function rememberCollapsed(sheetId, id, collapsed) {
+  try {
+    const all = collapsedSections(), ids = new Set(all[sheetId] ?? []);
+    if (collapsed) ids.add(id); else ids.delete(id);
+    if (ids.size) all[sheetId] = [...ids]; else delete all[sheetId];
+    globalThis.localStorage?.setItem(collapsedKey(), JSON.stringify(all));
+  } catch { /* storage unavailable: the section opens again next time */ }
+}
+
 /** Ruleset text first (world overrides, Ruleset translations), then the module's. */
 export function translator(versionId) {
   const api = rta()?.configurator;
@@ -188,6 +234,13 @@ export function createRulesetSheets({ActorSheetV2, ItemSheetV2}) {
       for (const button of root.querySelectorAll("[data-sheet-milestones]")) button.addEventListener("click", event => this.#milestones(event.currentTarget.dataset.sheetMilestones));
       for (const button of root.querySelectorAll("[data-sheet-command]")) button.addEventListener("click", event => this.#command(event.currentTarget.dataset.sheetCommand));
       for (const button of root.querySelectorAll("[data-sheet-tab]")) button.addEventListener("click", event => this.#showTab(event.currentTarget));
+      // Foldable sections: those this user folded stay folded.
+      const folded = new Set(collapsedSections()[this.#state?.sheet?.id] ?? []);
+      for (const button of root.querySelectorAll("[data-sheet-collapse]")) {
+        if (folded.has(button.dataset.sheetCollapse)) this.#fold(button, true);
+        button.addEventListener("click", event => { const toggle = event.currentTarget, fold = toggle.getAttribute("aria-expanded") === "true"; this.#fold(toggle, fold); rememberCollapsed(this.#state?.sheet?.id, toggle.dataset.sheetCollapse, fold); });
+      }
+      this.#richNotes(root).catch(notifyError);
       for (const button of root.querySelectorAll("[data-sheet-item-open]")) button.addEventListener("click", event => this.#ownedItem(event.currentTarget.dataset.sheetItemOpen)?.sheet?.render(true));
       for (const button of root.querySelectorAll("[data-sheet-item-remove]")) button.addEventListener("click", event => this.#removeItem(event.currentTarget.dataset.sheetItemRemove));
       const tab = this.#tab && root.querySelector(`[data-sheet-tab="${CSS.escape(this.#tab)}"]`);
@@ -232,6 +285,36 @@ export function createRulesetSheets({ActorSheetV2, ItemSheetV2}) {
       // Removing the Item releases what it granted (deleteItem hook).
       try { await item.delete(); } catch (error) { notifyError(error); }
       this.render();
+    }
+    #fold(button, folded) {
+      button.setAttribute("aria-expanded", String(!folded));
+      const body = button.closest(".rta-sheet-section")?.querySelector(`:scope > [data-sheet-collapsible="${CSS.escape(button.dataset.sheetCollapse)}"]`);
+      if (body) body.hidden = folded;
+    }
+    /** Rich notes: their text enriched by Foundry (links, @UUID, inline rolls), in Foundry's editor when this user may change
+       it. What a player wrote is cleaned first: it may be shown to the GM. Without the editor, the text is edited as it is stored. */
+    async #richNotes(root) {
+      const boxes = [...root.querySelectorAll("[data-sheet-note-rich]")];
+      if (!boxes.length) return;
+      const TextEditor = globalThis.foundry?.applications?.ux?.TextEditor?.implementation ?? globalThis.TextEditor;
+      const ProseMirror = globalThis.foundry?.applications?.elements?.HTMLProseMirrorElement;
+      const actor = this.document.documentName === "Actor" ? this.document : this.document.parent;
+      for (const box of boxes) {
+        const id = box.dataset.sheetNoteRich, raw = sanitizeRichText(viewNode(this.#state?.view?.root, id)?.value ?? "");
+        const enriched = TextEditor?.enrichHTML ? await TextEditor.enrichHTML(raw, {secrets: Boolean(actor?.isOwner), relativeTo: actor, rollData: actor?.getRollData?.() ?? {}}) : raw;
+        const write = value => this.#write({dataset: {sheetWrite: id, operation: "set"}, type: "text", value: sanitizeRichText(value)});
+        if (!box.hasAttribute("data-sheet-note-editable")) { box.innerHTML = enriched; continue; }
+        if (ProseMirror?.create) {
+          const editor = ProseMirror.create({name: `rta-note-${id}`, value: raw, enriched, toggled: true, documentUUID: actor?.uuid});
+          editor.classList.add("rta-sheet-notes__editor");
+          editor.addEventListener("change", event => { event.stopPropagation(); write(editor.value ?? ""); });
+          box.replaceChildren(editor);
+        } else {
+          const field = Object.assign(document.createElement("textarea"), {className: "rta-sheet-notes__field", value: raw});
+          field.addEventListener("change", () => write(field.value));
+          box.replaceWith(field);
+        }
+      }
     }
     #showTab(button) {
       const tabs = button.closest(".rta-sheet-tabs");

@@ -326,6 +326,11 @@
   pointer-events: none;
 }
 
+/* A block shown only when a Condition holds: dimmed (the editor shows it for every Actor). */
+.rta-sheet--edit [data-layout-conditional] {
+  opacity: .6;
+}
+
 .rta-sheet--edit [data-layout-node]:hover {
   outline: 1px dashed var(--rta-color-border-highlight);
   outline-offset: 2px;

@@ -93,6 +93,29 @@ const styled = {id: 'styled', target: 'actor', root: {id: 'root', kind: 'grid', 
     {id: 'tall', kind: 'image', src: 'icons/svg/mystery-man.svg', shape: 'portrait', height: 'small'},
     {id: 'a-wit', kind: 'value', labelKey: 'Wits', source: {kind: 'output', reference: out_('wit', 'value', 'value.final')}, write: {operation: 'adjust'}}]}]}};
 
+// Layout and dynamic blocks: a value over a picture, a foldable section with a track of boxes and a clock, a text that
+// shows values and rolls when clicked, separators, notes kept on the Actor, a block shown under a Condition, a list
+// whose names roll, a tiled background, spans and a fixed width.
+await engine.setDefinitionState(v, hero, 'luck', {pools: {points: 2}});
+await engine.setNote(v, hero, 'b-notes', 'Owes the thieves\' guild 100 crowns.\nSister in Westmarch.');
+await engine.setNote(v, hero, 'b-story', '<p>Born under a <strong>red moon</strong>.</p>');
+const blocks = {id: 'blocks', target: 'actor', root: {id: 'root', kind: 'grid', columns: 2, children: [
+  {id: 'b-crest', kind: 'grid', columns: 1, overlay: 'center', children: [
+    {id: 'b-crest-img', kind: 'image', src: 'icons/svg/mystery-man.svg', height: 'medium', shape: 'square'},
+    {id: 'b-crest-str', kind: 'value', labelKey: 'Strength', source: {kind: 'output', reference: out_('str', 'value', 'value.final')}, style: {label: 'hidden', align: 'center', size: 'huge', bold: true}}]},
+  {id: 'b-state', kind: 'section', labelKey: 'Condition', collapsible: true, columns: 1, children: [
+    {id: 'b-stress', kind: 'value', labelKey: 'Stress', source: {kind: 'output', reference: out_('dex', 'value', 'value.final')}, display: 'boxes', dots: 12, write: {operation: 'set'}, tooltip: {text: 'Marked when pushing yourself'}},
+    {id: 'b-clock', kind: 'value', labelKey: 'Luck', source: {kind: 'output', reference: out_('luck', 'pool', 'pool.current', 'points')}, display: 'clock', write: {operation: 'set'}},
+    {id: 'b-wits', kind: 'value', labelKey: 'Wits', source: {kind: 'output', reference: out_('wit', 'value', 'value.final')}, clickActionRef: 'sneak', width: 'medium'}]},
+  {id: 'b-line', kind: 'separator', look: 'ornament', span: 2},
+  {id: 'b-level', kind: 'text', span: 2, textKey: 'Experience {XP} · Defence {Defence}', values: {XP: {kind: 'output', reference: out_('xp', 'value', 'value.final')}, Defence: {kind: 'formula', formulaRef: 'defence'}}, clickActionRef: 'attack', style: {align: 'center'}},
+  {id: 'b-seasoned', kind: 'text', span: 2, textKey: 'Seasoned: shown because the Condition holds.', visibleIf: 'seasoned', style: {italic: true}},
+  {id: 'b-veteran', kind: 'text', span: 2, textKey: 'Veteran: hidden, the Condition is false.', visibleIf: 'veteran'},
+  {id: 'b-notes', kind: 'notes', labelKey: 'Notes', write: {operation: 'set'}, height: 'small', rowSpan: 2},
+  {id: 'b-story', kind: 'notes', labelKey: 'Background', format: 'rich', height: 'small'},
+  {id: 'b-plain', kind: 'separator'},
+  {id: 'b-skills', kind: 'section', labelKey: 'Skills', span: 2, style: {image: 'icons/svg/d20-grey.svg', imageFit: 'tile', imagePosition: 'top', opacity: 80}, children: [
+    {id: 'b-list', kind: 'repeater', query: {definitionTypeId: 'skill'}, columns: 2, clickActionRef: 'sneak', children: [{id: 'b-rank', kind: 'value', source: {kind: 'each', capabilityId: 'value', outputId: 'value.final'}}]}]}]}};
 // No standard header: the name, the portrait and the token image placed in the layout, styled like any block.
 const custom = {id: 'custom', target: 'actor', header: 'none', root: {id: 'root', kind: 'grid', columns: 3, children: [
   {id: 'face', kind: 'portrait', shape: 'portrait', height: 'large'},
@@ -123,6 +146,7 @@ const sheets = [
   ['actor-auto', await projectSheet(engine, v, sheetFor(ruleset, {target: 'actor'}), {actor: hero, items: [{id: 'sword-1', name: 'Grandfather\'s sword', img: '', managed: true}, {id: 'rope', name: 'Rope (15 m)', img: '', managed: false}]}), 'Ayla the Brave'],
   ['actor-tabbed', await projectSheet(engine, v, tabbed, {actor: hero}), 'Ayla the Brave'],
   ['actor-styled', await projectSheet(engine, v, styled, {actor: hero, items: [{id: 'sword-1', name: 'Grandfather\'s sword', img: '', managed: true}]}), 'Ayla the Brave'],
+  ['actor-blocks', await projectSheet(engine, v, blocks, {actor: hero}), 'Ayla the Brave'],
   ['actor-progression', await projectSheet(engine, v, {id: 'growth', target: 'actor', root: {id: 'root', kind: 'section', labelKey: 'Growth', columns: 1, children: [{id: 'buy', kind: 'progression', progressionSystemRef: 'growth'}]}}, {actor: hero}), 'Ayla the Brave'],
   ['item-owned', await projectSheet(engine, v, sheetFor(ruleset, {target: 'item', contentTypeId: 'weapon'}), {actor: hero, content: {key: 'sword-1'}}), 'Sword'],
   // Unlocked (the lock open in the window header): the name is a field, the camera buttons sit on the pictures.
@@ -146,7 +170,7 @@ const chat = join(out, 'chat-card.html');
 writeFileSync(chat, page(renderActionChatHTML({title: 'Attack', actor: 'Ayla', lines: [{label: '1d20+5', value: '14 + 5 = 19'}, {label: 'Target', value: '15'}], outcome: 'Hit'}), 'theme-dark'));
 files.push(['chat-card', chat]);
 
-const browser = await chromium.launch({executablePath: process.env.RTA_CHROMIUM, args: ['--no-sandbox']});
+const browser = await chromium.launch({executablePath: process.env.RTA_CHROMIUM, args: ['--no-sandbox', '--allow-file-access-from-files']});
 const tab = await browser.newPage({viewport: {width: 700, height: 900}});
 let problems = 0;
 for (const [name, file] of files) for (const width of [640, 420]) {
@@ -188,6 +212,14 @@ if (process.env.RTA_SHOTS) {
   await tab.goto(pathToFileURL(join(out, 'sheet-actor-tabbed-theme-dark.html')).href);
   await tab.evaluate(() => { document.querySelector('.application').style.setProperty('--qa-width', '640px'); for (const p of document.querySelectorAll('[data-sheet-panel]')) p.hidden = p.dataset.sheetPanel !== 'skills-tab'; });
   await tab.locator('.application').screenshot({path: join(process.env.RTA_SHOTS, 'sheet-actor-tabbed-skills.png')});
+}
+// Rich notes a player wrote are cleaned before anyone sees them: no script, handler, frame or javascript: link.
+{
+  await tab.goto(pathToFileURL(files[0][1]).href);
+  const dirty = '<p onclick="steal()">Hi <strong>there</strong><script>steal()</script><img src="x" onerror="steal()"><a href=" javascript:steal()">link</a><iframe src="x"></iframe><custom-tag>kept text</custom-tag></p>';
+  const cleaned = await tab.evaluate(async ([url, html]) => (await import(url)).sanitizeRichText(html), [pathToFileURL(join(root, 'src/runtime/foundry-sheets.mjs')).href, dirty]);
+  const expected = '<p>Hi <strong>there</strong><img src="x"><a>link</a>kept text</p>';
+  if (cleaned !== expected) { problems++; console.log(`rich notes not cleaned: ${cleaned}`); }
 }
 await browser.close();
 console.log(problems ? `sheet QA: ${problems} problem(s)` : 'sheet QA: no problem');

@@ -116,6 +116,18 @@ Un **cadre image** se pose aussi sur un seul bloc (groupe **Style** de ses régl
 ### Exporter et importer une feuille
 La ligne **Fichier** des réglages de la feuille **exporte** la feuille (mise en page, thème, réglages et modèles de cartes qu'elle utilise) dans un fichier JSON, et en **importe** une, par exemple depuis un autre Ruleset. Si le fichier utilise des éléments absents de ce Ruleset, ils sont listés et vous pouvez importer sans les blocs qui les utilisent. Un modèle de blocs s'importe de même depuis le groupe **Modèles** de la palette. Vérifiez la feuille importée puis enregistrez ; **Annuler** rétablit l'ancienne mise en page.
 
+### Mise en page et blocs dynamiques
+- **Image de fond** d'une section, d'une grille ou d'un onglet (groupe Style) : **Affichage de l'image** vaut Couvrir, Contenir, Étirer, Taille d'origine ou Mosaïque, et **Position de l'image** Centre, Haut, Bas, Gauche ou Droite.
+- **Zone de texte** (groupe Champs) : un texte libre de plusieurs lignes gardé sur l'Acteur (notes, historique). **Texte simple** ou **Texte enrichi** (l'éditeur de Foundry : gras, liens, @UUID, jets en ligne), une hauteur, **Visible par**, et **Modifiée par : le MJ seulement**. L'écriture suit les Permissions du Ruleset comme une valeur. Pas sur une feuille d'Objet ni dans une liste.
+- **Séparateur** (groupe Mise en page) : un trait, un ornement ou une image.
+- **Plus de réglages** (replié, pour tout bloc) : **Lignes occupées** (dans une grille), **Largeur fixe** (petite, moyenne, grande) et **Info-bulle** : un texte libre, ou pour une valeur, la **Description de la Définition**.
+- Une section peut être **Repliable** : son titre la replie en jeu, et chaque joueur retrouve ses sections comme il les a laissées.
+- **Superposer les blocs** (section, grille) : les blocs s'empilent au même endroit, en haut, au centre ou en bas, par exemple une valeur posée sur une image.
+- **Visible si** : le bloc ne s'affiche que quand une Condition est vraie pour l'Acteur (dans une liste : pour chaque ligne). Dans l'éditeur, un tel bloc apparaît atténué.
+- **Insérer une valeur** (bloc Texte) : choisissez une valeur, une Formule ou un Paramètre ; son nom s'ajoute entre accolades, par exemple « Défense {Défense} », et la feuille montre le nombre à sa place. Effacer le nom du texte retire la valeur.
+- **Au clic : lancer** (valeur, texte, image, liste) : un clic sur le libellé, le texte, l'image ou le nom d'une ligne lance l'Action choisie, pour ceux qui ont le droit de l'utiliser.
+- **Cases** et **Horloge** (groupe Champs) : une valeur affichée en cases à cocher ou en horloge à segments ; leur nombre vient du maximum de la valeur, sinon du réglage du bloc.
+
 ### Choisir la feuille d'un Acteur
 Chaque feuille activée du Ruleset actif apparaît sous son nom dans **Configuration de la feuille** (en-tête de la fenêtre de l'Acteur ou de l'Objet). Vous pouvez donc avoir plusieurs feuilles de PJ, une feuille de PNJ, une feuille de créature, et choisir pour chaque Acteur, ou par défaut pour un type d'Acteur.
 

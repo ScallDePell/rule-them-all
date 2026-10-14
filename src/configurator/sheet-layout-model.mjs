@@ -2,7 +2,7 @@
    editor shows. The preview goes through the same markup as a played sheet (ui/sheet-markup.mjs), with sample
    values, so what the editor shows is the sheet the players get. Every operation returns a new tree. */
 import {capabilityTypeRegistry} from "./capability-type-registry.mjs";
-import {CARD_EXCLUDED_KINDS, LAYOUT_CONTAINERS, LAYOUT_DOCUMENT_KINDS, LAYOUT_WRITABLE_SOURCES, layoutTarget} from "./layout-contract.mjs";
+import {CARD_EXCLUDED_KINDS, LAYOUT_CONTAINERS, LAYOUT_COUNTED_DISPLAYS, LAYOUT_DOCUMENT_KINDS, LAYOUT_WRITABLE_SOURCES, layoutTarget} from "./layout-contract.mjs";
 import {descriptionScale, scaleWords} from "./rule-contracts.mjs";
 
 const copy = value => structuredClone(value);
@@ -32,7 +32,7 @@ export const insideRepeater = (root, id) => Boolean(locate(root, id)?.path.slice
 export const repeaterOf = (root, id) => locate(root, id)?.path.slice(0, -1).findLast(node => node.kind === "repeater") ?? null;
 export const isContainer = node => LAYOUT_CONTAINERS.includes(node?.kind);
 /** The kinds a container accepts: tabs hold only tabs; a tab is only in tabs. */
-export const childKinds = parent => !isContainer(parent) ? [] : parent.kind === "tabs" ? ["tab"] : ["section", "grid", "tabs", "repeater", "value", "action", "text", "image", "contents", "progression", "name", "portrait", "token", "spacer"];
+export const childKinds = parent => !isContainer(parent) ? [] : parent.kind === "tabs" ? ["tab"] : ["section", "grid", "tabs", "repeater", "value", "action", "text", "image", "contents", "progression", "notes", "separator", "name", "portrait", "token", "spacer"];
 export const columnsOf = node => MAX_COLUMNS[node?.kind] ? node.columns ?? 1 : 1;
 export const maxColumns = kind => MAX_COLUMNS[kind] ?? 1;
 
@@ -84,6 +84,12 @@ export function newNode(kind, root, ruleset, {parentId = root?.id, target = "act
   if (kind === "action") { const action = (ruleset.actions ?? []).find(enabled); return action ? {id, kind, actionRef: action.id} : null; }
   if (kind === "text") return {id, kind, textKey: ""};
   if (kind === "image") return {id, kind, src: ""};
+  if (kind === "separator") return {id, kind};
+  if (kind === "notes") {
+    // The Actor's own text (notes, background): not on an Item sheet, not once per row of a list.
+    const parent = locate(root, parentId);
+    return target === "item" || parent?.path.some(node => node.kind === "repeater") ? null : {id, kind, write: {operation: "set"}};
+  }
   if (LAYOUT_DOCUMENT_KINDS.includes(kind)) {
     // The Document's name and pictures: not once per row of a list; a token is an Actor's.
     const parent = locate(root, parentId);
@@ -111,11 +117,13 @@ export function newNode(kind, root, ruleset, {parentId = root?.id, target = "act
    A single Definition, Formula or Action is chosen in the block's settings once it is placed. */
 export function paletteGroups(ruleset, {target = "actor", contentTypeIds = []} = {}) {
   const groups = [], name = entry => entry.nameKey ?? entry.id;
-  groups.push({id: "layout", labelKey: "RTA.SheetEditor.Palette.Layout", items: ["section", "grid", "tabs", "text", "image", "spacer"].map(kind => ({kind, spec: {kind}}))});
+  groups.push({id: "layout", labelKey: "RTA.SheetEditor.Palette.Layout", items: ["section", "grid", "tabs", "text", "image", "separator", "spacer"].map(kind => ({kind, spec: {kind}}))});
   groups.push({id: "document", labelKey: "RTA.SheetEditor.Palette.Document", items: ["name", "portrait", ...(target === "actor" ? ["token"] : [])].map(kind => ({kind, spec: {kind}}))});
   const fields = [
     {kind: "value", labelKey: "RTA.SheetEditor.Kind.value", spec: {kind: "value"}},
-    ...(target === "actor" ? [{kind: "gauge", labelKey: "RTA.SheetEditor.Display.gauge", spec: {kind: "value", display: "gauge"}}, {kind: "dots", labelKey: "RTA.SheetEditor.Display.dots", spec: {kind: "value", display: "dots"}}] : []),
+    ...(target === "actor" ? [{kind: "gauge", labelKey: "RTA.SheetEditor.Display.gauge", spec: {kind: "value", display: "gauge"}}, {kind: "dots", labelKey: "RTA.SheetEditor.Display.dots", spec: {kind: "value", display: "dots"}},
+      {kind: "boxes", labelKey: "RTA.SheetEditor.Display.boxes", spec: {kind: "value", display: "boxes"}}, {kind: "clock", labelKey: "RTA.SheetEditor.Display.clock", spec: {kind: "value", display: "clock"}},
+      {kind: "notes", spec: {kind: "notes"}}] : []),
     ...((ruleset.actions ?? []).some(enabled) ? [{kind: "action", spec: {kind: "action"}}] : []),
     ...(target === "actor" && itemContentTypes(ruleset).some(offeredInSheets) ? [{kind: "contents", spec: {kind: "contents"}}] : []),
     ...(target === "actor" ? (ruleset.progressionSystems ?? []).filter(enabled).map(system => ({label: name(system), kind: "progression", spec: {kind: "progression", progressionSystemRef: system.id}})) : [])];
@@ -172,6 +180,8 @@ export function paletteNode(spec, root, ruleset, {parentId = root?.id, target = 
     const inRepeater = Boolean(locate(root, parentId)?.path.some(entry => entry.kind === "repeater"));
     if (spec.display === "gauge" && !inRepeater) node.source = gaugeSource(ruleset) ?? node.source;
     if (spec.display) node.display = spec.display;
+    // A clock starts with 4 segments (a short task); the count changes in its settings.
+    if (spec.display === "clock") node.dots = 4;
     return node;
   }
   // A template: a copy of its block, to know where it may go (sheet-templates.mjs insertTemplate gives it its ids).
@@ -215,7 +225,7 @@ export function canPlace(root, node, targetId, {beside = false} = {}) {
   // An "each" value only exists in a repeater; held Contents are never once per row.
   const inRepeater = [...(holder === target.node ? target.path : target.path.slice(0, -1))].some(entry => entry.kind === "repeater");
   // Inside the node itself, a list it holds counts too: a new list's row value is in that list.
-  const fits = (entry, listed) => !(entry.source?.kind === "each" && !listed || ["contents", "progression", ...LAYOUT_DOCUMENT_KINDS].includes(entry.kind) && listed)
+  const fits = (entry, listed) => !(entry.source?.kind === "each" && !listed || ["contents", "progression", "notes", ...LAYOUT_DOCUMENT_KINDS].includes(entry.kind) && listed)
     && (entry.children ?? []).every(child => fits(child, listed || entry.kind === "repeater"));
   return fits(node, inRepeater);
 }
@@ -237,7 +247,7 @@ export function updateNode(root, id, changes) {
   return clampSpans(edit(root, next => {
     const {node} = locate(next, id);
     for (const [key, value] of Object.entries(changes)) {
-      if (value === undefined || value === null || value === "" && !["labelKey", "textKey", "src"].includes(key)) delete node[key];
+      if (value === undefined || value === null || value === "" && !["labelKey", "textKey", "src"].includes(key) || value === "" && key === "src" && node.kind === "separator" && node.look !== "image") delete node[key];
       else node[key] = copy(value);
     }
   }));
@@ -280,8 +290,8 @@ export function contentFields(ruleset, contentTypeIds = []) {
 
 /* Preview: the projection a played sheet would get, with sample values instead of an Actor's. */
 const SAMPLE = {number: 10, integer: 10, boolean: true};
-function previewValue(node, ruleset, row, contentTypeIds, viewer = null) {
-  const source = node.source, view = {id: node.id, kind: "value", ...(node.span ? {span: node.span} : {}), ...(node.style ? {style: node.style} : {}), ...(node.seenBy ? {seenBy: node.seenBy} : {}), ...(node.icon ? {icon: node.icon} : {}), ...(node.labelShow ? {labelShow: node.labelShow} : {}),
+function previewValue(node, ruleset, row, contentTypeIds, viewer = null, base = {id: node.id, kind: "value"}) {
+  const source = node.source, view = {...base,
     ...(node.display ? {display: node.display} : {}), ...(node.dots ? {dots: node.dots} : {}), label: node.labelKey || "", write: node.write && !(viewer && viewer !== "gm" && node.write.by === "gm") ? {operation: node.write.operation} : null};
   if (!view.label) Object.assign(view, defaultValueLabel(source, ruleset, {contentTypeIds}));
   let valueType = "number";
@@ -289,6 +299,7 @@ function previewValue(node, ruleset, row, contentTypeIds, viewer = null) {
     const capabilityId = source.kind === "output" ? source.reference.capabilityId : source.capabilityId, outputId = source.kind === "output" ? source.reference.outputId : source.outputId;
     valueType = capabilityTypeRegistry.get(capabilityId)?.outputs?.[outputId]?.valueType ?? "number";
     if (capabilityId === "pool" && outputId === "pool.current") view.maximum = 12;
+    if (node.tooltip?.description) { const text = ruleset.definitions?.find(d => d.id === (source.kind === "output" ? source.reference.objectId : row?.id))?.descriptionKey; if (text) view.tooltip = {text}; }
     // A description shows the words of the Definition's scale (its own, else its type's) for a high value.
     if (node.display === "description") {
       const scale = descriptionScale(ruleset, source.kind === "output" ? source.reference.objectId : row?.id);
@@ -307,8 +318,8 @@ function previewValue(node, ruleset, row, contentTypeIds, viewer = null) {
     const template = (ruleset.contentTemplates ?? []).find(t => enabled(t) && t.contentTypeId === source.contentTypeId);
     return {...view, valueType: "string", value: template?.nameKey ?? "…"};
   } else valueType = contentFields(ruleset, contentTypeIds).find(f => f.id === source.fieldId)?.valueType ?? "text";
-  // Dots and gauges show a part filled: 3 of 5 dots, 10 of 20 on a gauge.
-  if (node.display === "dots" && ["number", "integer"].includes(valueType)) return {...view, valueType, value: 3};
+  // Dots, boxes and clocks show a part filled (3 of 5 dots), a gauge 10 of 20.
+  if (LAYOUT_COUNTED_DISPLAYS.includes(node.display) && ["number", "integer"].includes(valueType)) return {...view, valueType, value: 3};
   if (node.display === "gauge" && view.maximum === undefined) view.maximum = 20;
   return {...view, valueType, value: SAMPLE[valueType] ?? (["string", "text"].includes(valueType) ? "…" : null)};
 }
@@ -333,8 +344,8 @@ function previewProgression(node, ruleset, viewer = null) {
     values only the GM changes read-only for the others); null shows every block. */
 /** A value of a card (a held Content shown in cards): a Content field reads that Content's value (a Reference by name);
     any other source shows its usual sample. A field the Content's type lacks is left out. */
-function previewCardValue(node, ruleset, card, viewer) {
-  const view = previewValue(node, ruleset, null, [], viewer);
+function previewCardValue(node, ruleset, card, viewer, base) {
+  const view = previewValue(node, ruleset, null, [], viewer, base);
   if (node.source?.kind !== "field") return view;
   const field = card.type?.fields?.[node.source.fieldId];
   if (!field) return null;
@@ -348,14 +359,20 @@ export function previewView(root, ruleset, {target = "actor", contentTypeIds = [
   const walk = (node, row, card = null) => {
     if (card && CARD_EXCLUDED_KINDS.includes(node.kind)) return null;
     if (viewer && node.seenBy && !node.seenBy.includes(viewer)) return null;
-    const base = {id: node.id, kind: node.kind, ...(node.span ? {span: node.span} : {}), ...(node.style ? {style: node.style} : {}), ...(node.seenBy ? {seenBy: node.seenBy} : {}), ...(node.icon ? {icon: node.icon} : {}), ...(node.labelShow ? {labelShow: node.labelShow} : {})};
-    if (node.kind === "value") return card ? previewCardValue(node, ruleset, card, viewer) : previewValue(node, ruleset, row, contentTypeIds, viewer);
+    // A block under a Condition is shown (dimmed by the editor): the Actor it applies to is not known here.
+    const base = {id: node.id, kind: node.kind, ...(node.span ? {span: node.span} : {}), ...(node.rowSpan ? {rowSpan: node.rowSpan} : {}), ...(node.width ? {width: node.width} : {}),
+      ...(node.style ? {style: node.style} : {}), ...(node.seenBy ? {seenBy: node.seenBy} : {}), ...(node.visibleIf ? {visibleIf: node.visibleIf} : {}), ...(node.icon ? {icon: node.icon} : {}), ...(node.labelShow ? {labelShow: node.labelShow} : {}),
+      ...(node.tooltip?.text ? {tooltip: {text: node.tooltip.text}} : {}), ...(node.collapsible ? {collapsible: true} : {}), ...(node.overlay ? {overlay: node.overlay} : {}),
+      ...(node.clickActionRef ? {click: {actionId: node.clickActionRef, definitionId: row?.id ?? null}} : {})};
+    if (node.kind === "value") return card ? previewCardValue(node, ruleset, card, viewer, base) : previewValue(node, ruleset, row, contentTypeIds, viewer, base);
     if (node.kind === "image") return {...base, src: node.src, fit: node.fit ?? "cover", height: node.height ?? "medium", ...(node.shape ? {shape: node.shape} : {})};
     // The Document's name and pictures: the editor shows samples (renderLayoutPreviewHTML).
     if (node.kind === "portrait" || node.kind === "token") return {...base, fit: node.fit ?? "cover", height: node.height ?? "medium", ...(node.shape ? {shape: node.shape} : {}), ...(node.updatePlaced ? {updatePlaced: true} : {})};
     if (node.kind === "name") return base;
-    if (node.kind === "text") return {...base, text: node.textKey};
+    if (node.kind === "text") return {...base, text: node.textKey, ...(node.values ? {values: Object.fromEntries(Object.entries(node.values).map(([name, source]) => [name, previewValue({id: node.id, kind: "value", source}, ruleset, row, contentTypeIds).value]))} : {})};
     if (node.kind === "spacer") return base;
+    if (node.kind === "separator") return {...base, look: node.look ?? "line", ...(node.look === "image" ? {src: node.src ?? ""} : {})};
+    if (node.kind === "notes") return {...base, label: node.labelKey || "", format: node.format ?? "plain", height: node.height ?? "medium", value: "", write: node.write && !(viewer && viewer !== "gm" && node.write.by === "gm") ? {operation: "set"} : null};
     if (node.kind === "contents") {
       // One Content of each listed type stands for what an Actor would hold.
       const types = itemContentTypes(ruleset).filter(type => !(node.contentTypeIds ?? []).length || node.contentTypeIds.includes(type.id));

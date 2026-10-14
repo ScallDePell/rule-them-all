@@ -52,6 +52,20 @@ test('a block naming what the Ruleset or the sheet lacks is refused, and a row v
   assert.deepEqual(pasteBlock(withPools,row,'repeater-1',pools).missing,['value.final']);
 });
 
+test('a pasted block\'s text values, Condition and click Action must exist here; notes only on an Actor sheet', ()=>{
+  const root=tree(),rules={...ruleset,conditions:[{id:'wounded'}]};
+  const line={id:'t',kind:'text',textKey:'{A} {B}',values:{A:{kind:'formula',formulaRef:'f'},B:{kind:'parameter',parameterRef:'level'}}};
+  assert.deepEqual(pasteBlock(root,line,'root',rules).missing,['level'],'a value the text shows');
+  assert.deepEqual(pasteBlock(root,{id:'t',kind:'text',textKey:'Hi',visibleIf:'shaken'},'root',rules).missing,['shaken'],'the Condition that shows it');
+  assert.ok(pasteBlock(root,{id:'t',kind:'text',textKey:'Hi',visibleIf:'wounded'},'root',rules).root);
+  assert.deepEqual(pasteBlock(root,{id:'i',kind:'image',src:'a.png',clickActionRef:'fly'},'root',rules).missing,['fly'],'the Action a click uses');
+  assert.ok(pasteBlock(root,{id:'i',kind:'image',src:'a.png',clickActionRef:'rest'},'root',rules).root);
+  const notes={id:'n',kind:'notes',write:{operation:'set'}};
+  assert.ok(pasteBlock(root,notes,'root',rules).root);
+  assert.deepEqual(pasteBlock(root,notes,'root',rules,{target:'item'}).missing,['notes']);
+  assert.deepEqual(pasteBlock(root,notes,'rank',rules),{error:'place'},'never once per row of a list');
+});
+
 test('the clipboard is shared by the editors of the session', ()=>{
   const store=new Map();
   globalThis.sessionStorage={getItem:key=>store.get(key)??null,setItem:(key,value)=>store.set(key,value),removeItem:key=>store.delete(key)};
@@ -72,6 +86,9 @@ test('the style brush gives each block the part of a style its kind takes', ()=>
   assert.deepEqual(styleFor('section',{background:'panel',gap:'row',label:'top'}),{background:'panel',gap:'row'});
   assert.deepEqual(styleFor('value',{label:'top',fill:'danger'}),{label:'top',fill:'danger'});
   assert.equal(styleFor('spacer',undefined),undefined);
+  const tiled={image:'a.png',imageFit:'tile',imagePosition:'top',bold:true};
+  assert.deepEqual(styleFor('section',tiled),tiled,'a background picture keeps its fit and position');
+  assert.deepEqual(styleFor('text',tiled),{bold:true},'none of it on a block that is not a container');
 });
 
 test('toolbar: one row of icon buttons, then "View as"; no automatic layout. Layers: a row per block', ()=>{

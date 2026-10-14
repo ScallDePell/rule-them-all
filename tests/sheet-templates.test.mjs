@@ -42,11 +42,12 @@ test('a block template is kept in the Ruleset, offered to the sheets it fits, an
   assert.deepEqual(cardTemplates(draft()).map(t => t.id), ['template-stats-block', 'weapon-card'], 'what fits an Item sheet, without a token image');
   assert.equal(layoutTarget(weaponCard), 'item');
   assert.equal(layoutTarget(statBlock), 'any');
+  assert.equal(layoutTarget({id: 'n', kind: 'notes'}), 'actor', 'notes are kept on the Actor');
   await assert.rejects(api.createSheetTemplate(v, {id: 'both', nameKey: 'Both', root: {id: 'b', kind: 'grid', children: [{id: 't', kind: 'token'}, {id: 'f', kind: 'value', source: {kind: 'field', fieldId: 'damage'}}]}}), /Actor|Item/);
   await assert.rejects(api.deleteDefinition(v, 'str'), /still referenced/);
   assert.deepEqual(templateFromBlock({id: 'row', kind: 'value', source: {kind: 'each', capabilityId: 'value', outputId: 'value.final'}}, 'Row', draft()), {error: 'each'});
   // The palette's "Templates" group, without the templates of a type left out of the sheet palette.
-  const group = paletteGroups(draft(), 'actor').find(g => g.id === 'templates');
+  const group = paletteGroups(draft(), {target: 'actor'}).find(g => g.id === 'templates');
   assert.deepEqual(group.items.map(item => item.spec), [{kind: 'template', templateId: 'template-stats-block'}, {kind: 'template', templateId: 'pawn'}]);
 });
 

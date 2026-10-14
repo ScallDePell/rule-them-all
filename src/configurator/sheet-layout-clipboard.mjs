@@ -50,8 +50,9 @@ export function pastePlace(root, node, selectedId, {after = false} = {}) {
 
 /** The ids a block (once placed at its id in the tree) names that this Ruleset or this sheet does not have:
    a Definition, a Formula, a Parameter, an Action, a Progression System, a Definition type, a Condition, a Content
-   Type, a Content field, and the row output a list's Definitions do not give. Blocks only an Actor sheet (or only an
-   Item sheet) has count too. */
+   Type, a Content field, a block template drawing cards, and the row output a list's Definitions do not give; the values
+   a text shows, the Condition that shows a block and the Action a click uses alike. Blocks only an Actor sheet (or only
+   an Item sheet) has count too. */
 export function missingReferences(root, nodeId, ruleset, options = {}) {
   const missing = new Set();
   for (const node of nodes(locate(root, nodeId)?.node)) for (const id of nodeMissing(root, node, ruleset, options)) missing.add(id);
@@ -62,16 +63,22 @@ export function missingReferences(root, nodeId, ruleset, options = {}) {
 export function nodeMissing(root, node, ruleset, {target = "actor", contentTypeIds = []} = {}) {
   const missing = new Set(), has = (list, id) => (ruleset[list] ?? []).some(entry => entry.id === id);
   const need = (ok, id) => { if (!ok) missing.add(id); };
-  const source = node.source;
-  if (source?.kind === "output") need(has("definitions", source.reference?.objectId), source.reference?.objectId);
-  if (source?.kind === "formula") need(has("formulas", source.formulaRef), source.formulaRef);
-  if (source?.kind === "parameter") need(has("parameters", source.parameterRef), source.parameterRef);
-  if (source?.kind === "content") need(target === "actor" && has("contentTypes", source.contentTypeId), source.contentTypeId);
-  if (source?.kind === "field") need(target === "item" && contentFields(ruleset, contentTypeIds).some(field => field.id === source.fieldId), source.fieldId);
-  if (source?.kind === "each") {
-    const typeId = repeaterOf(root, node.id)?.query?.definitionTypeId;
-    need((ruleset.definitions ?? []).some(d => d.definitionTypeId === typeId && (d.capabilities ?? []).includes(source.capabilityId)), source.outputId);
-  }
+  const checkSource = source => {
+    if (source?.kind === "output") need(has("definitions", source.reference?.objectId), source.reference?.objectId);
+    if (source?.kind === "formula") need(has("formulas", source.formulaRef), source.formulaRef);
+    if (source?.kind === "parameter") need(has("parameters", source.parameterRef), source.parameterRef);
+    if (source?.kind === "content") need(target === "actor" && has("contentTypes", source.contentTypeId), source.contentTypeId);
+    if (source?.kind === "field") need(target === "item" && contentFields(ruleset, contentTypeIds).some(field => field.id === source.fieldId), source.fieldId);
+    if (source?.kind === "each") {
+      const typeId = repeaterOf(root, node.id)?.query?.definitionTypeId;
+      need((ruleset.definitions ?? []).some(d => d.definitionTypeId === typeId && (d.capabilities ?? []).includes(source.capabilityId)), source.outputId);
+    }
+  };
+  checkSource(node.source);
+  for (const source of Object.values(node.values ?? {})) checkSource(source);
+  if (node.visibleIf) need(has("conditions", node.visibleIf), node.visibleIf);
+  if (node.clickActionRef) need(has("actions", node.clickActionRef), node.clickActionRef);
+  if (["notes", "token"].includes(node.kind)) need(target === "actor", node.kind);
   if (node.kind === "action") need(has("actions", node.actionRef), node.actionRef);
   if (node.kind === "progression") need(target === "actor" && has("progressionSystems", node.progressionSystemRef), node.progressionSystemRef);
   if (node.kind === "contents") {
@@ -79,7 +86,6 @@ export function nodeMissing(root, node, ruleset, {target = "actor", contentTypeI
     for (const id of node.contentTypeIds ?? []) need(has("contentTypes", id), id);
     if (node.cards?.templateRef) need(has("sheetTemplates", node.cards.templateRef), node.cards.templateRef);
   }
-  if (node.kind === "token") need(target === "actor", node.kind);
   if (node.kind === "repeater") {
     need(has("definitionTypes", node.query?.definitionTypeId), node.query?.definitionTypeId);
     if (node.query?.conditionRef) need(has("conditions", node.query.conditionRef), node.query.conditionRef);
@@ -103,7 +109,9 @@ export function pasteBlock(root, node, selectedId, ruleset, {target = "actor", c
 export function styleFor(kind, style) {
   const kept = {};
   for (const [key, value] of Object.entries(style ?? {})) {
-    try { if (prepareLayoutStyle({[key]: value}, kind, "style", {containers: LAYOUT_CONTAINERS})) kept[key] = value; } catch { /* not for this kind */ }
+    // A picture's fit and position go with the picture.
+    const alone = ["imageFit", "imagePosition"].includes(key) ? {image: style.image, [key]: value} : {[key]: value};
+    try { if (prepareLayoutStyle(alone, kind, "style", {containers: LAYOUT_CONTAINERS})) kept[key] = value; } catch { /* not for this kind */ }
   }
   return Object.keys(kept).length ? kept : undefined;
 }

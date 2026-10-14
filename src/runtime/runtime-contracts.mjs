@@ -20,6 +20,9 @@ export function prepareRuntimeState(data,{rulesetVersionId=""}={}) {
   // Progression milestones already applied: "<progressionSystemId>/<milestoneId>".
   state.milestones??=[];
   if(!Array.isArray(state.milestones)) throw new Error("milestones must be an array.");
+  // Texts written on a sheet's notes blocks, by node id (ui notes, background).
+  state.notes??={};
+  if(!isRecord(state.notes)||!Object.values(state.notes).every(text=>typeof text==="string")) throw new Error("notes must map ids to texts.");
   return state;
 }
 

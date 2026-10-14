@@ -28,6 +28,10 @@ export function diffRuntimeStates(before,after){
     const a=before?.contents?.[id]??null,b=after?.contents?.[id]??null;
     if(!same(a,b))changes.push({scope:"content",id,before:copyJSON(a),after:copyJSON(b)});
   }
+  for(const id of new Set([...Object.keys(before?.notes??{}),...Object.keys(after?.notes??{})])){
+    const a=before?.notes?.[id]??null,b=after?.notes?.[id]??null;
+    if(a!==b)changes.push({scope:"note",id,before:a,after:b});
+  }
   if(!same(before?.milestones??[],after?.milestones??[]))changes.push({scope:"milestones",id:"milestones",before:copyJSON(before?.milestones??[]),after:copyJSON(after?.milestones??[])});
   return changes;
 }
@@ -38,6 +42,7 @@ export function applyLedgerChanges(state,changes,side="before"){
     const value=copyJSON(change[side]);
     if(change.scope==="definition"){if(value===null)delete state.definitionStates[change.id];else state.definitionStates[change.id]=value;continue;}
     if(change.scope==="milestones"){state.milestones=value??[];continue;}
+    if(change.scope==="note"){state.notes??={};if(value===null)delete state.notes[change.id];else state.notes[change.id]=value;continue;}
     if(change.scope==="content"){state.contents??={};if(value===null)delete state.contents[change.id];else state.contents[change.id]=value;continue;}
     const index=state.stateInstances.findIndex(instance=>instance.id===change.id);
     if(value===null){if(index>=0)state.stateInstances.splice(index,1);}

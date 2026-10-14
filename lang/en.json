@@ -1456,7 +1456,8 @@
       "Unlock": "Unlock the sheet",
       "EditImage": "Change the image",
       "EditToken": "Change the token image",
-      "OpenContent": "Open"
+      "OpenContent": "Open",
+      "Section": "Section"
     },
     "SheetEditor": {
       "Layout": "Layout",
@@ -1498,7 +1499,9 @@
         "progression": "Progression",
         "name": "Name",
         "portrait": "Portrait",
-        "token": "Token image"
+        "token": "Token image",
+        "notes": "Text area",
+        "separator": "Separator"
       },
       "Source": {
         "output": "A Definition output",
@@ -1549,7 +1552,9 @@
         "Align": "Alignment",
         "Padding": "Inner margin",
         "Gap": "Space between blocks",
-        "Reset": "Default style"
+        "Reset": "Default style",
+        "ImageFit": "Picture fit",
+        "ImagePosition": "Picture position"
       },
       "Tone": {
         "text": "Text",
@@ -1601,7 +1606,9 @@
         "field": "Field",
         "gauge": "Gauge",
         "dots": "Dots",
-        "description": "As a description"
+        "description": "As a description",
+        "boxes": "Boxes",
+        "clock": "Clock"
       },
       "DisplayAs": "Shown as",
       "DotCount": "Dots (without a maximum)",
@@ -1671,7 +1678,64 @@
       "PortraitHint": "The Actor's or Item's image. It is changed on the unlocked sheet (camera button).",
       "TokenHint": "The image of the Actor's token, the one it shows on the scene. It is changed on the unlocked sheet.",
       "PlacedTokens": "Placed tokens",
-      "UpdatePlaced": "Also update the tokens already placed"
+      "UpdatePlaced": "Also update the tokens already placed",
+      "BoxCount": "Boxes (without a maximum)",
+      "ClockCount": "Segments (without a maximum)",
+      "InsertValue": "Insert a value",
+      "InsertValueChoose": "Choose…",
+      "NotesFormat": {
+        "label": "Text",
+        "plain": "Plain text",
+        "rich": "Rich text"
+      },
+      "NotesSample": "Player notes…",
+      "NotesRichSample": "Rich text: bold, links, @UUID, inline rolls…",
+      "SeparatorLook": {
+        "label": "Look",
+        "line": "Line",
+        "ornament": "Ornament",
+        "image": "Picture"
+      },
+      "Overlay": {
+        "label": "Stack the blocks",
+        "none": "No",
+        "top": "At the top",
+        "center": "In the middle",
+        "bottom": "At the bottom"
+      },
+      "Collapsible": "Foldable",
+      "CollapsibleHint": "Its title folds it",
+      "OnClick": "On click, use",
+      "NoClick": "Nothing",
+      "RowSpan": "Rows spanned",
+      "RowCount": "{count} row(s)",
+      "FixedWidth": "Fixed width",
+      "FixedWidths": {
+        "auto": "Automatic",
+        "small": "Small",
+        "medium": "Medium",
+        "large": "Large"
+      },
+      "VisibleIf": "Shown only if",
+      "Always": "Always",
+      "Tooltip": "Tooltip",
+      "TooltipHint": "Shown on hover",
+      "TooltipDescription": "The Definition's description",
+      "More": "More settings",
+      "BackgroundFit": {
+        "cover": "Cover",
+        "contain": "Contain",
+        "stretch": "Stretch",
+        "natural": "Original size",
+        "tile": "Tile"
+      },
+      "BackgroundPosition": {
+        "center": "Centre",
+        "top": "Top",
+        "bottom": "Bottom",
+        "left": "Left",
+        "right": "Right"
+      }
     },
     "Reaction": {
       "Title": "Reaction",
