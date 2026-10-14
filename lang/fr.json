@@ -449,6 +449,7 @@
       "NoDefinitionsAvailable": "Aucune définition disponible.",
       "DefineGuidedChoicesMadeWhenThisContentIsAcquiredThePlayerGmSelectsTheRequiredNumberOfDefinitionsOrActionsTechnicalIdsStayHidden": "Définissez les choix proposés lors de l’acquisition de ce contenu. Le joueur ou le MJ sélectionne le nombre requis de définitions ou d’actions ; les identifiants techniques restent masqués.",
       "AddChoice": "Ajouter un choix",
+      "ChoiceBonusHint": "Bonus ajouté à la valeur de l’option choisie (vide : aucun). Les bonus de plusieurs Contenus s’additionnent.",
       "NoAcquisitionChoicesThisContentIsAppliedDirectly": "Aucun choix d’acquisition. Ce contenu est appliqué directement.",
       "Sheet": "Fiche",
       "ConstrainedVisualCompositionComponentsReferenceConfiguredRulesetObjectsNoHtmlCssOrJavascriptIsStored": "Composition visuelle encadrée. Les composants référencent des objets configurés dans le Ruleset ; aucun HTML, CSS ou JavaScript n’est enregistré.",
@@ -1061,7 +1062,11 @@
     "Permission": {
       "ScopeRuleset": "Tout le Ruleset",
       "ScopeAllDefinitions": "Toutes les Définitions",
+      "ScopeDefinitionType": "Type de définition : {name}",
       "ScopeDefinition": "Définition : {name}",
+      "ScopeAllContents": "Tous les Contenus",
+      "ScopeContentType": "Type de contenu : {name}",
+      "ScopeContentTemplate": "Contenu : {name}",
       "ScopeAllActions": "Toutes les Actions",
       "ScopeAction": "Action : {name}",
       "Effect": "Effet",
@@ -1172,6 +1177,14 @@
       "NoActions": "Aucune Action pour l'instant."
     },
     "Action": {
+      "StateStackingTitle": "Si l'État est déjà présent",
+      "StateStacks": "Cumuls appliqués",
+      "StateStacking": {
+        "refresh": "Renouveler sa durée",
+        "stack": "Ajouter les cumuls et renouveler sa durée",
+        "separate": "Ajouter un exemplaire de plus",
+        "ignore": "Ne rien faire"
+      },
       "Targets": "Cibles",
       "Targeting": {
         "one": "Une cible",

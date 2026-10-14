@@ -88,7 +88,10 @@ export class RuntimeEngine{
   async authorize(versionId,operation,target,containerRef=null,context=null){
     const subject=await this.#subject(containerRef),evaluator=this.evaluator(versionId);
     const conditionContext=context??(containerRef?{roles:{self:normalizeRuntimeContainerRef(containerRef)},defaultRole:"self"}:{});
-    return resolvePermission(this.ruleset(versionId).permissionPolicies,{operation,target,subject,condition:id=>evaluator.condition(id,conditionContext)});
+    // A Definition is also in its definitionType's scope, a Content Template in its contentType's.
+    const ruleset=this.ruleset(versionId),typeId=target?.objectKind==="definition"?ruleset.definitions?.find(x=>x.id===target.objectId)?.definitionTypeId:target?.objectKind==="contentTemplate"?ruleset.contentTemplates?.find(x=>x.id===target.objectId)?.contentTypeId:null;
+    const typed=typeId?{...target,typeRef:{objectKind:target.objectKind==="definition"?"definitionType":"contentType",objectId:typeId}}:target;
+    return resolvePermission(ruleset.permissionPolicies,{operation,target:typed,subject,condition:id=>evaluator.condition(id,conditionContext)});
   }
   async #require(versionId,operation,target,containerRef,context=null){
     const decision=await this.authorize(versionId,operation,target,containerRef,context);

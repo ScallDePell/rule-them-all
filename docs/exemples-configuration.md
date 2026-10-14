@@ -52,6 +52,8 @@ Dans D&D 5e, un état est présent ou absent, sans valeur chiffrée, et ses cons
 
 Un état est posé par une Action (champ États appliqués, famille Actions de la section Règles). Ses effets chiffrés, comme un malus aux attaques, sont des Modificateurs (famille Modificateurs) que l'Action attache à l'état.
 
+Pour chaque état coché, l'Action dit aussi ce qui se passe si la cible l'a déjà, sous **Si l'État est déjà présent** : « Renouveler sa durée » (le choix par défaut), « Ajouter les cumuls et renouveler sa durée », « Ajouter un exemplaire de plus » ou « Ne rien faire ». L'Épuisement, qui se compte en niveaux, prend « Ajouter les cumuls et renouveler sa durée » avec **Cumuls appliqués** à 1 : chaque nouvelle application ajoute un niveau, que les Formules lisent avec la Référence « Épuisement · state · state.stacks ». Un Modificateur attaché à l'état garde la valeur calculée à sa pose : pour un malus qui grandit avec les niveaux, créez plutôt un Modificateur que l'Action n'applique pas, dont la valeur est une Formule qui lit ces cumuls.
+
 ### Définitions
 
 #### La Soif de Vampire la Mascarade V5 (de 0 à 5, départ à 1)
@@ -170,7 +172,9 @@ Dans Real World Fantasy, un personnage qui a le permis B part avec au moins 1 en
 4. Ouvrez Paramètres avancés (JSON) sous la relation et saisissez `{"initial": {"value.base": 1}}` : la maîtrise arrive avec une valeur de base de 1.
 5. Cliquez sur Enregistrer et quitter.
 
-Avec `{"add": {"value.base": 1}}` à la place, l'acquisition ajoute 1 à la valeur, que le personnage ait déjà la maîtrise ou non. C'est ce que font les choix de compétences des Parcours de RWF.
+Avec `{"add": {"value.base": 1}}` à la place, l'acquisition ajoute 1 à la valeur, que le personnage ait déjà la maîtrise ou non. Les bonus de plusieurs Contenus s'additionnent.
+
+Dans un Choix d'acquisition, ce bonus se saisit sans JSON : quand l'Opération est Attribuer à l'acquisition, chaque Définition à valeur cochée dans Objet lié reçoit un champ à son nom sous la liste. C'est ainsi que les choix de compétences des Parcours de RWF donnent +1 à la compétence choisie : cochez les compétences proposées et saisissez 1 en face de chacune.
 
 ## Règles (calculs et jets)
 
@@ -680,7 +684,7 @@ Pour un PNJ, le MJ décrit la Force ou l'Intelligence en mots plutôt qu'en pour
 
 ### Permissions
 
-Une Permission décide qui peut lire, modifier ou exécuter quoi. Le MJ garde toujours tous les droits. Le moteur vérifie la lecture et la modification des Définitions, et l'exécution des Actions. La politique dont la portée est la plus précise décide : une Action ou une Définition précise, puis toutes les Actions ou toutes les Définitions, puis tout le Ruleset.
+Une Permission décide qui peut lire, modifier ou exécuter quoi. Le MJ garde toujours tous les droits. Le moteur vérifie la lecture et la modification des Définitions, la modification des Contenus d'un personnage et l'exécution des Actions. La politique dont la portée est la plus précise décide : un objet précis (« Définition : … », « Contenu : … », « Action : … »), puis un type (« Type de définition : … », « Type de contenu : … »), puis toute la famille (« Toutes les Définitions », « Tous les Contenus », « Toutes les Actions »), puis tout le Ruleset.
 
 #### La société secrète de Paranoïa : une information que seul son joueur voit
 
@@ -710,6 +714,17 @@ Un personnage Secoué ne peut rien entreprendre, à part tenter de se reprendre 
 3. Ajoutez une règle : **Effet** « Refuser », **Opérations** « Exécuter », **Condition** « Secoué », **Message en cas de refus** « Vous êtes Secoué : reprenez-vous d'abord. »
 4. Créez une seconde Permission « Se reprendre reste possible », **Portée** « Action : Se reprendre », **Effet par défaut** « Autoriser », sans règle.
 5. Cette seconde politique vise une Action précise : sa portée est plus précise que « Toutes les Actions », c'est donc elle qui décide pour « Se reprendre ».
+
+#### Les caractéristiques de Real World Fantasy : un type entier réservé au MJ
+
+Dans Real World Fantasy, les caractéristiques restent stables : seul le MJ les modifie, mais tout le monde les lit.
+
+1. Créez une Permission « Caractéristiques réservées au MJ », **Portée** « Type de définition : Caractéristique », **Effet par défaut** « Refuser ».
+2. Première règle : **Effet** « Autoriser », **Opérations** « Lire ».
+3. Deuxième règle : **Effet** « Autoriser », **Opérations** « Modifier », **Rôles** « MJ assistant ».
+4. La politique vaut pour toutes les caractéristiques, y compris celles créées plus tard. Une Permission sur une caractéristique précise reste plus précise et décide pour elle.
+
+De la même façon, une Permission de **Portée** « Type de contenu : Pouvoir », **Effet par défaut** « Refuser », sans règle d'écriture pour les joueurs, empêche un joueur de s'ajouter ou de retirer un pouvoir : seul le MJ les attribue.
 
 ### Types d’événement
 

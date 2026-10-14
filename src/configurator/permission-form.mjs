@@ -8,12 +8,15 @@ export function parseScopeToken(token) {
   return objectKind === "ruleset" ? {objectKind} : {objectKind, objectId: objectId || null};
 }
 
-/** The scopes the engine checks: the whole Ruleset, Definitions (read, write) and Actions (execute). */
-function scopeChoices(scope, {definitions = [], actions = [], withColors = () => ({})}) {
+/** The scopes the engine checks: the whole Ruleset, Definitions (read, write) by type or one by one,
+ * Contents (write) by type or one by one, and Actions (execute). */
+function scopeChoices(scope, {definitionTypes = [], definitions = [], contentTypes = [], contentTemplates = [], actions = [], withColors = () => ({})}) {
   const current = scopeToken(scope), row = (token, labelKey, name = "", extra = {}) => ({token, labelKey, name, selected: token === current, ...extra});
+  const each = (kind, entries, labelKey) => entries.map(x => row(`${kind}:${x.id}`, labelKey, x.nameKey, withColors(kind, x)));
   return [row("ruleset", "RTA.Permission.ScopeRuleset"),
-    row("definition:", "RTA.Permission.ScopeAllDefinitions"), ...definitions.map(x => row(`definition:${x.id}`, "RTA.Permission.ScopeDefinition", x.nameKey, withColors("definition", x))),
-    row("action:", "RTA.Permission.ScopeAllActions"), ...actions.map(x => row(`action:${x.id}`, "RTA.Permission.ScopeAction", x.nameKey, withColors("action", x)))];
+    row("definition:", "RTA.Permission.ScopeAllDefinitions"), ...each("definitionType", definitionTypes, "RTA.Permission.ScopeDefinitionType"), ...each("definition", definitions, "RTA.Permission.ScopeDefinition"),
+    row("contentTemplate:", "RTA.Permission.ScopeAllContents"), ...each("contentType", contentTypes, "RTA.Permission.ScopeContentType"), ...each("contentTemplate", contentTemplates, "RTA.Permission.ScopeContentTemplate"),
+    row("action:", "RTA.Permission.ScopeAllActions"), ...each("action", actions, "RTA.Permission.ScopeAction")];
 }
 
 export function permissionRuleRow(rule, {conditions = [], withColors = () => ({})} = {}) {

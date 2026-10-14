@@ -26,11 +26,12 @@ await api.createTag(v,{id:'tag-b',nameKey:'Tag Beta'});
 await api.createCategory(v,{id:'cat-core',nameKey:'Core'});
 await api.createCategory(v,{id:'cat-extra',nameKey:'Extra'});
 await api.registerDefinitionType(v,{id:'stat',key:'stat',nameKey:'Stat',color:'#b8572e',allowedCapabilities:['value','pool','collection'],defaultCapabilities:['value','pool'],requiredCapabilities:['value'],valueBounds:{minimum:{literal:0},maximum:{literal:5}},fields:{abbreviation:{id:'abbreviation',name:'Abbreviation',valueType:'string',cardinality:'one',required:true,defaultValue:'STR'}},constraints:[{kind:'required',field:'abbreviation'}]});
-await api.registerDefinitionType(v,{id:'skill',key:'skill',nameKey:'Skill',allowedCapabilities:['value'],defaultCapabilities:['value'],requiredCapabilities:[],fields:{}});
+await api.registerDefinitionType(v,{id:'skill',key:'skill',nameKey:'Skill',allowedCapabilities:['value','state'],defaultCapabilities:['value'],requiredCapabilities:[],fields:{}});
 for(const [i,n] of ['Vigor','Focus','Grace','Wits','Resolve'].entries())await api.createDefinition(v,{id:'d'+i,key:'d'+i,nameKey:n,descriptionKey:'A sample definition with a description long enough to wrap on narrow tiles.',definitionTypeId:'stat',capabilities:i?['value']:['value','pool','collection'],...(i?{}:{slots:{pool:[{id:'hp',minimum:{literal:0},maximum:{literal:10},overflowPolicy:'reject'}],collection:[{id:'notes',entryMode:'value',allowedKinds:['string'],maximumEntries:5}]}}),tags:i%2?['tag-a']:['tag-b'],categories:i%2?['cat-core']:['cat-extra'],data:{}});
 await api.createDefinition(v,{id:'s1',key:'s1',nameKey:'Climb',definitionTypeId:'skill',capabilities:['value'],data:{}});
 await api.createContentType(v,{id:'gear',nameKey:'Gear',storageKind:'item',documentSubtype:'gear',runtimeMode:'unique'});
-await api.createContentTemplate(v,{id:'rope',nameKey:'Rope',contentTypeId:'gear'});
+await api.createDefinition(v,{id:'s2',key:'s2',nameKey:'Tired',definitionTypeId:'skill',capabilities:['value','state'],data:{}});
+await api.createContentTemplate(v,{id:'rope',nameKey:'Rope',contentTypeId:'gear',choiceGroups:[{id:'cg1',name:'Rope skill',min:1,max:1,options:[{id:'o1',operation:'grant',targetRef:{objectKind:'definition',objectId:'s1'},config:{add:{'value.base':1}}}]}]});
 await api.createParameter(v,{id:'p1',nameKey:'Base',valueType:'number',value:2});
 await api.createFormula(v,{id:'f1',nameKey:'Total',resultType:'number',expression:{type:'add',args:[{type:'literal',value:1},{type:'parameter',id:'p1'}]}});
 await api.createCondition(v,{id:'c1',nameKey:'Is ready',expression:{type:'literal',value:true}});
@@ -39,7 +40,7 @@ await api.createModifier(v,{id:'m1',nameKey:'Blessed',targetRef:{objectKind:'def
 await api.createDuration(v,{id:'du1',nameKey:'Three rounds',mode:'fixed',amount:3,unit:'round'});
 await api.createEventType(v,{id:'ev1',nameKey:'Damage taken',payloadFields:{amount:{name:'Amount',valueType:'number',required:true,nullable:false},kind:{name:'Kind',valueType:'string',required:false,nullable:false}}});
 await api.createTrigger(v,{id:'tr1',nameKey:'On heavy fire damage',eventTypeId:'ev1',actingRole:'target',mode:'offer',eventFilter:{payloadMatches:{kind:'fire'}},conditionRefs:[],actionRefs:['a1']});
-await api.createPermissionPolicy(v,{id:'pp1',nameKey:'Players act',scope:{objectKind:'action',objectId:null},defaultEffect:'DENY',rules:[{id:'r1',effect:'ALLOW',operations:['execute'],roles:['player'],minimumOwnership:'owner',priority:0,messageKey:''}]});
+await api.createPermissionPolicy(v,{id:'pp1',nameKey:'Players act',scope:{objectKind:'definitionType',objectId:'stat'},defaultEffect:'DENY',rules:[{id:'r1',effect:'ALLOW',operations:['execute'],roles:['player'],minimumOwnership:'owner',priority:0,messageKey:''}]});
 await api.createRoll(v,{id:'r1',nameKey:'d20',formula:'1d20',data:{}});
 for(const [id,nameKey] of [['o-crit','Critical'],['o-hit','Hit'],['o-miss','Miss']])await api.createOutcome(v,{id,nameKey,resultKey:id,conditionRef:'c1'});
 await api.createTest(v,{id:'t1',nameKey:'Attack',rollRef:'r1',targetValue:12,outcomeRefs:['o-crit','o-hit'],fallbackOutcomeRef:'o-miss'});
@@ -49,7 +50,7 @@ await api.createFormula(v,{id:'f-dice',nameKey:'Hunger tens',resultType:'number'
 await api.createCondition(v,{id:'c-near',nameKey:'Flanked',expression:{type:'gte',left:{type:'nearby',of:'target',within:{type:'literal',value:2},side:'enemy'},right:{type:'context',path:'variables.test.total'}}});
 await api.createScale(v,{id:'sc1',nameKey:'Health words',basis:'percent',rows:[{id:'full',labelKey:'Seems in great shape',min:100,max:null},{id:'hurt',labelKey:'Hurt',min:1,max:99.99},{id:'down',labelKey:'Down',min:null,max:0}]});
 await api.createTable(v,{id:'tb1',nameKey:'Critical hits',rollRef:'r1',rows:[{id:'low',labelKey:'Scratch',min:null,max:10,actionRefs:['a1']},{id:'high',labelKey:'Severed limb',min:11,max:null,actionRefs:[]}]});
-await api.createAction(v,{id:'a2',nameKey:'Swing',testRef:'t1',conditionRefs:[],costEffectRefs:[],effectRefs:[],tableRef:'tb1',targeting:'shared',reroll:{actionRefs:['a1']},outcomeMappings:[{outcomeId:'o-miss',block:true},{outcomeId:'o-crit',actionRefs:['a1']}]});
+await api.createAction(v,{id:'a2',nameKey:'Swing',testRef:'t1',conditionRefs:[],costEffectRefs:[],effectRefs:[],tableRef:'tb1',targeting:'shared',stateApplications:[{definitionId:'s2',stacking:'stack',stacks:2}],reroll:{actionRefs:['a1']},outcomeMappings:[{outcomeId:'o-miss',block:true},{outcomeId:'o-crit',actionRefs:['a1']}]});
 await api.createSheetDefinition(v,{id:'sh1',nameKey:'Character sheet',target:'actor',root:{id:'root',kind:'tabs',children:[{id:'main',kind:'tab',labelKey:'Character',children:[{id:'top',kind:'grid',columns:2,children:[
   {id:'stats',kind:'section',labelKey:'Stats',columns:1,children:[{id:'stat-list',kind:'repeater',query:{definitionTypeId:'stat'},columns:1,children:[{id:'stat-value',kind:'value',source:{kind:'each',capabilityId:'value',outputId:'value.final'},write:{operation:'set'}}]}]},
   {id:'derived',kind:'section',labelKey:'Derived',columns:1,children:[{id:'total',kind:'value',source:{kind:'formula',formulaRef:'f1'}},{id:'strike',kind:'action',actionRef:'a1'}]}]}]},
