@@ -7,8 +7,7 @@ const js=file('src/ui/rta-select.mjs');
 const css=readCssBundle();
 const hbs=file('templates/configurator/entry-editor.hbs');
 const editor=file('src/configurator/configurator-entry-editor.mjs');
-const markup=file('src/ui/entry-editor-markup.mjs');
-const expressionModel=file('src/configurator/entry-expression-model.mjs');
+const markup=file('src/ui/expression-builder-markup.mjs');
 
 test('Formula and Condition keep the ONE RTA Select without adding a nested grid',()=>{
   assert.match(js,/const compactOperand=Boolean\(native\.closest\('\.rta-rule-operand'\)\)/);
@@ -17,20 +16,14 @@ test('Formula and Condition keep the ONE RTA Select without adding a nested grid
   assert.match(js,/this\.trigger\.setAttribute\("aria-label",host\.dataset\.rtaSelectLabel/);
 });
 
-test('Condition and Formula static operands both use the canonical left-label/right-control row',()=>{
-  assert.equal((hbs.match(/<div class="rta-rule-operand rta-form-row" data-rule-operand>/g)||[]).length,2);
-  assert.equal((hbs.match(/<label class="rta-rule-operand__label">\{\{operandLabel\}\}<\/label><div class="rta-rule-operand__controls">/g)||[]).length,2);
-  assert.equal((hbs.match(/<\/div>\s*<\/div>\{\{\/each\}\}/g)||[]).length>=2,true);
-  assert.match(hbs,/<span data-rule-operand-editor="reference"/);
-  assert.doesNotMatch(hbs,/<div class="rta-rule-operand" data-rule-operand>/);
-});
-
-test('dynamic Add operand uses the same structure as existing Formula and Condition operands',()=>{
-  assert.match(expressionModel,/operandLabel:`Operand \$\{index\+1\}`/);
-  assert.match(markup,/data-rule-operand><label class="rta-rule-operand__label">/);
-  assert.match(markup,/data-action="removeRuleOperand"/);
-  assert.match(readFileSync(new URL("../src/configurator/entry-expression-serialization.mjs",import.meta.url),"utf8"),/row\?\.querySelector\(["']\[data-rule-operand-kind\]["']\)/);
-  assert.match(readFileSync(new URL("../src/configurator/entry-expression-serialization.mjs",import.meta.url),"utf8"),/row\?\.querySelector\(["']\[data-rule-operand-editor="literal"\] input["']\)/);
+test('Formula and Condition render one builder markup, the same for the editor and for the blocks drawn later',()=>{
+  assert.equal((hbs.match(/\{\{\{expressionBuilder\.html\}\}\}/g)||[]).length,2);
+  assert.doesNotMatch(hbs,/data-rule-operand/);
+  assert.match(markup,/<div class="rta-rule-operand rta-form-row" data-rule-operand data-kind="\$\{escape\(slot\.kind\)\}" data-expr-path="\$\{escape\(slot\.path\)\}"><label class="rta-rule-operand__label">/);
+  assert.match(markup,/<div class="rta-rule-operand__controls">\$\{controls\}<\/div>/);
+  assert.match(markup,/trash\("removeRuleOperand"/);
+  assert.match(editor,/renderExpressionSlotHTML\(slotView\(/);
+  assert.match(editor,/renderExpressionBlockHTML\(blockView\(/);
 });
 
 test('one canonical label/control geometry and specialized right-hand operand layout',()=>{
@@ -41,10 +34,4 @@ test('one canonical label/control geometry and specialized right-hand operand la
   assert.match(css,/@container rta-window \(max-width: 586px\)[\s\S]*\.rta-rule-operand__controls > \[data-rule-operand-editor\] \{\s*grid-column:\s*1 \/ -1;\s*grid-row:\s*2;\s*\}/);
   assert.match(css,/\.rta-rule-builder \.rta-select__trigger,[\s\S]*?height:\s*var\(--rta-form-control-height\);/);
   assert.doesNotMatch(css,/\.rta-rule-operand > \.rta-select \{ grid-column:/);
-});
-
-test('Formula operand labels are renumbered after addition and removal',()=>{
-  assert.match(editor,/#renumberRuleOperands\(list\)\s*\{/);
-  assert.match(editor,/label\.textContent=`Operand \$\{index\+1\}`/);
-  assert.equal((editor.match(/this\.#renumberRuleOperands\(list\)/g)||[]).length,2);
 });

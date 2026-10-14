@@ -176,7 +176,9 @@ Avec `{"add": {"value.base": 1}}` à la place, l'acquisition ajoute 1 à la vale
 
 Dans toutes les familles de cette section, on ouvre la famille dans la rubrique Règles, on clique sur **Créer**, on remplit l'éditeur puis on clique sur **Enregistrer**. Chaque élément porte un **Nom** et une case **Activé**, cochée par défaut.
 
-Les Formules et les Conditions se construisent dans un éditeur visuel. Chaque opérande choisit sa nature dans une liste : **Valeur littérale**, **Paramètre**, **Formule**, **Référence**, **Valeur du contexte**, **Dés du jet**, **Distance** ou **Acteurs à proximité**. Une Référence se présente sous la forme « Nom · capacité · sortie », par exemple « Discrétion · value · value.final ». Pour un calcul en plusieurs étapes, on crée une Formule par étape et on la reprend comme opérande **Formule** dans la suivante.
+Les Formules et les Conditions se construisent dans un éditeur visuel. Chaque opérande choisit sa nature dans une liste : **Valeur littérale**, **Paramètre**, **Formule**, **Référence**, **Valeur du contexte**, **Dés du jet**, **Distance** ou **Acteurs à proximité**. Une Référence se présente sous la forme « Nom · capacité · sortie », par exemple « Discrétion · value · value.final ». Elle se lit par défaut sur l'Acteur évalué ; la liste **Lue sur** permet de la lire sur la **Cible**, la **Source**, le **Propriétaire**, le **Sujet (réaction)**, le **Meneur du groupe**, le **Monde** ou le **Combat en cours**. Pour une **Valeur du contexte**, le champ propose les chemins que le moteur remplit, avec une courte explication : `variables.test.natural`, `variables.input.<id>`, `variables.creation.<id de l'étape>.total`, `event.payload.<champ>`, etc.
+
+Un opérande peut lui-même être un **Calcul** : il choisit sa propre opération, et ses opérandes s'ouvrent en dessous, en retrait. On imbrique ainsi autant de niveaux que nécessaire, par exemple pour arrondir une division. La partie **Technique** affiche en lecture seule le JSON de l'expression, mis à jour à chaque modification.
 
 ### Paramètres
 
@@ -212,7 +214,7 @@ Dans Savage Worlds, un jet réussit à 4 ou plus, et chaque tranche de 4 au-dess
 
 ### Formules
 
-Une Formule calcule une valeur. On choisit une **Opération** (Valeur unique, Additionner, Soustraire, Multiplier, Diviser, Minimum, Maximum, Somme, Moyenne), puis on ajoute autant d'opérandes que nécessaire avec **Ajouter un opérande**.
+Une Formule calcule une valeur. On choisit une **Opération** : Valeur unique, Additionner, Soustraire, Multiplier, Diviser, Reste de la division, Minimum, Maximum, Somme, Moyenne, Arrondir à l'inférieur, Arrondir au supérieur, Arrondir au plus proche, Borner entre deux valeurs, Si… alors… sinon, Table de plages ou Table de valeurs. Les opérations de calcul prennent autant d'opérandes que nécessaire (**Ajouter un opérande**) ; un arrondi prend une **Valeur** ; Si… alors… sinon prend une condition (**Si**), puis les valeurs **Alors** et **Sinon** ; une Table de plages range une **Valeur** dans des lignes **De** / **À** / **Résultat** (**Ajouter une plage**), avec une valeur **Sinon** facultative.
 
 #### La valeur cible d'un test de Warhammer Fantasy 4e
 
@@ -236,6 +238,18 @@ Le seuil extrême est la compétence divisée par 5, le seuil difficile la comp�
 5. Opérande 2 : **Paramètre**, « Diviseur extrême ».
 6. Enregistrez, puis faites de même pour « Seuil difficile » avec le Paramètre « Diviseur difficile ».
 7. La division peut donner un nombre à virgule (63 / 5 = 12,6). Ce n'est pas gênant : un jet de dé est entier, donc « jet inférieur ou égal à 12,6 » revient à « jet inférieur ou égal à 12 ».
+
+#### Le modificateur de caractéristique de D&D 5e
+
+En D&D 5e, le modificateur d'une caractéristique vaut (valeur − 10) / 2, arrondi à l'inférieur : 15 donne +2, 8 donne −1.
+
+1. Dans **Formules**, cliquez sur **Créer**. **Nom** : « Modificateur de Force ».
+2. **Type de résultat** : `integer`.
+3. **Opération** : **Arrondir à l'inférieur**.
+4. **Valeur** : **Calcul**, puis l'opération **Diviser**. Ses deux opérandes s'ouvrent en dessous.
+5. Opérande 1 de la division : **Calcul**, opération **Soustraire**, avec l'opérande 1 **Référence** « Force · value · value.final » et l'opérande 2 **Valeur littérale** `10`.
+6. Opérande 2 de la division : **Valeur littérale** `2`.
+7. Enregistrez. Créez les cinq autres modificateurs de la même façon, ou dupliquez celui-ci par un clic droit sur sa carte et changez la Référence. Pour la sauvegarde d'une cible, la même Référence **Lue sur** **Cible** donne son modificateur à elle.
 
 #### La réserve de dés de Shadowrun
 
@@ -267,8 +281,8 @@ La Perception passive vaut 10 plus le bonus de Perception. Ici, la Définition �
 
 La Parade vaut 2 plus la moitié du dé de Combat (un d8 donne 2 + 4 = 6). Les dés de trait vont du d4 au d12, la moitié tombe donc toujours juste.
 
-1. Dans **Formules**, créez « Moitié du Combat » : **Opération** **Diviser**, opérande 1 **Référence** « Combat · value · value.final », opérande 2 **Valeur littérale** `2`.
-2. Créez « Calcul de la Parade » : **Opération** **Additionner**, opérande 1 **Valeur littérale** `2`, opérande 2 **Formule** « Moitié du Combat ».
+1. Dans **Formules**, créez « Calcul de la Parade » : **Opération** **Additionner**, opérande 1 **Valeur littérale** `2`.
+2. Opérande 2 : **Calcul**, opération **Diviser**, avec l'opérande 1 **Référence** « Combat · value · value.final » et l'opérande 2 **Valeur littérale** `2`.
 3. Dans **Sorties dérivées**, cliquez sur **Créer**. **Nom** : « Parade calculée ».
 4. **Formule** : « Calcul de la Parade ». **Sortie cible** : « Parade · value · value.final ».
 5. Enregistrez. La Robustesse se construit de la même façon, avec la Vigueur et l'armure.
@@ -286,14 +300,14 @@ Dans Pathfinder 2, la CA vaut 10 plus le modificateur de Dextérité, le bonus d
 
 ### Conditions
 
-Une Condition est une question à laquelle le moteur répond par vrai ou faux. On choisit une **Comparaison** (Égal, Différent, Supérieur à, Supérieur ou égal, Inférieur à, Inférieur ou égal, Toujours vrai, Toujours faux), puis les deux opérandes à comparer. Pendant un Test, la **Valeur du contexte** donne accès au jet : `variables.test.natural` (le dé naturel), `variables.test.total`, `variables.test.target` (la cible) et `variables.test.margin` (le total moins la cible).
+Une Condition est une question à laquelle le moteur répond par vrai ou faux. On choisit une **Opération** : une comparaison (Égal, Différent, Supérieur à, Supérieur ou égal, Inférieur à, Inférieur ou égal) et ses deux opérandes, **Et (toutes vraies)**, **Ou (au moins une vraie)**, **Non (le contraire)**, **Si… alors… sinon**, **Toujours vrai** ou **Toujours faux**. Les opérandes de Et, Ou et Non sont en général des **Calculs** de comparaison. Pendant un Test, la **Valeur du contexte** donne accès au jet : `variables.test.natural` (le dé naturel), `variables.test.total`, `variables.test.target` (la cible) et `variables.test.margin` (le total moins la cible).
 
 #### Le 20 naturel de D&D 5e
 
 En D&D 5e, un 20 sur le d20 est une réussite critique, quel que soit le total.
 
 1. Dans **Conditions**, cliquez sur **Créer**. **Nom** : « 20 naturel ».
-2. **Comparaison** : **Égal**.
+2. **Opération** : **Égal**.
 3. Opérande 1 : **Valeur du contexte**, chemin `variables.test.natural`.
 4. Opérande 2 : **Valeur littérale** `20`.
 5. Enregistrez. Créez « 1 naturel » sur le même modèle. Ces Conditions servent aux Résultats du Test.
@@ -303,17 +317,28 @@ En D&D 5e, un 20 sur le d20 est une réussite critique, quel que soit le total.
 Une réussite extrême demande un jet inférieur ou égal au cinquième de la compétence.
 
 1. Dans **Conditions**, cliquez sur **Créer**. **Nom** : « Jet sous le seuil extrême ».
-2. **Comparaison** : **Inférieur ou égal**.
+2. **Opération** : **Inférieur ou égal**.
 3. Opérande 1 : **Valeur du contexte**, chemin `variables.test.total`.
 4. Opérande 2 : **Formule**, « Seuil extrême » (voir l'exemple de L'Appel de Cthulhu dans Formules).
 5. Enregistrez, puis créez « Jet sous le seuil difficile » avec la Formule « Seuil difficile ». La Formule est calculée dans le Test en cours, elle lit donc la compétence testée.
+
+#### La maladresse de L'Appel de Cthulhu
+
+Une maladresse est un 100, ou un jet de 96 à 100 quand la compétence est inférieure à 50.
+
+1. Dans **Conditions**, cliquez sur **Créer**. **Nom** : « Maladresse ».
+2. **Opération** : **Si… alors… sinon**.
+3. **Si** : **Calcul**, opération **Inférieur à**, avec l'opérande 1 **Valeur du contexte** `variables.test.target` (la compétence testée) et l'opérande 2 **Valeur littérale** `50`.
+4. **Alors** : **Calcul**, opération **Supérieur ou égal**, avec `variables.test.natural` et **Valeur littérale** `96`.
+5. **Sinon** : **Calcul**, opération **Égal**, avec `variables.test.natural` et **Valeur littérale** `100`.
+6. Enregistrez. Le Test de compétence s'en sert pour son Résultat « Maladresse » (voir l'exemple de L'Appel de Cthulhu dans Tests).
 
 #### Le critique de Vampire la Mascarade V5
 
 En V5, deux 10 ou plus parmi les dés lancés forment un critique.
 
 1. Dans **Conditions**, cliquez sur **Créer**. **Nom** : « Paire de 10 ».
-2. **Comparaison** : **Supérieur ou égal**.
+2. **Opération** : **Supérieur ou égal**.
 3. Opérande 1 : **Dés du jet**. Dans les listes qui apparaissent, choisissez **Nombre de dés**, laissez le groupe vide (**Tous les groupes**), puis **Égaux à** et la **Valeur de face** `10`.
 4. Opérande 2 : **Valeur littérale** `2`.
 5. Enregistrez. Si le Jet marque les dés de Faim d'un groupe (par exemple `[faim]` dans la formule de dés), écrire `faim` dans le champ du groupe ne compte que ces dés-là : c'est le critique sanglant.
@@ -390,12 +415,12 @@ Un Test réunit tout : les **Entrées** qu'il lit d'abord, le **Jet**, la **Cibl
 
 #### Un test de compétence de L'Appel de Cthulhu
 
-On lance 1d100 sous la compétence. Un 01 est un critique, un 100 une maladresse, et les seuils difficile et extrême donnent des degrés de réussite.
+On lance 1d100 sous la compétence. Un 01 est un critique, un 100 une maladresse (dès 96 sous une compétence de moins de 50), et les seuils difficile et extrême donnent des degrés de réussite.
 
 1. Créez le Jet « d100 » (**Formule de dés** `1d100`), et la Formule « Discrétion » (**Valeur unique**, **Référence** « Discrétion · value · value.final »).
 2. Dans **Tests**, cliquez sur **Créer**. **Nom** : « Test de Discrétion ». **Jet** : « d100 ».
 3. **Cible** : la Formule « Discrétion ».
-4. Dans **Résultats**, utilisez **Ajouter un résultat** dans cet ordre : Critique (`variables.test.natural` égal à 1), Maladresse (`variables.test.natural` égal à 100), Extrême (« Jet sous le seuil extrême »), Difficile (« Jet sous le seuil difficile »), Ordinaire (`variables.test.margin` inférieur ou égal à 0). Faites glisser les lignes pour corriger l'ordre.
+4. Dans **Résultats**, utilisez **Ajouter un résultat** dans cet ordre : Critique (`variables.test.natural` égal à 1), Maladresse (la Condition « Maladresse »), Extrême (« Jet sous le seuil extrême »), Difficile (« Jet sous le seuil difficile »), Ordinaire (`variables.test.margin` inférieur ou égal à 0). Faites glisser les lignes pour corriger l'ordre.
 5. **Résultat par défaut** : Échec.
 6. Enregistrez. Pour une autre compétence, un clic droit sur la carte du Test propose **Dupliquer** : il suffit de changer la Formule de la cible.
 
@@ -436,9 +461,9 @@ Une épée longue inflige 1d8 + Force ; sur un critique on lance deux fois plus 
 2. **Cible** : « Points de vie · pool · pool.current ». **S'applique à** : Cible.
 3. **Opération** : Soustraire. **Source de valeur** : Jet de dés.
 4. **Jet** : le Jet « 1d8 » (famille Jets).
-5. **Multiplicateur de dés** : une Formule qui vaut 2 quand le résultat du Test est le critique, sinon 1 (famille Formules). Seuls les dés sont doublés, pas le bonus.
+5. **Multiplicateur de dés** : une Formule qui vaut 2 quand le résultat du Test est le critique, sinon 1 (famille Formules : **Si… alors… sinon**, avec pour **Si** un Calcul **Égal** entre `variables.test.outcome.resultKey` et la clé du critique). Seuls les dés sont doublés, pas le bonus.
 6. **Bonus au jet** : la Formule « Modificateur de Force ».
-7. **Facteur après le jet** : une Formule qui vaut 0,5 si la cible résiste aux dégâts tranchants, sinon 1. Le résultat est arrondi à l'inférieur.
+7. **Facteur après le jet** : une Formule qui vaut 0,5 si la cible résiste aux dégâts tranchants, sinon 1 (**Si… alors… sinon**, avec une Référence **Lue sur** **Cible**). Le résultat est arrondi à l'inférieur.
 8. **Résultat minimal** : 0, pour qu'un gros malus ne transforme jamais les dégâts en soins.
 
 #### Le rafraîchissement des points de Fate dans Fate
@@ -791,7 +816,7 @@ Dans Mörk Borg, le monde court à sa fin : le MJ décompte en secret les jours 
 
 Le joueur dispose de 27 points pour acheter ses six caractéristiques, qui partent de 8 : chaque point jusqu'à 13 coûte 1, les points qui mènent à 14 et à 15 coûtent 2.
 
-1. Dans la famille Formules (section Règles), créez « Coût d'un point d'achat ». Elle lit la « Valeur du contexte » `variables.allocation.point`, qui vaut 1 pour le premier point posé sur une caractéristique, 2 pour le deuxième, et ainsi de suite. Elle doit valoir 1 pour les points 1 à 5 et 2 pour les points 6 et 7. Le constructeur visuel ne fait qu'une opération par Formule : enchaînez donc de petites Formules qui calculent 1 + min(1, max(0, point − 5)).
+1. Dans la famille Formules (section Règles), créez « Coût d'un point d'achat ». Elle lit la « Valeur du contexte » `variables.allocation.point`, qui vaut 1 pour le premier point posé sur une caractéristique, 2 pour le deuxième, et ainsi de suite. Elle doit valoir 1 pour les points 1 à 5 et 2 pour les points 6 et 7 : choisissez l'**Opération** **Table de plages**, avec pour **Valeur** ce chemin, une première ligne **À** `5`, **Résultat** `1`, et une seconde ligne **De** `6`, **Résultat** `2`.
 2. Dans Systèmes de création, créez le système, donnez-lui un « Nom », puis cliquez sur « Ajouter une étape ».
 3. Première étape, « Socle » : « Nature » content, « Source du Ruleset » Modèles de contenu, et dans « Modèles de contenu autorisés » un contenu qui donne les six caractéristiques à 8. Ce contenu se prépare dans la section Contenus.
 4. Deuxième étape, « Caractéristiques » : « Nature » allocation, « Source du Ruleset » Définitions, puis cochez les six caractéristiques dans « Définitions autorisées ».

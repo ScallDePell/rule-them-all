@@ -1,5 +1,4 @@
 import {effectOperationRegistry} from "./operation-registries.mjs";
-import {collectFormulaExpression,collectConditionExpression} from "./entry-expression-serialization.mjs";
 import {collectCreationSteps} from "./creation-step-serialization.mjs";
 import {collectEntryData} from "./entry-data-collector.mjs";
 import {constraintRowModel,presentationRowModel} from "./declarative-editor.mjs";
@@ -19,14 +18,16 @@ import {availableDocumentTypes} from "../core/system-document-types.mjs";
 
 import {pickerSummary,missingTargetLabel,editorDisplayTitle} from "../ui/editor-display-text.mjs";
 import {refToken,parseRefToken} from "./reference-token.mjs";
-import {simpleFormulaModel,simpleConditionModel,operandEditorRow,CONSTANT_OPERATORS} from "./entry-expression-model.mjs";
+import {expressionBuilderModel,blockView,slotView,reshapeBlock,editorOperations,blockShape,contextPathSuggestions} from "./entry-expression-model.mjs";
+import {readSlotForm,readBlockForm,collectExpression} from "./entry-expression-serialization.mjs";
+import {renderExpressionBuilderHTML,renderExpressionBlockHTML,renderExpressionSlotHTML} from "../ui/expression-builder-markup.mjs";
 import {buildFieldReferenceChoices} from "./field-reference-choices.mjs";
 import {createEntrySeed} from "./entry-seed.mjs";
 import {ENTRY_OPERATIONS} from "./entry-operations.mjs";
 import {renderPickerOptions,renderChoiceListBody,renderCreationCheckboxPicker} from "../ui/picker-markup.mjs";
 import {renderSelectOptions,renderCreationKindsOptions} from "../ui/select-option-markup.mjs";
 export {renderPickerOptions,renderChoiceListBody} from "../ui/picker-markup.mjs";
-import {renderChoiceGroupHTML,renderRuleOperandHTML,renderCreationStepHTML} from "../ui/entry-editor-markup.mjs";
+import {renderChoiceGroupHTML,renderCreationStepHTML} from "../ui/entry-editor-markup.mjs";
 import {renderDeclarativeConstraintRow} from "../ui/declarative-editor-markup.mjs";
 import {escapeHTML as escape} from "../ui/html-utils.mjs";
 import {renderNewEventFieldInnerHTML} from "../ui/entry-editor-markup.mjs";
@@ -213,11 +214,9 @@ export class ConfiguratorEntryEditor extends ConfiguratorWindow {
     const referenceTargetToken=refToken(data);
     const bindingTargetToken=refToken(data.targetRef??{});
     const bindingFormulaChoices=formulas.map(x=>({id:x.id,label:x.nameKey,...withColors("formula",x),selected:x.id===data.formulaRef}));
-    // The counters of the Ruleset's dice, once each, for operands reading the dice of a roll.
-    const neutralColors=selectColorsAttribute([RTA_NEUTRAL_COLOR]),operandCounters=["formula","condition"].includes(this.#kind)?this.#diceCounters():[];
-    const operandSources={parameters,formulas,references:referenceChoices,withColors,counters:operandCounters,neutral:neutralColors};
-    const formulaModel=simpleFormulaModel(data.expression??{type:"literal",value:0},operandSources);
-    const conditionModel=simpleConditionModel(data.expression??{type:"literal",value:true},operandSources);
+    const neutralColors=selectColorsAttribute([RTA_NEUTRAL_COLOR]);
+    const expression=data.expression??{type:"literal",value:this.#kind==="condition"?true:0};
+    const expressionBuilder=["formula","condition"].includes(this.#kind)?this.#expressionBuilder(expression):null;
     const relationTargets=relationCatalog(this.#renderCatalog??{}, {exclude:{objectKind:this.#kind,objectId:data.id}});
     const relationRows=(data.relations??[]).map(relation=>relationRowModel(relation,relationTargets,(kind,entry)=>selectColorsAttribute(this.#optionColors(kind,entry))));
     const tagChoices=selection(tags.map(x=>({id:x.id,label:x.nameKey,...withColors("tag",x)})),data.tags);
@@ -233,7 +232,7 @@ export class ConfiguratorEntryEditor extends ConfiguratorWindow {
     const conditionSummary=pickerSummary(conditionChoices),costEffectSummary=pickerSummary(effectChoices,"costSelected"),effectSummary=pickerSummary(effectChoices,"effectSelected"),actionSummary=pickerSummary(actionChoices);
     Object.assign(context,{error:this.#error,kind:this.#kind,creating,readOnly:isValidated,deletion:creating?{blocked:false,reason:""}:this.#deletionView(),help:entryHelp(this.#kind,{definitionType:type}),data,type,fieldContract,fieldRows,newFieldRow,capabilityChoices,colorSectionChoices,rulesetMainColor:rulesetColor(data),allowTypeColor,inheritedTypeColor,hasCustomColor:!!data.color,valueTypes:this.#api.listValueTypes().map(v=>({...v,selected:v.id===(data.valueType??data.resultType)})),
       documentActorTypes:availableDocumentTypes("Actor").map(id=>({id,selected:data.storageKind==="actor"&&data.documentSubtype===id})),documentItemTypes:availableDocumentTypes("Item").map(id=>({id,selected:data.storageKind!=="actor"&&data.documentSubtype===id})),
-      hasForcedCapabilities,hasOptionalCapabilities,conditionChoices,acquiredDefinitionChoices,acquisitionActionChoices,appliedStateChoices,removedStateChoices,appliedModifierChoices,stateDurationChoices,rollChoices,outcomeRows,fallbackOutcomeChoices,testChoices,bindingFormulaChoices,tagChoices,tagSummary,categoryChoices,categorySummary,eventFieldRows,roleChoices,contentTypeChoices,relationRows,hasRelations:RELATION_KINDS.includes(this.#kind),roleSelf,roleSource,roleTarget,roleSubject,roleOwner,roleWorld,roleCombat,outcomeConditionChoices,bonusFormulaChoices,targetSourceChoices,fixedTarget,showTestCalculation,effectChoices,actionChoices,eventTypeChoices,choiceGroupRows,conditionSummary,costEffectSummary,effectSummary,actionSummary,formulaModel,conditionModel,conditionOperands:[conditionModel.left,conditionModel.right],...(this.#kind==="sheetDefinition"?(()=>{const choices=selection(this.#renderList("contentTypes","listContentTypes").map(x=>({id:x.id,label:x.nameKey,...withColors("contentType",x)})),data.contentTypeIds??[]);return {sheetIsItem:data.target==="item",sheetContentTypeChoices:choices,sheetContentTypeSummary:pickerSummary(choices),sheetLayoutJSON:JSON.stringify(data.root??null)};})():{}),sheetTargetChoices:SHEET_TARGETS.map(id=>({id,labelKey:`RTA.Sheet.Target${id[0].toUpperCase()}${id.slice(1)}`,colors:selectColorsAttribute([RTA_NEUTRAL_COLOR]),selected:(data.target??"actor")===id})),
+      hasForcedCapabilities,hasOptionalCapabilities,conditionChoices,acquiredDefinitionChoices,acquisitionActionChoices,appliedStateChoices,removedStateChoices,appliedModifierChoices,stateDurationChoices,rollChoices,outcomeRows,fallbackOutcomeChoices,testChoices,bindingFormulaChoices,tagChoices,tagSummary,categoryChoices,categorySummary,eventFieldRows,roleChoices,contentTypeChoices,relationRows,hasRelations:RELATION_KINDS.includes(this.#kind),roleSelf,roleSource,roleTarget,roleSubject,roleOwner,roleWorld,roleCombat,outcomeConditionChoices,bonusFormulaChoices,targetSourceChoices,fixedTarget,showTestCalculation,effectChoices,actionChoices,eventTypeChoices,choiceGroupRows,conditionSummary,costEffectSummary,effectSummary,actionSummary,expressionBuilder,...(this.#kind==="sheetDefinition"?(()=>{const choices=selection(this.#renderList("contentTypes","listContentTypes").map(x=>({id:x.id,label:x.nameKey,...withColors("contentType",x)})),data.contentTypeIds??[]);return {sheetIsItem:data.target==="item",sheetContentTypeChoices:choices,sheetContentTypeSummary:pickerSummary(choices),sheetLayoutJSON:JSON.stringify(data.root??null)};})():{}),sheetTargetChoices:SHEET_TARGETS.map(id=>({id,labelKey:`RTA.Sheet.Target${id[0].toUpperCase()}${id.slice(1)}`,colors:selectColorsAttribute([RTA_NEUTRAL_COLOR]),selected:(data.target??"actor")===id})),
       referenceChoices:referenceChoices.map(x=>({...x,selected:x.token===referenceTargetToken})),
       bindingTargetChoices:referenceChoices.filter(x=>parseRefToken(x.token).capabilityId).map(x=>({...x,selected:x.token===bindingTargetToken})),
       effectTargetChoices:mutableReferenceChoices.map(x=>({...x,selected:x.token===targetToken})),
@@ -281,7 +280,7 @@ export class ConfiguratorEntryEditor extends ConfiguratorWindow {
       presentationRows:presentationRowModel(this.#kind==="definition"?data.presentationProfile:data.presentation),
       imagePreview:data.image||"icons/svg/mystery-man.svg",
       dataJson:JSON.stringify(data.data??{},null,2),genericJson:JSON.stringify(data,null,2),
-      expressionJson:JSON.stringify(data.expression??{type:"literal",value:0},null,2),
+      expressionJson:JSON.stringify(expression,null,2),
       rollDataJson:JSON.stringify(data.data??{},null,2),rolesText:(data.roles??[]).join("\n"),tagsText:(data.tags??[]).join("\n"),capabilitiesText:(data.capabilities??[]).join("\n"),
       isAllow:data.defaultEffect==="ALLOW",isDeny:data.defaultEffect!=="ALLOW",isStackable:data.runtimeMode==="stackable",isUnique:data.runtimeMode!=="stackable",inheritsRuntimeMode:!data.runtimeMode,templateUnique:data.runtimeMode==="unique",inheritedRuntimeModeKey:type?.runtimeMode==="stackable"?"RTA.Template.Stackable":"RTA.Template.Unique",isStorageItem:data.storageKind!=="actor",isStorageActor:data.storageKind==="actor",effectOperationChoices:effectOperationRegistry.list().map(id=>({id,labelKey:effectOperationRegistry.get(id).labelKey,operand:effectOperationRegistry.get(id).operand,colors:selectColorsAttribute([RTA_NEUTRAL_COLOR]),selected:id===(data.operation??"set")})),effectNeedsOperand:needsOperand, title:editorDisplayTitle(creating,creating?this.#kind:(data.nameKey??data.key??data.id))});
     return context;
@@ -302,8 +301,8 @@ export class ConfiguratorEntryEditor extends ConfiguratorWindow {
     if(!form)return;
     const mark=()=>{if(!this.#dirty){this.#dirty=true;this.#syncFooter();}};
     wireOrderedLists(this.element,{onChange:mark});
-    form.addEventListener("input",event=>{mark();if(event.target.closest?.('[data-card="dieCounter"]'))syncDieFaceCounts(this.element);const row=event.target.closest?.("[data-definition-field]");if(row&&!row.dataset.required){const use=row.querySelector("[data-field-present]");if(use&&!use.checked){use.checked=true;}}if(event.target.matches?.("[data-picker-filter]"))this.#filterPicker(event.target);});
-    form.addEventListener("change",event=>{if(event.target.matches?.("[data-step-source-family]")&&event.target.checked){const group=event.target.closest("[data-step-prop=sourceCollection]");for(const other of group?.querySelectorAll("[data-step-source-family]")??[])if(other!==event.target)other.checked=false;}this.#syncCreationSource(event.target);this.#syncCreationKind(event.target);mark();if(event.target.matches?.("[data-presentation-override]")){const row=event.target.closest("[data-presentation-key]");const control=row?.querySelector(".rta-declarative-presentation__value");if(control)control.hidden=!event.target.checked;}this.#syncFieldRow(event.target);this.#syncModeRows(event.target);this.#syncOperandEditor(event.target);this.#syncRuleOperandEditor(event.target);this.#syncDiceRead(event.target);this.#syncPickerSummary(event.target);this.#syncStorageKind(event.target);if(event.target.matches?.("[data-color-override-toggle]")){const input=event.target.closest("[data-color-override-editor]")?.querySelector("[data-custom-color-input]");if(input)input.disabled=!event.target.checked;}});
+    form.addEventListener("input",event=>{mark();if(event.target.closest?.("[data-expr-root]"))this.#syncExpressionJson();if(event.target.closest?.('[data-card="dieCounter"]'))syncDieFaceCounts(this.element);const row=event.target.closest?.("[data-definition-field]");if(row&&!row.dataset.required){const use=row.querySelector("[data-field-present]");if(use&&!use.checked){use.checked=true;}}if(event.target.matches?.("[data-picker-filter]"))this.#filterPicker(event.target);});
+    form.addEventListener("change",event=>{if(event.target.matches?.("[data-step-source-family]")&&event.target.checked){const group=event.target.closest("[data-step-prop=sourceCollection]");for(const other of group?.querySelectorAll("[data-step-source-family]")??[])if(other!==event.target)other.checked=false;}this.#syncCreationSource(event.target);this.#syncCreationKind(event.target);mark();if(event.target.matches?.("[data-presentation-override]")){const row=event.target.closest("[data-presentation-key]");const control=row?.querySelector(".rta-declarative-presentation__value");if(control)control.hidden=!event.target.checked;}this.#syncFieldRow(event.target);this.#syncModeRows(event.target);this.#syncOperandEditor(event.target);this.#syncExpressionBuilder(event.target);if(event.target.closest?.("[data-expr-root]"))this.#syncExpressionJson();this.#syncDiceRead(event.target);this.#syncPickerSummary(event.target);this.#syncStorageKind(event.target);if(event.target.matches?.("[data-color-override-toggle]")){const input=event.target.closest("[data-color-override-editor]")?.querySelector("[data-custom-color-input]");if(input)input.disabled=!event.target.checked;}});
     form.addEventListener("change",event=>{const card=event.target.closest?.("[data-card]");if(card)syncCard(card);if(event.target.matches?.("[data-source-kind]"))syncValueSource(event.target);if(event.target.matches?.('[data-input-prop="sourceKind"]'))syncTestInputSource(event.target);if(event.target.matches?.('[data-slot-prop="entryMode"]'))syncEntryMode(event.target);// Tie-break, reroll and sides only matter once an initiative roll is chosen.
       if(event.target.matches?.("[data-mapping-choice]")){const mapping=event.target.closest("[data-outcome-mapping]"),row=mapping?.querySelector("[data-mapping-choice-count-row]");if(row)row.hidden=!mapping.querySelector("[data-mapping-choice]:checked");}
       if(event.target.matches?.('[name="groupTestRef"]'))for(const row of form.querySelectorAll("[data-group-only]"))row.hidden=!event.target.value;
@@ -356,10 +355,55 @@ export class ConfiguratorEntryEditor extends ConfiguratorWindow {
     const summary=picker.matches(".rta-select")?null:picker.querySelector("[data-picker-summary]");if(summary)summary.textContent=pickerSummary(labels.map(label=>({label,selected:true})));
   }
 
-  #syncRuleOperandEditor(target){
-    if(!target?.matches?.("[data-rule-operand-kind]"))return;
-    const row=target.closest("[data-rule-operand]");
-    for(const editor of row?.querySelectorAll("[data-rule-operand-editor]")??[])editor.hidden=editor.dataset.ruleOperandEditor!==target.value;
+  /** A slot follows its kind: choosing Calculation draws its block, with the former operand as its first one;
+   * a new operation of a block keeps the operands it can. */
+  #syncExpressionBuilder(target){
+    if(target?.matches?.("[data-rule-operand-kind]")){
+      const row=target.closest("[data-rule-operand]"),block=row?.querySelector(":scope > [data-expr-block]"),before=row?.dataset.kind||"literal";
+      if(target.value==="expression"&&!block){const sources=this.#expressionSources(),editor=this.#kind;
+        const form={kind:"expression",...reshapeBlock(editorOperations(editor,false)[0],before==="expression"||before==="none"?[]:[readSlotForm(row,before)])};
+        this.#replaceExpressionPart(row,renderExpressionSlotHTML(slotView(form,{label:{key:"",fallback:row.querySelector(":scope > .rta-rule-operand__label")?.textContent??""},path:row.dataset.exprPath,optional:Boolean(row.querySelector('[data-rule-operand-kind] option[value="none"]')),removable:Boolean(row.querySelector(':scope > .rta-rule-operand__controls > [data-action="removeRuleOperand"]')),editor},sources),{contextListId:sources.contextListId}));return;}
+      for(const editor of row?.querySelectorAll(":scope > .rta-rule-operand__controls > [data-rule-operand-editor]")??[])editor.hidden=editor.dataset.ruleOperandEditor!==target.value;
+      if(block)block.hidden=target.value!=="expression";
+      row.dataset.kind=target.value;
+    }
+    if(target?.matches?.("[data-expr-operation]")){const block=this.#operationBlock(target);if(block)this.#renderExpressionBlock(block,form=>reshapeBlock(target.value,form.children,form.rows));}
+  }
+  /** The block an operation select drives: the root block, or the nested block of its slot. */
+  #operationBlock(select){
+    const root=select.closest("[data-expr-root]"),row=select.closest("[data-rule-operand]");
+    return row&&root?.contains(row)?row.querySelector(":scope > [data-expr-block]"):root?.querySelector(":scope > [data-expr-block]");
+  }
+  /** Redraw a block from its current form state, changed by edit (an operand added, an operation changed). */
+  #renderExpressionBlock(block,edit){
+    const root=block.parentElement?.matches("[data-expr-root]"),row=root?null:block.closest("[data-rule-operand]");
+    const select=root?block.parentElement.querySelector(":scope > .rta-form-row [data-expr-operation]"):row.querySelector(":scope > .rta-rule-operand__controls [data-expr-operation]");
+    const form=edit({operation:String(select?.value??""),...readBlockForm(block)}),sources=this.#expressionSources();
+    this.#replaceExpressionPart(block,renderExpressionBlockHTML(blockView(form,{path:row?.dataset.exprPath??"",editor:this.#kind,root},sources),{contextListId:sources.contextListId,root}));
+  }
+  /** Swap a slot or block for new markup, wire its buttons, and mark the entry changed. */
+  #replaceExpressionPart(node,html){
+    const template=document.createElement("template");template.innerHTML=html;const fresh=template.content.firstElementChild;
+    node.replaceWith(fresh);for(const button of fresh.querySelectorAll("[data-action]"))button.addEventListener("click",event=>this.#action(event));
+    this.#dirty=true;this.#syncFooter();this.#syncExpressionJson();
+  }
+  /** The read-only technical JSON follows the visual builder. */
+  #syncExpressionJson(){
+    const builder=this.element?.querySelector("[data-formula-builder], [data-condition-builder]"),json=this.element?.querySelector('[name="expressionJson"]');
+    if(!builder||!json||builder.dataset.supported!=="true")return;
+    try{json.value=JSON.stringify(collectExpression(builder,null),null,2);}catch{/* a number being typed: keep the last valid JSON */}
+  }
+  #expressionBuilder(expression){
+    const sources=this.#expressionSources(),model=expressionBuilderModel(expression,this.#kind,sources);
+    return {supported:model.supported,html:renderExpressionBuilderHTML(model,sources)};
+  }
+  /** Choices of every operand: Parameters, Formulas, References, dice counters, roles linked by Actions, context paths. */
+  #expressionSources(){
+    const withColors=(kind,entry)=>({colors:selectColorsAttribute(this.#optionColors(kind,entry))}),actions=this.#renderList("actions","listActions");
+    const ruleset=this.#renderCatalog??this.#api.getRulesetVersion(this.#versionId)?.workingDraft??this.#api.getRuleset(this.#versionId)??{};
+    return {parameters:this.#renderList("parameters","listParameters"),formulas:this.#renderList("formulas","listFormulas"),references:this.#referenceChoices(),withColors,
+      counters:this.#diceCounters(),neutral:selectColorsAttribute([RTA_NEUTRAL_COLOR]),roles:[...new Set(actions.flatMap(x=>(x.roleLinks??[]).map(l=>l.role)))],
+      contextListId:`${this.id??"rta-entry"}-context-paths`,contextPaths:contextPathSuggestions(ruleset)};
   }
   /** Dice read by counter take a counter; any other reading may compare the faces. */
   #syncDiceRead(target){
@@ -371,7 +415,6 @@ export class ConfiguratorEntryEditor extends ConfiguratorWindow {
 
   /** Effect value rows follow the value source, and disappear for operations without operand (toggle). */
   #syncOperandEditor(target){
-    if(target?.name==="conditionOperator"){const operands=this.element.querySelector("[data-condition-builder] .rta-rule-operands");if(operands)operands.hidden=CONSTANT_OPERATORS.includes(target.value);return;}
     if(!["operandKind","operation"].includes(target?.name))return;
     const kind=this.element.querySelector('[name="operandKind"]')?.value,operation=this.element.querySelector('[name="operation"]');
     const needsOperand=operation?.selectedOptions?.[0]?.dataset.operand!=="false";
@@ -508,8 +551,8 @@ export class ConfiguratorEntryEditor extends ConfiguratorWindow {
       queryOne:selector=>this.element.querySelector(selector),
       queryAll:selector=>this.element.querySelectorAll(selector),
       capabilityTypes:this.#api.listCapabilityTypes(),
-      collectFormulaExpression:fallback=>collectFormulaExpression(this.element.querySelector("[data-formula-builder]"),fallback),
-      collectConditionExpression:fallback=>collectConditionExpression(this.element.querySelector("[data-condition-builder]"),fallback),
+      collectFormulaExpression:fallback=>collectExpression(this.element.querySelector("[data-formula-builder]"),fallback),
+      collectConditionExpression:fallback=>collectExpression(this.element.querySelector("[data-condition-builder]"),fallback),
       collectCreation:()=>this.#collectCreation(),uid,fieldUid
     });
     // Relations are edited only where the runtime reads them (grants, relationCount).
@@ -588,21 +631,6 @@ export class ConfiguratorEntryEditor extends ConfiguratorWindow {
     for(const die of this.#renderList("dice","listDice"))for(const counter of die.counters??[])if(!seen.has(counter.id))seen.set(counter.id,{id:counter.id,label:counter.labelKey||counter.id});
     return [...seen.values()];
   }
-  #ruleOperandHTML(index){
-    const parameters=renderSelectOptions(this.#api.listParameters(this.#versionId).map(x=>({...x,colors:selectColorsAttribute(this.#optionColors("parameter",x))})),{labelKey:"nameKey",colorize:true});
-    const formulas=renderSelectOptions(this.#api.listFormulas(this.#versionId).map(x=>({...x,colors:selectColorsAttribute(this.#optionColors("formula",x))})),{labelKey:"nameKey",colorize:true});
-    const references=renderSelectOptions(this.#referenceChoices(),{valueKey:"token",colorize:true});
-    const row=operandEditorRow({type:"literal",value:0},index,{counters:this.#diceCounters(),neutral:selectColorsAttribute([RTA_NEUTRAL_COLOR])});
-    return renderRuleOperandHTML({index,parameters,formulas,references,row});
-  }
-
-  #renumberRuleOperands(list){
-    for(const [index,row] of [...(list?.querySelectorAll(':scope > [data-rule-operand]')??[])].entries()){
-      const label=row.querySelector(':scope > .rta-rule-operand__label');
-      if(label)label.textContent=`Operand ${index+1}`;
-    }
-  }
-
   async #action(event){
     const action=event.currentTarget.dataset.action;
     if(action==="addRelation"){
@@ -671,11 +699,16 @@ export class ConfiguratorEntryEditor extends ConfiguratorWindow {
     if(action==="removeTestInput"){event.currentTarget.closest("[data-test-input]")?.remove();this.#dirty=true;this.#syncFooter();return;}
     if(action==="removeSlot"){event.currentTarget.closest("[data-slot-card]")?.remove();this.#dirty=true;this.#syncFooter();return;}
     if(action==="removeChoiceGroup"){event.currentTarget.closest("[data-choice-group]")?.remove();this.#dirty=true;this.#syncFooter();return;}
-    if(action==="addFormulaOperand"){
-      const list=this.element.querySelector("[data-formula-operands]");if(list){list.insertAdjacentHTML("beforeend",this.#ruleOperandHTML(list.querySelectorAll("[data-rule-operand]").length));list.lastElementChild?.querySelector('[data-action="removeRuleOperand"]')?.addEventListener("click",event=>this.#action(event));this.#renumberRuleOperands(list);this.#dirty=true;this.#syncFooter();}return;
-    }
-    if(action==="removeRuleOperand"){
-      const row=event.currentTarget.closest("[data-rule-operand]"),list=row?.parentElement;if(list?.querySelectorAll("[data-rule-operand]").length>1){row.remove();this.#renumberRuleOperands(list);this.#dirty=true;this.#syncFooter();}return;
+    // Formula and Condition blocks: operands and table rows are added or removed through the block's form state.
+    if(["addRuleOperand","removeRuleOperand","addExprRow","removeExprRow"].includes(action)){
+      const button=event.currentTarget,block=button.closest("[data-expr-block]"),slot=button.closest("[data-rule-operand]"),row=button.closest("[data-expr-row]");if(!block?.isConnected)return;
+      const at=list=>list.indexOf(action==="removeRuleOperand"?slot:row);
+      this.#renderExpressionBlock(block,form=>{
+        if(action==="addRuleOperand")return {...form,children:[...form.children,{kind:"literal",value:"0"}]};
+        if(action==="addExprRow")return {...form,rows:[...form.rows,blockShape(form.operation)==="range"?{min:"",max:"",value:"0"}:{key:"",value:"0"}]};
+        if(action==="removeRuleOperand"){const i=at([...block.querySelectorAll(":scope > [data-rule-operand]")]);return form.children.length>1?{...form,children:form.children.filter((_,j)=>j!==i)}:form;}
+        const i=at([...block.querySelectorAll(":scope > [data-expr-rows] > [data-expr-row]")]);return form.rows.length>1?{...form,rows:form.rows.filter((_,j)=>j!==i)}:form;
+      });return;
     }
     if(action==="chooseImage"){
       const input=this.element.querySelector('[name="image"]'),current=String(input?.value??"");

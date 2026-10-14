@@ -96,24 +96,20 @@ test('new rule defaults do not silently create a d20 mechanic',()=>{
   assert.equal(roll.formula,'');assert.equal(tested.targetValue,null);
 });
 
-import {collectRuleOperand,collectFormulaExpression,collectConditionExpression} from '../src/configurator/entry-expression-serialization.mjs';
+import {collectRuleOperand,collectExpression} from '../src/configurator/entry-expression-serialization.mjs';
+import {blockNodeOf} from '../src/configurator/entry-expression-model.mjs';
 import {collectCreationSteps} from '../src/configurator/creation-step-serialization.mjs';
-const fakeOperand=(kind,value)=>({querySelector:selector=>{
-  if(selector==='[data-rule-operand-kind]')return input(kind);
-  return input(value);
-}});
-const fakeBuilder=(operator,operands=[],supported='true')=>({dataset:{supported},querySelector:()=>input(operator),querySelectorAll:()=>operands});
+const fakeOperand=(kind,value)=>({querySelector:selector=>selector.includes('[data-rule-operand-kind]')?input(kind):selector.includes('data-operand-part')?input(value):null});
 
 test('formula and condition AST serializers preserve typed literal, reference and fallback',()=>{
-  const numeric=fakeOperand('literal','3.5'),boolean=fakeOperand('literal','true');
-  assert.deepEqual(collectRuleOperand(numeric),{type:'literal',value:3.5});
-  assert.deepEqual(collectRuleOperand(boolean),{type:'literal',value:true});
+  assert.deepEqual(collectRuleOperand(fakeOperand('literal','3.5')),{type:'literal',value:3.5});
+  assert.deepEqual(collectRuleOperand(fakeOperand('literal','true')),{type:'literal',value:true});
   assert.deepEqual(collectRuleOperand(fakeOperand('literal','alpha')),{type:'literal',value:'alpha'});
+  assert.deepEqual(collectRuleOperand(fakeOperand('context','variables.test.total')),{type:'context',path:'variables.test.total'});
   const fallback={type:'reference',reference:{objectKind:'definition',objectId:'old'}};
-  assert.deepEqual(collectFormulaExpression(fakeBuilder('add',[numeric,boolean]),fallback),{type:'add',args:[{type:'literal',value:3.5},{type:'literal',value:true}]});
-  assert.equal(collectFormulaExpression(fakeBuilder('add',[],'false'),fallback),fallback);
-  assert.deepEqual(collectConditionExpression(fakeBuilder('alwaysFalse',[]),fallback),{type:'literal',value:false});
-  assert.deepEqual(collectConditionExpression(fakeBuilder('eq',[numeric,boolean]),fallback),{type:'eq',left:{type:'literal',value:3.5},right:{type:'literal',value:true}});
+  assert.equal(collectExpression({dataset:{supported:'false'}},fallback),fallback);
+  assert.deepEqual(blockNodeOf({operation:'alwaysFalse'}),{type:'literal',value:false});
+  assert.deepEqual(blockNodeOf({operation:'eq',children:[{kind:'literal',value:'3.5'},{kind:'literal',value:'true'}]}),{type:'eq',left:{type:'literal',value:3.5},right:{type:'literal',value:true}});
 });
 
 function creationRow({name='Step',min='0',max='1',source='definitions',objects=['x'],original='{}'}={}){

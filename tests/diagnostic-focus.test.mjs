@@ -12,9 +12,9 @@ test("A diagnostic opens the editor of the object it is about", () => {
 
 test("Diagnostic paths resolve to the control that fixes them", () => {
   const first = (kind, path) => diagnosticFocusTargets(kind, path)[0];
-  assert.deepEqual(first("formula", "expression.args[1].reference"), {selector: "[data-rule-operand]", index: 1});
-  assert.deepEqual(first("condition", "expression.right.reference"), {selector: "[data-rule-operand]", index: 1});
-  assert.deepEqual(first("condition", "expression.left"), {selector: "[data-rule-operand]", index: 0});
+  assert.deepEqual(diagnosticFocusTargets("formula", "expression.value.args[1].reference").map(target => target.selector).slice(0, 4), ['[data-expr-path="value.args[1].reference"]', '[data-expr-path="value.args[1]"]', '[data-expr-path="value"]', '[name="formulaOperator"]']);
+  assert.deepEqual(first("condition", "expression.left"), {selector: '[data-expr-path="left"]', index: 0});
+  assert.deepEqual(first("formula", "expression"), {selector: '[name="formulaOperator"]', index: 0});
   assert.deepEqual(first("effect", "operand.reference"), {selector: '[name="operandReference"]', index: 0});
   assert.deepEqual(first("effect", "targetRef"), {selector: '[name="targetRef"]', index: 0});
   assert.deepEqual(first("definition", "data.abbreviation"), {selector: '[data-definition-field="abbreviation"]', index: 0});
@@ -25,7 +25,7 @@ test("Diagnostic paths resolve to the control that fixes them", () => {
 test("Every simple property selector names a control that exists in the editor template", () => {
   const template = readFileSync(new URL("../templates/configurator/entry-editor.hbs", import.meta.url), "utf8");
   for (const name of ["targetRef", "operandReference", "operandKind", "expressionJson", "genericJson", "nameKey", "rollRef", "formulaRef"]) assert.match(template, new RegExp(`name="${name}"`), name);
-  for (const attribute of ["data-rule-operand", "data-definition-field=", "data-slot-card="]) assert.ok(template.includes(attribute) || readFileSync(new URL("../src/configurator/configurator-entry-editor.mjs", import.meta.url), "utf8").includes(attribute), attribute);
+  for (const attribute of ["data-definition-field=", "data-slot-card="]) assert.ok(template.includes(attribute) || readFileSync(new URL("../src/configurator/configurator-entry-editor.mjs", import.meta.url), "utf8").includes(attribute), attribute);
 });
 
 test('§46: a refused save points at the first problem of the edited object', async () => {
