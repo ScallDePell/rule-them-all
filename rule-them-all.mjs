@@ -33,6 +33,9 @@ let storage;
 
 Hooks.once("init", () => {
   game.ruleThemAll ??= {};
+  // Foundry's convention for a module's API; game.ruleThemAll is the same object.
+  const module = game.modules.get(MODULE_ID);
+  if (module) module.api = game.ruleThemAll;
   game.ruleThemAll.registries = engineRegistries();
   storage = new WorldSettingStorage(game.settings);
   storage.register();
@@ -98,7 +101,11 @@ Hooks.once("ready", () => {
     console.log("Rule Them'All | Configurator and runtime ready");
     return api;
   });
-  game.ruleThemAll.configuratorReady.catch(error => console.error("Rule Them'All | Configurator initialization failed", error));
+  game.ruleThemAll.configuratorReady.catch(error => {
+    console.error("Rule Them'All | Configurator initialization failed", error);
+    // Stored data the module cannot read (a former format to convert): the GM is told, not only the console.
+    if (game.user.isGM) ui.notifications?.error?.(`Rule Them'All: ${error?.message ?? error}`, {permanent: true});
+  });
 
   // CP-28: timed states end when the world clock passes them; the active GM writes the change once.
   Hooks.on("updateWorldTime", (worldTime, delta) => {
