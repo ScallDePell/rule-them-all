@@ -285,6 +285,10 @@ const result = await page.evaluate(async ({fixture, en, urls}) => {
   check('Ctrl+Shift+Z redoes too', !find(layout(), copy.id));
   { const field = element.querySelector('[data-layout-palette-filter]'); field.focus(); const count = JSON.stringify(layout()); field.dispatchEvent(new KeyboardEvent('keydown', {key: 'Delete', bubbles: true, cancelable: true})); await wait();
     check('keys typed in a field are left alone', JSON.stringify(layout()) === count); }
+  // The sheet's settings share the middle zone with the sheet: Delete on one of their buttons removes no block.
+  await click('[data-layout-canvas] [data-layout-node="derived"]');
+  { const button = element.querySelector('[data-sheet-file="export"]'); button.focus(); const count = JSON.stringify(layout()); const sent = new KeyboardEvent('keydown', {key: 'Delete', bubbles: true, cancelable: true}); button.dispatchEvent(sent); await wait();
+    check('keys on the sheet\'s settings are left alone', JSON.stringify(layout()) === count && !sent.defaultPrevented); }
   await click('[data-layout-canvas] [data-layout-node="derived"]');
   await key('Escape');
   check('Escape leaves nothing selected', !element.querySelector('[data-layout-selected]') && element.querySelector('[data-layout-command="remove"]').disabled && !element.querySelector('[data-layout-properties] [data-layout-prop]'));
