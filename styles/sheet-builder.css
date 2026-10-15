@@ -17,14 +17,20 @@
 
 .rta-sheet-editor__side,
 .rta-sheet-editor__layers-column {
-  --rta-form-label-column-min: 6rem;
-  --rta-form-label-column-max: 7rem;
+  --rta-form-label-column-min: 5.5rem;
+  --rta-form-label-column-max: 6.5rem;
   display: flex;
   flex-direction: column;
   gap: var(--rta-gap-row);
   min-inline-size: 0;
   padding: var(--rta-space-2) var(--rta-space-4) var(--rta-space-4);
   scrollbar-width: thin;
+}
+
+/* The sheet's settings share the middle zone with the preview: a narrower label column leaves the fields their values. */
+.rta-sheet-editor__main {
+  --rta-form-label-column-min: 8rem;
+  --rta-form-label-column-max: 9rem;
 }
 
 /* Stacked in a narrow window: one scroll for the three zones. */
@@ -38,7 +44,7 @@
   .rta-sheet-editor--editing {
     display: grid;
     grid-template-areas: "side main" "layers main";
-    grid-template-columns: minmax(16rem, 18rem) minmax(0, 1fr);
+    grid-template-columns: minmax(18rem, 22rem) minmax(0, 1fr);
     grid-template-rows: minmax(0, 3fr) minmax(0, 2fr);
     overflow: hidden;
   }
@@ -72,7 +78,7 @@
 @container rta-window (inline-size >= 960px) {
   .rta-sheet-editor--editing {
     grid-template-areas: "side main layers";
-    grid-template-columns: minmax(16rem, 18rem) minmax(0, 1fr) minmax(14rem, 16rem);
+    grid-template-columns: minmax(20rem, 24rem) minmax(0, 1fr) minmax(13rem, 15rem);
     grid-template-rows: minmax(0, 1fr);
   }
 
@@ -101,6 +107,12 @@
   width: auto;
   min-width: 0;
   margin: 0;
+}
+
+/* A button that cannot be used now keeps its frame, dimmed: the row always shows its nine buttons. */
+.rta-sheet-editor__tools > .rta-config-action:disabled {
+  border-color: var(--rta-color-border-subtle);
+  opacity: .5;
 }
 
 /* The style brush while it is loaded: pressed, and the sheet shows a brush cursor. */

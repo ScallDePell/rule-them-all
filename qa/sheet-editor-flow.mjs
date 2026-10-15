@@ -257,7 +257,10 @@ const result = await page.evaluate(async ({fixture, en, urls}) => {
   check('no automatic layout any more', !element.querySelector('[data-layout-command="auto"]'));
   // The toolbar: its nine buttons on one row, "View as" alone below them.
   { const buttons = [...element.querySelectorAll('[data-layout-toolbar] [data-layout-command]')].map(b => b.getBoundingClientRect()), viewAs = element.querySelector('.rta-sheet-editor__view-as').getBoundingClientRect();
-    check('the toolbar buttons sit on one row, "View as" below', buttons.length === 9 && buttons.every(b => Math.abs(b.top - buttons[0].top) < 1) && viewAs.top >= buttons[0].bottom && buttons.at(-1).right <= element.querySelector('.rta-sheet-editor__side').getBoundingClientRect().right); }
+    check('the toolbar buttons sit on one row, "View as" below', buttons.length === 9 && buttons.every(b => Math.abs(b.top - buttons[0].top) < 1) && viewAs.top >= buttons[0].bottom && buttons.at(-1).right <= element.querySelector('.rta-sheet-editor__side').getBoundingClientRect().right);
+    // Each one drawn, a frame even when disabled, none narrower than a usable button.
+    const frames = [...element.querySelectorAll('[data-layout-toolbar] [data-layout-command]')].map(b => getComputedStyle(b));
+    check(`every toolbar button shows its frame (${buttons.map(b => Math.round(b.width)).join(',')} px)`, buttons.every(b => b.width >= 28) && frames.every(f => f.borderTopStyle !== 'none' && f.visibility !== 'hidden' && Number(f.opacity) > 0.3)); }
   const key = async (name, options = {}) => { (document.activeElement && element.contains(document.activeElement) ? document.activeElement : element.querySelector('[data-layout-canvas]')).dispatchEvent(new KeyboardEvent('keydown', {key: name, bubbles: true, cancelable: true, ...options})); await wait(); };
   const top = () => find(layout(), 'top').children;
   // Copy and paste: a section pasted while a section is selected goes into it, with new ids and its style.
@@ -334,14 +337,16 @@ const result = await page.evaluate(async ({fixture, en, urls}) => {
     column.style.maxBlockSize = ''; }
   // Preview widths, and the sheet's own window width.
   const canvasWidth = () => Math.round(element.querySelector('[data-layout-canvas]').getBoundingClientRect().width);
-  check(`the preview starts at the sheet's window width (${canvasWidth()}px)`, canvasWidth() === 640);
+  // The middle zone may be narrower than the sheet's window: the preview then takes all of it.
+  const room = () => Math.round(element.querySelector('.rta-sheet-editor__stage').getBoundingClientRect().width);
+  check(`the preview starts at the sheet's window width (${canvasWidth()}px, room ${room()}px)`, canvasWidth() === Math.min(640, room()));
   await click('[data-layout-widths] [data-layout-width="narrow"]');
   check(`a narrow preview (${canvasWidth()}px)`, canvasWidth() === 400);
   await set('[name="sheetWindowWidth"]', '500');
   await click('[data-layout-widths] [data-layout-width="window"]');
   check(`a preview at the sheet's window width (${canvasWidth()}px)`, canvasWidth() === 500);
   await click('[data-layout-widths] [data-layout-width="wide"]');
-  check(`the whole width (${canvasWidth()}px)`, canvasWidth() > 640);
+  check(`the whole width (${canvasWidth()}px)`, canvasWidth() === room() && canvasWidth() > 500);
   await set('[name="sheetWindowHeight"]', '640');
   element.querySelector('[data-entry-form]').requestSubmit(); await new Promise(r => setTimeout(r, 200));
   check('the window size is saved with the sheet', JSON.stringify(api.getSheetDefinition(fixture.versionId, 'sh1').window) === JSON.stringify({width: 500, height: 640}));
@@ -453,17 +458,33 @@ if (process.env.RTA_SHOTS) {
 }
 // Narrower windows: at 1180 px the three zones narrow; at 900 px the Layers go under the tools; at 600 px all is stacked
 // in one scroll. The buttons stay at the bottom every time.
-for (const width of [1180, 900, 600]) {
+// The last block selected in the wide window, then the window narrowed: its Layers row is brought into the shorter zone.
+await page.evaluate(() => { const rows = document.querySelectorAll('[data-layout-layers] [data-layer-node]'); document.querySelector(`[data-layout-canvas] [data-layout-node="${rows[rows.length - 1].dataset.layerNode}"]`)?.click(); });
+await page.setViewportSize({width: 900, height: 1100});
+await page.waitForTimeout(100);
+{ const seen = await page.evaluate(() => { const column = document.querySelector('.rta-sheet-editor__layers-column'), r = column.querySelector('[aria-selected="true"]').getBoundingClientRect(), c = column.getBoundingClientRect(); return column.scrollTop > 0 && r.top >= c.top - 1 && r.bottom <= c.bottom + 1; });
+  console.log(`${seen ? 'ok' : 'FAIL'} the selected Layers row stays in view when the window narrows`); if (!seen) result.push('FAIL Layers row after resize'); }
+await page.setViewportSize({width: 1320, height: 1100});
+// A value block selected: the settings with the longest choices.
+await page.evaluate(() => document.querySelector('[data-layout-canvas] [data-layout-node="stat-value"]')?.click());
+for (const width of [1320, 1180, 900, 600]) {
   await page.setViewportSize({width, height: 1100});
+  await page.waitForTimeout(100);
   const narrow = await page.evaluate(() => {
     const box = selector => document.querySelector(selector).getBoundingClientRect(), side = box('.rta-sheet-editor__side'), main = box('.rta-sheet-editor__main'), layers = box('.rta-sheet-editor__layers-column'), footer = box('.rta-config-entry__footer'), app = box('.application');
     const page = document.documentElement;
     return {three: side.right <= main.left + 1 && main.right <= layers.left + 1, under: Math.abs(layers.left - side.left) < 1 && layers.top >= side.bottom - 1 && side.right <= main.left + 1,
-      stacked: main.top >= side.bottom - 1, footer: footer.height > 0 && footer.bottom <= app.bottom + 1, overflow: page.scrollWidth > page.clientWidth};
+      stacked: main.top >= side.bottom - 1, footer: footer.height > 0 && footer.bottom <= app.bottom + 1, overflow: page.scrollWidth > page.clientWidth,
+      // The selected block's settings: no value cut short, the text fields wide enough to read.
+      cut: [...document.querySelectorAll('[data-layout-properties] .rta-select__value')].filter(value => value.scrollWidth > value.clientWidth + 1).map(value => value.textContent.trim()),
+      thin: [...document.querySelectorAll('[data-layout-properties] input[type="text"]')].filter(input => input.getBoundingClientRect().width && input.getBoundingClientRect().width < 120).map(input => input.dataset.layoutProp ?? input.dataset.layoutStyle),
+      // The selected row of the Layers is in view after the resize.
+      row: (() => { const column = document.querySelector('.rta-sheet-editor__layers-column'), row = column.querySelector('[aria-selected="true"]'); if (!row || column.scrollHeight <= column.clientHeight) return true; const r = row.getBoundingClientRect(), c = column.getBoundingClientRect(); return r.top >= c.top - 1 && r.bottom <= c.bottom + 1; })()};
   });
   const layout = width >= 1180 ? narrow.three : width >= 900 ? narrow.under : narrow.stacked;
-  console.log(`${layout && narrow.footer && !narrow.overflow ? 'ok' : 'FAIL'} at ${width}px: ${width >= 1180 ? 'three zones' : width >= 900 ? 'the Layers under the tools' : 'one column'}, the buttons in view`);
-  if (!(layout && narrow.footer && !narrow.overflow)) result.push(`FAIL at ${width}px`);
+  const fields = width < 1180 || (!narrow.cut.length && !narrow.thin.length), good = layout && narrow.footer && !narrow.overflow && narrow.row && fields;
+  console.log(`${good ? 'ok' : 'FAIL'} at ${width}px: ${width >= 1180 ? 'three zones' : width >= 900 ? 'the Layers under the tools' : 'one column'}, the buttons and the selected Layers row in view${width >= 1180 ? ', the block\'s settings readable' : ''}${narrow.cut.length || narrow.thin.length ? ` (cut: ${narrow.cut.join(' / ')}; thin: ${narrow.thin.join(', ')})` : ''}${narrow.row ? '' : ' (Layers row out of view)'}`);
+  if (!good) result.push(`FAIL at ${width}px`);
   if (process.env.RTA_SHOTS) await page.screenshot({path: join(process.env.RTA_SHOTS, `sheet-editor-${width}.png`)});
 }
 await browser.close();

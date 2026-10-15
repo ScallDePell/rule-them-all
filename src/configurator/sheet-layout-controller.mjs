@@ -123,6 +123,9 @@ export class SheetLayoutController {
       if (dragged.id) return this.#commit(moveInto(this.#root, dragged.id, targetId, at));
       this.#add(dragged.spec, targetId, at, true);
     });
+    // The window resized (the Layers go under the tools, or come back): the selected row stays in view.
+    const column = host.querySelector("[data-entry-scroll-layers]");
+    if (column && globalThis.ResizeObserver) new ResizeObserver(() => this.#revealLayer()).observe(column);
     this.#renderPalette();
     this.render();
   }
@@ -194,14 +197,7 @@ export class SheetLayoutController {
     const host = this.#host.querySelector("[data-layout-layers-host]");
     if (!host) return;
     host.innerHTML = renderLayoutLayersHTML(this.#root, {selectedId: this.#selected, collapsed: this.#collapsed, label: node => this.#layerLabel(node), renaming: this.#renaming, open: this.#layersOpen});
-    // The Layers have their own column, which scrolls (in a narrow window, the tree scrolls by itself).
-    const list = host.querySelector("[data-layout-layers]"), row = list?.querySelector('[aria-selected="true"]');
-    const column = host.closest("[data-entry-scroll-layers]"), scroller = column && column.scrollHeight > column.clientHeight ? column : list;
-    if (row && scroller.clientHeight) {
-      const top = row.getBoundingClientRect().top - scroller.getBoundingClientRect().top + scroller.scrollTop;
-      if (top < scroller.scrollTop) scroller.scrollTop = top;
-      else if (top + row.offsetHeight > scroller.scrollTop + scroller.clientHeight) scroller.scrollTop = top + row.offsetHeight - scroller.clientHeight;
-    }
+    this.#revealLayer();
     const rename = host.querySelector("[data-layer-rename]");
     if (rename) {
       rename.focus(); rename.select();
@@ -211,6 +207,16 @@ export class SheetLayoutController {
       });
       rename.addEventListener("blur", () => this.#finishRename(rename, true));
     }
+  }
+  /** The selected row of the Layers brought into view: in the Layers' zone, which scrolls (in a narrow window, the tree
+     scrolls by itself). */
+  #revealLayer() {
+    const host = this.#host.querySelector("[data-layout-layers-host]"), list = host?.querySelector("[data-layout-layers]"), row = list?.querySelector('[aria-selected="true"]');
+    const column = host?.closest("[data-entry-scroll-layers]"), scroller = column && column.scrollHeight > column.clientHeight ? column : list;
+    if (!row || !scroller.clientHeight) return;
+    const top = row.getBoundingClientRect().top - scroller.getBoundingClientRect().top + scroller.scrollTop;
+    if (top < scroller.scrollTop) scroller.scrollTop = top;
+    else if (top + row.offsetHeight > scroller.scrollTop + scroller.clientHeight) scroller.scrollTop = top + row.offsetHeight - scroller.clientHeight;
   }
   /** A block's name in the Layers: its label, else what it shows, else its kind. */
   #layerLabel(node) {
