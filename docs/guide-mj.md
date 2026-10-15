@@ -78,13 +78,18 @@ Le Configurateur range le Ruleset en rubriques. Chaque élément est une carte :
 ## 4. Les feuilles
 
 ### Éditeur de feuilles
-Dans **Systèmes → Feuilles**, créez une feuille d'Acteur ou d'Objet (pour des Types de contenu précis, ou pour tous). L'éditeur montre la feuille telle qu'en jeu :
-- la **palette** à gauche ajoute des blocs (sections, onglets, grilles, listes d'une famille de Définitions, valeurs, jauges, pastilles, boutons d'Action, Systèmes de progression, images, textes) par clic ou glisser-déposer ;
+Dans **Systèmes → Feuilles**, créez une feuille d'Acteur ou d'Objet (pour des Types de contenu précis, ou pour tous). L'éditeur montre la feuille telle qu'en jeu. Sa fenêtre est partagée en **trois zones séparées par un trait vertical**, toute la hauteur, chacune avec son propre défilement ; les boutons (Supprimer, Annuler, Appliquer, Enregistrer et quitter) restent en bas :
+- **à gauche, les outils** : barre d'outils, **Voir comme**, réglages du bloc choisi, palette et thème de la feuille ;
+- **au centre, la feuille** : l'aide, ses informations (nom, utilisée pour, en-tête, fenêtre, description, fichier, activée), puis l'aperçu et la feuille elle-même ;
+- **à droite, les Calques** : l'arbre des blocs de la feuille.
+
+Dans une fenêtre moins large, les Calques passent sous les outils ; dans une fenêtre étroite, tout s'empile en une seule colonne. Une feuille d'une version validée n'a que la zone centrale.
+- la **palette** (zone de gauche) ajoute des blocs (sections, onglets, grilles, listes d'une famille de Définitions, valeurs, jauges, pastilles, boutons d'Action, Systèmes de progression, images, textes) par clic ou glisser-déposer ;
 - le **panneau de propriétés** règle le bloc choisi : libellé, icône Font Awesome (texte, icône ou les deux), affichage (champ, jauge, pastilles, description), ce que le joueur peut changer (saisir, augmenter, diminuer), **Visible par** (joueur, observateur, MJ) et **Modifiée par : le MJ seulement**, couleurs, police, marges ;
 - la **barre d'outils** (une ligne de boutons) monte et descend le bloc, le **copie**, le **colle**, le **duplique**, prend son style au **pinceau**, le supprime, **annule** et **rétablit** ; dessous, **Voir comme** montre la feuille telle que la verra un joueur, un observateur ou le MJ ;
 - **Copier / coller** : un bloc copié garde ses enfants et son style ; collé, il va dans le bloc choisi si c'est un conteneur qui l'accepte, sinon juste après. Le presse-papiers sert pour toutes les feuilles ouvertes pendant la session, même d'un autre Ruleset : un bloc qui utilise une Définition, une Formule, une Action… absente de ce Ruleset (ou un champ de Contenu sur une feuille d'Acteur) est refusé avec un message ;
 - le **pinceau de style** prend le style du bloc choisi ; chaque bloc cliqué ensuite le reçoit (ce que son genre de bloc ne peut pas porter est laissé de côté). Échap ou un nouveau clic sur le pinceau le repose ;
-- les **Calques** listent les blocs en arbre : un clic choisit un bloc, un double-clic renomme un onglet, une section, une valeur ou un bouton, la flèche replie ce qu'un conteneur contient, et on fait glisser une ligne pour déplacer le bloc (haut ou bas de la ligne : à côté ; milieu d'un conteneur : dedans) ;
+- les **Calques** (zone de droite) listent les blocs en arbre : un clic choisit un bloc, un double-clic renomme un onglet, une section, une valeur ou un bouton, la flèche replie ce qu'un conteneur contient, et on fait glisser une ligne pour déplacer le bloc (haut ou bas de la ligne : à côté ; milieu d'un conteneur : dedans) ;
 - **raccourcis clavier** (hors champ de saisie) : Ctrl+C, Ctrl+V, Ctrl+D (dupliquer), Ctrl+Z, Ctrl+Y ou Ctrl+Maj+Z (rétablir), Suppr, flèches haut et bas (déplacer), F2 (renommer), Échap (ne plus rien choisir) ;
 - **Aperçu** (au-dessus de la feuille) : fenêtre étroite, taille de la fenêtre de la feuille, ou toute la largeur ;
 - **Fenêtre (px)** : la largeur et la hauteur à l'ouverture de la feuille en jeu (vide : taille de Foundry).

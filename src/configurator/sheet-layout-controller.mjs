@@ -37,6 +37,8 @@ const nodeIdOf = element => element.dataset.layoutNode ?? element.dataset.layerN
 const DEFAULT_WINDOW_WIDTH = 640;
 /** Where typing goes to a field: the editor's shortcuts leave those keys alone. */
 const TYPING = "input, textarea, select, [contenteditable], .rta-select";
+/** Where the editor's keyboard shortcuts apply: its tools, the Layers and the sheet (not the sheet's name and settings). */
+const KEY_AREAS = "[data-layout-toolbar], [data-layout-properties], [data-layout-palette-host], [data-layout-theme-host], [data-layout-layers-host], [data-layout-widths], [data-layout-canvas]";
 /** Keyboard shortcuts: [key, with Ctrl (or Cmd), with Shift] → command. */
 const SHORTCUTS = [["c", true, false, "copy"], ["v", true, false, "paste"], ["d", true, false, "duplicate"], ["z", true, false, "undo"], ["z", true, true, "redo"], ["y", true, false, "redo"],
   ["delete", false, false, "remove"], ["backspace", false, false, "remove"], ["arrowup", false, false, "up"], ["arrowdown", false, false, "down"], ["escape", false, false, "escape"], ["f2", false, false, "rename"]];
@@ -192,11 +194,13 @@ export class SheetLayoutController {
     const host = this.#host.querySelector("[data-layout-layers-host]");
     if (!host) return;
     host.innerHTML = renderLayoutLayersHTML(this.#root, {selectedId: this.#selected, collapsed: this.#collapsed, label: node => this.#layerLabel(node), renaming: this.#renaming, open: this.#layersOpen});
+    // The Layers have their own column, which scrolls (in a narrow window, the tree scrolls by itself).
     const list = host.querySelector("[data-layout-layers]"), row = list?.querySelector('[aria-selected="true"]');
-    if (row && list.clientHeight) {
-      const top = row.getBoundingClientRect().top - list.getBoundingClientRect().top + list.scrollTop;
-      if (top < list.scrollTop) list.scrollTop = top;
-      else if (top + row.offsetHeight > list.scrollTop + list.clientHeight) list.scrollTop = top + row.offsetHeight - list.clientHeight;
+    const column = host.closest("[data-entry-scroll-layers]"), scroller = column && column.scrollHeight > column.clientHeight ? column : list;
+    if (row && scroller.clientHeight) {
+      const top = row.getBoundingClientRect().top - scroller.getBoundingClientRect().top + scroller.scrollTop;
+      if (top < scroller.scrollTop) scroller.scrollTop = top;
+      else if (top + row.offsetHeight > scroller.scrollTop + scroller.clientHeight) scroller.scrollTop = top + row.offsetHeight - scroller.clientHeight;
     }
     const rename = host.querySelector("[data-layer-rename]");
     if (rename) {
@@ -251,7 +255,7 @@ export class SheetLayoutController {
   /** The editor's keyboard shortcuts, while the focus is not in a field. Keys it uses never reach Foundry (Delete would
      remove the tokens selected on the scene). */
   #onKey(event) {
-    if (event.defaultPrevented || event.altKey || elementOf(event)?.closest(TYPING)) return;
+    if (event.defaultPrevented || event.altKey || !elementOf(event)?.closest(KEY_AREAS) || elementOf(event)?.closest(TYPING)) return;
     const key = event.key?.toLowerCase(), mod = event.ctrlKey || event.metaKey;
     const command = SHORTCUTS.find(([k, ctrl, shift]) => k === key && ctrl === mod && (!ctrl || shift === event.shiftKey))?.[3];
     if (!command) return;

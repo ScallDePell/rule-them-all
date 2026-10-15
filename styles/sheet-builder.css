@@ -1,46 +1,85 @@
 /* Rule Them'All — sheet-builder.css : Constructeur de fiches.
    L'ordre de chargement (module.json "styles") fait partie de la cascade. */
 
-/* The editor shows the played sheet (sheet.css) with sample values: a click selects a block. While editing, the
-   tools (toolbar, the selected block's settings, what can be added) sit in a column beside the sheet and stay in
-   view while the sheet scrolls; in a narrow window they go above it. */
+/* The editor shows the played sheet (sheet.css) with sample values: a click selects a block. Its window is split in
+   three zones that scroll each on its own, between the window's title and its buttons (which stay in view): the tools
+   (toolbar, "View as", the selected block's settings, what can be added, the sheet's look) on the left, the sheet's
+   settings then the sheet itself in the middle, the Layers on the right. A narrower window puts the Layers under the
+   tools; a narrow one stacks everything in one scroll. A validated sheet has the middle zone only. */
 .rta-sheet-editor {
   container: rta-sheet-editor / inline-size;
-}
-
-.rta-sheet-editor__body {
   display: flex;
+  flex: 1;
   flex-direction: column;
-  gap: var(--rta-gap-row);
+  min-block-size: 0;
+  overflow-y: auto;
 }
 
-/* The entry window's scroll area is the height the side column may take. */
-.rta-config-entry__scroll:has(.rta-sheet-editor__body--editing) {
-  container: rta-entry-scroll / size;
-}
-
-.rta-sheet-editor__side {
+.rta-sheet-editor__side,
+.rta-sheet-editor__layers-column {
   --rta-form-label-column-min: 6rem;
   --rta-form-label-column-max: 7rem;
   display: flex;
   flex-direction: column;
   gap: var(--rta-gap-row);
   min-inline-size: 0;
+  padding: var(--rta-space-2) var(--rta-space-4) var(--rta-space-4);
+  scrollbar-width: thin;
 }
 
-@container rta-sheet-editor (inline-size >= 720px) {
-  .rta-sheet-editor__body--editing {
+/* Stacked in a narrow window: one scroll for the three zones. */
+.rta-sheet-editor--editing > .rta-sheet-editor__main {
+  flex: none;
+  min-inline-size: 0;
+  overflow: visible;
+}
+
+@container rta-window (inline-size >= 640px) {
+  .rta-sheet-editor--editing {
     display: grid;
-    grid-template-columns: minmax(16rem, 20rem) minmax(0, 1fr);
-    align-items: start;
+    grid-template-areas: "side main" "layers main";
+    grid-template-columns: minmax(16rem, 18rem) minmax(0, 1fr);
+    grid-template-rows: minmax(0, 3fr) minmax(0, 2fr);
+    overflow: hidden;
   }
 
-  .rta-sheet-editor__side {
-    position: sticky;
-    inset-block-start: 0;
-    max-block-size: 100cqb;
+  .rta-sheet-editor__side { grid-area: side; }
+  .rta-sheet-editor__main { grid-area: main; }
+  .rta-sheet-editor__layers-column { grid-area: layers; }
+
+  .rta-sheet-editor--editing > :is(.rta-sheet-editor__side, .rta-sheet-editor__main, .rta-sheet-editor__layers-column) {
+    min-block-size: 0;
     overflow-y: auto;
     scrollbar-gutter: stable;
+  }
+
+  .rta-sheet-editor__side,
+  .rta-sheet-editor__layers-column {
+    border-inline-end: 1px solid var(--rta-color-border);
+  }
+
+  .rta-sheet-editor__layers-column {
+    border-block-start: 1px solid var(--rta-color-border);
+  }
+
+  /* The Layers' own zone scrolls: the tree takes the room it needs. */
+  .rta-sheet-editor__layers-column .rta-sheet-layers {
+    max-block-size: none;
+    overflow: visible;
+  }
+}
+
+@container rta-window (inline-size >= 960px) {
+  .rta-sheet-editor--editing {
+    grid-template-areas: "side main layers";
+    grid-template-columns: minmax(16rem, 18rem) minmax(0, 1fr) minmax(14rem, 16rem);
+    grid-template-rows: minmax(0, 1fr);
+  }
+
+  .rta-sheet-editor__layers-column {
+    border-block-start: 0;
+    border-inline-end: 0;
+    border-inline-start: 1px solid var(--rta-color-border);
   }
 }
 

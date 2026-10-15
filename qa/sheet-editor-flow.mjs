@@ -10,10 +10,11 @@ const fixture = JSON.parse(readFileSync(join(dir, 'fixture.json'), 'utf8'));
 const en = JSON.parse(readFileSync(join(root, 'lang/en.json'), 'utf8'));
 const url = rel => pathToFileURL(join(root, rel)).href;
 const browser = await chromium.launch({executablePath: process.env.RTA_CHROMIUM, args: ['--no-sandbox', '--allow-file-access-from-files']});
-const page = await browser.newPage({viewport: {width: 1180, height: 1100}});
+// The sheet editor's own window width (1320): the three zones side by side.
+const page = await browser.newPage({viewport: {width: 1320, height: 1100}});
 const errors = []; page.on('pageerror', error => errors.push(error.message));
 await page.goto(pathToFileURL(join(dir, 'editor-sheetDefinition.html')).href);
-// Sized like a Foundry window: the entry form scrolls inside it.
+// Sized like a Foundry window: the entry form scrolls inside it, its buttons stay at the bottom.
 await page.addStyleTag({content: '.application{height:1000px;display:flex;flex-direction:column}.window-content{flex:1;min-height:0;display:flex;flex-direction:column;overflow:hidden}'});
 const result = await page.evaluate(async ({fixture, en, urls}) => {
   const lookup = key => key.split('.').reduce((o, k) => o?.[k], en) ?? key;
@@ -106,8 +107,19 @@ const result = await page.evaluate(async ({fixture, en, urls}) => {
   check('dropping on the top edge of a block puts it before', find(layout(), 'stats').children[0]?.id === dropped.id);
   const strikeNow = element.querySelector('[data-layout-canvas] [data-layout-node="strike"]'), list = element.querySelector(`[data-layout-canvas] [data-layout-node="${find(layout(), 'stats').children.find(c => c.kind === 'repeater')?.id}"]`);
   if (list) { await drag(strikeNow, list, {top: true}); const kids = find(layout(), 'stats').children.map(c => c.id); check('the top edge of a list puts a block before the list, not in it', kids.indexOf('strike') === kids.indexOf(list.dataset.layoutNode) - 1); }
-  const side = element.querySelector('.rta-sheet-editor__side');
-  check('the tools sit beside the sheet and stay in view', getComputedStyle(side).position === 'sticky' && side.getBoundingClientRect().right <= element.querySelector('[data-layout-canvas]').getBoundingClientRect().left);
+  // Three zones side by side, each the window's full height and scrolled on its own; the buttons stay below them.
+  { const side = element.querySelector('.rta-sheet-editor__side'), main = element.querySelector('.rta-sheet-editor__main'), layers = element.querySelector('.rta-sheet-editor__layers-column');
+    const footer = element.querySelector('.rta-config-entry__footer'), box = e => e.getBoundingClientRect(), zones = [side, main, layers];
+    check('the tools, the sheet and the Layers sit side by side', box(side).right <= box(main).left + 1 && box(main).right <= box(layers).left + 1 && main.contains(element.querySelector('[name="nameKey"]')) && main.contains(element.querySelector('[data-layout-canvas]')) && layers.contains(element.querySelector('[data-layout-layers]')));
+    check('the three zones take the full height', zones.every(z => Math.abs(box(z).top - box(side).top) < 1 && Math.abs(box(z).bottom - box(side).bottom) < 1) && box(side).bottom <= box(footer).top + 1);
+    check('the tools and the sheet scroll', [side, main].every(z => getComputedStyle(z).overflowY === 'auto' && z.scrollHeight > z.clientHeight) && getComputedStyle(layers).overflowY === 'auto');
+    main.scrollTop = main.scrollHeight;
+    check('scrolling the sheet leaves the tools and the Layers in place', main.scrollTop > 0 && side.scrollTop === 0 && layers.scrollTop === 0);
+    side.scrollTop = side.scrollHeight;
+    check('scrolling the tools leaves the sheet in place', side.scrollTop > 0 && main.scrollTop > 0 && Math.abs(main.scrollTop - (main.scrollHeight - main.clientHeight)) < 2);
+    const app = element.getBoundingClientRect();
+    check('the window buttons stay in view', box(footer).height > 0 && box(footer).bottom <= app.bottom + 1 && box(footer).top >= box(main).bottom - 1);
+    side.scrollTop = 0; main.scrollTop = 0; }
   await click('[data-layout-canvas] [data-layout-node="strike"]');
   await click('[data-layout-command="remove"]');
   check('removing a block', !find(layout(), 'strike'));
@@ -309,6 +321,13 @@ const result = await page.evaluate(async ({fixture, en, urls}) => {
   await drag(layer('total'), layer('stats'));
   check('dragging a row onto a section in the Layers moves the block into it', find(layout(), 'stats').children.some(c => c.id === 'total'));
   await key('z', {ctrlKey: true});
+  { const column = element.querySelector('.rta-sheet-editor__layers-column'), rows = [...element.querySelectorAll('[data-layout-layers] [data-layer-node]')], last = rows.at(-1);
+    // Short window: the Layers' zone scrolls; the last block, picked on the sheet, is brought into it.
+    column.style.maxBlockSize = '8rem'; column.scrollTop = 0;
+    await click(`[data-layout-canvas] [data-layout-node="${last.dataset.layerNode}"]`);
+    const row = element.querySelector(`[data-layout-layers] [data-layer-node="${last.dataset.layerNode}"]`), r = row.getBoundingClientRect(), c = column.getBoundingClientRect();
+    check('the Layers scroll to the block picked on the sheet', column.scrollTop > 0 && r.top >= c.top - 1 && r.bottom <= c.bottom + 1);
+    column.style.maxBlockSize = ''; }
   // Preview widths, and the sheet's own window width.
   const canvasWidth = () => Math.round(element.querySelector('[data-layout-canvas]').getBoundingClientRect().width);
   check(`the preview starts at the sheet's window width (${canvasWidth()}px)`, canvasWidth() === 640);
@@ -387,7 +406,7 @@ const result = await page.evaluate(async ({fixture, en, urls}) => {
 if (process.env.RTA_SHOTS) {
   await page.screenshot({path: join(process.env.RTA_SHOTS, 'sheet-editor-flow.png')});
   // Scrolled down: the tools stay beside the sheet; then the bottom of the tools column, with the palette.
-  await page.evaluate(() => { const scroll = document.querySelector('.rta-config-entry__scroll'); scroll.scrollTop = scroll.scrollHeight; });
+  await page.evaluate(() => { const scroll = document.querySelector('.rta-sheet-editor__main'); scroll.scrollTop = scroll.scrollHeight; });
   await page.screenshot({path: join(process.env.RTA_SHOTS, 'sheet-editor-scrolled.png')});
   await page.evaluate(() => { const side = document.querySelector('.rta-sheet-editor__side'); side.scrollTop = side.scrollHeight; });
   await page.screenshot({path: join(process.env.RTA_SHOTS, 'sheet-editor-palette.png')});
@@ -400,7 +419,7 @@ if (process.env.RTA_SHOTS) {
     for (const key of ['set', 'add', 'subtract']) { const box = props().querySelector(`[data-layout-write="${key}"]`); if (box) { fire(box, key !== 'set'); await wait(); } }
     fire(props().querySelector('[data-layout-seen="observer"]'), false); await wait();
     fire(props().querySelector('[data-layout-write-by="gm"]'), true); await wait();
-    document.querySelector('.rta-sheet-editor__side').scrollTop = 0; document.querySelector('.rta-config-entry__scroll').scrollTop = 0;
+    document.querySelector('.rta-sheet-editor__side').scrollTop = 0; document.querySelector('.rta-sheet-editor__main').scrollTop = 0;
   });
   await page.screenshot({path: join(process.env.RTA_SHOTS, 'sheet-editor-gauge.png')});
   // The section with a text that shows a value, a rich text area, a separator, a clock and boxes; the text's settings.
@@ -424,9 +443,24 @@ if (process.env.RTA_SHOTS) {
       while (!document.querySelector('[data-layout-command="up"]')?.disabled) { document.querySelector('[data-layout-command="up"]').click(); await wait(); }
     }
     document.querySelector('[data-layout-canvas] [data-layout-node^="token"]')?.click(); await wait();
-    document.querySelector('.rta-sheet-editor__side').scrollTop = 0; document.querySelector('.rta-config-entry__scroll').scrollTop = 0;
+    document.querySelector('.rta-sheet-editor__side').scrollTop = 0; document.querySelector('.rta-sheet-editor__main').scrollTop = 0;
   });
   await page.screenshot({path: join(process.env.RTA_SHOTS, 'sheet-editor-document.png')});
+}
+// Narrower windows: at 1180 px the three zones narrow; at 900 px the Layers go under the tools; at 600 px all is stacked
+// in one scroll. The buttons stay at the bottom every time.
+for (const width of [1180, 900, 600]) {
+  await page.setViewportSize({width, height: 1100});
+  const narrow = await page.evaluate(() => {
+    const box = selector => document.querySelector(selector).getBoundingClientRect(), side = box('.rta-sheet-editor__side'), main = box('.rta-sheet-editor__main'), layers = box('.rta-sheet-editor__layers-column'), footer = box('.rta-config-entry__footer'), app = box('.application');
+    const page = document.documentElement;
+    return {three: side.right <= main.left + 1 && main.right <= layers.left + 1, under: Math.abs(layers.left - side.left) < 1 && layers.top >= side.bottom - 1 && side.right <= main.left + 1,
+      stacked: main.top >= side.bottom - 1, footer: footer.height > 0 && footer.bottom <= app.bottom + 1, overflow: page.scrollWidth > page.clientWidth};
+  });
+  const layout = width >= 1180 ? narrow.three : width >= 900 ? narrow.under : narrow.stacked;
+  console.log(`${layout && narrow.footer && !narrow.overflow ? 'ok' : 'FAIL'} at ${width}px: ${width >= 1180 ? 'three zones' : width >= 900 ? 'the Layers under the tools' : 'one column'}, the buttons in view`);
+  if (!(layout && narrow.footer && !narrow.overflow)) result.push(`FAIL at ${width}px`);
+  if (process.env.RTA_SHOTS) await page.screenshot({path: join(process.env.RTA_SHOTS, `sheet-editor-${width}.png`)});
 }
 await browser.close();
 for (const line of [...result, ...errors.map(e => `FAIL error: ${e}`)]) console.log(line);

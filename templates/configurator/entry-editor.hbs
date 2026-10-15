@@ -45,6 +45,41 @@
 <section class="rta-config-entry">
   {{#if error}}<p class="rta-configurator__error" role="alert">{{error}}</p>{{/if}}
   <form data-entry-form>
+    {{#if isSheetDefinition}}
+    <div class="rta-sheet-editor{{#unless readOnly}} rta-sheet-editor--editing{{/unless}}" data-sheet-layout-editor>
+      <input type="hidden" data-sheet-layout-value value="{{sheetLayoutJSON}}">
+      <input type="hidden" data-sheet-theme-value value="{{sheetThemeJSON}}">
+      {{#unless readOnly}}<aside class="rta-sheet-editor__side" data-entry-scroll-tools>
+        <div data-layout-toolbar></div>
+        <div class="rta-sheet-editor__properties" data-layout-properties></div>
+        <div data-layout-palette-host></div>
+        <div data-layout-theme-host></div>
+      </aside>{{/unless}}
+      <div data-entry-scroll class="rta-config-entry__scroll rta-sheet-editor__main">
+        {{#if readOnly}}<p><i class="fa-solid fa-lock"></i> {{localize "RTA.Template.ValidatedVersionReadOnly"}}</p>{{/if}}
+        {{#if help}}<details class="rta-config-entry__section rta-config-entry__help" data-entry-help><summary><strong><i class="fa-solid fa-circle-question" aria-hidden="true"></i> {{localize "RTA.Help.Title"}}</strong></summary><div class="rta-config-entry__help-body"><p>{{localize help.summaryKey}}</p><p>{{localize help.usageKey}}</p>{{#if help.typeDescription}}<p><strong>{{localize "RTA.Help.TypeHelp"}} :</strong> {{help.typeDescription}}</p>{{/if}}</div></details>{{/if}}
+        <fieldset><legend>{{localize "RTA.Template.Sheet"}}</legend>
+          {{> rtaIdentityName}}
+          <div class="form-group rta-form-row"><label>{{localize "RTA.Sheet.Target"}}</label><select name="sheetTarget" {{#if readOnly}}disabled{{/if}}>{{#each sheetTargetChoices}}<option value="{{id}}" data-rta-colors="{{colors}}" {{#if selected}}selected{{/if}}>{{localize labelKey}}</option>{{/each}}</select></div>
+          <div class="form-group rta-form-row"><label>{{localize "RTA.Sheet.Header.label"}}</label><select name="sheetHeader" {{#if readOnly}}disabled{{/if}}>{{#each sheetHeaderChoices}}<option value="{{id}}" data-rta-colors="{{colors}}" {{#if selected}}selected{{/if}}>{{localize labelKey}}</option>{{/each}}</select></div>
+          <div class="form-group rta-form-row"><label>{{localize "RTA.Sheet.WindowSize"}}</label><div class="rta-sheet-window-size" title="{{localize 'RTA.Sheet.WindowSizeHint'}}"><input type="number" name="sheetWindowWidth" min="320" max="2400" step="10" value="{{data.window.width}}" placeholder="640" aria-label="{{localize 'RTA.Sheet.WindowWidth'}}" {{#if readOnly}}readonly{{/if}}><span aria-hidden="true">×</span><input type="number" name="sheetWindowHeight" min="240" max="1600" step="10" value="{{data.window.height}}" placeholder="720" aria-label="{{localize 'RTA.Sheet.WindowHeight'}}" {{#if readOnly}}readonly{{/if}}></div></div>
+          <div data-sheet-item-only {{#unless sheetIsItem}}hidden{{/unless}}><details class="rta-picker rta-config-entry__section" data-picker><summary><strong>{{localize "RTA.Sheet.ContentTypes"}}</strong><span data-picker-summary>{{sheetContentTypeSummary}}</span></summary><div class="rta-picker__body rta-choice-list">{{#each sheetContentTypeChoices}}<label data-picker-option data-picker-label="{{label}}" data-rta-colors="{{colors}}"><input type="checkbox" name="sheetContentTypes" value="{{id}}" {{#if selected}}checked{{/if}} {{#if ../readOnly}}disabled{{/if}}> {{label}}</label>{{else}}<p>{{localize "RTA.Sheet.NoContentTypes"}}</p>{{/each}}</div></details></div>
+          <div class="form-group rta-form-row"><label>{{localize "RTA.Template.Description"}}</label><textarea name="descriptionKey" rows="2" {{#if readOnly}}readonly{{/if}}>{{data.descriptionKey}}</textarea></div>
+          <div class="form-group rta-form-row"><label>{{localize "RTA.SheetFile.Label"}}</label><div class="rta-sheet-file"><button type="button" data-sheet-file="export"><i class="fa-solid fa-file-export"></i> {{localize "RTA.SheetFile.Export"}}</button>{{#unless readOnly}}<button type="button" data-sheet-file="import"><i class="fa-solid fa-file-import"></i> {{localize "RTA.SheetFile.Import"}}</button>{{/unless}}</div></div>
+          {{> rtaEnabled}}
+        </fieldset>
+        <details class="rta-config-entry__section" open><summary><strong>{{localize "RTA.SheetEditor.Layout"}}</strong></summary>
+          <div class="rta-sheet-editor__stage">
+            {{#unless readOnly}}<div data-layout-widths></div>{{/unless}}
+            <div class="rta-sheet-editor__canvas" data-layout-canvas tabindex="-1"></div>
+          </div>
+        </details>
+      </div>
+      {{#unless readOnly}}<aside class="rta-sheet-editor__layers-column" data-entry-scroll-layers>
+        <div data-layout-layers-host tabindex="-1"></div>
+      </aside>{{/unless}}
+    </div>
+    {{else}}
     <div data-entry-scroll class="rta-config-entry__scroll">
       {{#if readOnly}}<p><i class="fa-solid fa-lock"></i> {{localize "RTA.Template.ValidatedVersionReadOnly"}}</p>{{/if}}
       {{#if help}}<details class="rta-config-entry__section rta-config-entry__help" data-entry-help><summary><strong><i class="fa-solid fa-circle-question" aria-hidden="true"></i> {{localize "RTA.Help.Title"}}</strong></summary><div class="rta-config-entry__help-body"><p>{{localize help.summaryKey}}</p><p>{{localize help.usageKey}}</p>{{#if help.typeDescription}}<p><strong>{{localize "RTA.Help.TypeHelp"}} :</strong> {{help.typeDescription}}</p>{{/if}}</div></details>{{/if}}
@@ -425,37 +460,6 @@
         {{#unless creating}}<details class="rta-config-entry__section rta-config-entry__technical"><summary>{{localize "RTA.Template.Technical"}}</summary><div class="form-group rta-form-row"><label>{{localize "RTA.Template.Id"}}</label><input value="{{data.id}}" readonly></div><details><summary>{{localize "RTA.Template.RawFieldData"}}</summary><textarea rows="8" readonly>{{dataJson}}</textarea></details></details>{{/unless}}
       {{/if}}
 
-      {{#if isSheetDefinition}}
-        <fieldset><legend>{{localize "RTA.Template.Sheet"}}</legend>
-          {{> rtaIdentityName}}
-          <div class="form-group rta-form-row"><label>{{localize "RTA.Sheet.Target"}}</label><select name="sheetTarget" {{#if readOnly}}disabled{{/if}}>{{#each sheetTargetChoices}}<option value="{{id}}" data-rta-colors="{{colors}}" {{#if selected}}selected{{/if}}>{{localize labelKey}}</option>{{/each}}</select></div>
-          <div class="form-group rta-form-row"><label>{{localize "RTA.Sheet.Header.label"}}</label><select name="sheetHeader" {{#if readOnly}}disabled{{/if}}>{{#each sheetHeaderChoices}}<option value="{{id}}" data-rta-colors="{{colors}}" {{#if selected}}selected{{/if}}>{{localize labelKey}}</option>{{/each}}</select></div>
-          <div class="form-group rta-form-row"><label>{{localize "RTA.Sheet.WindowSize"}}</label><div class="rta-sheet-window-size" title="{{localize 'RTA.Sheet.WindowSizeHint'}}"><input type="number" name="sheetWindowWidth" min="320" max="2400" step="10" value="{{data.window.width}}" placeholder="640" aria-label="{{localize 'RTA.Sheet.WindowWidth'}}" {{#if readOnly}}readonly{{/if}}><span aria-hidden="true">×</span><input type="number" name="sheetWindowHeight" min="240" max="1600" step="10" value="{{data.window.height}}" placeholder="720" aria-label="{{localize 'RTA.Sheet.WindowHeight'}}" {{#if readOnly}}readonly{{/if}}></div></div>
-          <div data-sheet-item-only {{#unless sheetIsItem}}hidden{{/unless}}><details class="rta-picker rta-config-entry__section" data-picker><summary><strong>{{localize "RTA.Sheet.ContentTypes"}}</strong><span data-picker-summary>{{sheetContentTypeSummary}}</span></summary><div class="rta-picker__body rta-choice-list">{{#each sheetContentTypeChoices}}<label data-picker-option data-picker-label="{{label}}" data-rta-colors="{{colors}}"><input type="checkbox" name="sheetContentTypes" value="{{id}}" {{#if selected}}checked{{/if}} {{#if ../readOnly}}disabled{{/if}}> {{label}}</label>{{else}}<p>{{localize "RTA.Sheet.NoContentTypes"}}</p>{{/each}}</div></details></div>
-          <div class="form-group rta-form-row"><label>{{localize "RTA.Template.Description"}}</label><textarea name="descriptionKey" rows="2" {{#if readOnly}}readonly{{/if}}>{{data.descriptionKey}}</textarea></div>
-          <div class="form-group rta-form-row"><label>{{localize "RTA.SheetFile.Label"}}</label><div class="rta-sheet-file"><button type="button" data-sheet-file="export"><i class="fa-solid fa-file-export"></i> {{localize "RTA.SheetFile.Export"}}</button>{{#unless readOnly}}<button type="button" data-sheet-file="import"><i class="fa-solid fa-file-import"></i> {{localize "RTA.SheetFile.Import"}}</button>{{/unless}}</div></div>
-          {{> rtaEnabled}}
-        </fieldset>
-        <details class="rta-config-entry__section" open><summary><strong>{{localize "RTA.SheetEditor.Layout"}}</strong></summary>
-          <div class="rta-sheet-editor" data-sheet-layout-editor>
-            <input type="hidden" data-sheet-layout-value value="{{sheetLayoutJSON}}">
-            <input type="hidden" data-sheet-theme-value value="{{sheetThemeJSON}}">
-            <div class="rta-sheet-editor__body{{#unless readOnly}} rta-sheet-editor__body--editing{{/unless}}">
-              {{#unless readOnly}}<aside class="rta-sheet-editor__side">
-                <div data-layout-toolbar></div>
-                <div data-layout-layers-host tabindex="-1"></div>
-                <div class="rta-sheet-editor__properties" data-layout-properties></div>
-                <div data-layout-palette-host></div>
-                <div data-layout-theme-host></div>
-              </aside>{{/unless}}
-              <div class="rta-sheet-editor__stage">
-                {{#unless readOnly}}<div data-layout-widths></div>{{/unless}}
-                <div class="rta-sheet-editor__canvas" data-layout-canvas tabindex="-1"></div>
-              </div>
-            </div>
-          </div>
-        </details>
-      {{/if}}
 
       {{#if isCreationSystem}}
         <fieldset><legend>{{localize "RTA.Template.CreationSystem"}}</legend>
@@ -568,6 +572,7 @@
         </details>
       {{/if}}
     </div>
+    {{/if}}
 
     <footer class="form-footer rta-config-entry__footer">
       {{#unless creating}}{{#unless readOnly}}<span class="rta-delete-guard" {{#if deletion.blocked}}data-tooltip="{{deletion.reason}}" aria-label="{{deletion.reason}}"{{/if}}><button type="button" data-action="delete" {{#if deletion.blocked}}disabled{{/if}}><i class="fa-solid fa-trash"></i> {{localize "RTA.Template.Delete"}}</button></span>{{/unless}}{{/unless}}

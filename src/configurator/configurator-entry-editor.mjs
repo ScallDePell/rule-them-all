@@ -70,12 +70,12 @@ const contractRow=item=>({...item,valueTypeLabel:valueTypeLabel(item.valueType),
 const selection=(items,selected=[])=>{const set=new Set(selected??[]);return items.map(item=>({...item,selected:set.has(item.id)}));};
 export class ConfiguratorEntryEditor extends ConfiguratorWindow {
   static DEFAULT_OPTIONS={window:{title:"Rule Them'All Entry",resizable:true},position:{width:760,height:760}};
-  static PARTS={content:{template:`modules/${MODULE_ID}/templates/configurator/entry-editor.hbs`,scrollable:["[data-entry-scroll]"]}};
+  static PARTS={content:{template:`modules/${MODULE_ID}/templates/configurator/entry-editor.hbs`,scrollable:["[data-entry-scroll]","[data-entry-scroll-tools]","[data-entry-scroll-layers]"]}};
   static MINIMUM={width:560,height:440};
 
   #api; #optionColors=()=>[]; #renderCatalog=null; #versionId; #kind; #id; #definitionTypeId; #contentTypeId; #baseline; #error=""; #dirty=false; #onSaved; #focusPath=null;
   constructor({api,versionId,kind,id=null,definitionTypeId=null,contentTypeId=null,focusPath=null,onSaved=()=>{}},options={}){
-    super(kind==="sheetDefinition"?{position:{width:1120,height:820},...options}:options);this.#focusPath=focusPath;this.#api=api;this.#versionId=versionId;this.#kind=kind;this.#id=id;this.#definitionTypeId=definitionTypeId;this.#contentTypeId=contentTypeId;this.#onSaved=onSaved;
+    super(kind==="sheetDefinition"?{position:{width:1320,height:860},...options}:options);this.#focusPath=focusPath;this.#api=api;this.#versionId=versionId;this.#kind=kind;this.#id=id;this.#definitionTypeId=definitionTypeId;this.#contentTypeId=contentTypeId;this.#onSaved=onSaved;
   }
 
   #read(){
