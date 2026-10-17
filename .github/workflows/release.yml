@@ -1,8 +1,10 @@
 name: Release
 
+# A v* tag, or a manual run from main: the release is named after module.json's version.
 on:
   push:
     tags: ["v*"]
+  workflow_dispatch:
 
 permissions:
   contents: write
@@ -17,17 +19,23 @@ jobs:
           node-version: 22
       - name: Tests
         run: node --test tests/*.test.mjs
-      - name: Check the tag matches module.json
-        run: test "v$(node -p "require('./module.json').version")" = "$GITHUB_REF_NAME"
+      - name: Version
+        id: version
+        run: echo "tag=v$(node -p "require('./module.json').version")" >> "$GITHUB_OUTPUT"
+      - name: Check a pushed tag matches module.json
+        if: github.event_name == 'push'
+        run: test "${{ steps.version.outputs.tag }}" = "$GITHUB_REF_NAME"
       - name: Build the zip
         run: |
           mkdir -p dist/rule-them-all
-          cp -r module.json rule-them-all.mjs README.md CHANGELOG.md lang src styles templates docs dist/rule-them-all/
-          if [ -f LICENSE ]; then cp LICENSE dist/rule-them-all/; fi
+          cp -r module.json rule-them-all.mjs README.md CHANGELOG.md LICENSE lang src styles templates docs dist/rule-them-all/
           cp module.json dist/module.json
           cd dist && zip -qr rule-them-all.zip rule-them-all
       - uses: softprops/action-gh-release@v2
         with:
+          tag_name: ${{ steps.version.outputs.tag }}
+          name: Rule Them'All ${{ steps.version.outputs.tag }}
+          target_commitish: ${{ github.sha }}
           files: |
             dist/module.json
             dist/rule-them-all.zip
