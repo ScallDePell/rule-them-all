@@ -24,7 +24,7 @@ test('actual Creation System editor renders the chosen source and its entries',a
   const api=await createConfiguratorAPI(new Storage());
   const {versionId}=await api.createRuleset({id:'r',nameKey:'R',version:'1'});
   await api.registerDefinitionType(versionId,{id:'attributes',nameKey:'Attributes',key:'attributes',fields:{},allowedCapabilities:[],defaultCapabilities:[],requiredCapabilities:[]});
-  await api.createDefinition(versionId,{id:'strength',nameKey:'Strength',key:'strength',definitionTypeId:'attributes',data:{},categories:[],capabilities:[],tags:[]});
+  await api.createDefinition(versionId,{id:'strength',nameKey:'Strength',key:'strength',definitionTypeId:'attributes',data:{},capabilities:[],tags:[]});
   await api.createCreationSystem(versionId,{id:'setup',nameKey:'Setup',steps:[{id:'s2',name:'Choose Strength',source:{collection:'definitions',objectIds:['strength']},min:1,max:1}]});
   const editor=new ConfiguratorEntryEditor({api,versionId,kind:'creationSystem',id:'setup'});
   const html=(await editor._prepareContext({})).creationStepRows[0].html;

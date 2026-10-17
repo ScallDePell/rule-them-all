@@ -98,7 +98,6 @@
       "ProgressionSystems": "Systèmes de progression",
       "SheetDefinitions": "Feuilles",
       "ContentTypes": "Types de contenu",
-      "Categories": "Catégories",
       "Tags": "Tags",
       "DefinitionTypes": "Types de définition",
       "RuntimeLab": "Labo runtime",
@@ -227,7 +226,6 @@
       "creationSystems": "Systèmes de création",
       "progressionSystems": "Systèmes de progression",
       "sheetDefinitions": "Fiches",
-      "categories": "Catégories",
       "tags": "Tags",
       "tables": "Tables",
       "dice": "Dés",
@@ -316,7 +314,6 @@
       "BonusFormula": "Formule de bonus",
       "Capabilities": "Capacités",
       "Cardinality": "Cardinalité",
-      "Categories": "Catégories",
       "ChooseWhatYouWantToTest": "Choisir ce que vous voulez tester",
       "Classification": "Classification",
       "Close": "Fermer",
@@ -540,9 +537,6 @@
       "NoneSelected": "Aucune sélection",
       "GroupsCount": "groupe(s)",
       "RollFormulaPlaceholder": "Expression de dés Foundry",
-      "Category": "Catégorie",
-      "SearchCategories": "Rechercher des catégories…",
-      "NoCategoriesYet": "Aucune catégorie pour le moment. Créez-en dans la section Catégories.",
       "AcquiredDefinitions": "Definitions acquises",
       "AcquisitionAction": "Action d’acquisition",
       "StatesRemoved": "États retirés",
@@ -1015,10 +1009,6 @@
       "sheetDefinition": {
         "Summary": "Une feuille est ce que les joueurs voient sur un Acteur ou un Objet : onglets, sections, listes des Definitions détenues, valeurs et boutons d'Action.",
         "Usage": "Clique sur un bloc de la feuille (ou dans les Calques) pour le régler dans les outils à gauche. Sous « Ajouter », clique sur un bloc ou un élément du Ruleset pour l'ajouter dans la sélection, ou fais-le glisser sur la feuille ; fais glisser les blocs pour les déplacer. Copier, coller et dupliquer marchent d'une feuille à l'autre (Ctrl+C, Ctrl+V, Ctrl+D). Sans feuille, Acteurs et Objets montrent une feuille automatique. Les joueurs choisissent la feuille dans le choix de feuille de Foundry."
-      },
-      "category": {
-        "Summary": "Une catégorie classe les Definitions et les contenus pour les filtrer.",
-        "Usage": "Le catalogue est géré ici ; les éléments ne stockent que l'identifiant."
       },
       "tag": {
         "Summary": "Une étiquette marque librement n'importe quel objet du Ruleset.",

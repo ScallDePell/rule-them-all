@@ -12,7 +12,7 @@ export const RULESET_SECTIONS = Object.freeze([
   {id:'rules', titleKey:'RTA.Nav.Rules', collections:['parameters','formulas','formulaBindings','conditions','rolls','outcomes','tests','effects','actions','modifiers','durations','dice','tables','scales']},
   {id:'orchestration', titleKey:'RTA.Nav.Orchestration', collections:['permissionPolicies','eventTypes','triggers']},
   {id:'systems', titleKey:'RTA.Nav.Systems', collections:['creationSystems','progressionSystems','sheetDefinitions','sheetTemplates','sheetThemes']},
-  {id:'organization', titleKey:'RTA.Nav.Organization', collections:['categories','tags']},
+  {id:'organization', titleKey:'RTA.Nav.Organization', collections:['tags']},
   {id:'tools', titleKey:'RTA.Nav.Tools', collections:[]}
 ]);
 const sectionByCollection = new Map(RULESET_SECTIONS.flatMap(section => section.collections.map(collection => [collection, section.id])));

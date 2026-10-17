@@ -4,7 +4,7 @@ import {copyJSON} from "./configurator-schema.mjs";
 import {ENTRY_OPERATIONS} from "./entry-operations.mjs";
 import {readableId as slug, freeId as free} from "./identity.mjs";
 
-const COLLECTION = {die: "dice", category: "categories", tag: "tags"};
+const COLLECTION = {die: "dice", tag: "tags"};
 export const entryCollection = kind => COLLECTION[kind] ?? `${kind}s`;
 
 /** The copy of `entry` named `name`, with an id (and key) not used by its collection. */

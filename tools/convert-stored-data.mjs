@@ -1,6 +1,7 @@
 /** One-shot conversion of a World saved before the 2026-10-11 UI simplification, the RWF gap fixes, the 2026-10-12 progression
  * the 2026-10-13 sheet audiences (gmOnly becomes seenBy), or the 2026-10-14 split storage (one world setting per
- * RulesetVersion instead of a single one), or the 2026-10-14 Event Types without roles.
+ * RulesetVersion instead of a single one), or the 2026-10-14 Event Types without roles, or the 2026-10-17 Categories
+ * merged into Tags.
  * The module itself reads only the current format; this tool rewrites stored data once.
  * In the Foundry console, as GM:
  *   const {convertWorld}=await import("/modules/rule-them-all/tools/convert-stored-data.mjs");
@@ -11,6 +12,7 @@ import {copyJSON, isRecord} from "../src/configurator/configurator-schema.mjs";
 import {readStorageSnapshot} from "../src/configurator/configurator-storage.mjs";
 import {PERMISSION_OPERATIONS} from "../src/configurator/permission-contract.mjs";
 import {STORAGE_KEY, STORAGE_NAMESPACE, WorldSettingStorage} from "../src/configurator/world-setting-storage.mjs";
+import {freeId} from "../src/configurator/identity.mjs";
 
 const REMOVED_CAPABILITIES = new Set(["tests", "actions", "progression", "formulaSource", "conditionSource", "effectTarget"]);
 const REMOVED_COLLECTIONS = ["references", "restrictions"];
@@ -142,6 +144,35 @@ function convertSheet(sheet, notes) {
     contentTypeIds: sheet.contentTypeIds ?? [], root: {id: "root", kind: "grid", columns, children}};
 }
 
+/** 2026-10-17: Categories only filtered the cards of Definitions and Contents, as Tags do; each becomes the Tag of its
+ * name (the Tag of that name when there is one), set on the same entries. */
+function mergeCategories(r, notes) {
+  const categories = (r.categories ?? []).filter(isRecord), tags = [...(r.tags ?? [])], byCategory = new Map();
+  const taken = new Set(tags.map(tag => tag?.id));
+  for (const category of categories) {
+    const name = String(category.nameKey ?? category.id ?? "").trim();
+    const same = tags.find(tag => String(tag?.nameKey ?? "").trim().toLowerCase() === name.toLowerCase());
+    if (same) { byCategory.set(category.id, same.id); continue; }
+    const id = freeId(String(category.id || "tag"), taken);
+    taken.add(id);
+    tags.push({id, nameKey: name || id, descriptionKey: category.descriptionKey ?? "", order: category.order ?? 0, color: null});
+    byCategory.set(category.id, id);
+  }
+  let moved = 0;
+  for (const collection of ["definitions", "contentTemplates"]) {
+    r[collection] = (r[collection] ?? []).map(entry => {
+      if (!isRecord(entry) || !Object.hasOwn(entry, "categories")) return entry;
+      const added = (entry.categories ?? []).map(id => byCategory.get(id)).filter(Boolean);
+      moved += added.length;
+      return {...without(entry, ["categories"]), tags: [...new Set([...(entry.tags ?? []), ...added])]};
+    });
+  }
+  if (categories.length) notes.push(`${categories.length} Categor${categories.length > 1 ? "ies" : "y"} merged into Tags (${moved} use${moved === 1 ? "" : "s"}).`);
+  r.tags = tags;
+  if (isRecord(r.familyColors)) r.familyColors = without(r.familyColors, ["categories"]);
+  return without(r, ["categories"]);
+}
+
 export function convertRuleset(source) {
   const notes = [];
   let r = copyJSON(source);
@@ -166,7 +197,7 @@ export function convertRuleset(source) {
   r.parameters = (r.parameters ?? []).map(p => without(p, ["nullable"]));
   r.actions = (r.actions ?? []).map(a => without(a, ["purpose"]));
   r.tags = (r.tags ?? []).map(t => without(t, ["enabled"]));
-  r.categories = (r.categories ?? []).map(c => without(c, ["enabled"]));
+  r = mergeCategories(r, notes);
 
   // The engine used to try Outcomes by priority (highest first); the Test's list order now decides.
   const priority = new Map((r.outcomes ?? []).map(o => [o.id, o.priority ?? 0]));

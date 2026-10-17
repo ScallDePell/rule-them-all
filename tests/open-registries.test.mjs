@@ -15,7 +15,7 @@ const strength={objectKind:'definition',objectId:'strength',capabilityId:'value'
 async function setup(){
   const api=await createConfiguratorAPI(new Storage());const v=(await api.createRuleset({id:'r',nameKey:'R',version:'1'})).versionId;
   await api.registerDefinitionType(v,{id:'attribute',key:'attribute',nameKey:'Attribute',descriptionKey:'',color:null,order:10,allowedCapabilities:['value','state'],defaultCapabilities:['value'],requiredCapabilities:['value'],fields:{},constraints:[]});
-  await api.createDefinition(v,{id:'strength',key:'strength',definitionTypeId:'attribute',nameKey:'Strength',descriptionKey:'',data:{},categories:[],capabilities:['value','state'],...meta});
+  await api.createDefinition(v,{id:'strength',key:'strength',definitionTypeId:'attribute',nameKey:'Strength',descriptionKey:'',data:{},capabilities:['value','state'],...meta});
   return {api,v};
 }
 const codes=(result,code)=>result.diagnostics.filter(x=>x.code===code);

@@ -283,15 +283,6 @@ export function prepareTag(data,options={}){
   if(!(x.color===null||nonempty(x.color)))throw new Error('Tag.color must be null or a non-empty string.');
   return x;
 }
-/** CatalogEntry (§47): a GM-managed Category; consumers store only its id. */
-export function prepareCategory(data,options={}){
-  const x={descriptionKey:'',order:0,...copyJSON(data)};
-  identity(x,'Category',options);
-  if(typeof x.descriptionKey!=='string')throw new Error('Category.descriptionKey must be a string.');
-  if(!Number.isSafeInteger(x.order))throw new Error('Category.order must be a safe integer.');
-  for(const key of Object.keys(x))if(!['id','nameKey','descriptionKey','order','relations'].includes(key))throw new Error(`Unsupported Category field: ${key}.`);
-  return x;
-}
 export function prepareEventType(data,options={}){
   const x={descriptionKey:'',enabled:true,order:0,tags:[],payloadFields:{},...copyJSON(data)};
   identity(x,'EventType',options);
@@ -331,7 +322,7 @@ export function prepareContentType(data,options={}){
 }
 
 export function prepareContentTemplate(data,options={}){
-  const x={descriptionKey:'',image:'',data:{},enabled:true,order:0,tags:[],contentTypeId:'generic',acquisitionActionRef:null,choiceGroups:[],categories:[],capabilities:[],runtimeMode:null,...copyJSON(data)};
+  const x={descriptionKey:'',image:'',data:{},enabled:true,order:0,tags:[],contentTypeId:'generic',acquisitionActionRef:null,choiceGroups:[],capabilities:[],runtimeMode:null,...copyJSON(data)};
   for(const k of ['definitionBindings','actionBindings','initialStateRules'])if(Object.hasOwn(x,k))throw new Error(`Unsupported ContentTemplate field: ${k}.`);
   identity(x,'ContentTemplate',options);need(nonempty(x.contentTypeId),'ContentTemplate requires contentTypeId.',options);
   if(!(x.acquisitionActionRef===null||nonempty(x.acquisitionActionRef)))throw new Error('ContentTemplate.acquisitionActionRef must be an Action id or null.');
@@ -339,7 +330,7 @@ export function prepareContentTemplate(data,options={}){
   if(!isRecord(x.data))throw new Error('ContentTemplate.data must be an object.');
   // null: the template follows its Content Type.
   if(![null,'unique','stackable'].includes(x.runtimeMode))throw new Error('ContentTemplate.runtimeMode must be null, unique or stackable.');
-  for(const k of ['choiceGroups','categories','capabilities','tags'])arr(x[k],`ContentTemplate.${k}`);
+  for(const k of ['choiceGroups','capabilities','tags'])arr(x[k],`ContentTemplate.${k}`);
   const groupIds=new Set();
   x.choiceGroups=x.choiceGroups.map((group,index)=>{
     if(!isRecord(group)||!nonempty(group.id))throw new Error(`ContentTemplate.choiceGroups[${index}] requires id.`);
@@ -614,4 +605,4 @@ export function prepareSheetThemeEntry(data,options={}){
   return prepareSheetThemeLook(x);
 }
 
-export const PREPARERS={parameters:prepareParameter,formulas:prepareFormula,formulaBindings:prepareFormulaBinding,conditions:prepareCondition,rolls:prepareRoll,outcomes:prepareOutcome,tests:prepareTest,effects:prepareEffect,actions:prepareAction,permissionPolicies:preparePermissionPolicy,eventTypes:prepareEventType,triggers:prepareTrigger,contentTypes:prepareContentType,contentTemplates:prepareContentTemplate,modifiers:prepareModifier,durations:prepareDuration,dice:prepareDie,tables:prepareTable,scales:prepareScale,creationSystems:prepareCreationSystem,progressionSystems:prepareProgressionSystem,sheetDefinitions:prepareSheetDefinition,sheetTemplates:prepareSheetTemplate,sheetThemes:prepareSheetThemeEntry,categories:prepareCategory,tags:prepareTag};
+export const PREPARERS={parameters:prepareParameter,formulas:prepareFormula,formulaBindings:prepareFormulaBinding,conditions:prepareCondition,rolls:prepareRoll,outcomes:prepareOutcome,tests:prepareTest,effects:prepareEffect,actions:prepareAction,permissionPolicies:preparePermissionPolicy,eventTypes:prepareEventType,triggers:prepareTrigger,contentTypes:prepareContentType,contentTemplates:prepareContentTemplate,modifiers:prepareModifier,durations:prepareDuration,dice:prepareDie,tables:prepareTable,scales:prepareScale,creationSystems:prepareCreationSystem,progressionSystems:prepareProgressionSystem,sheetDefinitions:prepareSheetDefinition,sheetTemplates:prepareSheetTemplate,sheetThemes:prepareSheetThemeEntry,tags:prepareTag};

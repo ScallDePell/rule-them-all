@@ -20,10 +20,11 @@ test('saving a Sheet keeps its tags', () => {
   assert.deepEqual(collectEntryData('sheetDefinition',{...form({nameKey:'Sheet'}),current}).tags,['main']);
 });
 
-test('a Content Template saves the categories chosen in its picker and no longer writes capabilities', () => {
-  const current={id:'rope',nameKey:'Rope',contentTypeId:'gear',categories:['old'],capabilities:['value'],tags:[]};
-  const saved=collectEntryData('contentTemplate',{...form({nameKey:'Rope',contentTypeId:'gear',runtimeMode:'unique'},{categories:['tools']}),current});
-  assert.deepEqual(saved.categories,['tools']);
+test('a Content Template saves the tags chosen in its picker and no longer writes capabilities', () => {
+  const current={id:'rope',nameKey:'Rope',contentTypeId:'gear',capabilities:['value'],tags:['old']};
+  const saved=collectEntryData('contentTemplate',{...form({nameKey:'Rope',contentTypeId:'gear',runtimeMode:'unique'},{tags:['tools']}),current});
+  assert.deepEqual(saved.tags,['tools']);
+  assert.equal(saved.categories,undefined);
   assert.deepEqual(saved.capabilities,['value']);
 });
 

@@ -16,8 +16,8 @@ test('Creation sources offer only what the creation runtime applies: Definitions
   const api=await createConfiguratorAPI(new MemoryStorage());
   const {versionId}=await api.createRuleset({id:'sample',nameKey:'Example game',version:'1.0.0'});
   await api.registerDefinitionType(versionId,{id:'characteristic',key:'characteristic',nameKey:'Characteristics',allowedCapabilities:[],defaultCapabilities:[],requiredCapabilities:[],fields:{}});
-  await api.createDefinition(versionId,{id:'strength',key:'strength',nameKey:'Strength',definitionTypeId:'characteristic',data:{},categories:[],capabilities:[],tags:[]});
-  await api.createDefinition(versionId,{id:'agility',key:'agility',nameKey:'Agility',definitionTypeId:'characteristic',data:{},categories:[],capabilities:[],tags:[]});
+  await api.createDefinition(versionId,{id:'strength',key:'strength',nameKey:'Strength',definitionTypeId:'characteristic',data:{},capabilities:[],tags:[]});
+  await api.createDefinition(versionId,{id:'agility',key:'agility',nameKey:'Agility',definitionTypeId:'characteristic',data:{},capabilities:[],tags:[]});
   const sources=getCreationSources(api,versionId);
   assert.deepEqual(sources.map(source=>source.id),['definitions','contentTemplates']);
   assert.deepEqual(sources[0].items.map(x=>x.label),['Strength','Agility']);

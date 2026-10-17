@@ -10,7 +10,7 @@ const strength={objectKind:'definition',objectId:'strength',capabilityId:'value'
 async function setup(){
   const api=await createConfiguratorAPI(new Storage());const v=(await api.createRuleset({id:'r',nameKey:'R',version:'1'})).versionId;
   await api.registerDefinitionType(v,{id:'attribute',key:'attribute',nameKey:'Attribute',descriptionKey:'',color:null,order:10,allowedCapabilities:['value','state'],defaultCapabilities:['value'],requiredCapabilities:['value'],fields:{},constraints:[]});
-  await api.createDefinition(v,{id:'strength',key:'strength',definitionTypeId:'attribute',nameKey:'Strength',descriptionKey:'',data:{},categories:[],capabilities:['value','state'],...meta});
+  await api.createDefinition(v,{id:'strength',key:'strength',definitionTypeId:'attribute',nameKey:'Strength',descriptionKey:'',data:{},capabilities:['value','state'],...meta});
   await api.createFormula(v,{id:'total',nameKey:'Total',resultType:'number',expression:{type:'reference',reference:strength},...meta});
   await api.createFormula(v,{id:'bonus',nameKey:'Bonus',resultType:'number',expression:{type:'literal',value:1},...meta});
   await api.createTest(v,{id:'check',nameKey:'Check',rollRef:null,totalFormulaRef:'total',bonusFormulaRef:'bonus',inputBindings:[],targetValue:5,outcomeRefs:[],fallbackOutcomeRef:null,...meta});

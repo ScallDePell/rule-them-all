@@ -1,4 +1,4 @@
-/** View-local card facets (Tags, Categories). Counts use the full current
+/** View-local card facets (Tags). Counts use the full current
  * collection, never the filtered subset; selections inside one facet use OR,
  * and different facets combine with AND. */
 export function buildFacet(cards, idsOf, describe, active) {

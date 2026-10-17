@@ -8,7 +8,7 @@ export function createEntrySeed(kind,{uid,definitionTypeId=null,contentTypeId=nu
   if(kind==="definition"){
       const type=getDefinitionType(definitionTypeId);
       const capabilities=[...new Set([...(type?.defaultCapabilities??[]),...(type?.requiredCapabilities??[])])];
-      return{id:uid("definition"),key:"",definitionTypeId:definitionTypeId,nameKey:"",descriptionKey:"",data:{},categories:[],capabilities,enabled:true,tags:[]};
+      return{id:uid("definition"),key:"",definitionTypeId:definitionTypeId,nameKey:"",descriptionKey:"",data:{},capabilities,enabled:true,tags:[]};
     }
   if(kind==="parameter")return{id:uid("parameter"),nameKey:"",descriptionKey:"",enabled:true,tags:[],valueType:"number",value:0,scope:"ruleset"};
   if(kind==="formula")return{id:uid("formula"),nameKey:"",descriptionKey:"",enabled:true,tags:[],resultType:"number",expression:{type:"literal",value:0}};
@@ -23,8 +23,7 @@ export function createEntrySeed(kind,{uid,definitionTypeId=null,contentTypeId=nu
   if(kind==="eventType")return{id:uid("event"),nameKey:"",descriptionKey:"",enabled:true,tags:[],payloadFields:{}};
   if(kind==="trigger")return{id:uid("trigger"),nameKey:"",descriptionKey:"",enabled:true,tags:[],eventTypeId:"",eventFilter:null,conditionRefs:[],actionRefs:[]};
   if(kind==="contentType")return{id:uid("content-type"),nameKey:"",descriptionKey:"",image:"",color:null,enabled:true,tags:[],storageKind:"item",documentSubtype:"",runtimeMode:"unique",fields:{}};
-  if(kind==="contentTemplate")return{id:uid("template"),nameKey:"",descriptionKey:"",image:"",data:{},enabled:true,tags:[],contentTypeId:contentTypeId??listContentTypes()[0]?.id??"",categories:[],capabilities:[],runtimeMode:null};
-  if(kind==="category")return{id:uid("category"),nameKey:"",descriptionKey:""};
+  if(kind==="contentTemplate")return{id:uid("template"),nameKey:"",descriptionKey:"",image:"",data:{},enabled:true,tags:[],contentTypeId:contentTypeId??listContentTypes()[0]?.id??"",capabilities:[],runtimeMode:null};
   if(kind==="tag")return{id:uid("tag"),nameKey:"",descriptionKey:"",color:null};
   if(kind==="modifier")return{id:uid("modifier"),nameKey:"",descriptionKey:"",enabled:true,tags:[],targetRef:{objectKind:"definition",objectId:""},operation:"add",valueSource:{kind:"literal",value:0},conditionRefs:[],stacking:{mode:"stack",group:""},priority:0};
   if(kind==="duration")return{id:uid("duration"),nameKey:"",descriptionKey:"",enabled:true,tags:[],mode:"untilRemoved",amount:null,unit:null,eventTypeRef:null,conditionRef:null,at:null};

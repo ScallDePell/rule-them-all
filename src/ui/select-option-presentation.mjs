@@ -9,7 +9,7 @@ import {COLLECTION_TO_KIND} from "../configurator/relation-contract.mjs";
  * - a Tag option itself => the Tag's own color.
  * Tags attached to an object NEVER change that object's accent. Missing
  * colors use the #666666 fallback from RTA navigation/cards. Free-text
- * categories have no color contract in the Ruleset schema.
+ * entries have no color contract in the Ruleset schema.
  */
 export const DEFAULT_SELECT_COLOR=RTA_NEUTRAL_COLOR;
 // Presentation and reference pickers resolve their families from the exact

@@ -35,10 +35,10 @@ test("DefinitionType fields apply defaults, required checks and reject undeclare
     rating:field("rating","integer",{required:true,defaultValue:1}),
     label:field("label","string",{nullable:true})
   },constraints:[]});
-  const created=await api.createDefinition(v,{id:"strength",key:"strength",definitionTypeId:"attribute",nameKey:"Strength",descriptionKey:"",data:{},categories:[],enabled:true,order:0,tags:[]});
+  const created=await api.createDefinition(v,{id:"strength",key:"strength",definitionTypeId:"attribute",nameKey:"Strength",descriptionKey:"",data:{},enabled:true,order:0,tags:[]});
   assert.deepEqual(created.data,{rating:1});
-  await assert.rejects(()=>api.createDefinition(v,{id:"bad",key:"bad",definitionTypeId:"attribute",nameKey:"Bad",descriptionKey:"",data:{rating:"1"},categories:[],enabled:true,order:0,tags:[]}),/Invalid field rating/);
-  await assert.rejects(()=>api.createDefinition(v,{id:"extra",key:"extra",definitionTypeId:"attribute",nameKey:"Extra",descriptionKey:"",data:{rating:1,hidden:2},categories:[],enabled:true,order:0,tags:[]}),/undeclared field/);
+  await assert.rejects(()=>api.createDefinition(v,{id:"bad",key:"bad",definitionTypeId:"attribute",nameKey:"Bad",descriptionKey:"",data:{rating:"1"},enabled:true,order:0,tags:[]}),/Invalid field rating/);
+  await assert.rejects(()=>api.createDefinition(v,{id:"extra",key:"extra",definitionTypeId:"attribute",nameKey:"Extra",descriptionKey:"",data:{rating:1,hidden:2},enabled:true,order:0,tags:[]}),/undeclared field/);
 });
 
 test("DefinitionType default and required capabilities are applied without business specialization",async()=>{
@@ -48,7 +48,7 @@ test("DefinitionType default and required capabilities are applied without busin
   assert.ok(api.getCapabilityType(id));
   const v=(await api.createRuleset(base())).versionId;
   await api.registerDefinitionType(v,{id:"meter",key:"meter",nameKey:"Meter",descriptionKey:"",color:null,order:0,allowedCapabilities:[id],defaultCapabilities:[id],requiredCapabilities:[id],fields:{},constraints:[]});
-  const created=await api.createDefinition(v,{id:"m",key:"m",definitionTypeId:"meter",nameKey:"M",descriptionKey:"",data:{},categories:[],enabled:true,order:0,tags:[]});
+  const created=await api.createDefinition(v,{id:"m",key:"m",definitionTypeId:"meter",nameKey:"M",descriptionKey:"",data:{},enabled:true,order:0,tags:[]});
   assert.deepEqual(created.capabilities,[id]);
   assert.deepEqual(created.data,{metric:0});
   // A draft may lack a required capability; only publish needs the complete Definition.
@@ -73,7 +73,7 @@ test("numeric FieldDefinition constraints validate defaults and Definition data"
   const v=(await api.createRuleset(base())).versionId;
   const score=field("score","integer",{required:true,defaultValue:1,constraints:[{kind:"min",value:0},{kind:"max",value:10},{kind:"step",value:1}]});
   await api.registerDefinitionType(v,{id:"attribute",key:"attribute",nameKey:"Attribute",descriptionKey:"",color:null,order:0,allowedCapabilities:[],defaultCapabilities:[],requiredCapabilities:[],fields:{score},constraints:[]});
-  const created=await api.createDefinition(v,{id:"strength",key:"strength",definitionTypeId:"attribute",nameKey:"Strength",descriptionKey:"",data:{},categories:[],enabled:true,order:0,tags:[]});
+  const created=await api.createDefinition(v,{id:"strength",key:"strength",definitionTypeId:"attribute",nameKey:"Strength",descriptionKey:"",data:{},enabled:true,order:0,tags:[]});
   assert.equal(created.data.score,1);
   await assert.rejects(()=>api.updateDefinition(v,"strength",{data:{score:-1}}),/greater than or equal to 0/);
   await assert.rejects(()=>api.updateDefinition(v,"strength",{data:{score:11}}),/less than or equal to 10/);
@@ -93,8 +93,8 @@ test("removing a DefinitionType field explicitly prunes stored values from Defin
   const v=(await api.createRuleset(base())).versionId;
   const score=field("score","integer",{required:true,defaultValue:1});
   await api.registerDefinitionType(v,{id:"attribute",key:"attribute",nameKey:"Attribute",descriptionKey:"",color:null,order:0,allowedCapabilities:[],defaultCapabilities:[],requiredCapabilities:[],fields:{score},constraints:[]});
-  await api.createDefinition(v,{id:"strength",key:"strength",definitionTypeId:"attribute",nameKey:"Strength",descriptionKey:"",data:{score:7},categories:[],enabled:true,order:0,tags:[]});
-  await api.createDefinition(v,{id:"agility",key:"agility",definitionTypeId:"attribute",nameKey:"Agility",descriptionKey:"",data:{score:4},categories:[],enabled:true,order:0,tags:[]});
+  await api.createDefinition(v,{id:"strength",key:"strength",definitionTypeId:"attribute",nameKey:"Strength",descriptionKey:"",data:{score:7},enabled:true,order:0,tags:[]});
+  await api.createDefinition(v,{id:"agility",key:"agility",definitionTypeId:"attribute",nameKey:"Agility",descriptionKey:"",data:{score:4},enabled:true,order:0,tags:[]});
   await assert.rejects(()=>api.updateDefinitionType(v,"attribute",{fields:{}}),error=>error.code==="FIELD_REMOVAL_DATA_LOSS"&&error.affected.length===2);
   assert.deepEqual(api.getDefinition(v,"strength").data,{score:7},"nothing is lost without confirmation");
   const updatedType=await api.updateDefinitionType(v,"attribute",{fields:{}},{pruneRemovedFields:true});

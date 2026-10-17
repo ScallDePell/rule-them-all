@@ -7,7 +7,7 @@ import {layoutNodes} from './layout-contract.mjs';
 /* Dependency strength (CP-31): `required` blocks deleting the target;
    `optional` means the consumer contract accepts the reference being absent,
    so the target may go once the caller explicitly clears that reference;
-   `metadata` (tags, categories) blocks like required. */
+   `metadata` (tags) blocks like required. */
 export const DEPENDENCY_STRENGTHS=Object.freeze(['required','optional','metadata']);
 const pushRef=(edges,consumerRef,targetRef,kind,path,strength='required')=>{
   if(!targetRef?.objectKind||!targetRef?.objectId)return;
@@ -176,8 +176,6 @@ export class DependencyIndex{
     }
     const tagCollections=['definitions','parameters','formulas','formulaBindings','conditions','rolls','outcomes','tests','effects','actions','eventTypes','triggers','contentTypes','contentTemplates','modifiers','durations','dice','tables','scales','creationSystems','progressionSystems','sheetDefinitions','sheetTemplates','sheetThemes'];
     for(const collection of tagCollections)for(const [i,entry] of (ruleset[collection]??[]).entries())for(const [j,id] of (entry.tags??[]).entries())pushRef(this.#edges,{objectKind:collection.replace(/s$/,''),objectId:entry.id},{objectKind:'tag',objectId:id},'tag',`${collection}[${i}].tags[${j}]`,'metadata');
-    // Category catalog (§47): consumers store catalog ids; a used Category cannot be deleted.
-    for(const collection of ['definitions','contentTemplates'])for(const [i,entry] of (ruleset[collection]??[]).entries())for(const [j,id] of (entry.categories??[]).entries())pushRef(this.#edges,{objectKind:collection==='definitions'?'definition':'contentTemplate',objectId:entry.id},{objectKind:'category',objectId:id},'category',`${collection}[${i}].categories[${j}]`,'metadata');
     // Capability slots (CP-26/27): bound Formulas and allowed ContentTypes are dependencies.
     // Description scales (what a sheet shows instead of a number): a Definition's own, else its type's.
     for(const [i,definition] of (ruleset.definitions??[]).entries())if(definition?.scaleRef)pushRef(this.#edges,{objectKind:'definition',objectId:definition.id},{objectKind:'scale',objectId:definition.scaleRef},'definitionScale',`definitions[${i}].scaleRef`);

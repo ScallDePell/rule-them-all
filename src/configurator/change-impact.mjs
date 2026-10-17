@@ -5,7 +5,7 @@ import {COLLECTION_FIELDS, copyJSON, isRecord} from "./configurator-schema.mjs";
 import {DependencyIndex} from "./dependency-index.mjs";
 import {validateRuleset} from "./configurator-validation.mjs";
 
-/** objectKind -> collection ("categories" -> "category", "permissionPolicies" -> "permissionPolicy"). */
+/** objectKind -> collection ("tags" -> "tag", "permissionPolicies" -> "permissionPolicy"). */
 export const kindOfCollection = collection => collection.replace(/ies$/, "y").replace(/s$/, "");
 const COLLECTION_OF_KIND = new Map(COLLECTION_FIELDS.map(collection => [kindOfCollection(collection), collection]));
 export const collectionOfKind = kind => COLLECTION_OF_KIND.get(kind) ?? null;

@@ -213,7 +213,7 @@
   margin-bottom: var(--rta-space-6);
 }
 
-/* understated category accent; preserve neutral borders and tile geometry. */
+/* understated family accent; preserve neutral borders and tile geometry. */
 .rta-configurator .rta-config-card:hover,
 .rta-configurator .rta-config-card:focus-visible {
   background: color-mix(in srgb, var(--rta-card-accent, var(--rta-color-neutral)) 5%, var(--rta-color-surface));

@@ -946,36 +946,35 @@ La bande a sa propre feuille, distincte de celle des scoundrels, et c'est le MJ 
 
 ## Organisation
 
-### Catégories
+### Tags
+
+Les tags rangent et filtrent les cartes du Configurateur. Ils se posent sur presque tous les objets du Ruleset, sauf les Types de définition, les Types de contenu et les tags eux-mêmes. Un clic droit sur une carte, puis « Tags… », coche ou décoche ses tags, ou en crée un nouveau par son nom.
 
 #### Les écoles de magie de D&D 5e
 
 Chaque sort appartient à une école (Abjuration, Évocation, Nécromancie…), ce qui permet de retrouver vite les sorts d'un magicien spécialisé.
 
-1. Dans Catégories, créez une catégorie par école : remplissez « Nom », et si besoin « Description » dans « Notes ».
-2. Ouvrez chaque sort, qui est un modèle de contenu (section Contenus). Dans « Catégories », cherchez l'école avec « Rechercher des catégories… » et cochez-la.
-3. Dans la liste des sorts, la zone « Filtrer » montre une puce par école, avec une icône de dossier et le nombre de sorts. Cliquez sur « Évocation » pour ne garder que ces sorts, puis sur « Effacer les filtres » pour tout revoir.
-4. Une catégorie sert seulement à ranger : aucune Formule ni Condition ne la lit.
+1. Dans Tags, créez un tag par école, ou faites-le au fil de l'eau : clic droit sur un sort, « Tags… », puis tapez l'école dans « Nouveau tag ».
+2. Sur chaque sort, qui est un modèle de contenu (section Contenus), cochez son école dans « Tags ».
+3. Dans la liste des sorts, la zone « Filtrer » montre une puce par école avec le nombre de sorts. Cliquez sur « Évocation » pour ne garder que ces sorts, puis sur « Effacer les filtres » pour tout revoir.
+4. Un tag sert seulement à ranger : aucune Formule ni Condition ne le lit.
 
 #### Les compétences de base et avancées de Warhammer Fantasy 4e
 
 Les compétences de base s'utilisent sans formation, alors que les compétences avancées demandent une formation.
 
-1. Créez deux catégories, « Compétences de base » et « Compétences avancées ».
-2. Ouvrez chaque compétence dans la section Définitions et cochez la bonne catégorie dans « Catégories ».
+1. Créez deux tags, « Compétences de base » et « Compétences avancées », chacun avec sa couleur.
+2. Ouvrez chaque compétence dans la section Définitions et cochez le bon tag dans « Tags ».
 3. Dans la liste des Définitions, les puces de « Filtrer » séparent les deux groupes. C'est pratique pour vérifier qu'aucune compétence n'a été oubliée.
-4. Les catégories se posent seulement sur les Définitions et les modèles de contenu, et n'ont pas de couleur. Pour marquer d'autres objets ou colorer, utilisez les Tags.
 
 #### Les familles de cyberware de Cyberpunk RED
 
 Le catalogue de cyberware se range par emplacement : Cybermembres, Neuralware, Cyberoptiques, Mode interne, Mode externe.
 
-1. Créez une catégorie par famille de cyberware.
-2. Sur chaque implant (un modèle de contenu), cochez sa famille dans « Catégories ». Un implant peut en avoir plusieurs si besoin.
+1. Créez un tag par famille de cyberware.
+2. Sur chaque implant (un modèle de contenu), cochez sa famille dans « Tags ». Un implant peut en avoir plusieurs si besoin.
 3. Avec des dizaines d'implants, filtrez par « Neuralware » avant d'ajuster les prix ou la perte d'Humanité d'une seule famille.
-4. Si une règle doit dépendre de la famille, par exemple un plafond d'implants neuraux, portez l'information dans un champ du type de contenu (section Contenus). Les Formules lisent les champs, pas les catégories.
-
-### Tags
+4. Si une règle doit dépendre de la famille, par exemple un plafond d'implants neuraux, portez l'information dans un champ du type de contenu (section Contenus). Les Formules lisent les champs, pas les tags.
 
 #### Concentration et Rituel dans D&D 5e
 
@@ -984,7 +983,7 @@ Certains sorts demandent de la concentration, d'autres peuvent se lancer en ritu
 1. Dans Tags, créez « Concentration » et « Rituel ». Donnez à chacun une « Couleur » en cochant « Personnaliser », si le Ruleset autorise les couleurs propres dans la section Organisation.
 2. Ouvrez chaque sort concerné et cochez le tag dans « Tags ». Cherchez-le avec « Rechercher des tags… ».
 3. Dans la liste des sorts, chaque carte montre ses tags en couleur. Les puces de « Filtrer » permettent de ne garder que les sorts à concentration.
-4. Comme une catégorie, un tag ne change pas les règles. Pour qu'un sort à concentration se termine quand on en lance un autre, il faut une vraie règle, avec des Déclencheurs et des Durées.
+4. Un tag ne change pas les règles. Pour qu'un sort à concentration se termine quand on en lance un autre, il faut une vraie règle, avec des Déclencheurs et des Durées.
 
 #### Les grands domaines de Shadowrun
 
@@ -992,8 +991,7 @@ Shadowrun mêle magie, Matrice et riggers, et un même domaine touche des Défin
 
 1. Créez les tags « Magie », « Matrice » et « Rigging », chacun avec sa couleur.
 2. Sur une Formule, une Condition ou un Test, ouvrez « Notes et étiquettes » et cochez le tag dans « Tags ». Les modèles de contenu ont leur liste « Tags » directement dans l'éditeur.
-3. Contrairement aux catégories, les tags se posent sur presque tous les objets du Ruleset. Les catégories et les tags eux-mêmes n'en portent pas.
-4. Dans Dépendances (section Outils), « Filtrer par tags » sur « Matrice » ne garde que les objets de ce domaine, ce qui aide à mesurer une refonte.
+3. Dans Dépendances (section Outils), « Filtrer par tags » sur « Matrice » ne garde que les objets de ce domaine, ce qui aide à mesurer une refonte.
 
 #### Le contenu tiers de Mörk Borg
 

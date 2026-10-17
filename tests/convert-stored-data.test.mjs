@@ -24,6 +24,20 @@ test('a World saved before the UI simplification is refused as is and loads once
   assert.equal(r.permissionPolicies[0].enabled,false);
   assert.deepEqual(r.sectionColors,{organization:'#445566'});
   assert.ok(notes.some(note=>note.includes('Restriction')));
+  // Categories become Tags on the same entries.
+  assert.equal(r.categories,undefined);
+  assert.ok(r.tags.some(tag=>tag.id==='melee'&&tag.nameKey==='Melee'));
+  assert.ok([...r.definitions,...r.contentTemplates].some(entry=>entry.tags.includes('melee')));
+  assert.ok([...r.definitions,...r.contentTemplates].every(entry=>!Object.hasOwn(entry,'categories')));
+  assert.ok(notes.some(note=>note.includes('merged into Tags')));
+});
+
+test('a Category named like a Tag joins that Tag', async () => {
+  const {convertRuleset}=await import('../tools/convert-stored-data.mjs');
+  const {ruleset}=convertRuleset({id:'r',nameKey:'R',version:'1',tags:[{id:'t-melee',nameKey:'melee',descriptionKey:'',order:0,color:null}],categories:[{id:'melee',nameKey:'Melee',descriptionKey:'',order:0}],definitions:[{id:'sword',tags:[],categories:['melee']}],contentTemplates:[{id:'axe',tags:['t-melee'],categories:['melee']}],familyColors:{categories:'#123456',tags:'#654321'}});
+  assert.deepEqual(ruleset.tags.map(tag=>tag.id),['t-melee']);
+  assert.deepEqual([ruleset.definitions[0].tags,ruleset.contentTemplates[0].tags],[['t-melee'],['t-melee']]);
+  assert.deepEqual(ruleset.familyColors,{tags:'#654321'});
 });
 
 test('FormulaBindings copied per role become one binding without a role', () => {

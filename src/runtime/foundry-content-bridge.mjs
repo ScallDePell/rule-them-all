@@ -33,7 +33,6 @@ export function templateFlags(versionId,template,contentType){
     runtimeMode:template.runtimeMode??contentType.runtimeMode??"unique",
     relations:clone(template.relations??[]),
     choiceGroups:clone(template.choiceGroups??[]),
-    categories:clone(template.categories??[]),
     capabilities:clone(template.capabilities??[]),
     tags:clone(template.tags??[]),
     data:clone(template.data??{})

@@ -98,7 +98,6 @@
       "ProgressionSystems": "Progression Systems",
       "SheetDefinitions": "Sheets",
       "ContentTypes": "Content Types",
-      "Categories": "Categories",
       "Tags": "Tags",
       "DefinitionTypes": "Definition Types",
       "RuntimeLab": "Runtime Lab",
@@ -227,7 +226,6 @@
       "creationSystems": "Creation Systems",
       "progressionSystems": "Progression Systems",
       "sheetDefinitions": "Sheets",
-      "categories": "Categories",
       "tags": "Tags",
       "tables": "Tables",
       "dice": "Dice",
@@ -316,7 +314,6 @@
       "BonusFormula": "Bonus Formula",
       "Capabilities": "Capabilities",
       "Cardinality": "Cardinality",
-      "Categories": "Categories",
       "ChooseWhatYouWantToTest": "Choose what you want to test",
       "Classification": "Classification",
       "Close": "Close",
@@ -540,9 +537,6 @@
       "NoneSelected": "None selected",
       "GroupsCount": "group(s)",
       "RollFormulaPlaceholder": "Foundry dice expression",
-      "Category": "Category",
-      "SearchCategories": "Search categories…",
-      "NoCategoriesYet": "No Categories yet. Create them from the Categories section.",
       "AcquiredDefinitions": "Acquired Definitions",
       "AcquisitionAction": "Acquisition Action",
       "StatesRemoved": "States removed",
@@ -1015,10 +1009,6 @@
       "sheetDefinition": {
         "Summary": "A sheet is what players see on an Actor or an Item: tabs, sections, lists of the Definitions they hold, values and Action buttons.",
         "Usage": "Click a block of the sheet (or in the Layers) to change it in the tools on the left. Under “Add”, click a block or an element of the Ruleset to add it into the selection, or drag it onto the sheet; drag the blocks to move them. Copy, paste and duplicate work from one sheet to another (Ctrl+C, Ctrl+V, Ctrl+D). Without any sheet, Actors and Items show an automatic sheet. Players choose the sheet in Foundry's sheet choice."
-      },
-      "category": {
-        "Summary": "A category classifies Definitions and contents for filtering.",
-        "Usage": "The catalog is managed here; elements store only the id."
       },
       "tag": {
         "Summary": "A tag freely marks any Ruleset object.",

@@ -12,7 +12,7 @@ const lit = value => ({type: "literal", value});
 const ref = (objectId, capabilityId, outputId, slotId) => ({type: "reference", reference: {objectKind: "definition", objectId, capabilityId, ...(slotId ? {slotId} : {}), outputId}});
 const meta = (order, nameKey) => ({nameKey, descriptionKey: "", enabled: true, order, tags: []});
 const type = (id, nameKey, capabilities) => ({id, key: id, nameKey, descriptionKey: "", color: null, order: 10, allowedCapabilities: capabilities, defaultCapabilities: capabilities, requiredCapabilities: capabilities, fields: {}, constraints: []});
-const definition = (id, typeId, nameKey, capabilities, slots) => ({id, key: id, definitionTypeId: typeId, nameKey, descriptionKey: "", data: {}, categories: [], capabilities, ...(slots ? {slots} : {}), enabled: true, order: 10, tags: []});
+const definition = (id, typeId, nameKey, capabilities, slots) => ({id, key: id, definitionTypeId: typeId, nameKey, descriptionKey: "", data: {}, capabilities, ...(slots ? {slots} : {}), enabled: true, order: 10, tags: []});
 const pool = (id, maximum, initial = maximum) => ({id, minimum: {literal: 0}, maximum: {literal: maximum}, initial: {literal: initial}});
 const poolCurrent = (objectId, slotId) => ({objectKind: "definition", objectId, capabilityId: "pool", slotId, outputId: "pool.current"});
 const valueBase = objectId => ({objectKind: "definition", objectId, capabilityId: "value", outputId: "value.base"});

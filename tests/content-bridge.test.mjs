@@ -14,7 +14,7 @@ test("Item-backed Content Types use the host system Item subtype",()=>{
 });
 
 test("content template flags preserve portable provenance",()=>{
-  const flags=templateFlags("version-1",{id:"doctor",runtimeMode:"unique",relations:[{id:"medicine",operation:"grant",targetRef:{objectKind:"definition",objectId:"medicine"}}],categories:["career"],capabilities:[],tags:["modern"]},{id:"career",runtimeMode:"unique"});
+  const flags=templateFlags("version-1",{id:"doctor",runtimeMode:"unique",relations:[{id:"medicine",operation:"grant",targetRef:{objectKind:"definition",objectId:"medicine"}}],capabilities:[],tags:["modern"]},{id:"career",runtimeMode:"unique"});
   assert.equal(flags.templateId,"doctor");assert.deepEqual(flags.relations,[{id:"medicine",operation:"grant",targetRef:{objectKind:"definition",objectId:"medicine"}}]);assert.equal(Object.hasOwn(flags,"definitionBindings"),false);assert.equal(flags.versionId,"version-1");
 });
 

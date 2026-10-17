@@ -86,7 +86,6 @@
           {{#if hasFacets}}
           <nav class="rta-tag-facets" aria-label="{{localize 'RTA.UI.Filter'}}">
             <span class="rta-tag-facets__label"><i class="fa-solid fa-filter" aria-hidden="true"></i> {{localize "RTA.UI.Filter"}}</span>
-            {{#each availableCategories}}<button type="button" class="rta-tag-facets__chip{{#if selected}} is-active{{/if}}" data-action="toggleCategoryFilter" data-category-id="{{id}}" aria-pressed="{{#if selected}}true{{else}}false{{/if}}"><i class="fa-solid fa-folder" aria-hidden="true"></i><span>{{name}}</span><small>{{count}}</small></button>{{/each}}
             {{#each availableTags}}<button type="button" class="rta-tag-facets__chip{{#if selected}} is-active{{/if}}" data-action="toggleTagFilter" data-tag-id="{{id}}" aria-pressed="{{#if selected}}true{{else}}false{{/if}}" {{#if color}}style="--rta-tag-color:{{color}}"{{/if}}><span>{{name}}</span><small>{{count}}</small></button>{{/each}}
             {{#if hasActiveFilters}}<button type="button" class="rta-tag-facets__clear" data-action="clearFilters"><i class="fa-solid fa-xmark" aria-hidden="true"></i> {{localize "RTA.UI.ClearFilters"}}</button>{{/if}}
           </nav>

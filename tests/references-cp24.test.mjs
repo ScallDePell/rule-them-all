@@ -14,7 +14,7 @@ const ref=(outputId,capabilityId='value',extra={})=>({objectKind:'definition',ob
 async function setup(){
   const api=await createConfiguratorAPI(new Storage());const v=(await api.createRuleset({id:'r',nameKey:'R',version:'1'})).versionId;
   await api.registerDefinitionType(v,{id:'attribute',key:'attribute',nameKey:'Attribute',descriptionKey:'',color:null,order:10,allowedCapabilities:['value'],defaultCapabilities:['value'],requiredCapabilities:['value'],fields:{},constraints:[]});
-  await api.createDefinition(v,{id:'strength',key:'strength',definitionTypeId:'attribute',nameKey:'Strength',descriptionKey:'',data:{},categories:[],capabilities:['value'],...meta});
+  await api.createDefinition(v,{id:'strength',key:'strength',definitionTypeId:'attribute',nameKey:'Strength',descriptionKey:'',data:{},capabilities:['value'],...meta});
   await api.createParameter(v,{id:'level',nameKey:'Level',valueType:'integer',value:3,scope:'ruleset',...meta});
   return {api,v};
 }

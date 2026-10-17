@@ -19,7 +19,6 @@ export const ENTRY_OPERATIONS=Object.freeze({
   trigger:{get:"getTrigger",create:"createTrigger",update:"updateTrigger",delete:"deleteTrigger"},
   contentType:{get:"getContentType",create:"createContentType",update:"updateContentType",delete:"deleteContentType"},
   contentTemplate:{get:"getContentTemplate",create:"createContentTemplate",update:"updateContentTemplate",delete:"deleteContentTemplate"},
-  category:{get:"getCategory",create:"createCategory",update:"updateCategory",delete:"deleteCategory"},
   tag:{get:"getTag",create:"createTag",update:"updateTag",delete:"deleteTag"},
   modifier:{get:"getModifier",create:"createModifier",update:"updateModifier",delete:"deleteModifier"},
   die:{get:"getDie",create:"createDie",update:"updateDie",delete:"deleteDie"},

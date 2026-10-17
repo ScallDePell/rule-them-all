@@ -71,7 +71,7 @@ Le Configurateur range le Ruleset en rubriques. Chaque élément est une carte :
 - **Feuilles** : les feuilles de personnage et d'objet. Voir la section 4.
 
 ### Organisation et outils
-- **Catégories** et **Tags** : pour classer et filtrer les cartes.
+- **Tags** : pour classer et filtrer les cartes. Un clic droit sur une carte, puis **Tags…**, coche ses tags ou en crée un nouveau.
 - **Dépendances** : le graphe de ce qui utilise quoi, pratique avant une suppression.
 - **Labo runtime** : un bac à sable du MJ pour essayer une Action, un Test ou une Formule sur un Acteur, sur le brouillon, sans toucher au jeu.
 

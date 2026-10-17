@@ -23,11 +23,9 @@ const v=(await api.createRuleset({id:'qa',nameKey:'QA Ruleset',descriptionKey:'F
 await api.createRuleset({id:'qa2',nameKey:'Second Ruleset',version:'2.0.0'});
 await api.createTag(v,{id:'tag-a',nameKey:'Tag Alpha',color:'#3a7bd5'});
 await api.createTag(v,{id:'tag-b',nameKey:'Tag Beta'});
-await api.createCategory(v,{id:'cat-core',nameKey:'Core'});
-await api.createCategory(v,{id:'cat-extra',nameKey:'Extra'});
 await api.registerDefinitionType(v,{id:'stat',key:'stat',nameKey:'Stat',color:'#b8572e',allowedCapabilities:['value','pool','collection'],defaultCapabilities:['value','pool'],requiredCapabilities:['value'],valueBounds:{minimum:{literal:0},maximum:{literal:5}},fields:{abbreviation:{id:'abbreviation',name:'Abbreviation',valueType:'string',cardinality:'one',required:true,defaultValue:'STR'}},constraints:[{kind:'required',field:'abbreviation'}]});
 await api.registerDefinitionType(v,{id:'skill',key:'skill',nameKey:'Skill',allowedCapabilities:['value','state'],defaultCapabilities:['value'],requiredCapabilities:[],fields:{}});
-for(const [i,n] of ['Vigor','Focus','Grace','Wits','Resolve'].entries())await api.createDefinition(v,{id:'d'+i,key:'d'+i,nameKey:n,descriptionKey:'A sample definition with a description long enough to wrap on narrow tiles.',definitionTypeId:'stat',capabilities:i?['value']:['value','pool','collection'],...(i?{}:{slots:{pool:[{id:'hp',minimum:{literal:0},maximum:{literal:10},overflowPolicy:'reject'}],collection:[{id:'notes',entryMode:'value',allowedKinds:['string'],maximumEntries:5}]}}),tags:i%2?['tag-a']:['tag-b'],categories:i%2?['cat-core']:['cat-extra'],data:{}});
+for(const [i,n] of ['Vigor','Focus','Grace','Wits','Resolve'].entries())await api.createDefinition(v,{id:'d'+i,key:'d'+i,nameKey:n,descriptionKey:'A sample definition with a description long enough to wrap on narrow tiles.',definitionTypeId:'stat',capabilities:i?['value']:['value','pool','collection'],...(i?{}:{slots:{pool:[{id:'hp',minimum:{literal:0},maximum:{literal:10},overflowPolicy:'reject'}],collection:[{id:'notes',entryMode:'value',allowedKinds:['string'],maximumEntries:5}]}}),tags:i%2?['tag-a']:['tag-b'],data:{}});
 await api.createDefinition(v,{id:'s1',key:'s1',nameKey:'Climb',definitionTypeId:'skill',capabilities:['value'],data:{}});
 await api.createContentType(v,{id:'gear',nameKey:'Gear',storageKind:'item',documentSubtype:'gear',runtimeMode:'unique'});
 await api.createDefinition(v,{id:'s2',key:'s2',nameKey:'Tired',definitionTypeId:'skill',capabilities:['value','state'],data:{}});
@@ -65,7 +63,7 @@ const tpl=Handlebars.compile(readFileSync(join(root,'templates/configurator/conf
 const foundryCss=process.env.RTA_FOUNDRY_CSS?readFileSync(process.env.RTA_FOUNDRY_CSS,'utf8')+'\n':'';
 const css=foundryCss+JSON.parse(readFileSync(join(root,'module.json'),'utf8')).styles.map(p=>readFileSync(join(root,p),'utf8')).join('\n');
 const views=[['rulesets','',''],['general',v,'general'],['definitionTypes',v,'definitionTypes'],['definitions-tiles',v,'definitions:stat'],['definitions-lines',v,'definitions:stat','lines'],
- ['contentTypes',v,'contentTypes'],['content',v,'content:gear'],['formulas',v,'formulas'],['actions',v,'actions'],['tags',v,'tags'],['categories',v,'categories'],['dependencies',v,'dependencies'],['runtimeLab',v,'runtimeLab'],['sheets',v,'sheetDefinitions']];
+ ['contentTypes',v,'contentTypes'],['content',v,'content:gear'],['formulas',v,'formulas'],['actions',v,'actions'],['tags',v,'tags'],['dependencies',v,'dependencies'],['runtimeLab',v,'runtimeLab'],['sheets',v,'sheetDefinitions']];
 for(const [name,selected,view,mode='tiles'] of views){
   globalThis.__qa={selected,view:view||'general',mode};
   const app=new ConfiguratorApp();const ctx=await app._prepareContext({});
@@ -78,7 +76,7 @@ console.log('rendered',views.length);
 const {ConfiguratorEntryEditor}=await imp('src/configurator/configurator-entry-editor.mjs');
 const editorTpl=Handlebars.compile(readFileSync(join(root,'templates/configurator/entry-editor.hbs'),'utf8'));
 const selectUrl=pathToFileURL(join(root,'src/ui/rta-select.mjs')).href;
-const editors=[['ruleset',v],['definitionType','stat'],['definition','d0'],['contentType','gear'],['contentTemplate','rope'],['parameter','p1'],['formula','f1'],['condition','c1'],['action','a2'],['tag','tag-a'],['category','cat-core'],['test','t1'],['modifier','m1'],['duration','du1'],['die','dz1'],['formula','f-dice'],['condition','c-near'],['table','tb1'],['scale','sc1'],['progressionSystem','ps1'],['trigger','tr1'],['permissionPolicy','pp1'],['eventType','ev1'],
+const editors=[['ruleset',v],['definitionType','stat'],['definition','d0'],['contentType','gear'],['contentTemplate','rope'],['parameter','p1'],['formula','f1'],['condition','c1'],['action','a2'],['tag','tag-a'],['test','t1'],['modifier','m1'],['duration','du1'],['die','dz1'],['formula','f-dice'],['condition','c-near'],['table','tb1'],['scale','sc1'],['progressionSystem','ps1'],['trigger','tr1'],['permissionPolicy','pp1'],['eventType','ev1'],
  ['sheetDefinition','sh1'],...['formulaBinding','roll','outcome','effect','creationSystem'].map(kind=>[kind,null])];
 for(const [kind,id] of editors){
   const editor=new ConfiguratorEntryEditor({api,versionId:v,kind,id,definitionTypeId:kind==='definition'?'stat':null,contentTypeId:kind==='contentTemplate'?'gear':null});

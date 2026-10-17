@@ -47,8 +47,8 @@ test('Configurator rejects invalid values at persistence and preserves inherited
  const version=(await api.createRuleset({id:'generic-contract',nameKey:'Neutral',version:'1.0.0'})).versionId;
  const type={id:'generic-type',key:'generic-type',nameKey:'Generic Type',allowedCapabilities:[],defaultCapabilities:[],requiredCapabilities:[],fields:{amount:{id:'amount',name:'Amount',valueType:'number',cardinality:'one',required:true,nullable:false}},constraints:[{kind:'min',field:'amount',value:1}],presentation:{label:'Base',color:'#666666'}};
  await api.registerDefinitionType(version,type);
- await assert.rejects(()=>api.createDefinition(version,{id:'bad',key:'bad',nameKey:'Bad',definitionTypeId:'generic-type',data:{amount:0},capabilities:[],categories:[],tags:[]}),/constraint|min|Invalid Ruleset/i);
- await api.createDefinition(version,{id:'good',key:'good',nameKey:'Good',definitionTypeId:'generic-type',data:{amount:2},capabilities:[],categories:[],tags:[],presentationProfile:{label:'Specific'}});
+ await assert.rejects(()=>api.createDefinition(version,{id:'bad',key:'bad',nameKey:'Bad',definitionTypeId:'generic-type',data:{amount:0},capabilities:[],tags:[]}),/constraint|min|Invalid Ruleset/i);
+ await api.createDefinition(version,{id:'good',key:'good',nameKey:'Good',definitionTypeId:'generic-type',data:{amount:2},capabilities:[],tags:[],presentationProfile:{label:'Specific'}});
  const actual=api.getDefinition(version,'good');
  assert.equal(resolvePresentation(api.getDefinitionType(version,'generic-type').presentation,actual.presentationProfile).label,'Specific');
 });

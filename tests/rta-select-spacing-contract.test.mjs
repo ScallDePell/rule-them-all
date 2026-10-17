@@ -30,9 +30,8 @@ test('One select geometry is retained and spacing is not duplicated in managed g
 
 test("Content editor adjacent selectors share the same canonical vertical flow", () => {
   const actions = editor.indexOf('<strong>{{localize "RTA.Template.AcquisitionChoices"}}</strong>');
-  const categories = editor.indexOf('{{> rtaCategoriesPicker}}', actions);
-  const tags = editor.indexOf('{{> rtaTagsPicker}}', categories);
+  const tags = editor.indexOf('{{> rtaTagsPicker}}', actions);
   const technical = editor.indexOf('<summary>{{localize "RTA.Template.Technical"}}</summary>', tags);
-  assert.ok(actions >= 0 && actions < categories && categories < tags && tags < technical,
+  assert.ok(actions >= 0 && actions < tags && tags < technical,
     'Expected the contiguous Content selectors and the Technical section in this order');
 });
