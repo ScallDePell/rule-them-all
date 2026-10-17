@@ -100,6 +100,22 @@
   overflow-wrap: anywhere;
 }
 
+/* A heading of a long menu (Rules): small, quiet, with room above it except at the top. */
+.rta-explorer__subheading {
+  margin: var(--rta-gap-row) 0 0;
+  padding: 0 var(--rta-space-2);
+  border: 0;
+  font-size: var(--rta-type-xs);
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: .05em;
+  color: var(--rta-color-text-secondary);
+}
+
+.rta-explorer__subheading:first-child {
+  margin-block-start: 0;
+}
+
 .rta-explorer__item:hover,.rta-explorer__group:hover {
   background: color-mix(in srgb, var(--rta-nav-accent, var(--rta-color-neutral)) 12%, transparent);
 }

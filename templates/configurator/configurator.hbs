@@ -48,6 +48,7 @@
             {{#each navGroups}}
               <section data-flyout-group="{{id}}" hidden>
                 {{#each items}}
+                  {{#if groupTitle}}<h4 class="rta-explorer__subheading">{{groupTitle}}</h4>{{/if}}
                   <button type="button" style="--rta-card-accent:{{color}};--rta-nav-accent:{{color}}" data-action="navigate" data-view="{{view}}" data-nav-item class="rta-explorer__item{{#if primary}} rta-explorer__item--primary{{/if}}{{#if active}} is-active{{/if}}" {{#if active}}aria-current="page"{{/if}}><span>{{title}}</span>{{#if primary}}<i class="fa-solid fa-sliders rta-explorer__primary-icon" aria-hidden="true"></i>{{/if}}</button>
                 {{/each}}
               </section>

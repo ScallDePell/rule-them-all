@@ -22,7 +22,7 @@ test('a World saved before the UI simplification is refused as is and loads once
   assert.deepEqual(sword.choiceGroups[0].options[0],{id:'o1',operation:'grant',targetRef:{objectKind:'definition',objectId:'fight'},config:{initial:{'value.base':1}}});
   assert.deepEqual(r.definitions[0].capabilities,['value']);
   assert.equal(r.permissionPolicies[0].enabled,false);
-  assert.deepEqual(r.sectionColors,{organization:'#445566'});
+  assert.deepEqual(r.sectionColors,{tools:'#445566'});
   assert.ok(notes.some(note=>note.includes('Restriction')));
   // Categories become Tags on the same entries.
   assert.equal(r.categories,undefined);

@@ -41,8 +41,16 @@ test('Card facets count the full collection and combine selections with AND',()=
 
 test('a Tag shows its own color even where its section does not allow custom colors', async () => {
   const {objectColor} = await import('../src/configurator/ruleset-colors.mjs');
-  const ruleset = {sectionColors: {organization: '#445566', definitions: '#112233'}, sectionColorOverrides: {}};
+  const ruleset = {sectionColors: {tools: '#445566', definitions: '#112233'}, sectionColorOverrides: {}};
   assert.equal(objectColor(ruleset, 'tags', {color: '#aa0000'}), '#aa0000');
   assert.equal(objectColor(ruleset, 'tags', {color: null}), '#445566');
   assert.equal(objectColor(ruleset, 'definitionTypes', {color: '#aa0000'}), '#112233', 'a type still needs its section to allow it');
+});
+
+test('the Rules menu headings list each Rules family once', async () => {
+  const {RULESET_SECTIONS} = await import('../src/configurator/ruleset-colors.mjs');
+  const rules = RULESET_SECTIONS.find(section => section.id === 'rules');
+  const grouped = rules.groups.flatMap(group => group.collections);
+  assert.deepEqual([...grouped].sort(), [...rules.collections].sort());
+  assert.equal(new Set(grouped).size, grouped.length);
 });

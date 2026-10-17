@@ -9,7 +9,7 @@ Sommaire :
 - [Règles (calculs et jets)](#règles-calculs-et-jets)
 - [Règles (effets, actions, dés)](#règles-effets-actions-dés)
 - [Orchestration](#orchestration)
-- [Systèmes](#systèmes) et [Organisation](#organisation)
+- [Systèmes](#systèmes) et [Tags](#tags)
 
 ## Section Définitions
 
@@ -884,7 +884,7 @@ Monter un attribut coûte cinq fois le nouveau niveau en XP, sans dépasser 5.
 5. « Payée avec » : l'Expérience. « Coût » : « Coût d'un attribut ». « Valeur maximale » : la Formule « Cinq ».
 6. Ajoutez une seconde amélioration « Compétence » sur le type Compétence, avec une Formule de coût qui multiplie par 3.
 7. Sur la feuille, le joueur achète lui-même : la feuille automatique montre une section au nom du système, et dans l'éditeur de feuilles le système s'ajoute depuis « Ajouter », groupe « Champs ». Chaque attribut détenu y paraît avec son niveau actuel, le niveau visé, le coût en XP et un bouton « Acheter ». Si l'XP manque ou si la valeur est au maximum, la ligne le dit à la place du bouton. L'achat poste une carte dans le chat.
-8. Pour essayer sans joueur, le Labo runtime garde l'outil Progression et son bouton « Acheter ».
+8. Pour essayer sans joueur, « Essayer les règles » garde l'outil Progression et son bouton « Acheter ».
 
 #### Les points d'amélioration de Cyberpunk RED
 
@@ -944,9 +944,7 @@ La bande a sa propre feuille, distincte de celle des scoundrels, et c'est le MJ 
 5. Dans Foundry, ouvrez l'Acteur de la bande, puis la configuration de la feuille dans son en-tête. Choisissez « Feuille de bande » : chaque feuille activée y est proposée sous son nom.
 6. L'entrée générique « Feuille Rule Them'All » prend la première feuille activée qui convient. Pour la bande, choisissez donc la feuille par son nom.
 
-## Organisation
-
-### Tags
+## Tags
 
 Les tags rangent et filtrent les cartes du Configurateur. Ils se posent sur presque tous les objets du Ruleset, sauf les Types de définition, les Types de contenu et les tags eux-mêmes. Un clic droit sur une carte, puis « Tags… », coche ou décoche ses tags, ou en crée un nouveau par son nom.
 

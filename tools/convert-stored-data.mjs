@@ -17,7 +17,8 @@ import {freeId} from "../src/configurator/identity.mjs";
 const REMOVED_CAPABILITIES = new Set(["tests", "actions", "progression", "formulaSource", "conditionSource", "effectTarget"]);
 const REMOVED_COLLECTIONS = ["references", "restrictions"];
 const FIELD_KEYS = ["id", "name", "valueType", "cardinality", "required", "nullable", "defaultValue", "constraints", "referenceTarget"];
-const SECTION_RENAMES = {advanced: "organization"};
+// 2026-10-17: the Organization section (Tags only) joined Tools.
+const SECTION_RENAMES = {advanced: "tools", organization: "tools"};
 const REMOVED_SECTIONS = new Set(["runtime"]);
 
 const pick = (value, keys) => Object.fromEntries(keys.filter(key => Object.hasOwn(value, key)).map(key => [key, value[key]]));
@@ -109,7 +110,8 @@ function convertColors(map) {
   const next = {};
   for (const [section, value] of Object.entries(map)) {
     if (REMOVED_SECTIONS.has(section)) continue;
-    next[SECTION_RENAMES[section] ?? section] = value;
+    const target = SECTION_RENAMES[section] ?? section;
+    if (target === section || !Object.hasOwn(map, target)) next[target] = value;
   }
   return next;
 }

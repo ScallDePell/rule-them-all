@@ -46,7 +46,6 @@ const TOP_LEVEL = Object.freeze([
   {view:"scales", kind:"scale", titleKey:"RTA.Nav.Scales", list:"listScales", collection:"scales"},
   {view:"creationSystems", kind:"creationSystem", titleKey:"RTA.Nav.CreationSystems", list:"listCreationSystems", collection:"creationSystems"},
   {view:"progressionSystems", kind:"progressionSystem", titleKey:"RTA.Nav.ProgressionSystems", list:"listProgressionSystems", collection:"progressionSystems"},
-  // Sheets stay out of the navigation until their runtime exists (milestone 4).
   {view:"sheetDefinitions", kind:"sheetDefinition", titleKey:"RTA.Nav.SheetDefinitions", list:"listSheetDefinitions", collection:"sheetDefinitions"},
   {view:"contentTypes", kind:"contentType", titleKey:"RTA.Nav.ContentTypes", list:"listContentTypes", collection:"contentTypes"},
   {view:"tags", kind:"tag", titleKey:"RTA.Nav.Tags", list:"listTags", collection:"tags"}
@@ -167,7 +166,10 @@ export class ConfiguratorApp extends ConfiguratorWindow {
         {view:'contentTypes',title:label('RTA.Nav.ContentTypes'),active:this.#view==='contentTypes'},
         ...contentTypes.map(type=>({view:`content:${type.id}`,title:type.name,active:type.active,color:type.color}))
       ];
-      else if(section.id==='tools')items=[{view:'runtimeLab',title:label('RTA.Nav.RuntimeLab'),active:this.#view==='runtimeLab'},{view:'dependencies',title:label('RTA.Nav.Dependencies'),active:this.#view==='dependencies'}];
+      else if(section.id==='tools')items=[...TOP_LEVEL.filter(item=>item.collection==='tags').map(item=>({...item,title:label(item.titleKey),active:this.#view===item.view})),{view:'runtimeLab',title:label('RTA.Nav.RuntimeLab'),active:this.#view==='runtimeLab'},{view:'dependencies',title:label('RTA.Nav.Dependencies'),active:this.#view==='dependencies'}];
+      else if(section.groups)items=section.groups.flatMap(group=>TOP_LEVEL.filter(item=>group.collections.includes(item.collection))
+          .sort((a,b)=>group.collections.indexOf(a.collection)-group.collections.indexOf(b.collection))
+          .map((item,index)=>({...item,title:label(item.titleKey),active:this.#view===item.view,groupTitle:index===0?label(group.titleKey):""})));
       else {
         items=TOP_LEVEL.filter(item=>section.collections.includes(item.collection)&&!item.hidden&&!['contentTypes'].includes(item.collection))
           .map(item=>({...item,title:label(item.titleKey),active:this.#view===item.view}));
@@ -178,7 +180,7 @@ export class ConfiguratorApp extends ConfiguratorWindow {
     const navGroups = navigation.map(entry => {
       const id = entry.view ?? entry.group.toLowerCase();
       const items = entry.items ?? [];
-      const icons = {general:"fa-sliders",definitions:"fa-shapes",content:"fa-box-open",rules:"fa-gears",orchestration:"fa-diagram-project",systems:"fa-wand-magic-sparkles",organization:"fa-tags",tools:"fa-screwdriver-wrench"};
+      const icons = {general:"fa-sliders",definitions:"fa-shapes",content:"fa-box-open",rules:"fa-gears",orchestration:"fa-diagram-project",systems:"fa-wand-magic-sparkles",tools:"fa-screwdriver-wrench"};
       const groupLabel = label(entry.titleKey);
       const groupColor=sectionColor(ruleset,id);
       return {id, title:groupLabel, color:groupColor, icon:icons[id] ?? "fa-folder", count:items.length,

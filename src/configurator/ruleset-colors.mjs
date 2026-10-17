@@ -9,11 +9,16 @@ export const RULESET_SECTIONS = Object.freeze([
   {id:'general', titleKey:'RTA.Nav.General', collections:[]},
   {id:'definitions', titleKey:'RTA.Nav.Definitions', collections:['definitionTypes','definitions']},
   {id:'content', titleKey:'RTA.Nav.Content', collections:['contentTypes','contentTemplates']},
-  {id:'rules', titleKey:'RTA.Nav.Rules', collections:['parameters','formulas','formulaBindings','conditions','rolls','outcomes','tests','effects','actions','modifiers','durations','dice','tables','scales']},
+  {id:'rules', titleKey:'RTA.Nav.Rules', collections:['parameters','formulas','formulaBindings','conditions','rolls','outcomes','tests','effects','actions','modifiers','durations','dice','tables','scales'],
+    // The Rules menu is long: its families are listed under these headings, in this order.
+    groups:[
+      {titleKey:'RTA.Nav.RulesCompute', collections:['parameters','formulas','formulaBindings','conditions','scales','tables']},
+      {titleKey:'RTA.Nav.RulesRolls', collections:['dice','rolls','outcomes','tests']},
+      {titleKey:'RTA.Nav.RulesEffects', collections:['actions','effects','modifiers','durations']}
+    ]},
   {id:'orchestration', titleKey:'RTA.Nav.Orchestration', collections:['permissionPolicies','eventTypes','triggers']},
   {id:'systems', titleKey:'RTA.Nav.Systems', collections:['creationSystems','progressionSystems','sheetDefinitions','sheetTemplates','sheetThemes']},
-  {id:'organization', titleKey:'RTA.Nav.Organization', collections:['tags']},
-  {id:'tools', titleKey:'RTA.Nav.Tools', collections:[]}
+  {id:'tools', titleKey:'RTA.Nav.Tools', collections:['tags']}
 ]);
 const sectionByCollection = new Map(RULESET_SECTIONS.flatMap(section => section.collections.map(collection => [collection, section.id])));
 if (sectionByCollection.size !== COLLECTION_FIELDS.length || COLLECTION_FIELDS.some(c=>!sectionByCollection.has(c))) {
