@@ -46,7 +46,7 @@ export class WorldSettingStorage {
   #index() {
     const index = this.#settings.get(STORAGE_NAMESPACE, STORAGE_KEY);
     if (!isRecord(index) || index.storageVersion !== SPLIT_STORAGE_VERSION || !Array.isArray(index.rulesetFamilies)) {
-      throw new Error("Rule Them'All data is in a former storage format: convert it once with tools/convert-stored-data.mjs (convertWorld).");
+      throw new Error("Rule Them'All data is in a former storage format: repair it once (Game Settings > Rule Them'All > Repair the data).");
     }
     return index;
   }
@@ -88,7 +88,7 @@ export class WorldSettingStorage {
       this.#stored.delete(versionId);
     }
   }
-  /** One-shot tools only (tools/convert-stored-data.mjs): writes every version and the index, whatever was stored before. */
+  /** The data repair only (stored-data-repair.mjs): writes every version and the index, whatever was stored before. */
   async replace(value) {
     if (!globalThis.game?.user?.isGM) throw new Error("Only a GM can configure Rule Them'All.");
     const snapshot = readStorageSnapshot(value);

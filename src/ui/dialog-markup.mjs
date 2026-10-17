@@ -13,3 +13,5 @@ export const renderActionInputsContent=(inputs,t)=>inputs.map(input=>{
 }).join("");
 /** The Actions offered after a result, to check. options: [{value, label}]. */
 export const renderActionChoiceContent=options=>`<div class="rta-sheet-choice">${options.map(o=>`<label class="checkbox"><input type="checkbox" name="choice" value="${escape(o.value)}"> ${escape(o.label)}</label>`).join("")}</div>`;
+/** The data repair report: a sentence, then what will change (one line per note). */
+export const renderRepairContent=(text,notes=[])=>`<p>${escape(text)}</p>${notes.length?`<ul class="rta-repair-notes">${notes.map(note=>`<li>${escape(note)}</li>`).join("")}</ul>`:""}`;

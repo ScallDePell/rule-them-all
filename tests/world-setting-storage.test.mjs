@@ -43,7 +43,7 @@ test('a World still in the single-setting format asks for the conversion, which 
   const source=createConfiguratorAPI({load:async()=>emptyStorageSnapshot(),save:async snapshot=>{former=snapshot;},subscribe:()=>()=>{}});
   let former;const api=await source;await api.createRuleset({id:'alpha',nameKey:'Alpha',version:'1'});
   settings.values.set(`rule-them-all.${STORAGE_KEY}`,former);
-  await assert.rejects(storage.load(),/convert it once/);
+  await assert.rejects(storage.load(),/repair it once/);
   await storage.replace(former);
   const loaded=await new WorldSettingStorage(settings).load();
   assert.equal(loaded.rulesetFamilies[0].versions[0].rulesetId,'alpha');

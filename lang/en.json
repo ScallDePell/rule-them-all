@@ -33,6 +33,11 @@
         "Name": "Rule Them'All language",
         "Hint": "Language of the module's interface (configurator, sheets, editor, dialogs, messages). Texts typed in Rulesets do not change. Set per user; reloads Foundry.",
         "Auto": "Automatic (Foundry's language)"
+      },
+      "Repair": {
+        "Name": "Repair the data",
+        "Label": "Repair the data",
+        "Hint": "After an update, checks the Rulesets saved in this world and brings them to the current format. A backup is downloaded before any change."
       }
     },
     "UI": {
@@ -2031,6 +2036,16 @@
         "target": "Each target, for itself",
         "gm": "The GM"
       }
+    },
+    "Repair": {
+      "Title": "Repair Rule Them'All data",
+      "Nothing": "The data is already in the current format: nothing to repair.",
+      "Found": "This data comes from an earlier version. Here is what will change. A backup will be downloaded first.",
+      "Apply": "Repair",
+      "Done": "The data is repaired. Reload the world to use it.",
+      "Reload": "Reload",
+      "Failed": "The data could not be repaired, nothing was changed: {error}",
+      "LoadFailed": "Game Settings > Rule Them'All > Repair the data can fix it."
     }
   }
 }

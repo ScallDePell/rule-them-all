@@ -161,15 +161,9 @@ Le bouton de création se trouve dans l'onglet **Acteurs**. Le joueur suit les �
 
 ## 7. Mettre à jour le module
 
-Certaines mises à jour changent la façon dont le module range ses données. Le module ne lit alors plus l'ancien format et l'indique au MJ au chargement. Convertissez le monde une fois, dans la console Foundry (F12), en MJ :
+Certaines mises à jour changent la façon dont le module range ses données. Le module ne lit alors plus l'ancien format et l'indique au MJ au chargement.
 
-```js
-const {convertWorld} = await import("/modules/rule-them-all/tools/convert-stored-data.mjs");
-await convertWorld();               // vérifie seulement
-await convertWorld({write: true});  // télécharge une sauvegarde, puis convertit
-```
-
-Rechargez ensuite le monde.
+Dans ce cas, ouvrez **Paramètres du jeu → Configurer les paramètres → Rule Them'All → Réparer les données**. La fenêtre dit s'il y a quelque chose à réparer et liste ce qui va changer. **Réparer** télécharge d'abord une sauvegarde, puis convertit les données. Rechargez ensuite le monde.
 
 ## 8. Pour les autres modules
 

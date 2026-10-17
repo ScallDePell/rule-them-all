@@ -6,7 +6,7 @@ import {emptyStorageSnapshot} from '../src/configurator/configurator-storage.mjs
 import {prepareAction,prepareEventType} from '../src/configurator/rule-contracts.mjs';
 import {collectEventPayloadFields} from '../src/configurator/entry-field-serialization.mjs';
 import {collectEventPayloads,eventPayloadContext} from '../src/configurator/action-event-payload-form.mjs';
-import {convertSnapshot} from '../tools/convert-stored-data.mjs';
+import {convertSnapshot} from '../src/configurator/stored-data-repair.mjs';
 import {MemoryRuntimeAdapter} from '../src/runtime/memory-runtime-adapter.mjs';
 import {RuntimeEngine} from '../src/runtime/runtime-engine.mjs';
 class Storage{value=emptyStorageSnapshot();async load(){return structuredClone(this.value)}async save(v){this.value=structuredClone(v)}}

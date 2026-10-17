@@ -33,6 +33,11 @@
         "Name": "Langue de Rule Them'All",
         "Hint": "Langue de l'interface du module (configurateur, feuilles, éditeur, fenêtres, messages). Les textes saisis dans les Rulesets ne changent pas. Propre à chaque utilisateur ; recharge Foundry.",
         "Auto": "Automatique (langue de Foundry)"
+      },
+      "Repair": {
+        "Name": "Réparer les données",
+        "Label": "Réparer les données",
+        "Hint": "Après une mise à jour, vérifie les Rulesets enregistrés dans ce monde et les met au format actuel. Une sauvegarde est téléchargée avant tout changement."
       }
     },
     "UI": {
@@ -2031,6 +2036,16 @@
         "target": "Chaque cible, pour elle-même",
         "gm": "Le MJ"
       }
+    },
+    "Repair": {
+      "Title": "Réparer les données Rule Them'All",
+      "Nothing": "Les données sont déjà au format actuel : rien à réparer.",
+      "Found": "Ces données viennent d'une version précédente. Voici ce qui va changer. Une sauvegarde sera téléchargée avant.",
+      "Apply": "Réparer",
+      "Done": "Les données sont réparées. Rechargez le monde pour les utiliser.",
+      "Reload": "Recharger",
+      "Failed": "Les données n'ont pas pu être réparées, rien n'a été modifié : {error}",
+      "LoadFailed": "Paramètres du jeu > Rule Them'All > Réparer les données peut le corriger."
     }
   }
 }

@@ -1,18 +1,14 @@
-/** One-shot conversion of a World saved before the 2026-10-11 UI simplification, the RWF gap fixes, the 2026-10-12 progression
+/** Repair of stored data (Game Settings > Rule Them'All > Repair the data, see repair-data-menu.mjs): conversion of a World saved before the 2026-10-11 UI simplification, the RWF gap fixes, the 2026-10-12 progression
  * the 2026-10-13 sheet audiences (gmOnly becomes seenBy), or the 2026-10-14 split storage (one world setting per
  * RulesetVersion instead of a single one), or the 2026-10-14 Event Types without roles, or the 2026-10-17 Categories
  * merged into Tags.
- * The module itself reads only the current format; this tool rewrites stored data once.
- * In the Foundry console, as GM:
- *   const {convertWorld}=await import("/modules/rule-them-all/tools/convert-stored-data.mjs");
- *   await convertWorld();          // report only
- *   await convertWorld({write:true});  // downloads a backup, then saves the converted data
- * then reload the World. */
-import {copyJSON, isRecord} from "../src/configurator/configurator-schema.mjs";
-import {readStorageSnapshot} from "../src/configurator/configurator-storage.mjs";
-import {PERMISSION_OPERATIONS} from "../src/configurator/permission-contract.mjs";
-import {STORAGE_KEY, STORAGE_NAMESPACE, WorldSettingStorage} from "../src/configurator/world-setting-storage.mjs";
-import {freeId} from "../src/configurator/identity.mjs";
+ * The module itself reads only the current format; this rewrites stored data once, on the GM's request.
+ * convertWorld() reports; convertWorld({write:true}) downloads a backup, then saves the converted data. */
+import {copyJSON, isRecord} from "./configurator-schema.mjs";
+import {readStorageSnapshot} from "./configurator-storage.mjs";
+import {PERMISSION_OPERATIONS} from "./permission-contract.mjs";
+import {STORAGE_KEY, STORAGE_NAMESPACE, WorldSettingStorage} from "./world-setting-storage.mjs";
+import {freeId} from "./identity.mjs";
 
 const REMOVED_CAPABILITIES = new Set(["tests", "actions", "progression", "formulaSource", "conditionSource", "effectTarget"]);
 const REMOVED_COLLECTIONS = ["references", "restrictions"];
@@ -251,11 +247,11 @@ export async function convertWorld({write = false} = {}) {
   snapshot.storageRevision = (stored.storageRevision ?? 0) + 1;
   let error = null;
   try { readStorageSnapshot(snapshot); } catch (e) { error = e; }
-  console.log("Rule Them'All | conversion notes", notes);
-  if (error) { console.error("Rule Them'All | still invalid after conversion, nothing written", error); return {ok: false, notes, error: error.message}; }
-  if (!write) { console.log("Rule Them'All | conversion OK. Run convertWorld({write:true}) to save it."); return {ok: true, notes}; }
+  // Nothing to repair: the stored data is already in the current format.
+  const changed = raw?.storageVersion === 3 || JSON.stringify({...snapshot, storageRevision: 0}) !== JSON.stringify({...copyJSON(stored), storageRevision: 0});
+  if (error) { console.error("Rule Them'All | still invalid after conversion, nothing written", error); return {ok: false, changed, notes, error: error.message}; }
+  if (!write || !changed) return {ok: true, changed, notes};
   foundry.utils.saveDataToFile(JSON.stringify(stored, null, 2), "application/json", "rule-them-all-backup-before-conversion.json");
   await storage.replace(snapshot);
-  console.log("Rule Them'All | converted data saved. Reload the World.");
-  return {ok: true, notes};
+  return {ok: true, changed, notes};
 }

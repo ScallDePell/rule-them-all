@@ -3,7 +3,7 @@ import assert from 'node:assert/strict';
 import fs from 'node:fs';
 import {readStorageSnapshot} from '../src/configurator/configurator-storage.mjs';
 import {createConfiguratorAPI} from '../src/configurator/configurator-api.mjs';
-import {convertSnapshot} from '../tools/convert-stored-data.mjs';
+import {convertSnapshot} from '../src/configurator/stored-data-repair.mjs';
 
 // Saved by the module as it was just before the 2026-10-11 UI simplification.
 const old=()=>JSON.parse(fs.readFileSync(new URL('./fixtures/world-before-ui-simplification.json',import.meta.url),'utf8'));
@@ -33,7 +33,7 @@ test('a World saved before the UI simplification is refused as is and loads once
 });
 
 test('a Category named like a Tag joins that Tag', async () => {
-  const {convertRuleset}=await import('../tools/convert-stored-data.mjs');
+  const {convertRuleset}=await import('../src/configurator/stored-data-repair.mjs');
   const {ruleset}=convertRuleset({id:'r',nameKey:'R',version:'1',tags:[{id:'t-melee',nameKey:'melee',descriptionKey:'',order:0,color:null}],categories:[{id:'melee',nameKey:'Melee',descriptionKey:'',order:0}],definitions:[{id:'sword',tags:[],categories:['melee']}],contentTemplates:[{id:'axe',tags:['t-melee'],categories:['melee']}],familyColors:{categories:'#123456',tags:'#654321'}});
   assert.deepEqual(ruleset.tags.map(tag=>tag.id),['t-melee']);
   assert.deepEqual([ruleset.definitions[0].tags,ruleset.contentTemplates[0].tags],[['t-melee'],['t-melee']]);
@@ -75,4 +75,12 @@ test('a block for the GM only (gmOnly) becomes one seen by the GM', () => {
   const snapshot={rulesetFamilies:[{versions:[{versionId:'v',workingDraft:{sheetDefinitions:[{id:'s',target:'actor',root:{id:'root',kind:'grid',children:[{id:'a',kind:'section',gmOnly:true,children:[{id:'b',kind:'text',textKey:''}]},{id:'c',kind:'spacer'}]}}]}}]}]};
   const [sheet]=convertSnapshot(snapshot).snapshot.rulesetFamilies[0].versions[0].workingDraft.sheetDefinitions;
   assert.deepEqual(sheet.root.children.map(n=>[n.id,n.seenBy??null,Object.hasOwn(n,'gmOnly')]),[['a',['gm'],false],['c',null,false]]);
+});
+
+test('data already in the current format comes out of the repair unchanged', async () => {
+  const converted=convertSnapshot(old()).snapshot;
+  const again=convertSnapshot(converted);
+  assert.deepEqual(again.snapshot,converted);
+  assert.equal(JSON.stringify(again.snapshot),JSON.stringify(converted),'same key order: nothing to rewrite');
+  assert.deepEqual(again.notes,[]);
 });

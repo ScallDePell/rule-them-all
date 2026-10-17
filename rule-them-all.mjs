@@ -1,4 +1,5 @@
 import {MODULE_ID, REGISTER_TYPES_HOOK} from "./src/core/module-contract.mjs";
+import {RepairDataMenu} from "./src/configurator/repair-data-menu.mjs";
 import {engineRegistries} from "./src/configurator/operation-registries.mjs";
 import {createConfiguratorAPI} from "./src/configurator/configurator-api.mjs";
 import {ConfiguratorApp} from "./src/configurator/configurator-app.mjs";
@@ -59,6 +60,15 @@ Hooks.once("init", () => {
     hint: "RTA.Settings.Configurator.Hint",
     icon: "fa-solid fa-gears",
     type: ConfiguratorApp,
+    restricted: true
+  });
+  // Stored data from an earlier version: checked and repaired by the GM in one click.
+  game.settings.registerMenu(MODULE_ID, "repair", {
+    name: "RTA.Settings.Repair.Name",
+    label: "RTA.Settings.Repair.Label",
+    hint: "RTA.Settings.Repair.Hint",
+    icon: "fa-solid fa-screwdriver-wrench",
+    type: RepairDataMenu,
     restricted: true
   });
   // Combatants under a Ruleset with an initiative Test roll it; the others keep the game system's roll.
@@ -130,7 +140,7 @@ Hooks.once("ready", () => {
   game.ruleThemAll.configuratorReady.catch(error => {
     console.error("Rule Them'All | Configurator initialization failed", error);
     // Stored data the module cannot read (a former format to convert): the GM is told, not only the console.
-    if (game.user.isGM) ui.notifications?.error?.(`Rule Them'All: ${error?.message ?? error}`, {permanent: true});
+    if (game.user.isGM) ui.notifications?.error?.(`Rule Them'All: ${error?.message ?? error} ${game.i18n.localize("RTA.Repair.LoadFailed")}`, {permanent: true});
   });
 
   // CP-28: timed states end when the world clock passes them; the active GM writes the change once.

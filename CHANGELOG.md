@@ -1,5 +1,9 @@
 # Changelog
 
+## 1.0.3
+
+- Game Settings > Rule Them'All > **Repair the data**: after an update, the GM checks the stored Rulesets, sees what will change and repairs them in one click (a backup is downloaded first). No console command needed any more.
+
 ## 1.0.2
 
 - Chat cards carry their Foundry rolls and follow the roll mode chosen in the chat (public, GM, blind, self): dice tooltips and Dice So Nice work. A blind card shows players its title only.
