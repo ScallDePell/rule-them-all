@@ -648,11 +648,15 @@ export class RuntimeEngine{
    * they own), then apply standalone ModifierStates. Each row joins the Action's changes. */
   async #stageStates(versionId,ruleset,action,context,staged,evaluator,changes){
     const sourceRef={kind:"action",id:action.id};
-    for(const removal of action.stateRemovals??[]){
+    // A row may name its state by a Formula (definitionFormulaRef); an empty result skips the row.
+    const chosen=async row=>{if(!row.definitionFormulaRef)return row;const value=await evaluator.formula(row.definitionFormulaRef,context),definitionId=typeof value==="string"?value:value?.objectId;return definitionId?{...row,definitionId}:null;};
+    for(const listed of action.stateRemovals??[]){
+      const removal=await chosen(listed);if(!removal)continue;
       const {ref,state}=await this.#stagedState(versionId,context,removal.targetRole,staged);
       for(const instance of state.stateInstances.filter(x=>x.definitionId===removal.definitionId))changes.push({stateRemoved:removeStateInstance(state,instance.id).id,definitionId:removal.definitionId,containerRef:ref});
     }
-    for(const application of action.stateApplications??[]){
+    for(const listed of action.stateApplications??[]){
+      const application=await chosen(listed);if(!application)continue;
       const definition=ruleset.definitions?.find(x=>x.id===application.definitionId&&enabled(x));if(!definition)throw new Error(`Definition unavailable: ${application.definitionId}.`);
       const {ref,state}=await this.#stagedState(versionId,context,application.targetRole,staged),durationState=this.#duration(ruleset,application.durationRef);
       const existing=state.stateInstances.find(x=>x.definitionId===definition.id&&x.active!==false);
@@ -704,13 +708,13 @@ export class RuntimeEngine{
     return results;
   }
   /** The inputs an Action asks for when it is used, with their allowed values: listed options, or the
-   * Definitions of the input's type (those the self role holds, when it holds some). */
+   * Definitions of the input's type, as its from says (auto: those the self role holds, when it holds some). */
   async describeActionInputs(versionId,actionId,context={}){
     const ruleset=this.ruleset(versionId),action=ruleset.actions?.find(x=>x.id===actionId&&enabled(x));if(!action)throw new Error(`Action unavailable: ${actionId}.`);
     const self=roleRef(context,"self"),held=self?new Set(Object.keys((await this.adapter.load(self,{rulesetVersionId:versionId})).definitionStates??{})):new Set();
     return (action.inputs??[]).map(input=>{
       let options=clone(input.options??[]);
-      if(input.valueType==="reference"){const ofType=(ruleset.definitions??[]).filter(d=>enabled(d)&&d.definitionTypeId===input.definitionTypeId),owned=ofType.filter(d=>held.has(d.id));options=(owned.length?owned:ofType).map(d=>({value:d.id,labelKey:d.nameKey}));}
+      if(input.valueType==="reference"){const ofType=(ruleset.definitions??[]).filter(d=>enabled(d)&&d.definitionTypeId===input.definitionTypeId),owned=ofType.filter(d=>held.has(d.id)),from=input.from??"auto";options=(from==="all"?ofType:from==="held"?owned:from==="unheld"?ofType.filter(d=>!held.has(d.id)):owned.length?owned:ofType).map(d=>({value:d.id,labelKey:d.nameKey}));}
       return {id:input.id,labelKey:input.labelKey||input.id,valueType:input.valueType,required:input.required!==false,...(input.defaultValue!==undefined?{defaultValue:clone(input.defaultValue)}:{}),options};
     });
   }
@@ -1042,7 +1046,8 @@ export class RuntimeEngine{
       const mark=`${system.id}/${milestone.id}`,state=staged.get(key);
       if(state.milestones.includes(mark)||!await evaluator.condition(milestone.conditionRef,context))continue;
       const copy=new Map([...staged].map(([k,s])=>[k,clone(s)]));
-      for(const definitionId of milestone.definitionIds??[]){const created=await this.#acquireInto(versionId,ruleset,ref,copy.get(key),{definitionId,initial:{},ifAbsent:true});if(created)changes.push({acquisition:definitionId,containerRef:ref});}
+      // A state the milestone grants is held from then on (a class feature): it starts active.
+      for(const definitionId of milestone.definitionIds??[]){const granted=ruleset.definitions?.find(d=>d.id===definitionId),initial=(granted?.capabilities??[]).includes("state")?{"state.active":true}:{};const created=await this.#acquireInto(versionId,ruleset,ref,copy.get(key),{definitionId,initial,ifAbsent:true});if(created)changes.push({acquisition:definitionId,containerRef:ref});}
       if(milestone.actionRef){
         const plan=await this.previewAction(versionId,milestone.actionRef,{...context,variables:{input:clone(choices[milestone.id]??{})}},{staged:copy});
         if(!plan.allowed){stopped={milestoneId:milestone.id,reason:plan.reason,conditionId:plan.conditionId??null};break;}

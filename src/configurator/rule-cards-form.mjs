@@ -38,6 +38,7 @@ export function actionInputContext(data, {definitionTypes = [], withColors, neut
       id: input.id ?? "", labelKey: input.labelKey ?? "", required: input.required !== false, defaultValue: show(input.defaultValue),
       valueTypes: ACTION_INPUT_EDITOR_TYPES.map(id => ({id, colors: neutral, labelKey: `RTA.ActionInput.Types.${id}`, selected: id === valueType})),
       definitionTypes: choicesFor(types, input.definitionTypeId ?? ""),
+      sources: ["auto", "held", "all", "unheld"].map(id => ({id, colors: neutral, labelKey: `RTA.ActionInput.Sources.${id}`, selected: id === (input.from ?? "auto")})),
       optionsText: (input.options ?? []).map(option => option.labelKey ? `${show(option.value)} = ${option.labelKey}` : show(option.value)).join("\n"),
       isReference: valueType === "reference", hasOptions: ["number", "integer", "string"].includes(valueType)
     };
@@ -48,7 +49,7 @@ export function collectActionInputs(queryAll) {
   return collectCards(queryAll, "actionInput").map((card, index) => {
     const valueType = card.valueType || "number", label = `Input ${card.id || index + 1}`;
     const input = {id: card.id ?? "", labelKey: card.labelKey ?? "", valueType, required: card.required !== false};
-    if (valueType === "reference") input.definitionTypeId = card.definitionTypeId || null;
+    if (valueType === "reference") { input.definitionTypeId = card.definitionTypeId || null; input.from = card.from || "auto"; }
     else if (valueType !== "boolean") input.options = String(card.options ?? "").split(/\r?\n/).map(line => line.trim()).filter(Boolean).map(line => {
       const at = line.indexOf("="), value = at < 0 ? line : line.slice(0, at).trim(), labelKey = at < 0 ? "" : line.slice(at + 1).trim();
       return {value: parseTypedText(valueType, value, `${label} option`), labelKey};

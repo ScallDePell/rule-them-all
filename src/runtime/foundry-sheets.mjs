@@ -394,7 +394,8 @@ export function createRulesetSheets({ActorSheetV2, ItemSheetV2}) {
     async #command(command) {
       const state = this.#state;
       try {
-        if (command === "initialize") await rta().runtime.initializeContainer(state.versionId, state.actor);
+        // An Actor made from an Actor Content takes on its template first; Initialize then adds the other Definitions.
+        if (command === "initialize") { await rta().content?.applyActorTemplate?.(state.actor); await rta().runtime.initializeContainer(state.versionId, state.actor); }
         if (command === "create") { openCreationWindow({actorUuid: this.document.uuid}); return; }
         if (command === "rebind") {
           const active = rta().configurator.getRulesetVersion(rta().configurator.getActiveVersionId());

@@ -1176,6 +1176,8 @@
       "Input": "Choix",
       "Label": "Libellé",
       "DefinitionType": "Choisi parmi",
+      "Source": "Proposées",
+      "Sources": {"auto": "Celles détenues, sinon toutes", "held": "Seulement celles détenues", "all": "Toutes", "unheld": "Seulement celles non détenues"},
       "Options": "Valeurs permises",
       "OptionsPlaceholder": "Une par ligne : valeur = libellé (vide : toute valeur)",
       "Types": {

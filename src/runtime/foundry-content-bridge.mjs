@@ -215,13 +215,34 @@ export class FoundryContentBridge{
       if(!ruleset.definitions.some(d=>d.id===id&&d.enabled!==false))throw new Error(`Acquisition Definition unavailable: ${id}.`);
     if(Array.isArray(ruleset.actions))for(const id of actionIds)
       if(!ruleset.actions.some(a=>a.id===id&&a.enabled!==false))throw new Error(`Acquisition Action unavailable: ${id}.`);
-    return {selected,plan,definitionBindings,grantedDefinitionIds,actionIds};
+    for(const grant of plan.contentGrants)if(!(ruleset.contentTemplates??[]).some(t=>t.id===grant.templateId&&t.enabled!==false))throw new Error(`Granted Content Template unavailable: ${grant.templateId}.`);
+    return {selected,plan,definitionBindings,grantedDefinitionIds,actionIds,contentGrants:plan.contentGrants};
   }
   /** Guided Item creation. All choices and reference semantics are validated
    * before the first Foundry document write. A failure removes only the new
    * Item, never an existing Actor or unrelated Inventory entry.
    */
-  async createOwnedContentItem(versionId,actorRef,templateId,{selections=null,prompt=promptAcquisitionChoices,sourceData=null}={}){
+  async createOwnedContentItem(versionId,actorRef,templateId,{selections=null,prompt=promptAcquisitionChoices,sourceData=null,depth=0}={}){
+    const made=await this.#createOwnedContentItem(versionId,actorRef,templateId,{selections,prompt,sourceData});
+    if(made)await this.#grantContents(versionId,made.acquisition,{prompt,depth});
+    return made;
+  }
+  /** The Contents an acquisition grants, made as owned Items of the same Actor once its own write lock is released.
+   * A unique Content the Actor already holds is skipped; grants nest a few levels at most. */
+  async #grantContents(versionId,acquisition,{prompt=promptAcquisitionChoices,depth=0}={}){
+    if(!acquisition||acquisition.alreadyApplied||!(acquisition.contentGrants??[]).length)return;
+    if(depth>=4)throw new Error(`Content grants nest too deeply under ${acquisition.templateId}.`);
+    const ruleset=this.ruleset(versionId),actor=await this.runtime.adapter.resolveDocument(acquisition.actorRef);
+    for(const grant of acquisition.contentGrants){
+      const template=this.getAcquisitionTemplate(versionId,grant.templateId),type=(ruleset.contentTypes??[]).find(x=>x.id===template.contentTypeId&&x.enabled!==false);
+      if(!type||type.storageKind==='actor')throw new Error(`Content ${acquisition.templateId} grants ${grant.templateId}, which is not an Item Content.`);
+      for(let copy=0;copy<grant.count;copy++){
+        try{this.assertAcquisitionEligibility(actor,versionId,grant.templateId);}catch{break;}
+        await this.createOwnedContentItem(versionId,actor.uuid,grant.templateId,{selections:grant.selections??{},prompt,depth:depth+1});
+      }
+    }
+  }
+  async #createOwnedContentItem(versionId,actorRef,templateId,{selections,prompt,sourceData}){
     const ruleset=this.ruleset(versionId),template=this.getAcquisitionTemplate(versionId,templateId);
     const contentType=(ruleset.contentTypes??[]).find(x=>x.id===template.contentTypeId&&x.enabled!==false);
     if(!contentType)throw new Error(`Content Type unavailable: ${template.contentTypeId}.`);
@@ -292,7 +313,20 @@ export class FoundryContentBridge{
   }
   async acquireTemplate(versionId,actorRef,templateId,options={}){
     const actor=await this.runtime.adapter.resolveDocument(actorRef);
-    return this.#withActorMutation(actor.uuid,()=>this.#acquireTemplateUnlocked(versionId,actor.uuid,templateId,options));
+    const acquisition=await this.#withActorMutation(actor.uuid,()=>this.#acquireTemplateUnlocked(versionId,actor.uuid,templateId,options));
+    if(typeof actor.createEmbeddedDocuments==='function')await this.#grantContents(versionId,acquisition);
+    return acquisition;
+  }
+  /** An Actor made from an Actor Content (a creature dragged from its compendium) takes on its template: the
+   * Definitions with their values, the Actions and the Contents it grants. Done once; returns null otherwise. */
+  async applyActorTemplate(actorRef){
+    const actor=await this.runtime.adapter.resolveDocument(actorRef);if(actor?.documentName!=="Actor")return null;
+    const flag=foundryJSON(actor.getFlag?.(MODULE_ID,TEMPLATE_FLAG)??null);if(!flag?.managed||!flag.versionId||!flag.templateId)return null;
+    let template;try{template=this.getAcquisitionTemplate(flag.versionId,flag.templateId);}catch{return null;}
+    const type=(this.ruleset(flag.versionId).contentTypes??[]).find(x=>x.id===template.contentTypeId&&x.enabled!==false);if(type?.storageKind!=="actor")return null;
+    const acquisitions=actor.getFlag?.(MODULE_ID,ACQUISITIONS_FLAG)??{};
+    if(Object.values(acquisitions).some(a=>a?.versionId===flag.versionId&&a?.templateId===flag.templateId))return null;
+    return this.acquireTemplate(flag.versionId,actor.uuid,flag.templateId,{selections:flag.acquisitionSelections??{}});
   }
   async #acquireTemplateUnlocked(versionId,actorRef,templateId,{sourceItemId=null,selections={}}={}){
     const ruleset=this.ruleset(versionId),template=(ruleset.contentTemplates??[]).find(x=>x.id===templateId&&x.enabled!==false);if(!template)throw new Error(`Content Template unavailable: ${templateId}.`);
@@ -305,7 +339,7 @@ export class FoundryContentBridge{
       if(duplicate)return {...clone(duplicate),alreadyApplied:true,duplicate:true};
     }
     // The same preflight is used by the dialog, preCreateItem and Runtime.
-    const {selected:selectedOptions,plan:relationPlan,definitionBindings,grantedDefinitionIds,actionIds}=
+    const {selected:selectedOptions,plan:relationPlan,definitionBindings,grantedDefinitionIds,actionIds,contentGrants}=
       this.preflightAcquisition(versionId,templateId,selections);
     if(this.runtime.adapter.canWrite&&!await this.runtime.adapter.canWrite(actorRef))throw new Error("Actor is not writable by the current user.");
     const previousAcquisitions=clone(current);
@@ -320,7 +354,7 @@ export class FoundryContentBridge{
     let writtenOrigins=false,writtenAcquisitions=false;
     try{
       for(const id of createdDefinitionIds)origins[originKey(versionId,id)]=true;
-      const acquisition={templateId:template.id,contentTypeId:template.contentTypeId,versionId,sourceItemId,createdDefinitionIds,grantedDefinitionIds,actionIds,linkedRefs:relationPlan.linkedRefs,unlockedRefs:relationPlan.unlockedRefs,grantedRefs:relationPlan.grantedRefs,selections:clone(selections),selectedOptions,transactionId:runtimeResult.transactionId,appliedAt:Date.now()};
+      const acquisition={templateId:template.id,contentTypeId:template.contentTypeId,versionId,sourceItemId,createdDefinitionIds,grantedDefinitionIds,actionIds,contentGrants,actorRef:actor.uuid,linkedRefs:relationPlan.linkedRefs,unlockedRefs:relationPlan.unlockedRefs,grantedRefs:relationPlan.grantedRefs,selections:clone(selections),selectedOptions,transactionId:runtimeResult.transactionId,appliedAt:Date.now()};
       current[key]=acquisition;
       await actor.setFlag(MODULE_ID,DEFINITION_ORIGINS_FLAG,origins);writtenOrigins=true;
       await actor.setFlag(MODULE_ID,ACQUISITIONS_FLAG,current);writtenAcquisitions=true;

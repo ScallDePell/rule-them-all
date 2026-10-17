@@ -150,7 +150,8 @@ export function parseRollFormula(formula) {
 export function assertSafeRollFormula(formula) { return parseRollFormula(formula); }
 
 /** The same formula with every dice count multiplied (a critical hit doubling its dice: 1d8+2 -> 2d8+2).
- * Only literal counts can be multiplied; a count computed from data or parentheses is refused. */
+ * A literal count is multiplied in place; a count computed from data or parentheses is wrapped:
+ * (@input.level+2)d6 -> ((@input.level+2)*2)d6. */
 export function multiplyDice(formula, multiplier) {
   const factor = Number(multiplier);
   if (!Number.isInteger(factor) || factor < 1) throw new Error(`Dice multiplier must be a positive integer, not ${multiplier}.`);
@@ -160,8 +161,7 @@ export function multiplyDice(formula, multiplier) {
   let text = formula.trim();
   if (factor === 1) return text;
   for (const {start, d, count} of [...parser.dicePositions].reverse()) {
-    if (count === null) throw new Error(`Cannot multiply the dice of ${text}: a dice count is computed.`);
-    text = `${text.slice(0, start)}${count * factor}${text.slice(d)}`;
+    text = count === null ? `${text.slice(0, start)}(${text.slice(start, d)}*${factor})${text.slice(d)}` : `${text.slice(0, start)}${count * factor}${text.slice(d)}`;
   }
   parseRollFormula(text);
   return text;

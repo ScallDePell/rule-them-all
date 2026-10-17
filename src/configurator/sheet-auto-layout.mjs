@@ -3,7 +3,7 @@
    Actor: one section per Definition Type, listing the Definitions the Actor holds with what their capabilities give
    (value, pools, active state, collection size), then the Contents it holds (its Items), then what it buys with each
    Progression System, then the Actions a player starts.
-   Item: every field of its Content Types. */
+   Item: every field of its Content Types, then the Actions their Content Templates grant (used from the Item). */
 import {prepareLayout} from "./layout-contract.mjs";
 
 const enabled = entry => entry?.enabled !== false;
@@ -15,6 +15,17 @@ const ROW_OUTPUTS = [
   {capabilityId: "state", outputId: "state.active", write: true},
   {capabilityId: "collection", outputId: "collection.count", write: false}
 ];
+
+/** The Actions Content Templates grant (of these Content Types; none listed: all), by relation or choice option. */
+export function contentGrantedActionIds(ruleset, contentTypeIds = []) {
+  const ids = new Set();
+  for (const template of ruleset.contentTemplates ?? []) {
+    if (!enabled(template) || contentTypeIds.length && !contentTypeIds.includes(template.contentTypeId)) continue;
+    for (const relation of [...(template.relations ?? []), ...(template.choiceGroups ?? []).flatMap(group => group?.options ?? [])])
+      if (relation?.operation === "grant" && relation.targetRef?.objectKind === "action") ids.add(relation.targetRef.objectId);
+  }
+  return ids;
+}
 
 /** Actions a player starts from a sheet: not a follow-up of another Action, a Trigger, a Table, an acquisition or a milestone. */
 export function sheetActionIds(ruleset) {
@@ -53,7 +64,9 @@ function actorLayout(ruleset) {
   if ((ruleset.contentTypes ?? []).some(type => enabled(type) && type.storageKind !== "actor")) sections.push({id: "contents", kind: "section", labelKey: "RTA.Sheet.Contents", columns: 1, span: 2, children: [{id: "contents-list", kind: "contents"}]});
   for (const system of (ruleset.progressionSystems ?? []).filter(enabled)) sections.push({id: nodeId("progression", system.id), kind: "section", labelKey: system.nameKey ?? system.id, columns: 1, span: 2,
     children: [{id: nodeId("progression", system.id, "purchases"), kind: "progression", progressionSystemRef: system.id}]});
-  const actions = sheetActionIds(ruleset).map(id => ({id: nodeId("action", id), kind: "action", actionRef: id}));
+  // An Action a Content grants is used from that Content's Item (a weapon's attack), not from the Actor's buttons.
+  const fromContents = contentGrantedActionIds(ruleset);
+  const actions = sheetActionIds(ruleset).filter(id => !fromContents.has(id)).map(id => ({id: nodeId("action", id), kind: "action", actionRef: id}));
   if (actions.length) sections.push({id: "actions", kind: "section", labelKey: "RTA.Sheet.Actions", columns: Math.min(4, actions.length), span: 2, children: actions});
   const columns = sections.length > 1 ? 2 : 1;
   return {id: "root", kind: "grid", columns, children: columns === 1 ? sections.map(({span: _span, ...section}) => section) : sections};
@@ -62,7 +75,14 @@ function actorLayout(ruleset) {
 function itemLayout(ruleset, contentTypeIds) {
   const types = (ruleset.contentTypes ?? []).filter(type => !contentTypeIds.length || contentTypeIds.includes(type.id));
   const fieldIds = [...new Set(types.flatMap(type => Object.keys(type.fields ?? {})))];
-  return {id: "root", kind: "section", labelKey: "", columns: fieldIds.length > 1 ? 2 : 1, children: fieldIds.map(fieldId => ({id: nodeId("field", fieldId), kind: "value", source: {kind: "field", fieldId}, write: {operation: "set"}}))};
+  const fields = fieldIds.map(fieldId => ({id: nodeId("field", fieldId), kind: "value", source: {kind: "field", fieldId}, write: {operation: "set"}}));
+  // Each Item shows the Actions of its own template only (the sheet leaves out those another template grants).
+  const actions = [...contentGrantedActionIds(ruleset, types.map(type => type.id))].filter(id => (ruleset.actions ?? []).some(action => action.id === id && enabled(action)))
+    .map(id => ({id: nodeId("action", id), kind: "action", actionRef: id}));
+  if (!actions.length) return {id: "root", kind: "section", labelKey: "", columns: fieldIds.length > 1 ? 2 : 1, children: fields};
+  return {id: "root", kind: "grid", columns: 1, children: [
+    ...(fields.length ? [{id: "fields", kind: "section", labelKey: "", columns: fieldIds.length > 1 ? 2 : 1, children: fields}] : []),
+    {id: "actions", kind: "section", labelKey: "RTA.Sheet.Actions", columns: Math.min(4, actions.length), children: actions}]};
 }
 
 /** The AUTO layout for an Actor or an Item sheet (contentTypeIds narrows an Item sheet; none means every Content Type). */

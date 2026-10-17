@@ -17,6 +17,7 @@ import {findSlot, SLOT_CAPABILITIES} from "../configurator/capability-slots.mjs"
 import {descriptionScale, scaleWords} from "../configurator/rule-contracts.mjs";
 import {CARD_EXCLUDED_KINDS, LAYOUT_COUNTED_DISPLAYS} from "../configurator/layout-contract.mjs";
 import {resolveSheetTheme} from "../configurator/sheet-themes.mjs";
+import {contentGrantedActionIds} from "../configurator/sheet-auto-layout.mjs";
 
 const enabled = entry => entry?.enabled !== false;
 const ERROR = error => String(error?.message ?? error);
@@ -73,6 +74,9 @@ export async function projectSheet(engine, versionId, sheet, {actor = null, cont
     if (!decisions.has(key)) decisions.set(key, (await engine.authorize(versionId, operation, {objectKind, objectId}, actor, actor ? context : null)).allowed);
     return decisions.get(key);
   };
+  const grantedByContents = contentGrantedActionIds(ruleset);
+  const grants = (template, actionId) => [...(template?.relations ?? []), ...(template?.choiceGroups ?? []).flatMap(group => group?.options ?? [])]
+    .some(relation => relation?.operation === "grant" && relation.targetRef?.objectKind === "action" && relation.targetRef.objectId === actionId);
   let shown;
   /** The Content this Item sheet shows: its Content Type and its field values (an owned Content keeps its own). */
   const shownContent = async () => {
@@ -80,7 +84,7 @@ export async function projectSheet(engine, versionId, sheet, {actor = null, cont
     const owned = content?.key && actor ? (await engine.listOwnedContents(versionId, actor)).find(row => row.key === content.key) : null;
     const template = ruleset.contentTemplates?.find(t => t.id === (owned?.templateId ?? content?.templateId));
     const typeId = owned?.contentTypeId ?? template?.contentTypeId;
-    shown = typeId ? {type: ruleset.contentTypes?.find(type => type.id === typeId) ?? null, fields: owned?.fields ?? structuredClone(template?.data ?? {})} : null;
+    shown = typeId ? {type: ruleset.contentTypes?.find(type => type.id === typeId) ?? null, template: template ?? null, fields: owned?.fields ?? structuredClone(template?.data ?? {})} : null;
     return shown;
   };
 
@@ -307,6 +311,8 @@ export async function projectSheet(engine, versionId, sheet, {actor = null, cont
     if (node.kind === "action") {
       const action = ruleset.actions?.find(a => a.id === node.actionRef && enabled(a));
       if (!action || !actor || !await allowed("execute", "action", action.id)) return null;
+      // On an Item, an Action another Content Template grants is not this Item's (one spell's cast among all spells).
+      if (content && grantedByContents.has(action.id) && !grants((await shownContent())?.template, action.id)) return null;
       return {...base, label: node.labelKey || action.nameKey || action.id, actionId: action.id, definitionId: row?.definition.id ?? null};
     }
     const children = async (nodes, s, r) => (await Promise.all(nodes.map(child => walk(child, s, r, card)))).filter(Boolean);

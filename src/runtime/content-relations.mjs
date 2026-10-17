@@ -19,6 +19,13 @@ export class ContentGrantHandlers {
     this.register('action',(relation,plan)=>{
       plan.actionIds.push(relation.targetRef.objectId);
     });
+    // A granted Content Template becomes an owned Content of its own (a creature's attacks, a class's starting
+    // equipment): config.count copies, with config.selections answering its choices.
+    this.register('contentTemplate',(relation,plan)=>{
+      const count=Number(relation.config?.count??1);
+      if(!Number.isSafeInteger(count)||count<1)throw new Error(`Relation ${relation.id}: count must be a whole number of at least 1.`);
+      plan.contentGrants.push({templateId:relation.targetRef.objectId,count,selections:copyJSON(relation.config?.selections??{})});
+    });
   }
   register(objectKind,prepare){
     if(typeof objectKind!=='string'||!objectKind.trim()||typeof prepare!=='function')throw new TypeError('Grant handler requires an objectKind and prepare function.');
@@ -28,7 +35,7 @@ export class ContentGrantHandlers {
   registeredKinds(){return [...this.#handlers.keys()];}
   prepare(ruleset,relations){
     const normalized=normalizeRelations(relations??[],{ruleset});
-    const plan={definitionBindings:[],actionIds:[],linkedRefs:[],unlockedRefs:[],grantedRefs:[]};
+    const plan={definitionBindings:[],actionIds:[],contentGrants:[],linkedRefs:[],unlockedRefs:[],grantedRefs:[]};
     for(const relation of normalized){
       const ref=copyJSON(relation.targetRef);
       if(relation.operation==='link'){plan.linkedRefs.push(ref);continue;}

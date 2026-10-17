@@ -1176,6 +1176,8 @@
       "Input": "Choice",
       "Label": "Label",
       "DefinitionType": "Chosen among",
+      "Source": "Offered",
+      "Sources": {"auto": "Those held, else all", "held": "Only those held", "all": "All", "unheld": "Only those not held"},
       "Options": "Allowed values",
       "OptionsPlaceholder": "One per line: value = label (empty: any value)",
       "Types": {

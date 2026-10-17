@@ -62,9 +62,10 @@ test('Effects of an Action read its Test result', async()=>{
   assert.equal(await vitality(),30-4,'margin 16 - 12');
 });
 
-test('Dice multiplication keeps modifiers and refuses computed counts', ()=>{
+test('Dice multiplication keeps modifiers and multiplies computed counts', ()=>{
   assert.equal(multiplyDice('2d6kh1 + 1d4 + 3',3),'6d6kh1 + 3d4 + 3');
-  assert.throws(()=>multiplyDice('(1+1)d6',2),/computed/);
+  assert.equal(multiplyDice('(1+1)d6 + d4',2),'((1+1)*2)d6 + 2d4');
+  assert.equal(multiplyDice('(@input.level)d8',2),'((@input.level)*2)d8');
   assert.throws(()=>multiplyDice('1d6',0),/positive integer/);
 });
 

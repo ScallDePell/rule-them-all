@@ -162,7 +162,9 @@ function prepareActionAcquisition(data,index){
  * add a separate StateInstance, or do nothing. */
 export const STATE_STACKING=Object.freeze(['refresh','stack','separate','ignore']);
 function prepareStateApplication(data,index){
-  if(!isRecord(data)||!nonempty(data.definitionId))throw new Error(`Action.stateApplications[${index}] requires definitionId.`);
+  // definitionFormulaRef instead of definitionId: the state comes from a Formula (a condition named by a spell's field).
+  if(!isRecord(data)||!(nonempty(data.definitionId)||nonempty(data.definitionFormulaRef)))throw new Error(`Action.stateApplications[${index}] requires definitionId.`);
+  if(data.definitionId&&data.definitionFormulaRef)throw new Error(`Action.stateApplications[${index}]: definitionId or definitionFormulaRef, not both.`);
   const x={targetRole:'target',durationRef:null,stacking:'refresh',stacks:1,severity:null,modifierRefs:[],...copyJSON(data)};
   if(!ROLE_NAME.test(String(x.targetRole)))throw new Error(`Action.stateApplications[${index}].targetRole must be a role name.`);
   if(!(x.durationRef===null||nonempty(x.durationRef)))throw new Error(`Action.stateApplications[${index}].durationRef must be a Duration id or null.`);
@@ -173,7 +175,8 @@ function prepareStateApplication(data,index){
   return x;
 }
 function prepareStateRemoval(data,index){
-  if(!isRecord(data)||!nonempty(data.definitionId))throw new Error(`Action.stateRemovals[${index}] requires definitionId.`);
+  if(!isRecord(data)||!(nonempty(data.definitionId)||nonempty(data.definitionFormulaRef)))throw new Error(`Action.stateRemovals[${index}] requires definitionId.`);
+  if(data.definitionId&&data.definitionFormulaRef)throw new Error(`Action.stateRemovals[${index}]: definitionId or definitionFormulaRef, not both.`);
   const x={targetRole:'target',...copyJSON(data)};
   if(!ROLE_NAME.test(String(x.targetRole)))throw new Error(`Action.stateRemovals[${index}].targetRole must be a role name.`);
   return x;
@@ -187,13 +190,15 @@ function prepareModifierApplication(data,index){
 }
 /** Action input: a value chosen when the Action is used (a slot level, a difficulty), read as
  * variables.input.<id>. options lists the allowed values; a reference input chooses a
- * Definition of definitionTypeId. */
+ * Definition of definitionTypeId, offered from: the ones self holds when it holds some (auto),
+ * only those it holds (held), every one (all) or only those it lacks (unheld: a new feat). */
+export const ACTION_INPUT_SOURCES=Object.freeze(['auto','held','all','unheld']);
 export const ACTION_INPUT_TYPES=Object.freeze(['number','integer','boolean','string','reference']);
 function prepareActionInput(data,index,options){
   const label=`Action.inputs[${index}]`;
   if(!isRecord(data))throw new Error(`${label} must be an object.`);
   const x={labelKey:'',valueType:'number',options:[],definitionTypeId:null,required:true,...copyJSON(data)};
-  for(const key of Object.keys(x))if(!['id','labelKey','valueType','options','definitionTypeId','required','defaultValue'].includes(key))throw new Error(`${label} contains unsupported field: ${key}.`);
+  for(const key of Object.keys(x))if(!['id','labelKey','valueType','options','definitionTypeId','from','required','defaultValue'].includes(key))throw new Error(`${label} contains unsupported field: ${key}.`);
   if(!nonempty(x.id)||!/^[A-Za-z][A-Za-z0-9_]*$/.test(x.id))throw new Error(`${label}.id must start with a letter and use letters, digits or _.`);
   if(!ACTION_INPUT_TYPES.includes(x.valueType))throw new Error(`${label}.valueType must be one of ${ACTION_INPUT_TYPES.join(', ')}.`);
   if(typeof x.labelKey!=='string')throw new Error(`${label}.labelKey must be a string.`);
@@ -201,7 +206,8 @@ function prepareActionInput(data,index,options){
   if(x.valueType==='reference'){
     need(nonempty(x.definitionTypeId),`${label} requires the Definition type it chooses from.`,options);
     if(x.options.length)throw new Error(`${label} chooses a Definition and cannot list options.`);
-  }else x.definitionTypeId=null;
+    x.from??='auto';if(!ACTION_INPUT_SOURCES.includes(x.from))throw new Error(`${label}.from must be one of ${ACTION_INPUT_SOURCES.join(', ')}.`);
+  }else{x.definitionTypeId=null;delete x.from;}
   const typed=(value,what)=>{if(x.valueType==='reference'){if(!nonempty(value))throw new Error(`${label}.${what} must be a Definition id.`);return;}const check=validateTypedValue(x.valueType,'one',false,value);if(!check.valid)throw new Error(`${label}.${what}: ${check.message}`);};
   x.options=x.options.map((option,i)=>{if(!isRecord(option))throw new Error(`${label}.options[${i}] must be {value, labelKey}.`);typed(option.value,`options[${i}].value`);return {value:option.value,labelKey:String(option.labelKey??'')};});
   if(new Set(x.options.map(option=>JSON.stringify(option.value))).size!==x.options.length)throw new Error(`${label} lists the same option twice.`);

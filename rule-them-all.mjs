@@ -179,6 +179,14 @@ Hooks.once("ready", () => {
       }
     });
   });
+  // An Actor made from an Actor Content (a creature from its compendium) takes on its template, on the creating client only.
+  Hooks.on("createActor", (actor, _options, userId) => {
+    if (!userId || userId !== game.user?.id || !actor?.getFlag?.(MODULE_ID, "contentTemplate")?.managed) return;
+    Promise.resolve(game.ruleThemAll?.content?.applyActorTemplate?.(actor.uuid)).catch(error => {
+      console.error("Rule Them'All | Actor Content template failed", error);
+      ui.notifications?.error?.(error.message);
+    });
+  });
   Hooks.on("createItem", (item, _options, userId) => {
     // v14 createItem fires on every connected client, not only the initiator.
     // Only the initiating client may apply runtime state and acquisition flags.

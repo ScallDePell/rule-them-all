@@ -123,11 +123,12 @@ export function collectEntryData(kind,{fd,current,bool,checkedIds,queryOne,query
         return {...base,ifAbsent:true,add:{"value.base":amount}};
       }),
       // The editor sets one Duration for every state and Modifier the Action applies.
-      stateRemovals:checkedIds("stateRemovalIds").map(definitionId=>(current.stateRemovals??[]).find(a=>a?.definitionId===definitionId)??{definitionId,targetRole:"target"}),
+      // Rows naming their state by a Formula are not shown as checkboxes and are kept as they are.
+      stateRemovals:[...checkedIds("stateRemovalIds").map(definitionId=>(current.stateRemovals??[]).find(a=>a?.definitionId===definitionId)??{definitionId,targetRole:"target"}),...(current.stateRemovals??[]).filter(a=>a?.definitionFormulaRef)],
       // Per state: what happens when the target already has it (refresh, stack, separate, ignore) and the stacks added.
       stateApplications:checkedIds("stateApplicationIds").map(definitionId=>{const kept=(current.stateApplications??[]).find(a=>a?.definitionId===definitionId)??{definitionId,targetRole:"target"};
         const stacks=Number(fd.get(`stateStacks.${definitionId}`)??kept.stacks??1);if(!Number.isSafeInteger(stacks)||stacks<1)throw new Error("The stacks an Action applies must be a whole number of at least 1.");
-        return {...kept,durationRef:String(fd.get("stateDurationRef")??"").trim()||null,stacking:String(fd.get(`stateStacking.${definitionId}`)??kept.stacking??"refresh"),stacks};}),
+        return {...kept,durationRef:String(fd.get("stateDurationRef")??"").trim()||null,stacking:String(fd.get(`stateStacking.${definitionId}`)??kept.stacking??"refresh"),stacks};}).concat((current.stateApplications??[]).filter(a=>a?.definitionFormulaRef)),
       modifierApplications:checkedIds("modifierApplicationIds").map(modifierRef=>({...((current.modifierApplications??[]).find(a=>a?.modifierRef===modifierRef)??{modifierRef,targetRole:"target"}),durationRef:String(fd.get("stateDurationRef")??"").trim()||null}))};
     if(kind==="permissionPolicy")return{...current,nameKey:String(fd.get("nameKey")??"").trim(),descriptionKey:String(fd.get("descriptionKey")??""),enabled:bool("enabled"),scope:parseScopeToken(fd.get("permissionScope")),rules:collectPermissionRules(queryAll("[data-permission-rule]")),defaultEffect:String(fd.get("defaultEffect")??"DENY")};
     if(kind==="eventType")return{...current,nameKey:String(fd.get("nameKey")??"").trim(),descriptionKey:String(fd.get("descriptionKey")??""),enabled:bool("enabled"),payloadFields:collectEventPayloadFields(queryAll("[data-event-field-row]")),tags:checkedIds("tags")};
