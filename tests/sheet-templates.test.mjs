@@ -7,8 +7,8 @@ import {RuntimeEngine} from '../src/runtime/runtime-engine.mjs';
 import {projectSheet} from '../src/runtime/sheet-projection.mjs';
 import {layoutTarget, prepareLayout} from '../src/configurator/layout-contract.mjs';
 import {cardTemplates, importedSheet, importedTemplate, insertTemplate, prunedSheet, readSheetFile, sheetFile, templateFile, templateFromBlock, templateNamed, templatesFor} from '../src/configurator/sheet-templates.mjs';
-import {FALLBACK_FONTS, availableFonts, frameDeclarations, prepareSheetTheme, sheetThemeAttributes} from '../src/configurator/sheet-themes.mjs';
-import {paletteGroups} from '../src/configurator/sheet-layout-model.mjs';
+import {FALLBACK_FONTS, availableFonts, frameDeclarations, prepareSheetTheme, readThemeFile, resolveSheetTheme, sheetThemeAttributes, sheetThemeFromLook, sheetThemeNamed, themeFile} from '../src/configurator/sheet-themes.mjs';
+import {paletteGroups, previewView} from '../src/configurator/sheet-layout-model.mjs';
 import {renderSheetHTML} from '../src/ui/sheet-markup.mjs';
 
 class Storage { value = emptyStorageSnapshot(); async load() { return structuredClone(this.value); } async save(v) { this.value = structuredClone(v); } }
@@ -142,4 +142,42 @@ test('sheet themes: a theme and its overrides, checked; their tokens and classes
   assert.deepEqual(availableFonts(), [...FALLBACK_FONTS]);
   globalThis.CONFIG = {fontDefinitions: {'My Runes': {}, Signika: {}}};
   try { assert.deepEqual(availableFonts(), ['My Runes', 'Signika']); } finally { delete globalThis.CONFIG; }
+});
+
+test('Ruleset themes: a look saved under a name, taken by sheets (with their own changes on top), sent with a sheet file, kept while used', async () => {
+  const {api, v, draft} = await setup();
+  const look = {id: 'gothic', overrides: {accent: '#aa2200', panel: '#221111', field: '#000000'}};
+  const made = sheetThemeFromLook(look, 'Blood moon', draft());
+  assert.deepEqual(made, {id: 'theme-blood-moon', nameKey: 'Blood moon', base: 'gothic', overrides: {accent: '#aa2200', panel: '#221111', field: '#000000'}});
+  await api.createSheetTheme(v, made);
+  await assert.rejects(api.createSheetTheme(v, {id: 'bad', nameKey: 'Bad', base: 'pink'}), /base must be/);
+  await assert.rejects(api.createSheetTheme(v, {id: 'bad', nameKey: 'Bad', base: 'plain', overrides: {glow: '#ffffff'}}), /unsupported field: glow/);
+  assert.equal(sheetThemeNamed(draft(), ' blood MOON')?.id, 'theme-blood-moon');
+  assert.deepEqual(prepareSheetTheme({themeRef: 'theme-blood-moon', overrides: {text: '#eeeeee'}}), {themeRef: 'theme-blood-moon', overrides: {text: '#eeeeee'}});
+  assert.throws(() => prepareSheetTheme({id: 'gothic', themeRef: 'x'}), /either/);
+  assert.throws(() => prepareSheetTheme({}), /either/);
+  assert.deepEqual(resolveSheetTheme({themeRef: 'theme-blood-moon', overrides: {accent: '#00ff00'}}, draft()), {id: 'gothic', overrides: {accent: '#00ff00', panel: '#221111', field: '#000000'}});
+  assert.equal(resolveSheetTheme({themeRef: 'gone'}, draft()), null);
+  assert.deepEqual(sheetThemeAttributes(resolveSheetTheme({themeRef: 'theme-blood-moon'}, draft())).css, ['--rta-sheet-panel: #221111', '--rta-sheet-accent: #aa2200', '--rta-sheet-field: #000000']);
+  assert.ok(sheetThemeAttributes({id: 'plain', overrides: {field: '#123456'}}).classes.includes('rta-sheet-themed--fields'), 'Plain keeps Foundry fields unless given a color');
+  // A sheet takes it: the preview and the game show the saved look; it cannot be deleted under the sheet.
+  await api.createSheetDefinition(v, {id: 'hero', nameKey: 'Hero', target: 'actor', theme: {themeRef: 'theme-blood-moon'}, root: {id: 'root', kind: 'grid', columns: 2, children: [statBlock]}});
+  assert.deepEqual(previewView(draft().sheetDefinitions[0].root, draft(), {theme: {themeRef: 'theme-blood-moon'}}).theme.id, 'gothic');
+  await assert.rejects(api.deleteSheetTheme(v, 'theme-blood-moon'), error => error.consumers?.some(edge => edge.consumerRef?.objectId === 'hero'));
+  // A sheet file brings the theme it takes into a Ruleset that lacks it.
+  const read = readSheetFile(JSON.stringify(sheetFile(draft().sheetDefinitions[0], draft())));
+  assert.deepEqual(read.themes.map(t => t.id), ['theme-blood-moon']);
+  const found = importedSheet(read, {...draft(), sheetThemes: []});
+  assert.deepEqual([found.themes.map(t => t.id), found.missing], [['theme-blood-moon'], []]);
+  assert.deepEqual(importedSheet(read, draft()).themes, [], 'the Ruleset\'s own is kept');
+  const lost = importedSheet({...read, themes: []}, {...draft(), sheetThemes: []});
+  assert.deepEqual(lost.missing, ['theme-blood-moon']);
+  assert.equal(prunedSheet(lost, {...draft(), sheetThemes: []}).sheet.theme, undefined, 'left out, the sheet takes the module\'s look');
+  // A theme file.
+  const file = readThemeFile(JSON.parse(JSON.stringify(themeFile(draft().sheetThemes[0]))), draft());
+  assert.deepEqual(file, {...made, id: 'theme-blood-moon-2'});
+  assert.throws(() => readThemeFile({format: 'other'}, draft()), error => error.code === 'format');
+  await api.updateSheetDefinition(v, 'hero', {theme: {id: 'plain'}});
+  await api.deleteSheetTheme(v, 'theme-blood-moon');
+  assert.deepEqual(draft().sheetThemes, []);
 });

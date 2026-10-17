@@ -406,6 +406,25 @@ const result = await page.evaluate(async ({fixture, en, urls}) => {
   check('a color of its own', theme()?.overrides?.accent === '#aa2200' && /--rta-sheet-accent:\s*#aa2200/.test(element.querySelector('[data-layout-canvas] .rta-sheet-themed')?.getAttribute('style') ?? '') && element.querySelector('[data-layout-theme-reset="accent"]'));
   await click('[data-layout-theme-reset="accent"]');
   check('back to the theme\'s color', !theme()?.overrides?.accent);
+  // A look of its own saved as a Ruleset theme: offered to every sheet, renamed, then deleted (the sheet keeps the look).
+  await set('[data-layout-theme-host] [data-layout-theme="panel"]', '#332211');
+  globalThis.__answer = 'Moon';
+  await click('[data-layout-theme-command="save"]');
+  { const saved = draft().sheetThemes?.find(entry => entry.id === 'theme-moon');
+    check('saving the look as a Ruleset theme', theme()?.themeRef === 'theme-moon' && !theme().overrides && saved?.base === 'parchment' && saved.overrides?.panel === '#332211'
+      && element.querySelector('[data-layout-theme="id"] option[value="ref:theme-moon"]')?.selected && /--rta-sheet-panel:\s*#332211/.test(element.querySelector('[data-layout-canvas] .rta-sheet-themed')?.getAttribute('style') ?? '')); }
+  await set('[data-layout-theme-host] [data-layout-theme="id"]', 'gothic');
+  await set('[data-layout-theme-host] [data-layout-theme="id"]', 'ref:theme-moon');
+  check('taking it again from the list', theme()?.themeRef === 'theme-moon' && element.querySelector('[data-layout-canvas] .rta-sheet-theme--parchment'));
+  globalThis.__answer = 'Full moon';
+  await click('[data-layout-theme-command="rename"]');
+  check('renaming the theme', draft().sheetThemes?.find(entry => entry.id === 'theme-moon')?.nameKey === 'Full moon' && element.querySelector('[data-layout-theme="id"] option[value="ref:theme-moon"]')?.textContent.includes('Full moon'));
+  downloads.length = 0;
+  await click('[data-layout-theme-command="export"]');
+  check('exporting the theme', downloads[0] && JSON.parse(downloads[0].text).format === 'rule-them-all.sheet-theme');
+  await click('[data-layout-theme-command="delete"]');
+  check('deleting it, the sheet keeps the look', !draft().sheetThemes?.length && theme()?.id === 'parchment' && theme().overrides?.panel === '#332211');
+  await click('[data-layout-theme-reset="panel"]');
   await click('[data-layout-canvas] [data-layout-node="stats"]');
   await set('[data-layout-properties] [data-layout-style="frame"]', 'icons/svg/frame.svg');
   await set('[data-layout-properties] [data-layout-style="frameWidth"]', 'small');
@@ -550,6 +569,14 @@ await page.waitForTimeout(100);
   const good = crumbs.length >= 2 && parent && parent !== 'stat-value' && add.shown && add.into && back && hover.includes('stats') && hover.includes('layer:stats') && hover.length === 2;
   console.log(`${good ? 'ok' : 'FAIL'} the path (${crumbs.join(' › ')}) selects a parent, the tabs switch (adds into ${add.into}), a block picked leaves the theme tab, the hovered block lights up on the sheet and in the Layers (${hover.join(', ')})`);
   if (!good) result.push('FAIL tabs, path, hover');
+}
+if (process.env.RTA_SHOTS) {
+  // The theme tab once the look is saved as a Ruleset theme: its rename, export and delete buttons.
+  await page.click('[data-layout-pane="theme"]');
+  await page.evaluate(() => { globalThis.__answer = 'Moonlight'; });
+  await page.click('[data-layout-theme-command="save"]');
+  await page.waitForTimeout(200);
+  await page.screenshot({path: join(process.env.RTA_SHOTS, 'sheet-editor-theme-saved.png')});
 }
 await browser.close();
 for (const line of [...result, ...errors.map(e => `FAIL error: ${e}`)]) console.log(line);

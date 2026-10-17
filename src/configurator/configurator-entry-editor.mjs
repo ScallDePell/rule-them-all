@@ -341,11 +341,11 @@ export class ConfiguratorEntryEditor extends ConfiguratorWindow {
   }
 
   /** Bring the control a diagnostic points to into view and highlight it briefly. */
-  /** The Ruleset's block templates, written at once (they are the Ruleset's, not this sheet's): the sheet editor saves,
-   *  renames, deletes and imports them. */
+  /** The Ruleset's block templates and sheet themes, written at once (they are the Ruleset's, not this sheet's): the sheet
+   *  editor saves, renames, deletes and imports them. */
   #sheetTemplateStore(){
     const v=this.#versionId,api=this.#api;
-    return {ruleset:()=>api.getRulesetVersion(v)?.workingDraft??api.getRuleset(v),createTemplate:data=>api.createSheetTemplate(v,data),updateTemplate:(id,patch)=>api.updateSheetTemplate(v,id,patch),deleteTemplate:id=>api.deleteSheetTemplate(v,id)};
+    return {ruleset:()=>api.getRulesetVersion(v)?.workingDraft??api.getRuleset(v),createTemplate:data=>api.createSheetTemplate(v,data),updateTemplate:(id,patch)=>api.updateSheetTemplate(v,id,patch),deleteTemplate:id=>api.deleteSheetTemplate(v,id),createTheme:data=>api.createSheetTheme(v,data),updateTheme:(id,patch)=>api.updateSheetTheme(v,id,patch),deleteTheme:id=>api.deleteSheetTheme(v,id)};
   }
 
   #focusDiagnostic(path){

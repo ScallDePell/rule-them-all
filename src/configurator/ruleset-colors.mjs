@@ -11,7 +11,7 @@ export const RULESET_SECTIONS = Object.freeze([
   {id:'content', titleKey:'RTA.Nav.Content', collections:['contentTypes','contentTemplates']},
   {id:'rules', titleKey:'RTA.Nav.Rules', collections:['parameters','formulas','formulaBindings','conditions','rolls','outcomes','tests','effects','actions','modifiers','durations','dice','tables','scales']},
   {id:'orchestration', titleKey:'RTA.Nav.Orchestration', collections:['permissionPolicies','eventTypes','triggers']},
-  {id:'systems', titleKey:'RTA.Nav.Systems', collections:['creationSystems','progressionSystems','sheetDefinitions','sheetTemplates']},
+  {id:'systems', titleKey:'RTA.Nav.Systems', collections:['creationSystems','progressionSystems','sheetDefinitions','sheetTemplates','sheetThemes']},
   {id:'organization', titleKey:'RTA.Nav.Organization', collections:['categories','tags']},
   {id:'tools', titleKey:'RTA.Nav.Tools', collections:[]}
 ]);

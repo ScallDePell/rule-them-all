@@ -732,16 +732,31 @@
   margin-block-start: var(--rta-gap-row);
 }
 
-/* The sheet's theme: its own panel under the palette. */
+/* The sheet's theme: its own tab of the tools. */
 .rta-sheet-editor__theme {
   padding: var(--rta-frame-pad);
   border: var(--rta-frame-border) solid var(--rta-color-border-subtle);
   border-radius: var(--rta-radius-panel);
 }
 
-.rta-sheet-editor__theme > summary {
-  cursor: pointer;
-  font-weight: 600;
+/* The Ruleset's themes: save the look shown, the tools of the one taken, import. */
+.rta-sheet-editor__theme-commands {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--rta-gap-row);
+  margin-block-start: var(--rta-gap-block);
+}
+
+.rta-sheet-editor__theme-tools {
+  display: inline-flex;
+  flex: 0 0 auto;
+  gap: var(--rta-gap-tight);
+}
+
+.rta-sheet-editor__theme-tools > button {
+  flex: 0 0 auto;
+  inline-size: auto;
 }
 
 .rta-sheet-editor__theme-color {

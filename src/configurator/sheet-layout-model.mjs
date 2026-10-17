@@ -4,6 +4,7 @@
 import {capabilityTypeRegistry} from "./capability-type-registry.mjs";
 import {CARD_EXCLUDED_KINDS, LAYOUT_CONTAINERS, LAYOUT_COUNTED_DISPLAYS, LAYOUT_DOCUMENT_KINDS, LAYOUT_WRITABLE_SOURCES, layoutTarget} from "./layout-contract.mjs";
 import {descriptionScale, scaleWords} from "./rule-contracts.mjs";
+import {resolveSheetTheme} from "./sheet-themes.mjs";
 
 const copy = value => structuredClone(value);
 const enabled = entry => entry?.enabled !== false;
@@ -399,5 +400,6 @@ export function previewView(root, ruleset, {target = "actor", contentTypeIds = [
     }
     return {...base, ...(node.columns ? {columns: node.columns} : {}), ...(node.labelKey !== undefined ? {label: node.labelKey} : {}), children: (node.children ?? []).map(child => walk(child, row, card)).filter(Boolean)};
   };
-  return {sheetId: "preview", target, header, ...(theme ? {theme} : {}), root: walk(root, null)};
+  const resolved = resolveSheetTheme(theme, ruleset);
+  return {sheetId: "preview", target, header, ...(resolved ? {theme: resolved} : {}), root: walk(root, null)};
 }

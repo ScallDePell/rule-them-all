@@ -16,6 +16,7 @@ import {capabilityTypeRegistry} from "../configurator/capability-type-registry.m
 import {findSlot, SLOT_CAPABILITIES} from "../configurator/capability-slots.mjs";
 import {descriptionScale, scaleWords} from "../configurator/rule-contracts.mjs";
 import {CARD_EXCLUDED_KINDS, LAYOUT_COUNTED_DISPLAYS} from "../configurator/layout-contract.mjs";
+import {resolveSheetTheme} from "../configurator/sheet-themes.mjs";
 
 const enabled = entry => entry?.enabled !== false;
 const ERROR = error => String(error?.message ?? error);
@@ -319,5 +320,6 @@ export async function projectSheet(engine, versionId, sheet, {actor = null, cont
     }
     return {...base, ...(node.columns ? {columns: node.columns} : {}), ...(node.labelKey !== undefined ? {label: node.labelKey} : {}), children: await children(node.children, scope, row)};
   };
-  return {sheetId: sheet.id, target: sheet.target, header: sheet.header ?? "standard", ...(sheet.theme ? {theme: sheet.theme} : {}), root: await walk(sheet.root, context, null)};
+  const theme = resolveSheetTheme(sheet.theme, ruleset);
+  return {sheetId: sheet.id, target: sheet.target, header: sheet.header ?? "standard", ...(theme ? {theme} : {}), root: await walk(sheet.root, context, null)};
 }

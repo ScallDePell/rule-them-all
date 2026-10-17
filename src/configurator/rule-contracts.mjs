@@ -6,7 +6,7 @@ import {assertSafeRollFormula, FOUNDRY_DIE_LETTERS} from './roll-grammar.mjs';
 import {DICE_COMPARATORS} from './dice-reading.mjs';
 import {need} from './diagnostics.mjs';
 import {prepareLayout,prepareTemplateBlock,layoutTarget,emptyLayout,layoutNodes} from './layout-contract.mjs';
-import {prepareSheetTheme} from './sheet-themes.mjs';
+import {prepareSheetTheme,prepareSheetThemeLook} from './sheet-themes.mjs';
 import {preparePermissionRules} from './permission-contract.mjs';
 import {validateFormulaAst, effectOperationRegistry} from './operation-registries.mjs';
 
@@ -606,4 +606,12 @@ export function prepareSheetTemplate(data,options={}){
   return x;
 }
 
-export const PREPARERS={parameters:prepareParameter,formulas:prepareFormula,formulaBindings:prepareFormulaBinding,conditions:prepareCondition,rolls:prepareRoll,outcomes:prepareOutcome,tests:prepareTest,effects:prepareEffect,actions:prepareAction,permissionPolicies:preparePermissionPolicy,eventTypes:prepareEventType,triggers:prepareTrigger,contentTypes:prepareContentType,contentTemplates:prepareContentTemplate,modifiers:prepareModifier,durations:prepareDuration,dice:prepareDie,tables:prepareTable,scales:prepareScale,creationSystems:prepareCreationSystem,progressionSystems:prepareProgressionSystem,sheetDefinitions:prepareSheetDefinition,sheetTemplates:prepareSheetTemplate,categories:prepareCategory,tags:prepareTag};
+/** SheetTheme ("Thème de feuille" of the Ruleset): one of the module's themes (base) with overrides of its own, saved
+ * under a name and offered to every sheet of the Ruleset (sheet-themes.mjs). */
+export function prepareSheetThemeEntry(data,options={}){
+  const x=prepareNamedGeneric(data,'SheetTheme',{base:null},options);
+  for(const key of Object.keys(x))if(!['id','nameKey','descriptionKey','enabled','order','tags','base','overrides'].includes(key))throw new Error(`Unsupported SheetTheme field: ${key}.`);
+  return prepareSheetThemeLook(x);
+}
+
+export const PREPARERS={parameters:prepareParameter,formulas:prepareFormula,formulaBindings:prepareFormulaBinding,conditions:prepareCondition,rolls:prepareRoll,outcomes:prepareOutcome,tests:prepareTest,effects:prepareEffect,actions:prepareAction,permissionPolicies:preparePermissionPolicy,eventTypes:prepareEventType,triggers:prepareTrigger,contentTypes:prepareContentType,contentTemplates:prepareContentTemplate,modifiers:prepareModifier,durations:prepareDuration,dice:prepareDie,tables:prepareTable,scales:prepareScale,creationSystems:prepareCreationSystem,progressionSystems:prepareProgressionSystem,sheetDefinitions:prepareSheetDefinition,sheetTemplates:prepareSheetTemplate,sheetThemes:prepareSheetThemeEntry,categories:prepareCategory,tags:prepareTag};

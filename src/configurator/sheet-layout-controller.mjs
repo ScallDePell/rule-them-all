@@ -15,7 +15,7 @@ import {NONE, kindText, renderLayoutLayersHTML, renderLayoutPaletteHTML, renderL
 import {selectColorsAttribute} from "../ui/select-option-presentation.mjs";
 import {RTA_NEUTRAL_COLOR} from "../ui/theme-tokens.mjs";
 import {LAYOUT_CONTAINERS, LAYOUT_LABELLED} from "./layout-contract.mjs";
-import {SHEET_THEMES, availableFonts, prepareSheetTheme} from "./sheet-themes.mjs";
+import {SHEET_THEMES, availableFonts, prepareSheetTheme, readThemeFile, resolveSheetTheme, sheetThemeFromLook, sheetThemeNamed, themeFile} from "./sheet-themes.mjs";
 import {cardTemplates, importedSheet, importedTemplate, insertTemplate, prunedSheet, prunedTemplate, readSheetFile, sheetFile, templateFile, templateFromBlock, templateNamed} from "./sheet-templates.mjs";
 import {confirmRTA, promptRTA} from "./foundry-dialogs.mjs";
 import {installPanels} from "./sheet-editor-panels.mjs";
@@ -391,6 +391,8 @@ export class SheetLayoutController {
     if (width) { event.preventDefault(); this.#width = width.dataset.layoutWidth; return this.#renderWidth(); }
     const tool = elementOf(event)?.closest("[data-layout-template-command]");
     if (tool) { event.preventDefault(); event.stopPropagation(); return this.#templateCommand(tool.dataset.layoutTemplateCommand, tool.dataset.templateId).catch(error => this.#warn(error.message)); }
+    const themeTool = elementOf(event)?.closest("[data-layout-theme-command]");
+    if (themeTool) { event.preventDefault(); return this.#themeCommand(themeTool.dataset.layoutThemeCommand).catch(error => this.#warn(error.message)); }
     const reset = elementOf(event)?.closest("[data-layout-theme-reset]");
     if (reset) { event.preventDefault(); return this.#setTheme({[reset.dataset.layoutThemeReset]: undefined}); }
     const item = elementOf(event)?.closest("[data-layout-palette]");
@@ -805,6 +807,7 @@ export class SheetLayoutController {
       found = prunedSheet(found, this.#ruleset);
     } else if (!await confirmRTA("RTA.SheetFile.ReplaceConfirm")) return;
     for (const template of found.templates) await this.#templates?.createTemplate(template);
+    for (const theme of found.themes ?? []) await this.#templates?.createTheme?.(theme);
     const {sheet} = found, set = (name, next) => { const field = this.#form?.querySelector(`[name="${name}"]`); if (field && next !== undefined && field.value !== String(next)) { field.value = String(next); field.dispatchEvent(new Event("change", {bubbles: true})); } };
     set("sheetTarget", sheet.target); set("sheetHeader", sheet.header ?? "standard");
     set("sheetWindowWidth", sheet.window?.width ?? ""); set("sheetWindowHeight", sheet.window?.height ?? "");
@@ -825,22 +828,81 @@ export class SheetLayoutController {
     const overrides = {...(this.#theme?.overrides ?? {}), ...changes};
     for (const [key, value] of Object.entries(overrides)) if (value === undefined) delete overrides[key];
     if (!overrides.frame) { delete overrides.frameSlice; delete overrides.frameWidth; }
-    try { this.#theme = prepareSheetTheme({id: this.#theme.id, overrides}) ?? null; } catch (error) { this.#warn(error.message); return this.render(); }
+    const which = this.#theme.themeRef ? {themeRef: this.#theme.themeRef} : {id: this.#theme.id};
+    try { this.#theme = prepareSheetTheme({...which, overrides}) ?? null; } catch (error) { this.#warn(error.message); return this.render(); }
     this.#storeTheme(); this.render();
   }
   #onThemeChange(target) {
     const prop = target.dataset.layoutTheme;
-    if (prop === "id") { this.#theme = target.value === "none" ? null : {id: target.value, ...(this.#theme?.overrides ? {overrides: this.#theme.overrides} : {})}; this.#storeTheme(); return this.render(); }
+    // A Ruleset theme is taken as it is saved; between the module's themes, the sheet keeps its own changes.
+    if (prop === "id") {
+      const value = target.value;
+      this.#theme = value === "none" ? null : value.startsWith("ref:") ? {themeRef: value.slice(4)} : {id: value, ...(this.#theme?.id && this.#theme.overrides ? {overrides: this.#theme.overrides} : {})};
+      this.#storeTheme(); return this.render();
+    }
     if (["font", "titleFont", "frameWidth"].includes(prop)) return this.#setTheme({[prop]: ["", "default"].includes(target.value) || prop === "frameWidth" && target.value === "medium" ? undefined : target.value});
     if (prop === "frameSlice") { const slice = Math.trunc(Number(target.value)); return this.#setTheme({frameSlice: slice >= 1 && slice <= 200 && slice !== 30 ? slice : undefined}); }
     if (prop === "frame") return this.#setTheme({frame: target.value.trim() || undefined});
     return this.#setTheme({[prop]: target.value});
   }
+  /** The Ruleset's themes: the look shown saved under a name (the sheet then takes it), the one it takes renamed,
+      exported or deleted (the sheet keeps its look), a theme file imported (and taken). */
+  async #themeCommand(command) {
+    const store = this.#templates, current = (this.#ruleset.sheetThemes ?? []).find(entry => entry.id === this.#theme?.themeRef);
+    if (command === "export") return current && download(themeFile(current), `${current.nameKey || current.id}.json`);
+    if (!store?.createTheme) return;
+    const take = id => { this.#theme = {themeRef: id}; this.#storeTheme(); this.#refresh(); };
+    if (command === "save") {
+      const look = resolveSheetTheme(this.#theme, this.#ruleset);
+      if (!look) return;
+      const name = (await promptRTA("RTA.SheetTheme.NamePrompt", current?.nameKey ?? ""))?.trim();
+      if (!name) return;
+      const made = sheetThemeFromLook(look, name, this.#ruleset), same = sheetThemeNamed(this.#ruleset, name);
+      if (same) {
+        if (same.id !== current?.id && !await confirmRTA("RTA.SheetTheme.ReplaceConfirm", {name})) return;
+        await store.updateTheme(same.id, {base: made.base, overrides: made.overrides ?? {}});
+      } else await store.createTheme(made);
+      globalThis.ui?.notifications?.info?.(format("RTA.SheetTheme.Saved", {name}, name));
+      return take(same?.id ?? made.id);
+    }
+    if (command === "import") {
+      const file = await chooseFile();
+      if (!file) return;
+      let data;
+      try { data = JSON.parse(file); } catch { return this.#warn("RTA.SheetTheme.NotTheme"); }
+      let theme;
+      try { theme = readThemeFile(data, this.#ruleset); } catch (error) { return this.#warn(error.code === "format" ? "RTA.SheetTheme.NotTheme" : error.message); }
+      await store.createTheme(theme);
+      globalThis.ui?.notifications?.info?.(format("RTA.SheetTheme.Saved", {name: theme.nameKey}, theme.nameKey));
+      return take(theme.id);
+    }
+    if (!current) return;
+    if (command === "rename") {
+      const name = (await promptRTA("RTA.SheetTheme.RenamePrompt", current.nameKey))?.trim();
+      if (!name || name === current.nameKey) return;
+      await store.updateTheme(current.id, {nameKey: name});
+      return this.#refresh();
+    }
+    if (command === "delete") {
+      if (!await confirmRTA("RTA.SheetTheme.DeleteConfirm", {name: current.nameKey})) return;
+      const look = resolveSheetTheme(this.#theme, this.#ruleset);
+      try { await store.deleteTheme(current.id); }
+      catch (error) {
+        // Saved sheets take it: say which.
+        const users = [...new Set((error.consumers ?? []).map(edge => this.#ruleset.sheetDefinitions?.find(sheet => sheet.id === edge.consumerRef?.objectId)?.nameKey ?? edge.consumerRef?.objectId))];
+        if (users.length) return this.#warn("RTA.SheetTheme.InUse", {names: users.join(", ")});
+        throw error;
+      }
+      this.#theme = look; this.#storeTheme(); this.#refresh();
+    }
+  }
   #renderTheme() {
     const host = this.#host.querySelector("[data-layout-theme-host]");
     if (!host) return;
     const neutral = selectColorsAttribute([RTA_NEUTRAL_COLOR]), choice = (value, key) => ({value, label: i18n(key), colors: neutral}), byDefault = choice("default", "RTA.SheetTheme.ThemeFont");
-    host.innerHTML = renderSheetThemeHTML(this.#theme, {themes: [choice("none", "RTA.SheetTheme.None"), ...SHEET_THEMES.map(id => choice(id, `RTA.SheetTheme.Themes.${id}`))],
+    const saved = (this.#ruleset.sheetThemes ?? []).filter(entry => entry.enabled !== false || entry.id === this.#theme?.themeRef).map(entry => ({value: `ref:${entry.id}`, label: entry.nameKey || entry.id, colors: neutral}));
+    host.innerHTML = renderSheetThemeHTML(this.#theme, {themes: [choice("none", "RTA.SheetTheme.None"), ...SHEET_THEMES.map(id => choice(id, `RTA.SheetTheme.Themes.${id}`)), ...saved],
+      frame: resolveSheetTheme(this.#theme, this.#ruleset)?.overrides?.frame, store: Boolean(this.#templates?.createTheme) && !this.#readOnly,
       fonts: current => [byDefault, ...[...new Set([...availableFonts(), ...(current ? [current] : [])])].map(font => ({value: font, label: font, colors: neutral}))],
       frameWidths: Object.keys(SHEET_FRAME_WIDTHS).map(width => choice(width, `RTA.SheetTheme.Width.${width}`)), color: prop => this.#themeColor(prop)});
   }
@@ -848,9 +910,10 @@ export class SheetLayoutController {
   #themeColor(prop) {
     const sheet = this.#host.querySelector("[data-layout-canvas] .rta-sheet");
     if (!sheet || typeof getComputedStyle === "undefined") return RTA_NEUTRAL_COLOR;
-    const token = {page: "--rta-color-surface", text: "--rta-color-text", accent: "--rta-color-accent-warm", border: "--rta-color-border-subtle"}[prop];
+    const shown = {page: "var(--rta-color-surface)", panel: "var(--rta-color-surface-option-light)", text: "var(--rta-color-text)", accent: "var(--rta-color-accent-warm)",
+      border: "var(--rta-color-border-subtle)", field: "var(--rta-sheet-field, var(--input-background-color, var(--rta-color-surface)))"}[prop];
     const probe = document.createElement("span");
-    probe.style.color = `var(${token})`; sheet.append(probe);
+    probe.style.color = shown; sheet.append(probe);
     const hex = toHex(getComputedStyle(probe).color); probe.remove();
     return hex ?? RTA_NEUTRAL_COLOR;
   }

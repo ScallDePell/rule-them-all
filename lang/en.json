@@ -227,7 +227,8 @@
       "tags": "Tags",
       "tables": "Tables",
       "dice": "Dice",
-      "sheetTemplates": "Block templates"
+      "sheetTemplates": "Block templates",
+      "sheetThemes": "Sheet themes"
     },
     "DynamicMarkup": {
       "NewField": "New field",
@@ -1471,19 +1472,41 @@
       "Section": "Section"
     },
     "SheetEditor": {
-      "Pane": {"block": "Block", "add": "Add", "theme": "Theme"},
-      "Group": {"content": "Content", "display": "Display", "access": "Access"},
+      "Pane": {
+        "block": "Block",
+        "add": "Add",
+        "theme": "Theme"
+      },
+      "Group": {
+        "content": "Content",
+        "display": "Display",
+        "access": "Access"
+      },
       "Crumbs": "Where the block is",
       "AddInto": "Adds into:",
       "Panels": {
         "Resize": "Drag to change the width, double-click to give it back its own",
-        "Hide": {"side": "Hide the tools", "layers": "Hide the layers"},
-        "Show": {"side": "Show the tools", "layers": "Show the layers"}
+        "Hide": {
+          "side": "Hide the tools",
+          "layers": "Hide the layers"
+        },
+        "Show": {
+          "side": "Show the tools",
+          "layers": "Show the layers"
+        }
       },
       "Menu": {
-        "up": "Move up (↑)", "down": "Move down (↓)", "copy": "Copy (Ctrl+C)", "paste": "Paste into it (Ctrl+V)",
-        "duplicate": "Duplicate (Ctrl+D)", "brush": "Style brush", "rename": "Rename (F2)",
-        "saveTemplate": "Save as template", "unstyle": "Default style", "addTab": "Add a tab", "remove": "Remove (Delete)"
+        "up": "Move up (↑)",
+        "down": "Move down (↓)",
+        "copy": "Copy (Ctrl+C)",
+        "paste": "Paste into it (Ctrl+V)",
+        "duplicate": "Duplicate (Ctrl+D)",
+        "brush": "Style brush",
+        "rename": "Rename (F2)",
+        "saveTemplate": "Save as template",
+        "unstyle": "Default style",
+        "addTab": "Add a tab",
+        "remove": "Remove (Delete)"
       },
       "Layout": "Layout",
       "Empty": "Empty: add a block here",
@@ -1985,7 +2008,21 @@
         "small": "Thin",
         "medium": "Medium",
         "large": "Wide"
-      }
+      },
+      "Panel": "Sections",
+      "Field": "Fields",
+      "Save": "Save as theme",
+      "NamePrompt": "Theme name",
+      "RenamePrompt": "New theme name",
+      "Rename": "Rename the theme",
+      "Export": "Export as a file",
+      "Delete": "Delete the theme",
+      "DeleteConfirm": "Delete the theme “{name}”? This sheet keeps its look.",
+      "ReplaceConfirm": "A theme is already named “{name}”. Replace it with this look?",
+      "Saved": "Theme “{name}” saved: every sheet of this Ruleset can take it.",
+      "InUse": "These sheets use this theme: {names}. Pick another theme there first.",
+      "Import": "Import a theme…",
+      "NotTheme": "This file is not a sheet theme."
     }
   }
 }

@@ -185,6 +185,11 @@
   --checkbox-background-color: var(--rta-sheet-field);
   --checkbox-checked-color: var(--rta-sheet-accent);
 }
+/* « Sobre » garde les champs de Foundry, sauf si le MJ leur donne une couleur. */
+.rta-sheet.rta-sheet-themed--fields :is(input, select, textarea) {
+  --input-background-color: var(--rta-sheet-field);
+  --checkbox-background-color: var(--rta-sheet-field);
+}
 .rta-sheet.rta-sheet-themed--colored button {
   --button-text-color: var(--rta-sheet-text);
   --button-background-color: var(--rta-sheet-panel);

@@ -227,7 +227,8 @@
       "tags": "Tags",
       "tables": "Tables",
       "dice": "Dés",
-      "sheetTemplates": "Modèles de blocs"
+      "sheetTemplates": "Modèles de blocs",
+      "sheetThemes": "Thèmes de feuille"
     },
     "DynamicMarkup": {
       "NewField": "Nouveau champ",
@@ -1471,19 +1472,41 @@
       "Section": "Section"
     },
     "SheetEditor": {
-      "Pane": {"block": "Bloc", "add": "Ajouter", "theme": "Thème"},
-      "Group": {"content": "Contenu", "display": "Affichage", "access": "Accès"},
+      "Pane": {
+        "block": "Bloc",
+        "add": "Ajouter",
+        "theme": "Thème"
+      },
+      "Group": {
+        "content": "Contenu",
+        "display": "Affichage",
+        "access": "Accès"
+      },
       "Crumbs": "Emplacement du bloc",
       "AddInto": "Ajoute dans :",
       "Panels": {
         "Resize": "Glisser pour changer la largeur, double-clic pour revenir à la largeur d'origine",
-        "Hide": {"side": "Cacher les outils", "layers": "Cacher les calques"},
-        "Show": {"side": "Afficher les outils", "layers": "Afficher les calques"}
+        "Hide": {
+          "side": "Cacher les outils",
+          "layers": "Cacher les calques"
+        },
+        "Show": {
+          "side": "Afficher les outils",
+          "layers": "Afficher les calques"
+        }
       },
       "Menu": {
-        "up": "Monter (↑)", "down": "Descendre (↓)", "copy": "Copier (Ctrl+C)", "paste": "Coller dedans (Ctrl+V)",
-        "duplicate": "Dupliquer (Ctrl+D)", "brush": "Pinceau de style", "rename": "Renommer (F2)",
-        "saveTemplate": "Enregistrer comme modèle", "unstyle": "Style par défaut", "addTab": "Ajouter un onglet", "remove": "Supprimer (Suppr)"
+        "up": "Monter (↑)",
+        "down": "Descendre (↓)",
+        "copy": "Copier (Ctrl+C)",
+        "paste": "Coller dedans (Ctrl+V)",
+        "duplicate": "Dupliquer (Ctrl+D)",
+        "brush": "Pinceau de style",
+        "rename": "Renommer (F2)",
+        "saveTemplate": "Enregistrer comme modèle",
+        "unstyle": "Style par défaut",
+        "addTab": "Ajouter un onglet",
+        "remove": "Supprimer (Suppr)"
       },
       "Layout": "Mise en page",
       "Empty": "Vide : ajoute un bloc ici",
@@ -1985,7 +2008,21 @@
         "small": "Fin",
         "medium": "Moyen",
         "large": "Large"
-      }
+      },
+      "Panel": "Sections",
+      "Field": "Champs",
+      "Save": "Enregistrer comme thème",
+      "NamePrompt": "Nom du thème",
+      "RenamePrompt": "Nouveau nom du thème",
+      "Rename": "Renommer le thème",
+      "Export": "Exporter dans un fichier",
+      "Delete": "Supprimer le thème",
+      "DeleteConfirm": "Supprimer le thème « {name} » ? Cette feuille garde son aspect.",
+      "ReplaceConfirm": "Un thème s'appelle déjà « {name} ». Le remplacer par cet aspect ?",
+      "Saved": "Thème « {name} » enregistré : il est proposé à toutes les feuilles de ce Ruleset.",
+      "InUse": "Ces feuilles utilisent ce thème : {names}. Choisissez-y d'abord un autre thème.",
+      "Import": "Importer un thème…",
+      "NotTheme": "Ce fichier n'est pas un thème de feuille."
     }
   }
 }

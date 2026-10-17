@@ -3,7 +3,8 @@
    Data contract: [data-layout-template-command=rename|export|delete] (+ data-template-id) on a template of the palette,
    [data-layout-command=importTemplate | saveTemplate]; [data-layout-prop=cards|cardTemplate|cardFields] on a held-Contents
    block; [data-layout-style=frame|frameSlice|frameWidth] in the Style group; [data-layout-theme=<prop>] the sheet's theme
-   ([data-layout-theme-reset=<prop>] takes an override back to the theme's), [data-layout-pick=frame][data-layout-pick-theme]. */
+   ([data-layout-theme-reset=<prop>] takes an override back to the theme's), [data-layout-pick=frame][data-layout-pick-theme],
+   [data-layout-theme-command=save|rename|export|delete|import] on the Ruleset's themes. */
 import {escapeHTML as escape} from "./html-utils.mjs";
 import {localizedKeyMarkup as t} from "./ui-localization.mjs";
 import {renderSelectOptions} from "./select-option-markup.mjs";
@@ -48,21 +49,31 @@ export function renderFrameRowsHTML(style, ctx) {
   return rows;
 }
 
-/** The sheet's look: a theme, then its colors, fonts and section frame changed for this sheet.
-    theme: the SheetDefinition's ({id, overrides} or null); ctx: {open, themes, fonts(current), frameWidths}. */
+/** The sheet's look: a theme (the module's, or one the Ruleset saved: value "ref:<id>"), then its colors, fonts and
+    section frame changed for this sheet, and the Ruleset themes' commands.
+    theme: the SheetDefinition's ({id | themeRef, overrides} or null); ctx: {themes, fonts(current), frameWidths,
+    color(prop), frame (the frame the sheet shows), store (the Ruleset's themes may be written)}. */
 export function renderSheetThemeHTML(theme, ctx) {
-  const rows = [row(t("RTA.SheetTheme.Theme", "Theme"), `<select data-layout-theme="id">${options(ctx.themes, theme?.id ?? "none")}</select>`)];
+  const selected = theme?.themeRef ? `ref:${theme.themeRef}` : theme?.id ?? "none";
+  const rows = [row(t("RTA.SheetTheme.Theme", "Theme"), `<select data-layout-theme="id">${options(ctx.themes, selected)}</select>`)];
   if (theme) {
-    const o = theme.overrides ?? {};
+    const o = theme.overrides ?? {}, frame = o.frame ?? ctx.frame;
     const color = (prop, key, fallback) => row(t(key, fallback), `<span class="rta-sheet-editor__theme-color"><input type="color" data-layout-theme="${prop}" value="${escape(o[prop] ?? ctx.color(prop))}">${o[prop] ? `<button type="button" class="rta-config-action" data-layout-theme-reset="${prop}" title="${t("RTA.SheetTheme.Reset", "The theme's")}" aria-label="${t("RTA.SheetTheme.Reset", "The theme's")}"><i class="fa-solid fa-rotate-left"></i></button>` : ""}</span>`);
-    rows.push(color("page", "RTA.SheetTheme.Page", "Page"), color("text", "RTA.SheetTheme.Text", "Text"), color("accent", "RTA.SheetTheme.Accent", "Titles and highlights"), color("border", "RTA.SheetTheme.Border", "Frames"));
+    rows.push(color("page", "RTA.SheetTheme.Page", "Page"), color("panel", "RTA.SheetTheme.Panel", "Sections"), color("text", "RTA.SheetTheme.Text", "Text"), color("accent", "RTA.SheetTheme.Accent", "Titles and highlights"), color("border", "RTA.SheetTheme.Border", "Frames"), color("field", "RTA.SheetTheme.Field", "Fields"));
     rows.push(row(t("RTA.SheetTheme.Font", "Text font"), `<select data-layout-theme="font">${options(ctx.fonts(o.font), o.font ?? "default")}</select>`));
     rows.push(row(t("RTA.SheetTheme.TitleFont", "Title font"), `<select data-layout-theme="titleFont">${options(ctx.fonts(o.titleFont), o.titleFont ?? "default")}</select>`));
-    rows.push(row(t("RTA.SheetTheme.SectionFrame", "Section frame"), picture(`data-layout-theme="frame"`, o.frame)));
-    if (o.frame) {
+    rows.push(row(t("RTA.SheetTheme.SectionFrame", "Section frame"), picture(`data-layout-theme="frame"`, frame)));
+    if (frame) {
       rows.push(row(t("RTA.SheetTheme.FrameSlice", "Cut from the edges (px)"), `<input type="number" min="1" max="200" step="1" data-layout-theme="frameSlice" value="${escape(String(o.frameSlice ?? 30))}">`));
       rows.push(row(t("RTA.SheetTheme.FrameWidth", "Frame width"), `<select data-layout-theme="frameWidth">${options(ctx.frameWidths, o.frameWidth ?? "medium")}</select>`));
     }
   }
-  return `<div class="rta-sheet-editor__theme" data-layout-theme-panel><div class="rta-sheet-editor__style-body">${rows.join("")}</div></div>`;
+  return `<div class="rta-sheet-editor__theme" data-layout-theme-panel><div class="rta-sheet-editor__style-body">${rows.join("")}</div>${ctx.store ? renderThemeCommandsHTML(theme) : ""}</div>`;
+}
+/** The Ruleset's themes: save the look shown as one; rename, export or delete the one the sheet takes; import a file. */
+function renderThemeCommandsHTML(theme) {
+  const button = (command, icon, key, fallback) => `<button type="button" class="rta-config-action" data-layout-theme-command="${command}" title="${t(key, fallback)}" aria-label="${t(key, fallback)}"><i class="fa-solid ${icon}"></i></button>`;
+  const save = theme ? `<button type="button" class="rta-sheet-editor__wide" data-layout-theme-command="save"><i class="fa-solid fa-bookmark"></i> ${t("RTA.SheetTheme.Save", "Save as theme")}</button>` : "";
+  const own = theme?.themeRef ? `<span class="rta-sheet-editor__theme-tools">${button("rename", "fa-pen", "RTA.SheetTheme.Rename", "Rename the theme")}${button("export", "fa-file-export", "RTA.SheetTheme.Export", "Export as a file")}${button("delete", "fa-trash", "RTA.SheetTheme.Delete", "Delete the theme")}</span>` : "";
+  return `<div class="rta-sheet-editor__theme-commands">${save}${own}<button type="button" class="rta-sheet-editor__wide" data-layout-theme-command="import"><i class="fa-solid fa-file-import"></i> ${t("RTA.SheetTheme.Import", "Import a theme…")}</button></div>`;
 }

@@ -10,6 +10,7 @@ import {prepareSheetDefinition, prepareSheetTemplate} from "./rule-contracts.mjs
 import {missingReferences, nodeMissing, pasteBlock, withFreshIds} from "./sheet-layout-clipboard.mjs";
 import {canPlace, insertNode, removeNode, updateNode} from "./sheet-layout-model.mjs";
 import {freeId, readableId} from "./identity.mjs";
+import {prepareSheetThemeLook, themeBody} from "./sheet-themes.mjs";
 
 const enabled = entry => entry?.enabled !== false;
 function* nodes(root) { if (!root) return; yield root; for (const child of root.children ?? []) yield* nodes(child); }
@@ -60,11 +61,12 @@ const FILE_VERSION = 1;
 /** The templates a tree draws its cards with. */
 const cardRefs = root => [...new Set([...nodes(root)].map(node => node.cards?.templateRef).filter(Boolean))];
 
-/** A sheet as a file: its settings and layout, with the templates its cards are drawn with. */
+/** A sheet as a file: its settings and layout, with the templates its cards are drawn with and the Ruleset theme it takes. */
 export function sheetFile(sheet, ruleset) {
   const {id: _id, enabled: _enabled, order: _order, tags: _tags, ...kept} = structuredClone(sheet);
   const templates = cardRefs(sheet.root).map(id => (ruleset.sheetTemplates ?? []).find(entry => entry.id === id)).filter(Boolean).map(templateBody);
-  return {format: SHEET_FILE_FORMAT, version: FILE_VERSION, sheet: kept, templates};
+  const themes = (ruleset.sheetThemes ?? []).filter(entry => entry.id === sheet.theme?.themeRef).map(themeBody);
+  return {format: SHEET_FILE_FORMAT, version: FILE_VERSION, sheet: kept, templates, ...(themes.length ? {themes} : {})};
 }
 const templateBody = template => ({id: template.id, nameKey: template.nameKey, ...(template.descriptionKey ? {descriptionKey: template.descriptionKey} : {}), root: structuredClone(template.root)});
 /** A template as a file. */
@@ -85,7 +87,12 @@ export function readSheetFile(text) {
       const template = prepareSheetTemplate({...entry, id: entry?.id || "template"});
       return {id: template.id, nameKey: template.nameKey, descriptionKey: template.descriptionKey, root: template.root};
     });
-    return {kind: "sheet", sheet, templates};
+    const themes = (Array.isArray(data.themes) ? data.themes : []).map(entry => {
+      if (typeof entry?.id !== "string" || !entry.id || typeof entry.nameKey !== "string" || !entry.nameKey.trim()) throw new Error("A theme of the sheet file has no id or name.");
+      const {base, overrides} = prepareSheetThemeLook({base: entry.base, overrides: entry.overrides});
+      return {id: entry.id, nameKey: entry.nameKey, ...(entry.descriptionKey ? {descriptionKey: entry.descriptionKey} : {}), base, ...(overrides ? {overrides} : {})};
+    });
+    return {kind: "sheet", sheet, templates, themes};
   }
   throw Object.assign(new Error("Not a sheet or block template file."), {code: "format"});
 }
@@ -107,9 +114,9 @@ export function prunedTemplate(template, ruleset) {
   return {...template, root: pruneMissing(holder, ruleset, {target}).children[0]};
 }
 
-/** A sheet from a file, in this Ruleset's terms: {sheet, templates, missing}. The templates its cards need are the
-    Ruleset's own when it has one of that id, else they come with the file (templates: those to create); missing lists
-    what its blocks or its Content Types name and the Ruleset lacks. */
+/** A sheet from a file, in this Ruleset's terms: {sheet, templates, themes, missing}. The templates its cards need and
+    the theme it takes are the Ruleset's own when it has one of that id, else they come with the file (templates,
+    themes: those to create); missing lists what its blocks or its Content Types name and the Ruleset lacks. */
 export function importedSheet(file, ruleset) {
   const have = new Set((ruleset.sheetTemplates ?? []).map(entry => entry.id));
   const templates = file.templates.filter(template => !have.has(template.id) && cardRefs(file.sheet.root).includes(template.id));
@@ -118,13 +125,17 @@ export function importedSheet(file, ruleset) {
   const missing = new Set(missingReferences(file.sheet.root, file.sheet.root.id, withTemplates, options));
   for (const id of file.sheet.contentTypeIds ?? []) if (!(ruleset.contentTypes ?? []).some(type => type.id === id)) missing.add(id);
   for (const template of templates) for (const id of importedTemplate(template, ruleset).missing) missing.add(id);
-  return {sheet: file.sheet, templates, missing: [...missing]};
+  const themes = (file.themes ?? []).filter(theme => theme.id === file.sheet.theme?.themeRef && !(ruleset.sheetThemes ?? []).some(entry => entry.id === theme.id));
+  if (file.sheet.theme?.themeRef && !themes.length && !(ruleset.sheetThemes ?? []).some(entry => entry.id === file.sheet.theme.themeRef)) missing.add(file.sheet.theme.themeRef);
+  return {sheet: file.sheet, templates, themes, missing: [...missing]};
 }
 /** The sheet from a file without what this Ruleset lacks: blocks left out, Content Types dropped, templates pruned. */
-export function prunedSheet({sheet, templates}, ruleset) {
+export function prunedSheet({sheet, templates, themes = []}, ruleset) {
   const kept = templates.map(template => prunedTemplate(template, ruleset)).filter(Boolean);
   const withTemplates = {...ruleset, sheetTemplates: [...(ruleset.sheetTemplates ?? []), ...kept]};
   const contentTypeIds = (sheet.contentTypeIds ?? []).filter(id => (ruleset.contentTypes ?? []).some(type => type.id === id));
   const root = pruneMissing(sheet.root, withTemplates, {target: sheet.target, contentTypeIds});
-  return {sheet: {...sheet, contentTypeIds, root}, templates: kept.filter(template => cardRefs(root).includes(template.id))};
+  const themeKnown = !sheet.theme?.themeRef || themes.length || (ruleset.sheetThemes ?? []).some(entry => entry.id === sheet.theme.themeRef);
+  const {theme: _theme, ...rest} = sheet;
+  return {sheet: {...rest, contentTypeIds, root, ...(sheet.theme && themeKnown ? {theme: sheet.theme} : {})}, templates: kept.filter(template => cardRefs(root).includes(template.id)), themes};
 }
