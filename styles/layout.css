@@ -210,3 +210,8 @@
 .rta-configurator :is(.rta-configurator__scroll, .rta-runtime-lab, nav.rta-explorer) > :not([hidden], div:empty) ~ :not([hidden], div:empty) {
   margin-block-start: var(--rta-gap-block);
 }
+
+/* Right-click menus (ui/context-menu.mjs): Foundry's menu, framed like the module's cards. */
+#context-menu.rta-context-menu {
+  border-color: var(--rta-color-border);
+}

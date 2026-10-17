@@ -6,7 +6,9 @@ import {RULESET_SECTIONS,rulesetColor,sectionColor,collectionColor,objectColor,s
 import {MODULE_ID} from "../core/module-contract.mjs";
 import {createSelectColorResolver,selectColorsAttribute} from "../ui/select-option-presentation.mjs";
 import {buildDependencyExplorer,buildDependencyGraph} from "./dependency-explorer.mjs";
-import {confirmRTA, promptRTA} from "./foundry-dialogs.mjs";
+import {chooseTagsRTA, confirmRTA, promptRTA} from "./foundry-dialogs.mjs";
+import {ENTRY_OPERATIONS} from "./entry-operations.mjs";
+import {entryTagsAfter} from "./entry-tags.mjs";
 import {openContextMenu} from "../ui/context-menu.mjs";
 import {entryDeletionView,deleteRulesetEntry} from "./entry-deletion.mjs";
 import {ConfiguratorWindow} from "./configurator-window.mjs";
@@ -368,7 +370,11 @@ export class ConfiguratorApp extends ConfiguratorWindow {
       panel.hidden=false;
       for(const section of root.querySelectorAll("[data-flyout-group]"))section.hidden=section.dataset.flyoutGroup!==group;
       for(const button of root.querySelectorAll("[data-nav-group]"))button.setAttribute("aria-expanded",String(button.dataset.group===group));
-      root.querySelector("[data-flyout-title]").textContent=root.querySelector(`[data-nav-group][data-group="${group}"]`)?.querySelector("span")?.textContent??"";
+      const groupButton=root.querySelector(`[data-nav-group][data-group="${group}"]`);
+      root.querySelector("[data-flyout-title]").textContent=groupButton?.querySelector("span")?.textContent??"";
+      // The menu takes its section's color as its frame.
+      const accent=groupButton?.style.getPropertyValue("--rta-nav-accent").trim();
+      if(accent)panel.style.setProperty("--rta-flyout-accent",accent);else panel.style.removeProperty("--rta-flyout-accent");
       for(const item of root.querySelectorAll("[data-nav-item]"))item.hidden=false;
       // Anchor to the full Foundry window, not to the sidebar's top edge.
       // Small menus stay level with the clicked family; tall menus rise into
@@ -507,7 +513,13 @@ export class ConfiguratorApp extends ConfiguratorWindow {
     const kind=card.dataset.kind,id=card.dataset.entryId,name=card.querySelector(".rta-config-card__title")?.textContent?.trim()??id;
     const record=(await this.#api()).getRulesetVersion(this.#selected),i18n=game.i18n;
     const items=[{label:i18n.localize("RTA.UI.Edit"),icon:"fa-solid fa-pen-to-square",run:()=>this.#openEditor(kind,id)}];
-    if(record?.status!=="validated")items.push({label:i18n.localize("RTA.UI.DuplicateEntry"),icon:"fa-solid fa-copy",run:()=>this.#duplicate(kind,id,name)},{label:i18n.localize("RTA.Template.Delete"),icon:"fa-solid fa-trash",run:()=>this.#delete(kind,id,name)});
+    if(record?.status!=="validated"){
+      items.push({label:i18n.localize("RTA.UI.DuplicateEntry"),icon:"fa-solid fa-copy",run:()=>this.#duplicate(kind,id,name)});
+      // Entries that carry tags: check them, or add a new one, from here.
+      const api=await this.#api(),entry=ENTRY_OPERATIONS[kind]?api[ENTRY_OPERATIONS[kind].get]?.(this.#selected,id):null;
+      if(Array.isArray(entry?.tags))items.push({label:i18n.localize("RTA.UI.EditTags"),icon:"fa-solid fa-tags",run:()=>this.#editTags(kind,id,name)});
+      items.push({label:i18n.localize("RTA.Template.Delete"),icon:"fa-solid fa-trash",run:()=>this.#delete(kind,id,name)});
+    }
     openContextMenu(event,items);
   }
   async #duplicate(kind,id,name) {
@@ -519,6 +531,23 @@ export class ConfiguratorApp extends ConfiguratorWindow {
       const copy=await (await this.#api()).duplicateEntry(this.#selected,kind,id,String(copyName).trim());
       await this.render(false);
       return this.#openEditor(kind,copy.id);
+    } catch(error){this.#error=error?.message??String(error);return this.render(false);}
+  }
+
+  /** Tags from the right-click menu: the Ruleset's tags checked or not, and a new tag made from a name (an existing tag
+      of that name is taken instead). */
+  async #editTags(kind,id,name) {
+    this.#error="";
+    try {
+      const api=await this.#api(),ops=ENTRY_OPERATIONS[kind],entry=api[ops.get](this.#selected,id),ruleset=api.getRulesetVersion(this.#selected)?.workingDraft??api.getRuleset(this.#selected);
+      const tags=(ruleset?.tags??[]).map(tag=>({id:tag.id,label:tag.nameKey||tag.id}));
+      const chosen=await chooseTagsRTA(name,tags,entry?.tags??[]);
+      if(!chosen)return;
+      const {ids,create}=entryTagsAfter(ruleset,chosen);
+      if(create)await api.createTag(this.#selected,create);
+      await api[ops.update](this.#selected,id,{tags:ids});
+      this.#rememberScroll();this.#restoreScroll=true;
+      return this.render(false);
     } catch(error){this.#error=error?.message??String(error);return this.render(false);}
   }
 

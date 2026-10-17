@@ -335,7 +335,7 @@
   background: var(--rta-color-surface);
   width: 270px;
   max-height: none;
-  border: 1px solid var(--rta-color-border-tertiary);
+  border: 1px solid var(--rta-flyout-accent, var(--rta-color-border-tertiary));
   border-radius: var(--rta-radius-control);
   z-index: 30;
 }

@@ -52,3 +52,18 @@ test('a saved creation step shows its id to copy; a new one asks for a readable 
  assert.doesNotMatch(saved,/data-step-prop="id"/);
  assert.match(html({name:'',kind:'choice'}),/<input data-step-prop="id" placeholder="Empty: taken from the step name">/);
 });
+
+test('Tags… from an entry\'s right-click menu: the tags checked, a new one made from a name, an existing name reused', async () => {
+  const {renderTagChoiceContent} = await import('../src/ui/dialog-markup.mjs');
+  const {entryTagsAfter} = await import('../src/configurator/entry-tags.mjs');
+  const html = renderTagChoiceContent([{id: 'core', label: 'Core'}, {id: 'x', label: '<b>'}], ['core'], {tags: 'Tags', none: 'None', add: 'New tag'});
+  assert.match(html, /value="core" checked/);
+  assert.match(html, /value="x"> &lt;b&gt;/);
+  assert.match(html, /name="newTag"/);
+  assert.match(renderTagChoiceContent([], [], {tags: 'Tags', none: 'None yet', add: 'New'}), /None yet/);
+  const ruleset = {tags: [{id: 'core', nameKey: 'Core'}, {id: 'magie', nameKey: 'Magie'}]};
+  assert.deepEqual(entryTagsAfter(ruleset, {ids: ['core'], newTag: ''}), {ids: ['core'], create: null});
+  assert.deepEqual(entryTagsAfter(ruleset, {ids: ['core'], newTag: ' magie '}), {ids: ['core', 'magie'], create: null});
+  assert.deepEqual(entryTagsAfter(ruleset, {ids: [], newTag: 'Combat rapproché'}), {ids: ['combat-rapproche'], create: {id: 'combat-rapproche', nameKey: 'Combat rapproché'}});
+  assert.deepEqual(entryTagsAfter({tags: [{id: 'core', nameKey: 'Base'}]}, {ids: [], newTag: 'Core'}).create.id, 'core-2');
+});

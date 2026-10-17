@@ -64,7 +64,11 @@
       "DuplicateName": "Name of the copy",
       "CopyOf": "{name} (copy)",
       "DuplicateNameRequired": "Give the copy a name.",
-      "DeleteNamedEntry": "Delete “{name}”? This cannot be undone."
+      "DeleteNamedEntry": "Delete “{name}”? This cannot be undone.",
+      "EditTags": "Tags…",
+      "TagsOf": "Tags of “{name}”",
+      "NoTagsYet": "This Ruleset has no tag yet.",
+      "NewTag": "New tag"
     },
     "Nav": {
       "General": "General",

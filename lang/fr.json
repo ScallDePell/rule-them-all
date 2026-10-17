@@ -64,7 +64,11 @@
       "DuplicateName": "Nom de la copie",
       "CopyOf": "{name} (copie)",
       "DuplicateNameRequired": "Donnez un nom à la copie.",
-      "DeleteNamedEntry": "Supprimer « {name} » ? Cette action est définitive."
+      "DeleteNamedEntry": "Supprimer « {name} » ? Cette action est définitive.",
+      "EditTags": "Tags…",
+      "TagsOf": "Tags de « {name} »",
+      "NoTagsYet": "Ce Ruleset n'a pas encore de tag.",
+      "NewTag": "Nouveau tag"
     },
     "Nav": {
       "General": "Général",
