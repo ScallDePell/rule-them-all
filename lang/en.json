@@ -2019,6 +2019,18 @@
       "InUse": "These sheets use this theme: {names}. Pick another theme there first.",
       "Import": "Import a theme…",
       "NotTheme": "This file is not a sheet theme."
+    },
+    "ChatAction": {
+      "Title": "Chat card buttons",
+      "Help": "Buttons under the result in the chat. Each runs an Action that reads this result as variables.previous (total, margin, target, outcome, roll, natural).",
+      "Add": "Add a button",
+      "Button": "Button",
+      "WhoLabel": "Who uses it",
+      "Who": {
+        "self": "The character's player",
+        "target": "Each target, for itself",
+        "gm": "The GM"
+      }
     }
   }
 }

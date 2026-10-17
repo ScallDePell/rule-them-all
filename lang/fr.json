@@ -2019,6 +2019,18 @@
       "InUse": "Ces feuilles utilisent ce thème : {names}. Choisissez-y d'abord un autre thème.",
       "Import": "Importer un thème…",
       "NotTheme": "Ce fichier n'est pas un thème de feuille."
+    },
+    "ChatAction": {
+      "Title": "Boutons de la carte de chat",
+      "Help": "Des boutons sous le résultat dans le chat. Chacun lance une Action qui lit ce résultat dans variables.previous (total, margin, target, outcome, roll, natural).",
+      "Add": "Ajouter un bouton",
+      "Button": "Bouton",
+      "WhoLabel": "Qui l'utilise",
+      "Who": {
+        "self": "Le joueur du personnage",
+        "target": "Chaque cible, pour elle-même",
+        "gm": "Le MJ"
+      }
     }
   }
 }

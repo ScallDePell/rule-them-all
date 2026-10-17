@@ -51,7 +51,7 @@ import {buildTestInputContext,syncTestInputSource} from "./test-input-form.mjs";
 import {dieContext,syncDieFaceCounts} from "./die-form.mjs";
 import {CREATION_STEP_KINDS,SHEET_HEADERS,SHEET_TARGETS,STATE_STACKING} from "./rule-contracts.mjs";
 import {SheetLayoutController} from "./sheet-layout-controller.mjs";
-import {rollVariantContext,extraRollContext,actionInputContext,tableRowContext,scaleRowContext,progressionContext} from "./rule-cards-form.mjs";
+import {rollVariantContext,extraRollContext,actionInputContext,chatActionContext,tableRowContext,scaleRowContext,progressionContext} from "./rule-cards-form.mjs";
 import {syncCard} from "./card-form.mjs";
 import {moduleLanguage} from "../core/module-language.mjs";
 
@@ -260,6 +260,7 @@ export class ConfiguratorEntryEditor extends ConfiguratorWindow {
       ...(this.#kind==="roll"?rollVariantContext(data,{conditions,withColors}):{}),
       ...(this.#kind==="test"?extraRollContext(data,{conditions,rolls,withColors,neutral:selectColorsAttribute([RTA_NEUTRAL_COLOR])}):{}),
       ...(this.#kind==="action"?actionInputContext(data,{definitionTypes:selectableDefinitionTypes,withColors,neutral:selectColorsAttribute([RTA_NEUTRAL_COLOR])}):{}),
+      ...(this.#kind==="action"?chatActionContext(data,{actions,withColors,neutral:selectColorsAttribute([RTA_NEUTRAL_COLOR])}):{}),
       ...(this.#kind==="progressionSystem"?progressionContext(data,{definitionTypes:selectableDefinitionTypes,definitions,formulas,conditions,actions,withColors,currencies:mutableReferenceChoices.filter(choice=>["pool.current","value.base"].includes(parseRefToken(choice.token).outputId))}):{}),
       ...(this.#kind==="die"?dieContext(data):{}),
       ...(this.#kind==="scale"?{...scaleRowContext(data),scaleBasisChoices:["value","percent"].map(id=>({id,labelKey:`RTA.Scale.Basis.${id}`,colors:neutralColors,selected:id===(data.basis??"value")}))}:{}),

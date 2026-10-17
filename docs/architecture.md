@@ -1,6 +1,6 @@
 # Rule Them'All : architecture
 
-Ce document décrit le module tel qu'il est en 1.0.1. Le guide d'utilisation est dans [guide-mj.md](guide-mj.md), les exemples dans [exemples-configuration.md](exemples-configuration.md).
+Ce document décrit le module dans sa version actuelle. Le guide d'utilisation est dans [guide-mj.md](guide-mj.md), les exemples dans [exemples-configuration.md](exemples-configuration.md).
 
 ## 1. Mission
 

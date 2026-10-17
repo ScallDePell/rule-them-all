@@ -134,3 +134,15 @@ export function collectScaleRows(queryAll) {
     return {id: card.id || freshId(), labelKey: String(card.labelKey ?? "").trim(), min: bound(card.min, `${label} minimum`), max: bound(card.max, `${label} maximum`)};
   });
 }
+
+/** Action: one card per button of its chat card (an Action, and who presses it). */
+export const CHAT_ACTION_WHO = Object.freeze(["self", "target", "gm"]);
+export function chatActionContext(data, {actions = [], withColors, neutral = ""}) {
+  const choices = named("action", actions.filter(action => action.id !== data.id), withColors);
+  const row = (button = {}) => ({actions: choicesFor(choices, button.actionRef ?? ""),
+    who: CHAT_ACTION_WHO.map(id => ({id, labelKey: `RTA.ChatAction.Who.${id}`, colors: neutral, selected: id === (button.who ?? "self")}))});
+  return {chatActions: {rows: (data.chatActions ?? []).map(row), blank: row()}};
+}
+export function collectChatActions(queryAll) {
+  return collectCards(queryAll, "chatAction").map(card => ({actionRef: card.actionRef ?? "", who: card.who || "self"}));
+}

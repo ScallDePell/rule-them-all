@@ -56,7 +56,7 @@ Le Configurateur range le Ruleset en rubriques. Chaque élément est une carte :
 - **Conditions** : des tests vrai/faux (« l'Acteur est un PJ », « la cible est à portée »).
 - **Jets**, **Résultats** et **Tests** : comment on lance les dés et comment on lit le résultat (réussite, échec, degrés).
 - **Effets**, **Modificateurs** et **Durées** : ce qui change sur un Acteur, et combien de temps.
-- **Actions** : ce que l'on fait depuis une feuille (attaquer, lancer un sort, se reposer). Une Action enchaîne Test, Effets, choix après le résultat, relances.
+- **Actions** : ce que l'on fait depuis une feuille (attaquer, lancer un sort, se reposer). Une Action enchaîne Test, Effets, choix après le résultat, relances. Ses **Boutons de la carte de chat** ajoutent sous le résultat un bouton qui lance une autre Action : « Appliquer les dégâts » pour le MJ, « Se défendre » pour chaque cible, etc. L'Action du bouton lit le premier résultat dans `variables.previous` (total, margin, target, outcome, roll, natural).
 - **Dés** : des dés propres au jeu, lancés par leur lettre (par exemple `2dp`).
 - **Tables** : des tirages au hasard.
 - **Échelles descriptives** : des mots à la place d'un nombre (« En pleine forme », « Gravement blessé »).
@@ -149,6 +149,9 @@ Le bouton de création se trouve dans l'onglet **Acteurs**. Le joueur suit les �
 ## 6. En jeu
 
 - Les **boutons d'Action** de la feuille lancent l'Action, demandent ses entrées s'il y en a, et postent une carte dans le chat. Les choix après le résultat sont proposés dans une fenêtre.
+- La carte suit le **mode de jet** choisi dans le chat (public, MJ, aveugle, privé) et porte les dés de Foundry : l'infobulle des dés et Dice So Nice fonctionnent. En jet aveugle, le joueur ne voit que le titre.
+- Les **boutons de la carte** ne s'affichent que pour qui peut les utiliser : le MJ, le joueur du personnage, ou le propriétaire d'une cible.
+- Les **barres de token** peuvent montrer une réserve du Ruleset qui a un maximum, ou une valeur bornée : dans la configuration du token, choisissez-la dans le groupe « Rule Them'All ». Elles se mettent à jour seules et se modifient depuis la feuille.
 - Le bloc d'un **Système de progression** montre ce que l'Acteur peut acheter (niveau actuel et visé, coût, monnaie dépensée) avec un bouton par achat, puis ses paliers et le bouton « Appliquer les paliers atteints ». Le joueur achète lui-même, sans passer par « Essayer les règles ». Quand une permission du Ruleset le laisse acheter pour un Acteur qu'il ne possède pas, l'achat passe par le MJ connecté. Un observateur voit les coûts sans les boutons.
 - Les **valeurs** se changent sur la feuille dans les limites du Ruleset (bornes, permissions). Un joueur qui modifie un Acteur qu'il ne possède pas passe par le MJ connecté.
 - Glisser un **Objet** sur la feuille le donne à l'Acteur ; un Contenu du Ruleset pose alors ses choix et accorde ce qu'il accorde. Le retirer reprend ce qu'il avait accordé.

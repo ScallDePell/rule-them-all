@@ -35,3 +35,21 @@ test('a blind card shows the players only its title, the GM all of it', () => {
   assert.match(data.content, /Spot/);
   assert.match(data.flags['rule-them-all'].blindCard, /17/);
 });
+
+test('a card with buttons keeps the offer; who may press each is checked per user', async () => {
+  const {mayPress, answeringTargets} = await import('../src/runtime/foundry-chat.mjs');
+  const offer = {rulesetVersionId: 'v', actionId: 'attack', context: {roles: {self: {uuid: 'Actor.hero'}, target: {uuid: 'Actor.foe'}}}, previous: {total: 16}, buttons: [{index: 0, actionId: 'riposte', who: 'target'}]};
+  const data = actionMessageData({summary: {title: 'Attack', buttons: [{index: 0, who: 'target', label: 'Riposte'}]}, result: {chatOffer: offer}}, {RollClass: FakeRoll, ChatMessage: {}, rollMode: null});
+  assert.deepEqual(data.flags['rule-them-all'].chatOffer, offer);
+  assert.match(data.content, /data-rta-chat-action="0"/);
+  const owned = new Set(['Actor.foe']);
+  globalThis.fromUuidSync = uuid => ({isOwner: owned.has(uuid)});
+  try {
+    const player = {user: {isGM: false}}, gm = {user: {isGM: true}};
+    assert.equal(mayPress(offer, 'target', player), true);
+    assert.equal(mayPress(offer, 'self', player), false);
+    assert.equal(mayPress(offer, 'gm', player), false);
+    assert.equal(mayPress(offer, 'gm', gm), true);
+    assert.deepEqual(answeringTargets(offer, player), [{uuid: 'Actor.foe'}]);
+  } finally { delete globalThis.fromUuidSync; }
+});

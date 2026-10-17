@@ -83,7 +83,8 @@ export function actionSummary(result, {t, ruleset}) {
     lines.push({label: t(definition?.nameKey ?? run.definitionId), value: run.testResult?.outcome ? t(run.testResult.outcome.labelKey) : run.allowed === false ? i18n("RTA.Sheet.NotAllowed") : "✓"});
   }
   // A reroll (a reaction such as a shield) shows the replayed use under the reroll Action's name.
-  return {title: result.rerollActionId ? `${name(result.rerollActionId)} · ${name(result.actionId)}` : name(result.actionId), lines, outcome: test?.outcome ? t(test.outcome.labelKey) : ""};
+  return {title: result.rerollActionId ? `${name(result.rerollActionId)} · ${name(result.actionId)}` : name(result.actionId), lines, outcome: test?.outcome ? t(test.outcome.labelKey) : "",
+    buttons: (result.chatOffer?.buttons ?? []).map(button => ({index: button.index, who: button.who, label: name(button.actionId)}))};
 }
 
 async function askInputs(inputs, t, title = i18n("RTA.Sheet.ActionInputs")) {

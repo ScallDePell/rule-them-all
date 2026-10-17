@@ -359,6 +359,6 @@ export function renderSheetHTML(view, {t = key => key, name = "", img = "", toke
 }
 
 /** The chat card of an Action used from a sheet. summary: {title, actor, lines: [{label, value}], outcome}. */
-export function renderActionChatHTML({title, actor = "", lines = [], outcome = ""}) {
-  return `<div class="rta-chat-card"><header class="rta-chat-card__title"><strong>${escape(title)}</strong>${actor ? `<span>${escape(actor)}</span>` : ""}</header>${lines.length ? `<dl class="rta-chat-card__lines">${lines.map(line => `<dt>${escape(line.label)}</dt><dd>${escape(line.value)}</dd>`).join("")}</dl>` : ""}${outcome ? `<p class="rta-chat-card__outcome">${escape(outcome)}</p>` : ""}</div>`;
+export function renderActionChatHTML({title, actor = "", lines = [], outcome = "", buttons = []}) {
+  return `<div class="rta-chat-card"><header class="rta-chat-card__title"><strong>${escape(title)}</strong>${actor ? `<span>${escape(actor)}</span>` : ""}</header>${lines.length ? `<dl class="rta-chat-card__lines">${lines.map(line => `<dt>${escape(line.label)}</dt><dd>${escape(line.value)}</dd>`).join("")}</dl>` : ""}${outcome ? `<p class="rta-chat-card__outcome">${escape(outcome)}</p>` : ""}${buttons.length ? `<footer class="rta-chat-card__buttons">${buttons.map(button => `<button type="button" data-rta-chat-action="${escape(button.index)}" data-who="${escape(button.who)}">${escape(button.label)}</button>`).join("")}</footer>` : ""}</div>`;
 }

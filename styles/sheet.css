@@ -921,6 +921,21 @@ span.rta-sheet-progression__button {
   font-weight: 600;
 }
 
+.rta-chat-card__buttons {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--rta-gap-tight);
+}
+
+.rta-chat-card__buttons > button {
+  flex: 1 1 auto;
+  width: auto;
+}
+
+.rta-chat-card__buttons > button[hidden] {
+  display: none;
+}
+
 @container rta-sheet (max-width: 600px) {
   .rta-sheet-list {
     grid-template-columns: var(--rta-sheet-list-medium);

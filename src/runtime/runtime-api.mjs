@@ -43,6 +43,8 @@ export function createRuntimeAPI(configurator,{adapter=new FoundryRuntimeAdapter
     executeAction:write("executeAction"),
     rerollAction:write("rerollAction"),
     chooseActions:write("chooseActions"),
+    /** A chat card's button: offer = the card's executeAction chatOffer, index = the button, as = the answering target. */
+    runChatAction:write("runChatAction"),
     rollInitiative:(versionId,ref,options)=>engine.rollInitiative(versionId,ref,options),
     /** The world's shared Definitions, and a combat's ({kind: "combat", id}); versionId defaults to the active Ruleset. */
     initializeShared:(versionId=configurator.getActiveVersionId?.(),{combat=null}={})=>versionId?engine.initializeShared(versionId,{combat}):{},

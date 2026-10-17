@@ -97,7 +97,7 @@ test('markup: values, bounds, amounts, tabs and the Action chat summary', ()=>{
   assert.equal(formatSheetValue(null),'—');
   const ruleset={actions:[{id:'hit',nameKey:'Hit'}],definitions:[]};
   const summary=actionSummary({actionId:'hit',testResult:{roll:{formula:'1d20',result:'14'},total:14,target:12,outcome:{labelKey:'Success'}}},{t:k=>k,ruleset});
-  assert.deepEqual(summary,{title:'Hit',lines:[{label:'1d20',value:'14 = 14'},{label:'RTA.Sheet.TestTarget',value:'12'}],outcome:'Success'});
+  assert.deepEqual(summary,{title:'Hit',lines:[{label:'1d20',value:'14 = 14'},{label:'RTA.Sheet.TestTarget',value:'12'}],outcome:'Success',buttons:[]});
 });
 
 test('a character not made yet is offered the active Ruleset creation, on the notice then in the header, until it holds Contents', async()=>{

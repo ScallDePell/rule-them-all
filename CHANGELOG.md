@@ -1,5 +1,12 @@
 # Changelog
 
+## 1.0.2
+
+- Chat cards carry their Foundry rolls and follow the roll mode chosen in the chat (public, GM, blind, self): dice tooltips and Dice So Nice work. A blind card shows players its title only.
+- Chat card buttons: an Action can add buttons under its result that run another Action, for the GM, the character's player or each target. That Action reads the first result as `variables.previous`.
+- Token bars can show a Ruleset pool with a maximum or a bounded value.
+- Configurator: the Rules menu is grouped under headings, Tags moved to Tools, and the Runtime Lab is now "Try the rules".
+
 ## 1.0.1
 
 First public release.

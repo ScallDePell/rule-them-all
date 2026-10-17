@@ -222,9 +222,10 @@ function prepareRerollDice(dice){
   return x;
 }
 export const ACTION_TARGETING=Object.freeze(['one','each','shared']);
+export const ACTION_CHAT_WHO=Object.freeze(['self','target','gm']);
 export const TURN_ORDER_MOVES=Object.freeze(['now','last','set','add']);
 export function prepareAction(data,options={}){
-  const x={descriptionKey:'',enabled:true,order:0,tags:[],inputs:[],conditionRefs:[],costEffectRefs:[],acquisitions:[],stateRemovals:[],stateApplications:[],modifierApplications:[],effectRefs:[],testRef:null,outcomeMappings:[],tableRef:null,targeting:'one',reroll:null,forEach:null,roleLinks:[],group:null,turnOrder:null,eventTypeRefs:[],eventPayloads:{},...copyJSON(data)};
+  const x={descriptionKey:'',enabled:true,order:0,tags:[],inputs:[],conditionRefs:[],costEffectRefs:[],acquisitions:[],stateRemovals:[],stateApplications:[],modifierApplications:[],effectRefs:[],testRef:null,outcomeMappings:[],tableRef:null,targeting:'one',reroll:null,forEach:null,roleLinks:[],group:null,turnOrder:null,eventTypeRefs:[],eventPayloads:{},chatActions:[],...copyJSON(data)};
   identity(x,'Action',options);
   // targeting: one target, or each of context.targets with its own Effect dice ("each") or the same dice for all ("shared").
   if(!ACTION_TARGETING.includes(x.targeting))throw new Error(`Action.targeting must be one of ${ACTION_TARGETING.join(', ')}.`);
@@ -255,6 +256,13 @@ export function prepareAction(data,options={}){
   // choice: {count, actionRefs}: once the result is known, the player picks count of these Actions (offered, not run).
   x.outcomeMappings.forEach((mapping,i)=>{if(!isRecord(mapping))throw new Error(`Action.outcomeMappings[${i}] must be an object.`);if(mapping.actionRefs!==undefined)arr(mapping.actionRefs,`Action.outcomeMappings[${i}].actionRefs`);
     if(mapping.choice!==undefined){const c=mapping.choice;if(!isRecord(c))throw new Error(`Action.outcomeMappings[${i}].choice must be an object.`);for(const key of Object.keys(c))if(!['count','actionRefs'].includes(key))throw new Error(`Action.outcomeMappings[${i}].choice contains unsupported field: ${key}.`);arr(c.actionRefs,`Action.outcomeMappings[${i}].choice.actionRefs`);if(!c.actionRefs.length)throw new Error(`Action.outcomeMappings[${i}].choice needs Actions to choose from.`);if(!Number.isInteger(c.count)||c.count<1||c.count>c.actionRefs.length)throw new Error(`Action.outcomeMappings[${i}].choice.count must be from 1 to the number of Actions offered.`);}});
+  // chatActions: [{actionRef, who}]: buttons on the chat card; who presses one: self (the user's player), target (each
+  // target answers, an Action of its own) or gm. The Action run reads the first result as variables.previous.
+  arr(x.chatActions,'Action.chatActions');
+  x.chatActions=x.chatActions.map((button,i)=>{if(!isRecord(button))throw new Error(`Action.chatActions[${i}] must be an object.`);const b={who:'self',...button};
+    for(const key of Object.keys(b))if(!['actionRef','who'].includes(key))throw new Error(`Unsupported Action.chatActions[${i}] field: ${key}.`);
+    if(!ACTION_CHAT_WHO.includes(b.who))throw new Error(`Action.chatActions[${i}].who must be one of ${ACTION_CHAT_WHO.join(', ')}.`);
+    need(nonempty(b.actionRef),`Action.chatActions[${i}] requires an Action.`,options);return b;});
   // eventPayloads: {eventTypeId: {fieldId: {formulaRef} | {literal}}}: the value each payload field of an emitted event takes,
   // a Formula computed in the Action's context once its Effects are done, or a fixed value.
   if(!isRecord(x.eventPayloads))throw new Error('Action.eventPayloads must be an object.');

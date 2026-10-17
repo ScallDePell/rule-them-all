@@ -12,7 +12,7 @@ import {combatChangeEvents, timeElapsedPayload} from "./src/configurator/system-
 import {registerRulesetDice} from "./src/runtime/foundry-dice.mjs";
 import {installInitiative, installInitiativePasses, rerollEachRound} from "./src/runtime/foundry-initiative.mjs";
 import {FoundryRuntimeAdapter} from "./src/runtime/foundry-runtime-adapter.mjs";
-import {registerRulesetSheets, repairSheetChoices, translator} from "./src/runtime/foundry-sheets.mjs";
+import {actionSummary, registerRulesetSheets, repairSheetChoices, translator} from "./src/runtime/foundry-sheets.mjs";
 import {resolveRuntimeRuleset} from "./src/runtime/runtime-contracts.mjs";
 import {installReactions} from "./src/runtime/foundry-reactions.mjs";
 import {installActionCards} from "./src/runtime/foundry-chat.mjs";
@@ -94,7 +94,7 @@ Hooks.once("ready", () => {
     relay.listen(message => game.ruleThemAll.runtime.serveRelay(message));
     // Reactions offered by Triggers are asked of the reacting Actor's player, on their own client.
     installReactions();
-    installActionCards();
+    installActionCards({summarize: (result, versionId) => actionSummary(result, {t: translator(versionId), ruleset: resolveRuntimeRuleset(api, versionId)})});
     installTokenBars();
     // Players create their character with the active Ruleset's Creation System, from the Actors directory.
     installCreationButton();

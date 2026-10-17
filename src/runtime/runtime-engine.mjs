@@ -146,6 +146,7 @@ export class RuntimeEngine{
     if(method==="acquire"){const ref=normalizeRuntimeContainerRef(args[1]),{actionId=null,context={}}=args[2]??{};return actionId?[ref,...this.writeTargets("executeAction",[versionId,actionId,{...context,roles:{...(context.roles??{}),self:ref,source:ref}}])]:[ref];}
     if(method==="rerollAction"){const [,rerollId,original={},context={}]=args,refs=[...this.writeTargets("executeAction",[versionId,original.actionId,original.context??{}]),...this.writeTargets("executeAction",[versionId,rerollId,context])];return [...new Map(refs.map(ref=>[this.#refKey(ref),ref])).values()];}
     if(method==="chooseActions"){const [,offer={},ids=[]]=args,refs=ids.flatMap(id=>this.writeTargets("executeAction",[versionId,id,offer.context??{}]));return [...new Map(refs.map(ref=>[this.#refKey(ref),ref])).values()];}
+    if(method==="runChatAction"){const [,offer,index,options={}]=args;try{const {button,context}=this.#chatContext(versionId,offer,index,options.as);return this.writeTargets("executeAction",[versionId,button.actionRef,context]);}catch{return [];}}
     if(method==="advance"||method==="applyMilestones")return [normalizeRuntimeContainerRef(args[2])];
     if(method!=="executeAction")return [normalizeRuntimeContainerRef(args[1])];
     const ruleset=this.ruleset(versionId),context=args[2]??{},roles=new Set(),seen=new Set();let turnOrder=false;
@@ -857,12 +858,38 @@ export class RuntimeEngine{
     // use: what a reroll or a reaction needs to undo and replay this use, the dice thrown included.
     const use={actionId,transactionId:committed.transactionId,context:plainContext(context),dice:clone(dice),rerollCount:0};
     const choices=(plan.choices??[]).map(choice=>({actionId,count:choice.count,actionIds:choice.actionIds,context:plainContext(choice.context),cause:clone(use)}));
-    const result={actionId,allowed:true,testResult:plan.testResult??null,tableResult:plan.tableResult??null,followUps,...(plan.targets?{targets:strip(plan.targets)}:{}),...(plan.each?{each:strip(plan.each)}:{}),choices,changes:plan.changes,acquired:plan.acquired,committed:true,duplicate:committed.duplicate,transactionId:committed.transactionId,ledgerEntryIds:committed.entries.map(entry=>entry.id),use,events:[]};
+    const result={actionId,allowed:true,testResult:plan.testResult??null,tableResult:plan.tableResult??null,followUps,...(plan.targets?{targets:strip(plan.targets)}:{}),...(plan.each?{each:strip(plan.each)}:{}),choices,changes:plan.changes,acquired:plan.acquired,committed:true,duplicate:committed.duplicate,transactionId:committed.transactionId,ledgerEntryIds:committed.entries.map(entry=>entry.id),use,events:[],...this.#chatOffer(versionId,actionId,context,plan.testResult)};
     if(committed.duplicate)return result;
     if(this.adapter.activeCombat?.()&&this.adapter.changeTurnOrder)for(const change of plan.changes)if(change.turnOrder)await this.adapter.changeTurnOrder(change.turnRef,change.turnOrder);
     for(const offer of choices)this.hooks?.callAll?.(RUNTIME_HOOKS.choiceOffered,clone(offer));
     this.hooks?.callAll?.(RUNTIME_HOOKS.actionExecuted,clone(result),context);
     await this.#emitActionEvents(versionId,{actionId,testResult:plan.testResult,context:{...context,cause:use},followUps:plan.followUps,targets:plan.targets??plan.each},eventDepth,result.events);return result;
+  }
+  /** The buttons an Action's chat card offers (Action.chatActions): what a button needs to run its Action later. previous:
+   * the result the follow-up reads (variables.previous: total, margin, target, outcome, roll, natural). */
+  #chatOffer(versionId,actionId,context,testResult){
+    const action=this.ruleset(versionId).actions?.find(x=>x.id===actionId);if(!action?.chatActions?.length)return {};
+    const previous={total:testResult?.total??null,margin:testResult?.margin??null,target:testResult?.target??null,outcome:testResult?.outcome?.resultKey??null,roll:testResult?.roll?.total??null,natural:testResult?.roll?.natural??null};
+    return {chatOffer:{rulesetVersionId:versionId,actionId,context:plainContext(context),previous,buttons:action.chatActions.map(({actionRef,who},index)=>({index,actionId:actionRef,who}))}};
+  }
+  /** The context a chat button runs its Action in. who "target": the target answers (it is self, the user of the first
+   * Action its target); as names which target, one of the first Action's. Otherwise the first Action's roles. */
+  #chatContext(versionId,offer,index,as){
+    const action=this.ruleset(versionId).actions?.find(x=>x.id===offer?.actionId),button=action?.chatActions?.[index];
+    if(!button)throw new Error("This chat button is not one of the Action's.");
+    const context=clone(offer.context??{}),variables={...(context.variables??{}),previous:clone(offer.previous??{})};
+    if(button.who!=="target")return {button,context:{...context,variables}};
+    const targets=[context.roles?.target,...(context.targets??[])].filter(Boolean).map(normalizeRuntimeContainerRef),chosen=as?normalizeRuntimeContainerRef(as):null;
+    if(!chosen||!targets.some(ref=>this.#refKey(ref)===this.#refKey(chosen)))throw new Error("Only a target of the Action can answer it.");
+    const user=context.roles?.self??null;
+    return {button,context:{roles:{self:chosen,source:chosen,owner:chosen,...(user?{target:user}:{})},defaultRole:"self",variables:{previous:variables.previous},...(context.userContext?{userContext:context.userContext}:{})}};
+  }
+  /** A chat card's button (see #chatOffer): who may press it is checked, then its Action runs in its own transaction. */
+  async runChatAction(versionId,offer,index,{as=null,transactionId=null}={}){
+    const {button,context}=this.#chatContext(versionId,offer,index,as);
+    const subject=await this.#subject(button.who==="gm"?null:context.roles?.self??null);
+    if(!subject?.isGM&&(button.who==="gm"||subject?.ownership!=="owner"))throw new Error(button.who==="gm"?"Only the GM can use this button.":"You do not own the character this button acts for.");
+    return this.executeAction(versionId,button.actionRef,context,{transactionId});
   }
   /** The player's pick on a choice an Action offered (executeAction result.choices): count distinct Actions among
    * those offered, run in order in the offer's context, each one its own transaction. */
