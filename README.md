@@ -2,7 +2,13 @@
 
 A Foundry VTT v14 module for writing the rules of any tabletop RPG and playing them in any world, whatever game system is installed.
 
-Rule Them'All does not replace your game system. It keeps its own data in the flags of Actors and Items, and offers its sheets next to the system's own.
+Rule Them'All is a powerful and flexible rule creation module for Foundry Virtual Tabletop.
+
+It allows Game Masters and system creators to design, configure, and manage virtually any type of game rule, from simple mechanics to complex rule systems, without being limited to a predefined ruleset.
+
+Rule Them'All can extend existing Foundry VTT game systems with custom rules and mechanics, or serve as a complete rule-building framework for the Systemless game system.
+
+Whether you want to customize an existing RPG system or build your own rules from scratch, Rule Them'All gives you the freedom to create and shape your gameplay experience.
 
 ## What it does
 
