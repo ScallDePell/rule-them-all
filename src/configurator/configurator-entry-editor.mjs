@@ -254,7 +254,7 @@ export class ConfiguratorEntryEditor extends ConfiguratorWindow {
       sheetHeaderChoices:SHEET_HEADERS.map(id=>({id,labelKey:`RTA.Sheet.Header.${id}`,colors:selectColorsAttribute([RTA_NEUTRAL_COLOR]),selected:(data.header??"standard")===id})),
       valueBounds:this.#kind==="definitionType"||this.#kind==="definition"&&capabilityChoices.some(cap=>cap.id==="value"&&cap.permitted)?valueBoundsContext(data,{formulas,ofType:this.#kind==="definitionType",colorsOf:(kind,entry)=>withColors(kind,entry).colors,neutral:selectColorsAttribute([RTA_NEUTRAL_COLOR])}):null,
       slots:this.#kind==="definition"?buildSlotFormContext({definition:data,permittedCapabilities:capabilityChoices.filter(cap=>cap.permitted).map(cap=>cap.id),formulas,contentTypes,valueTypes:this.#api.listValueTypes(),colorsOf:(kind,entry)=>withColors(kind,entry).colors,neutral:selectColorsAttribute([RTA_NEUTRAL_COLOR])}):null,testInputs:this.#kind==="test"?buildTestInputContext({inputs:data.inputBindings??[],formulas:formulas.map(x=>({id:x.id,label:x.nameKey,...withColors("formula",x)})),references:this.#referenceChoices(),neutral:selectColorsAttribute([RTA_NEUTRAL_COLOR])}):null,totalFormulaChoices,marginFormulaChoices,isEventType:this.#kind==="eventType",isTrigger:this.#kind==="trigger",isContentType:this.#kind==="contentType",availabilityChoices,isContentTemplate:this.#kind==="contentTemplate",
-      isCreationSystem:this.#kind==="creationSystem",creationStepRows:this.#kind==="creationSystem"?(data.steps??[]).map(step=>({html:this.#creationStepHTML(step)})):[],isGeneric:false,isProgressionSystem:this.#kind==="progressionSystem",isModifier:this.#kind==="modifier",isDuration:this.#kind==="duration",
+      isCreationSystem:this.#kind==="creationSystem",creationStepRows:this.#kind==="creationSystem"?(data.steps??[]).map(step=>({html:this.#creationStepHTML(step,data.steps)})):[],isGeneric:false,isProgressionSystem:this.#kind==="progressionSystem",isModifier:this.#kind==="modifier",isDuration:this.#kind==="duration",
       ...(this.#kind==="modifier"?modifierFormContext(data,{valueTargetChoices:referenceChoices.filter(x=>parseRefToken(x.token).capabilityId==="value").map(x=>({...x,selected:x.token===targetToken}))}):{}),
       ...(this.#kind==="duration"?durationFormContext(data,{eventTypes,conditions,withColors}):{}),
       ...(this.#kind==="roll"?rollVariantContext(data,{conditions,withColors}):{}),
@@ -466,8 +466,11 @@ export class ConfiguratorEntryEditor extends ConfiguratorWindow {
     return this.#creationCheckboxList({property:"sourceObjects",items,selected,emptyMessage});
   }
 
-  #creationStepHTML(step={}){
+  #creationStepHTML(step={},allSteps=null){
     const value={name:"",kind:"choice",min:1,max:1,...copy(step)};
+    // A contentChoices step asks the choices of the Contents picked in content steps saved before it.
+    const saved=allSteps??this.#savedSteps(),at=value.id?saved.findIndex(entry=>entry.id===value.id):-1,before=at>=0?saved.slice(0,at):saved;
+    const coveredSteps=renderCreationCheckboxPicker({property:"coveredSteps",items:before.filter(entry=>entry.kind==="content").map(entry=>({id:entry.id,label:entry.name||entry.id,colors:RTA_NEUTRAL_COLOR})),selected:value.kind==="contentChoices"?value.source?.stepIds??[]:[],emptyMessage:uiText("NoContentStepBefore","Save a content step before this one first.")});
     const kinds=renderCreationKindsOptions(CREATION_STEP_KINDS,value.kind);
     // Bounds may be Formulas over the earlier steps; options may be filtered by a Condition.
     const pick=(collection,method,kind,selected,noneLabel)=>renderSelectOptions([{id:"",label:noneLabel,colors:RTA_NEUTRAL_COLOR},...this.#renderList(collection,method).map(entry=>({id:entry.id,label:entry.nameKey||entry.id,colors:selectColorsAttribute(this.#optionColors(kind,entry))}))],{selectedValue:selected??"",colorize:true});
@@ -485,7 +488,11 @@ export class ConfiguratorEntryEditor extends ConfiguratorWindow {
     const families=this.#creationSources();
     const sourceFamilies=this.#creationCheckboxList({property:"sourceCollection",items:families,selected:sourceFamily?[sourceFamily]:[],single:true});
     const sourcePicker=this.#creationSourcePicker(sourceFamily,selectedIds);
-    return renderCreationStepHTML({value,kinds,computed,sourceFamilies,sourcePicker,sourceDescriptor:getCreationSourceDescriptor(sourceFamily),uiText});
+    return renderCreationStepHTML({value,kinds,computed,sourceFamilies,sourcePicker,sourceDescriptor:getCreationSourceDescriptor(sourceFamily),coveredSteps,uiText});
+  }
+  /** The steps of the Creation System as last saved. */
+  #savedSteps(){
+    try{return (this.#api.getRuleset(this.#versionId)?.creationSystems??[]).find(entry=>entry.id===this.#id)?.steps??[];}catch{return [];}
   }
 
   /** Rows that only make sense for some step kinds follow the kind select. */

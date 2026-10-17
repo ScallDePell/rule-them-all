@@ -212,7 +212,10 @@
       "StepIdHint": "À utiliser dans les Formules et les Conditions : variables.creation.{id}",
       "StepIdPlaceholder": "Vide : tiré du nom de l’étape",
       "CopyStepId": "Copier l’identifiant",
-      "StepIdCopied": "Identifiant copié : {id}"
+      "StepIdCopied": "Identifiant copié : {id}",
+      "CoveredSteps": "Choix des étapes",
+      "CoveredStepsHint": "Les choix des Contenus pris dans ces étapes sont demandés ici plutôt que sur leur étape. Passée quand aucun n'a de choix.",
+      "NoContentStepBefore": "Enregistrez d'abord une étape de contenu avant celle-ci."
     },
     "FamilyColor": {
       "parameters": "Paramètres",
@@ -1859,7 +1862,8 @@
       "content": "Contenu",
       "allocation": "Répartition de points",
       "roll": "Jet",
-      "review": "Relecture"
+      "review": "Relecture",
+      "contentChoices": "Choix des Contenus"
     },
     "Expression": {
       "Kind": "Nature de l’opérande",

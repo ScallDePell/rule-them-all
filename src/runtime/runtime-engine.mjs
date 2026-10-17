@@ -115,11 +115,25 @@ export class RuntimeEngine{
   }
   #hasRuleset(versionId){try{this.ruleset(versionId);return true;}catch{return false;}}
   /** Containers being built by a Creation System: the creation's own rules bound what it writes, so the Ruleset's
-     write Permissions (meant for play, such as "only the GM changes characteristics") do not apply to it. */
+     write Permissions (meant for play, such as "only the GM changes characteristics") do not apply to it.
+     The values' bounds hold for the character built, not along the way: an age penalty taken before the free points
+     is not lost to the minimum, so the bonuses and penalties of the steps add up first and are bounded once at the end. */
   async duringCreation(ref,build){
-    const key=this.#refKey(normalizeRuntimeContainerRef(ref));
+    const container=normalizeRuntimeContainerRef(ref),key=this.#refKey(container);
     this.#creating.add(key);
-    try{return await build();}finally{this.#creating.delete(key);}
+    try{const result=await build();await this.#settleCreationBounds(container);return result;}finally{this.#creating.delete(key);}
+  }
+  /** Every value base of a container just built, held within its bounds. */
+  async #settleCreationBounds(ref){
+    const versionId=(await this.adapter.load(ref))?.rulesetVersionId;
+    if(!versionId||!this.#hasRuleset(versionId))return;
+    const tx=this.transaction(versionId,"creation.bounds",{summary:{}}),state=await tx.load(ref);let changed=false;
+    for(const [definitionId,ds] of Object.entries(state.definitionStates??{})){
+      const value=ds?.capabilityStates?.value;if(!value)continue;
+      const base=Number(value.base??0),bounded=boundValue(null,base,await this.#stagedValueBounds(versionId,ref,state,definitionId));
+      if(bounded!==base){value.base=bounded;changed=true;}
+    }
+    if(changed)await this.#commit(tx);
   }
   /** Every persistent runtime write goes through one transaction (CP-08, CP-18). */
   transaction(versionId,kind,{transactionId=null,summary=null,corrects=null}={}){
@@ -604,7 +618,9 @@ export class RuntimeEngine{
     for(const [key,amount] of Object.entries(add??{})){
       if(key!=="value.base"||!ds.capabilityStates?.value)throw new Error(`Acquisition can only add to value.base of a value Definition: ${definition.id} ${key}.`);
       const value=Number(amount);if(!Number.isFinite(value))throw new Error(`Acquisition add for ${definition.id} is not a number.`);
-      const current=Number(ds.capabilityStates.value.base??0);ds.capabilityStates.value.base=boundValue(current,current+value,await this.#stagedValueBounds(versionId,ref,state,definition.id));
+      const current=Number(ds.capabilityStates.value.base??0);
+      // A character being created is bounded once it is built (duringCreation).
+      ds.capabilityStates.value.base=this.#creating.has(this.#refKey(normalizeRuntimeContainerRef(ref)))?current+value:boundValue(current,current+value,await this.#stagedValueBounds(versionId,ref,state,definition.id));
     }
   }
   /** content: {key, templateId, contentTypeId}; the same key acquired twice keeps its instance fields. */

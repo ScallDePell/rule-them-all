@@ -66,7 +66,7 @@ Le Configurateur range le Ruleset en rubriques. Chaque élément est une carte :
 - **Types d'événement** et **Déclencheurs** : réagir à ce qui arrive en jeu (début de combat, nouveau round, temps qui passe, résultat d'une Action). Un déclencheur peut proposer une réaction au joueur concerné.
 
 ### Systèmes
-- **Systèmes de création** : la création de personnage, étape par étape (choix, répartition de points, jet, récapitulatif). Voir la section 5.
+- **Systèmes de création** : la création de personnage, étape par étape (choix, contenu, choix des contenus, répartition de points, jet, récapitulatif). Voir la section 5.
 - **Systèmes de progression** : l'avancement (dépense d'expérience, paliers).
 - **Feuilles** : les feuilles de personnage et d'objet. Voir la section 4.
 
@@ -145,6 +145,10 @@ Chaque feuille activée du Ruleset actif apparaît sous son nom dans **Configura
 ## 5. Créer un personnage
 
 Le bouton de création se trouve dans l'onglet **Acteurs**. Le joueur suit les étapes du Système de création ; sa progression est gardée s'il ferme la fenêtre. Un Acteur vide ouvert avec une feuille Rule Them'All propose aussi la création.
+
+Les choix d'un Contenu (deux compétences parmi quatre pour un métier) se font d'ordinaire sous le Contenu choisi. Une étape **Choix des contenus** placée après une étape de contenu les demande plutôt sur un écran à part : cochez dans **Choix des étapes** les étapes concernées. Elle est passée d'elle-même quand aucun Contenu choisi n'a de choix à faire.
+
+Pendant la création, les bonus et malus des étapes s'additionnent avant que les bornes des valeurs ne s'appliquent : un malus d'âge pris avant les points libres n'est pas perdu au minimum. Les bornes s'appliquent au personnage terminé.
 
 ## 6. En jeu
 

@@ -64,7 +64,7 @@ export class CreationSessions{
     const at=this.#term(session,steps,stepId,term);
     if(this.#locked(session,steps.find(step=>step.id===stepId),at))throw new Error(`Creation step ${stepId} was drawn and cannot be changed.`);
     this.#put(session,stepId,at,copyJSON(answer),null);
-    this.#advance(session,steps,stepId);
+    await this.#advance(session,steps,stepId);
     return this.#save(session);
   }
   /** Start another term of the repeated block that `stepId` belongs to: back to its first step. Whether the
@@ -83,8 +83,16 @@ export class CreationSessions{
     const terms=[...(session.answers[stepId]?.terms??[])];while(terms.length<term)terms.push(null);terms[term]=answer;session.answers[stepId]={terms};
     const kept=[...(session.rolls[stepId]?.terms??[])];while(kept.length<term)kept.push(null);kept[term]=rolls;session.rolls[stepId]={terms:kept};
   }
-  /** Next step; the last step of a block goes on after the block, and another term starts with nextTerm. */
-  #advance(session,steps,stepId){const index=steps.findIndex(step=>step.id===stepId);session.currentStepId=steps[index+1]?.id??stepId;}
+  /** Next step; the last step of a block goes on after the block, and another term starts with nextTerm.
+   * A contentChoices step with nothing to ask is passed over. */
+  async #advance(session,steps,stepId){
+    let index=steps.findIndex(step=>step.id===stepId)+1;
+    if(steps.slice(index).some(step=>step.kind==="contentChoices")){
+      const skipped=new Set((await analyzeCreationSystem(this.#ruleset(session.rulesetVersionId),session.creationSystemId,session.answers)).steps.filter(step=>step.skipped).map(step=>step.id));
+      while(steps[index]?.kind==="contentChoices"&&skipped.has(steps[index].id))index++;
+    }
+    session.currentStepId=steps[index]?.id??stepId;
+  }
   /** Draw a step at random (its draw settings); the answer is marked drawn and its dice kept under session.rolls. */
   async draw(id,stepId,{revision=null,term=null}={}){
     const session=await this.#load(id,{revision}),steps=this.#steps(session),step=steps.find(entry=>entry.id===stepId);
@@ -93,7 +101,7 @@ export class CreationSessions{
     if(this.#locked(session,step,at))throw new Error(`Creation step ${stepId} was already drawn.`);
     const {answer,rolls}=await drawCreationStep(this.#ruleset(session.rulesetVersionId),session.creationSystemId,session.answers,stepId,{random:this.random,roll:this.roll});
     this.#put(session,stepId,at,answer,rolls);
-    this.#advance(session,steps,stepId);
+    await this.#advance(session,steps,stepId);
     return this.#save(session);
   }
   /** A roll step is thrown once; a drawn step marked locked keeps its draw. */

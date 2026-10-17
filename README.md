@@ -44,6 +44,12 @@ The documentation is in French for now:
 - [Configuration examples](docs/exemples-configuration.md), drawn from well-known games.
 - [Architecture](docs/architecture.md), for contributors.
 
+## Exemples de rulesets
+
+Ready-made Rulesets, kept out of the module zip. Download the `.json` file and import it from the Configurator with **Import**.
+
+- [Real World Fantasy 2.0.0](Rulesets/rwf/) ([rwf-ruleset-2.0.0.json](Rulesets/rwf/rwf-ruleset-2.0.0.json)): contemporary fantasy, d20 + characteristic + skill. Character creation, combat, practice-based progression, pursuits, powers and 461 contents. Notes in French.
+
 ## Development
 
 ```

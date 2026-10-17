@@ -46,6 +46,12 @@ export function collectCreationSteps(rows,{sources=[]}={}){
       const weightField=String(row.querySelector('[data-step-prop="drawWeightField"]')?.value??'').trim(),rollRef=String(row.querySelector('[data-step-prop="drawRollRef"]')?.value??'').trim();
       next.draw={locked:draw==='locked',...(next.kind!=='allocation'&&weightField?{weightField}:{}),...(next.kind==='allocation'&&rollRef?{rollRef}:{})};
     }
+    // A contentChoices step lists the content steps whose choices it asks, and nothing else.
+    if(next.kind==='contentChoices'){
+      const stepIds=[...row.querySelectorAll('[data-step-prop="coveredSteps"] [data-step-source-object]:checked')].map(input=>input.value);
+      for(const key of ['minFormulaRef','maxFormulaRef','optionConditionRef'])delete next[key];
+      return {...next,min:0,max:0,required:false,source:{stepIds}};
+    }
     if(family){
       const source=choices.get(family);
       if(!source)throw new Error(`Unknown Ruleset source: ${family}`);

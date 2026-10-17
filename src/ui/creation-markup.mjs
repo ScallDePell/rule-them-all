@@ -2,7 +2,7 @@
    the page shows from a CreationContext (game.ruleThemAll.creation.context) and the Ruleset; renderCreationHTML
    writes it. Data contract read by the window (runtime/foundry-creation.mjs):
    [data-creation-goto] step buttons, [data-creation-option] selected objects, [data-creation-choice] a Content's
-   choices (data-template, data-group), [data-creation-points] value reached on a Definition (data-start: its value before the points), [data-creation-step] −/+, [data-creation-command]
+   choices (data-template, data-group; on the content step or a later contentChoices step), [data-creation-points] value reached on a Definition (data-start: its value before the points), [data-creation-step] −/+, [data-creation-command]
    previous / next / draw / term / finish / abandon / start / resume, [data-creation-name] the character's name,
    [data-creation-actor-type] its Actor subtype when the game system has several. */
 import {escapeHTML as escape} from "./html-utils.mjs";
@@ -27,15 +27,17 @@ function currentAnswer(step, session) {
 /** What the wizard shows. context: {session, steps, complete, preview}; t: Ruleset text first. */
 export function creationView(context, ruleset, t) {
   const {session, steps} = context, system = (ruleset.creationSystems ?? []).find(entry => entry.id === session.creationSystemId);
-  const index = Math.max(0, steps.findIndex(step => step.current)), step = steps[index];
+  // A choices step with nothing to ask (no chosen Content has a choice) is left out of the way.
+  const shown = steps.filter(entry => !(entry.kind === "contentChoices" && entry.skipped && !entry.current));
+  const index = Math.max(0, shown.findIndex(step => step.current)), step = shown[index];
   const answer = step ? currentAnswer(step, session) : null, answered = answer !== null && answer !== undefined;
-  const view = {title: t(system?.nameKey ?? session.creationSystemId), complete: context.complete, index, count: steps.length,
-    steps: steps.map((entry, i) => ({id: entry.id, label: t(entry.name ?? entry.id), number: i + 1, current: entry.current, skipped: entry.skipped,
+  const view = {title: t(system?.nameKey ?? session.creationSystemId), complete: context.complete, index, count: shown.length,
+    steps: shown.map((entry, i) => ({id: entry.id, label: t(entry.name ?? entry.id), number: i + 1, current: entry.current, skipped: entry.skipped,
       state: entry.skipped ? "skipped" : entry.answer === null || entry.answer === undefined ? "open" : entry.valid ? "done" : "error"})),
     step: null};
   if (!step) return view;
   const panel = {id: step.id, kind: step.kind, label: t(step.name ?? step.id), skipped: step.skipped, errors: answered || step.kind === "review" ? step.errors : [],
-    term: step.repeated ? (session.currentTerm ?? 0) + 1 : null, canNextTerm: step.endsBlock === true, first: index === 0, last: index === steps.length - 1,
+    term: step.repeated ? (session.currentTerm ?? 0) + 1 : null, canNextTerm: step.endsBlock === true, first: index === 0, last: index === shown.length - 1,
     canDraw: Boolean(step.draw) && !(step.draw.locked && answer?.drawn), drawn: answer?.drawn === true};
   if (["choice", "content"].includes(step.kind)) {
     const collection = step.source?.collection ?? COLLECTION_OF[step.kind], selected = new Set(Array.isArray(answer) ? answer : answer?.selectedIds ?? []);
@@ -43,12 +45,13 @@ export function creationView(context, ruleset, t) {
     panel.bounds = step.bounds ?? {min: step.min ?? 0, max: step.max ?? 1};
     panel.boundsText = boundsText(panel.bounds, t);
     panel.options = ids.map(id => ({id, label: nameOf(ruleset, collection, id, t), checked: selected.has(id)}));
-    // A chosen Content may ask for its own choices (two skills among four).
-    panel.groups = collection === "contentTemplates" ? [...selected].flatMap(templateId => {
-      const template = (ruleset.contentTemplates ?? []).find(entry => entry.id === templateId), picked = answer?.contentChoices?.[templateId] ?? {};
-      return (template?.choiceGroups ?? []).map(group => ({templateId, id: group.id, label: `${t(template.nameKey ?? templateId)} · ${t(group.name ?? group.id)}`, boundsText: boundsText(group, t), max: group.max,
-        options: (group.options ?? []).map(option => ({id: option.id, label: option.targetRef ? nameOf(ruleset, option.targetRef.objectKind === "definition" ? "definitions" : "contentTemplates", option.targetRef.objectId, t) : option.id, checked: (picked[group.id] ?? []).includes(option.id)}))}));
-    }) : [];
+    // A chosen Content may ask for its own choices (two skills among four), here or on a later step of their own.
+    const later = steps.some(entry => entry.kind === "contentChoices" && (entry.source?.stepIds ?? []).includes(step.id));
+    panel.groups = collection === "contentTemplates" && !later ? choiceGroupsOf([...selected], answer?.contentChoices ?? {}, ruleset, t) : [];
+  }
+  if (step.kind === "contentChoices") {
+    const picked = (steps.filter(entry => (step.source?.stepIds ?? []).includes(entry.id)).flatMap(entry => { const own = currentAnswer(entry, session); return Array.isArray(own) ? own : own?.selectedIds ?? []; }));
+    panel.groups = choiceGroupsOf(picked, answer?.contentChoices ?? {}, ruleset, t);
   }
   if (step.kind === "allocation") {
     const points = answer?.allocations ?? {}, bounds = step.bounds ?? {min: step.min ?? 0, max: step.max ?? 0};
@@ -71,12 +74,26 @@ export function creationView(context, ruleset, t) {
   return view;
 }
 
+/** The choices the given Contents ask for, with what is ticked in picked ({templateId: {groupId: [optionId]}}). */
+function choiceGroupsOf(templateIds, picked, ruleset, t) {
+  return templateIds.flatMap(templateId => {
+    const template = (ruleset.contentTemplates ?? []).find(entry => entry.id === templateId), own = picked[templateId] ?? {};
+    return (template?.choiceGroups ?? []).map(group => ({templateId, id: group.id, label: `${t(template.nameKey ?? templateId)} · ${t(group.name ?? group.id)}`, boundsText: boundsText(group, t), max: group.max,
+      options: (group.options ?? []).map(option => ({id: option.id, label: optionLabel(option, ruleset, t), checked: (own[group.id] ?? []).includes(option.id)}))}));
+  });
+}
+const optionLabel = (option, ruleset, t) => option.targetRef ? nameOf(ruleset, option.targetRef.objectKind === "definition" ? "definitions" : "contentTemplates", option.targetRef.objectId, t) : option.id;
+
 /** One line per step for the review: what was chosen, points spent, the roll. */
 function summaryOf(step, ruleset, t) {
   const answers = step.repeated ? (step.answer?.terms ?? []).filter(Boolean) : [step.answer].filter(answer => answer !== null && answer !== undefined);
   const parts = answers.flatMap(answer => {
     if (step.kind === "roll") return [String(answer.total)];
     if (step.kind === "allocation") return Object.entries(answer.allocations ?? {}).filter(([, points]) => points > 0).map(([id, points]) => `${nameOf(ruleset, "definitions", id, t)} +${points}`);
+    if (step.kind === "contentChoices") return Object.entries(answer.contentChoices ?? {}).flatMap(([templateId, groups]) => {
+      const template = (ruleset.contentTemplates ?? []).find(entry => entry.id === templateId);
+      return Object.entries(groups ?? {}).flatMap(([groupId, ids]) => ids.map(id => { const option = template?.choiceGroups?.find(group => group.id === groupId)?.options?.find(entry => entry.id === id); return option ? optionLabel(option, ruleset, t) : id; }));
+    });
     const collection = step.source?.collection ?? COLLECTION_OF[step.kind];
     return (Array.isArray(answer) ? answer : answer.selectedIds ?? []).map(id => nameOf(ruleset, collection, id, t));
   });
@@ -95,6 +112,8 @@ function panelHTML(step, t, {name = "", actorTypes = [], actorType = ""} = {}) {
   else if (step.options) {
     parts.push(`<p class="rta-creation__hint">${escape(step.boundsText)}</p>`);
     parts.push(step.options.length ? optionList(step.options, {name: "data-creation-option", single: step.bounds.max === 1}) : `<p class="rta-creation__hint">${escape(t("RTA.Creation.NoOption"))}</p>`);
+    for (const group of step.groups) parts.push(`<fieldset class="rta-creation__group"><legend>${escape(group.label)}</legend><p class="rta-creation__hint">${escape(group.boundsText)}</p>${optionList(group.options, {name: "data-creation-choice", extra: ` data-template="${escape(group.templateId)}" data-group="${escape(group.id)}"`, single: group.max === 1})}</fieldset>`);
+  } else if (step.kind === "contentChoices") {
     for (const group of step.groups) parts.push(`<fieldset class="rta-creation__group"><legend>${escape(group.label)}</legend><p class="rta-creation__hint">${escape(group.boundsText)}</p>${optionList(group.options, {name: "data-creation-choice", extra: ` data-template="${escape(group.templateId)}" data-group="${escape(group.id)}"`, single: group.max === 1})}</fieldset>`);
   } else if (step.rows) {
     parts.push(`<p class="rta-creation__hint">${escape(step.boundsText)}${step.costed ? "" : ` <span data-creation-spent>${escape(format(t, "RTA.Creation.Spent", {count: step.spent}))}</span>`}</p>`);
@@ -162,6 +181,11 @@ export function readCreationAnswer(root, step) {
     const allocations = {};
     for (const input of root.querySelectorAll("[data-creation-points]")) { const points = pointsOf(input); if (points > 0) allocations[input.dataset.creationPoints] = points; }
     return {allocations};
+  }
+  if (step.kind === "contentChoices") {
+    const contentChoices = {};
+    for (const input of root.querySelectorAll("[data-creation-choice]:checked")) ((contentChoices[input.dataset.template] ??= {})[input.dataset.group] ??= []).push(input.value);
+    return {contentChoices};
   }
   if (step.options) {
     const selectedIds = [...root.querySelectorAll("[data-creation-option]:checked")].map(input => input.value), contentChoices = {};

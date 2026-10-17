@@ -212,7 +212,10 @@
       "StepIdHint": "Use it in Formulas and Conditions: variables.creation.{id}",
       "StepIdPlaceholder": "Empty: taken from the step name",
       "CopyStepId": "Copy the identifier",
-      "StepIdCopied": "Identifier copied: {id}"
+      "StepIdCopied": "Identifier copied: {id}",
+      "CoveredSteps": "Choices of the steps",
+      "CoveredStepsHint": "The choices of the Contents picked in these steps are asked here instead of on their step. Skipped when none of them has a choice.",
+      "NoContentStepBefore": "Save a content step before this one first."
     },
     "FamilyColor": {
       "parameters": "Parameters",
@@ -1859,7 +1862,8 @@
       "content": "Content",
       "allocation": "Point allocation",
       "roll": "Roll",
-      "review": "Review"
+      "review": "Review",
+      "contentChoices": "Choices of the Contents"
     },
     "Expression": {
       "Kind": "Kind of operand",

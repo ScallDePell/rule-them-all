@@ -493,7 +493,7 @@ export function scaleWords(scale,value,maximum){
   if(measure===null)return null;
   return (scale.rows??[]).find(row=>(row.min===null||measure>=row.min)&&(row.max===null||measure<=row.max))?.labelKey??null;
 }
-export const CREATION_STEP_KINDS=Object.freeze(['choice','content','allocation','roll','review']);
+export const CREATION_STEP_KINDS=Object.freeze(['choice','content','contentChoices','allocation','roll','review']);
 export function prepareCreationSystem(data,options={}){
   const x=prepareNamedGeneric(data,'CreationSystem',{steps:[]},options);arr(x.steps,'CreationSystem.steps');x.steps=x.steps.map((step,i)=>{if(!isRecord(step)||!nonempty(step.id))throw new Error(`CreationSystem.steps[${i}] requires id.`);need(nonempty(step.name),`CreationSystem.steps[${i}] requires name.`,options);const n={kind:'choice',required:true,options:[],min:0,max:1,...copyJSON(step)};if(!CREATION_STEP_KINDS.includes(n.kind))throw new Error(`CreationSystem.steps[${i}].kind is invalid.`);arr(n.options,`CreationSystem.steps[${i}].options`);
     // Computed bounds and option filter (Formulas and a Condition over the earlier steps); allocation: points per Definition.
@@ -507,10 +507,17 @@ export function prepareCreationSystem(data,options={}){
       bool(n.draw.locked,`CreationSystem.steps[${i}].draw.locked`);
       for(const key of ['weightField','rollRef'])if(n.draw[key]===''||n.draw[key]===null)delete n.draw[key];else if(n.draw[key]!==undefined&&!nonempty(n.draw[key]))throw new Error(`CreationSystem.steps[${i}].draw.${key} must be a name.`);
       if(n.kind==='allocation')need(Boolean(n.draw.rollRef),`CreationSystem.steps[${i}]: a drawn allocation needs a Roll.`,options);
-      if(['review','roll'].includes(n.kind))throw new Error(`CreationSystem.steps[${i}]: a ${n.kind} step has no draw settings.`);
+      if(['review','roll','contentChoices'].includes(n.kind))throw new Error(`CreationSystem.steps[${i}]: a ${n.kind} step has no draw settings.`);
     }
     if(n.kind==='roll')need(Boolean(n.rollRef),`CreationSystem.steps[${i}]: a roll step needs a Roll.`,options);else delete n.rollRef;
     if(n.kind!=='allocation')delete n.costFormulaRef;
+    // contentChoices: its own screen for the choices of the Contents picked in earlier content steps (source.stepIds).
+    if(n.kind==='contentChoices'){
+      const ids=n.source?.stepIds;
+      if(!isRecord(n.source)||!Array.isArray(ids)||Object.keys(n.source).some(key=>key!=='stepIds'))throw new Error(`CreationSystem.steps[${i}]: a contentChoices step lists the steps it covers in source.stepIds.`);
+      need(ids.length>0,`CreationSystem.steps[${i}]: a contentChoices step covers at least one content step.`,options);
+      n.min=0;n.max=0;n.required=false;n.options=[];delete n.optionConditionRef;delete n.minFormulaRef;delete n.maxFormulaRef;delete n.perTargetMaxFormulaRef;
+    }else if(isRecord(n.source)&&Object.hasOwn(n.source,'stepIds'))throw new Error(`CreationSystem.steps[${i}]: only a contentChoices step lists steps in its source.`);
     // repeat: this step closes a block of its last `steps` steps played term after term.
     if(n.repeat===undefined||n.repeat===null)delete n.repeat;else{
       const label=`CreationSystem.steps[${i}].repeat`;
@@ -524,6 +531,13 @@ export function prepareCreationSystem(data,options={}){
     }
     if(n.perTargetMax===null||n.perTargetMax==='')delete n.perTargetMax;else if(n.perTargetMax!==undefined&&!(Number.isSafeInteger(n.perTargetMax)&&n.perTargetMax>=0))throw new Error(`CreationSystem.steps[${i}].perTargetMax must be a whole number of 0 or more.`);
     return n;});
+  // A contentChoices step covers earlier content steps, each covered once.
+  const covered=new Set();
+  for(const [i,step] of x.steps.entries())if(step.kind==='contentChoices')for(const id of step.source.stepIds){
+    const target=x.steps.findIndex(other=>other.id===id);
+    if(target<0||target>=i||x.steps[target].kind!=='content')throw new Error(`CreationSystem.steps[${i}]: ${id} is not an earlier content step.`);
+    if(covered.has(id))throw new Error(`CreationSystem: the choices of step ${id} are asked on two steps.`);covered.add(id);
+  }
   // Repeated blocks do not overlap: a step belongs to one series of terms at most.
   let reach=-1;
   for(const [end,step] of x.steps.entries())if(step.repeat){const start=end-step.repeat.steps+1;if(start<=reach)throw new Error(`CreationSystem: the repeated steps ending at ${step.id} overlap another repeated block.`);reach=end;}

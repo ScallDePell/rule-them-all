@@ -1,5 +1,11 @@
 # Changelog
 
+## 1.0.5
+
+- Creation: a **Choices of the Contents** step asks, on its own screen, the choices of the Contents picked in earlier content steps (the skills a career gives). It is skipped when none of them has a choice.
+- Creation: the bonuses and penalties of the steps add up before the values' bounds apply; the character built is bounded once at the end.
+- New `Rulesets/` folder with ready-made Rulesets, not shipped in the module zip: Real World Fantasy 2.0.0.
+
 ## 1.0.4
 
 - Fix: in 1.0.3 the "Repair the data" menu was refused by Foundry, which stopped the module's initialization (no Repair button, Ruleset sheets and initiative not registered). The menu is now a proper Foundry application.

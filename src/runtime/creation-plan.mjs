@@ -27,7 +27,10 @@ export async function planCreationSystem(ruleset,creationSystemId,answers={}){
  * A step with a conditionRef only applies while it holds (else it is skipped, its answer kept).
  * A step with repeat {steps, max, continueConditionRef} closes a block of its last `steps` steps played term after
  * term (careers, lifepaths): their answers are {terms: [answer, …]}, variables.term = {index, count}, and a new
- * term needs fewer than max terms so far and the continue Condition over the last term. */
+ * term needs fewer than max terms so far and the continue Condition over the last term.
+ * A contentChoices step asks, on its own screen, the choices of the Contents picked in the content steps it covers
+ * (source.stepIds): its answer is {contentChoices: {templateId: {groupId: [optionId]}}}; it is skipped when none of
+ * them has a choice to make. */
 export async function analyzeCreationSystem(ruleset,creationSystemId,answers={}){
   const system=(ruleset.creationSystems??[]).find(entry=>entry.id===creationSystemId&&entry.enabled!==false);
   if(!system)throw new Error(`Creation System unavailable: ${creationSystemId}.`);
@@ -42,6 +45,8 @@ export async function analyzeCreationSystem(ruleset,creationSystemId,answers={})
     initialByDefinition[definitionId]=copyJSON(initial);
   };
   const creation={},bounds={},candidates={};
+  // Content steps whose Contents' choices a later contentChoices step asks.
+  const deferred=new Set(steps.filter(step=>step.kind==='contentChoices').flatMap(step=>step.source?.stepIds??[]));
   const evaluator=new RuntimeEvaluator({ruleset,resolveReference:()=>{throw new Error("A creation Formula cannot read an Actor: use the earlier steps (variables.creation).");}});
   let term=null;
   const context=extra=>({roles:{},variables:{creation,...(term?{term}:{}),...extra}});
@@ -71,11 +76,13 @@ export async function analyzeCreationSystem(ruleset,creationSystemId,answers={})
     for(const step of members)selectionSummary[step.id]=history.get(step.id).flatMap(entry=>entry.ids);
     term=null;i=block.end+1;
   }
+  for(const operation of operations)delete operation.pendingChoices;
   const report=steps.map(step=>byStep.get(step.id));
   return {creationSystemId:system.id,selectedByStep:selectionSummary,operations,initialByDefinition,steps:report,complete:report.every(step=>!step.errors.length),bounds,options:candidates};
   async function analyzeStep(step,given){
     const answer=given??{},selected=Array.isArray(answer)?answer:answer?.selectedIds??[];
     if(step.kind==='roll')return analyzeRoll(step,given);
+    if(step.kind==='contentChoices')return analyzeContentChoices(step,given);
     const min=Math.max(await number(step.minFormulaRef,Number(step.min??0),`Creation step ${step.id} minimum`),step.required===true&&!step.minFormulaRef?1:0),max=await number(step.maxFormulaRef,Number(step.max??1),`Creation step ${step.id} maximum`);
     if(!Number.isInteger(min)||!Number.isInteger(max)||max<min)throw new Error(`Invalid Creation step cardinality: ${step.id} (${min} to ${max}).`);
     bounds[step.id]={min,max};
@@ -102,16 +109,38 @@ export async function analyzeCreationSystem(ruleset,creationSystemId,answers={})
       if(step.optionConditionRef&&!await evaluator.condition(step.optionConditionRef,context({option:{id,fields:copyJSON(registered.get(id).data??{})}})))throw new Error(`Creation step ${step.id}: ${id} is not available with the earlier choices.`);
       if(collection==='definitions')operations.push({kind:'definition',stepId:step.id,definitionId:id});
       else{
-        const choices=copyJSON(templateChoices[id]??{});
         const template=registered.get(id);
-        const resolved=resolveAcquisitionChoices(template,choices); // preflight all choices
         for(const relation of template.relations??[])if(relation?.operation==='grant'&&relation.targetRef?.objectKind==='definition')setInitial(relation.targetRef.objectId,initialForDefinition(template,relation.targetRef.objectId));
-        for(const option of resolved)if(option.operation==='grant'&&option.targetRef?.objectKind==='definition')setInitial(option.targetRef.objectId,option.config?.initial??{});
+        // Its choices are asked later, on their own step.
+        if(deferred.has(step.id)){operations.push({kind:'content',stepId:step.id,templateId:id,selections:{},pendingChoices:true});continue;}
+        const choices=copyJSON(templateChoices[id]??{});
+        acceptChoices(template,choices);
         operations.push({kind:'content',stepId:step.id,templateId:id,selections:choices});
       }
     }
     selectionSummary[step.id]=copyJSON(selected);
     creation[step.id]={ids:copyJSON(selected),count:selected.length,fields:copyJSON(registered.get(selected[0])?.data??{})};
+  }
+  /** The choices made on a Content (preflight), and the initial values the options it grants give. */
+  function acceptChoices(template,choices){
+    for(const option of resolveAcquisitionChoices(template,choices))if(option.operation==='grant'&&option.targetRef?.objectKind==='definition')setInitial(option.targetRef.objectId,option.config?.initial??{});
+  }
+  /** contentChoices: the choices of the Contents picked in the covered steps, after them; skipped when there is none. */
+  async function analyzeContentChoices(step,answer){
+    const covered=new Set(step.source?.stepIds??[]),given=isRecord(answer?.contentChoices)?answer.contentChoices:{};
+    const pending=operations.filter(operation=>operation.pendingChoices&&covered.has(operation.stepId));
+    for(const operation of pending)delete operation.pendingChoices;
+    const templates=new Map((ruleset.contentTemplates??[]).map(template=>[template.id,template]));
+    const asking=pending.filter(operation=>(templates.get(operation.templateId)?.choiceGroups??[]).length);
+    selectionSummary[step.id]=[];
+    if(!asking.length){byStep.get(step.id).skipped=true;creation[step.id]={ids:[],count:0,fields:{},skipped:true};return;}
+    if(answer===undefined||answer===null)throw new Error(`Creation step ${step.id} has not been answered.`);
+    for(const operation of asking){
+      const choices=copyJSON(given[operation.templateId]??{});
+      acceptChoices(templates.get(operation.templateId),choices);
+      operation.selections=choices;
+    }
+    creation[step.id]={ids:asking.map(operation=>operation.templateId),count:asking.length,fields:{},contentChoices:copyJSON(given)};
   }
   /** Roll: a throw made at creation (survival, aging, starting money); later steps read its total. */
   async function analyzeRoll(step,answer){

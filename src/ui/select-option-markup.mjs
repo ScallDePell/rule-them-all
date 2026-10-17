@@ -12,7 +12,7 @@ export function renderSelectOptions(items,{valueKey="id",labelKey="label",colori
   }).join("");
 }
 /** A creation step's kind in words (RTA.CreationStepKind.<id>); the option value stays the id. */
-const STEP_KIND_WORDS={choice:"Choice",content:"Content",allocation:"Point allocation",roll:"Roll",review:"Review"};
+const STEP_KIND_WORDS={choice:"Choice",content:"Content",contentChoices:"Choices of the Contents",allocation:"Point allocation",roll:"Roll",review:"Review"};
 export function renderCreationKindsOptions(kinds,selectedValue){
   return renderSelectOptions(kinds.map(value=>({id:value,label:localizedText(`RTA.CreationStepKind.${value}`,STEP_KIND_WORDS[value]??value)})),{selectedValue});
 }
