@@ -3,6 +3,7 @@ import {FoundryRuntimeAdapter} from "./foundry-runtime-adapter.mjs";
 import {serveRuntimeRelay} from "./runtime-relay.mjs";
 import {projectSheet} from "./sheet-projection.mjs";
 import {describeShared, setSharedValue} from "./shared-resources.mjs";
+import {tokenBarAttributes, tokenBarValue} from "./token-bars.mjs";
 
 /** relay: {request(method,args)}; a write this client cannot make on a Document goes to the GM client. */
 export function createRuntimeAPI(configurator,{adapter=new FoundryRuntimeAdapter(),hooks=globalThis.Hooks,rulesetSource="published",relay=null}={}){
@@ -53,6 +54,9 @@ export function createRuntimeAPI(configurator,{adapter=new FoundryRuntimeAdapter
     describeProgression:(versionId,id,ref)=>engine.describeProgression(versionId,id,ref),
     advance:write("advance"),
     applyMilestones:write("applyMilestones"),
+    /** Token bars: what the Ruleset offers, and what one shows for a container ({value, max} or null). */
+    tokenBarAttributes:versionId=>{try{return tokenBarAttributes(engine.ruleset(versionId));}catch{return [];}},
+    tokenBarValue:(versionId,ref,attribute)=>tokenBarValue(engine,versionId,ref,attribute),
     describeContainer:ref=>adapter.describe(ref),
     getLedger:ref=>engine.getLedger(ref),
     compensate:write("compensate"),
