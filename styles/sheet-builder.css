@@ -532,6 +532,8 @@
 }
 
 .rta-sheet-editor__canvas {
+  /* The chosen width is the whole preview, frame included, as a Foundry window's width is. */
+  box-sizing: border-box;
   padding: var(--rta-frame-pad);
   border: var(--rta-frame-border) dashed var(--rta-color-border-subtle);
   border-radius: var(--rta-radius-panel);

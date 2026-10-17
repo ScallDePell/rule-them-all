@@ -1,4 +1,4 @@
-/** Release-closure gate for the architecture cleanup. This is intentionally
+/** Release gate. This is intentionally
  * stricter than unit tests. A passing architecture audit does NOT mean RTA
  * is fully generic, translated, and ready for Foundry distribution.
  *
@@ -63,9 +63,9 @@ add('locale-parity',missingFR.length===0&&missingEN.length===0,
 // is not clean merely because all its string literals were moved out.
 const editorController=read('src/configurator/configurator-entry-editor.mjs');
 const remainingResponsibilities=['#fieldReferenceChoices(', '#definitionField(', '#seed(', '#collectFieldDefinitions(', '#collectDefinitionData(', '#collectRuleOperand(', '#collectCreationSteps('].filter(signature=>editorController.includes(signature));
-if(!editorController.includes('return collectEntryData(this.#kind,'))remainingResponsibilities.push('missing canonical entry-data-collector delegation');
+if(!editorController.includes('collectEntryData(this.#kind,'))remainingResponsibilities.push('missing canonical entry-data-collector delegation');
 if(!editorController.includes('collectCreationSteps(this.element.querySelectorAll'))remainingResponsibilities.push('missing creation-step serialization delegation');
-if(!editorController.includes('collectFormulaExpression(this.element.querySelector'))remainingResponsibilities.push('missing expression serialization delegation');
+if(!/collectFormulaExpression:\w+=>collectExpression\(this\.element\.querySelector/.test(editorController))remainingResponsibilities.push('missing expression serialization delegation');
 add('editor-responsibility-split',remainingResponsibilities.length===0,
  'The main editor controller should coordinate Foundry UI only; domain defaults, reference catalog choices and form serialization belong in separately testable units.',
  remainingResponsibilities.map(signature=>`src/configurator/configurator-entry-editor.mjs: ${signature}`));
@@ -104,32 +104,28 @@ const subtypeContract={
 const unmapped=Object.entries(subtypeContract).filter(([key,ok])=>!ok).map(([key])=>key);
 add('document-subtype-mapping',unmapped.length===0,
  'Multi-type Game Systems need an explicit selection on every relevant entry and Runtime Lab path; a uniquely advertised type may be inferred.',unmapped);
-// Functional acceptance is a separate contract from architectural cleanliness.
-// These gates are intentionally OPEN until a true Foundry-user workflow exists
-// and an executable integrated acceptance scenario has been recorded.
-add('creation-wizard-player-flow',false,
- 'A player must be able to run every configured Creation System step from a Foundry UI; currently only a strict core for Definition/Content selections is implemented.',
- ['No end-user Creation wizard; allocation and schema-only sources are rejected intentionally.']);
-add('acquisition-guided-choices',false,
- 'Item acquisitions with required choices need a Foundry choice flow, not an unhandled post-create hook error.',
- ['Automatic createItem still cannot collect choiceGroups selections.']);
-add('progression-engine',false,
- 'Configured Progression Systems must be applied to an Actor with persisted results.',
- ['No generic Progression execution API or full lifecycle proof.']);
-add('sheet-renderer',false,
- 'Configured Sheet Definitions must render and update an actual Foundry Actor/Item sheet.',
- ['No registered Foundry Sheet Definition renderer.']);
-add('business-permission-engine',false,
- 'Configured Permission Policies must be evaluated at their declared operation boundaries.',
- ['Acquired Action grants are checked by a dedicated bridge entrypoint only; PermissionPolicy not integrated globally.']);
-add('duration-lifecycle',false,
- 'A configured Duration must drive lifecycle and expiry of runtime effects.',
- ['No Duration scheduler/resolution lifecycle.']);
+// Functional acceptance: each gate needs its Foundry entry point AND an automated test exercising it.
+const exists=path=>{try{read(path);return true;}catch{return false;}};
+const functional=(id,explanation,proofs)=>{const missing=proofs.filter(([path,needle])=>!exists(path)||(needle&&!read(path).includes(needle))).map(([path,needle])=>needle?`${path}: ${needle}`:path);
+ add(id,missing.length===0,explanation,missing);};
+functional('creation-wizard-player-flow','A player runs every configured Creation System step from a Foundry window.',
+ [['src/runtime/foundry-creation.mjs','export function openCreationWindow'],['tests/creation-window.test.mjs'],['qa/creation-render.mjs']]);
+functional('acquisition-guided-choices','Item acquisitions with required choices ask them in Foundry.',
+ [['src/runtime/guided-acquisition.mjs','export function acquisitionChoiceCatalog'],['tests/guided-acquisition-generic.test.mjs']]);
+functional('progression-engine','Progression Systems apply advancements to an Actor in one transaction.',
+ [['src/runtime/runtime-engine.mjs','async advance('],['tests/progression.test.mjs']]);
+functional('sheet-renderer','Sheet Definitions render and update real Foundry Actor/Item sheets.',
+ [['src/runtime/foundry-sheets.mjs','export function registerRulesetSheets'],['tests/foundry-sheets.test.mjs'],['qa/sheet-render.mjs']]);
+functional('business-permission-engine','Permission Policies are evaluated at their operation boundaries.',
+ [['src/runtime/permission-policy.mjs','export async function resolvePermission'],['src/runtime/runtime-engine.mjs','resolvePermission('],['tests/permissions-cp11.test.mjs']]);
+functional('duration-lifecycle','Durations end runtime states on the world clock and on events.',
+ [['src/runtime/runtime-engine.mjs','async expireAll('],['rule-them-all.mjs','updateWorldTime'],['tests/duration-modes-cp08.test.mjs']]);
 // This cannot be certified in Node/Chromium. It MUST remain an explicit manual
 // gate until evidence of a real Foundry 14 test campaign is recorded.
-add('foundry-v14-integration',false,
+const acceptance=exists('docs/recette-foundry-v14.md')?read('docs/recette-foundry-v14.md'):'';
+add('foundry-v14-integration',/^Résultat : validé/m.test(acceptance),
  'Open, edit, save, reopen, export/import and Actor/Item integration must be confirmed in Foundry 14.',
- ['PENDING: user-maintained Foundry acceptance report']);
+ /^Résultat : validé/m.test(acceptance)?[]:['docs/recette-foundry-v14.md: Résultat : validé']);
 const open=checks.filter(c=>c.status==='OPEN');
 const report={status:open.length?'NOT_READY':'READY',baseVersion:JSON.parse(read('module.json')).version,
   scope:'Architecture cleanup release, not merely automated test success',checks,

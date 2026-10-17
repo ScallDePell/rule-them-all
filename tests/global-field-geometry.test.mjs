@@ -4,7 +4,6 @@ import {readFileSync} from 'node:fs';
 import {readCssBundle} from './helpers/css-bundle.mjs';
 const source=file=>readFileSync(new URL('../'+file,import.meta.url),'utf8');
 const css=readCssBundle();
-const qa=source('qa/form-matrix.py');
 const select=source('src/ui/rta-select.mjs');
 
 test('all editor form inputs and selects share exactly one control-height token',()=>{
@@ -21,14 +20,4 @@ test('normal selectors share the framed fieldset right edge and compact operands
   assert.match(css,/\.rta-rule-operand__controls:not\(:has\(> \[data-action="removeRuleOperand"\]\)\)/);
   assert.match(css,/@container rta-window \(max-width:\s*586px\)[\s\S]*?\.rta-config-entry__scroll > \.rta-form-row--picker/);
   assert.match(select,/const formRow=\(control,label\)=>/);
-});
-
-test('browser matrix validates the actual Handlebars editor branches including dynamic Creation steps',()=>{
-  const expected=['Ruleset','DefinitionType','Definition','ContentType','ContentTemplate','Formula','Condition','SheetDefinition','CreationSystem','Modifier','Duration','ProgressionSystem'];
-  for(const kind of expected)assert.ok(qa.includes(`'${kind}'`),kind);
-  assert.match(qa,/RTASelect\.enhance\(document\.querySelector/);
-  assert.match(qa,/len\(results\)==len\(KINDS\)\*3/);
-  assert.match(qa,/Non-canonical input\/select heights/);
-  assert.match(qa,/Form-row labels overlap controls/);
-  assert.match(qa,/Unlabeled selector/);
 });

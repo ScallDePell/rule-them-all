@@ -4,3 +4,6 @@ Thumbs.db
 node_modules/
 src/configurator/.qa-configurator-app.mjs
 .claude/worktrees/
+__pycache__/
+qa-out/
+*.zip

@@ -127,7 +127,7 @@ export function collectValueBounds(root) {
 export function syncValueSource(select) {
   const box = select.closest("[data-slot-source]");
   if (!box) return;
-  // The boxes, not the controls: RTASelect replaces a <select> with its own widget.
+  // The boxes, not the controls: RTASelect replaces a native select with its own widget.
   box.querySelector('[data-source-box="literal"]')?.toggleAttribute("hidden", select.value !== "literal");
   box.querySelector('[data-source-box="formula"]')?.toggleAttribute("hidden", select.value !== "formula");
 }

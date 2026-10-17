@@ -7,6 +7,7 @@ import {sheetFor} from "../configurator/sheet-auto-layout.mjs";
 import {resolveRuntimeRuleset} from "./runtime-contracts.mjs";
 import {formatSheetValue, renderActionChatHTML, renderSheetHTML} from "../ui/sheet-markup.mjs";
 import {escapeHTML} from "../ui/html-utils.mjs";
+import {renderActionChoiceContent, renderActionInputsContent} from "../ui/dialog-markup.mjs";
 import {openCreationWindow, startableSystems} from "./foundry-creation.mjs";
 import {foundryJSON} from "./foundry-data.mjs";
 import {confirmRTA} from "../configurator/foundry-dialogs.mjs";
@@ -86,13 +87,7 @@ export function actionSummary(result, {t, ruleset}) {
 
 async function askInputs(inputs, t, title = i18n("RTA.Sheet.ActionInputs")) {
   const Dialog = globalThis.foundry.applications.api.DialogV2;
-  const field = input => {
-    const label = escapeHTML(t(input.labelKey)), name = `input-${escapeHTML(input.id)}`, current = input.defaultValue ?? "";
-    if (input.options?.length) return `<div class="form-group"><label>${label}</label><select name="${name}">${input.options.map(o => `<option value="${escapeHTML(o.value)}" ${String(o.value) === String(current) ? "selected" : ""}>${escapeHTML(t(o.labelKey ?? String(o.value)))}</option>`).join("")}</select></div>`;
-    if (input.valueType === "boolean") return `<div class="form-group"><label>${label}</label><input type="checkbox" name="${name}" ${current ? "checked" : ""}></div>`;
-    return `<div class="form-group"><label>${label}</label><input type="${["number", "integer"].includes(input.valueType) ? "number" : "text"}" name="${name}" value="${escapeHTML(current)}"></div>`;
-  };
-  return Dialog.prompt({window: {title}, content: inputs.map(field).join(""), ok: {callback: (_event, button) => {
+  return Dialog.prompt({window: {title}, content: renderActionInputsContent(inputs, t), ok: {callback: (_event, button) => {
     const values = {};
     for (const input of inputs) {
       const element = button.form.elements[`input-${input.id}`];
@@ -106,8 +101,8 @@ async function askInputs(inputs, t, title = i18n("RTA.Sheet.ActionInputs")) {
 
 async function askChoice(offer, t, ruleset) {
   const Dialog = globalThis.foundry.applications.api.DialogV2;
-  const options = offer.actionIds.map(id => `<label class="checkbox"><input type="checkbox" name="choice" value="${escapeHTML(id)}"> ${escapeHTML(t(ruleset.actions?.find(a => a.id === id)?.nameKey ?? id))}</label>`).join("");
-  return Dialog.prompt({window: {title: globalThis.game.i18n.format("RTA.Sheet.ChooseActions", {count: offer.count})}, content: `<div class="rta-sheet-choice">${options}</div>`,
+  const options = offer.actionIds.map(id => ({value: id, label: t(ruleset.actions?.find(a => a.id === id)?.nameKey ?? id)}));
+  return Dialog.prompt({window: {title: globalThis.game.i18n.format("RTA.Sheet.ChooseActions", {count: offer.count})}, content: renderActionChoiceContent(options),
     ok: {callback: (_event, button) => [...button.form.querySelectorAll('input[name="choice"]:checked')].map(input => input.value)}, rejectClose: false});
 }
 

@@ -1,0 +1,33 @@
+name: Release
+
+on:
+  push:
+    tags: ["v*"]
+
+permissions:
+  contents: write
+
+jobs:
+  release:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+      - name: Tests
+        run: node --test tests/*.test.mjs
+      - name: Check the tag matches module.json
+        run: test "v$(node -p "require('./module.json').version")" = "$GITHUB_REF_NAME"
+      - name: Build the zip
+        run: |
+          mkdir -p dist/rule-them-all
+          cp -r module.json rule-them-all.mjs README.md CHANGELOG.md lang src styles templates tools docs dist/rule-them-all/
+          if [ -f LICENSE ]; then cp LICENSE dist/rule-them-all/; fi
+          cp module.json dist/module.json
+          cd dist && zip -qr rule-them-all.zip rule-them-all
+      - uses: softprops/action-gh-release@v2
+        with:
+          files: |
+            dist/module.json
+            dist/rule-them-all.zip

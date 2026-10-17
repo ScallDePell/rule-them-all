@@ -393,6 +393,11 @@
   background: transparent;
 }
 
+/* The numeric and reference settings show only for a field of that kind. */
+.rta-config-entry :is(.rta-field-editor__numeric, .rta-field-editor__grid)[hidden] {
+  display: none;
+}
+
 /* Canonical form-stack rhythm, reusable by nested editors. */
 .rta-config-entry .rta-form-stack {
   display: flex;
@@ -857,6 +862,6 @@
   width: auto;
 }
 
-.rta-step-id + .hint {
+.rta-config-entry .form-group > div > :is(.rta-step-id, .rta-select) + .hint {
   margin: var(--rta-gap-tight) 0 0;
 }

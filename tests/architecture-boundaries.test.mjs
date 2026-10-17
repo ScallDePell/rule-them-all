@@ -4,7 +4,7 @@ import {readFileSync,readdirSync} from "node:fs";
 import {fileURLToPath} from "node:url";
 import path from "node:path";
 import {availableDocumentTypes,resolveDocumentType} from "../src/core/system-document-types.mjs";
-import {MODULE_ID,IMPORT_ONLY_PACKAGE_FORMAT,RULESET_PACKAGE_FORMAT,RUNTIME_HOOKS} from "../src/core/module-contract.mjs";
+import {MODULE_ID,RULESET_PACKAGE_FORMAT,RUNTIME_HOOKS} from "../src/core/module-contract.mjs";
 import {FoundryRuntimeAdapter} from "../src/runtime/foundry-runtime-adapter.mjs";
 import {FoundryContentBridge} from "../src/runtime/foundry-content-bridge.mjs";
 import {exportRulesetData,readRulesetPayload} from "../src/configurator/configurator-serialization.mjs";
@@ -63,15 +63,15 @@ test("content type documentation follows an unrelated Game System without a buil
  }finally{globalThis.game=before;globalThis.Actor=oldActor;globalThis.Item=oldItem;}
 });
 
-test("RTA always exports rta-ruleset and still reads packages exported by the original system",async()=>{
+test("RTA exports and reads only rta-ruleset packages",async()=>{
  class MemoryStorage{constructor(){this.value=emptyStorageSnapshot();this.listeners=new Set();}async load(){return structuredClone(this.value)}async save(v){this.value=structuredClone(v)}subscribe(fn){this.listeners.add(fn);return()=>this.listeners.delete(fn)}}
  const api=await createConfiguratorAPI(new MemoryStorage());
  const record=await api.createRuleset({id:"alien-setting",nameKey:"Alien World",version:"1"});
  const value=api.getRulesetVersion(record.versionId);
- const modern=exportRulesetData(value),old={...modern,format:IMPORT_ONLY_PACKAGE_FORMAT};
+ const modern=exportRulesetData(value),old={...modern,format:"rwf-ruleset"};
  assert.equal(modern.format,RULESET_PACKAGE_FORMAT);
- assert.throws(()=>exportRulesetData(value,{format:IMPORT_ONLY_PACKAGE_FORMAT}),/Unsupported/);
- assert.deepEqual(readRulesetPayload(old).record,readRulesetPayload(modern).record);
+ assert.throws(()=>exportRulesetData(value,{format:"rwf-ruleset"}),/Unsupported/);
+ assert.throws(()=>readRulesetPayload(old));
  assert.throws(()=>exportRulesetData(value,{format:"unknown"}),/Unsupported/);
  assert.throws(()=>readRulesetPayload({...old,format:"unknown"}),/Unsupported/);
  assert.equal(MODULE_ID,"rule-them-all");
@@ -122,8 +122,8 @@ test("architecture gate: no system-owned Actor type localizations, no game-speci
 // The architectural rules must be enforceable by CI, not just described in prose.
 test("canonical architecture file is checked in and architecture gate passes",async()=>{
  const {spawnSync}=await import("node:child_process");
- const doc=read("RTA-ARCHITECTURE-CANONIQUE.md");
- for(const required of ["Foundry v14","rwf-ruleset","storageVersion: 3","RTA Select","Limites et dettes identifiées"])
+ const doc=read("docs/architecture.md");
+ for(const required of ["Foundry v14","rta-ruleset","storageVersion: 3","RTA Select","Limites et dettes identifiées"])
   assert.ok(doc.includes(required),`Missing architecture contract: ${required}`);
  const proc=spawnSync(process.execPath,["qa/architecture-audit.mjs","--strict","--json"],{cwd:base,encoding:"utf8"});
  assert.equal(proc.status,0,proc.stderr||proc.stdout);
@@ -133,10 +133,7 @@ test("canonical architecture file is checked in and architecture gate passes",as
  assert.ok(result.scanned.productionModules>=35);
 });
 
-test("no transient legacy RWF UI hooks or CSS classes remain, except explicit compatibility tokens",()=>{
+test("no legacy RWF hooks, formats or CSS classes remain",()=>{
  const files=[...walk(path.join(base,"src")),...walk(path.join(base,"templates")),...walk(path.join(base,"styles"))].filter(f=>/\.(?:mjs|hbs|css)$/.test(f));
- const exceptions=files.filter(f=>f.endsWith("module-contract.mjs"));
- assert.equal(exceptions.length,1);
- for(const file of files.filter(f=>!exceptions.includes(f)))assert.doesNotMatch(readFileSync(file,"utf8"),/rwf-/i,file);
- assert.match(read("src/core/module-contract.mjs"),/IMPORT_ONLY_PACKAGE_FORMAT = "rwf-ruleset"/);
+ for(const file of files)assert.doesNotMatch(readFileSync(file,"utf8"),/rwf-/i,file);
 });

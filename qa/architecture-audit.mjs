@@ -40,7 +40,7 @@ const css=stylesheets.map(rel=>data(join(root,rel))).join('\n');
 if(!css.includes('.rta-'))add('missing-rta-components',join(root,'module.json'),'canonical component selectors missing');
 const entry=data(join(root,'src/configurator/configurator-entry-editor.mjs'));
 if(!entry.includes('entry-operations.mjs'))add('routing-not-centralized',join(root,'src/configurator/configurator-entry-editor.mjs'),'entry dispatch must use the operations registry');
-for(const rel of ['src/ui/entry-editor-markup.mjs','src/ui/picker-markup.mjs','src/core/system-document-types.mjs','src/runtime/runtime-lab-fixtures.mjs','RTA-ARCHITECTURE-CANONIQUE.md']){
+for(const rel of ['src/ui/entry-editor-markup.mjs','src/ui/picker-markup.mjs','src/core/system-document-types.mjs','src/runtime/runtime-lab-fixtures.mjs','docs/architecture.md']){
  if(!existsSync(join(root,rel)))add('missing-architecture-contract',join(root,rel),'expected architectural boundary missing');
 }
 // These are indicators for review, NOT enforced claims of full architectural cleanliness.
