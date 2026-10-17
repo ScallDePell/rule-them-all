@@ -7,7 +7,7 @@
    Component-specific geometry (grids, icon sizes, min-width) is
    intentionally kept out of the scale and documented separately.
    ================================================================ */
-:is(.rta-configurator, .rta-config-entry, .rta-sheet, .rta-chat-card, .rta-creation, .rta-shared) {
+:is(.rta-configurator, .rta-config-entry, .rta-sheet, .rta-chat-card, .rta-creation, .rta-shared, .rta-tag-dialog) {
   --rta-space-1: .125rem;
   /* 2px at a 16px root */
   --rta-space-2: .25rem;

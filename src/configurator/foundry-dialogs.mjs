@@ -8,6 +8,6 @@ export async function promptRTA(key,initial="") {const Dialog=dialogClass();cons
 export async function chooseTagsRTA(name,tags,selected) {
   const Dialog=dialogClass();
   const content=renderTagChoiceContent(tags,selected,{tags:translate("RTA.UI.TagsOf",{name}),none:translate("RTA.UI.NoTagsYet"),add:translate("RTA.UI.NewTag")});
-  const value=await Dialog.prompt({window:{title:translate("RTA.UI.EditTags")},content,ok:{label:translate("RTA.Template.Apply"),callback:(event,button)=>({ids:[...(button.form?.querySelectorAll('[name="tags"]:checked')??[])].map(box=>box.value),newTag:String(button.form?.elements?.newTag?.value??"").trim()})},modal:true,rejectClose:false});
+  const value=await Dialog.prompt({window:{title:translate("RTA.UI.EditTags")},classes:["rta-tag-dialog"],position:{width:640},content,ok:{label:translate("RTA.Template.Apply"),callback:(event,button)=>({ids:[...(button.form?.querySelectorAll('[name="tags"]:checked')??[])].map(box=>box.value),newTag:String(button.form?.elements?.newTag?.value??"").trim()})},modal:true,rejectClose:false});
   return value??null;
 }

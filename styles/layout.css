@@ -215,3 +215,17 @@
 #context-menu.rta-context-menu {
   border-color: var(--rta-color-border);
 }
+
+/* The "Tags…" dialog of an entry: its tags in three columns, scrolled when there are many. */
+.rta-tag-dialog .rta-tag-choice {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: var(--rta-gap-tight) var(--rta-gap-row);
+  max-block-size: 50vh;
+  overflow-y: auto;
+}
+
+.rta-tag-dialog .rta-tag-choice > label {
+  min-inline-size: 0;
+  overflow-wrap: anywhere;
+}
