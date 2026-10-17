@@ -9,5 +9,4 @@ First public release.
 - Character creation window and guided acquisition of Items with choices.
 - Progression systems and type-scoped permissions.
 - Visual sheet editor for Actors and Items: blocks, layers, templates, card lists, themes saved in the Ruleset, and per-role visibility.
-- Tags replace the former Categories. Worlds from earlier builds are converted with `tools/convert-stored-data.mjs`.
 - English and French interface.

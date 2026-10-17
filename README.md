@@ -38,16 +38,6 @@ The documentation is in French for now:
 - [Configuration examples](docs/exemples-configuration.md), drawn from well-known games.
 - [Architecture](docs/architecture.md), for contributors.
 
-## Updating from an earlier build
-
-Worlds created with a pre-1.0 build may hold data in formats that were since removed. Before upgrading, back up the world. Then, as GM, run this in the browser console:
-
-```js
-const {convertWorld} = await import("/modules/rule-them-all/tools/convert-stored-data.mjs");
-await convertWorld();               // shows what will change
-await convertWorld({write: true});  // downloads a backup, then converts
-```
-
 ## Development
 
 ```
