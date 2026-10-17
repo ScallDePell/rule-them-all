@@ -375,9 +375,11 @@ export class RuntimeEngine{
   }
   /** A replay takes back the logged roll of the same formula; a partial reroll (dice.some) throws again only the matching dice. */
   async #throw(versionId,formula,data,context){
-    const dice=context?.[DICE],kept=dice?.keep?.get(formula);let roll=kept?.length?kept.shift():null;
+    const dice=context?.[DICE],kept=dice?.keep?.get(formula);let roll=kept?.length?kept.shift():null;const replayed=Boolean(roll);
     if(roll&&dice.some){const {filter,replaceWith}=dice.some;if((roll.dice??[]).length)roll=await rerollSomeDice(roll,filter,{replaceWith,next:async faces=>Number((await this.roll(`1d${faces}`)).total)});}
     roll??=await this.roll(formula,data,{versionId});
+    // A kept or partly rethrown roll is not the Foundry Roll thrown before: the chat shows only the dice thrown now.
+    if(replayed)delete (roll=clone(roll)).foundryRoll;
     dice?.log.push({formula,roll:clone(roll)});return roll;
   }
   /** versionId: the Ruleset whose dice (2dp) the formula may throw; the adapter makes them known to Foundry first. */

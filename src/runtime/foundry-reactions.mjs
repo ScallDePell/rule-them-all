@@ -1,8 +1,8 @@
 /* Reactions in play: a Trigger in "offer" mode (hook ruleThemAllReactionOffered) asks the player of the reacting
    Actor, on their own client, whether to use one of its Actions. The offer is raised where the event happened
    (often the GM client); it travels on the module socket to the user who answers it. */
+import {postActionCard} from "./foundry-chat.mjs";
 import {MODULE_ID, RUNTIME_HOOKS} from "../core/module-contract.mjs";
-import {renderActionChatHTML} from "../ui/sheet-markup.mjs";
 import {escapeHTML} from "../ui/html-utils.mjs";
 import {actionSummary, translator} from "./foundry-sheets.mjs";
 import {resolveRuntimeRuleset} from "./runtime-contracts.mjs";
@@ -25,7 +25,7 @@ export async function answerReaction(offer, {runtime, ask, chat = null, ruleset,
   const action = actions.find(entry => entry.id === picked);
   if (!action) return null;
   const result = action.reroll && offer.cause ? await runtime.rerollAction(offer.rulesetVersionId, action.id, offer.cause, offer.context) : await runtime.executeAction(offer.rulesetVersionId, action.id, offer.context);
-  if (result?.allowed !== false) await chat?.create?.({speaker, content: renderActionChatHTML(actionSummary(result, {t, ruleset}))});
+  if (result?.allowed !== false) await postActionCard(chat, {speaker, summary: actionSummary(result, {t, ruleset}), result});
   return result;
 }
 

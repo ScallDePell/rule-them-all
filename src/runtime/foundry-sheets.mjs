@@ -10,6 +10,7 @@ import {escapeHTML} from "../ui/html-utils.mjs";
 import {renderActionChoiceContent, renderActionInputsContent} from "../ui/dialog-markup.mjs";
 import {openCreationWindow, startableSystems} from "./foundry-creation.mjs";
 import {foundryJSON} from "./foundry-data.mjs";
+import {postActionCard} from "./foundry-chat.mjs";
 import {confirmRTA} from "../configurator/foundry-dialogs.mjs";
 import {moduleLanguage} from "../core/module-language.mjs";
 
@@ -348,10 +349,11 @@ export function createRulesetSheets({ActorSheetV2, ItemSheetV2}) {
         }
         const result = await runtime.executeAction(state.versionId, actionId, context);
         if (!result.allowed) throw new Error(result.reason ?? i18n("RTA.Sheet.NotAllowed"));
-        await globalThis.ChatMessage.create({speaker: this.#speaker(), content: renderActionChatHTML(actionSummary(result, {t, ruleset: state.ruleset}))});
+        const card = done => postActionCard(globalThis.ChatMessage, {speaker: this.#speaker(), summary: actionSummary(done, {t, ruleset: state.ruleset}), result: done});
+        await card(result);
         for (const offer of result.choices ?? []) {
           const picked = await askChoice(offer, t, state.ruleset);
-          if (picked?.length) await runtime.chooseActions(state.versionId, offer, picked);
+          if (picked?.length) for (const chosen of await runtime.chooseActions(state.versionId, offer, picked)) if (chosen?.allowed !== false) await card(chosen);
         }
       } catch (error) { notifyError(error); }
       this.render();

@@ -105,7 +105,7 @@ export class FoundryRuntimeAdapter{
     const roll=new RollClass(String(formula??""),copyJSON(data??{}));
     await roll.evaluate();
     const first=roll.dice?.[0]?.results?.find?.(r=>r.active!==false)?.result;
-    return {formula:String(roll.formula??formula??""),result:String(roll.result??roll.total??""),total:Number(roll.total),natural:Number.isFinite(Number(first))?Number(first):null,dice:foundryDice(roll)};
+    return {formula:String(roll.formula??formula??""),result:String(roll.result??roll.total??""),total:Number(roll.total),natural:Number.isFinite(Number(first))?Number(first):null,dice:foundryDice(roll),foundryRoll:roll.toJSON?.()??null};
   }
   async createStateEffect(ref,{name,definitionId,stateInstanceId,disabled=false,duration=null}={}){
     const doc=await this.resolveDocument(ref);

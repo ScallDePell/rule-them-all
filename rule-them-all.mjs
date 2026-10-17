@@ -15,6 +15,7 @@ import {FoundryRuntimeAdapter} from "./src/runtime/foundry-runtime-adapter.mjs";
 import {registerRulesetSheets, repairSheetChoices, translator} from "./src/runtime/foundry-sheets.mjs";
 import {resolveRuntimeRuleset} from "./src/runtime/runtime-contracts.mjs";
 import {installReactions} from "./src/runtime/foundry-reactions.mjs";
+import {installActionCards} from "./src/runtime/foundry-chat.mjs";
 import {installCreationButton} from "./src/runtime/foundry-creation.mjs";
 import {installSharedResources} from "./src/runtime/foundry-shared-resources.mjs";
 import {registerLanguageSetting, chosenLanguage, loadModuleTranslations, applyModuleTranslations} from "./src/core/module-language.mjs";
@@ -92,6 +93,7 @@ Hooks.once("ready", () => {
     relay.listen(message => game.ruleThemAll.runtime.serveRelay(message));
     // Reactions offered by Triggers are asked of the reacting Actor's player, on their own client.
     installReactions();
+    installActionCards();
     // Players create their character with the active Ruleset's Creation System, from the Actors directory.
     installCreationButton();
     installSharedResources();
