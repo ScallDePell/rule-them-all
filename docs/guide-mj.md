@@ -149,7 +149,7 @@ Le bouton de création se trouve dans l'onglet **Acteurs**. Le joueur suit les �
 ## 6. En jeu
 
 - Les **boutons d'Action** de la feuille lancent l'Action, demandent ses entrées s'il y en a, et postent une carte dans le chat. Les choix après le résultat sont proposés dans une fenêtre.
-- Le bloc d'un **Système de progression** montre ce que l'Acteur peut acheter (niveau actuel et visé, coût, monnaie dépensée) avec un bouton par achat, puis ses paliers et le bouton « Appliquer les paliers atteints ». Le joueur achète lui-même, sans passer par le Labo runtime . Quand une permission du Ruleset le laisse acheter pour un Acteur qu'il ne possède pas, l'achat passe par le MJ connecté. Un observateur voit les coûts sans les boutons.
+- Le bloc d'un **Système de progression** montre ce que l'Acteur peut acheter (niveau actuel et visé, coût, monnaie dépensée) avec un bouton par achat, puis ses paliers et le bouton « Appliquer les paliers atteints ». Le joueur achète lui-même, sans passer par le Labo runtime. Quand une permission du Ruleset le laisse acheter pour un Acteur qu'il ne possède pas, l'achat passe par le MJ connecté. Un observateur voit les coûts sans les boutons.
 - Les **valeurs** se changent sur la feuille dans les limites du Ruleset (bornes, permissions). Un joueur qui modifie un Acteur qu'il ne possède pas passe par le MJ connecté.
 - Glisser un **Objet** sur la feuille le donne à l'Acteur ; un Contenu du Ruleset pose alors ses choix et accorde ce qu'il accorde. Le retirer reprend ce qu'il avait accordé.
 - Le **combat** : l'initiative du Ruleset, ses passes et l'ordre du round sont gérés par le traqueur de combat de Foundry.
