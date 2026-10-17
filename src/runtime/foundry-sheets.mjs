@@ -10,6 +10,7 @@ import {escapeHTML} from "../ui/html-utils.mjs";
 import {openCreationWindow, startableSystems} from "./foundry-creation.mjs";
 import {foundryJSON} from "./foundry-data.mjs";
 import {confirmRTA} from "../configurator/foundry-dialogs.mjs";
+import {moduleLanguage} from "../core/module-language.mjs";
 
 const TEMPLATE_FLAG = "contentTemplate";
 const rta = () => globalThis.game?.ruleThemAll;
@@ -66,7 +67,7 @@ function rememberCollapsed(sheetId, id, collapsed) {
 /** Ruleset text first (world overrides, Ruleset translations), then the module's. */
 export function translator(versionId) {
   const api = rta()?.configurator;
-  return key => { if (!key) return ""; try { return api.resolveLocalizedText(versionId, globalThis.game?.i18n?.lang ?? "en", key, i18n); } catch { return i18n(key); } };
+  return key => { if (!key) return ""; try { return api.resolveLocalizedText(versionId, moduleLanguage(), key, i18n); } catch { return i18n(key); } };
 }
 
 /** What an Action used from a sheet did, for the chat card. */

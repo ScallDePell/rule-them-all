@@ -15,6 +15,7 @@ import {buildRuntimeLabDemoProfile} from "../runtime/runtime-demo-profile.mjs";
 import {applyRuntimeChoice,describeRuntimeResult,progressionLabRows} from "./runtime-lab-view.mjs";
 import {diagnosticEditor,pathInObject} from "./diagnostic-focus.mjs";
 import {recipeCards,recipeTextKeys} from "./recipes.mjs";
+import {moduleLanguage} from "../core/module-language.mjs";
 
 
 const neutral = RTA_NEUTRAL_COLOR;
@@ -52,7 +53,7 @@ const TOP_LEVEL = Object.freeze([
 
 function localize(api, versionId, key) {
   if (!key) return "";
-  try { return api.resolveLocalizedText(versionId, game.i18n?.lang ?? "en", key, value => label(value)); }
+  try { return api.resolveLocalizedText(versionId, moduleLanguage(), key, value => label(value)); }
   catch { return label(key); }
 }
 

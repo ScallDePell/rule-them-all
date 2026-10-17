@@ -28,6 +28,11 @@
         "Name": "Rule Them'All Configurator",
         "Label": "Open Rule Them'All",
         "Hint": "Configure Rulesets and runtime behavior with Rule Them'All."
+      },
+      "Language": {
+        "Name": "Rule Them'All language",
+        "Hint": "Language of the module's interface (configurator, sheets, editor, dialogs, messages). Texts typed in Rulesets do not change. Set per user; reloads Foundry.",
+        "Auto": "Automatic (Foundry's language)"
       }
     },
     "UI": {

@@ -53,6 +53,7 @@ import {CREATION_STEP_KINDS,SHEET_HEADERS,SHEET_TARGETS,STATE_STACKING} from "./
 import {SheetLayoutController} from "./sheet-layout-controller.mjs";
 import {rollVariantContext,extraRollContext,actionInputContext,tableRowContext,scaleRowContext,progressionContext} from "./rule-cards-form.mjs";
 import {syncCard} from "./card-form.mjs";
+import {moduleLanguage} from "../core/module-language.mjs";
 
 
 const uid=prefix=>`${prefix}-${crypto.randomUUID?.()??Math.random().toString(36).slice(2)}`;
@@ -104,7 +105,7 @@ export class ConfiguratorEntryEditor extends ConfiguratorWindow {
         ??this.#api.getRuleset(this.#versionId)?.[collection]??[],
       findDefinitionType:id=>this.#renderGet('definitionTypes',id,'getDefinitionType'),
       optionColors:(kind,entry)=>this.#optionColors(kind,entry),
-      language:globalThis.game?.i18n?.lang??'en'
+      language:moduleLanguage()
     });
     return buildDefinitionFieldModel(id,field,data,creating,source,{referenceChoices});
   }
@@ -117,7 +118,7 @@ export class ConfiguratorEntryEditor extends ConfiguratorWindow {
       formulas:mutableOnly?[]:this.#renderList('formulas','listFormulas'),
       findCapability:id=>this.#api.getCapabilityType(id),
       optionColors:(kind,entry)=>this.#optionColors(kind,entry),
-      language:globalThis.game?.i18n?.lang??'en',mutableOnly
+      language:moduleLanguage(),mutableOnly
     });
   }
 
@@ -205,7 +206,7 @@ export class ConfiguratorEntryEditor extends ConfiguratorWindow {
     const systemEvents=SYSTEM_EVENT_TYPES.map(x=>({...x,nameKey:globalThis.game?.i18n?.localize?.(x.nameKey)??x.nameKey})),triggerEventChoices=[...eventTypeChoices,...systemEvents.map(x=>({id:x.id,label:x.nameKey,colors:selectColorsAttribute([RTA_NEUTRAL_COLOR]),selected:x.id===data.eventTypeId}))];
     const contentTypeChoices=contentTypes.map(x=>({id:x.id,label:x.nameKey,...withColors("contentType",x),selected:x.id===data.contentTypeId}));
     const relationTargetChoices=relationCatalog(this.#renderCatalog??{}).map(x=>({
-      id:refToken(x),label:`${referenceKindTitle(x.objectKind,globalThis.game?.i18n?.lang==='fr')} · ${x.label}`,
+      id:refToken(x),label:`${referenceKindTitle(x.objectKind,moduleLanguage().startsWith('fr'))} · ${x.label}`,
       colors:selectColorsAttribute(this.#optionColors(x.objectKind,x.entry)),
       objectKind:x.objectKind,objectId:x.objectId,valued:x.objectKind==="definition"&&(x.entry?.capabilities??[]).includes("value")
     }));
@@ -594,7 +595,7 @@ export class ConfiguratorEntryEditor extends ConfiguratorWindow {
   #choiceGroupHTML(){
     const id=uid('choice'),ruleset=this.#api.getRuleset(this.#versionId);
     const options=relationCatalog(ruleset).map(x=>({
-      id:refToken(x),label:`${referenceKindTitle(x.objectKind,globalThis.game?.i18n?.lang==='fr')} · ${x.label}`,
+      id:refToken(x),label:`${referenceKindTitle(x.objectKind,moduleLanguage().startsWith('fr'))} · ${x.label}`,
       colors:selectColorsAttribute(this.#optionColors(x.objectKind,x.entry)),valued:x.objectKind==="definition"&&(x.entry?.capabilities??[]).includes("value")
     }));
     const choices=renderChoiceListBody(options,{name:'choiceTargetRef',placeholder:uiText('SearchRelations','Search Ruleset objects…'),emptyMessage:uiText('NoChoiceTargets','No selectable Ruleset entries for this choice.')});

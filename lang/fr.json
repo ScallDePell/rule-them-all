@@ -1,7 +1,4 @@
 {
-  "RTA.Settings.Configurator.Name": "Configurateur Rule Them'All",
-  "RTA.Settings.Configurator.Label": "Ouvrir Rule Them'All",
-  "RTA.Settings.Configurator.Hint": "Configurer les Rulesets et leur comportement runtime avec Rule Them'All.",
   "RTA": {
     "Declarative": {
       "HelpConstraints": "Les contraintes connues sont exécutées lors de la validation. Les règles historiques inconnues sont conservées et signalées, sans exécution.",
@@ -25,6 +22,18 @@
         "relationCount": "Nombre de relations"
       },
       "Relations": "Relations"
+    },
+    "Settings": {
+      "Configurator": {
+        "Name": "Configurateur Rule Them'All",
+        "Label": "Ouvrir Rule Them'All",
+        "Hint": "Configurer les Rulesets et leur comportement runtime avec Rule Them'All."
+      },
+      "Language": {
+        "Name": "Langue de Rule Them'All",
+        "Hint": "Langue de l'interface du module (configurateur, feuilles, éditeur, fenêtres, messages). Les textes saisis dans les Rulesets ne changent pas. Propre à chaque utilisateur ; recharge Foundry.",
+        "Auto": "Automatique (langue de Foundry)"
+      }
     },
     "UI": {
       "NewRuleset": "Nouveau Ruleset",

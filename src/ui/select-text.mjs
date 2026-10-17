@@ -1,6 +1,7 @@
+import {moduleLanguage} from "../core/module-language.mjs";
 /** Localized RTA Select text, independent of Ruleset data. */
 export function selectUiText(key){
-  const language=String(globalThis.game?.i18n?.lang??globalThis.document?.documentElement?.lang??"en").toLowerCase();
+  const language=String(moduleLanguage()).toLowerCase();
   const fr=language.startsWith("fr");
   const fallbacks={
     Single: ["Select a {label}","Sélectionner un {label}"],

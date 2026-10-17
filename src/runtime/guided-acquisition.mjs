@@ -6,6 +6,7 @@ import {relationCatalog} from '../configurator/generic-relations.mjs';
 import {resolveAcquisitionChoices} from './acquisition-choices.mjs';
 import {RTASelect} from '../ui/rta-select.mjs';
 import {createSelectColorResolver,selectColorsAttribute,referenceKindTitle} from '../ui/select-option-presentation.mjs';
+import {moduleLanguage} from "../core/module-language.mjs";
 
 const message=(key,fallback,data={})=>{
   const i18n=globalThis.game?.i18n;
@@ -15,7 +16,7 @@ const message=(key,fallback,data={})=>{
 
 export function acquisitionChoiceCatalog(ruleset,template){
   const catalog=new Map(relationCatalog(ruleset).map(x=>[`${x.objectKind}\u0000${x.objectId}`,x]));
-  const french=String(globalThis.game?.i18n?.lang??'en').toLowerCase().startsWith('fr');
+  const french=String(moduleLanguage()).toLowerCase().startsWith('fr');
   return (template.choiceGroups??[]).map(group=>({
     id:group.id,name:group.name,min:group.min,max:group.max,
     options:(group.options??[]).map(option=>{

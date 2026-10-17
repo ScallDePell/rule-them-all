@@ -1,5 +1,6 @@
 import {normalizedSelectColors} from "./select-option-presentation.mjs";
 import {selectUiText,selectionPlaceholder,selectCardinality,CARDINALITY_KEYS} from "./select-text.mjs";
+import {moduleLanguage} from "../core/module-language.mjs";
 /**
  * Rule Them'All — universal selection control.
  * A single visual contract for native <select>, checkbox pickers, independent
@@ -97,7 +98,7 @@ export class RTASelect {
       node.closest(".form-group")?.querySelector(":scope > label")?.textContent?.trim() ||
       node.closest("[data-definition-field]")?.querySelector(":scope > label")?.textContent?.trim();
     const associated=node.id?document.querySelector(`label[for="${CSS.escape(node.id)}"]`)?.textContent?.trim():"";
-    const fr=String(globalThis.game?.i18n?.lang??document.documentElement?.lang??"en").startsWith("fr");
+    const fr=String(moduleLanguage()).startsWith("fr");
     const operand=node.closest("[data-rule-operand-editor]")?.dataset.ruleOperandEditor;
     const sheet=node.dataset.sheetProp;
     const identity=node.hasAttribute("data-rule-operand-kind")?(selectUiText("OperandType"))

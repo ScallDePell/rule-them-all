@@ -16,6 +16,7 @@ import {registerRulesetSheets, repairSheetChoices, translator} from "./src/runti
 import {resolveRuntimeRuleset} from "./src/runtime/runtime-contracts.mjs";
 import {installReactions} from "./src/runtime/foundry-reactions.mjs";
 import {installCreationButton} from "./src/runtime/foundry-creation.mjs";
+import {registerLanguageSetting, chosenLanguage, loadModuleTranslations, applyModuleTranslations} from "./src/core/module-language.mjs";
 
 // The sheet classes, kept to offer the active Ruleset's own sheets once it is loaded.
 let rulesetSheets = null;
@@ -30,6 +31,8 @@ function emitModuleEvents(events) {
 
 
 let storage;
+// The module's own interface language, when the user chose one other than Foundry's.
+let moduleTranslations = null;
 
 Hooks.once("init", () => {
   game.ruleThemAll ??= {};
@@ -37,6 +40,12 @@ Hooks.once("init", () => {
   const module = game.modules.get(MODULE_ID);
   if (module) module.api = game.ruleThemAll;
   game.ruleThemAll.registries = engineRegistries();
+  registerLanguageSetting(game.settings);
+  const language = chosenLanguage(game.settings);
+  if (language) {
+    game.ruleThemAll.language = language;
+    moduleTranslations = loadModuleTranslations(language);
+  }
   storage = new WorldSettingStorage(game.settings);
   storage.register();
   FoundryRuntimeAdapter.registerSettings(game.settings);
@@ -57,6 +66,17 @@ Hooks.once("init", () => {
   rulesetSheets = registerRulesetSheets();
   Hooks.callAll("ruleThemAllInit", game.ruleThemAll);
   console.log("Rule Them'All | Initialization");
+});
+
+// Foundry's translations are loaded: the chosen language replaces the module's texts only.
+Hooks.once("i18nInit", () => {
+  moduleTranslations?.then(translations => {
+    if (!applyModuleTranslations(game.i18n, translations)) return;
+    // Read after windows were drawn (a slow file): they are drawn again in the chosen language.
+    if (!game.ready) return;
+    for (const app of foundry.applications.instances.values()) if (app.rendered) app.render();
+    ui.actors?.render?.();
+  });
 });
 
 // After every module's init, before any Ruleset is loaded or validated.
