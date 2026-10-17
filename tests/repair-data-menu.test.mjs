@@ -1,6 +1,6 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import {repairData} from '../src/configurator/repair-data-menu.mjs';
+import {createRepairDataMenu, repairData} from '../src/configurator/repair-data-menu.mjs';
 
 const fakeDialog = answers => {
   const shown = [];
@@ -31,4 +31,12 @@ test('declined or failed: nothing is written', async () => {
   const Dialog = fakeDialog([]);
   await repairData({convert: async () => ({ok: false, changed: true, notes: [], error: 'still invalid'}), Dialog});
   assert.match(Dialog.shown[0][1], /RTA.Repair.Failed/);
+});
+
+test('the menu is an ApplicationV2 subclass, as Foundry requires, and render runs the repair', async () => {
+  class ApplicationV2 {}
+  const Menu = createRepairDataMenu({ApplicationV2});
+  assert.ok(Menu.prototype instanceof ApplicationV2);
+  const menu = new Menu();
+  assert.equal(await menu.render(true), menu);
 });

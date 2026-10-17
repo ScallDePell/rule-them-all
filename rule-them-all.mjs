@@ -1,5 +1,5 @@
 import {MODULE_ID, REGISTER_TYPES_HOOK} from "./src/core/module-contract.mjs";
-import {RepairDataMenu} from "./src/configurator/repair-data-menu.mjs";
+import {createRepairDataMenu} from "./src/configurator/repair-data-menu.mjs";
 import {engineRegistries} from "./src/configurator/operation-registries.mjs";
 import {createConfiguratorAPI} from "./src/configurator/configurator-api.mjs";
 import {ConfiguratorApp} from "./src/configurator/configurator-app.mjs";
@@ -68,7 +68,7 @@ Hooks.once("init", () => {
     label: "RTA.Settings.Repair.Label",
     hint: "RTA.Settings.Repair.Hint",
     icon: "fa-solid fa-screwdriver-wrench",
-    type: RepairDataMenu,
+    type: createRepairDataMenu({ApplicationV2: foundry.applications.api.ApplicationV2}),
     restricted: true
   });
   // Combatants under a Ruleset with an initiative Test roll it; the others keep the game system's roll.

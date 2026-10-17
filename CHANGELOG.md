@@ -1,5 +1,9 @@
 # Changelog
 
+## 1.0.4
+
+- Fix: in 1.0.3 the "Repair the data" menu was refused by Foundry, which stopped the module's initialization (no Repair button, Ruleset sheets and initiative not registered). The menu is now a proper Foundry application.
+
 ## 1.0.3
 
 - Game Settings > Rule Them'All > **Repair the data**: after an update, the GM checks the stored Rulesets, sees what will change and repairs them in one click (a backup is downloaded first). No console command needed any more.

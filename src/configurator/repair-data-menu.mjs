@@ -22,7 +22,10 @@ export async function repairData({convert = convertWorld, Dialog = dialog(), rel
   return done;
 }
 
-/** The settings menu entry: Foundry opens it with new type().render(true). */
-export class RepairDataMenu {
-  render() { repairData().catch(error => globalThis.ui?.notifications?.error?.(error?.message ?? String(error))); return this; }
+/** The settings menu entry. Foundry only accepts an ApplicationV2 subclass there and opens it with render(): the repair
+    runs instead of a window. */
+export function createRepairDataMenu({ApplicationV2}) {
+  return class RepairDataMenu extends ApplicationV2 {
+    async render() { repairData().catch(error => globalThis.ui?.notifications?.error?.(error?.message ?? String(error))); return this; }
+  };
 }
