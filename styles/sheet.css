@@ -832,6 +832,12 @@ span.rta-sheet-progression__button {
   color: var(--rta-color-text-secondary);
 }
 
+/* In the editor, a portrait or token image shows Foundry's sample figure, whole and a little faded. */
+.rta-sheet-image--sample > img {
+  object-fit: contain;
+  opacity: .6;
+}
+
 /* The Document's portrait or token image: the picture takes the frame's shape, the camera button sits on its bottom right corner. */
 .rta-sheet-picture {
   position: relative;

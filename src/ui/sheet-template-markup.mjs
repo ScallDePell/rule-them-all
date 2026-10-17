@@ -64,5 +64,5 @@ export function renderSheetThemeHTML(theme, ctx) {
       rows.push(row(t("RTA.SheetTheme.FrameWidth", "Frame width"), `<select data-layout-theme="frameWidth">${options(ctx.frameWidths, o.frameWidth ?? "medium")}</select>`));
     }
   }
-  return `<details class="rta-sheet-editor__theme" data-layout-theme-panel${ctx.open ? " open" : ""}><summary>${t("RTA.SheetTheme.Title", "Sheet theme")}</summary><div class="rta-sheet-editor__style-body">${rows.join("")}</div></details>`;
+  return `<div class="rta-sheet-editor__theme" data-layout-theme-panel><div class="rta-sheet-editor__style-body">${rows.join("")}</div></div>`;
 }

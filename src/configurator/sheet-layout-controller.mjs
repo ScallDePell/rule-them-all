@@ -64,9 +64,14 @@ function chooseFile() {
   });
 }
 
+/** The left panel's tab (block settings, add, theme), kept while the editor is drawn again and between sheets. */
+let openPane = "block";
+/** Which groups of the block's settings are open (Content, Display, Access), kept the same way. */
+const openGroups = {content: true, display: false, access: false};
+
 export class SheetLayoutController {
-  #host; #ruleset; #colors; #form; #root; #selected; #history = []; #future = []; #dragged = null; #readOnly; #paletteOpen = true; #styleOpen = false; #moreOpen = false; #toneHex = null;
-  #layersOpen = true; #collapsed = new Set(); #renaming = null; #brush = null; #width = "window"; #templates; #theme = null; #themeOpen = false;
+  #host; #ruleset; #colors; #form; #root; #selected; #history = []; #future = []; #dragged = null; #readOnly; #styleOpen = false; #toneHex = null;
+  #layersOpen = true; #collapsed = new Set(); #renaming = null; #brush = null; #width = "window"; #templates; #theme = null;
 
   /** host: [data-sheet-layout-editor]; ruleset: the working draft; colors(kind, entry): option colors; form: the entry form (target, content types). */
   /** store: the Ruleset's block templates ({ruleset(), createTemplate(data), updateTemplate(id, patch), deleteTemplate(id)}, each
@@ -94,16 +99,24 @@ export class SheetLayoutController {
     host.addEventListener("change", event => this.#onChange(event));
     // The opacity slider says its value while it moves; the change is kept when it is let go.
     host.addEventListener("input", event => { if (event.target.matches?.('[data-layout-style="opacity"]')) { event.stopPropagation(); const label = event.target.closest(".rta-form-row")?.querySelector("[data-layout-opacity-value]"); if (label) label.textContent = `${event.target.value} %`; } });
-    host.addEventListener("toggle", event => { if (event.target.matches?.("[data-layout-style-group]")) this.#styleOpen = event.target.open; if (event.target.matches?.("[data-layout-more-group]")) this.#moreOpen = event.target.open; }, true);
+    host.addEventListener("toggle", event => { if (event.target.matches?.("[data-layout-style-group]")) this.#styleOpen = event.target.open; if (event.target.matches?.("[data-layout-group]")) openGroups[event.target.dataset.layoutGroup] = event.target.open; }, true);
     host.addEventListener("click", event => this.#onClick(event));
     host.addEventListener("contextmenu", event => this.#onContextMenu(event));
-    host.addEventListener("dblclick", event => { const name = elementOf(event)?.closest("[data-layer-renamable]"); if (name) { event.preventDefault(); this.#startRename(name.closest("[data-layer-node]").dataset.layerNode); } });
+    host.addEventListener("dblclick", event => {
+      const name = elementOf(event)?.closest("[data-layer-renamable]");
+      if (name) { event.preventDefault(); return this.#startRename(name.closest("[data-layer-node]").dataset.layerNode); }
+      // A double click on the sheet: what to add into that block.
+      const block = elementOf(event)?.closest("[data-layout-canvas] [data-layout-node]");
+      if (block && !this.#brush) { event.preventDefault(); this.select(block.dataset.layoutNode); this.#showPane("add"); this.#host.querySelector("[data-layout-palette-filter]")?.focus(); }
+    });
+    // Hovering a block of the sheet or a row of the Layers outlines both, to show what a click picks.
+    host.addEventListener("pointerover", event => this.#hover(elementOf(event)?.closest("[data-layout-canvas] [data-layout-node], [data-layer-node]")));
+    host.addEventListener("pointerleave", () => this.#hover(null));
     host.addEventListener("toggle", event => { if (event.target.matches?.("[data-layout-layers-panel]")) this.#layersOpen = event.target.open; }, true);
     // A palette element is not a button: Enter or Space adds it like a click.
     host.addEventListener("keydown", event => { const item = elementOf(event)?.closest("[data-layout-palette]"); if (item && (event.key === "Enter" || event.key === " ")) { event.preventDefault(); this.#add(JSON.parse(item.dataset.layoutPalette), this.#selected ?? this.#root.id); } });
     host.addEventListener("keydown", event => this.#onKey(event));
     host.addEventListener("input", event => { if (event.target.matches?.("[data-layout-palette-filter]")) this.#filterPalette(event.target.value); });
-    host.addEventListener("toggle", event => { if (event.target.matches?.("[data-layout-palette-panel]")) this.#paletteOpen = event.target.open; }, true);
     // A block of the sheet, or an element of the palette, dragged onto the sheet.
     host.addEventListener("dragstart", event => {
       const item = elementOf(event)?.closest("[data-layout-palette]"), node = elementOf(event)?.closest("[data-layout-canvas] [data-layout-node], [data-layer-node][draggable]");
@@ -146,6 +159,8 @@ export class SheetLayoutController {
     const found = locate(this.#root, id);
     if (!found) return;
     this.#selected = id;
+    // The theme tab leaves for the block's settings; the add tab stays, to add into the block chosen.
+    if (openPane === "theme") openPane = "block";
     // The Layers unfold down to it.
     for (const holder of found.path.slice(0, -1)) this.#collapsed.delete(holder.id);
     this.render();
@@ -192,6 +207,9 @@ export class SheetLayoutController {
     this.#renderTheme();
     this.#renderLayers();
     this.#renderWidth();
+    const into = this.#host.querySelector("[data-layout-add-target]");
+    if (into) into.textContent = node ? this.#layerLabel(node) : i18n("RTA.SheetEditor.Layers.Sheet");
+    this.#showPane();
   }
 
   /** Which toolbar commands apply to a located block (or to no selection). */
@@ -218,7 +236,11 @@ export class SheetLayoutController {
   #renderLayers() {
     const host = this.#host.querySelector("[data-layout-layers-host]");
     if (!host) return;
-    host.innerHTML = renderLayoutLayersHTML(this.#root, {selectedId: this.#selected, collapsed: this.#collapsed, label: node => this.#layerLabel(node), renaming: this.#renaming, open: this.#layersOpen});
+    // Two rows of the same name say what sets them apart: how each value is shown, else what kind of block it is.
+    const names = new Map(), count = node => { const name = this.#layerLabel(node); names.set(name, (names.get(name) ?? 0) + 1); for (const child of node.children ?? []) count(child); };
+    count(this.#root);
+    const label = node => { const name = this.#layerLabel(node); if (names.get(name) < 2 || node.id === this.#root.id) return name; const detail = node.kind === "value" ? i18n(`RTA.SheetEditor.Display.${node.display ?? "field"}`) : kindText(node.kind); return detail && detail !== name ? `${name} · ${detail}` : name; };
+    host.innerHTML = renderLayoutLayersHTML(this.#root, {selectedId: this.#selected, collapsed: this.#collapsed, label, renaming: this.#renaming, open: this.#layersOpen, badges: node => this.#badges(node)});
     this.#revealLayer();
     const rename = host.querySelector("[data-layer-rename]");
     if (rename) {
@@ -239,6 +261,14 @@ export class SheetLayoutController {
     const top = row.getBoundingClientRect().top - scroller.getBoundingClientRect().top + scroller.scrollTop;
     if (top < scroller.scrollTop) scroller.scrollTop = top;
     else if (top + row.offsetHeight > scroller.scrollTop + scroller.clientHeight) scroller.scrollTop = top + row.offsetHeight - scroller.clientHeight;
+  }
+  /** What the Layers mark on a block: kept from some viewers, shown only if a Condition holds, changed by the GM only. */
+  #badges(node) {
+    const out = [];
+    if (node.seenBy && node.seenBy.length < 3) out.push({icon: "fa-eye-slash", title: `${i18n("RTA.SheetEditor.Seen")} : ${node.seenBy.map(who => i18n(`RTA.SheetEditor.Audience.${who}`)).join(", ")}`});
+    if (node.visibleIf) out.push({icon: "fa-filter", title: i18n("RTA.SheetEditor.VisibleIf")});
+    if (node.write?.by === "gm") out.push({icon: "fa-lock", title: `${i18n("RTA.SheetEditor.ChangedBy")} : ${i18n("RTA.SheetEditor.GmOnly")}`});
+    return out;
   }
   /** A block's name in the Layers: its label, else what it shows, else its kind. */
   #layerLabel(node) {
@@ -338,7 +368,7 @@ export class SheetLayoutController {
     const groups = paletteGroups(this.#ruleset, {target: this.#target, contentTypeIds: this.#contentTypeIds}).map(group => ({
       id: group.id, text: group.labelKey ? i18n(group.labelKey) : group.label,
       items: group.items.map(item => ({...item, text: item.labelKey ? i18n(item.labelKey) : item.label ?? kindText(item.kind)}))}));
-    host.innerHTML = renderLayoutPaletteHTML(groups, {open: this.#paletteOpen, filter});
+    host.innerHTML = renderLayoutPaletteHTML(groups, {filter});
     this.#filterPalette(filter);
   }
   #filterPalette(text) {
@@ -351,6 +381,10 @@ export class SheetLayoutController {
   }
 
   #onClick(event) {
+    const pane = elementOf(event)?.closest("[data-layout-pane]");
+    if (pane) { event.preventDefault(); return this.#showPane(pane.dataset.layoutPane); }
+    const crumb = elementOf(event)?.closest("[data-layout-crumb]");
+    if (crumb) { event.preventDefault(); this.select(crumb.dataset.layoutCrumb); return this.#keys(); }
     const command = elementOf(event)?.closest("[data-layout-command]");
     if (command) { event.preventDefault(); this.#command(command.dataset.layoutCommand); return this.#keys(); }
     const width = elementOf(event)?.closest("[data-layout-width]:not([data-layout-canvas])");
@@ -381,6 +415,19 @@ export class SheetLayoutController {
     }
     const node = elementOf(event)?.closest("[data-layout-canvas] [data-layout-node]");
     if (node) { event.preventDefault(); this.#pickBlock(node.dataset.layoutNode); this.#keys(); }
+  }
+  /** The left panel shows one tab: the selected block's settings, what can be added, or the sheet's theme. */
+  #showPane(pane = openPane) {
+    openPane = pane;
+    for (const tab of this.#host.querySelectorAll("[data-layout-pane]")) tab.setAttribute("aria-selected", String(tab.dataset.layoutPane === pane));
+    for (const body of this.#host.querySelectorAll("[data-layout-pane-body]")) body.hidden = body.dataset.layoutPaneBody !== pane;
+  }
+  /** The block under the pointer, outlined on the sheet and in the Layers. */
+  #hover(element) {
+    const id = element ? nodeIdOf(element) : null;
+    for (const marked of this.#host.querySelectorAll("[data-layout-hover]")) if (nodeIdOf(marked) !== id) marked.removeAttribute("data-layout-hover");
+    if (!id) return;
+    for (const match of this.#host.querySelectorAll(`[data-layout-canvas] [data-layout-node="${CSS.escape(id)}"], [data-layer-node="${CSS.escape(id)}"]`)) match.setAttribute("data-layout-hover", "");
   }
   /** A block clicked: selected, or given the brush's style while the brush is loaded. */
   #pickBlock(id) {
@@ -779,11 +826,11 @@ export class SheetLayoutController {
     for (const [key, value] of Object.entries(overrides)) if (value === undefined) delete overrides[key];
     if (!overrides.frame) { delete overrides.frameSlice; delete overrides.frameWidth; }
     try { this.#theme = prepareSheetTheme({id: this.#theme.id, overrides}) ?? null; } catch (error) { this.#warn(error.message); return this.render(); }
-    this.#themeOpen = true; this.#storeTheme(); this.render();
+    this.#storeTheme(); this.render();
   }
   #onThemeChange(target) {
     const prop = target.dataset.layoutTheme;
-    if (prop === "id") { this.#theme = target.value === "none" ? null : {id: target.value, ...(this.#theme?.overrides ? {overrides: this.#theme.overrides} : {})}; this.#themeOpen = true; this.#storeTheme(); return this.render(); }
+    if (prop === "id") { this.#theme = target.value === "none" ? null : {id: target.value, ...(this.#theme?.overrides ? {overrides: this.#theme.overrides} : {})}; this.#storeTheme(); return this.render(); }
     if (["font", "titleFont", "frameWidth"].includes(prop)) return this.#setTheme({[prop]: ["", "default"].includes(target.value) || prop === "frameWidth" && target.value === "medium" ? undefined : target.value});
     if (prop === "frameSlice") { const slice = Math.trunc(Number(target.value)); return this.#setTheme({frameSlice: slice >= 1 && slice <= 200 && slice !== 30 ? slice : undefined}); }
     if (prop === "frame") return this.#setTheme({frame: target.value.trim() || undefined});
@@ -793,10 +840,9 @@ export class SheetLayoutController {
     const host = this.#host.querySelector("[data-layout-theme-host]");
     if (!host) return;
     const neutral = selectColorsAttribute([RTA_NEUTRAL_COLOR]), choice = (value, key) => ({value, label: i18n(key), colors: neutral}), byDefault = choice("default", "RTA.SheetTheme.ThemeFont");
-    host.innerHTML = renderSheetThemeHTML(this.#theme, {open: this.#themeOpen, themes: [choice("none", "RTA.SheetTheme.None"), ...SHEET_THEMES.map(id => choice(id, `RTA.SheetTheme.Themes.${id}`))],
+    host.innerHTML = renderSheetThemeHTML(this.#theme, {themes: [choice("none", "RTA.SheetTheme.None"), ...SHEET_THEMES.map(id => choice(id, `RTA.SheetTheme.Themes.${id}`))],
       fonts: current => [byDefault, ...[...new Set([...availableFonts(), ...(current ? [current] : [])])].map(font => ({value: font, label: font, colors: neutral}))],
       frameWidths: Object.keys(SHEET_FRAME_WIDTHS).map(width => choice(width, `RTA.SheetTheme.Width.${width}`)), color: prop => this.#themeColor(prop)});
-    host.querySelector("[data-layout-theme-panel]")?.addEventListener("toggle", event => { this.#themeOpen = event.target.open; });
   }
   /** A theme color as it shows on the sheet now (its default before the GM changes it). */
   #themeColor(prop) {
@@ -838,7 +884,8 @@ export class SheetLayoutController {
       fits: SHEET_IMAGE_FITS.map(value => ({value, label: i18n(`RTA.SheetEditor.Fit.${value}`), colors: neutral})),
       heights: Object.keys(SHEET_IMAGE_HEIGHTS).map(value => ({value, label: i18n(`RTA.SheetEditor.Height.${value}`), colors: neutral})),
       style: this.#styleContext(neutral), saveTemplate: Boolean(this.#templates),
-      neutral, moreOpen: this.#moreOpen,
+      neutral, groupsOpen: openGroups,
+      crumbs: found.path.slice(0, -1).map(entry => ({id: entry.id, label: this.#layerLabel(entry)})), title: this.#layerLabel(node),
       inGrid: ["section", "grid", "tab"].includes(found.parent?.kind) && !found.parent?.overlay,
       rowSpans: Array.from({length: LAYOUT_MAX_ROW_SPAN}, (_, i) => ({value: String(i + 1), label: format("RTA.SheetEditor.RowCount", {count: i + 1}, String(i + 1)), colors: neutral})),
       widths: ["auto", ...Object.keys(LAYOUT_WIDTHS)].map(value => ({value, label: i18n(`RTA.SheetEditor.FixedWidths.${value}`), colors: neutral})),

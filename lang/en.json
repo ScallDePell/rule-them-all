@@ -1471,6 +1471,10 @@
       "Section": "Section"
     },
     "SheetEditor": {
+      "Pane": {"block": "Block", "add": "Add", "theme": "Theme"},
+      "Group": {"content": "Content", "display": "Display", "access": "Access"},
+      "Crumbs": "Where the block is",
+      "AddInto": "Adds into:",
       "Panels": {
         "Resize": "Drag to change the width, double-click to give it back its own",
         "Hide": {"side": "Hide the tools", "layers": "Hide the layers"},

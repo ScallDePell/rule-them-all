@@ -1471,6 +1471,10 @@
       "Section": "Section"
     },
     "SheetEditor": {
+      "Pane": {"block": "Bloc", "add": "Ajouter", "theme": "Thème"},
+      "Group": {"content": "Contenu", "display": "Affichage", "access": "Accès"},
+      "Crumbs": "Emplacement du bloc",
+      "AddInto": "Ajoute dans :",
       "Panels": {
         "Resize": "Glisser pour changer la largeur, double-clic pour revenir à la largeur d'origine",
         "Hide": {"side": "Cacher les outils", "layers": "Cacher les calques"},

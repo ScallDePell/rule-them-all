@@ -222,7 +222,7 @@ test('name, portrait and token blocks: the Document itself, placed anywhere but 
   assert.match(html,/<header class="rta-sheet__header"><div class="rta-sheet__portrait"><span class="rta-sheet__image rta-sheet__image--sample">/);
   assert.doesNotMatch(renderLayoutPreviewHTML(previewView(next,ruleset,{header:'none'})),/rta-sheet__header/);
   assert.match(html,/<div class="rta-sheet-name" data-layout-node="n"><span class="rta-sheet-name__text">RTA.SheetEditor.SampleName<\/span><\/div>/);
-  assert.match(html,/class="rta-sheet-image rta-sheet-picture rta-sheet-image--portrait rta-sheet-image--empty"[^>]*data-layout-node="p"><i class="fa-solid fa-user"/);
+  assert.match(html,/class="rta-sheet-image rta-sheet-picture rta-sheet-image--portrait rta-sheet-image--sample"[^>]*data-layout-node="p"><img src="icons\/svg\/mystery-man.svg" alt="RTA.SheetEditor.Kind.portrait"/);
   assert.doesNotMatch(html,/data-sheet-edit-image|data-sheet-name/,'the editor never changes the Document');
   const ctx={columnChoices:()=>[],spanChoices:()=>[],shapes:[],fits:[],heights:[],parentColumns:1,isRoot:false};
   assert.match(renderLayoutPropertiesHTML({id:'t',kind:'token',updatePlaced:true},ctx),/data-layout-prop="updatePlaced" checked/);

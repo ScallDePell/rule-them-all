@@ -112,11 +112,19 @@ const result = await page.evaluate(async ({fixture, en, urls}) => {
     const footer = element.querySelector('.rta-config-entry__footer'), box = e => e.getBoundingClientRect(), zones = [side, main, layers];
     check('the tools, the sheet and the Layers sit side by side', box(side).right <= box(main).left + 1 && box(main).right <= box(layers).left + 1 && main.contains(element.querySelector('[name="nameKey"]')) && main.contains(element.querySelector('[data-layout-canvas]')) && layers.contains(element.querySelector('[data-layout-layers]')));
     check('the three zones take the full height', zones.every(z => Math.abs(box(z).top - box(side).top) < 1 && Math.abs(box(z).bottom - box(side).bottom) < 1) && box(side).bottom <= box(footer).top + 1);
-    check('the tools and the sheet scroll', [side, main].every(z => getComputedStyle(z).overflowY === 'auto' && z.scrollHeight > z.clientHeight) && getComputedStyle(layers).overflowY === 'auto');
+    // Long enough to scroll: a long sheet (a tall block under it), every group of the block's settings open.
+    const tall = Object.assign(document.createElement('div'), {style: 'height: 1200px'}); element.querySelector('.rta-sheet-editor__stage').append(tall);
+    for (const group of element.querySelectorAll('[data-layout-properties] details')) group.open = true;
+    check(`the tools and the sheet scroll (${[side, main].map(z => `${z.scrollHeight}/${z.clientHeight}`).join(', ')})`, [side, main].every(z => getComputedStyle(z).overflowY === 'auto' && z.scrollHeight > z.clientHeight) && getComputedStyle(layers).overflowY === 'auto');
     main.scrollTop = main.scrollHeight;
     check('scrolling the sheet leaves the tools and the Layers in place', main.scrollTop > 0 && side.scrollTop === 0 && layers.scrollTop === 0);
     side.scrollTop = side.scrollHeight;
     check('scrolling the tools leaves the sheet in place', side.scrollTop > 0 && main.scrollTop > 0 && Math.abs(main.scrollTop - (main.scrollHeight - main.clientHeight)) < 2);
+    side.scrollTop = 0;
+    // The bar above the sheet (toolbar, "View as", preview width) stays in view while the sheet scrolls.
+    const bar = element.querySelector('.rta-sheet-editor__stage-bar').getBoundingClientRect();
+    check(`the toolbar stays above the scrolled sheet (${Math.round(bar.top)} vs ${Math.round(box(main).top)}, scrolled ${main.scrollTop})`, main.scrollTop > 0 && Math.abs(bar.top - box(main).top) < 2);
+    tall.remove();
     const app = element.getBoundingClientRect();
     check('the window buttons stay in view', box(footer).height > 0 && box(footer).bottom <= app.bottom + 1 && box(footer).top >= box(main).bottom - 1);
     side.scrollTop = 0; main.scrollTop = 0; }
@@ -220,7 +228,7 @@ const result = await page.evaluate(async ({fixture, en, urls}) => {
   check('a click Action and a Condition', find(layout(), line.id).clickActionRef === 'a1' && element.querySelector(`[data-layout-canvas] [data-layout-node="${line.id}"][data-layout-conditional]`));
   await set('[data-layout-properties] [data-layout-prop="tooltip"]', 'What it costs');
   await set('[data-layout-properties] [data-layout-prop="width"]', 'medium');
-  check('a tooltip and a fixed width', find(layout(), line.id).tooltip?.text === 'What it costs' && find(layout(), line.id).width === 'medium' && element.querySelector('[data-layout-more-group]')?.open !== undefined);
+  check('a tooltip and a fixed width', find(layout(), line.id).tooltip?.text === 'What it costs' && find(layout(), line.id).width === 'medium' && element.querySelector('[data-layout-group="display"] [data-layout-prop="width"]'));
   // A text area kept on the Actor, a separator with an ornament, a clock and a track of boxes.
   await click('[data-layout-palette-host] [data-layout-palette=\'{"kind":"notes"}\']');
   const notes = find(layout(), 'derived').children.at(-1);
@@ -255,9 +263,9 @@ const result = await page.evaluate(async ({fixture, en, urls}) => {
   const canonical = value => JSON.stringify(value, (key, v) => v && typeof v === 'object' && !Array.isArray(v) ? Object.fromEntries(Object.keys(v).sort().map(k => [k, v[k]])) : v);
   check(`saving keeps the edited tree${canonical(saved.root) === canonical(layout()) ? '' : `: ${(await app._prepareContext({})).error || 'not saved'}`}`, canonical(saved.root) === canonical(layout()));
   check('no automatic layout any more', !element.querySelector('[data-layout-command="auto"]'));
-  // The toolbar: its nine buttons on one row, "View as" alone below them.
+  // The toolbar, above the sheet: its nine buttons in five groups on one row, "View as" beside them.
   { const buttons = [...element.querySelectorAll('[data-layout-toolbar] [data-layout-command]')].map(b => b.getBoundingClientRect()), viewAs = element.querySelector('.rta-sheet-editor__view-as').getBoundingClientRect();
-    check('the toolbar buttons sit on one row, "View as" below', buttons.length === 9 && buttons.every(b => Math.abs(b.top - buttons[0].top) < 1) && viewAs.top >= buttons[0].bottom && buttons.at(-1).right <= element.querySelector('.rta-sheet-editor__side').getBoundingClientRect().right);
+    check('the toolbar buttons sit on one row in five groups, "View as" beside them', buttons.length === 9 && element.querySelectorAll('[data-layout-toolbar] .rta-sheet-editor__tool-group').length === 5 && buttons.every(b => Math.abs(b.top - buttons[0].top) < 1) && viewAs.left >= buttons.at(-1).right && element.querySelector('.rta-sheet-editor__main').contains(element.querySelector('[data-layout-toolbar]')));
     // Each one drawn, a frame even when disabled, none narrower than a usable button.
     const frames = [...element.querySelectorAll('[data-layout-toolbar] [data-layout-command]')].map(b => getComputedStyle(b));
     check(`every toolbar button shows its frame (${buttons.map(b => Math.round(b.width)).join(',')} px)`, buttons.every(b => b.width >= 28) && frames.every(f => f.borderTopStyle !== 'none' && f.visibility !== 'hidden' && Number(f.opacity) > 0.3)); }
@@ -523,6 +531,25 @@ await page.waitForTimeout(100);
   const good = menu.selected === 'stat-value' && menu.labels.some(label => label.startsWith('Copy')) && menu.labels.some(label => label.startsWith('Remove')) && after > before;
   console.log(`${good ? 'ok' : 'FAIL'} right click selects the block and offers its commands (${menu.labels.join(', ')}), Duplicate runs from it`);
   if (!good) result.push('FAIL context menu');
+}
+// The left panel's tabs, the path above the block's settings, the outline of the hovered block.
+{
+  await page.click('[data-layout-canvas] [data-layout-node="stat-value"]');
+  const crumbs = await page.evaluate(() => [...document.querySelectorAll('.rta-sheet-editor__crumbs [data-layout-crumb]')].map(b => b.textContent));
+  await page.click('.rta-sheet-editor__crumbs [data-layout-crumb]:last-of-type');
+  const parent = await page.evaluate(() => document.querySelector('[data-layer-node][aria-selected="true"]')?.dataset.layerNode);
+  await page.click('[data-layout-pane="add"]');
+  const add = await page.evaluate(() => ({shown: document.querySelector('[data-layout-palette-host]').getBoundingClientRect().height > 0 && !document.querySelector('[data-layout-properties]').getBoundingClientRect().height, into: document.querySelector('[data-layout-add-target]')?.textContent}));
+  if (process.env.RTA_SHOTS) await page.screenshot({path: join(process.env.RTA_SHOTS, 'sheet-editor-pane-add.png')});
+  await page.click('[data-layout-pane="theme"]');
+  if (process.env.RTA_SHOTS) await page.screenshot({path: join(process.env.RTA_SHOTS, 'sheet-editor-pane-theme.png')});
+  await page.click('[data-layout-canvas] [data-layout-node="stat-value"]');
+  const back = await page.evaluate(() => document.querySelector('[data-layout-properties]').getBoundingClientRect().height > 0 && !document.querySelector('[data-layout-theme-host]').getBoundingClientRect().height);
+  await page.hover('[data-layout-canvas] [data-layout-node="stats"]', {position: {x: 6, y: 6}});
+  const hover = await page.evaluate(() => [...document.querySelectorAll('[data-layout-hover]')].map(e => e.dataset.layoutNode ?? `layer:${e.dataset.layerNode}`));
+  const good = crumbs.length >= 2 && parent && parent !== 'stat-value' && add.shown && add.into && back && hover.includes('stats') && hover.includes('layer:stats') && hover.length === 2;
+  console.log(`${good ? 'ok' : 'FAIL'} the path (${crumbs.join(' › ')}) selects a parent, the tabs switch (adds into ${add.into}), a block picked leaves the theme tab, the hovered block lights up on the sheet and in the Layers (${hover.join(', ')})`);
+  if (!good) result.push('FAIL tabs, path, hover');
 }
 await browser.close();
 for (const line of [...result, ...errors.map(e => `FAIL error: ${e}`)]) console.log(line);

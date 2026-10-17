@@ -51,15 +51,14 @@
       <input type="hidden" data-sheet-layout-value value="{{sheetLayoutJSON}}">
       <input type="hidden" data-sheet-theme-value value="{{sheetThemeJSON}}">
       {{#unless readOnly}}<aside class="rta-sheet-editor__side" data-entry-scroll-tools>
-        <div data-layout-toolbar></div>
-        <div class="rta-sheet-editor__properties" data-layout-properties></div>
-        <div data-layout-palette-host></div>
-        <div data-layout-theme-host></div>
+        <div class="rta-sheet-editor__panes" role="tablist">{{#each sheetEditorPanes}}<button type="button" role="tab" data-layout-pane="{{id}}" aria-selected="false"><i class="fa-solid {{icon}}" aria-hidden="true"></i> {{localize labelKey}}</button>{{/each}}</div>
+        <div class="rta-sheet-editor__properties" role="tabpanel" data-layout-properties data-layout-pane-body="block"></div>
+        <div role="tabpanel" data-layout-palette-host data-layout-pane-body="add" hidden></div>
+        <div role="tabpanel" data-layout-theme-host data-layout-pane-body="theme" hidden></div>
       </aside>
       {{> rtaPanelResizer panel="side"}}{{/unless}}
       <div data-entry-scroll class="rta-config-entry__scroll rta-sheet-editor__main">
         {{#if readOnly}}<p><i class="fa-solid fa-lock"></i> {{localize "RTA.Template.ValidatedVersionReadOnly"}}</p>{{/if}}
-        {{#if help}}<details class="rta-config-entry__section rta-config-entry__help" data-entry-help><summary><strong><i class="fa-solid fa-circle-question" aria-hidden="true"></i> {{localize "RTA.Help.Title"}}</strong></summary><div class="rta-config-entry__help-body"><p>{{localize help.summaryKey}}</p><p>{{localize help.usageKey}}</p>{{#if help.typeDescription}}<p><strong>{{localize "RTA.Help.TypeHelp"}} :</strong> {{help.typeDescription}}</p>{{/if}}</div></details>{{/if}}
         <details class="rta-config-entry__section" data-sheet-settings {{#if creating}}open{{/if}}><summary><strong>{{localize "RTA.Template.Sheet"}}</strong>{{#unless creating}}<span class="rta-config-entry__section-summary">{{data.nameKey}}</span>{{/unless}}</summary>
           {{> rtaIdentityName}}
           <div class="form-group rta-form-row"><label>{{localize "RTA.Sheet.Target"}}</label><select name="sheetTarget" {{#if readOnly}}disabled{{/if}}>{{#each sheetTargetChoices}}<option value="{{id}}" data-rta-colors="{{colors}}" {{#if selected}}selected{{/if}}>{{localize labelKey}}</option>{{/each}}</select></div>
@@ -70,12 +69,14 @@
           <div class="form-group rta-form-row"><label>{{localize "RTA.SheetFile.Label"}}</label><div class="rta-sheet-file"><button type="button" data-sheet-file="export"><i class="fa-solid fa-file-export"></i> {{localize "RTA.SheetFile.Export"}}</button>{{#unless readOnly}}<button type="button" data-sheet-file="import"><i class="fa-solid fa-file-import"></i> {{localize "RTA.SheetFile.Import"}}</button>{{/unless}}</div></div>
           {{> rtaEnabled}}
         </details>
-        <details class="rta-config-entry__section" open><summary><strong>{{localize "RTA.SheetEditor.Layout"}}</strong></summary>
-          <div class="rta-sheet-editor__stage">
-            {{#unless readOnly}}<div data-layout-widths></div>{{/unless}}
-            <div class="rta-sheet-editor__canvas" data-layout-canvas tabindex="-1"></div>
+        <div class="rta-sheet-editor__stage">
+          <div class="rta-sheet-editor__stage-bar">
+            {{#unless readOnly}}<div data-layout-toolbar></div><div data-layout-widths></div>{{/unless}}
+            {{#if help}}<button type="button" class="rta-config-action rta-sheet-editor__help-button" popovertarget="rta-sheet-help-{{data.id}}" title="{{localize "RTA.Help.Title"}}" aria-label="{{localize "RTA.Help.Title"}}"><i class="fa-solid fa-circle-question" aria-hidden="true"></i></button>
+            <div class="rta-sheet-editor__help" id="rta-sheet-help-{{data.id}}" popover data-entry-help><p>{{localize help.summaryKey}}</p><p>{{localize help.usageKey}}</p></div>{{/if}}
           </div>
-        </details>
+          <div class="rta-sheet-editor__canvas" data-layout-canvas tabindex="-1"></div>
+        </div>
       </div>
       {{#unless readOnly}}{{> rtaPanelResizer panel="layers"}}<aside class="rta-sheet-editor__layers-column" data-entry-scroll-layers>
         <div data-layout-layers-host tabindex="-1"></div>

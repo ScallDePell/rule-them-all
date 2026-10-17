@@ -208,12 +208,15 @@ function renderName(node, t, {edit, doc, m}) {
       : `<h2 class="rta-sheet-name__text">${escape(doc.name ?? "")}</h2>`;
   return `<div ${attrs(node, "rta-sheet-name")}${m}>${inner}</div>`;
 }
+/** The figure Foundry gives an Actor without an image: the editor's portraits and token images show it. */
+const SAMPLE_PICTURE = "icons/svg/mystery-man.svg";
 /** The Document's portrait, or (Actor) its prototype token's image, framed like an image block; the camera changes it. */
 function renderPicture(node, t, {edit, doc, m}) {
   const token = node.kind === "token", src = edit ? "" : token ? doc.token : doc.img, label = t(token ? "RTA.SheetEditor.Kind.token" : "RTA.SheetEditor.Kind.portrait");
-  const body = src ? `<img src="${escape(src)}" alt="${escape(label)}">` : `<i class="fa-solid ${token ? "fa-chess-pawn" : "fa-user"}" aria-hidden="true"></i>${edit ? `<span>${escape(label)}</span>` : ""}`;
+  // In the editor: Foundry's sample figure, the block's kind on hover, so it does not read as a missing image.
+  const body = src ? `<img src="${escape(src)}" alt="${escape(label)}">` : edit ? `<img src="${SAMPLE_PICTURE}" alt="${escape(label)}" title="${escape(label)}">` : `<i class="fa-solid ${token ? "fa-chess-pawn" : "fa-user"}" aria-hidden="true"></i>`;
   const camera = !edit && doc.editable && doc.unlocked ? cameraButton(token ? "token" : "img", t, token && node.updatePlaced) : "";
-  return `<div ${attrs(node, `rta-sheet-image rta-sheet-picture${pictureShape(node)}${src ? "" : " rta-sheet-image--empty"}`, pictureLook(node))}${m}>${body}${camera}</div>`;
+  return `<div ${attrs(node, `rta-sheet-image rta-sheet-picture${pictureShape(node)}${src ? "" : edit ? " rta-sheet-image--sample" : " rta-sheet-image--empty"}`, pictureLook(node))}${m}>${body}${camera}</div>`;
 }
 
 /** A notes block: its text kept on the Actor, in a field when it may be changed. A rich one is filled by the sheet

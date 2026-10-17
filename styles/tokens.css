@@ -72,6 +72,8 @@
   --rta-color-border-subtle: var(--color-border-light-2);
   --rta-color-border-highlight: var(--color-border-highlight, #947f9c);
   --rta-color-surface: var(--color-cool-5, #17141e);
+  /* The window's own background (Foundry theme), for what lies over scrolled content. */
+  --rta-color-window: var(--background, var(--color-cool-5, #17141e));
   --rta-color-surface-raised: var(--color-cool-4, rgba(0, 0, 0, 0.12));
   --rta-color-surface-option-light: var(--color-bg-option, rgba(255, 255, 255, .35));
   --rta-color-surface-option: var(--color-bg-option, #2b2530);
