@@ -1471,6 +1471,16 @@
       "Section": "Section"
     },
     "SheetEditor": {
+      "Panels": {
+        "Resize": "Glisser pour changer la largeur, double-clic pour revenir à la largeur d'origine",
+        "Hide": {"side": "Cacher les outils", "layers": "Cacher les calques"},
+        "Show": {"side": "Afficher les outils", "layers": "Afficher les calques"}
+      },
+      "Menu": {
+        "up": "Monter (↑)", "down": "Descendre (↓)", "copy": "Copier (Ctrl+C)", "paste": "Coller dedans (Ctrl+V)",
+        "duplicate": "Dupliquer (Ctrl+D)", "brush": "Pinceau de style", "rename": "Renommer (F2)",
+        "saveTemplate": "Enregistrer comme modèle", "unstyle": "Style par défaut", "addTab": "Ajouter un onglet", "remove": "Supprimer (Suppr)"
+      },
       "Layout": "Mise en page",
       "Empty": "Vide : ajoute un bloc ici",
       "EmptyText": "Texte",

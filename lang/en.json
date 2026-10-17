@@ -1471,6 +1471,16 @@
       "Section": "Section"
     },
     "SheetEditor": {
+      "Panels": {
+        "Resize": "Drag to change the width, double-click to give it back its own",
+        "Hide": {"side": "Hide the tools", "layers": "Hide the layers"},
+        "Show": {"side": "Show the tools", "layers": "Show the layers"}
+      },
+      "Menu": {
+        "up": "Move up (↑)", "down": "Move down (↓)", "copy": "Copy (Ctrl+C)", "paste": "Paste into it (Ctrl+V)",
+        "duplicate": "Duplicate (Ctrl+D)", "brush": "Style brush", "rename": "Rename (F2)",
+        "saveTemplate": "Save as template", "unstyle": "Default style", "addTab": "Add a tab", "remove": "Remove (Delete)"
+      },
       "Layout": "Layout",
       "Empty": "Empty: add a block here",
       "EmptyText": "Text",

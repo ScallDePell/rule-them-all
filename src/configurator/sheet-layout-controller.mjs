@@ -18,6 +18,8 @@ import {LAYOUT_CONTAINERS, LAYOUT_LABELLED} from "./layout-contract.mjs";
 import {SHEET_THEMES, availableFonts, prepareSheetTheme} from "./sheet-themes.mjs";
 import {cardTemplates, importedSheet, importedTemplate, insertTemplate, prunedSheet, prunedTemplate, readSheetFile, sheetFile, templateFile, templateFromBlock, templateNamed} from "./sheet-templates.mjs";
 import {confirmRTA, promptRTA} from "./foundry-dialogs.mjs";
+import {installPanels} from "./sheet-editor-panels.mjs";
+import {openContextMenu} from "../ui/context-menu.mjs";
 import {renderSheetThemeHTML} from "../ui/sheet-template-markup.mjs";
 import {SHEET_ALIGNS, SHEET_BACKGROUND_FITS, SHEET_BACKGROUND_POSITIONS, SHEET_FILL_PROPS, SHEET_FRAME_WIDTHS, SHEET_GAPS, SHEET_IMAGE_FITS, SHEET_IMAGE_HEIGHTS, SHEET_LABELS, SHEET_NO_COLOR, SHEET_SIZES, SHEET_SPACES, SHEET_TONES} from "./layout-style-contract.mjs";
 
@@ -88,11 +90,13 @@ export class SheetLayoutController {
     });
     // A validated Ruleset shows its sheet, read-only.
     if (readOnly) { this.#selected = null; this.render(); return; }
+    installPanels(host);
     host.addEventListener("change", event => this.#onChange(event));
     // The opacity slider says its value while it moves; the change is kept when it is let go.
     host.addEventListener("input", event => { if (event.target.matches?.('[data-layout-style="opacity"]')) { event.stopPropagation(); const label = event.target.closest(".rta-form-row")?.querySelector("[data-layout-opacity-value]"); if (label) label.textContent = `${event.target.value} %`; } });
     host.addEventListener("toggle", event => { if (event.target.matches?.("[data-layout-style-group]")) this.#styleOpen = event.target.open; if (event.target.matches?.("[data-layout-more-group]")) this.#moreOpen = event.target.open; }, true);
     host.addEventListener("click", event => this.#onClick(event));
+    host.addEventListener("contextmenu", event => this.#onContextMenu(event));
     host.addEventListener("dblclick", event => { const name = elementOf(event)?.closest("[data-layer-renamable]"); if (name) { event.preventDefault(); this.#startRename(name.closest("[data-layer-node]").dataset.layerNode); } });
     host.addEventListener("toggle", event => { if (event.target.matches?.("[data-layout-layers-panel]")) this.#layersOpen = event.target.open; }, true);
     // A palette element is not a button: Enter or Space adds it like a click.
@@ -174,10 +178,8 @@ export class SheetLayoutController {
       this.#host.querySelector("[data-layout-canvas]").innerHTML = renderLayoutPreviewHTML(previewView(this.#root, this.#ruleset, {target: this.#target, contentTypeIds: this.#contentTypeIds, header: this.#header, theme: this.#theme}), {t: i18n});
       return;
     }
-    const found = this.#selected ? locate(this.#root, this.#selected) : null, node = found?.node ?? null, child = Boolean(found?.parent);
-    this.#host.querySelector("[data-layout-toolbar]").innerHTML = renderLayoutToolbarHTML({viewer: this.#viewer, brush: Boolean(this.#brush), enabled: {
-      up: child && found.index > 0, down: child && found.index < found.parent.children.length - 1, copy: Boolean(node), paste: Boolean(readClipboard()),
-      duplicate: child, brush: Boolean(node) || Boolean(this.#brush), remove: child, undo: this.#history.length > 0, redo: this.#future.length > 0}});
+    const found = this.#selected ? locate(this.#root, this.#selected) : null, node = found?.node ?? null;
+    this.#host.querySelector("[data-layout-toolbar]").innerHTML = renderLayoutToolbarHTML({viewer: this.#viewer, brush: Boolean(this.#brush), enabled: this.#enabled(found)});
     const view = previewView(this.#root, this.#ruleset, {target: this.#target, contentTypeIds: this.#contentTypeIds, header: this.#header, theme: this.#theme, viewer: this.#viewer === "all" ? null : this.#viewer});
     const canvas = this.#host.querySelector("[data-layout-canvas]");
     canvas.innerHTML = renderLayoutPreviewHTML(view, {t: i18n, selectedId: node?.id ?? null});
@@ -192,6 +194,26 @@ export class SheetLayoutController {
     this.#renderWidth();
   }
 
+  /** Which toolbar commands apply to a located block (or to no selection). */
+  #enabled(found) {
+    const node = found?.node ?? null, child = Boolean(found?.parent);
+    return {up: child && found.index > 0, down: child && found.index < found.parent.children.length - 1, copy: Boolean(node), paste: Boolean(readClipboard()),
+      duplicate: child, brush: Boolean(node) || Boolean(this.#brush), remove: child, undo: this.#history.length > 0, redo: this.#future.length > 0};
+  }
+  /** Right click on a block of the sheet or a row of the Layers: it is selected, and what can be done to it is offered. */
+  #onContextMenu(event) {
+    const element = elementOf(event)?.closest("[data-layout-canvas] [data-layout-node], [data-layer-node]");
+    if (!element || elementOf(event)?.closest(TYPING)) return;
+    const id = nodeIdOf(element);
+    if (!locate(this.#root, id)) return;
+    this.select(id);
+    const found = locate(this.#root, id), node = found.node, enabled = this.#enabled(found);
+    const offered = [["copy", "fa-copy", enabled.copy], ["paste", "fa-paste", enabled.paste], ["duplicate", "fa-clone", enabled.duplicate], ["brush", "fa-paintbrush", enabled.brush && !this.#brush],
+      ["rename", "fa-pen", LAYOUT_LABELLED.includes(node.kind) && Boolean(found.parent)], ["addTab", "fa-folder-plus", ["tabs", "tab"].includes(node.kind)],
+      ["saveTemplate", "fa-bookmark", Boolean(this.#templates) && Boolean(found.parent)], ["unstyle", "fa-eraser", Boolean(node.style && Object.keys(node.style).length)],
+      ["up", "fa-arrow-up", enabled.up], ["down", "fa-arrow-down", enabled.down], ["remove", "fa-trash", enabled.remove]];
+    openContextMenu(event, offered.filter(([, , shown]) => shown).map(([command, icon]) => ({label: i18n(`RTA.SheetEditor.Menu.${command}`), icon: `fa-solid ${icon}`, run: () => { this.#command(command); if (command !== "rename") this.#keys(); }})));
+  }
   /** The Layers tree; the selected row is scrolled into its view. */
   #renderLayers() {
     const host = this.#host.querySelector("[data-layout-layers-host]");

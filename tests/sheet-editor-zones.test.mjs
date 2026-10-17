@@ -23,6 +23,6 @@ test("the sheet editor has three zones, each scrolled on its own, and the window
 
 test("the three zones fall back by container queries on the window, never @media", () => {
   assert.doesNotMatch(css, /@media/);
-  assert.match(css, /@container rta-window \(inline-size >= 640px\)[\s\S]*?grid-template-areas: "side main" "layers main"/);
-  assert.match(css, /@container rta-window \(inline-size >= 960px\)[\s\S]*?grid-template-areas: "side main layers"/);
+  assert.match(css, /@container rta-window \(inline-size >= 640px\)[\s\S]*?grid-template-areas: "side side-bar main" "layers side-bar main"/);
+  assert.match(css, /@container rta-window \(inline-size >= 960px\)[\s\S]*?grid-template-areas: "side side-bar main layers-bar layers"/);
 });

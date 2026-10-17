@@ -40,11 +40,14 @@
   overflow: visible;
 }
 
+/* The bars between the side panels and the sheet: dragged to set a panel's width, their button hides or shows it.
+   Only beside the sheet (a stacked editor has none); the Layers' bar only when they have their own column. */
+
 @container rta-window (inline-size >= 640px) {
   .rta-sheet-editor--editing {
     display: grid;
-    grid-template-areas: "side main" "layers main";
-    grid-template-columns: minmax(18rem, 22rem) minmax(0, 1fr);
+    grid-template-areas: "side side-bar main" "layers side-bar main";
+    grid-template-columns: var(--rta-sheet-side-width, 22rem) var(--rta-space-6) minmax(0, 1fr);
     grid-template-rows: minmax(0, 3fr) minmax(0, 2fr);
     overflow: hidden;
   }
@@ -52,6 +55,7 @@
   .rta-sheet-editor__side { grid-area: side; }
   .rta-sheet-editor__main { grid-area: main; }
   .rta-sheet-editor__layers-column { grid-area: layers; }
+  .rta-sheet-editor__resizer--side { grid-area: side-bar; }
 
   .rta-sheet-editor--editing > :is(.rta-sheet-editor__side, .rta-sheet-editor__main, .rta-sheet-editor__layers-column) {
     min-block-size: 0;
@@ -59,13 +63,21 @@
     scrollbar-gutter: stable;
   }
 
-  .rta-sheet-editor__side,
-  .rta-sheet-editor__layers-column {
-    border-inline-end: 1px solid var(--rta-color-border);
+  .rta-sheet-editor--editing > .rta-sheet-editor__resizer--side {
+    display: flex;
   }
 
   .rta-sheet-editor__layers-column {
     border-block-start: 1px solid var(--rta-color-border);
+  }
+
+  /* The tools hidden: the Layers under them go too, the sheet takes the room. */
+  .rta-sheet-editor--editing.rta-sheet-editor--hide-side {
+    grid-template-columns: 0 var(--rta-space-6) minmax(0, 1fr);
+  }
+
+  .rta-sheet-editor--hide-side > :is(.rta-sheet-editor__side, .rta-sheet-editor__layers-column) {
+    display: none;
   }
 
   /* The Layers' own zone scrolls: the tree takes the room it needs. */
@@ -77,16 +89,85 @@
 
 @container rta-window (inline-size >= 960px) {
   .rta-sheet-editor--editing {
-    grid-template-areas: "side main layers";
-    grid-template-columns: minmax(20rem, 24rem) minmax(0, 1fr) minmax(13rem, 15rem);
+    grid-template-areas: "side side-bar main layers-bar layers";
+    grid-template-columns: var(--rta-sheet-side-width, 24rem) var(--rta-space-6) minmax(0, 1fr) var(--rta-space-6) var(--rta-sheet-layers-width, 15rem);
     grid-template-rows: minmax(0, 1fr);
+  }
+
+  .rta-sheet-editor--editing.rta-sheet-editor--hide-side {
+    grid-template-columns: 0 var(--rta-space-6) minmax(0, 1fr) var(--rta-space-6) var(--rta-sheet-layers-width, 15rem);
+  }
+
+  .rta-sheet-editor--editing.rta-sheet-editor--hide-layers {
+    grid-template-columns: var(--rta-sheet-side-width, 24rem) var(--rta-space-6) minmax(0, 1fr) var(--rta-space-6) 0;
+  }
+
+  .rta-sheet-editor--editing.rta-sheet-editor--hide-side.rta-sheet-editor--hide-layers {
+    grid-template-columns: 0 var(--rta-space-6) minmax(0, 1fr) var(--rta-space-6) 0;
+  }
+
+  /* With their own column, the Layers stay when the tools are hidden, and hide on their own. */
+  .rta-sheet-editor--hide-side > .rta-sheet-editor__layers-column {
+    display: flex;
+  }
+
+  .rta-sheet-editor--hide-layers > .rta-sheet-editor__layers-column {
+    display: none;
+  }
+
+  .rta-sheet-editor__resizer--layers { grid-area: layers-bar; }
+
+  .rta-sheet-editor--editing > .rta-sheet-editor__resizer--layers {
+    display: flex;
   }
 
   .rta-sheet-editor__layers-column {
     border-block-start: 0;
-    border-inline-end: 0;
-    border-inline-start: 1px solid var(--rta-color-border);
   }
+}
+
+/* A bar is a thin line the pointer drags; its button sits at the top. */
+.rta-sheet-editor__resizer {
+  position: relative;
+  display: none;
+  flex-direction: column;
+  align-items: center;
+  padding-block-start: var(--rta-space-2);
+  cursor: col-resize;
+  touch-action: none;
+}
+
+.rta-sheet-editor__resizer::before {
+  position: absolute;
+  inset-block: 0;
+  inset-inline-start: 50%;
+  border-inline-start: 1px solid var(--rta-color-border);
+  content: "";
+}
+
+.rta-sheet-editor__resizer:hover::before,
+.rta-sheet-editor__resizer[data-panel-dragging]::before {
+  border-inline-start-color: var(--rta-color-border-highlight);
+}
+
+.rta-sheet-editor--hide-side > .rta-sheet-editor__resizer--side,
+.rta-sheet-editor--hide-layers > .rta-sheet-editor__resizer--layers {
+  cursor: default;
+}
+
+.rta-sheet-editor__panel-toggle {
+  position: relative;
+  display: inline-grid;
+  flex: none;
+  place-items: center;
+  inline-size: var(--rta-space-6);
+  block-size: calc(var(--rta-space-6) * 2);
+  min-block-size: 0;
+  padding: 0;
+  border-radius: var(--rta-radius-compact);
+  font-size: var(--rta-type-micro);
+  line-height: 1;
+  cursor: pointer;
 }
 
 /* The toolbar: one row of icon buttons that always fits the column (they shrink when it is narrow), then "View as" on

@@ -487,6 +487,43 @@ for (const width of [1320, 1180, 900, 600]) {
   if (!good) result.push(`FAIL at ${width}px`);
   if (process.env.RTA_SHOTS) await page.screenshot({path: join(process.env.RTA_SHOTS, `sheet-editor-${width}.png`)});
 }
+// The side panels: hidden by their button (the sheet takes the room), shown again, and the tools' bar dragged wider.
+await page.setViewportSize({width: 1320, height: 1100});
+await page.waitForTimeout(100);
+{
+  const width = () => page.evaluate(() => Math.round(document.querySelector('.rta-sheet-editor__main').getBoundingClientRect().width));
+  const before = await width();
+  await page.click('[data-panel-toggle="side"]'); await page.click('[data-panel-toggle="layers"]'); await page.waitForTimeout(50);
+  const hidden = await page.evaluate(() => [...document.querySelectorAll('.rta-sheet-editor__side, .rta-sheet-editor__layers-column')].every(el => !el.getBoundingClientRect().width));
+  const wide = await width();
+  if (process.env.RTA_SHOTS) await page.screenshot({path: join(process.env.RTA_SHOTS, 'sheet-editor-panels-hidden.png')});
+  await page.click('[data-panel-toggle="side"]'); await page.click('[data-panel-toggle="layers"]'); await page.waitForTimeout(50);
+  const back = await width();
+  const bar = await page.evaluate(() => { const r = document.querySelector('[data-panel-resizer="side"]').getBoundingClientRect(); return {x: r.left + r.width / 2, y: r.top + r.height / 2}; });
+  const side = () => page.evaluate(() => Math.round(document.querySelector('.rta-sheet-editor__side').getBoundingClientRect().width));
+  const sideBefore = await side();
+  await page.mouse.move(bar.x, bar.y); await page.mouse.down(); await page.mouse.move(bar.x + 80, bar.y, {steps: 4}); await page.mouse.up();
+  const sideAfter = await side();
+  await page.dblclick('[data-panel-resizer="side"]', {position: {x: 6, y: 300}});
+  const reset = await side();
+  const good = hidden && wide > before + 300 && back === before && sideAfter >= sideBefore + 70 && reset === sideBefore;
+  console.log(`${good ? 'ok' : 'FAIL'} the side panels hide, come back and the tools widen by dragging their bar (sheet ${before} → ${wide} → ${back} px, tools ${sideBefore} → ${sideAfter} → ${reset} px)`);
+  if (!good) result.push('FAIL side panels');
+}
+// Right click on a block of the sheet: it is selected and its commands are offered; Duplicate runs from the menu.
+{
+  const before = await page.evaluate(() => document.querySelectorAll('[data-layout-canvas] [data-layout-node]').length);
+  await page.click('[data-layout-canvas] [data-layout-node="stat-value"]', {button: 'right'});
+  await page.waitForTimeout(50);
+  const menu = await page.evaluate(() => ({labels: [...document.querySelectorAll('#context-menu .context-item')].map(item => item.textContent.trim()), selected: document.querySelector('[data-layer-node][aria-selected="true"]')?.dataset.layerNode}));
+  if (process.env.RTA_SHOTS) await page.screenshot({path: join(process.env.RTA_SHOTS, 'sheet-editor-context-menu.png')});
+  await page.evaluate(() => [...document.querySelectorAll('#context-menu .context-item')].find(item => item.textContent.includes('Duplicate'))?.click());
+  await page.waitForTimeout(50);
+  const after = await page.evaluate(() => document.querySelectorAll('[data-layout-canvas] [data-layout-node]').length);
+  const good = menu.selected === 'stat-value' && menu.labels.some(label => label.startsWith('Copy')) && menu.labels.some(label => label.startsWith('Remove')) && after > before;
+  console.log(`${good ? 'ok' : 'FAIL'} right click selects the block and offers its commands (${menu.labels.join(', ')}), Duplicate runs from it`);
+  if (!good) result.push('FAIL context menu');
+}
 await browser.close();
 for (const line of [...result, ...errors.map(e => `FAIL error: ${e}`)]) console.log(line);
 const failed = result.filter(line => line.startsWith('FAIL')).length + errors.length;
