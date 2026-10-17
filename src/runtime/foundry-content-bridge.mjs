@@ -238,7 +238,8 @@ export class FoundryContentBridge{
       if(!type||type.storageKind==='actor')throw new Error(`Content ${acquisition.templateId} grants ${grant.templateId}, which is not an Item Content.`);
       for(let copy=0;copy<grant.count;copy++){
         try{this.assertAcquisitionEligibility(actor,versionId,grant.templateId);}catch{break;}
-        await this.createOwnedContentItem(versionId,actor.uuid,grant.templateId,{selections:grant.selections??{},prompt,depth:depth+1});
+        const made=await this.createOwnedContentItem(versionId,actor.uuid,grant.templateId,{selections:grant.selections??{},prompt,depth:depth+1});
+        for(const [fieldId,value] of Object.entries(grant.fields??{}))if(made?.item?.id)await this.runtime.setContentField(versionId,actor.uuid,made.item.id,fieldId,value);
       }
     }
   }

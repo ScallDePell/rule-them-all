@@ -20,11 +20,11 @@ export class ContentGrantHandlers {
       plan.actionIds.push(relation.targetRef.objectId);
     });
     // A granted Content Template becomes an owned Content of its own (a creature's attacks, a class's starting
-    // equipment): config.count copies, with config.selections answering its choices.
+    // equipment): config.count copies, with config.selections answering its choices and config.fields set on each (20 arrows).
     this.register('contentTemplate',(relation,plan)=>{
       const count=Number(relation.config?.count??1);
       if(!Number.isSafeInteger(count)||count<1)throw new Error(`Relation ${relation.id}: count must be a whole number of at least 1.`);
-      plan.contentGrants.push({templateId:relation.targetRef.objectId,count,selections:copyJSON(relation.config?.selections??{})});
+      plan.contentGrants.push({templateId:relation.targetRef.objectId,count,selections:copyJSON(relation.config?.selections??{}),fields:copyJSON(relation.config?.fields??{})});
     });
   }
   register(objectKind,prepare){

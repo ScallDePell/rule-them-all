@@ -69,12 +69,12 @@ class Adapter extends MemoryRuntimeAdapter{constructor(actors){super();this.acto
 test('An Actor made from an Actor Content takes on its template and receives the Contents it grants', async()=>{
   const {api,v}=await rules();
   await api.createContentType(v,{id:'creature',nameKey:'Creature',storageKind:'actor',fields:{}});
-  await api.createContentType(v,{id:'attack',nameKey:'Attack',storageKind:'item',runtimeMode:'stackable',fields:{}});
+  await api.createContentType(v,{id:'attack',nameKey:'Attack',storageKind:'item',runtimeMode:'stackable',fields:{uses:{id:'uses',name:'Uses',valueType:'integer',cardinality:'one',required:false,nullable:false,constraints:[]}}});
   await api.createContentTemplate(v,{id:'bite',nameKey:'Bite',contentTypeId:'attack'});
   await api.createContentTemplate(v,{id:'wolf',nameKey:'Wolf',contentTypeId:'creature',relations:[
     {id:'str',operation:'grant',targetRef:{objectKind:'definition',objectId:'strength'},config:{initial:{'value.base':12}}},
     {id:'alert',operation:'grant',targetRef:{objectKind:'definition',objectId:'alert'},config:{initial:{'state.active':true}}},
-    {id:'bite',operation:'grant',targetRef:{objectKind:'contentTemplate',objectId:'bite'},config:{count:2}}]});
+    {id:'bite',operation:'grant',targetRef:{objectKind:'contentTemplate',objectId:'bite'},config:{count:2,fields:{uses:3}}}]});
   await api.publishRuleset(v);
   const actors=new Actors(),runtime=createRuntimeAPI(api,{adapter:new Adapter(actors),hooks:null});
   const bridge=new FoundryContentBridge(api,runtime,{hooks:null,documentTypeResolver:()=>'npc'});
@@ -87,6 +87,7 @@ test('An Actor made from an Actor Content takes on its template and receives the
   assert.equal(state.definitionStates.alert.capabilityStates.state.active,true);
   assert.deepEqual(wolf.items.map(item=>item.name),['Bite','Bite'],'two bites, each an owned Content');
   assert.equal(Object.values(wolf.getFlag('rule-them-all','contentAcquisitions')).filter(a=>a.templateId==='bite').length,2);
+  assert.deepEqual((await runtime.listOwnedContents(v,wolf.uuid)).filter(row=>row.templateId==='bite').map(row=>row.fields.uses),[3,3],'the fields the grant sets');
   assert.equal(await bridge.applyActorTemplate(wolf.uuid),null,'applied once');
   assert.equal(await bridge.applyActorTemplate(actors.make('Plain').uuid),null,'an Actor without Content is left alone');
 });
