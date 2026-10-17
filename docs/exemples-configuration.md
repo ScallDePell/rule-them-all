@@ -980,7 +980,7 @@ Le catalogue de cyberware se range par emplacement : Cybermembres, Neuralware, C
 
 Certains sorts demandent de la concentration, d'autres peuvent se lancer en rituel, et le MJ veut les repérer d'un coup d'œil.
 
-1. Dans Tags, créez « Concentration » et « Rituel ». Donnez à chacun une « Couleur » en cochant « Personnaliser », si le Ruleset autorise les couleurs propres dans la section Organisation.
+1. Dans Tags, créez « Concentration » et « Rituel ». Donnez à chacun une « Couleur » en cochant « Personnaliser » (sinon le tag prend la couleur de la section Organisation).
 2. Ouvrez chaque sort concerné et cochez le tag dans « Tags ». Cherchez-le avec « Rechercher des tags… ».
 3. Dans la liste des sorts, chaque carte montre ses tags en couleur. Les puces de « Filtrer » permettent de ne garder que les sorts à concentration.
 4. Un tag ne change pas les règles. Pour qu'un sort à concentration se termine quand on en lance un autre, il faut une vraie règle, avec des Déclencheurs et des Durées.

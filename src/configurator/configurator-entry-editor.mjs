@@ -155,7 +155,7 @@ export class ConfiguratorEntryEditor extends ConfiguratorWindow {
     const hasOptionalCapabilities=capabilityChoices.some(cap=>cap.permitted&&!cap.forced);
     const colorSectionChoices=RULESET_SECTIONS.map(section=>({id:section.id,title:globalThis.game?.i18n?.localize?.(section.titleKey)??section.id,color:sectionColor(data,section.id),allowOverrides:mayOverrideSection(data,section.id),hasSubsections:section.collections.length>0}));
     const typeCollection=this.#kind==='definitionType'?'definitionTypes':this.#kind==='contentType'?'contentTypes':this.#kind==='tag'?'tags':null;
-    const allowTypeColor=!!typeCollection && mayOverrideSection(colorContext,sectionForCollection(typeCollection));
+    const allowTypeColor=this.#kind==='tag'||(!!typeCollection && mayOverrideSection(colorContext,sectionForCollection(typeCollection)));
     const inheritedTypeColor=typeCollection?objectColor(colorContext,typeCollection,null):RTA_NEUTRAL_COLOR;
     const fieldKinds=["definitionType","contentType"].includes(this.#kind),fieldDefinitionTypes=fieldKinds?selectableDefinitionTypes.map(type=>({...type,colors:selectColorsAttribute(this.#optionColors("definitionType",type))})):[];
     const fieldRows=fieldKinds?Object.entries(data.fields??{}).map(([id,field])=>buildFieldRow(id,field,this.#api.listValueTypes(),fieldDefinitionTypes)):[];

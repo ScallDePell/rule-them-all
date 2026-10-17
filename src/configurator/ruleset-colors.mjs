@@ -38,7 +38,9 @@ export function collectionColor(ruleset, collection) {
 export function objectColor(ruleset, collection, entry) {
   const section=sectionForCollection(collection);
   if (!section) return DEFAULT_RULESET_COLOR;
-  if (mayOverrideSection(ruleset,section) && ['definitionTypes','contentTypes','tags'].includes(collection) && isHexColor(entry?.color)) return entry.color;
+  // A Tag's color is its own; a type takes its own color only where its section allows it.
+  if (collection === 'tags' && isHexColor(entry?.color)) return entry.color;
+  if (mayOverrideSection(ruleset,section) && ['definitionTypes','contentTypes'].includes(collection) && isHexColor(entry?.color)) return entry.color;
   return collectionColor(ruleset,collection);
 }
 export const effectiveCollectionList = ruleset => COLLECTION_FIELDS.filter(collection => Array.isArray(ruleset?.[collection]));
