@@ -16,6 +16,7 @@
   "readme": "https://github.com/ScallDePell/Rule-Them-All/blob/main/README.md",
   "changelog": "https://github.com/ScallDePell/Rule-Them-All/blob/main/CHANGELOG.md",
   "bugs": "https://github.com/ScallDePell/Rule-Them-All/issues",
+  "license": "https://github.com/ScallDePell/Rule-Them-All/blob/main/LICENSE",
   "compatibility": {
     "minimum": "14",
     "verified": "14"

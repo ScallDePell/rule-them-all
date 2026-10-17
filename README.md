@@ -57,3 +57,7 @@ node qa/release-readiness.mjs
 ```
 
 Pushing a `v*` tag builds the release zip and its `module.json` (see `.github/workflows/release.yml`).
+
+## License
+
+[MIT](LICENSE)
