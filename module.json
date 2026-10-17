@@ -24,6 +24,7 @@
     "styles/sheet-builder.css",
     "styles/sheet.css",
     "styles/creation.css",
+    "styles/shared.css",
     "styles/editor.css",
     "styles/choices.css",
     "styles/rule-builder.css",

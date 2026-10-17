@@ -16,6 +16,7 @@ import {registerRulesetSheets, repairSheetChoices, translator} from "./src/runti
 import {resolveRuntimeRuleset} from "./src/runtime/runtime-contracts.mjs";
 import {installReactions} from "./src/runtime/foundry-reactions.mjs";
 import {installCreationButton} from "./src/runtime/foundry-creation.mjs";
+import {installSharedResources} from "./src/runtime/foundry-shared-resources.mjs";
 import {registerLanguageSetting, chosenLanguage, loadModuleTranslations, applyModuleTranslations} from "./src/core/module-language.mjs";
 
 // The sheet classes, kept to offer the active Ruleset's own sheets once it is loaded.
@@ -93,6 +94,7 @@ Hooks.once("ready", () => {
     installReactions();
     // Players create their character with the active Ruleset's Creation System, from the Actors directory.
     installCreationButton();
+    installSharedResources();
     ui.actors?.render?.();
     // GM sandbox only: previews the working draft. Gameplay never uses it.
     game.ruleThemAll.runtimeLab = createRuntimeAPI(api, {rulesetSource: "draft"});

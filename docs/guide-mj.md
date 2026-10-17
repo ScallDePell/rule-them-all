@@ -149,6 +149,7 @@ Le bouton de création se trouve dans l'onglet **Acteurs**. Le joueur suit les �
 - Les **valeurs** se changent sur la feuille dans les limites du Ruleset (bornes, permissions). Un joueur qui modifie un Acteur qu'il ne possède pas passe par le MJ connecté.
 - Glisser un **Objet** sur la feuille le donne à l'Acteur ; un Contenu du Ruleset pose alors ses choix et accorde ce qu'il accorde. Le retirer reprend ce qu'il avait accordé.
 - Le **combat** : l'initiative du Ruleset, ses passes et l'ordre du round sont gérés par le traqueur de combat de Foundry.
+- Les **ressources partagées** (fiche du Ruleset, bloc « Combat et ressources partagées ») : des valeurs tenues une seule fois pour la partie (réserve du MJ, horloges) ou pour chaque combat (dé d'escalade). Le bouton **Ressources partagées** du traqueur de combat les montre à tous ; le MJ les modifie avec − / +.
 - Le **temps du monde** fait expirer les états à durée.
 
 ## 7. Mettre à jour le module

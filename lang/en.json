@@ -1247,6 +1247,7 @@
       "ThenAction": "Then runs"
     },
     "Initiative": {
+      "SectionTitle": "Combat and shared resources",
       "Rolled": "{name} rolls initiative",
       "Legend": "Combat initiative",
       "Test": "Initiative roll",
@@ -1284,9 +1285,14 @@
     },
     "Shared": {
       "Legend": "Shared resources",
-      "Help": "Definitions held once for the whole table, outside the characters: a GM reserve, clocks, a die every combat shares. Effects and Formulas reach them with the World and Combat roles.",
+      "Help": "Values held once for the whole game instead of once per character. For example, a \"GM reserve\" Definition in World resources: an Action lowers it with the World role, and everyone sees the same counter. Each combat's resources start again from their starting value in every new combat, like an escalation die. Everyone sees them, and the GM changes them, from the Shared resources button in the combat tracker.",
       "World": "World resources",
-      "Combat": "Resources of each combat"
+      "Combat": "Resources of each combat",
+      "Open": "Shared resources",
+      "CurrentCombat": "Current combat",
+      "NoCombat": "No combat in progress.",
+      "Hidden": "Nothing you can see.",
+      "None": "The active Ruleset has no shared resources."
     },
     "Group": {
       "Legend": "Several Actors",

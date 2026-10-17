@@ -1247,6 +1247,7 @@
       "ThenAction": "Puis lance"
     },
     "Initiative": {
+      "SectionTitle": "Combat et ressources partagées",
       "Rolled": "{name} lance l'initiative",
       "Legend": "Initiative en combat",
       "Test": "Jet d'initiative",
@@ -1284,9 +1285,14 @@
     },
     "Shared": {
       "Legend": "Ressources partagées",
-      "Help": "Des Definitions tenues une seule fois pour toute la table, hors des personnages : réserve du MJ, horloges, dé partagé par un combat. Les Effets et les Formulas les atteignent avec les rôles Monde et Combat.",
+      "Help": "Des valeurs tenues une seule fois pour toute la partie, au lieu d'une par personnage. Par exemple, une Definition « Réserve du MJ » dans Ressources du monde : une Action la diminue avec le rôle Monde, et tout le monde voit le même compteur. Les ressources de chaque combat repartent de leur valeur de départ à chaque nouveau combat, comme un dé d'escalade. On les voit et le MJ les modifie depuis le bouton Ressources partagées du suivi de combat.",
       "World": "Ressources du monde",
-      "Combat": "Ressources de chaque combat"
+      "Combat": "Ressources de chaque combat",
+      "Open": "Ressources partagées",
+      "CurrentCombat": "Combat en cours",
+      "NoCombat": "Aucun combat en cours.",
+      "Hidden": "Rien que vous puissiez voir.",
+      "None": "Le Ruleset actif n'a pas de ressources partagées."
     },
     "Group": {
       "Legend": "Plusieurs acteurs",

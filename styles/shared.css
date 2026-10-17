@@ -1,0 +1,72 @@
+/* Rule Them'All — shared.css : panneau des ressources partagées en jeu (monde et combat en cours).
+   L'ordre de chargement (module.json "styles") fait partie de la cascade.
+   Une ligne par valeur : son nom à gauche, le nombre (et −/+ pour le MJ) à droite. */
+.rta-shared {
+  display: flex;
+  flex-direction: column;
+  gap: var(--rta-gap-block);
+  color: var(--rta-color-text);
+}
+
+.rta-shared__group {
+  display: flex;
+  flex-direction: column;
+  gap: var(--rta-gap-tight);
+}
+
+.rta-shared__group > h3 {
+  margin: 0;
+  border: 0;
+  font-size: var(--rta-type-heading);
+}
+
+.rta-shared__row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--rta-gap-row);
+  min-block-size: var(--input-height, 1.75rem);
+}
+
+/* −, the number, + and its maximum: the maximum keeps its column even when empty, so the rows line up. */
+.rta-shared__value {
+  display: grid;
+  flex: 0 0 auto;
+  grid-template-columns: auto auto auto 2.5rem;
+  align-items: center;
+  gap: var(--rta-gap-tight);
+}
+
+/* The −/+ buttons replace the browser's own arrows. */
+.rta-shared__value > input {
+  inline-size: 3.5rem;
+  text-align: center;
+  appearance: textfield;
+}
+
+.rta-shared__value > input::-webkit-inner-spin-button,
+.rta-shared__value > input::-webkit-outer-spin-button {
+  appearance: none;
+  margin: 0;
+}
+
+.rta-shared__stepper {
+  display: inline-grid;
+  flex: 0 0 auto;
+  place-items: center;
+  inline-size: var(--input-height, 1.75rem);
+  block-size: var(--input-height, 1.75rem);
+  padding: 0;
+  line-height: 1;
+}
+
+.rta-shared__number {
+  flex: 0 0 auto;
+  white-space: nowrap;
+}
+
+.rta-shared__empty,
+.rta-shared__max {
+  margin: 0;
+  color: var(--rta-color-text-secondary);
+}

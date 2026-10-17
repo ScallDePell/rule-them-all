@@ -2,6 +2,7 @@ import {RuntimeEngine} from "./runtime-engine.mjs";
 import {FoundryRuntimeAdapter} from "./foundry-runtime-adapter.mjs";
 import {serveRuntimeRelay} from "./runtime-relay.mjs";
 import {projectSheet} from "./sheet-projection.mjs";
+import {describeShared, setSharedValue} from "./shared-resources.mjs";
 
 /** relay: {request(method,args)}; a write this client cannot make on a Document goes to the GM client. */
 export function createRuntimeAPI(configurator,{adapter=new FoundryRuntimeAdapter(),hooks=globalThis.Hooks,rulesetSource="published",relay=null}={}){
@@ -44,6 +45,9 @@ export function createRuntimeAPI(configurator,{adapter=new FoundryRuntimeAdapter
     rollInitiative:(versionId,ref,options)=>engine.rollInitiative(versionId,ref,options),
     /** The world's shared Definitions, and a combat's ({kind: "combat", id}); versionId defaults to the active Ruleset. */
     initializeShared:(versionId=configurator.getActiveVersionId?.(),{combat=null}={})=>versionId?engine.initializeShared(versionId,{combat}):{},
+    /** The shared resources as the GM panel shows them, and one changed (see shared-resources.mjs). */
+    describeShared:(versionId,options)=>describeShared(engine,versionId,options),
+    setSharedValue:(versionId,ref,definitionId,slotId,value)=>setSharedValue(engine,versionId,ref,definitionId,slotId,value),
     initiativePasses:versionId=>{try{const passes=engine.ruleset(versionId).initiative?.passes;return passes?{step:passes.step,threshold:passes.threshold??0}:null;}catch{return null;}},
     initiativeEachRound:versionId=>{try{return engine.ruleset(versionId).initiative?.eachRound===true;}catch{return false;}},
     describeProgression:(versionId,id,ref)=>engine.describeProgression(versionId,id,ref),
