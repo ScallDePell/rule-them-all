@@ -10,6 +10,7 @@ import {CreationSessions, FoundryCreationSessionStore} from "./src/runtime/creat
 import {FoundryContentBridge} from "./src/runtime/foundry-content-bridge.mjs";
 import {isOwningContentHook,guardOwnedContentCreation} from "./src/runtime/foundry-content-hooks.mjs";
 import {combatChangeEvents, combatTurnEvent, timeElapsedPayload} from "./src/configurator/system-events.mjs";
+import {createModuleEventQueue} from "./src/runtime/module-event-queue.mjs";
 import {registerRulesetDice} from "./src/runtime/foundry-dice.mjs";
 import {installInitiative, installInitiativePasses, rerollEachRound} from "./src/runtime/foundry-initiative.mjs";
 import {FoundryRuntimeAdapter} from "./src/runtime/foundry-runtime-adapter.mjs";
@@ -26,19 +27,8 @@ import {registerLanguageSetting, chosenLanguage, loadModuleTranslations, applyMo
 let rulesetSheets = null;
 
 /** events: () => [{eventTypeId, payload, refs}], emitted in order on the containers they concern. */
-// One batch after the other: a combat's start, round and turn events keep their order whatever hooks fire meanwhile.
-let moduleEvents = Promise.resolve();
-// The turn each combat last announced (round|combatant|pass): the active combatant hears its turn once, however it came.
-const announcedTurns = new Map();
-function emitModuleEvents(events) {
-  moduleEvents = moduleEvents.then(async () => {
-    await game.ruleThemAll?.configuratorReady;
-    for (const {eventTypeId, payload, refs, key} of (await events()).filter(Boolean)) {
-      if (eventTypeId === "rta.combat.turn") { if (announcedTurns.get(payload.combatId) === key) continue; announcedTurns.set(payload.combatId, key); }
-      await game.ruleThemAll.runtime.emitSystemEvent(eventTypeId, payload, refs);
-    }
-  }).catch(error => console.error("Rule Them'All | Module event failed", error));
-}
+const moduleEvents = createModuleEventQueue((eventTypeId, payload, refs) => game.ruleThemAll.runtime.emitSystemEvent(eventTypeId, payload, refs), {ready: () => game.ruleThemAll?.configuratorReady});
+const emitModuleEvents = events => moduleEvents.push(events);
 
 
 let storage;
@@ -169,7 +159,9 @@ Hooks.once("ready", () => {
       // Initiative rerolled at a new round reorders the turns: the turn event goes to whoever acts first after it.
       const rerolled = await rerollEachRound(combat, prior, current, () => game.ruleThemAll.runtime)
         .catch(error => { console.error("Rule Them'All | Initiative reroll failed", error); return false; });
-      return combatChangeEvents(combat, prior, rerolled ? {...current, turn: combat.turn, combatantId: combat.combatant?.id ?? null} : current);
+      const events = combatChangeEvents(combat, prior, rerolled ? {...current, turn: combat.turn, combatantId: combat.combatant?.id ?? null} : current);
+      // Whatever the change names, the batch ends on the turn of the combatant acting now.
+      return events.some(e => e.eventTypeId === "rta.combat.turn") ? events : [...events, combatTurnEvent(combat)];
     });
   });
   // The combatant acting can change without a turn change (initiative rolled or rerolled, a pass flag, a combatant
@@ -178,7 +170,7 @@ Hooks.once("ready", () => {
   Hooks.on("updateCombat", combat => announceTurn(combat));
   for (const hook of ["updateCombatant", "deleteCombatant"]) Hooks.on(hook, combatant => announceTurn(combatant.parent ?? combatant.combat));
   Hooks.on("deleteCombat", combat => {
-    announcedTurns.delete(combat.id);
+    moduleEvents.forget(combat.id);
     if (!game.users.activeGM?.isSelf || !combat.started) return;
     emitModuleEvents(() => [{eventTypeId: "rta.combat.end", payload: {combatId: combat.id, round: combat.round}, refs: combat.combatants.map(c => c.actor?.uuid).filter(Boolean)}]);
   });

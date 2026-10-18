@@ -1,5 +1,9 @@
 # Changelog
 
+## 1.0.13
+
+- Combat: the first combatant of a combat or of a round hears its turn after the start and round events, even when Foundry signals the turn first (the start reset its pass, so it could not attack until the turn was moved back and forth).
+
 ## 1.0.12
 
 - Combat: the combatant acting always hears its turn, also when it became the one acting without a turn change (initiative rolled or rerolled, a pass, a combatant removed), once per round, combatant and pass; module events run one batch after the other.
