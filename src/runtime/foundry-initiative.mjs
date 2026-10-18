@@ -51,18 +51,21 @@ export function installInitiative(CombatClass, getRuntime, {chat = globalThis.Ch
   CombatClass.prototype.rollInitiative = rollInitiative;
 }
 
-/** New round (GM): combatants whose Ruleset rerolls initiative each round roll again, and the round restarts at its first turn. */
+/** New round (GM): combatants whose Ruleset rerolls initiative each round roll again, and the round restarts at its first
+ * turn. At the start of the combat, only those with no initiative yet roll, and the combat starts with the best one: a
+ * combatant made current before the initiatives were rolled does not keep the turn. */
 export async function rerollEachRound(combat, prior, current, getRuntime) {
-  if (!(Number(current?.round) > Number(prior?.round ?? 0)) || Number(prior?.round ?? 0) < 1) return false;
-  const runtime = getRuntime(), ids = [];
+  if (!(Number(current?.round) > Number(prior?.round ?? 0))) return false;
+  const starting = Number(prior?.round ?? 0) < 1, runtime = getRuntime(), each = [];
   const combatants = typeof combat.combatants?.values === "function" ? [...combat.combatants.values()] : [...(combat.combatants ?? [])];
   for (const combatant of combatants) {
     const state = combatant.actor?.uuid ? await runtime.getContainerState(combatant.actor.uuid) : null;
-    if (state?.rulesetVersionId && runtime.initiativeEachRound(state.rulesetVersionId)) ids.push(combatant.id);
+    if (state?.rulesetVersionId && runtime.initiativeEachRound(state.rulesetVersionId)) each.push(combatant);
   }
-  if (!ids.length) return false;
-  await combat.rollInitiative(ids);
-  await combat.update({turn: 0});
+  if (!each.length) return false;
+  const ids = (starting ? each.filter(c => c.initiative === null || c.initiative === undefined || c.initiative === "") : each).map(c => c.id);
+  if (ids.length) await combat.rollInitiative(ids);
+  if (Number(combat.turn) !== 0) await combat.update({turn: 0});
   return true;
 }
 

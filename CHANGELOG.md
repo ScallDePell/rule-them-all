@@ -1,5 +1,10 @@
 # Changelog
 
+## 1.0.14
+
+- Combat start with a Ruleset that rerolls initiative each round: combatants with no initiative yet roll it, and the combat starts on the best one (a combatant made current before the rolls no longer keeps the turn). Initiatives already rolled stay.
+- A combat started again begins at the first initiative pass.
+
 ## 1.0.13
 
 - Combat: the first combatant of a combat or of a round hears its turn after the start and round events, even when Foundry signals the turn first (the start reset its pass, so it could not attack until the turn was moved back and forth).

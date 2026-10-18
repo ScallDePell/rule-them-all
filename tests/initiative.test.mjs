@@ -51,6 +51,11 @@ test('The combat tracker uses it for Ruleset Actors, the game system for the oth
   assert.equal(await rerollEachRound(combat,{round:1},{round:2},()=>bridged),true);
   assert.deepEqual(combat.initiatives,{ca:5.03,cb:21.01});assert.equal(combat.turn,0);
   assert.equal(await rerollEachRound(combat,{round:2,turn:0},{round:2,turn:1},()=>bridged),false,'not a new round');
+  // The combat starts: the rolled initiatives stay, a combatant still without one rolls, and the best acts first.
+  combat.combatants.get('ca').initiative=5.03;combat.combatants.get('cb').initiative=null;combat.turn=1;
+  adapter.queue=[7];
+  assert.equal(await rerollEachRound(combat,{round:0,turn:null},{round:1,turn:1},()=>bridged),true);
+  assert.deepEqual(combat.initiatives,{ca:5.03,cb:8.01});assert.equal(combat.turn,0);
 });
 
 test('Saving checks the initiative settings', async()=>{

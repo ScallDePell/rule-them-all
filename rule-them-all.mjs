@@ -155,7 +155,11 @@ Hooks.once("ready", () => {
     if (!game.users.activeGM?.isSelf) return;
     // A combat that starts gets its shared Definitions before its first events.
     emitModuleEvents(async () => {
-      if (Number(prior?.round ?? 0) < 1) await game.ruleThemAll.runtime.initializeShared(undefined, {combat: {kind: "combat", id: combat.id}});
+      if (Number(prior?.round ?? 0) < 1) {
+        await game.ruleThemAll.runtime.initializeShared(undefined, {combat: {kind: "combat", id: combat.id}});
+        // A combat started again (rewound to round 0) starts from the first pass.
+        if (Number(combat.getFlag(MODULE_ID, "initiativePass") ?? 1) !== 1) await combat.unsetFlag(MODULE_ID, "initiativePass");
+      }
       // Initiative rerolled at a new round reorders the turns: the turn event goes to whoever acts first after it.
       const rerolled = await rerollEachRound(combat, prior, current, () => game.ruleThemAll.runtime)
         .catch(error => { console.error("Rule Them'All | Initiative reroll failed", error); return false; });
