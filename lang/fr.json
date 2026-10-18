@@ -1653,6 +1653,8 @@
         "Fields": "Champs",
         "ContentFields": "Champs du Contenu",
         "Families": "Familles de Définitions",
+        "Descriptions": "descriptions",
+        "Description": "Description (échelle descriptive)",
         "Held": "Contenu détenu, par type",
         "Hint": "Clique pour ajouter dans le bloc sélectionné, ou glisse sur la feuille. Une famille ajoute la liste de ses Définitions.",
         "Search": "Rechercher",

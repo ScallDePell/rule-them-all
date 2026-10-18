@@ -228,3 +228,24 @@ test('name, portrait and token blocks: the Document itself, placed anywhere but 
   assert.match(renderLayoutPropertiesHTML({id:'t',kind:'token',updatePlaced:true},ctx),/data-layout-prop="updatePlaced" checked/);
   assert.doesNotMatch(renderLayoutPropertiesHTML({id:'p',kind:'portrait'},ctx),/updatePlaced|data-layout-prop="src"/);
 });
+
+test('description blocks start on a Definition that has a scale, and a family with scales is offered as a list of its words',()=>{
+  const ruleset={definitionTypes:[{id:'trait',nameKey:'Traits'},{id:'skill',nameKey:'Skills'}],
+    definitions:[{id:'luck',definitionTypeId:'trait',capabilities:['value']},{id:'might',definitionTypeId:'trait',capabilities:['value'],scaleRef:'words'},{id:'climb',definitionTypeId:'skill',capabilities:['value']}],
+    scales:[{id:'words',nameKey:'Words',basis:'value',rows:[{id:'r1',min:null,max:null,labelKey:'Strong'}]}]};
+  const groups=paletteGroups(ruleset,{target:'actor'});
+  const fields=groups.find(g=>g.id==='fields').items, families=groups.find(g=>g.id==='families').items;
+  const description=fields.find(item=>item.kind==='description');
+  assert.ok(description);
+  const root={id:'root',kind:'section',children:[]};
+  const node=paletteNode(description.spec,root,ruleset);
+  assert.equal(node.display,'description');
+  assert.equal(node.source.reference.objectId,'might','not luck, which has no scale');
+  const lists=families.filter(item=>item.spec.definitionTypeId==='trait');
+  assert.deepEqual(lists.map(item=>item.spec.display??null),[null,'description']);
+  assert.equal(lists[1].suffixKey,'RTA.SheetEditor.Palette.Descriptions');
+  assert.equal(families.filter(item=>item.spec.definitionTypeId==='skill').length,1,'no scale, no list of words');
+  const list=paletteNode(lists[1].spec,root,ruleset);
+  assert.deepEqual(list.children.map(child=>[child.source.kind,child.display]),[['each','description']]);
+  assert.equal(paletteGroups({...ruleset,scales:[]},{target:'actor'}).find(g=>g.id==='fields').items.some(item=>item.kind==='description'),false);
+});

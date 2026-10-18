@@ -10,6 +10,7 @@ import {copyToClipboard, pasteBlock, readClipboard, styleFor} from "./sheet-layo
 import {EACH_OUTPUTS, itemContentTypes, offeredInSheets, canMoveInto, canPlace, paletteGroups, paletteNode, childKinds, columnsOf, contentFields, defaultValueLabel, insertNode, isContainer, locate, maxColumns, moveInto, moveNode, newNode, outputLabelKey, previewView, removeNode, repeaterOf, updateNode, writableSource} from "./sheet-layout-model.mjs";
 import {refToken, parseRefToken} from "./reference-token.mjs";
 import {findSlot} from "./capability-slots.mjs";
+import {descriptionScale} from "./rule-contracts.mjs";
 import {renderLayoutPreviewHTML} from "../ui/sheet-markup.mjs";
 import {NONE, kindText, renderLayoutLayersHTML, renderLayoutPaletteHTML, renderLayoutPropertiesHTML, renderLayoutToolbarHTML, renderPreviewWidthHTML} from "../ui/sheet-editor-markup.mjs";
 import {selectColorsAttribute} from "../ui/select-option-presentation.mjs";
@@ -367,7 +368,7 @@ export class SheetLayoutController {
     const filter = host.querySelector("[data-layout-palette-filter]")?.value ?? "";
     const groups = paletteGroups(this.#ruleset, {target: this.#target, contentTypeIds: this.#contentTypeIds}).map(group => ({
       id: group.id, text: group.labelKey ? i18n(group.labelKey) : group.label,
-      items: group.items.map(item => ({...item, text: item.labelKey ? i18n(item.labelKey) : item.label ?? kindText(item.kind)}))}));
+      items: group.items.map(item => ({...item, text: `${item.labelKey ? i18n(item.labelKey) : item.label ?? kindText(item.kind)}${item.suffixKey ? ` · ${i18n(item.suffixKey)}` : ""}`}))}));
     host.innerHTML = renderLayoutPaletteHTML(groups, {filter});
     this.#filterPalette(filter);
   }
@@ -662,7 +663,8 @@ export class SheetLayoutController {
   }
   #sourceChoices(kind, node) {
     const r = this.#ruleset, color = (k, e) => selectColorsAttribute(this.#colors(k, e));
-    if (kind === "output") return (r.definitions ?? []).flatMap(definition => EACH_OUTPUTS.filter(o => (definition.capabilities ?? []).includes(o.capabilityId)).flatMap(o => {
+    // A description reads only a Definition that has a scale: the others would show nothing.
+    if (kind === "output") return (r.definitions ?? []).filter(definition => node.display !== "description" || descriptionScale(r, definition.id)).flatMap(definition => EACH_OUTPUTS.filter(o => (definition.capabilities ?? []).includes(o.capabilityId)).flatMap(o => {
       const slots = ["pool", "collection"].includes(o.capabilityId) ? (definition.slots?.[o.capabilityId] ?? []).map(slot => slot.id) : [null];
       return slots.map(slotId => ({value: refToken({objectKind: "definition", objectId: definition.id, capabilityId: o.capabilityId, ...(slotId ? {slotId} : {}), outputId: o.outputId}),
         label: `${definition.nameKey} · ${slotId ? `${findSlot(definition, o.capabilityId, slotId)?.name || slotId} · ` : ""}${i18n(outputLabelKey(o.capabilityId, o.outputId))}`, colors: color("definition", definition)}));

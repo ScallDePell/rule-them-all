@@ -1,5 +1,10 @@
 # Changelog
 
+## 1.0.11
+
+- Combat: when initiative is rerolled at a new round, the turn event goes to the combatant who acts first after the reroll (it went to whoever was first before it, so the real first combatant had no pass and could not attack).
+- Sheet editor: a "Description (descriptive scale)" field starts on a Definition that has a scale, its source list only offers those, and each Definition family with scales is also offered as a list of its words.
+
 ## 1.0.10
 
 - Sheets: words of a description scale read as prose (they wrap, at the body weight); in a list, they take the free width and the names stay whole.

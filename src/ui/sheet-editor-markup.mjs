@@ -74,7 +74,7 @@ export function renderLayoutLayersHTML(root, {selectedId = null, collapsed = new
 }
 
 const KIND_ICONS = {section: "fa-square", grid: "fa-table-cells", tabs: "fa-folder", tab: "fa-folder-open", repeater: "fa-list", value: "fa-hashtag", gauge: "fa-battery-half", dots: "fa-circle-dot", content: "fa-id-card", action: "fa-dice-d20", text: "fa-font", image: "fa-image", contents: "fa-box-open", progression: "fa-arrow-trend-up", spacer: "fa-border-none", name: "fa-signature", portrait: "fa-image-portrait", token: "fa-chess-pawn",
-  notes: "fa-note-sticky", separator: "fa-grip-lines", boxes: "fa-square-check", clock: "fa-clock"};
+  notes: "fa-note-sticky", separator: "fa-grip-lines", boxes: "fa-square-check", clock: "fa-clock", description: "fa-quote-left"};
 
 /** What can be added: blocks, then the Ruleset's own elements. A click adds an item into the selection; it can also
    be dragged onto the sheet. groups: paletteGroups (configurator/sheet-layout-model.mjs), labels given by the controller. */

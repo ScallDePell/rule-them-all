@@ -159,10 +159,11 @@ Hooks.once("ready", () => {
     // A combat that starts gets its shared Definitions before its first events.
     emitModuleEvents(async () => {
       if (Number(prior?.round ?? 0) < 1) await game.ruleThemAll.runtime.initializeShared(undefined, {combat: {kind: "combat", id: combat.id}});
-      return combatChangeEvents(combat, prior, current);
+      // Initiative rerolled at a new round reorders the turns: the turn event goes to whoever acts first after it.
+      const rerolled = await rerollEachRound(combat, prior, current, () => game.ruleThemAll.runtime)
+        .catch(error => { console.error("Rule Them'All | Initiative reroll failed", error); return false; });
+      return combatChangeEvents(combat, prior, rerolled ? {...current, turn: combat.turn, combatantId: combat.combatant?.id ?? null} : current);
     });
-    Promise.resolve(game.ruleThemAll?.configuratorReady).then(() => rerollEachRound(combat, prior, current, () => game.ruleThemAll.runtime))
-      .catch(error => console.error("Rule Them'All | Initiative reroll failed", error));
   });
   Hooks.on("deleteCombat", combat => {
     if (!game.users.activeGM?.isSelf || !combat.started) return;

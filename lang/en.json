@@ -1653,6 +1653,8 @@
         "Fields": "Fields",
         "ContentFields": "Content fields",
         "Families": "Definition families",
+        "Descriptions": "descriptions",
+        "Description": "Description (descriptive scale)",
         "Held": "Held Content, by type",
         "Hint": "Click to add into the selected block, or drag onto the sheet. A family adds the list of its Definitions.",
         "Search": "Search",

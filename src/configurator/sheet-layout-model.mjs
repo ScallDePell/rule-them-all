@@ -124,6 +124,7 @@ export function paletteGroups(ruleset, {target = "actor", contentTypeIds = []} =
     {kind: "value", labelKey: "RTA.SheetEditor.Kind.value", spec: {kind: "value"}},
     ...(target === "actor" ? [{kind: "gauge", labelKey: "RTA.SheetEditor.Display.gauge", spec: {kind: "value", display: "gauge"}}, {kind: "dots", labelKey: "RTA.SheetEditor.Display.dots", spec: {kind: "value", display: "dots"}},
       {kind: "boxes", labelKey: "RTA.SheetEditor.Display.boxes", spec: {kind: "value", display: "boxes"}}, {kind: "clock", labelKey: "RTA.SheetEditor.Display.clock", spec: {kind: "value", display: "clock"}},
+      ...(describedDefinitions(ruleset).length ? [{kind: "description", labelKey: "RTA.SheetEditor.Palette.Description", spec: {kind: "value", display: "description"}}] : []),
       {kind: "notes", spec: {kind: "notes"}}] : []),
     ...((ruleset.actions ?? []).some(enabled) ? [{kind: "action", spec: {kind: "action"}}] : []),
     ...(target === "actor" && itemContentTypes(ruleset).some(offeredInSheets) ? [{kind: "contents", spec: {kind: "contents"}}] : []),
@@ -137,7 +138,10 @@ export function paletteGroups(ruleset, {target = "actor", contentTypeIds = []} =
     return [...groups, ...templateGroup(ruleset, target)];
   }
   const families = (ruleset.definitionTypes ?? []).filter(type => enabled(type) && offeredInSheets(type) && (ruleset.definitions ?? []).some(d => enabled(d) && d.definitionTypeId === type.id));
-  if (families.length) groups.push({id: "families", labelKey: "RTA.SheetEditor.Palette.Families", items: families.map(type => ({label: name(type), kind: "repeater", spec: {kind: "repeater", definitionTypeId: type.id}}))});
+  // A family whose Definitions have description scales is offered a second time, as the list of its words.
+  const described = new Set(describedDefinitions(ruleset).map(d => d.definitionTypeId));
+  if (families.length) groups.push({id: "families", labelKey: "RTA.SheetEditor.Palette.Families", items: families.flatMap(type => [{label: name(type), kind: "repeater", spec: {kind: "repeater", definitionTypeId: type.id}},
+    ...(described.has(type.id) ? [{label: name(type), suffixKey: "RTA.SheetEditor.Palette.Descriptions", kind: "repeater", spec: {kind: "repeater", definitionTypeId: type.id, display: "description"}}] : [])])});
   const held = (ruleset.contentTypes ?? []).filter(type => enabled(type) && offeredInSheets(type));
   if (held.length) groups.push({id: "held", labelKey: "RTA.SheetEditor.Palette.Held", items: held.map(type => ({label: name(type), kind: "content", spec: {kind: "value", source: {kind: "content", contentTypeId: type.id}}}))});
   return [...groups, ...templateGroup(ruleset, target)];
@@ -154,6 +158,15 @@ function templateGroup(ruleset, target) {
   return [{id: "templates", labelKey: "RTA.SheetTemplate.Palette", items}];
 }
 
+/** The Definitions with a description scale (their own or their type's) and a number to read it with. */
+export const describedDefinitions = ruleset => (ruleset.definitions ?? []).filter(d => enabled(d) && descriptionScale(ruleset, d.id) && describedOutput(d));
+const describedOutput = definition => EACH_OUTPUTS.find(o => ["value", "pool"].includes(o.capabilityId) && (definition.capabilities ?? []).includes(o.capabilityId)) ?? null;
+/** The output a description reads for a Definition: its value, else its pool's current points (first slot). */
+function describedSource(definition) {
+  const output = describedOutput(definition), slotId = output?.capabilityId === "pool" ? definition.slots?.pool?.[0]?.id : null;
+  return output && {kind: "output", reference: {objectKind: "definition", objectId: definition.id, capabilityId: output.capabilityId, ...(slotId ? {slotId} : {}), outputId: output.outputId}};
+}
+
 /** The first Definition output a gauge can fill: a pool's current points, else any number. */
 function gaugeSource(ruleset) {
   const definition = (ruleset.definitions ?? []).find(d => enabled(d) && (d.capabilities ?? []).includes("pool"));
@@ -167,8 +180,10 @@ export function paletteNode(spec, root, ruleset, {parentId = root?.id, target = 
   if (spec?.kind === "repeater" && spec.definitionTypeId) {
     const id = freshId(root, "repeater"), node = {id, kind: "repeater", query: {definitionTypeId: spec.definitionTypeId}, columns: 1, children: []};
     // A new list shows each Definition's main value straight away.
-    const output = EACH_OUTPUTS.find(o => (ruleset.definitions ?? []).some(d => d.definitionTypeId === spec.definitionTypeId && (d.capabilities ?? []).includes(o.capabilityId)));
-    if (output) node.children.push({id: `${id}-value`, kind: "value", source: {kind: "each", capabilityId: output.capabilityId, outputId: output.outputId}});
+    const members = (ruleset.definitions ?? []).filter(d => d.definitionTypeId === spec.definitionTypeId);
+    const output = spec.display === "description" ? members.map(describedOutput).find(Boolean) : EACH_OUTPUTS.find(o => members.some(d => (d.capabilities ?? []).includes(o.capabilityId)));
+    // A list of descriptions shows each Definition's words, read from its scale, beside its name.
+    if (output) node.children.push({id: `${id}-value`, kind: "value", source: {kind: "each", capabilityId: output.capabilityId, outputId: output.outputId}, ...(spec.display === "description" ? {display: "description"} : {})});
     return node;
   }
   if (spec?.kind === "progression" && spec.progressionSystemRef) {
@@ -180,6 +195,8 @@ export function paletteNode(spec, root, ruleset, {parentId = root?.id, target = 
     if (!node) return null;
     const inRepeater = Boolean(locate(root, parentId)?.path.some(entry => entry.kind === "repeater"));
     if (spec.display === "gauge" && !inRepeater) node.source = gaugeSource(ruleset) ?? node.source;
+    // A description starts on the first Definition that has a scale; in a list, on the row's value.
+    if (spec.display === "description" && !inRepeater && !spec.source) { const first = describedDefinitions(ruleset)[0]; if (first) node.source = describedSource(first); }
     if (spec.display) node.display = spec.display;
     // A clock starts with 4 segments (a short task); the count changes in its settings.
     if (spec.display === "clock") node.dots = 4;
