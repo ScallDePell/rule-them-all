@@ -16,7 +16,7 @@ import {FoundryRuntimeAdapter} from "./src/runtime/foundry-runtime-adapter.mjs";
 import {actionSummary, registerRulesetSheets, repairSheetChoices, translator} from "./src/runtime/foundry-sheets.mjs";
 import {resolveRuntimeRuleset} from "./src/runtime/runtime-contracts.mjs";
 import {installReactions} from "./src/runtime/foundry-reactions.mjs";
-import {installActionCards} from "./src/runtime/foundry-chat.mjs";
+import {installActionCards, postActionCard} from "./src/runtime/foundry-chat.mjs";
 import {installTokenBars} from "./src/runtime/foundry-token-bars.mjs";
 import {installCreationButton} from "./src/runtime/foundry-creation.mjs";
 import {installSharedResources} from "./src/runtime/foundry-shared-resources.mjs";
@@ -104,7 +104,10 @@ Hooks.once("ready", () => {
     relay.listen(message => game.ruleThemAll.runtime.serveRelay(message));
     // Reactions offered by Triggers are asked of the reacting Actor's player, on their own client.
     installReactions();
-    installActionCards({summarize: (result, versionId) => actionSummary(result, {t: translator(versionId), ruleset: resolveRuntimeRuleset(api, versionId)})});
+    const summarize = (result, versionId) => actionSummary(result, {t: translator(versionId), ruleset: resolveRuntimeRuleset(api, versionId)});
+    installActionCards({summarize});
+    // For other modules that run an Action themselves: its chat card, as the sheet posts it (Rolls, roll mode, buttons).
+    game.ruleThemAll.chat = Object.freeze({postActionCard: (result, versionId, {speaker = null} = {}) => postActionCard(ChatMessage, {speaker, summary: summarize(result, versionId), result})});
     installTokenBars();
     // Players create their character with the active Ruleset's Creation System, from the Actors directory.
     installCreationButton();

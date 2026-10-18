@@ -32,7 +32,7 @@ Frontière : le domaine ne produit pas de HTML, la présentation ne décide ni d
 
 ## 4. Points d'extension
 
-- `game.ruleThemAll` : API du configurateur et du runtime.
+- `game.ruleThemAll` : API du configurateur et du runtime ; `game.ruleThemAll.chat.postActionCard(result, versionId, {speaker})` poste la carte de chat d'une Action qu'un autre module a lancée avec `runtime.executeAction`.
 - Hooks : `ruleThemAllTestResolved`, `ruleThemAllEvent`, `ruleThemAllActionExecuted`, `ruleThemAllLedgerEntry`, `ruleThemAllReactionOffered`, `ruleThemAllChoiceOffered`.
 - `ruleThemAllRegisterTypes` (au `setup`) : un autre module y ajoute des types de valeur, des nœuds de formule et des opérations d'effet.
 

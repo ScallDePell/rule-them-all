@@ -1,5 +1,10 @@
 # Changelog
 
+## 1.0.8
+
+- `game.ruleThemAll.chat.postActionCard(result, versionId, {speaker})`: another module that runs an Action with `runtime.executeAction` posts the same chat card as the sheet.
+- Real World Fantasy 2.1.0 in `Rulesets/rwf`: practice outside combat only from a test the GM asks for (the "Demandé par le MJ" checkbox is gone).
+
 ## 1.0.7
 
 - Fixed: every Test or Action roll in Foundry failed with "Expected plain JSON data." (the Foundry Roll data kept for the chat card is now copied as plain JSON).
