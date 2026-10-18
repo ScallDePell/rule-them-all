@@ -3,7 +3,7 @@ import assert from 'node:assert/strict';
 import {readFileSync} from 'node:fs';
 import {readCssBundle} from './helpers/css-bundle.mjs';
 const css=readCssBundle();
-const home=readFileSync(new URL('../templates/configurator/configurator.hbs',import.meta.url),'utf8');
+const home=readFileSync(new URL('../templates/configurator/configurator.hbs',import.meta.url),'utf8').replace(/\r\n/g,'\n');
 
 test('one canonical full-height rail for Ruleset tiles, General, collections, dependencies, and navigation',()=>{
   assert.equal((css.match(/--rta-rail-width:\s*4px;/g)||[]).length,1);

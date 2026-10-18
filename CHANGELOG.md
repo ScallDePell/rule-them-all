@@ -1,5 +1,10 @@
 # Changelog
 
+## 1.0.7
+
+- Fixed: every Test or Action roll in Foundry failed with "Expected plain JSON data." (the Foundry Roll data kept for the chat card is now copied as plain JSON).
+- The repository checks out with LF line endings on every platform; the tests that read templates and stylesheets also accept CRLF.
+
 ## 1.0.6
 
 - An Actor made from an Actor Content (a creature dragged from its compendium) takes on its template: its values, states and Actions, and the Item Contents it grants, created as its Items.

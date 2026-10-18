@@ -2,9 +2,9 @@ import test from "node:test";
 import assert from "node:assert/strict";
 import {readFileSync} from "node:fs";
 
-const template = readFileSync(new URL("../templates/configurator/entry-editor.hbs", import.meta.url), "utf8");
-const css = readFileSync(new URL("../styles/sheet-builder.css", import.meta.url), "utf8");
-const editor = readFileSync(new URL("../src/configurator/configurator-entry-editor.mjs", import.meta.url), "utf8");
+const template = readFileSync(new URL("../templates/configurator/entry-editor.hbs", import.meta.url), "utf8").replace(/\r\n/g, "\n");
+const css = readFileSync(new URL("../styles/sheet-builder.css", import.meta.url), "utf8").replace(/\r\n/g, "\n");
+const editor = readFileSync(new URL("../src/configurator/configurator-entry-editor.mjs", import.meta.url), "utf8").replace(/\r\n/g, "\n");
 
 test("the sheet editor has three zones, each scrolled on its own, and the window buttons outside them", () => {
   const start = template.indexOf("{{#if isSheetDefinition}}"), end = template.indexOf("\n    {{else}}\n", start) + 5, sheet = template.slice(start, end);
