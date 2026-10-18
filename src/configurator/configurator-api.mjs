@@ -9,6 +9,7 @@ import {valueTypeRegistry} from "./value-type-registry.mjs";
 import {ENTRY_OPERATIONS} from "./entry-operations.mjs";
 import {duplicateEntryData} from "./entry-duplication.mjs";
 import {applyRulesetPartImport, collectDependencies, exportRulesetPart, planRulesetPartImport} from "./ruleset-parts.mjs";
+import {applyExtensionInstall, planExtensionInstall, removeExtension} from "./ruleset-extensions.mjs";
 
 function registryAPI(registry) {
   const api={...createGraphAPI(registry),
@@ -26,21 +27,29 @@ function registryAPI(registry) {
   const draftOf=v=>{const r=registry.getRecord(v); if(!r) throw new Error(`RulesetVersion not found: ${v}.`); return r.workingDraft;};
   /** Parts of a Ruleset: what a selection needs, the part itself, and reading a part into a draft. */
   api.listPartDependencies=(v,selection,{stop=[]}={})=>collectDependencies(draftOf(v),selection,{stop});
-  api.exportRulesetPart=(v,{selection,expect=[],name=""}={})=>exportRulesetPart(draftOf(v),{selection,expect,name,worldLocalizations:registry.getVersionWorldOverrides(v)});
+  api.exportRulesetPart=(v,{selection,expect=[],name="",extension=null}={})=>exportRulesetPart(draftOf(v),{selection,expect,name,extension,worldLocalizations:registry.getVersionWorldOverrides(v)});
   api.planRulesetPartImport=(v,payload)=>planRulesetPartImport(draftOf(v),payload);
+  // The part's world translations fill texts this Ruleset has none for.
+  const addTranslations=(v,localizations)=>{for(const [locale,translations] of Object.entries(localizations))for(const [key,text] of Object.entries(translations))
+    if(typeof text==="string"&&registry.getWorldOverride(v,locale,key)===undefined)registry.setWorldOverride(v,locale,key,text);};
   api.importRulesetPart=(v,payload,decisions={})=>{
     const result=applyRulesetPartImport(draftOf(v),payload,decisions);
-    registry.update(v,result.patch);
-    // The part's world translations fill texts this Ruleset has none for.
-    for(const [locale,translations] of Object.entries(result.localizations))for(const [key,text] of Object.entries(translations))
-      if(typeof text==="string"&&registry.getWorldOverride(v,locale,key)===undefined)registry.setWorldOverride(v,locale,key,text);
+    registry.update(v,result.patch);addTranslations(v,result.localizations);
     return {created:result.created,replaced:result.replaced,renamed:result.renamed};
   };
+  /** Extensions: parts with a header, installed, updated and removed as a whole. */
+  api.planExtensionInstall=(v,payload)=>planExtensionInstall(draftOf(v),payload);
+  api.installExtension=(v,payload,decisions={})=>{
+    const result=applyExtensionInstall(draftOf(v),payload,decisions);
+    registry.update(v,result.patch);addTranslations(v,result.localizations);
+    return {record:result.record,created:result.created,replaced:result.replaced,removed:result.removed};
+  };
+  api.removeExtension=(v,id)=>{const result=removeExtension(draftOf(v),id);registry.update(v,result.patch);return {removed:result.removed,restored:result.restored};};
   /** A copy of one entry under a new name, created in the same Ruleset; returns the new entry. */
   api.duplicateEntry=(v,kind,id,name)=>{const ops=ENTRY_OPERATIONS[kind]; if(!ops)throw new Error(`Entries of kind ${kind} cannot be duplicated.`); const source=api[ops.get](v,id); if(!source)throw new Error(`Entry not found: ${kind} ${id}.`); return api[ops.create](v,duplicateEntryData(registry.get(v),kind,source,name));};
   return api;
 }
-const MUTATIONS=new Set(["duplicateEntry","createRuleset","updateRuleset","deleteRulesetVersion","publishRuleset","validateRulesetVersion","createNewRulesetVersion","importRuleset","importRulesetPart","setActiveVersionId","setWorldOverride","deleteWorldOverride","registerDefinitionType","updateDefinitionType","deleteDefinitionType","createDefinition","updateDefinition","deleteDefinition","createParameter","updateParameter","deleteParameter","createFormula","updateFormula","deleteFormula","createFormulaBinding","updateFormulaBinding","deleteFormulaBinding","createCondition","updateCondition","deleteCondition","createRoll","updateRoll","deleteRoll","createOutcome","updateOutcome","deleteOutcome","createTest","updateTest","deleteTest","createEffect","updateEffect","deleteEffect","createAction","updateAction","deleteAction","createPermissionPolicy","updatePermissionPolicy","deletePermissionPolicy","createEventType","updateEventType","deleteEventType","createTrigger","updateTrigger","deleteTrigger","createContentType","updateContentType","deleteContentType","createContentTemplate","updateContentTemplate","deleteContentTemplate","createModifier","updateModifier","deleteModifier","createDuration","updateDuration","deleteDuration","createDie","updateDie","deleteDie","createTable","updateTable","deleteTable","createScale","updateScale","deleteScale","createCreationSystem","updateCreationSystem","deleteCreationSystem","createProgressionSystem","updateProgressionSystem","deleteProgressionSystem","createSheetDefinition","updateSheetDefinition","deleteSheetDefinition","createSheetTemplate","updateSheetTemplate","deleteSheetTemplate","createSheetTheme","updateSheetTheme","deleteSheetTheme","createTag","updateTag","deleteTag","reorderEntries","applyRecipe"]);
+const MUTATIONS=new Set(["duplicateEntry","createRuleset","updateRuleset","deleteRulesetVersion","publishRuleset","validateRulesetVersion","createNewRulesetVersion","importRuleset","importRulesetPart","installExtension","removeExtension","setActiveVersionId","setWorldOverride","deleteWorldOverride","registerDefinitionType","updateDefinitionType","deleteDefinitionType","createDefinition","updateDefinition","deleteDefinition","createParameter","updateParameter","deleteParameter","createFormula","updateFormula","deleteFormula","createFormulaBinding","updateFormulaBinding","deleteFormulaBinding","createCondition","updateCondition","deleteCondition","createRoll","updateRoll","deleteRoll","createOutcome","updateOutcome","deleteOutcome","createTest","updateTest","deleteTest","createEffect","updateEffect","deleteEffect","createAction","updateAction","deleteAction","createPermissionPolicy","updatePermissionPolicy","deletePermissionPolicy","createEventType","updateEventType","deleteEventType","createTrigger","updateTrigger","deleteTrigger","createContentType","updateContentType","deleteContentType","createContentTemplate","updateContentTemplate","deleteContentTemplate","createModifier","updateModifier","deleteModifier","createDuration","updateDuration","deleteDuration","createDie","updateDie","deleteDie","createTable","updateTable","deleteTable","createScale","updateScale","deleteScale","createCreationSystem","updateCreationSystem","deleteCreationSystem","createProgressionSystem","updateProgressionSystem","deleteProgressionSystem","createSheetDefinition","updateSheetDefinition","deleteSheetDefinition","createSheetTemplate","updateSheetTemplate","deleteSheetTemplate","createSheetTheme","updateSheetTheme","deleteSheetTheme","createTag","updateTag","deleteTag","reorderEntries","applyRecipe"]);
 export async function createConfiguratorAPI(storage,{onError=error=>console.error("Rule Them'All | Configurator storage",error)}={}) {
   if(!storage||typeof storage.load!=="function"||typeof storage.save!=="function") throw new TypeError("Configurator requires a load/save storage adapter.");
   const registry=new ConfiguratorRegistry(), listeners=new Set(); let loading=true,saving=false,pending=[],queue=Promise.resolve();

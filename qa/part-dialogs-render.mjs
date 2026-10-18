@@ -23,7 +23,8 @@ const sheet = {objectKind: 'sheetDefinition', objectId: ruleset.sheetDefinitions
 const {roots, dependencies} = collectDependencies(ruleset, [sheet]);
 const groups = groupPartRefs(dependencies, nameOf).map(group => ({...group, title: t(PART_FAMILY_KEYS[group.collection])}));
 const exportBody = renderPartExportContent(nameOf('sheetDefinitions', sheet.objectId), t('RTA.Part.ExportSummary', {count: roots.length, dependencies: dependencies.length}), groups,
-  {name: t('RTA.Part.Name'), dependencies: t('RTA.Part.Dependencies'), hint: t('RTA.Part.DependenciesHint'), none: t('RTA.Part.NoDependencies')});
+  {name: t('RTA.Part.Name'), dependencies: t('RTA.Part.Dependencies'), hint: t('RTA.Part.DependenciesHint'), none: t('RTA.Part.NoDependencies'),
+    extension: t('RTA.Extension.Section'), extensionHint: t('RTA.Extension.SectionHint'), asExtension: t('RTA.Extension.AsExtension'), version: t('RTA.Extension.Version'), minVersion: t('RTA.Extension.MinVersion')}, {version: '1.0.0', minVersion: ruleset.version});
 // Import into a copy where some entries changed and one is gone: conflicts and new entries.
 const part = exportRulesetPart(ruleset, {selection: [{objectKind: 'action', objectId: ruleset.actions.find(entry => entry.testRef).id}]});
 const target = copyJSON(ruleset);
@@ -35,7 +36,7 @@ for (const [collection, list] of Object.entries(part.entries)) for (const [i, en
 const view = partImportView(planRulesetPartImport(target, part), (collection, row) => row.nameKey || row.id);
 const titled = row => ({...row, title: t(PART_FAMILY_KEYS[row.collection])});
 const importBody = renderPartImportContent(t('RTA.Part.ImportSummary', {source: 'RWF', ...view.counts}), view.conflicts.map(titled), view.added.map(titled),
-  ['keep', 'replace', 'rename'].map(value => ({value, label: t(`RTA.Part.Choice.${value}`)})), {conflicts: t('RTA.Part.Conflicts'), hint: t('RTA.Part.ConflictsHint'), added: t('RTA.Part.Added')});
+  ['keep', 'replace', 'rename'].map(value => ({value, label: t(`RTA.Part.Choice.${value}`)})), {conflicts: t('RTA.Part.Conflicts'), hint: t('RTA.Part.ConflictsHint'), added: t('RTA.Part.Added'), removed: t('RTA.Extension.Removed')}, view.added.slice(0, 2).map(titled));
 
 const foundryCss = process.env.RTA_FOUNDRY_CSS ? readFileSync(process.env.RTA_FOUNDRY_CSS, 'utf8') + '\n' : '';
 const css = foundryCss + JSON.parse(readFileSync(join(root, 'module.json'), 'utf8')).styles.map(p => readFileSync(join(root, p), 'utf8')).join('\n');
@@ -56,7 +57,7 @@ for (const [name, file] of files) for (const width of [640, 420]) {
     const issues = [], content = document.querySelector('.window-content'), allowed = [4, 8, 12];
     if (content.scrollWidth > content.clientWidth + 1) issues.push(`horizontal overflow ${content.scrollWidth} > ${content.clientWidth}`);
     for (const el of document.querySelectorAll('.rta-part-dialog :is(label, select, button, summary)')) if (el.scrollWidth > el.clientWidth + 1) issues.push(`clipped: ${el.textContent.trim().slice(0, 40)}`);
-    for (const parent of document.querySelectorAll('.rta-part-dialog :is(.rta-part-groups, .rta-part-choice, .rta-part-conflicts)')) {
+    for (const parent of document.querySelectorAll('.rta-part-dialog :is(.rta-part-groups, .rta-part-choice, .rta-part-conflicts, .rta-part-extension__body)')) {
       const kids = [...parent.children].filter(kid => getComputedStyle(kid).display !== 'none' && kid.getBoundingClientRect().height > 0);
       for (let i = 1; i < kids.length; i++) {
         const a = kids[i - 1].getBoundingClientRect(), b = kids[i].getBoundingClientRect();

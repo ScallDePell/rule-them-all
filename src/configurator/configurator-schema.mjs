@@ -5,7 +5,7 @@ export const COLLECTION_FIELDS = Object.freeze([
   "permissionPolicies", "eventTypes", "triggers", "contentTypes", "contentTemplates", "modifiers", "durations", "dice", "tables", "scales", "creationSystems", "progressionSystems", "sheetDefinitions", "sheetTemplates", "sheetThemes", "tags"
 ]);
 export const RULESET_FIELDS = Object.freeze([
-  "id", "nameKey", "descriptionKey", "version", "revision", "engineContractVersion", "status", "color", "sectionColors", "sectionColorOverrides", "familyColors", "initiative", "sharedDefinitions", ...COLLECTION_FIELDS
+  "id", "nameKey", "descriptionKey", "version", "revision", "engineContractVersion", "status", "color", "sectionColors", "sectionColorOverrides", "familyColors", "initiative", "sharedDefinitions", "extensions", ...COLLECTION_FIELDS
 ]);
 
 export function isRecord(value) {

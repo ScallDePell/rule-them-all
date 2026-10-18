@@ -1,5 +1,11 @@
 # Changelog
 
+## 1.0.19
+
+- Ruleset extensions: in the part export dialog, **Exporter comme extension** adds a header (name, version, target Ruleset and minimum Ruleset version). **Importer une partie…** installs it: refused for another Ruleset or an older version; an installed extension is updated by its next version (its own entries replaced without asking, dropped ones removed, entries imported as a copy keep their id).
+- The Ruleset records installed extensions (`extensions`: entries brought, entries replaced with their previous content, renamed ids). The General section lists them with **Retirer**: what it added is deleted, what it replaced comes back; refused, with the list, while the Ruleset's own entries use what it added. Cards from an extension show its name.
+- API: `planExtensionInstall`, `installExtension`, `removeExtension`; `exportRulesetPart` takes `extension: {id, name, version, minVersion}`.
+
 ## 1.0.18
 
 - Export part of a Ruleset with what it needs: right-click a card (**Exporter…**), Ctrl+click several cards then **Exporter la sélection**, or right-click a family or a section in the menu. The dialog lists the dependencies by family; unchecked ones are not carried and are expected in the receiving Ruleset. The file format is `rule-them-all-part`.

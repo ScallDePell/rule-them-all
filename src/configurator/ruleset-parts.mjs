@@ -75,7 +75,7 @@ const stringsOf = (value, out = new Set()) => {
 };
 
 /** A part holding the selection and its dependencies, except those in `expect` (and what only they need). */
-export function exportRulesetPart(ruleset, {selection, expect = [], name = "", worldLocalizations = {}} = {}) {
+export function exportRulesetPart(ruleset, {selection, expect = [], name = "", worldLocalizations = {}, extension = null} = {}) {
   if (!Array.isArray(selection) || !selection.length) throw new Error("A Ruleset part needs at least one entry.");
   const entries = entryIndex(ruleset), expected = new Set(expect.map(keyOf));
   const {roots, dependencies} = collectDependencies(ruleset, selection, {stop: expect});
@@ -97,6 +97,9 @@ export function exportRulesetPart(ruleset, {selection, expect = [], name = "", w
   for (const [locale, translations] of Object.entries(worldLocalizations ?? {})) for (const [key, text] of Object.entries(translations ?? {})) {
     if (texts.has(key)) (part.localizations[locale] ??= {})[key] = text;
   }
+  // An extension names itself, its version, and the Ruleset (from which version) it adds to.
+  if (extension) part.extension = {id: String(extension.id), name: String(extension.name || name), version: String(extension.version),
+    target: {rulesetId: ruleset.id, ...(extension.minVersion ? {minVersion: String(extension.minVersion)} : {})}};
   return part;
 }
 
@@ -111,6 +114,11 @@ export function readRulesetPart(payload) {
     if (list.some(entry => !isRecord(entry) || typeof entry.id !== "string" || !entry.id.trim())) throw new Error(`Invalid Ruleset part entry in ${collection}.`);
   }
   part.localizations = isRecord(part.localizations) ? part.localizations : {};
+  if (part.extension !== undefined) {
+    const header = part.extension, text = value => typeof value === "string" && value.trim().length > 0;
+    if (!isRecord(header) || !text(header.id) || !text(header.name) || !text(header.version) || !isRecord(header.target) || !text(header.target.rulesetId)
+      || (header.target.minVersion !== undefined && !text(header.target.minVersion))) throw new Error("Invalid Ruleset extension header.");
+  }
   return part;
 }
 
@@ -152,6 +160,26 @@ const freeId = (id, taken) => {
   for (let n = 2; ; n++) {const candidate = `${id}-${n}`; if (!taken.has(candidate)) {taken.add(candidate); return candidate;}}
 };
 
+/** The part's entries by collection, with the entries named in `renamed` ("kind:id" -> new id) under their new id
+    and every reference the dependency index finds inside the part following them. Same order as the part. */
+export function renamePartEntries(part, renamed) {
+  const carried = Object.fromEntries(COLLECTION_FIELDS.map(collection => [collection, copyJSON(part.entries[collection] ?? [])]));
+  if (!renamed.size) return carried;
+  for (const edge of new DependencyIndex({id: "part", ...carried}).list()) {
+    const newId = renamed.get(keyOf(edge.targetRef));
+    if (newId) rewriteAt(carried, edge.path, edge.targetRef.objectId, newId);
+  }
+  for (const action of carried.actions) for (const [eventTypeId, values] of Object.entries(action.eventPayloads ?? {})) {
+    const newId = renamed.get(`eventType:${eventTypeId}`);
+    if (newId) {delete action.eventPayloads[eventTypeId]; action.eventPayloads[newId] = values;}
+  }
+  for (const collection of COLLECTION_FIELDS) for (const entry of carried[collection]) {
+    const newId = renamed.get(`${KIND_BY_COLLECTION[collection]}:${entry.id}`);
+    if (newId) entry.id = newId;
+  }
+  return carried;
+}
+
 /** The Ruleset patch reading a part gives. `decisions` maps "kind:id" of conflicting entries to keep (the Ruleset's
     own stays and the part uses it), replace, or rename (the part's comes in under a free id, and the part's
     references follow it). Undecided conflicts keep the Ruleset's entry. */
@@ -164,25 +192,16 @@ export function applyRulesetPartImport(ruleset, payload, decisions = {}) {
   const renamed = new Map();
   for (const row of plan.entries) if (choice.get(row.key) === "rename") renamed.set(row.key, freeId(row.id, taken));
   // References inside the part follow renamed entries, wherever the dependency index finds them.
-  const carried = Object.fromEntries(COLLECTION_FIELDS.map(collection => [collection, copyJSON(part.entries[collection] ?? [])]));
-  for (const edge of new DependencyIndex({id: "part", ...carried}).list()) {
-    const newId = renamed.get(keyOf(edge.targetRef));
-    if (newId) rewriteAt(carried, edge.path, edge.targetRef.objectId, newId);
-  }
-  for (const action of carried.actions) for (const [eventTypeId, values] of Object.entries(action.eventPayloads ?? {})) {
-    const newId = renamed.get(`eventType:${eventTypeId}`);
-    if (newId) {delete action.eventPayloads[eventTypeId]; action.eventPayloads[newId] = values;}
-  }
+  const carried = renamePartEntries(part, renamed);
   const patch = {}, created = [], replaced = [];
   for (const collection of COLLECTION_FIELDS) {
     const kind = KIND_BY_COLLECTION[collection];
     let list = null;
-    for (const entry of carried[collection]) {
-      const key = `${kind}:${entry.id}`, decision = choice.get(key);
+    for (const [i, entry] of carried[collection].entries()) {
+      const key = `${kind}:${part.entries[collection][i].id}`, decision = choice.get(key);
       if (decision === "same" || decision === "keep") continue;
       list ??= copyJSON(ruleset?.[collection] ?? []);
       if (decision === "replace") {list[list.findIndex(current => current.id === entry.id)] = entry; replaced.push({collection, id: entry.id}); continue;}
-      if (decision === "rename") entry.id = renamed.get(key);
       list.push(entry); created.push({collection, id: entry.id, nameKey: entry.nameKey ?? ""});
     }
     if (list) patch[collection] = list;

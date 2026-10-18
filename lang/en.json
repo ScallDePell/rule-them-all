@@ -2105,6 +2105,34 @@
         "SheetTemplates": "Block templates",
         "SheetThemes": "Sheet themes"
       }
+    },
+    "Extension": {
+      "Section": "Extension (optional)",
+      "SectionHint": "An extension is installed, updated and removed as a whole in the receiving Ruleset. It is known by its name: keep the same name for its next versions.",
+      "AsExtension": "Export as an extension",
+      "Version": "Extension version",
+      "MinVersion": "Minimum Ruleset version",
+      "Refused": {
+        "TARGET": "The “{name}” extension is made for another Ruleset ({rulesetId}).",
+        "VERSION": "The “{name}” extension needs version {minVersion} of the Ruleset or later."
+      },
+      "Summary": {
+        "install": "Install the “{name}” extension {version}: {added} new entr(y/ies), {conflict} already here but different.",
+        "update": "Update “{name}” from {installed} to {version}: {added} added, {updated} updated, {removed} removed, {conflict} in conflict with yours.",
+        "downgrade": "Go back to version {version} of “{name}” (installed: {installed}): {added} added, {updated} changed, {removed} removed, {conflict} in conflict with yours.",
+        "reinstall": "Reinstall “{name}” {version}: {added} added, {updated} restored, {removed} removed, {conflict} in conflict with yours."
+      },
+      "InstallTitle": "Install an extension",
+      "Install": "Install",
+      "Update": "Update",
+      "Removed": "Removed by this version",
+      "InstalledDone": "Extension “{name}” {version} installed.",
+      "ListTitle": "Installed extensions",
+      "Count": "{count} entr(y/ies)",
+      "Remove": "Remove",
+      "ConfirmRemove": "Remove the “{name}” extension? What it added is deleted, what it replaced comes back.",
+      "InUse": "Cannot remove “{name}”: your entries still use what it added ({list}). Remove those uses first.",
+      "RemovedDone": "Extension “{name}” removed."
     }
   }
 }

@@ -286,6 +286,26 @@
   overflow-wrap: anywhere;
 }
 
+.rta-part-dialog .rta-part-extension > summary {
+  cursor: pointer;
+  font-weight: bold;
+}
+
+.rta-part-dialog .rta-part-extension__body {
+  display: flex;
+  flex-direction: column;
+  gap: var(--rta-gap-row);
+  margin-block-start: var(--rta-gap-row);
+}
+
+.rta-part-dialog .rta-part-extension__body > .form-group {
+  margin: 0;
+}
+
+.rta-part-dialog .rta-part-extension .hint {
+  margin: 0;
+}
+
 .rta-part-dialog .rta-part-added ul {
   margin: var(--rta-gap-tight) 0 0;
   max-block-size: 25vh;

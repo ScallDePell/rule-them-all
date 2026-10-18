@@ -92,6 +92,15 @@ Pour lire une partie, ouvrez le Ruleset qui la reçoit (un brouillon ou une vers
 
 Les traductions du monde des textes de la partie l'accompagnent et complètent celles du Ruleset qui la reçoit. Un Ruleset complet, lui, s'importe toujours depuis la liste des Rulesets.
 
+### Extensions
+Une extension est une partie qui s'installe, se met à jour et se retire d'un bloc : par exemple un supplément de « fantaisies » qui ajoute ses règles et ses contenus à RWF.
+- **La créer** : exportez la partie comme ci-dessus, ouvrez **Extension (facultatif)** dans la fenêtre d'export, cochez **Exporter comme extension** et donnez sa version (1.0.0, puis 1.1.0…) et la version minimale du Ruleset. Elle est faite pour le Ruleset d'où elle est exportée (même identifiant de Ruleset) et reconnue par son nom : gardez le même nom pour ses versions suivantes.
+- **L'installer** : **Importer une partie…** reconnaît une extension. Elle est refusée par un autre Ruleset ou par une version plus ancienne que la version minimale. Les conflits avec vos propres éléments se décident comme pour une partie.
+- **La mettre à jour** : importez sa nouvelle version de la même façon. Ses propres éléments sont remplacés sans question, ceux que la nouvelle version n'a plus sont retirés, et un élément importé en copie garde son identifiant.
+- **La retirer** : la rubrique **Général** liste les extensions installées, avec **Retirer**. Ce qu'elle a ajouté est supprimé, et ce qu'elle a remplacé reprend son contenu d'avant. Le retrait est refusé, avec la liste, tant que vos propres éléments utilisent ce qu'elle a ajouté.
+
+Les cartes venues d'une extension portent son nom. Une extension n'ajoute ou ne remplace que des éléments entiers.
+
 ## 4. Les feuilles
 
 ### Éditeur de feuilles

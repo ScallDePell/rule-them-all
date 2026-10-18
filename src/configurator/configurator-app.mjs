@@ -9,6 +9,7 @@ import {buildDependencyExplorer,buildDependencyGraph} from "./dependency-explore
 import {chooseTagsRTA, confirmRTA, exportPartRTA, importPartRTA, promptRTA} from "./foundry-dialogs.mjs";
 import {collectionOfKind, isRulesetPart, selectionForSection, selectionForView} from "./ruleset-parts.mjs";
 import {groupPartRefs, partFileName, partImportView, partKey, PART_FAMILY_KEYS} from "./ruleset-part-view.mjs";
+import {extensionOwners} from "./ruleset-extensions.mjs";
 import {ENTRY_OPERATIONS} from "./entry-operations.mjs";
 import {entryTagsAfter} from "./entry-tags.mjs";
 import {openContextMenu} from "../ui/context-menu.mjs";
@@ -244,8 +245,9 @@ export class ConfiguratorApp extends ConfiguratorWindow {
     const collectionCustomAccent=currentCollection && !!ruleset?.familyColors?.[currentCollection];
     // Resolve only persisted tag references, preserving the tag's own color.
     const tagIndex = new Map((ruleset?.tags ?? []).map(tag => [tag.id, tag]));
+    const owners = extensionOwners(ruleset);
     cards = cards.map(card => ({
-      ...card,partSelected:this.#partSelection.has(`${currentKind}:${card.id}`),
+      ...card,partSelected:this.#partSelection.has(`${currentKind}:${card.id}`),extensionName:owners.get(`${currentKind}:${card.id}`)?.name??"",
       displayTags: (Array.isArray(card.tags) ? card.tags : []).map(id => {
         const tag = tagIndex.get(id);
         if (!tag) return null;
@@ -360,6 +362,7 @@ export class ConfiguratorApp extends ConfiguratorWindow {
       publishReadiness:this.#view==='general'&&record?.status==='draft'?this.#publishReadiness(api,ruleset):null,
       recipes:this.#view==='general'&&record?recipeCards():null,
       lifecycle:record?{isValidated:record.status==="validated",isReady:record.status==="ready",isDraft:record.status==="draft",canMutate:record.status!=="validated",canCreateVersion:record.status==="validated",canActivate:Boolean(record.publishedSnapshot),isActive:record.versionId===activeId,statusLabel:statusLabel(record.status)}:null,
+      extensions:(ruleset?.extensions??[]).map(extension=>({id:extension.id,name:extension.name,version:extension.version,count:game.i18n?.format?.("RTA.Extension.Count",{count:extension.entries.length+extension.replaced.length})??""})),
       partSelection:{count:this.#partSelection.size,label:game.i18n?.format?.("RTA.Part.SelectionCount",{count:this.#partSelection.size})??String(this.#partSelection.size)},
       storage:ruleset?{storageRevision:api.getStorageRevision(),activeVersionId:activeId,engineContractVersion:ruleset.engineContractVersion}:null
     });
@@ -565,10 +568,12 @@ export class ConfiguratorApp extends ConfiguratorWindow {
       const {roots,dependencies}=api.listPartDependencies(this.#selected,selection);
       const groups=groupPartRefs(dependencies,nameOf).map(group=>({...group,title:label(PART_FAMILY_KEYS[group.collection])}));
       const defaultName=name||(roots.length===1?nameOf(collectionOf(roots[0]),roots[0].objectId):game.i18n.format("RTA.Part.SelectionName",{ruleset:localize(api,this.#selected,ruleset?.nameKey)}));
-      const chosen=await exportPartRTA(defaultName,game.i18n.format("RTA.Part.ExportSummary",{count:roots.length,dependencies:dependencies.length}),groups);
+      const chosen=await exportPartRTA(defaultName,game.i18n.format("RTA.Part.ExportSummary",{count:roots.length,dependencies:dependencies.length}),groups,{version:"1.0.0",minVersion:ruleset?.version??""});
       if(!chosen)return;
       const included=new Set(chosen.include),partName=chosen.name||defaultName;
-      const part=api.exportRulesetPart(this.#selected,{selection:roots,expect:dependencies.filter(ref=>!included.has(partKey(ref))),name:partName});
+      // An extension is known by its name: a later version keeps the same name.
+      const extension=chosen.extension?{...chosen.extension,id:partFileName(partName).slice("rta-part-".length,-".json".length),name:partName}:null;
+      const part=api.exportRulesetPart(this.#selected,{selection:roots,expect:dependencies.filter(ref=>!included.has(partKey(ref))),name:partName,extension});
       download(part,partFileName(partName));
       ui.notifications?.info?.(game.i18n.format("RTA.Part.Exported",{count:Object.values(part.entries).flat().length,expected:part.expects.length}));
     } catch(error){this.#error=error?.message??String(error);return this.render(false);}
@@ -581,6 +586,7 @@ export class ConfiguratorApp extends ConfiguratorWindow {
     try {
       const api=await this.#api(),payload=JSON.parse(await file.text());
       if(!isRulesetPart(payload))throw new Error(label("RTA.Part.NotAPart"));
+      if(payload.extension)return this.#installExtension(api,payload);
       const plan=api.planRulesetPartImport(this.#selected,payload);
       const nameOf=(collection,row)=>localize(api,this.#selected,row.nameKey||row.id);
       const titled=row=>({...row,title:label(PART_FAMILY_KEYS[row.collection])});
@@ -597,6 +603,37 @@ export class ConfiguratorApp extends ConfiguratorWindow {
       ui.notifications?.info?.(game.i18n.format("RTA.Part.Imported",{created:result.created.length,replaced:result.replaced.length}));
       return this.render(false);
     } catch(error){this.#error=error?.message??String(error);return this.render(false);}
+  }
+  /** Install or update an extension: refused for another Ruleset or an older version; its own entries are replaced
+      without asking, only conflicts with this Ruleset's entries are decided. */
+  async #installExtension(api,payload) {
+    const plan=api.planExtensionInstall(this.#selected,payload),header=plan.extension;
+    if(plan.refusal)throw new Error(game.i18n.format(`RTA.Extension.Refused.${plan.refusal.code}`,{name:header.name,...plan.refusal}));
+    const nameOf=(collection,row)=>localize(api,this.#selected,row.nameKey||row.id),titled=row=>({...row,title:label(PART_FAMILY_KEYS[row.collection])});
+    if(plan.blocked)throw new Error(game.i18n.format("RTA.Part.Missing",{list:plan.missing.map(ref=>`${label(PART_FAMILY_KEYS[collectionOf(ref)])} · ${localize(api,this.#selected,ref.nameKey||ref.objectId)}`).join(", ")}));
+    const view=partImportView({entries:plan.entries.filter(row=>!row.owned||row.status!=="conflict")},nameOf);
+    const ruleset=api.getRulesetVersion(this.#selected)?.workingDraft;
+    const removed=plan.removed.map(ref=>({collection:collectionOf(ref),title:label(PART_FAMILY_KEYS[collectionOf(ref)]),name:localize(api,this.#selected,(ruleset?.[collectionOf(ref)]??[]).find(entry=>entry.id===ref.objectId)?.nameKey??ref.objectId)}));
+    const updates=plan.entries.filter(row=>row.owned&&row.status==="conflict").length;
+    const summary=game.i18n.format(`RTA.Extension.Summary.${plan.action}`,{name:header.name,version:header.version,installed:plan.installedVersion??"",added:view.counts.new,updated:updates,removed:removed.length,conflict:view.counts.conflict});
+    const decisions=await importPartRTA(summary,view.conflicts.map(titled),view.added.map(titled),{removed,title:"RTA.Extension.InstallTitle",apply:plan.installedVersion?"RTA.Extension.Update":"RTA.Extension.Install"});
+    if(!decisions)return;
+    await api.installExtension(this.#selected,payload,decisions);
+    ui.notifications?.info?.(game.i18n.format("RTA.Extension.InstalledDone",{name:header.name,version:header.version}));
+    return this.render(false);
+  }
+  /** Remove an installed extension, after confirmation; refused while this Ruleset's own entries use what it brought. */
+  async #removeExtension(id) {
+    const api=await this.#api(),ruleset=api.getRulesetVersion(this.#selected)?.workingDraft,record=(ruleset?.extensions??[]).find(extension=>extension.id===id);
+    if(!record||!await confirmRTA("RTA.Extension.ConfirmRemove",{name:record.name}))return;
+    try{await api.removeExtension(this.#selected,id);}
+    catch(error){
+      if(error?.code!=="EXTENSION_IN_USE")throw error;
+      const name=ref=>localize(api,this.#selected,(ruleset?.[collectionOf(ref)]??[]).find(entry=>entry.id===ref.objectId)?.nameKey??ref.objectId);
+      throw new Error(game.i18n.format("RTA.Extension.InUse",{name:record.name,list:[...new Set(error.users.map(use=>`${name(use.consumer)} → ${name(use.target)}`))].join(", ")}));
+    }
+    ui.notifications?.info?.(game.i18n.format("RTA.Extension.RemovedDone",{name:record.name}));
+    return this.render(false);
   }
   async #duplicate(kind,id,name) {
     this.#error="";
@@ -655,6 +692,7 @@ export class ConfiguratorApp extends ConfiguratorWindow {
         return this.render(false);
       }
       if (action==="importRuleset") return this.element?.querySelector?.("[data-import-file]")?.click();
+      if (action==="removeExtension") return this.#removeExtension(button.dataset.extensionId);
       if (action==="importPart") return this.element?.querySelector?.("[data-import-part-file]")?.click();
       if (action==="exportPartSelection") return this.#exportPart([...this.#partSelection.values()],"");
       if (action==="clearPartSelection") {this.#partSelection.clear();this.#rememberScroll();this.#restoreScroll=true;return this.render(false);}

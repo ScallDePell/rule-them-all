@@ -186,6 +186,19 @@ export function validateRuleset(ruleset, {scope = "save"} = {}) {
       ids.forEach((id, i) => { if (!(ruleset.definitions ?? []).some(definition => definition?.id === id)) issue("REFERENCE", `sharedDefinitions.${holder}[${i}]`, `Missing reference: definition/${id}.`); });
     }
   }
+  // extensions (optional): what each installed extension added or replaced, so it can be updated or removed.
+  if (ruleset.extensions !== undefined) {
+    if (!Array.isArray(ruleset.extensions)) issue("ARRAY_TYPE", "extensions", "extensions must be an array.");
+    else ruleset.extensions.forEach((extension, i) => {
+      const at = `extensions[${i}]`;
+      if (!isRecord(extension)) return issue("ENTRY_TYPE", at, "Extension record must be a plain object.");
+      exactFields(extension, ["id", "name", "version", "entries", "replaced", "renamed"], at, issue);
+      for (const key of ["id", "name", "version"]) if (!nonempty(extension[key])) issue("REQUIRED_STRING", `${at}.${key}`, `${key} must be a non-empty string.`);
+      for (const key of ["entries", "replaced"]) if (!Array.isArray(extension[key]) || extension[key].some(ref => !isRecord(ref) || !nonempty(ref.objectKind) || !nonempty(ref.objectId)))
+        issue("ARRAY_TYPE", `${at}.${key}`, `${key} must list typed references.`);
+      if (!isRecord(extension.renamed) || Object.values(extension.renamed).some(id => !nonempty(id))) issue("OBJECT_TYPE", `${at}.renamed`, "renamed must map entries to ids.");
+    });
+  }
   if (!Number.isSafeInteger(ruleset.revision) || ruleset.revision < 0) issue("REVISION", "revision", "revision must be a non-negative safe integer.");
   if (!["draft","ready","validated"].includes(ruleset.status)) issue("STATUS", "status", "Unsupported Ruleset status.");
   const idsByKind = new Map();

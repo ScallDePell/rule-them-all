@@ -225,3 +225,25 @@
   align-self: flex-start;
   margin-top: auto;
 }
+
+/* Installed extensions: one line each, its name and size, then Remove. */
+.rta-configurator .rta-general__extension-list {
+  display: flex;
+  flex-direction: column;
+  gap: var(--rta-gap-row);
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.rta-configurator .rta-general__extension-list > li {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--rta-gap-row);
+}
+
+.rta-configurator .rta-general__extension-list button {
+  flex: 0 0 auto;
+  width: auto;
+}

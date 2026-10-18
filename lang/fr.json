@@ -2105,6 +2105,34 @@
         "SheetTemplates": "Modèles de blocs",
         "SheetThemes": "Thèmes de feuille"
       }
+    },
+    "Extension": {
+      "Section": "Extension (facultatif)",
+      "SectionHint": "Une extension s'installe, se met à jour et se retire d'un bloc dans le Ruleset qui la reçoit. Elle est reconnue par son nom : gardez le même nom pour ses versions suivantes.",
+      "AsExtension": "Exporter comme extension",
+      "Version": "Version de l'extension",
+      "MinVersion": "Version minimale du Ruleset",
+      "Refused": {
+        "TARGET": "L'extension « {name} » est faite pour un autre Ruleset ({rulesetId}).",
+        "VERSION": "L'extension « {name} » demande la version {minVersion} du Ruleset ou une plus récente."
+      },
+      "Summary": {
+        "install": "Installer l'extension « {name} » {version} : {added} nouvelle(s) entrée(s), {conflict} déjà présente(s) mais différente(s).",
+        "update": "Mettre à jour « {name} » de {installed} vers {version} : {added} ajoutée(s), {updated} mise(s) à jour, {removed} retirée(s), {conflict} en conflit avec les vôtres.",
+        "downgrade": "Revenir à la version {version} de « {name} » (installée : {installed}) : {added} ajoutée(s), {updated} changée(s), {removed} retirée(s), {conflict} en conflit avec les vôtres.",
+        "reinstall": "Réinstaller « {name} » {version} : {added} ajoutée(s), {updated} rétablie(s), {removed} retirée(s), {conflict} en conflit avec les vôtres."
+      },
+      "InstallTitle": "Installer une extension",
+      "Install": "Installer",
+      "Update": "Mettre à jour",
+      "Removed": "Retirées par cette version",
+      "InstalledDone": "Extension « {name} » {version} installée.",
+      "ListTitle": "Extensions installées",
+      "Count": "{count} élément(s)",
+      "Remove": "Retirer",
+      "ConfirmRemove": "Retirer l'extension « {name} » ? Ce qu'elle a ajouté est supprimé, ce qu'elle a remplacé revient.",
+      "InUse": "Impossible de retirer « {name} » : vos éléments utilisent encore ce qu'elle a ajouté ({list}). Retirez d'abord ces usages.",
+      "RemovedDone": "Extension « {name} » retirée."
     }
   }
 }
