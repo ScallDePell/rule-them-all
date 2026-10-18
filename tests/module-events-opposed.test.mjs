@@ -4,7 +4,7 @@ import {createConfiguratorAPI} from '../src/configurator/configurator-api.mjs';
 import {emptyStorageSnapshot} from '../src/configurator/configurator-storage.mjs';
 import {MemoryRuntimeAdapter} from '../src/runtime/memory-runtime-adapter.mjs';
 import {createRuntimeAPI} from '../src/runtime/runtime-api.mjs';
-import {combatChangeEvents,timeElapsedPayload} from '../src/configurator/system-events.mjs';
+import {combatChangeEvents,combatTurnEvent,timeElapsedPayload} from '../src/configurator/system-events.mjs';
 
 class Storage{data=emptyStorageSnapshot();async load(){return structuredClone(this.data)}async save(next){this.data=structuredClone(next)}}
 class Adapter extends MemoryRuntimeAdapter{rolls=[];async roll(formula){const total=this.rolls.shift()??10;return {formula,total,natural:total,result:String(total)};}}
@@ -45,6 +45,11 @@ test('Combat tracker changes become start, round and turn events', ()=>{
   assert.deepEqual(combatChangeEvents(combat,{round:0,turn:null},{round:1,turn:0,combatantId:'x'}).map(e=>[e.eventTypeId,e.refs]),
     [['rta.combat.start',['Actor.a','Actor.b',{kind:'combat',id:'c1'}]],['rta.combat.round',['Actor.a','Actor.b',{kind:'combat',id:'c1'}]],['rta.combat.turn',['Actor.a']]]);
   assert.deepEqual(combatChangeEvents(combat,{round:1,turn:0},{round:1,turn:1,combatantId:'y'}).map(e=>e.eventTypeId),['rta.combat.turn']);
+  // The combat as it stands names the acting combatant when the change does not (initiative rolled, a pass flag).
+  const live={...combat,round:2,turn:1,started:true,combatant:{id:'y'},getFlag:()=>2};
+  assert.deepEqual(combatTurnEvent(live),{eventTypeId:'rta.combat.turn',payload:{combatId:'c1',round:2,turn:1,pass:2},refs:['Actor.b'],key:'2|y|2'});
+  assert.equal(combatTurnEvent({...live,round:0}),null,'not started');
+  assert.equal(combatChangeEvents(combat,{round:1,turn:0},{round:1,turn:1}).length,0,'no combatant named, none acting');
   assert.deepEqual(timeElapsedPayload(86400*2+10,20),{seconds:20,days:1,worldTime:172810});
   assert.equal(timeElapsedPayload(100,-5),null);
 });

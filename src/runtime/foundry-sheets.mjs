@@ -78,6 +78,12 @@ export function actionSummary(result, {t, ruleset}) {
   const lines = [], test = result.testResult;
   if (test?.roll) lines.push({label: test.roll.formula, value: `${test.roll.result} = ${formatSheetValue(test.total)}`});
   if (test && test.target !== null && test.target !== undefined) lines.push({label: i18n("RTA.Sheet.TestTarget"), value: formatSheetValue(test.target)});
+  // An Effect that rolled its amount (damage, healing) shows it: its dice and what they gave.
+  for (const change of result.changes ?? []) {
+    if (!change?.roll) continue;
+    const effect = ruleset.effects?.find(e => e.id === change.effectId), rolled = String(change.roll.result ?? change.roll.total ?? "");
+    lines.push({label: t(effect?.nameKey ?? change.effectId), value: rolled && rolled !== String(change.roll.total) ? `${change.roll.formula} : ${rolled} = ${formatSheetValue(change.roll.total)}` : formatSheetValue(change.roll.total)});
+  }
   for (const run of result.each ?? []) {
     const definition = ruleset.definitions?.find(d => d.id === run.definitionId);
     lines.push({label: t(definition?.nameKey ?? run.definitionId), value: run.testResult?.outcome ? t(run.testResult.outcome.labelKey) : run.allowed === false ? i18n("RTA.Sheet.NotAllowed") : "✓"});

@@ -1,5 +1,10 @@
 # Changelog
 
+## 1.0.12
+
+- Combat: the combatant acting always hears its turn, also when it became the one acting without a turn change (initiative rolled or rerolled, a pass, a combatant removed), once per round, combatant and pass; module events run one batch after the other.
+- Chat cards: an Effect that rolls its amount (damage, healing) shows its dice and total.
+
 ## 1.0.11
 
 - Combat: when initiative is rerolled at a new round, the turn event goes to the combatant who acts first after the reroll (it went to whoever was first before it, so the real first combatant had no pass and could not attack).

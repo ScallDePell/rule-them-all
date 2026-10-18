@@ -98,6 +98,9 @@ test('markup: values, bounds, amounts, tabs and the Action chat summary', ()=>{
   const ruleset={actions:[{id:'hit',nameKey:'Hit'}],definitions:[]};
   const summary=actionSummary({actionId:'hit',testResult:{roll:{formula:'1d20',result:'14'},total:14,target:12,outcome:{labelKey:'Success'}}},{t:k=>k,ruleset});
   assert.deepEqual(summary,{title:'Hit',lines:[{label:'1d20',value:'14 = 14'},{label:'RTA.Sheet.TestTarget',value:'12'}],outcome:'Success',buttons:[]});
+  // Damage rolled by an Effect: its dice and their total; an amount typed from the table, its number.
+  const hurt=actionSummary({actionId:'hit',changes:[{effectId:'dmg',roll:{formula:'2d6',result:'4 + 2',total:6}},{effectId:'dmg',roll:{formula:'3',result:'3',total:3}},{effectId:'count'}]},{t:k=>k,ruleset:{...ruleset,effects:[{id:'dmg',nameKey:'Damage'}]}});
+  assert.deepEqual(hurt.lines,[{label:'Damage',value:'2d6 : 4 + 2 = 6'},{label:'Damage',value:'3'}]);
 });
 
 test('a character not made yet is offered the active Ruleset creation, on the notice then in the header, until it holds Contents', async()=>{

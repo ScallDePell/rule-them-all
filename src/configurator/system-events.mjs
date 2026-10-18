@@ -27,10 +27,18 @@ export function combatChangeEvents(combat, prior, current) {
   const previousRound = Number(prior?.round ?? 0);
   if (previousRound < 1) events.push({eventTypeId: "rta.combat.start", payload, refs: actors});
   if (round !== previousRound) events.push({eventTypeId: "rta.combat.round", payload, refs: actors});
-  const active = [...(combat?.combatants ?? [])].find(c => c.id === current?.combatantId)?.actor?.uuid;
-  const pass = Number(combat?.getFlag?.("rule-them-all", "initiativePass") ?? 1) || 1;
-  if (active) events.push({eventTypeId: "rta.combat.turn", payload: {...payload, turn: Number(current?.turn ?? 0), pass}, refs: [active]});
+  const turn = combatTurnEvent(combat, current);
+  if (turn) events.push(turn);
   return events;
+}
+
+/** The turn event of the combatant acting: named by the change (current.combatantId), else the combat's own. */
+export function combatTurnEvent(combat, current = null) {
+  const round = Number(current?.round ?? combat?.round ?? 0), combatantId = current?.combatantId ?? combat?.combatant?.id ?? null;
+  const active = [...(combat?.combatants ?? [])].find(c => c.id === combatantId)?.actor?.uuid;
+  if (round < 1 || !active) return null;
+  const pass = Number(combat?.getFlag?.("rule-them-all", "initiativePass") ?? 1) || 1;
+  return {eventTypeId: "rta.combat.turn", payload: {combatId: String(combat?.id ?? ""), round, turn: Number(current?.turn ?? combat?.turn ?? 0), pass}, refs: [active], key: `${round}|${combatantId}|${pass}`};
 }
 
 /** World clock change to an elapsed-time event (none when the clock goes back). */
