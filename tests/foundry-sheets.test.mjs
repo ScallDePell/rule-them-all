@@ -101,6 +101,9 @@ test('markup: values, bounds, amounts, tabs and the Action chat summary', ()=>{
   // Damage rolled by an Effect: its dice and their total; an amount typed from the table, its number.
   const hurt=actionSummary({actionId:'hit',changes:[{effectId:'dmg',roll:{formula:'2d6',result:'4 + 2',total:6}},{effectId:'dmg',roll:{formula:'3',result:'3',total:3}},{effectId:'count'}]},{t:k=>k,ruleset:{...ruleset,effects:[{id:'dmg',nameKey:'Damage'}]}});
   assert.deepEqual(hurt.lines,[{label:'Damage',value:'2d6 : 4 + 2 = 6'},{label:'Damage',value:'3'}]);
+  // The bonus added to the dice (Force) is part of the amount applied.
+  const fist=actionSummary({actionId:'hit',changes:[{effectId:'dmg',operand:8,roll:{formula:'1d4',result:'4',total:4,bonus:4}},{effectId:'dmg',operand:5,roll:{formula:'2d4',result:'1 + 2',total:3,bonus:2}},{effectId:'dmg',operand:5,roll:{formula:'3',result:'3',total:3,bonus:2}},{effectId:'dmg',operand:2,roll:{formula:'1d6',result:'5',total:5,bonus:0,factor:0.5}}]},{t:k=>k,ruleset:{...ruleset,effects:[{id:'dmg',nameKey:'Damage'}]}});
+  assert.deepEqual(fist.lines.map(l=>l.value),['1d4 : 4 + 4 = 8','2d4 : 1 + 2 + 2 = 5','3 + 2 = 5','1d6 : 5 × 0.5 = 2']);
 });
 
 test('a character not made yet is offered the active Ruleset creation, on the notice then in the header, until it holds Contents', async()=>{

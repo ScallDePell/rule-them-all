@@ -1,5 +1,9 @@
 # Changelog
 
+## 1.0.16
+
+- Chat cards: a rolled amount (damage, healing) shows the bonus and factor added to its dice and the amount applied, e.g. "1d4 : 4 + 4 = 8", instead of the dice alone.
+
 ## 1.0.15
 
 - An Action a player may run reaches its target even when that player does not own it (a player character's attack damages a GM's NPC): writes on the Action's other containers no longer need ownership; the Ruleset's Permissions on what is written still apply. Before, the GM client refused with "Permission denied: write definition …".

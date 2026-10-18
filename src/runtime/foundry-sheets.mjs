@@ -78,11 +78,17 @@ export function actionSummary(result, {t, ruleset}) {
   const lines = [], test = result.testResult;
   if (test?.roll) lines.push({label: test.roll.formula, value: `${test.roll.result} = ${formatSheetValue(test.total)}`});
   if (test && test.target !== null && test.target !== undefined) lines.push({label: i18n("RTA.Sheet.TestTarget"), value: formatSheetValue(test.target)});
-  // An Effect that rolled its amount (damage, healing) shows it: its dice and what they gave.
+  // An Effect that rolled its amount (damage, healing) shows it: its dice, the bonus and factor added to them, and the
+  // amount applied (what the target loses or gains, before its bounds).
   for (const change of result.changes ?? []) {
     if (!change?.roll) continue;
-    const effect = ruleset.effects?.find(e => e.id === change.effectId), rolled = String(change.roll.result ?? change.roll.total ?? "");
-    lines.push({label: t(effect?.nameKey ?? change.effectId), value: rolled && rolled !== String(change.roll.total) ? `${change.roll.formula} : ${rolled} = ${formatSheetValue(change.roll.total)}` : formatSheetValue(change.roll.total)});
+    const effect = ruleset.effects?.find(e => e.id === change.effectId), roll = change.roll;
+    const rolled = String(roll.result ?? roll.total ?? ""), bonus = Number(roll.bonus ?? 0), factor = roll.factor;
+    const amount = Number.isFinite(Number(change.operand)) ? Number(change.operand) : Number(roll.total) + bonus;
+    const dice = rolled && rolled !== String(roll.total) ? `${roll.formula} : ${rolled}` : bonus || factor !== undefined ? `${roll.formula === String(roll.total) ? "" : `${roll.formula} : `}${formatSheetValue(roll.total)}` : "";
+    const parts = [dice, bonus ? `${bonus < 0 ? "−" : "+"} ${formatSheetValue(Math.abs(bonus))}` : "", factor !== undefined ? `× ${formatSheetValue(factor)}` : ""].filter(Boolean);
+    const shown = parts.join(" ");
+    lines.push({label: t(effect?.nameKey ?? change.effectId), value: shown ? `${shown} = ${formatSheetValue(amount)}` : formatSheetValue(amount)});
   }
   for (const run of result.each ?? []) {
     const definition = ruleset.definitions?.find(d => d.id === run.definitionId);
