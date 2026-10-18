@@ -91,16 +91,19 @@ export class RuntimeEngine{
   /** Who this engine's user is for an Actor's sheet: "gm", "player" (an owner) or "observer" (anyone else). */
   async viewer(ref){const subject=await this.#subject(ref);return subject?.isGM?"gm":subject?.ownership==="owner"?"player":"observer";}
   /** CP-11 decision for one operation on one Ruleset object, for this engine's user on a container. */
-  async authorize(versionId,operation,target,containerRef=null,context=null){
-    const subject=await this.#subject(containerRef),evaluator=this.evaluator(versionId);
+  async authorize(versionId,operation,target,containerRef=null,context=null,{asOwner=false}={}){
+    const seen=await this.#subject(containerRef),evaluator=this.evaluator(versionId);
+    // An allowed Action reaches its other containers (its target) as if this user owned them: ownership no longer
+    // stops it, the Ruleset's Permissions on what it writes still do.
+    const subject=asOwner&&seen&&!seen.isGM?{...seen,ownership:"owner"}:seen;
     const conditionContext=context??(containerRef?{roles:{self:normalizeRuntimeContainerRef(containerRef)},defaultRole:"self"}:{});
     // A Definition is also in its definitionType's scope, a Content Template in its contentType's.
     const ruleset=this.ruleset(versionId),typeId=target?.objectKind==="definition"?ruleset.definitions?.find(x=>x.id===target.objectId)?.definitionTypeId:target?.objectKind==="contentTemplate"?ruleset.contentTemplates?.find(x=>x.id===target.objectId)?.contentTypeId:null;
     const typed=typeId?{...target,typeRef:{objectKind:target.objectKind==="definition"?"definitionType":"contentType",objectId:typeId}}:target;
     return resolvePermission(ruleset.permissionPolicies,{operation,target:typed,subject,condition:id=>evaluator.condition(id,conditionContext)});
   }
-  async #require(versionId,operation,target,containerRef,context=null){
-    const decision=await this.authorize(versionId,operation,target,containerRef,context);
+  async #require(versionId,operation,target,containerRef,context=null,options={}){
+    const decision=await this.authorize(versionId,operation,target,containerRef,context,options);
     if(!decision.allowed)throw new RuntimeTransactionError(TRANSACTION_ERRORS.forbidden,decision.messageKey?globalThis.game?.i18n?.localize?.(decision.messageKey)??decision.messageKey:`Permission denied: ${operation} ${target.objectKind} ${target.objectId}.`,{operation,target,decision});
     return decision;
   }
@@ -138,9 +141,9 @@ export class RuntimeEngine{
     if(changed)await this.#commit(tx);
   }
   /** Every persistent runtime write goes through one transaction (CP-08, CP-18). */
-  transaction(versionId,kind,{transactionId=null,summary=null,corrects=null}={}){
+  transaction(versionId,kind,{transactionId=null,summary=null,corrects=null,actor=null}={}){
     const target=change=>change.scope==="note"?{objectKind:"sheetNote",objectId:change.id}:change.scope==="content"?{objectKind:"contentTemplate",objectId:(change.after??change.before)?.templateId}:{objectKind:"definition",objectId:change.scope==="definition"?change.id:(change.after??change.before)?.definitionId};
-    const authorize=async(ref,changes)=>{if(this.#creating.has(this.#refKey(normalizeRuntimeContainerRef(ref))))return;for(const change of changes)await this.#require(versionId,"write",target(change),ref);};
+    const authorize=async(ref,changes)=>{const key=this.#refKey(normalizeRuntimeContainerRef(ref));if(this.#creating.has(key))return;const asOwner=Boolean(actor)&&key!==this.#refKey(normalizeRuntimeContainerRef(actor));for(const change of changes)await this.#require(versionId,"write",target(change),ref,null,{asOwner});};
     const prepare=(ref,state)=>this.#followMaxima(versionId,ref,state);
     return new RuntimeTransaction(this.adapter,{kind,rulesetVersionId:versionId,transactionId,summary,corrects,authorize,prepare,...(this.userId?{userId:this.userId}:{})});
   }
@@ -887,7 +890,7 @@ export class RuntimeEngine{
     const plan=await this.previewAction(versionId,actionId,context,{acquisitions,content});if(preview||!plan.allowed)return {...plan,staged:undefined,context:undefined};
     const dice=context[DICE].log;context=plan.context;
     // Staged states were read once by the preview: the commit expects their revision unchanged.
-    const tx=this.transaction(versionId,"action",{transactionId,summary:{actionId,outcomeKey:plan.testResult?.outcome?.resultKey??null}});
+    const tx=this.transaction(versionId,"action",{transactionId,actor:roleRef(context,"self")??roleRef(context,context.defaultRole??"self"),summary:{actionId,outcomeKey:plan.testResult?.outcome?.resultKey??null}});
     for(const [key,state] of plan.staged){const change=plan.changes.find(x=>x.containerRef&&this.#refKey(x.containerRef)===key);if(change)tx.stage(change.containerRef,state);}
     const committed=await this.#commit(tx);
     const strip=list=>list.map(({context:_context,followUps:inner=[],targets,...rest})=>({...rest,followUps:strip(inner),...(targets?{targets:strip(targets)}:{})})),followUps=strip(plan.followUps);
@@ -981,7 +984,7 @@ export class RuntimeEngine{
     const plan=await this.previewAction(versionId,actionId,replayContext,{staged});
     if(!plan.allowed)return {...plan,staged:undefined,context:undefined};
     for(const change of [...paid.changes,...plan.changes])if(change.containerRef)refs.set(this.#refKey(change.containerRef),normalizeRuntimeContainerRef(change.containerRef));
-    const tx=this.transaction(versionId,"reroll",{transactionId,corrects:originalId,summary:{actionId,rerollActionId,rerollOf:originalId,rerollCount:count,outcomeKey:plan.testResult?.outcome?.resultKey??null}});
+    const tx=this.transaction(versionId,"reroll",{transactionId,corrects:originalId,actor:roleRef(originalContext,"self"),summary:{actionId,rerollActionId,rerollOf:originalId,rerollCount:count,outcomeKey:plan.testResult?.outcome?.resultKey??null}});
     // One ledger entry per part: the undone use, the reroll's costs, the replay (the part a later reroll undoes).
     for(const [key,ref] of refs)if(staged.has(key)){
       const steps=[["undo",undone],["cost",afterCost]].filter(([,states])=>states.has(key)).map(([part,states])=>({part,state:states.get(key)}));

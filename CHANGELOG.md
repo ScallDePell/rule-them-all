@@ -1,5 +1,9 @@
 # Changelog
 
+## 1.0.15
+
+- An Action a player may run reaches its target even when that player does not own it (a player character's attack damages a GM's NPC): writes on the Action's other containers no longer need ownership; the Ruleset's Permissions on what is written still apply. Before, the GM client refused with "Permission denied: write definition …".
+
 ## 1.0.14
 
 - Combat start with a Ruleset that rerolls initiative each round: combatants with no initiative yet roll it, and the combat starts on the best one (a combatant made current before the rolls no longer keeps the turn). Initiatives already rolled stay.

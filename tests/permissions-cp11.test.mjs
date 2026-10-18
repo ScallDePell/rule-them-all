@@ -94,6 +94,22 @@ test('CP-11: a player write on a Document they do not own needs the GM client, w
   assert.deepEqual(relayed,['executeAction']);
 });
 
+test('CP-11: an Action the player may run reaches its target without owning it; the Permissions on what it writes still apply', async () => {
+  const {api,v,gm,playerAdapter}=await world(async(api,v)=>{
+    await api.createDefinition(v,{id:'vigor',key:'vigor',definitionTypeId:'body',nameKey:'Vigor',descriptionKey:'',data:{},capabilities:['pool'],slots:{pool:[{id:'points',minimum:{literal:0},maximum:{literal:10}}]},enabled:true,tags:[]});
+    await api.createEffect(v,{id:'bruise',nameKey:'Bruise',targetRole:'target',targetRef:{objectKind:'definition',objectId:'vigor',capabilityId:'pool',slotId:'points',outputId:'pool.current'},operation:'subtract',operand:{kind:'literal',value:2},enabled:true,tags:[]});
+    await api.createEffect(v,{id:'reveal',nameKey:'Reveal',targetRole:'target',targetRef:{objectKind:'definition',objectId:'secret',capabilityId:'value',outputId:'value.base'},operation:'set',operand:{kind:'literal',value:1},enabled:true,tags:[]});
+    await api.createAction(v,{id:'punch',nameKey:'Punch',effectRefs:['bruise'],enabled:true,tags:[]});
+    await api.createAction(v,{id:'pry',nameKey:'Pry',effectRefs:['reveal'],enabled:true,tags:[]});
+  });
+  const player=createRuntimeAPI(api,{adapter:playerAdapter,hooks:null,relay:{request:(method,args)=>gm.serveRelay(JSON.parse(JSON.stringify({method,args,userId:'p'})))}});
+  assert.equal((await player.executeAction(v,'punch',context)).committed,true);
+  assert.equal((await gm.getContainerState({kind:'actor',id:'b'})).definitionStates.vigor.capabilityStates.pool.points.current,8);
+  await assert.rejects(()=>player.executeAction(v,'pry',context),error=>error.code==='RUNTIME_FORBIDDEN');
+  // Outside an Action, the player still cannot write what they do not own.
+  await assert.rejects(()=>gm.serveRelay({method:'setDefinitionState',args:[v,{kind:'actor',id:'b'},'vigor',{pools:{points:1}}],userId:'p'}),error=>error.code==='RUNTIME_FORBIDDEN');
+});
+
 test('CP-11: the GM refuses a relayed write the rules deny to the player, and writes nothing', async () => {
   const {v,gm}=await world();
   await assert.rejects(()=>gm.serveRelay({method:'setDefinitionState',args:[v,{kind:'actor',id:'b'},'secret',{base:5}],userId:'p'}),error=>error.code==='RUNTIME_FORBIDDEN');
