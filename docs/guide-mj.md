@@ -26,7 +26,7 @@ Un Ruleset a une ou plusieurs versions. Chaque version a un statut :
 Les actions sur une version :
 - **Publier** vérifie que rien ne manque. La rubrique Général affiche ce qui reste à compléter ; un clic sur un point ouvre le champ à corriger.
 - **Activer** choisit la version jouée dans le monde. Une seule version est active à la fois.
-- **Exporter** télécharge la version en JSON ; **Importer** (depuis la liste des Rulesets) la recharge dans un autre monde.
+- **Exporter** télécharge la version en JSON ; **Importer** (depuis la liste des Rulesets) la recharge dans un autre monde. Pour n'en exporter qu'une partie, voir [Exporter et importer une partie du Ruleset](#exporter-et-importer-une-partie-du-ruleset).
 - **Créer une nouvelle version** repart d'une version existante.
 
 Des Rulesets prêts à importer sont dans le dossier [Rulesets](../Rulesets/) du dépôt : [Real World Fantasy](../Rulesets/rwf/LISEZMOI.md) et [SRD 5.2](../Rulesets/srd-5.2/LISEZMOI.md) (5e édition, règles 2024). Une créature d'un Contenu de type Acteur, glissée depuis son compendium sur la scène ou dans les Acteurs, prend les valeurs, les actions et les objets de son modèle.
@@ -42,7 +42,7 @@ Si vous supprimez l'ancienne version d'abord, la feuille de l'Acteur l'indique e
 
 ## 3. Construire un Ruleset
 
-Le Configurateur range le Ruleset en rubriques. Chaque élément est une carte : un clic l'ouvre, un **clic droit** propose Éditer, Dupliquer (le nom de la copie est demandé) et Supprimer (avec confirmation, et le détail de ce qui l'utilise).
+Le Configurateur range le Ruleset en rubriques. Chaque élément est une carte : un clic l'ouvre, un **clic droit** propose Éditer, Exporter, Dupliquer (le nom de la copie est demandé) et Supprimer (avec confirmation, et le détail de ce qui l'utilise).
 
 ### Définitions
 - **Types de définition** : les familles du jeu (caractéristiques, compétences, ressources, états…). Un type fixe les capacités de ses Définitions (une valeur, une réserve, un état…), et peut porter des **bornes de valeur** (minimum et maximum, fixes ou calculés par une Formule).
@@ -76,6 +76,21 @@ Le Configurateur range le Ruleset en rubriques. Chaque élément est une carte :
 - **Tags** : pour classer et filtrer les cartes. Un clic droit sur une carte, puis **Tags…**, coche ses tags ou en crée un nouveau.
 - **Dépendances** : le graphe de ce qui utilise quoi, pratique avant une suppression.
 - **Essayer les règles** : un bac à sable du MJ pour essayer une Action, un Test ou une Formule sur un Acteur, sur le brouillon, sans toucher au jeu.
+
+### Exporter et importer une partie du Ruleset
+Une partie d'un Ruleset (une règle, quelques cartes, une famille, une rubrique entière) s'exporte avec tout ce dont elle a besoin, pour la sauvegarder ou la donner à un autre MJ.
+- **Une carte** : clic droit, **Exporter…**.
+- **Plusieurs cartes**, même de familles différentes : **Ctrl+clic** (Cmd+clic sur Mac) sur chacune, ou clic droit puis **Ajouter à la sélection**. Le nombre de cartes choisies s'affiche en haut de la fenêtre, avec les boutons **Exporter la sélection** et **Vider la sélection**.
+- **Une famille ou une rubrique** : clic droit sur son nom dans le menu de gauche (par exemple *Actions*, ou *Règles* pour toute la rubrique). Une famille de Définitions ou de Contenus part avec son type.
+
+La fenêtre d'export liste, par famille, ce dont la partie a besoin (les Tests d'une Action, les Formules et Définitions qu'ils lisent, etc.). Ce qui est coché est mis dans le fichier ; ce qui est décoché ne l'est pas : le Ruleset qui reçoit la partie doit déjà l'avoir (même identifiant). Décochez par exemple les caractéristiques quand l'autre MJ joue le même Ruleset. La case d'une famille coche ou décoche toute la famille.
+
+Pour lire une partie, ouvrez le Ruleset qui la reçoit (un brouillon ou une version publiée, pas une version validée) et cliquez sur **Importer une partie…** en haut de la fenêtre :
+- s'il manque au Ruleset un élément que la partie attend, l'import est refusé et la liste de ce qui manque s'affiche ;
+- les éléments identiques sont ignorés, les nouveaux sont ajoutés ;
+- pour un élément déjà présent mais différent, vous choisissez : **Garder la mienne** (la partie utilise la vôtre), **Remplacer par celle du fichier**, ou **Importer en copie** (elle arrive sous un autre identifiant, et les éléments de la partie qui l'utilisent la suivent).
+
+Les traductions du monde des textes de la partie l'accompagnent et complètent celles du Ruleset qui la reçoit. Un Ruleset complet, lui, s'importe toujours depuis la liste des Rulesets.
 
 ## 4. Les feuilles
 

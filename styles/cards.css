@@ -69,6 +69,12 @@
   opacity: 0.35;
 }
 
+/* Chosen for a part export (Ctrl+click): framed in its family's color. */
+.rta-config-card.rta-config-card--selected {
+  outline: 2px solid var(--rta-card-accent);
+  outline-offset: 2px;
+}
+
 .rta-config-card.rta-config-card--drop-target {
   background: var(--rta-card-fill-hover);
   outline: 2px solid var(--rta-card-accent);

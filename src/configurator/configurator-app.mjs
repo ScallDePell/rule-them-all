@@ -6,7 +6,9 @@ import {RULESET_SECTIONS,rulesetColor,sectionColor,collectionColor,objectColor,s
 import {MODULE_ID} from "../core/module-contract.mjs";
 import {createSelectColorResolver,selectColorsAttribute} from "../ui/select-option-presentation.mjs";
 import {buildDependencyExplorer,buildDependencyGraph} from "./dependency-explorer.mjs";
-import {chooseTagsRTA, confirmRTA, promptRTA} from "./foundry-dialogs.mjs";
+import {chooseTagsRTA, confirmRTA, exportPartRTA, importPartRTA, promptRTA} from "./foundry-dialogs.mjs";
+import {collectionOfKind, isRulesetPart, selectionForSection, selectionForView} from "./ruleset-parts.mjs";
+import {groupPartRefs, partFileName, partImportView, partKey, PART_FAMILY_KEYS} from "./ruleset-part-view.mjs";
 import {ENTRY_OPERATIONS} from "./entry-operations.mjs";
 import {entryTagsAfter} from "./entry-tags.mjs";
 import {openContextMenu} from "../ui/context-menu.mjs";
@@ -23,6 +25,12 @@ import {moduleLanguage} from "../core/module-language.mjs";
 const neutral = RTA_NEUTRAL_COLOR;
 const label = key => game.i18n?.localize?.(key) ?? key;
 const slug = value => String(value ?? "").trim().toLowerCase().normalize("NFKD").replace(/[^a-z0-9]+/g,"-").replace(/^-|-$/g,"");
+const collectionOf = ref => collectionOfKind(ref.objectKind) ?? "";
+/** Save JSON as a file the browser downloads. */
+function download(payload,fileName) {
+  const blob=new Blob([JSON.stringify(payload,null,2)],{type:"application/json"}),url=URL.createObjectURL(blob),a=document.createElement("a");
+  a.href=url;a.download=fileName;a.click();URL.revokeObjectURL(url);
+}
 const uid = prefix => `${prefix}-${crypto.randomUUID?.() ?? Math.random().toString(36).slice(2)}`;
 
 
@@ -77,6 +85,8 @@ export class ConfiguratorApp extends ConfiguratorWindow {
   #dependencyClick = null;
   #tagFilters = new Map();
   #dependencySearch = "";
+  /** Entries chosen with Ctrl+click for a part export: "kind:id" -> {objectKind, objectId}. */
+  #partSelection = new Map();
   #dependencyListScroll = 0;
   #dependencyUnresolvedOnly = false;
   #view = "general";
@@ -235,7 +245,7 @@ export class ConfiguratorApp extends ConfiguratorWindow {
     // Resolve only persisted tag references, preserving the tag's own color.
     const tagIndex = new Map((ruleset?.tags ?? []).map(tag => [tag.id, tag]));
     cards = cards.map(card => ({
-      ...card,
+      ...card,partSelected:this.#partSelection.has(`${currentKind}:${card.id}`),
       displayTags: (Array.isArray(card.tags) ? card.tags : []).map(id => {
         const tag = tagIndex.get(id);
         if (!tag) return null;
@@ -350,6 +360,7 @@ export class ConfiguratorApp extends ConfiguratorWindow {
       publishReadiness:this.#view==='general'&&record?.status==='draft'?this.#publishReadiness(api,ruleset):null,
       recipes:this.#view==='general'&&record?recipeCards():null,
       lifecycle:record?{isValidated:record.status==="validated",isReady:record.status==="ready",isDraft:record.status==="draft",canMutate:record.status!=="validated",canCreateVersion:record.status==="validated",canActivate:Boolean(record.publishedSnapshot),isActive:record.versionId===activeId,statusLabel:statusLabel(record.status)}:null,
+      partSelection:{count:this.#partSelection.size,label:game.i18n?.format?.("RTA.Part.SelectionCount",{count:this.#partSelection.size})??String(this.#partSelection.size)},
       storage:ruleset?{storageRevision:api.getStorageRevision(),activeVersionId:activeId,engineContractVersion:ruleset.engineContractVersion}:null
     });
   }
@@ -405,8 +416,16 @@ export class ConfiguratorApp extends ConfiguratorWindow {
   }
   #bind() {
     for (const element of this.element?.querySelectorAll?.("[data-action]") ?? []) element.addEventListener("click", event => this.#action(event));
-    for (const card of this.element?.querySelectorAll?.(".rta-config-card[data-entry-id]") ?? []) card.addEventListener("contextmenu", event => this.#entryMenu(event, card));
+    for (const card of this.element?.querySelectorAll?.(".rta-config-card[data-entry-id]") ?? []) {
+      card.addEventListener("contextmenu", event => this.#entryMenu(event, card));
+      // Ctrl+click (Cmd+click) chooses an entry for a part export instead of opening it.
+      card.addEventListener("click", event => {if(!(event.ctrlKey||event.metaKey))return;event.preventDefault();event.stopPropagation();this.#togglePartSelection(card.dataset.kind,card.dataset.entryId);}, true);
+    }
     this.element?.querySelector?.("[data-import-file]")?.addEventListener("change", event => this.#import(event));
+    this.element?.querySelector?.("[data-import-part-file]")?.addEventListener("change", event => this.#importPart(event));
+    // Right click on a section or a family of the menu exports all of it.
+    for (const button of this.element?.querySelectorAll?.("[data-nav-group]") ?? []) button.addEventListener("contextmenu", event => this.#navMenu(event, {section:button.dataset.group,name:button.querySelector("span")?.textContent?.trim()}));
+    for (const button of this.element?.querySelectorAll?.("[data-nav-item]") ?? []) button.addEventListener("contextmenu", event => this.#navMenu(event, {view:button.dataset.view,name:button.textContent.trim()}));
     const depSearch=this.element?.querySelector?.('[data-dependency-search]');
     if(depSearch){depSearch.value=this.#dependencySearch;depSearch.addEventListener('input',()=>{
       this.#dependencySearch=depSearch.value;const term=depSearch.value.trim().toLocaleLowerCase();
@@ -506,6 +525,11 @@ export class ConfiguratorApp extends ConfiguratorWindow {
     const kind=card.dataset.kind,id=card.dataset.entryId,name=card.querySelector(".rta-config-card__title")?.textContent?.trim()??id;
     const record=(await this.#api()).getRulesetVersion(this.#selected),i18n=game.i18n;
     const items=[{label:i18n.localize("RTA.UI.Edit"),icon:"fa-solid fa-pen-to-square",run:()=>this.#openEditor(kind,id)}];
+    // Export it with what it needs; a chosen entry exports the whole selection.
+    const key=`${kind}:${id}`,chosen=this.#partSelection.has(key);
+    if(chosen&&this.#partSelection.size>1)items.push({label:i18n.format("RTA.Part.ExportSelectionCount",{count:this.#partSelection.size}),icon:"fa-solid fa-file-export",run:()=>this.#exportPart([...this.#partSelection.values()],"")});
+    else items.push({label:i18n.localize("RTA.Part.ExportEntry"),icon:"fa-solid fa-file-export",run:()=>this.#exportPart([{objectKind:kind,objectId:id}],name)});
+    items.push({label:i18n.localize(chosen?"RTA.Part.Unselect":"RTA.Part.Select"),icon:chosen?"fa-regular fa-square-minus":"fa-regular fa-square-check",run:()=>this.#togglePartSelection(kind,id)});
     if(record?.status!=="validated"){
       items.push({label:i18n.localize("RTA.UI.DuplicateEntry"),icon:"fa-solid fa-copy",run:()=>this.#duplicate(kind,id,name)});
       // Entries that carry tags: check them, or add a new one, from here.
@@ -514,6 +538,65 @@ export class ConfiguratorApp extends ConfiguratorWindow {
       items.push({label:i18n.localize("RTA.Template.Delete"),icon:"fa-solid fa-trash",run:()=>this.#delete(kind,id,name)});
     }
     openContextMenu(event,items);
+  }
+  #togglePartSelection(kind,id) {
+    const key=`${kind}:${id}`;
+    if(this.#partSelection.has(key))this.#partSelection.delete(key);else this.#partSelection.set(key,{objectKind:kind,objectId:id});
+    this.#rememberScroll();this.#restoreScroll=true;
+    return this.render(false);
+  }
+  /** Right click on a section or a family of the menu: export everything it lists. */
+  async #navMenu(event,{section,view,name}) {
+    const api=await this.#api(),ruleset=api.getRulesetVersion(this.#selected)?.workingDraft;
+    if(!ruleset)return;
+    const collection=view?(TOP_LEVEL.find(item=>item.view===view)?.collection??view):null;
+    const selection=section?selectionForSection(ruleset,section):selectionForView(ruleset,collection);
+    if(!selection.length)return;
+    event.preventDefault();event.stopPropagation();
+    const i18n=game.i18n;
+    openContextMenu(event,[{label:i18n.format(section?"RTA.Part.ExportSection":"RTA.Part.ExportFamily",{name}),icon:"fa-solid fa-file-export",run:()=>this.#exportPart(selection,name)}]);
+  }
+  /** Export entries and, as chosen in the dialog, what they need: a part file another Ruleset can read. */
+  async #exportPart(selection,name) {
+    this.#error="";
+    try {
+      const api=await this.#api(),ruleset=api.getRulesetVersion(this.#selected)?.workingDraft;
+      const nameOf=(collection,id)=>{const entry=(ruleset?.[collection]??[]).find(x=>x.id===id);return entry?localize(api,this.#selected,entry.nameKey??entry.id):id;};
+      const {roots,dependencies}=api.listPartDependencies(this.#selected,selection);
+      const groups=groupPartRefs(dependencies,nameOf).map(group=>({...group,title:label(PART_FAMILY_KEYS[group.collection])}));
+      const defaultName=name||(roots.length===1?nameOf(collectionOf(roots[0]),roots[0].objectId):game.i18n.format("RTA.Part.SelectionName",{ruleset:localize(api,this.#selected,ruleset?.nameKey)}));
+      const chosen=await exportPartRTA(defaultName,game.i18n.format("RTA.Part.ExportSummary",{count:roots.length,dependencies:dependencies.length}),groups);
+      if(!chosen)return;
+      const included=new Set(chosen.include),partName=chosen.name||defaultName;
+      const part=api.exportRulesetPart(this.#selected,{selection:roots,expect:dependencies.filter(ref=>!included.has(partKey(ref))),name:partName});
+      download(part,partFileName(partName));
+      ui.notifications?.info?.(game.i18n.format("RTA.Part.Exported",{count:Object.values(part.entries).flat().length,expected:part.expects.length}));
+    } catch(error){this.#error=error?.message??String(error);return this.render(false);}
+  }
+  /** Read a part file into this Ruleset's draft: blocked while it lacks what the part expects, else conflicts are decided first. */
+  async #importPart(event) {
+    const input=event.currentTarget,file=input.files?.[0]; if(!file)return;
+    input.value="";
+    this.#error="";
+    try {
+      const api=await this.#api(),payload=JSON.parse(await file.text());
+      if(!isRulesetPart(payload))throw new Error(label("RTA.Part.NotAPart"));
+      const plan=api.planRulesetPartImport(this.#selected,payload);
+      const nameOf=(collection,row)=>localize(api,this.#selected,row.nameKey||row.id);
+      const titled=row=>({...row,title:label(PART_FAMILY_KEYS[row.collection])});
+      if(plan.blocked){
+        const missing=plan.missing.map(ref=>`${label(PART_FAMILY_KEYS[collectionOf(ref)])} · ${localize(api,this.#selected,ref.nameKey||ref.objectId)}`);
+        throw new Error(game.i18n.format("RTA.Part.Missing",{list:missing.join(", ")}));
+      }
+      const view=partImportView(plan,nameOf);
+      if(view.nothingToDo)return ui.notifications?.info?.(label("RTA.Part.NothingToImport"));
+      const source=plan.name||localize(api,this.#selected,plan.source?.nameKey)||plan.source?.rulesetId||"";
+      const decisions=await importPartRTA(game.i18n.format("RTA.Part.ImportSummary",{source,...view.counts}),view.conflicts.map(titled),view.added.map(titled));
+      if(!decisions)return;
+      const result=await api.importRulesetPart(this.#selected,payload,decisions);
+      ui.notifications?.info?.(game.i18n.format("RTA.Part.Imported",{created:result.created.length,replaced:result.replaced.length}));
+      return this.render(false);
+    } catch(error){this.#error=error?.message??String(error);return this.render(false);}
   }
   async #duplicate(kind,id,name) {
     this.#error="";
@@ -572,6 +655,9 @@ export class ConfiguratorApp extends ConfiguratorWindow {
         return this.render(false);
       }
       if (action==="importRuleset") return this.element?.querySelector?.("[data-import-file]")?.click();
+      if (action==="importPart") return this.element?.querySelector?.("[data-import-part-file]")?.click();
+      if (action==="exportPartSelection") return this.#exportPart([...this.#partSelection.values()],"");
+      if (action==="clearPartSelection") {this.#partSelection.clear();this.#rememberScroll();this.#restoreScroll=true;return this.render(false);}
       if (action==="clearTagFilters") {
         this.#tagFilters.delete(this.#view);
         this.#rememberScroll();this.#restoreScroll=true;
@@ -588,8 +674,8 @@ export class ConfiguratorApp extends ConfiguratorWindow {
         const now=Date.now(),key=button.dataset.dependencyKey,last=this.#dependencyClick;this.#dependencyClick={key,time:now};
         if(last?.key===key&&now-last.time<450&&button.dataset.nodeKind){this.#dependencyClick=null;return this.#openEditor(button.dataset.nodeKind,button.dataset.nodeId);}this.#dependencyListScroll=this.element?.querySelector('.rta-dependencies__items')?.scrollTop??0;this.#dependencySelected=button.dataset.dependencyKey;return this.render(false);}
       if (action==="setDisplayMode") { this.#displayMode=button.dataset.mode==="lines"?"lines":"tiles"; return this.render(false); }
-      if (action==="openWorkspace") { this.#selected=button.dataset.versionId; this.#view="general"; await game.settings?.set(MODULE_ID,"configuratorSelectedRuleset",this.#selected); return this.render(false); }
-      if (action==="backToRulesets") { this.#selected=""; this.#view="general"; await game.settings?.set(MODULE_ID,"configuratorSelectedRuleset",""); return this.render(false); }
+      if (action==="openWorkspace") { this.#partSelection.clear(); this.#selected=button.dataset.versionId; this.#view="general"; await game.settings?.set(MODULE_ID,"configuratorSelectedRuleset",this.#selected); return this.render(false); }
+      if (action==="backToRulesets") { this.#partSelection.clear(); this.#selected=""; this.#view="general"; await game.settings?.set(MODULE_ID,"configuratorSelectedRuleset",""); return this.render(false); }
       if (action==="navGroup") { const panel=this.element?.querySelector("[data-nav-panel]"); if(panel&&!panel.hidden&&button.getAttribute("aria-expanded")==="true")this._rtaNav?.dismiss();else this._rtaNav?.open(button.dataset.group); return; }
       if (action==="navigate") { this.#rememberScroll(); this.#view=button.dataset.view; this.#restoreScroll=true; return this.render(false); }
       if (action==="closeConfigurator") return this.close();
@@ -707,8 +793,7 @@ export class ConfiguratorApp extends ConfiguratorWindow {
       if (action==="runtimeEvent") return this.#runtimeShow("event",await game.ruleThemAll.runtimeLab.emitEvent(this.#selected,runtimeId("eventTypeId"),{},this.#runtimeContext()));
       if (action==="export") {
         const id=button.dataset.versionId??this.#selected; const payload=api.exportRuleset(id,{includeWorldLocalizations:true});
-        const blob=new Blob([JSON.stringify(payload,null,2)],{type:"application/json"}),url=URL.createObjectURL(blob),a=document.createElement("a");
-        a.href=url;a.download=`rta-ruleset-${id}.json`;a.click();URL.revokeObjectURL(url); return;
+        return download(payload,`rta-ruleset-${id}.json`);
       }
     } catch(error) {
       let message=error?.message??String(error);
@@ -747,7 +832,7 @@ export class ConfiguratorApp extends ConfiguratorWindow {
 
   async #import(event) {
     const file=event.currentTarget.files?.[0]; if(!file)return;
-    try { const api=await this.#api(); const payload=JSON.parse(await file.text()); await api.importRuleset(payload,"NEW"); await this.render(false); }
+    try { const api=await this.#api(); const payload=JSON.parse(await file.text()); if(isRulesetPart(payload))throw new Error(label("RTA.Part.WholeImportRefused")); await api.importRuleset(payload,"NEW"); await this.render(false); }
     catch(error){ this.#error=error?.message??String(error); await this.render(false); }
   }
 }

@@ -1,5 +1,11 @@
 # Changelog
 
+## 1.0.18
+
+- Export part of a Ruleset with what it needs: right-click a card (**Exporter…**), Ctrl+click several cards then **Exporter la sélection**, or right-click a family or a section in the menu. The dialog lists the dependencies by family; unchecked ones are not carried and are expected in the receiving Ruleset. The file format is `rule-them-all-part`.
+- **Importer une partie…** (Ruleset header) reads such a file into an editable Ruleset: refused with the list of what is missing when an expected entry is absent; identical entries are skipped; for an entry already there but different, keep yours, replace it, or import the file's as a copy under a new id (the part's references follow it). World translations of the part's texts come along.
+- API: `exportRulesetPart`, `listPartDependencies`, `planRulesetPartImport`, `importRulesetPart` on the configurator API.
+
 ## 1.0.17
 
 - Ruleset "Combat et ressources partagées": **Vaincu quand** (initiative.defeatedConditionRef), a Condition that marks a combatant defeated in Foundry's combat tracker (and the token's status) while it holds, and clears the mark when it stops holding. The GM's own toggle stays until the Condition changes.

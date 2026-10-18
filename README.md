@@ -18,7 +18,7 @@ Whether you want to customize an existing RPG system or build your own rules fro
   - rolls, tests, actions, effects, states and durations;
   - creation and progression systems, permissions and tags.
   
-  Rulesets are versioned. They can be published, exported and imported between worlds.
+  Rulesets are versioned. They can be published, exported and imported between worlds, whole or in part (a rule, a sheet or a section with what it needs).
 - **Generic rules engine.** It handles any dice formula and custom dice, success counts, thresholds and margins, and opposed and group tests. It also covers rerolls, choices made after a result, and reactions. Other mechanics include initiative by table or by side, shared world and combat resources, and states that expire on the world clock or on events.
 - **Character creation.** A step-by-step window walks players through the configured creation system: allocations, picks and draws.
 - **Visual sheet editor.** You build Actor and Item sheets block by block. Blocks include values, gauges, tracks, clocks, card lists, tabs and rich notes. The editor also offers themes, templates and per-role visibility. Each sheet appears in Foundry's sheet selection menu.

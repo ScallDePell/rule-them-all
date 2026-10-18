@@ -160,6 +160,14 @@
   justify-content: flex-end;
 }
 
+/* Entries chosen for a part export, counted next to its export and clear buttons. */
+.rta-configurator .rta-part-selection {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--rta-gap-tight);
+  margin-inline-end: var(--rta-gap-row);
+}
+
 .rta-configurator__section-actions {
   display: flex;
   gap: var(--rta-gap-row);
@@ -228,4 +236,57 @@
 .rta-tag-dialog .rta-tag-choice > label {
   min-inline-size: 0;
   overflow-wrap: anywhere;
+}
+
+/* Exporting or importing part of a Ruleset: dependencies by family, conflicts one per line; scrolled when long. */
+.rta-part-dialog :is(.rta-part-groups, .rta-part-conflicts, .rta-part-added ul) {
+  display: flex;
+  flex-direction: column;
+  gap: var(--rta-gap-row);
+  max-block-size: 45vh;
+  overflow-y: auto;
+}
+
+.rta-part-dialog .rta-part-group > summary {
+  display: flex;
+  align-items: center;
+  gap: var(--rta-gap-tight);
+  font-weight: bold;
+  cursor: pointer;
+}
+
+.rta-part-dialog .rta-part-group > summary > input {
+  margin: 0;
+}
+
+.rta-part-dialog .rta-part-choice {
+  margin-block-start: var(--rta-gap-tight);
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: var(--rta-gap-tight) var(--rta-gap-row);
+  padding-inline-start: var(--rta-gap-block);
+}
+
+.rta-part-dialog .rta-part-choice > label {
+  min-inline-size: 0;
+  overflow-wrap: anywhere;
+}
+
+/* A conflict: the entry's family and name, then the choice, on one line. */
+.rta-part-dialog .rta-part-conflicts > .form-group {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) max-content;
+  align-items: center;
+  gap: var(--rta-gap-row);
+  margin: 0;
+}
+
+.rta-part-dialog .rta-part-conflicts > .form-group > label {
+  line-height: normal;
+  overflow-wrap: anywhere;
+}
+
+.rta-part-dialog .rta-part-added ul {
+  margin: var(--rta-gap-tight) 0 0;
+  max-block-size: 25vh;
 }

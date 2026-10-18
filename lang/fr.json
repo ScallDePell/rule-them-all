@@ -1178,7 +1178,12 @@
       "Label": "Libellé",
       "DefinitionType": "Choisi parmi",
       "Source": "Proposées",
-      "Sources": {"auto": "Celles détenues, sinon toutes", "held": "Seulement celles détenues", "all": "Toutes", "unheld": "Seulement celles non détenues"},
+      "Sources": {
+        "auto": "Celles détenues, sinon toutes",
+        "held": "Seulement celles détenues",
+        "all": "Toutes",
+        "unheld": "Seulement celles non détenues"
+      },
       "Options": "Valeurs permises",
       "OptionsPlaceholder": "Une par ligne : valeur = libellé (vide : toute valeur)",
       "Types": {
@@ -2059,6 +2064,47 @@
       "Reload": "Recharger",
       "Failed": "Les données n'ont pas pu être réparées, rien n'a été modifié : {error}",
       "LoadFailed": "Paramètres du jeu > Rule Them'All > Réparer les données peut le corriger."
+    },
+    "Part": {
+      "Import": "Importer une partie…",
+      "ImportTitle": "Importer une partie de Ruleset",
+      "ImportApply": "Importer",
+      "Export": "Exporter",
+      "ExportTitle": "Exporter une partie du Ruleset",
+      "ExportEntry": "Exporter…",
+      "ExportSelection": "Exporter la sélection",
+      "ExportSelectionCount": "Exporter la sélection ({count})",
+      "ExportSection": "Exporter la section « {name} »…",
+      "ExportFamily": "Exporter « {name} »…",
+      "Select": "Ajouter à la sélection",
+      "Unselect": "Retirer de la sélection",
+      "ClearSelection": "Vider la sélection",
+      "SelectionCount": "{count} sélectionné(s)",
+      "SelectionName": "{ruleset} – sélection",
+      "Name": "Nom de la partie",
+      "Dependencies": "Ce dont elle a besoin",
+      "DependenciesHint": "Coché : inclus dans le fichier. Décoché : le Ruleset qui la reçoit doit déjà l'avoir.",
+      "NoDependencies": "Elle n'a besoin de rien d'autre.",
+      "ExportSummary": "{count} entrée(s) choisie(s), {dependencies} dépendance(s).",
+      "Exported": "Partie exportée : {count} entrée(s), {expected} attendue(s) chez le destinataire.",
+      "ImportSummary": "Depuis « {source} » : {new} nouvelle(s), {same} déjà identique(s), {conflict} déjà présente(s) mais différente(s).",
+      "Conflicts": "Déjà dans ce Ruleset, mais différent",
+      "ConflictsHint": "Pour chacune : garder la vôtre, la remplacer par celle du fichier, ou importer celle du fichier comme une copie à part.",
+      "Added": "Nouvelles entrées",
+      "Choice": {
+        "keep": "Garder la mienne",
+        "replace": "Remplacer par celle du fichier",
+        "rename": "Importer en copie"
+      },
+      "Imported": "Partie importée : {created} ajoutée(s), {replaced} remplacée(s).",
+      "NothingToImport": "Rien à importer : ce Ruleset a déjà tout, à l'identique.",
+      "Missing": "Ce Ruleset n'a pas ce que la partie attend : {list}. Importez-le d'abord, ou demandez une partie qui l'inclut.",
+      "NotAPart": "Ce fichier n'est pas une partie de Ruleset. Un Ruleset complet s'importe depuis la liste des Rulesets.",
+      "WholeImportRefused": "Ce fichier est une partie de Ruleset : ouvrez le Ruleset qui doit la recevoir et utilisez « Importer une partie… ».",
+      "Family": {
+        "SheetTemplates": "Modèles de blocs",
+        "SheetThemes": "Thèmes de feuille"
+      }
     }
   }
 }

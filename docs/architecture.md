@@ -26,6 +26,7 @@ Frontière : le domaine ne produit pas de HTML, la présentation ne décide ni d
 
 - Stockage du monde : index `configuratorStorage` (`storageVersion: 4`, découpé) ; le configurateur voit un instantané `storageVersion: 3`. Aucune lecture d'un format plus ancien.
 - Export/import : enveloppe `rta-ruleset`, seul format lu et écrit.
+- Parties de Ruleset : enveloppe `rule-them-all-part` (`src/configurator/ruleset-parts.mjs`) : des entrées avec leurs dépendances, tirées de `DependencyIndex`, et les entrées attendues chez le destinataire. À l'import, une entrée renommée est suivie par les références de la partie via les chemins des arêtes de l'index ; une référence que l'index ne voit pas ne suivrait pas.
 - Quand un format stocké disparaît, `src/configurator/stored-data-repair.mjs` le convertit : le MJ le lance depuis Paramètres du jeu → Rule Them'All → Réparer les données (`repair-data-menu.mjs`), qui montre les changements, télécharge une sauvegarde puis écrit. Le reste du module ne lit que le format courant.
 - Toute écriture de jeu persistante passe par `engine.transaction` (journal, annulation). Les adaptateurs exposent `load`, `loadLedger`, `write`, `canWrite`, `subject`, `worldTime`, `listContainers`.
 - Les feuilles écrivent dans le runtime (`writeSheetValue`), jamais dans les données du système hôte.
@@ -50,7 +51,7 @@ node qa/architecture-audit.mjs --strict
 node qa/release-readiness.mjs
 ```
 
-Rendus Chromium (variable `RTA_CHROMIUM`, CSS de Foundry via `RTA_FOUNDRY_CSS`) : `qa/configurator-render.mjs` d'abord, puis `dynamic-markup-audit.mjs`, `layout-audit.mjs`, `sheet-editor-flow.mjs`, `sheet-render.mjs`, `creation-render.mjs`, `shared-resources-render.mjs`.
+Rendus Chromium (variable `RTA_CHROMIUM`, CSS de Foundry via `RTA_FOUNDRY_CSS`) : `qa/configurator-render.mjs` d'abord, puis `dynamic-markup-audit.mjs`, `layout-audit.mjs`, `sheet-editor-flow.mjs`, `sheet-render.mjs`, `creation-render.mjs`, `shared-resources-render.mjs`, `part-dialogs-render.mjs`.
 
 ## 7. Limites et dettes identifiées
 

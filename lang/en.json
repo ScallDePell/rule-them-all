@@ -1178,7 +1178,12 @@
       "Label": "Label",
       "DefinitionType": "Chosen among",
       "Source": "Offered",
-      "Sources": {"auto": "Those held, else all", "held": "Only those held", "all": "All", "unheld": "Only those not held"},
+      "Sources": {
+        "auto": "Those held, else all",
+        "held": "Only those held",
+        "all": "All",
+        "unheld": "Only those not held"
+      },
       "Options": "Allowed values",
       "OptionsPlaceholder": "One per line: value = label (empty: any value)",
       "Types": {
@@ -2059,6 +2064,47 @@
       "Reload": "Reload",
       "Failed": "The data could not be repaired, nothing was changed: {error}",
       "LoadFailed": "Game Settings > Rule Them'All > Repair the data can fix it."
+    },
+    "Part": {
+      "Import": "Import a part…",
+      "ImportTitle": "Import part of a Ruleset",
+      "ImportApply": "Import",
+      "Export": "Export",
+      "ExportTitle": "Export part of the Ruleset",
+      "ExportEntry": "Export…",
+      "ExportSelection": "Export the selection",
+      "ExportSelectionCount": "Export the selection ({count})",
+      "ExportSection": "Export the “{name}” section…",
+      "ExportFamily": "Export “{name}”…",
+      "Select": "Add to the selection",
+      "Unselect": "Remove from the selection",
+      "ClearSelection": "Clear the selection",
+      "SelectionCount": "{count} selected",
+      "SelectionName": "{ruleset} – selection",
+      "Name": "Part name",
+      "Dependencies": "What it needs",
+      "DependenciesHint": "Checked: included in the file. Unchecked: the receiving Ruleset must already have it.",
+      "NoDependencies": "It needs nothing else.",
+      "ExportSummary": "{count} chosen entr(y/ies), {dependencies} dependenc(y/ies).",
+      "Exported": "Part exported: {count} entr(y/ies), {expected} expected at the receiving end.",
+      "ImportSummary": "From “{source}”: {new} new, {same} already identical, {conflict} already here but different.",
+      "Conflicts": "Already in this Ruleset, but different",
+      "ConflictsHint": "For each: keep yours, replace it with the file's, or import the file's as a separate copy.",
+      "Added": "New entries",
+      "Choice": {
+        "keep": "Keep mine",
+        "replace": "Replace with the file's",
+        "rename": "Import as a copy"
+      },
+      "Imported": "Part imported: {created} added, {replaced} replaced.",
+      "NothingToImport": "Nothing to import: this Ruleset already has everything, unchanged.",
+      "Missing": "This Ruleset lacks what the part expects: {list}. Import it first, or ask for a part that includes it.",
+      "NotAPart": "This file is not part of a Ruleset. A whole Ruleset is imported from the Rulesets list.",
+      "WholeImportRefused": "This file is part of a Ruleset: open the Ruleset that should receive it and use “Import a part…”.",
+      "Family": {
+        "SheetTemplates": "Block templates",
+        "SheetThemes": "Sheet themes"
+      }
     }
   }
 }

@@ -33,7 +33,10 @@
     <header class="rta-configurator__workspace-header">
       <button type="button" data-action="backToRulesets"><i class="fa-solid fa-arrow-left"></i> {{localize "RTA.Template.Rulesets"}}</button>
       <div><strong>{{selectedRulesetName}}</strong><span>v{{selectedRuleset.version}} · {{lifecycle.statusLabel}}</span></div>
-      <div class="rta-config-actions"></div>
+      <div class="rta-config-actions">
+        {{#if partSelection.count}}<span class="rta-part-selection" role="status"><span>{{partSelection.label}}</span><button type="button" class="rta-config-action" data-action="exportPartSelection" data-tooltip="{{localize 'RTA.Part.ExportSelection'}}" aria-label="{{localize 'RTA.Part.ExportSelection'}}"><i class="fa-solid fa-file-export"></i></button><button type="button" class="rta-config-action" data-action="clearPartSelection" data-tooltip="{{localize 'RTA.Part.ClearSelection'}}" aria-label="{{localize 'RTA.Part.ClearSelection'}}"><i class="fa-solid fa-xmark"></i></button></span>{{/if}}
+        <button type="button" data-action="importPart" {{#unless lifecycle.canMutate}}disabled title="{{localize 'RTA.Colors.ReadOnly'}}"{{/unless}}><i class="fa-solid fa-file-import" aria-hidden="true"></i> {{localize "RTA.Part.Import"}}</button><input data-import-part-file type="file" accept=".json,application/json" hidden>
+      </div>
     </header>
     <div class="rta-configurator__workspace">
       <nav class="rta-explorer" style="--rta-card-accent:{{rulesetAccent}}" aria-label="{{localize 'RTA.Template.RuleThemAllNavigation'}}" data-explorer>
@@ -93,7 +96,7 @@
           {{/if}}
           <div class="rta-config-card-grid{{#if displayLines}} rta-display-lines{{/if}}" role="list" data-card-grid>
             {{#each cards}}
-              <article class="rta-config-card{{#unless enabled}} rta-config-card--disabled{{/unless}}" style="--rta-card-accent: {{cardColor}}" role="listitem" draggable="{{#if ../canReorder}}true{{else}}false{{/if}}" data-orderable-card data-kind="{{../currentKind}}" data-entry-id="{{id}}">
+              <article class="rta-config-card{{#unless enabled}} rta-config-card--disabled{{/unless}}{{#if partSelected}} rta-config-card--selected{{/if}}" style="--rta-card-accent: {{cardColor}}" role="listitem" draggable="{{#if ../canReorder}}true{{else}}false{{/if}}" data-orderable-card data-kind="{{../currentKind}}" data-entry-id="{{id}}">
                 <button class="rta-config-card__title" type="button" data-action="openEntry" data-kind="{{../currentKind}}" data-entry-id="{{id}}">{{name}}</button>
                 <div class="rta-config-card__bottom">
                   <div class="rta-config-card__tags">{{#each displayTags}}<span class="rta-config-card__tag" {{#if color}}style="--rta-tag-color: {{color}}"{{/if}} title="{{name}}">{{name}}</span>{{/each}}</div>
