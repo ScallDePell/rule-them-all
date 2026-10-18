@@ -309,7 +309,9 @@ function renderList(node, t, edit) {
   // The editor always shows a row, and a drop zone in it while the row shows nothing.
   if (!rows.length) rows = [{definitionId: "", label: t("RTA.SheetEditor.ExampleRow"), children: []}];
   if (edit && !rows[0].children.length) rows = rows.map(r => ({...r, children: [{kind: "placeholder", parentId: node.id}]}));
-  const cells = rows[0].children, perColumn = `minmax(0, 1fr)${" auto".repeat(cells.length)}`, columnCount = Math.max(1, Number(node.columns ?? 1));
+  // A description (words of a scale) takes the free width and wraps; the names then keep theirs.
+  const cells = rows[0].children, worded = cells.some(c => c.display === "description");
+  const perColumn = `${worded ? "minmax(min-content, max-content)" : "minmax(0, 1fr)"}${cells.map(c => c.display === "description" ? " minmax(0, 1fr)" : " auto").join("")}`, columnCount = Math.max(1, Number(node.columns ?? 1));
   const head = cells.filter(c => c.kind === "value").length > 1
     ? `<div class="rta-sheet-row rta-sheet-row--head" aria-hidden="true"><span></span>${cells.map(c => `<span class="rta-sheet-row__head"${labelTip(c, cellLabel(c, t))}>${labelHTML(c, cellLabel(c, t))}</span>`).join("")}</div>`.repeat(Math.min(columnCount, rows.length)) : "";
   const style = `--rta-sheet-cells: ${cells.length + 1}; --rta-sheet-list-template: ${Array(columnCount).fill(perColumn).join(" ")}; --rta-sheet-list-medium: ${Array(Math.min(columnCount, 2)).fill(perColumn).join(" ")}; --rta-sheet-list-narrow: ${perColumn}`;

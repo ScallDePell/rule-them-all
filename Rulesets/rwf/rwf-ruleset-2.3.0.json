@@ -3,8 +3,8 @@
  "format": "rta-ruleset",
  "formatVersion": 3,
  "rulesetId": "rwf",
- "version": "2.2.0",
- "versionId": "rwf-2-2-0",
+ "version": "2.3.0",
+ "versionId": "rwf-2-3-0",
  "versionRecord": {
   "publishedSnapshot": {
    "actions": [
@@ -68472,6 +68472,7 @@
      "key": "force",
      "nameKey": "Force",
      "order": 10,
+     "scaleRef": "etat-force",
      "tags": []
     },
     {
@@ -68486,6 +68487,7 @@
      "key": "agilite",
      "nameKey": "Agilité",
      "order": 20,
+     "scaleRef": "etat-agilite",
      "tags": []
     },
     {
@@ -68500,6 +68502,7 @@
      "key": "constitution",
      "nameKey": "Constitution",
      "order": 30,
+     "scaleRef": "etat-constitution",
      "tags": []
     },
     {
@@ -68514,6 +68517,7 @@
      "key": "esprit",
      "nameKey": "Esprit",
      "order": 40,
+     "scaleRef": "etat-esprit",
      "tags": []
     },
     {
@@ -68528,6 +68532,7 @@
      "key": "presence",
      "nameKey": "Présence",
      "order": 50,
+     "scaleRef": "etat-presence",
      "tags": []
     },
     {
@@ -68551,6 +68556,7 @@
      "key": "athletisme",
      "nameKey": "Athlétisme",
      "order": 60,
+     "scaleRef": "etat-athletisme",
      "tags": []
     },
     {
@@ -68574,6 +68580,7 @@
      "key": "discretion",
      "nameKey": "Discrétion",
      "order": 70,
+     "scaleRef": "etat-discretion",
      "tags": []
     },
     {
@@ -68597,6 +68604,7 @@
      "key": "vigilance",
      "nameKey": "Vigilance",
      "order": 80,
+     "scaleRef": "etat-vigilance",
      "tags": []
     },
     {
@@ -68620,6 +68628,7 @@
      "key": "investigation",
      "nameKey": "Investigation",
      "order": 90,
+     "scaleRef": "etat-investigation",
      "tags": []
     },
     {
@@ -68643,6 +68652,7 @@
      "key": "survie",
      "nameKey": "Survie",
      "order": 100,
+     "scaleRef": "etat-survie",
      "tags": []
     },
     {
@@ -68666,6 +68676,7 @@
      "key": "technique",
      "nameKey": "Technique",
      "order": 110,
+     "scaleRef": "etat-technique",
      "tags": []
     },
     {
@@ -68689,6 +68700,7 @@
      "key": "informatique",
      "nameKey": "Informatique",
      "order": 120,
+     "scaleRef": "etat-informatique",
      "tags": []
     },
     {
@@ -68712,6 +68724,7 @@
      "key": "sciences",
      "nameKey": "Sciences",
      "order": 130,
+     "scaleRef": "etat-sciences",
      "tags": []
     },
     {
@@ -68735,6 +68748,7 @@
      "key": "medecine",
      "nameKey": "Médecine",
      "order": 140,
+     "scaleRef": "etat-medecine",
      "tags": []
     },
     {
@@ -68758,6 +68772,7 @@
      "key": "culture",
      "nameKey": "Culture",
      "order": 150,
+     "scaleRef": "etat-culture",
      "tags": []
     },
     {
@@ -68781,6 +68796,7 @@
      "key": "influence",
      "nameKey": "Influence",
      "order": 160,
+     "scaleRef": "etat-influence",
      "tags": []
     },
     {
@@ -68804,6 +68820,7 @@
      "key": "empathie",
      "nameKey": "Empathie",
      "order": 170,
+     "scaleRef": "etat-empathie",
      "tags": []
     },
     {
@@ -68827,6 +68844,7 @@
      "key": "langues",
      "nameKey": "Langues",
      "order": 180,
+     "scaleRef": "etat-langues",
      "tags": []
     },
     {
@@ -68850,6 +68868,7 @@
      "key": "arts",
      "nameKey": "Arts",
      "order": 190,
+     "scaleRef": "etat-arts",
      "tags": []
     },
     {
@@ -68873,6 +68892,7 @@
      "key": "occultisme",
      "nameKey": "Occultisme",
      "order": 200,
+     "scaleRef": "etat-occultisme",
      "tags": []
     },
     {
@@ -68896,6 +68916,7 @@
      "key": "corps-a-corps",
      "nameKey": "Corps à corps",
      "order": 210,
+     "scaleRef": "etat-corps-a-corps",
      "tags": []
     },
     {
@@ -68919,6 +68940,7 @@
      "key": "armes-de-melee",
      "nameKey": "Armes de mêlée",
      "order": 220,
+     "scaleRef": "etat-armes-de-melee",
      "tags": []
     },
     {
@@ -68942,6 +68964,7 @@
      "key": "armes-de-poing",
      "nameKey": "Armes de poing",
      "order": 230,
+     "scaleRef": "etat-armes-de-poing",
      "tags": []
     },
     {
@@ -68965,6 +68988,7 @@
      "key": "armes-d-epaule",
      "nameKey": "Armes d'épaule",
      "order": 240,
+     "scaleRef": "etat-armes-d-epaule",
      "tags": []
     },
     {
@@ -68988,6 +69012,7 @@
      "key": "armes-lourdes",
      "nameKey": "Armes lourdes",
      "order": 250,
+     "scaleRef": "etat-armes-lourdes",
      "tags": []
     },
     {
@@ -69011,6 +69036,7 @@
      "key": "armes-de-jet",
      "nameKey": "Armes de jet",
      "order": 260,
+     "scaleRef": "etat-armes-de-jet",
      "tags": []
     },
     {
@@ -69034,6 +69060,7 @@
      "key": "armes-de-trait",
      "nameKey": "Armes de trait",
      "order": 270,
+     "scaleRef": "etat-armes-de-trait",
      "tags": []
     },
     {
@@ -69057,6 +69084,7 @@
      "key": "course-a-pied",
      "nameKey": "Course à pied",
      "order": 280,
+     "scaleRef": "etat-course-a-pied",
      "tags": []
     },
     {
@@ -69080,6 +69108,7 @@
      "key": "vehicules-legers",
      "nameKey": "Véhicules légers",
      "order": 290,
+     "scaleRef": "etat-vehicules-legers",
      "tags": []
     },
     {
@@ -69103,6 +69132,7 @@
      "key": "deux-roues-motorises",
      "nameKey": "Deux-roues motorisés",
      "order": 300,
+     "scaleRef": "etat-deux-roues-motorises",
      "tags": []
     },
     {
@@ -69126,6 +69156,7 @@
      "key": "poids-lourds",
      "nameKey": "Poids lourds",
      "order": 310,
+     "scaleRef": "etat-poids-lourds",
      "tags": []
     },
     {
@@ -69149,6 +69180,7 @@
      "key": "transport-collectif",
      "nameKey": "Transport collectif",
      "order": 320,
+     "scaleRef": "etat-transport-collectif",
      "tags": []
     },
     {
@@ -69172,6 +69204,7 @@
      "key": "cyclisme",
      "nameKey": "Cyclisme",
      "order": 330,
+     "scaleRef": "etat-cyclisme",
      "tags": []
     },
     {
@@ -69195,6 +69228,7 @@
      "key": "equitation",
      "nameKey": "Équitation / Monture",
      "order": 340,
+     "scaleRef": "etat-equitation",
      "tags": []
     },
     {
@@ -69218,6 +69252,7 @@
      "key": "navigation",
      "nameKey": "Navigation",
      "order": 350,
+     "scaleRef": "etat-navigation",
      "tags": []
     },
     {
@@ -69241,6 +69276,7 @@
      "key": "ski-glisse",
      "nameKey": "Ski / Glisse",
      "order": 360,
+     "scaleRef": "etat-ski-glisse",
      "tags": []
     },
     {
@@ -69264,6 +69300,7 @@
      "key": "pilotage-aerien",
      "nameKey": "Pilotage aérien",
      "order": 370,
+     "scaleRef": "etat-pilotage-aerien",
      "tags": []
     },
     {
@@ -69287,6 +69324,7 @@
      "key": "engins-specialises",
      "nameKey": "Engins spécialisés",
      "order": 380,
+     "scaleRef": "etat-engins-specialises",
      "tags": []
     },
     {
@@ -69301,7 +69339,7 @@
      "key": "vitalite",
      "nameKey": "Vitalité",
      "order": 390,
-     "scaleRef": "etat-de-sante",
+     "scaleRef": "etat-vitalite",
      "slots": {
       "pool": [
        {
@@ -69335,6 +69373,7 @@
      "key": "endurance",
      "nameKey": "Endurance",
      "order": 400,
+     "scaleRef": "etat-endurance",
      "slots": {
       "pool": [
        {
@@ -69368,6 +69407,7 @@
      "key": "energie",
      "nameKey": "Énergie",
      "order": 410,
+     "scaleRef": "etat-energie",
      "slots": {
       "pool": [
        {
@@ -74616,48 +74656,1898 @@
    ],
    "scales": [
     {
-     "basis": "percent",
-     "descriptionKey": "Ce qu'un observateur lit de la Vitalité d'un personnage, en part de sa Vitalité maximale.",
+     "basis": "value",
+     "descriptionKey": "Ce que l'on perçoit de Force selon son niveau.",
      "enabled": true,
-     "id": "etat-de-sante",
-     "nameKey": "État de santé",
+     "id": "etat-force",
+     "nameKey": "État observable : Force",
      "order": 10,
      "rows": [
       {
-       "id": "pleine-forme",
-       "labelKey": "Semble en pleine forme",
+       "id": "niveau-1",
+       "labelKey": "Sa silhouette frêle et ses gestes mesurés laissent deviner un corps peu habitué aux efforts physiques importants.",
+       "max": 1,
+       "min": null
+      },
+      {
+       "id": "niveau-2",
+       "labelKey": "Sa carrure ordinaire ne révèle aucune puissance particulière, mais ses mouvements témoignent d'une force suffisante pour les exigences du quotidien.",
+       "max": 2,
+       "min": 2
+      },
+      {
+       "id": "niveau-3",
+       "labelKey": "Sous ses vêtements se devine une musculature harmonieusement développée. Sa posture assurée et ses gestes fermes suggèrent une force patiemment acquise.",
+       "max": 3,
+       "min": 3
+      },
+      {
+       "id": "niveau-4",
+       "labelKey": "Sa carrure imposante attire naturellement le regard. Chaque mouvement révèle une puissance musculaire remarquable, maîtrisée avec une aisance presque déconcertante.",
+       "max": 4,
+       "min": 4
+      },
+      {
+       "id": "niveau-5",
+       "labelKey": "Sa constitution physique impressionne immédiatement. Une puissance exceptionnelle émane de chacun de ses gestes, comme si les limites ordinaires du corps humain ne s'appliquaient pas tout à fait à lui.",
        "max": null,
-       "min": 100
+       "min": 5
+      }
+     ],
+     "tags": []
+    },
+    {
+     "basis": "value",
+     "descriptionKey": "Ce que l'on perçoit de Agilité selon son niveau.",
+     "enabled": true,
+     "id": "etat-agilite",
+     "nameKey": "État observable : Agilité",
+     "order": 20,
+     "rows": [
+      {
+       "id": "niveau-1",
+       "labelKey": "Ses mouvements paraissent parfois hésitants, ses gestes manquent de précision et son corps semble chercher son équilibre plus souvent qu'il ne le trouve.",
+       "max": 1,
+       "min": null
       },
       {
-       "id": "un-peu-blesse",
-       "labelKey": "Un peu blessé",
-       "max": 99.99,
-       "min": 75
+       "id": "niveau-2",
+       "labelKey": "Sa gestuelle est naturelle, quoique légèrement maladroite dans les situations exigeantes. Rien dans sa démarche ne laisse présager une souplesse particulière.",
+       "max": 2,
+       "min": 2
       },
       {
-       "id": "blesse",
-       "labelKey": "Blessé",
-       "max": 74.99,
-       "min": 50
+       "id": "niveau-3",
+       "labelKey": "Ses déplacements possèdent une fluidité agréable à observer. Ses gestes précis et son équilibre assuré révèlent une excellente coordination corporelle.",
+       "max": 3,
+       "min": 3
       },
       {
-       "id": "mal-en-point",
-       "labelKey": "Mal en point",
-       "max": 49.99,
-       "min": 25
+       "id": "niveau-4",
+       "labelKey": "Une remarquable élégance accompagne chacun de ses mouvements. Il semble glisser entre les obstacles avec une aisance instinctive, comme si son corps anticipait déjà la trajectoire suivante.",
+       "max": 4,
+       "min": 4
       },
       {
-       "id": "etat-critique",
-       "labelKey": "État critique",
-       "max": 24.99,
+       "id": "niveau-5",
+       "labelKey": "Ses mouvements défient presque le regard tant ils sont fluides et précis. Chaque geste semble parfaitement calculé, chaque déplacement exécuté avec une grâce fascinante, à la frontière de l'impossible.",
+       "max": null,
+       "min": 5
+      }
+     ],
+     "tags": []
+    },
+    {
+     "basis": "value",
+     "descriptionKey": "Ce que l'on perçoit de Constitution selon son niveau.",
+     "enabled": true,
+     "id": "etat-constitution",
+     "nameKey": "État observable : Constitution",
+     "order": 30,
+     "rows": [
+      {
+       "id": "niveau-1",
+       "labelKey": "Son apparence laisse deviner une certaine fragilité physique. Les efforts prolongés semblent rapidement entamer ses forces, et la fatigue marque facilement ses traits.",
+       "max": 1,
+       "min": null
+      },
+      {
+       "id": "niveau-2",
+       "labelKey": "Sa résistance paraît comparable à celle de la plupart des gens. Il supporte les contraintes ordinaires, mais les longues épreuves finissent par laisser des traces visibles.",
+       "max": 2,
+       "min": 2
+      },
+      {
+       "id": "niveau-3",
+       "labelKey": "Une vigueur rassurante se dégage de son attitude. Même après une journée éprouvante, il conserve une présence solide et semble récupérer avec une facilité appréciable.",
+       "max": 3,
+       "min": 3
+      },
+      {
+       "id": "niveau-4",
+       "labelKey": "Son organisme semble taillé pour résister aux épreuves. Là où d'autres commencent à fléchir, il conserve une énergie physique étonnante et une résistance particulièrement impressionnante.",
+       "max": 4,
+       "min": 4
+      },
+      {
+       "id": "niveau-5",
+       "labelKey": "Sa résistance physique paraît presque inexplicable. Les privations, les efforts et les conditions éprouvantes semblent glisser sur lui sans parvenir à entamer durablement son extraordinaire vitalité.",
+       "max": null,
+       "min": 5
+      }
+     ],
+     "tags": []
+    },
+    {
+     "basis": "value",
+     "descriptionKey": "Ce que l'on perçoit de Esprit selon son niveau.",
+     "enabled": true,
+     "id": "etat-esprit",
+     "nameKey": "État observable : Esprit",
+     "order": 40,
+     "rows": [
+      {
+       "id": "niveau-1",
+       "labelKey": "Face aux situations complexes, son regard trahit souvent une certaine perplexité. Il privilégie les évidences et les solutions immédiates, parfois au détriment des subtilités.",
+       "max": 1,
+       "min": null
+      },
+      {
+       "id": "niveau-2",
+       "labelKey": "Son raisonnement suit une logique simple et pragmatique. Il comprend aisément les situations familières, mais les problèmes inhabituels réclament davantage de réflexion.",
+       "max": 2,
+       "min": 2
+      },
+      {
+       "id": "niveau-3",
+       "labelKey": "Une vivacité intellectuelle se révèle dans ses conversations. Ses questions pertinentes et sa capacité à relier les idées témoignent d'un esprit curieux et bien structuré.",
+       "max": 3,
+       "min": 3
+      },
+      {
+       "id": "niveau-4",
+       "labelKey": "Son intelligence se manifeste par une étonnante rapidité d'analyse. Il perçoit les liens invisibles entre les faits et formule des conclusions auxquelles peu de personnes seraient parvenues aussi vite.",
+       "max": 4,
+       "min": 4
+      },
+      {
+       "id": "niveau-5",
+       "labelKey": "Son esprit semble évoluer plusieurs raisonnements en avance sur ceux qui l'entourent. Des problèmes réputés insolubles deviennent entre ses mains d'élégantes évidences, suscitant autant d'admiration que d'incompréhension.",
+       "max": null,
+       "min": 5
+      }
+     ],
+     "tags": []
+    },
+    {
+     "basis": "value",
+     "descriptionKey": "Ce que l'on perçoit de Présence selon son niveau.",
+     "enabled": true,
+     "id": "etat-presence",
+     "nameKey": "État observable : Présence",
+     "order": 50,
+     "rows": [
+      {
+       "id": "niveau-1",
+       "labelKey": "Sa présence se fond facilement dans le décor. Ses paroles hésitantes et son attitude effacée peinent à retenir l'attention, même lorsqu'il cherche à se faire entendre.",
+       "max": 1,
+       "min": null
+      },
+      {
+       "id": "niveau-2",
+       "labelKey": "Son attitude inspire une impression agréable mais discrète. Il participe naturellement aux échanges sans particulièrement chercher, ni parvenir, à attirer les regards.",
+       "max": 2,
+       "min": 2
+      },
+      {
+       "id": "niveau-3",
+       "labelKey": "Une assurance tranquille émane de sa personne. Son regard, sa voix et sa manière d'être inspirent spontanément l'écoute et donnent à ses paroles un poids certain.",
+       "max": 3,
+       "min": 3
+      },
+      {
+       "id": "niveau-4",
+       "labelKey": "Il possède ce magnétisme rare qui transforme une simple apparition en événement. Les regards convergent naturellement vers lui, et sa parole semble captiver avant même qu'il ait terminé sa première phrase.",
+       "max": 4,
+       "min": 4
+      },
+      {
+       "id": "niveau-5",
+       "labelKey": "Sa seule présence semble modifier imperceptiblement l'atmosphère d'une pièce. Son charisme exceptionnel captive les regards, impose le silence ou éveille les passions, laissant rarement ceux qui le croisent indifférents.",
+       "max": null,
+       "min": 5
+      }
+     ],
+     "tags": []
+    },
+    {
+     "basis": "value",
+     "descriptionKey": "Ce que l'on perçoit de Athlétisme selon son niveau.",
+     "enabled": true,
+     "id": "etat-athletisme",
+     "nameKey": "État observable : Athlétisme",
+     "order": 60,
+     "rows": [
+      {
+       "id": "niveau-0",
+       "labelKey": "L'effort athlétique le déborde vite ; ses mouvements perdent leur cohérence dès que le rythme monte.",
+       "max": 0,
+       "min": null
+      },
+      {
+       "id": "niveau-1",
+       "labelKey": "Il participe avec bonne volonté, mais le souffle et la coordination ne suivent pas toujours.",
+       "max": 1,
+       "min": 1
+      },
+      {
+       "id": "niveau-2",
+       "labelKey": "Il court, grimpe et se dépense sans se distinguer du commun.",
+       "max": 2,
+       "min": 2
+      },
+      {
+       "id": "niveau-3",
+       "labelKey": "Il aborde les obstacles avec assurance ; son corps connaît les bons appuis.",
+       "max": 3,
+       "min": 3
+      },
+      {
+       "id": "niveau-4",
+       "labelKey": "Sa foulée et ses impulsions révèlent un entraînement soutenu ; les obstacles semblent plus petits devant lui.",
+       "max": 4,
+       "min": 4
+      },
+      {
+       "id": "niveau-5",
+       "labelKey": "Ses performances ont l'évidence des athlètes d'exception ; chaque mouvement paraît admirablement maîtrisé.",
+       "max": null,
+       "min": 5
+      }
+     ],
+     "tags": []
+    },
+    {
+     "basis": "value",
+     "descriptionKey": "Ce que l'on perçoit de Discrétion selon son niveau.",
+     "enabled": true,
+     "id": "etat-discretion",
+     "nameKey": "État observable : Discrétion",
+     "order": 70,
+     "rows": [
+      {
+       "id": "niveau-0",
+       "labelKey": "Même immobile, il attire l'attention ; ses pas, ses gestes ou sa présence le trahissent.",
+       "max": 0,
+       "min": null
+      },
+      {
+       "id": "niveau-1",
+       "labelKey": "Il tente de se fondre dans le décor, mais une maladresse finit souvent par le révéler.",
+       "max": 1,
+       "min": 1
+      },
+      {
+       "id": "niveau-2",
+       "labelKey": "Il sait ne pas se faire remarquer lorsqu'il prend quelques précautions.",
+       "max": 2,
+       "min": 2
+      },
+      {
+       "id": "niveau-3",
+       "labelKey": "Il se déplace sans bruit et choisit instinctivement les endroits où le regard ne s'attarde pas.",
+       "max": 3,
+       "min": 3
+      },
+      {
+       "id": "niveau-4",
+       "labelKey": "Il traverse les lieux comme une ombre familière des angles morts.",
+       "max": 4,
+       "min": 4
+      },
+      {
+       "id": "niveau-5",
+       "labelKey": "Sa présence semble s'effacer de la mémoire immédiate ; on se surprend à ignorer quand il est arrivé.",
+       "max": null,
+       "min": 5
+      }
+     ],
+     "tags": []
+    },
+    {
+     "basis": "value",
+     "descriptionKey": "Ce que l'on perçoit de Vigilance selon son niveau.",
+     "enabled": true,
+     "id": "etat-vigilance",
+     "nameKey": "État observable : Vigilance",
+     "order": 80,
+     "rows": [
+      {
+       "id": "niveau-0",
+       "labelKey": "Les signes les plus visibles lui échappent dès que son attention se disperse.",
+       "max": 0,
+       "min": null
+      },
+      {
+       "id": "niveau-1",
+       "labelKey": "Il remarque l'évidence, mais laisse filer nombre de détails autour de lui.",
+       "max": 1,
+       "min": 1
+      },
+      {
+       "id": "niveau-2",
+       "labelKey": "Son regard suit naturellement ce qui change dans son environnement.",
+       "max": 2,
+       "min": 2
+      },
+      {
+       "id": "niveau-3",
+       "labelKey": "Un bruit déplacé ou un geste inhabituel suffit à éveiller son attention.",
+       "max": 3,
+       "min": 3
+      },
+      {
+       "id": "niveau-4",
+       "labelKey": "Il capte les détails subtils sans cesser de suivre la conversation.",
+       "max": 4,
+       "min": 4
+      },
+      {
+       "id": "niveau-5",
+       "labelKey": "Rien ne semble anodin à ses yeux ; il perçoit des anomalies avant que quiconque comprenne qu'elles existent.",
+       "max": null,
+       "min": 5
+      }
+     ],
+     "tags": []
+    },
+    {
+     "basis": "value",
+     "descriptionKey": "Ce que l'on perçoit de Investigation selon son niveau.",
+     "enabled": true,
+     "id": "etat-investigation",
+     "nameKey": "État observable : Investigation",
+     "order": 90,
+     "rows": [
+      {
+       "id": "niveau-0",
+       "labelKey": "Face aux indices, il se précipite sur la première explication et oublie les contradictions.",
+       "max": 0,
+       "min": null
+      },
+      {
+       "id": "niveau-1",
+       "labelKey": "Il pose quelques questions utiles, mais les rapprochements difficiles lui échappent.",
+       "max": 1,
+       "min": 1
+      },
+      {
+       "id": "niveau-2",
+       "labelKey": "Il cherche méthodiquement et sait reconnaître une piste vraisemblable.",
+       "max": 2,
+       "min": 2
+      },
+      {
+       "id": "niveau-3",
+       "labelKey": "Il relève les incohérences avec une patience qui finit souvent par payer.",
+       "max": 3,
+       "min": 3
+      },
+      {
+       "id": "niveau-4",
+       "labelKey": "Son regard relie traces, silences et chronologies avec une logique remarquable.",
+       "max": 4,
+       "min": 4
+      },
+      {
+       "id": "niveau-5",
+       "labelKey": "Il reconstruit les faits à partir de presque rien ; le détail oublié par tous devient chez lui une clef.",
+       "max": null,
+       "min": 5
+      }
+     ],
+     "tags": []
+    },
+    {
+     "basis": "value",
+     "descriptionKey": "Ce que l'on perçoit de Survie selon son niveau.",
+     "enabled": true,
+     "id": "etat-survie",
+     "nameKey": "État observable : Survie",
+     "order": 100,
+     "rows": [
+      {
+       "id": "niveau-0",
+       "labelKey": "Hors des chemins connus, il paraît vite démuni face au terrain et aux éléments.",
+       "max": 0,
+       "min": null
+      },
+      {
+       "id": "niveau-1",
+       "labelKey": "Il reconnaît les précautions élémentaires, mais hésite lorsqu'il faut improviser.",
+       "max": 1,
+       "min": 1
+      },
+      {
+       "id": "niveau-2",
+       "labelKey": "Il sait se débrouiller dans un environnement peu familier avec des moyens simples.",
+       "max": 2,
+       "min": 2
+      },
+      {
+       "id": "niveau-3",
+       "labelKey": "Il lit le sol, le ciel et les traces avec une assurance acquise dehors.",
+       "max": 3,
+       "min": 3
+      },
+      {
+       "id": "niveau-4",
+       "labelKey": "Le terrain semble lui parler ; il anticipe le froid, l'eau et les dangers avant qu'ils ne se présentent.",
+       "max": 4,
+       "min": 4
+      },
+      {
+       "id": "niveau-5",
+       "labelKey": "Même dans un milieu hostile, il trouve des signes et des solutions que d'autres ne sauraient imaginer.",
+       "max": null,
+       "min": 5
+      }
+     ],
+     "tags": []
+    },
+    {
+     "basis": "value",
+     "descriptionKey": "Ce que l'on perçoit de Technique selon son niveau.",
+     "enabled": true,
+     "id": "etat-technique",
+     "nameKey": "État observable : Technique",
+     "order": 110,
+     "rows": [
+      {
+       "id": "niveau-0",
+       "labelKey": "Un mécanisme banal suffit à l'embarrasser ; il craint d'aggraver la panne en touchant quoi que ce soit.",
+       "max": 0,
+       "min": null
+      },
+      {
+       "id": "niveau-1",
+       "labelKey": "Il exécute des gestes simples, mais sort difficilement d'une procédure connue.",
+       "max": 1,
+       "min": 1
+      },
+      {
+       "id": "niveau-2",
+       "labelKey": "Il utilise et entretient les appareils courants avec un sens pratique convenable.",
+       "max": 2,
+       "min": 2
+      },
+      {
+       "id": "niveau-3",
+       "labelKey": "Ses mains trouvent vite la pièce défectueuse ; il comprend comment les choses s'assemblent.",
+       "max": 3,
+       "min": 3
+      },
+      {
+       "id": "niveau-4",
+       "labelKey": "Il diagnostique une panne complexe au son, à l'odeur ou à quelques mesures bien choisies.",
+       "max": 4,
+       "min": 4
+      },
+      {
+       "id": "niveau-5",
+       "labelKey": "Les machines paraissent transparentes à son regard ; il leur rend vie avec une inventivité saisissante.",
+       "max": null,
+       "min": 5
+      }
+     ],
+     "tags": []
+    },
+    {
+     "basis": "value",
+     "descriptionKey": "Ce que l'on perçoit de Informatique selon son niveau.",
+     "enabled": true,
+     "id": "etat-informatique",
+     "nameKey": "État observable : Informatique",
+     "order": 120,
+     "rows": [
+      {
+       "id": "niveau-0",
+       "labelKey": "Face à un écran inhabituel, il se perd rapidement dans les menus et les messages.",
+       "max": 0,
+       "min": null
+      },
+      {
+       "id": "niveau-1",
+       "labelKey": "Il sait accomplir les tâches courantes, mais hésite dès que l'environnement change.",
+       "max": 1,
+       "min": 1
+      },
+      {
+       "id": "niveau-2",
+       "labelKey": "Il utilise les outils numériques avec autonomie et résout les petits incidents ordinaires.",
+       "max": 2,
+       "min": 2
+      },
+      {
+       "id": "niveau-3",
+       "labelKey": "Sa navigation est rapide ; ses manipulations révèlent une vraie compréhension des systèmes.",
+       "max": 3,
+       "min": 3
+      },
+      {
+       "id": "niveau-4",
+       "labelKey": "Il démêle configurations et anomalies complexes comme d'autres trient quelques dossiers.",
+       "max": 4,
+       "min": 4
+      },
+      {
+       "id": "niveau-5",
+       "labelKey": "Devant un système opaque, il semble en deviner l'architecture et trouver le point juste où intervenir.",
+       "max": null,
+       "min": 5
+      }
+     ],
+     "tags": []
+    },
+    {
+     "basis": "value",
+     "descriptionKey": "Ce que l'on perçoit de Sciences selon son niveau.",
+     "enabled": true,
+     "id": "etat-sciences",
+     "nameKey": "État observable : Sciences",
+     "order": 130,
+     "rows": [
+      {
+       "id": "niveau-0",
+       "labelKey": "Les explications scientifiques le désorientent et il confond facilement hypothèse et certitude.",
+       "max": 0,
+       "min": null
+      },
+      {
+       "id": "niveau-1",
+       "labelKey": "Il connaît quelques principes mais peine à les appliquer hors d'un exemple familier.",
+       "max": 1,
+       "min": 1
+      },
+      {
+       "id": "niveau-2",
+       "labelKey": "Il discute des phénomènes connus avec curiosité et un raisonnement raisonnable.",
+       "max": 2,
+       "min": 2
+      },
+      {
+       "id": "niveau-3",
+       "labelKey": "Il formule des hypothèses solides et sait distinguer observation et interprétation.",
+       "max": 3,
+       "min": 3
+      },
+      {
+       "id": "niveau-4",
+       "labelKey": "Sa rigueur lui permet de voir des modèles là où les autres ne perçoivent que des faits épars.",
+       "max": 4,
+       "min": 4
+      },
+      {
+       "id": "niveau-5",
+       "labelKey": "Sa manière d'interroger le réel révèle un esprit scientifique exceptionnel, précis jusque dans l'inattendu.",
+       "max": null,
+       "min": 5
+      }
+     ],
+     "tags": []
+    },
+    {
+     "basis": "value",
+     "descriptionKey": "Ce que l'on perçoit de Médecine selon son niveau.",
+     "enabled": true,
+     "id": "etat-medecine",
+     "nameKey": "État observable : Médecine",
+     "order": 140,
+     "rows": [
+      {
+       "id": "niveau-0",
+       "labelKey": "Au moindre incident de santé, il panique ou risque un geste maladroit.",
+       "max": 0,
+       "min": null
+      },
+      {
+       "id": "niveau-1",
+       "labelKey": "Il connaît quelques réflexes de secours, sans grande assurance.",
+       "max": 1,
+       "min": 1
+      },
+      {
+       "id": "niveau-2",
+       "labelKey": "Il reconnaît les signes courants et adopte des gestes d'aide appropriés.",
+       "max": 2,
+       "min": 2
+      },
+      {
+       "id": "niveau-3",
+       "labelKey": "Il évalue calmement une situation médicale et agit avec une précision rassurante.",
+       "max": 3,
+       "min": 3
+      },
+      {
+       "id": "niveau-4",
+       "labelKey": "Son observation clinique et sa sûreté de main inspirent confiance même dans l'urgence.",
+       "max": 4,
+       "min": 4
+      },
+      {
+       "id": "niveau-5",
+       "labelKey": "Dans le chaos, il décèle les signes infimes et intervient avec une maîtrise qui force le respect.",
+       "max": null,
+       "min": 5
+      }
+     ],
+     "tags": []
+    },
+    {
+     "basis": "value",
+     "descriptionKey": "Ce que l'on perçoit de Culture selon son niveau.",
+     "enabled": true,
+     "id": "etat-culture",
+     "nameKey": "État observable : Culture",
+     "order": 150,
+     "rows": [
+      {
+       "id": "niveau-0",
+       "labelKey": "Références et contextes lui échappent ; il peine à situer les événements les plus connus.",
+       "max": 0,
+       "min": null
+      },
+      {
+       "id": "niveau-1",
+       "labelKey": "Il possède des repères dispersés mais les rapproche parfois de travers.",
+       "max": 1,
+       "min": 1
+      },
+      {
+       "id": "niveau-2",
+       "labelKey": "Il entretient une culture générale qui lui permet de participer aux échanges.",
+       "max": 2,
+       "min": 2
+      },
+      {
+       "id": "niveau-3",
+       "labelKey": "Il replace spontanément les œuvres, les faits et les usages dans leur contexte.",
+       "max": 3,
+       "min": 3
+      },
+      {
+       "id": "niveau-4",
+       "labelKey": "Ses références traversent les époques et les milieux avec une aisance étonnante.",
+       "max": 4,
+       "min": 4
+      },
+      {
+       "id": "niveau-5",
+       "labelKey": "Il fait dialoguer des savoirs éloignés et éclaire une situation d'un exemple que nul n'aurait songé à citer.",
+       "max": null,
+       "min": 5
+      }
+     ],
+     "tags": []
+    },
+    {
+     "basis": "value",
+     "descriptionKey": "Ce que l'on perçoit de Influence selon son niveau.",
+     "enabled": true,
+     "id": "etat-influence",
+     "nameKey": "État observable : Influence",
+     "order": 160,
+     "rows": [
+      {
+       "id": "niveau-0",
+       "labelKey": "Ses arguments tombent à plat ; ses tentatives de convaincre suscitent surtout la gêne.",
+       "max": 0,
+       "min": null
+      },
+      {
+       "id": "niveau-1",
+       "labelKey": "Il sait défendre une idée simple, mais perd pied devant la contradiction.",
+       "max": 1,
+       "min": 1
+      },
+      {
+       "id": "niveau-2",
+       "labelKey": "Il explique son point de vue avec assez de clarté pour être entendu.",
+       "max": 2,
+       "min": 2
+      },
+      {
+       "id": "niveau-3",
+       "labelKey": "Il choisit ses mots et son moment ; son discours fait progressivement évoluer les positions.",
+       "max": 3,
+       "min": 3
+      },
+      {
+       "id": "niveau-4",
+       "labelKey": "Il oriente une discussion sans paraître l'imposer, avec un sens rare des résistances.",
+       "max": 4,
+       "min": 4
+      },
+      {
+       "id": "niveau-5",
+       "labelKey": "Quelques phrases lui suffisent à déplacer les convictions d'une assemblée pourtant réticente.",
+       "max": null,
+       "min": 5
+      }
+     ],
+     "tags": []
+    },
+    {
+     "basis": "value",
+     "descriptionKey": "Ce que l'on perçoit de Empathie selon son niveau.",
+     "enabled": true,
+     "id": "etat-empathie",
+     "nameKey": "État observable : Empathie",
+     "order": 170,
+     "rows": [
+      {
+       "id": "niveau-0",
+       "labelKey": "Il ne perçoit guère la tension de son interlocuteur et manque souvent les émotions évidentes.",
+       "max": 0,
+       "min": null
+      },
+      {
+       "id": "niveau-1",
+       "labelKey": "Il sent parfois un malaise, sans toujours en saisir la cause.",
+       "max": 1,
+       "min": 1
+      },
+      {
+       "id": "niveau-2",
+       "labelKey": "Il reconnaît les émotions usuelles et adapte ses paroles avec une attention sincère.",
+       "max": 2,
+       "min": 2
+      },
+      {
+       "id": "niveau-3",
+       "labelKey": "Il déchiffre les hésitations, les regards et les silences avec finesse.",
+       "max": 3,
+       "min": 3
+      },
+      {
+       "id": "niveau-4",
+       "labelKey": "Il comprend ce qui n'est pas dit et trouve souvent la distance juste pour approcher l'autre.",
+       "max": 4,
+       "min": 4
+      },
+      {
+       "id": "niveau-5",
+       "labelKey": "Il paraît lire les nuances les plus secrètes d'une émotion, sans pour autant connaître les pensées d'autrui.",
+       "max": null,
+       "min": 5
+      }
+     ],
+     "tags": []
+    },
+    {
+     "basis": "value",
+     "descriptionKey": "Ce que l'on perçoit de Langues selon son niveau.",
+     "enabled": true,
+     "id": "etat-langues",
+     "nameKey": "État observable : Langues",
+     "order": 180,
+     "rows": [
+      {
+       "id": "niveau-0",
+       "labelKey": "Hors de sa langue habituelle, il reste sans repères et les échanges tournent court.",
+       "max": 0,
+       "min": null
+      },
+      {
+       "id": "niveau-1",
+       "labelKey": "Quelques expressions apprises lui permettent de se faire comprendre avec peine.",
+       "max": 1,
+       "min": 1
+      },
+      {
+       "id": "niveau-2",
+       "labelKey": "Il parvient à établir une communication simple dans les langues qu'il a pratiquées.",
+       "max": 2,
+       "min": 2
+      },
+      {
+       "id": "niveau-3",
+       "labelKey": "Il passe d'un registre à l'autre avec une aisance qui facilite les rencontres.",
+       "max": 3,
+       "min": 3
+      },
+      {
+       "id": "niveau-4",
+       "labelKey": "Ses nuances de vocabulaire et son oreille pour les accents révèlent une pratique étendue.",
+       "max": 4,
+       "min": 4
+      },
+      {
+       "id": "niveau-5",
+       "labelKey": "Il manie les langues apprises avec une précision subtile, jusqu'aux inflexions culturelles qui échappent à beaucoup.",
+       "max": null,
+       "min": 5
+      }
+     ],
+     "tags": []
+    },
+    {
+     "basis": "value",
+     "descriptionKey": "Ce que l'on perçoit de Arts selon son niveau.",
+     "enabled": true,
+     "id": "etat-arts",
+     "nameKey": "État observable : Arts",
+     "order": 190,
+     "rows": [
+      {
+       "id": "niveau-0",
+       "labelKey": "Ses essais créatifs demeurent maladroits, et l'intention peine à prendre forme.",
+       "max": 0,
+       "min": null
+      },
+      {
+       "id": "niveau-1",
+       "labelKey": "Une sensibilité transparaît parfois, malgré une technique encore incertaine.",
+       "max": 1,
+       "min": 1
+      },
+      {
+       "id": "niveau-2",
+       "labelKey": "Il sait produire ou interpréter une œuvre simple avec un plaisir communicatif.",
+       "max": 2,
+       "min": 2
+      },
+      {
+       "id": "niveau-3",
+       "labelKey": "Son geste artistique est sûr ; il donne une forme personnelle à ce qu'il exprime.",
+       "max": 3,
+       "min": 3
+      },
+      {
+       "id": "niveau-4",
+       "labelKey": "Son travail porte une signature sensible et une maîtrise technique rare.",
+       "max": 4,
+       "min": 4
+      },
+      {
+       "id": "niveau-5",
+       "labelKey": "Ses créations captivent durablement ; une émotion singulière semble naître au moindre trait, mot ou son.",
+       "max": null,
+       "min": 5
+      }
+     ],
+     "tags": []
+    },
+    {
+     "basis": "value",
+     "descriptionKey": "Ce que l'on perçoit de Occultisme selon son niveau. Formulation proposée, à remplacer par celle de l'auteur.",
+     "enabled": true,
+     "id": "etat-occultisme",
+     "nameKey": "État observable : Occultisme",
+     "order": 200,
+     "rows": [
+      {
+       "id": "niveau-0",
+       "labelKey": "Les récits d'étrange le laissent sceptique ou désemparé ; il confond folklore, rumeur et véritable signe.",
+       "max": 0,
+       "min": null
+      },
+      {
+       "id": "niveau-1",
+       "labelKey": "Il connaît quelques légendes et symboles, mais en tire des conclusions hasardeuses.",
+       "max": 1,
+       "min": 1
+      },
+      {
+       "id": "niveau-2",
+       "labelKey": "Il reconnaît les traditions ésotériques courantes et sait où chercher une référence.",
+       "max": 2,
+       "min": 2
+      },
+      {
+       "id": "niveau-3",
+       "labelKey": "Il identifie rituels, symboles et pratiques avec assurance, et distingue l'imitation du véritable savoir.",
+       "max": 3,
+       "min": 3
+      },
+      {
+       "id": "niveau-4",
+       "labelKey": "Il relie traditions oubliées et manifestations récentes avec une érudition troublante.",
+       "max": 4,
+       "min": 4
+      },
+      {
+       "id": "niveau-5",
+       "labelKey": "Les arcanes semblent lui être familiers ; il perçoit dans un détail anodin la trace de forces que d'autres ne soupçonnent pas.",
+       "max": null,
+       "min": 5
+      }
+     ],
+     "tags": []
+    },
+    {
+     "basis": "value",
+     "descriptionKey": "Ce que l'on perçoit de Corps à corps selon son niveau.",
+     "enabled": true,
+     "id": "etat-corps-a-corps",
+     "nameKey": "État observable : Corps à corps",
+     "order": 210,
+     "rows": [
+      {
+       "id": "niveau-0",
+       "labelKey": "Ses gestes se dispersent ; il se découvre et perd l'équilibre au moindre échange.",
+       "max": 0,
+       "min": null
+      },
+      {
+       "id": "niveau-1",
+       "labelKey": "Il adopte une garde approximative et réagit davantage par instinct que par technique.",
+       "max": 1,
+       "min": 1
+      },
+      {
+       "id": "niveau-2",
+       "labelKey": "Il sait se protéger et placer quelques gestes efficaces dans une confrontation simple.",
+       "max": 2,
+       "min": 2
+      },
+      {
+       "id": "niveau-3",
+       "labelKey": "Ses appuis sont solides ; ses réactions témoignent d'une pratique régulière.",
+       "max": 3,
+       "min": 3
+      },
+      {
+       "id": "niveau-4",
+       "labelKey": "Ses déplacements courts et précis laissent voir une remarquable science de la distance.",
+       "max": 4,
+       "min": 4
+      },
+      {
+       "id": "niveau-5",
+       "labelKey": "Chaque feinte et chaque esquive semblent surgir au moment parfait, avec une maîtrise presque déroutante.",
+       "max": null,
+       "min": 5
+      }
+     ],
+     "tags": []
+    },
+    {
+     "basis": "value",
+     "descriptionKey": "Ce que l'on perçoit de Armes de mêlée selon son niveau.",
+     "enabled": true,
+     "id": "etat-armes-de-melee",
+     "nameKey": "État observable : Armes de mêlée",
+     "order": 220,
+     "rows": [
+      {
+       "id": "niveau-0",
+       "labelKey": "Une arme tenue en main paraît le gêner plus qu'elle ne le protège.",
+       "max": 0,
+       "min": null
+      },
+      {
+       "id": "niveau-1",
+       "labelKey": "Il sait la manier prudemment, mais sa garde laisse encore des ouvertures.",
+       "max": 1,
+       "min": 1
+      },
+      {
+       "id": "niveau-2",
+       "labelKey": "Il coordonne portée, appuis et mouvements d'une manière convenable.",
+       "max": 2,
+       "min": 2
+      },
+      {
+       "id": "niveau-3",
+       "labelKey": "Il guide la lame ou l'outil avec assurance, sans mouvement superflu.",
+       "max": 3,
+       "min": 3
+      },
+      {
+       "id": "niveau-4",
+       "labelKey": "Sa maîtrise de la distance et du rythme rend ses gestes difficiles à anticiper.",
+       "max": 4,
+       "min": 4
+      },
+      {
+       "id": "niveau-5",
+       "labelKey": "L'arme semble prolonger sa volonté ; ses mouvements sont d'une précision redoutable.",
+       "max": null,
+       "min": 5
+      }
+     ],
+     "tags": []
+    },
+    {
+     "basis": "value",
+     "descriptionKey": "Ce que l'on perçoit de Armes de poing selon son niveau.",
+     "enabled": true,
+     "id": "etat-armes-de-poing",
+     "nameKey": "État observable : Armes de poing",
+     "order": 230,
+     "rows": [
+      {
+       "id": "niveau-0",
+       "labelKey": "Sa prise est hésitante et ses gestes trahissent un manque évident de familiarité.",
+       "max": 0,
+       "min": null
+      },
+      {
+       "id": "niveau-1",
+       "labelKey": "Il connaît les bases, mais son alignement et ses réactions restent incertains.",
+       "max": 1,
+       "min": 1
+      },
+      {
+       "id": "niveau-2",
+       "labelKey": "Il manipule l'arme avec méthode et conserve une attitude contrôlée.",
+       "max": 2,
+       "min": 2
+      },
+      {
+       "id": "niveau-3",
+       "labelKey": "Sa gestuelle est rapide et stable, manifestement issue d'un entraînement sérieux.",
+       "max": 3,
+       "min": 3
+      },
+      {
+       "id": "niveau-4",
+       "labelKey": "Sa maîtrise du placement et du recul lui donne une efficacité saisissante.",
+       "max": 4,
+       "min": 4
+      },
+      {
+       "id": "niveau-5",
+       "labelKey": "Chaque geste est mesuré, fluide, sans la moindre précipitation ; son sang-froid impressionne.",
+       "max": null,
+       "min": 5
+      }
+     ],
+     "tags": []
+    },
+    {
+     "basis": "value",
+     "descriptionKey": "Ce que l'on perçoit de Armes d'épaule selon son niveau.",
+     "enabled": true,
+     "id": "etat-armes-d-epaule",
+     "nameKey": "État observable : Armes d'épaule",
+     "order": 240,
+     "rows": [
+      {
+       "id": "niveau-0",
+       "labelKey": "L'arme lui paraît encombrante ; trouver une position stable lui prend du temps.",
+       "max": 0,
+       "min": null
+      },
+      {
+       "id": "niveau-1",
+       "labelKey": "Il se place correctement, mais manque encore de régularité dans la manipulation.",
+       "max": 1,
+       "min": 1
+      },
+      {
+       "id": "niveau-2",
+       "labelKey": "Il épaule et vise avec les gestes attendus d'un pratiquant ordinaire.",
+       "max": 2,
+       "min": 2
+      },
+      {
+       "id": "niveau-3",
+       "labelKey": "Sa posture, son souffle et sa gestion de la distance montrent une véritable expérience.",
+       "max": 3,
+       "min": 3
+      },
+      {
+       "id": "niveau-4",
+       "labelKey": "Il manie l'arme avec une aisance constante, même lorsque l'environnement se complique.",
+       "max": 4,
+       "min": 4
+      },
+      {
+       "id": "niveau-5",
+       "labelKey": "Il semble parfaitement accorder respiration, équilibre et visée, avec une maîtrise exceptionnelle.",
+       "max": null,
+       "min": 5
+      }
+     ],
+     "tags": []
+    },
+    {
+     "basis": "value",
+     "descriptionKey": "Ce que l'on perçoit de Armes lourdes selon son niveau.",
+     "enabled": true,
+     "id": "etat-armes-lourdes",
+     "nameKey": "État observable : Armes lourdes",
+     "order": 250,
+     "rows": [
+      {
+       "id": "niveau-0",
+       "labelKey": "Le poids et la complexité du matériel le dépassent dès la prise en main.",
+       "max": 0,
+       "min": null
+      },
+      {
+       "id": "niveau-1",
+       "labelKey": "Il en connaît les commandes élémentaires, mais peine à garder le contrôle du dispositif.",
+       "max": 1,
+       "min": 1
+      },
+      {
+       "id": "niveau-2",
+       "labelKey": "Il suit une procédure de manipulation avec prudence et méthode.",
+       "max": 2,
+       "min": 2
+      },
+      {
+       "id": "niveau-3",
+       "labelKey": "Il domine l'encombrement de l'arme et organise ses gestes sans hésitation.",
+       "max": 3,
+       "min": 3
+      },
+      {
+       "id": "niveau-4",
+       "labelKey": "Sa coordination et son sens du matériel évoquent un spécialiste aguerri.",
+       "max": 4,
+       "min": 4
+      },
+      {
+       "id": "niveau-5",
+       "labelKey": "Même la puissance et la complexité de l'engin semblent ne jamais rompre la précision de ses gestes.",
+       "max": null,
+       "min": 5
+      }
+     ],
+     "tags": []
+    },
+    {
+     "basis": "value",
+     "descriptionKey": "Ce que l'on perçoit de Armes de jet selon son niveau.",
+     "enabled": true,
+     "id": "etat-armes-de-jet",
+     "nameKey": "État observable : Armes de jet",
+     "order": 260,
+     "rows": [
+      {
+       "id": "niveau-0",
+       "labelKey": "Ses lancers manquent d'équilibre et prennent des trajectoires imprévisibles.",
+       "max": 0,
+       "min": null
+      },
+      {
+       "id": "niveau-1",
+       "labelKey": "Il atteint parfois son intention, mais le geste reste irrégulier.",
+       "max": 1,
+       "min": 1
+      },
+      {
+       "id": "niveau-2",
+       "labelKey": "Il lance avec une coordination correcte et sait estimer une distance simple.",
+       "max": 2,
+       "min": 2
+      },
+      {
+       "id": "niveau-3",
+       "labelKey": "Son bras trouve naturellement l'angle et la force appropriés.",
+       "max": 3,
+       "min": 3
+      },
+      {
+       "id": "niveau-4",
+       "labelKey": "Ses projectiles décrivent des trajectoires d'une netteté remarquable.",
+       "max": 4,
+       "min": 4
+      },
+      {
+       "id": "niveau-5",
+       "labelKey": "Son sens du mouvement paraît prodigieux ; chaque lancer semble calculé à l'instant même.",
+       "max": null,
+       "min": 5
+      }
+     ],
+     "tags": []
+    },
+    {
+     "basis": "value",
+     "descriptionKey": "Ce que l'on perçoit de Armes de trait selon son niveau.",
+     "enabled": true,
+     "id": "etat-armes-de-trait",
+     "nameKey": "État observable : Armes de trait",
+     "order": 270,
+     "rows": [
+      {
+       "id": "niveau-0",
+       "labelKey": "Il lutte contre la tension de l'arme et peine à stabiliser sa visée.",
+       "max": 0,
+       "min": null
+      },
+      {
+       "id": "niveau-1",
+       "labelKey": "Il connaît les gestes essentiels, sans parvenir encore à les répéter avec constance.",
+       "max": 1,
+       "min": 1
+      },
+      {
+       "id": "niveau-2",
+       "labelKey": "Il arme, aligne et libère son tir avec une technique convenable.",
+       "max": 2,
+       "min": 2
+      },
+      {
+       "id": "niveau-3",
+       "labelKey": "Sa posture reste souple et sûre ; son geste de tir paraît entraîné.",
+       "max": 3,
+       "min": 3
+      },
+      {
+       "id": "niveau-4",
+       "labelKey": "Le mouvement est si régulier et silencieux qu'il semble réglé par une mécanique invisible.",
+       "max": 4,
+       "min": 4
+      },
+      {
+       "id": "niveau-5",
+       "labelKey": "Son tir possède une élégance et une exactitude rares, jusque dans les conditions difficiles.",
+       "max": null,
+       "min": 5
+      }
+     ],
+     "tags": []
+    },
+    {
+     "basis": "value",
+     "descriptionKey": "Ce que l'on perçoit de Course à pied selon son niveau.",
+     "enabled": true,
+     "id": "etat-course-a-pied",
+     "nameKey": "État observable : Course à pied",
+     "order": 280,
+     "rows": [
+      {
+       "id": "niveau-0",
+       "labelKey": "Quelques foulées suffisent à désorganiser son souffle et sa cadence.",
+       "max": 0,
+       "min": null
+      },
+      {
+       "id": "niveau-1",
+       "labelKey": "Il peut courir, mais son rythme se brise vite lorsque l'allure augmente.",
+       "max": 1,
+       "min": 1
+      },
+      {
+       "id": "niveau-2",
+       "labelKey": "Sa foulée est naturelle et lui permet de soutenir une course ordinaire.",
+       "max": 2,
+       "min": 2
+      },
+      {
+       "id": "niveau-3",
+       "labelKey": "Il dose parfaitement ses appuis et son souffle ; sa course paraît légère.",
+       "max": 3,
+       "min": 3
+      },
+      {
+       "id": "niveau-4",
+       "labelKey": "Ses foulées absorbent le terrain avec une économie remarquable.",
+       "max": 4,
+       "min": 4
+      },
+      {
+       "id": "niveau-5",
+       "labelKey": "Il avale la distance avec une fluidité presque irréelle, comme si la fatigue tardait à le rejoindre.",
+       "max": null,
+       "min": 5
+      }
+     ],
+     "tags": []
+    },
+    {
+     "basis": "value",
+     "descriptionKey": "Ce que l'on perçoit de Véhicules légers selon son niveau.",
+     "enabled": true,
+     "id": "etat-vehicules-legers",
+     "nameKey": "État observable : Véhicules légers",
+     "order": 290,
+     "rows": [
+      {
+       "id": "niveau-0",
+       "labelKey": "Derrière un volant, ses gestes sont brusques et l'anticipation lui fait défaut.",
+       "max": 0,
+       "min": null
+      },
+      {
+       "id": "niveau-1",
+       "labelKey": "Il conduit prudemment sur terrain simple mais se crispe dès que survient l'imprévu.",
+       "max": 1,
+       "min": 1
+      },
+      {
+       "id": "niveau-2",
+       "labelKey": "Il tient sa trajectoire et s'adapte aux situations routières habituelles.",
+       "max": 2,
+       "min": 2
+      },
+      {
+       "id": "niveau-3",
+       "labelKey": "Ses mains corrigent la trajectoire en douceur ; il lit la circulation avec avance.",
+       "max": 3,
+       "min": 3
+      },
+      {
+       "id": "niveau-4",
+       "labelKey": "Il place le véhicule avec une précision qui trahit une grande expérience.",
+       "max": 4,
+       "min": 4
+      },
+      {
+       "id": "niveau-5",
+       "labelKey": "Il semble sentir l'adhérence et l'espace avant même que les roues ne réagissent.",
+       "max": null,
+       "min": 5
+      }
+     ],
+     "tags": []
+    },
+    {
+     "basis": "value",
+     "descriptionKey": "Ce que l'on perçoit de Deux-roues motorisés selon son niveau.",
+     "enabled": true,
+     "id": "etat-deux-roues-motorises",
+     "nameKey": "État observable : Deux-roues motorisés",
+     "order": 300,
+     "rows": [
+      {
+       "id": "niveau-0",
+       "labelKey": "La machine le déséquilibre ; chaque changement de direction paraît risqué.",
+       "max": 0,
+       "min": null
+      },
+      {
+       "id": "niveau-1",
+       "labelKey": "Il la contrôle à petite allure mais manque d'aisance dans les manœuvres délicates.",
+       "max": 1,
+       "min": 1
+      },
+      {
+       "id": "niveau-2",
+       "labelKey": "Il garde son équilibre et pilote avec une assurance ordinaire.",
+       "max": 2,
+       "min": 2
+      },
+      {
+       "id": "niveau-3",
+       "labelKey": "Son regard et son corps accompagnent les courbes avec une coordination sûre.",
+       "max": 3,
+       "min": 3
+      },
+      {
+       "id": "niveau-4",
+       "labelKey": "La machine semble répondre à ses intentions sans délai, même sur une route exigeante.",
+       "max": 4,
+       "min": 4
+      },
+      {
+       "id": "niveau-5",
+       "labelKey": "Pilote et machine donnent l'impression de ne faire qu'un, dans une précision saisissante.",
+       "max": null,
+       "min": 5
+      }
+     ],
+     "tags": []
+    },
+    {
+     "basis": "value",
+     "descriptionKey": "Ce que l'on perçoit de Poids lourds selon son niveau.",
+     "enabled": true,
+     "id": "etat-poids-lourds",
+     "nameKey": "État observable : Poids lourds",
+     "order": 310,
+     "rows": [
+      {
+       "id": "niveau-0",
+       "labelKey": "Il mesure mal le gabarit ; manœuvrer le véhicule paraît le submerger.",
+       "max": 0,
+       "min": null
+      },
+      {
+       "id": "niveau-1",
+       "labelKey": "Il avance avec prudence, mais hésite devant les espaces étroits.",
+       "max": 1,
+       "min": 1
+      },
+      {
+       "id": "niveau-2",
+       "labelKey": "Il apprécie les dimensions et conduit sans difficulté majeure dans des conditions courantes.",
+       "max": 2,
+       "min": 2
+      },
+      {
+       "id": "niveau-3",
+       "labelKey": "Il anticipe inertie, angles morts et trajectoires avec une assurance professionnelle.",
+       "max": 3,
+       "min": 3
+      },
+      {
+       "id": "niveau-4",
+       "labelKey": "Il place une masse imposante avec une finesse surprenante.",
+       "max": 4,
+       "min": 4
+      },
+      {
+       "id": "niveau-5",
+       "labelKey": "Chaque manœuvre révèle une compréhension presque instinctive du poids, de l'élan et de l'espace.",
+       "max": null,
+       "min": 5
+      }
+     ],
+     "tags": []
+    },
+    {
+     "basis": "value",
+     "descriptionKey": "Ce que l'on perçoit de Transport collectif selon son niveau.",
+     "enabled": true,
+     "id": "etat-transport-collectif",
+     "nameKey": "État observable : Transport collectif",
+     "order": 320,
+     "rows": [
+      {
+       "id": "niveau-0",
+       "labelKey": "La responsabilité du véhicule et de ses passagers semble le dépasser.",
+       "max": 0,
+       "min": null
+      },
+      {
+       "id": "niveau-1",
+       "labelKey": "Il connaît les gestes de base, mais les situations chargées le mettent en difficulté.",
+       "max": 1,
+       "min": 1
+      },
+      {
+       "id": "niveau-2",
+       "labelKey": "Il assure un trajet régulier avec calme et vigilance.",
+       "max": 2,
+       "min": 2
+      },
+      {
+       "id": "niveau-3",
+       "labelKey": "Il combine souplesse, anticipation et attention au confort des passagers.",
+       "max": 3,
+       "min": 3
+      },
+      {
+       "id": "niveau-4",
+       "labelKey": "Il garde une maîtrise remarquable malgré les contraintes de circulation et de service.",
+       "max": 4,
+       "min": 4
+      },
+      {
+       "id": "niveau-5",
+       "labelKey": "À bord, les manœuvres les plus délicates paraissent simples, tant sa conduite reste précise et sereine.",
+       "max": null,
+       "min": 5
+      }
+     ],
+     "tags": []
+    },
+    {
+     "basis": "value",
+     "descriptionKey": "Ce que l'on perçoit de Cyclisme selon son niveau.",
+     "enabled": true,
+     "id": "etat-cyclisme",
+     "nameKey": "État observable : Cyclisme",
+     "order": 330,
+     "rows": [
+      {
+       "id": "niveau-0",
+       "labelKey": "Son équilibre et sa cadence se dérèglent dès que le terrain devient difficile.",
+       "max": 0,
+       "min": null
+      },
+      {
+       "id": "niveau-1",
+       "labelKey": "Il pédale correctement mais manque d'aisance dans les passages techniques.",
+       "max": 1,
+       "min": 1
+      },
+      {
+       "id": "niveau-2",
+       "labelKey": "Il circule à vélo avec une maîtrise courante et une allure régulière.",
+       "max": 2,
+       "min": 2
+      },
+      {
+       "id": "niveau-3",
+       "labelKey": "Son corps accompagne naturellement le vélo ; il choisit ses trajectoires avec justesse.",
+       "max": 3,
+       "min": 3
+      },
+      {
+       "id": "niveau-4",
+       "labelKey": "Il lit les reliefs et garde sa vitesse avec une élégance sportive.",
+       "max": 4,
+       "min": 4
+      },
+      {
+       "id": "niveau-5",
+       "labelKey": "Le vélo semble danser sous lui : obstacles, virages et relances s'enchaînent sans effort apparent.",
+       "max": null,
+       "min": 5
+      }
+     ],
+     "tags": []
+    },
+    {
+     "basis": "value",
+     "descriptionKey": "Ce que l'on perçoit de Équitation / Monture selon son niveau.",
+     "enabled": true,
+     "id": "etat-equitation",
+     "nameKey": "État observable : Équitation / Monture",
+     "order": 340,
+     "rows": [
+      {
+       "id": "niveau-0",
+       "labelKey": "La monture perçoit son hésitation ; le moindre mouvement le désarçonne presque.",
+       "max": 0,
+       "min": null
+      },
+      {
+       "id": "niveau-1",
+       "labelKey": "Il tient en selle, mais ses demandes restent confuses pour l'animal.",
+       "max": 1,
+       "min": 1
+      },
+      {
+       "id": "niveau-2",
+       "labelKey": "Il accompagne l'allure et entretient un contact convenable avec sa monture.",
+       "max": 2,
+       "min": 2
+      },
+      {
+       "id": "niveau-3",
+       "labelKey": "Ses aides sont discrètes et claires ; l'animal semble comprendre ses intentions.",
+       "max": 3,
+       "min": 3
+      },
+      {
+       "id": "niveau-4",
+       "labelKey": "La relation entre cavalier et monture est d'une rare finesse, jusque dans l'imprévu.",
+       "max": 4,
+       "min": 4
+      },
+      {
+       "id": "niveau-5",
+       "labelKey": "Il semble converser par le seul mouvement du corps ; la monture répond avant même qu'on voie la demande.",
+       "max": null,
+       "min": 5
+      }
+     ],
+     "tags": []
+    },
+    {
+     "basis": "value",
+     "descriptionKey": "Ce que l'on perçoit de Navigation selon son niveau.",
+     "enabled": true,
+     "id": "etat-navigation",
+     "nameKey": "État observable : Navigation",
+     "order": 350,
+     "rows": [
+      {
+       "id": "niveau-0",
+       "labelKey": "Sur l'eau, il lit mal les conditions et peine à conserver un cap.",
+       "max": 0,
+       "min": null
+      },
+      {
+       "id": "niveau-1",
+       "labelKey": "Il connaît quelques manœuvres, mais les changements de vent ou de courant le désorientent.",
+       "max": 1,
+       "min": 1
+      },
+      {
+       "id": "niveau-2",
+       "labelKey": "Il conduit une embarcation dans des conditions habituelles avec prudence.",
+       "max": 2,
+       "min": 2
+      },
+      {
+       "id": "niveau-3",
+       "labelKey": "Il lit les courants et ajuste sa trajectoire avec sûreté.",
+       "max": 3,
+       "min": 3
+      },
+      {
+       "id": "niveau-4",
+       "labelKey": "Ses décisions anticipent la météo, le mouvement de l'eau et les réactions du bateau.",
+       "max": 4,
+       "min": 4
+      },
+      {
+       "id": "niveau-5",
+       "labelKey": "Il paraît comprendre la mer dans ses plus fines variations ; sa navigation force l'admiration.",
+       "max": null,
+       "min": 5
+      }
+     ],
+     "tags": []
+    },
+    {
+     "basis": "value",
+     "descriptionKey": "Ce que l'on perçoit de Ski / Glisse selon son niveau.",
+     "enabled": true,
+     "id": "etat-ski-glisse",
+     "nameKey": "État observable : Ski / Glisse",
+     "order": 360,
+     "rows": [
+      {
+       "id": "niveau-0",
+       "labelKey": "La pente le fige ; ses mouvements manquent de contrôle et d'équilibre.",
+       "max": 0,
+       "min": null
+      },
+      {
+       "id": "niveau-1",
+       "labelKey": "Il descend avec prudence, parfois au prix de gestes saccadés.",
+       "max": 1,
+       "min": 1
+      },
+      {
+       "id": "niveau-2",
+       "labelKey": "Il maîtrise les virages usuels et conserve son équilibre sur des parcours accessibles.",
+       "max": 2,
+       "min": 2
+      },
+      {
+       "id": "niveau-3",
+       "labelKey": "Ses appuis sont souples et sûrs ; il épouse les reliefs du terrain.",
+       "max": 3,
+       "min": 3
+      },
+      {
+       "id": "niveau-4",
+       "labelKey": "Il trace sa ligne avec une aisance spectaculaire, même dans des conditions difficiles.",
+       "max": 4,
+       "min": 4
+      },
+      {
+       "id": "niveau-5",
+       "labelKey": "Sa glisse semble défier le relief : chaque courbe devient un mouvement limpide et parfaitement mesuré.",
+       "max": null,
+       "min": 5
+      }
+     ],
+     "tags": []
+    },
+    {
+     "basis": "value",
+     "descriptionKey": "Ce que l'on perçoit de Pilotage aérien selon son niveau.",
+     "enabled": true,
+     "id": "etat-pilotage-aerien",
+     "nameKey": "État observable : Pilotage aérien",
+     "order": 370,
+     "rows": [
+      {
+       "id": "niveau-0",
+       "labelKey": "Les instruments et les mouvements de l'appareil l'accaparent au point de perdre ses repères.",
+       "max": 0,
+       "min": null
+      },
+      {
+       "id": "niveau-1",
+       "labelKey": "Il comprend les principes mais peine encore à coordonner toutes les commandes.",
+       "max": 1,
+       "min": 1
+      },
+      {
+       "id": "niveau-2",
+       "labelKey": "Il maintient un pilotage stable dans une situation normale.",
+       "max": 2,
+       "min": 2
+      },
+      {
+       "id": "niveau-3",
+       "labelKey": "Il anticipe les réactions de l'appareil et garde une conduite précise.",
+       "max": 3,
+       "min": 3
+      },
+      {
+       "id": "niveau-4",
+       "labelKey": "Sa lecture de l'espace aérien et des paramètres révèle un pilote chevronné.",
+       "max": 4,
+       "min": 4
+      },
+      {
+       "id": "niveau-5",
+       "labelKey": "Il paraît ne faire qu'un avec l'appareil, capable de conserver une lucidité absolue sous pression.",
+       "max": null,
+       "min": 5
+      }
+     ],
+     "tags": []
+    },
+    {
+     "basis": "value",
+     "descriptionKey": "Ce que l'on perçoit de Engins spécialisés selon son niveau.",
+     "enabled": true,
+     "id": "etat-engins-specialises",
+     "nameKey": "État observable : Engins spécialisés",
+     "order": 380,
+     "rows": [
+      {
+       "id": "niveau-0",
+       "labelKey": "La machine lui semble étrangère ; ses commandes provoquent des réactions maladroites.",
+       "max": 0,
+       "min": null
+      },
+      {
+       "id": "niveau-1",
+       "labelKey": "Il connaît une procédure élémentaire mais redoute les configurations inhabituelles.",
+       "max": 1,
+       "min": 1
+      },
+      {
+       "id": "niveau-2",
+       "labelKey": "Il utilise l'engin dans ses fonctions courantes avec une précaution suffisante.",
+       "max": 2,
+       "min": 2
+      },
+      {
+       "id": "niveau-3",
+       "labelKey": "Il manœuvre avec précision et comprend le comportement du matériel.",
+       "max": 3,
+       "min": 3
+      },
+      {
+       "id": "niveau-4",
+       "labelKey": "Même les opérations délicates lui paraissent familières ; son contrôle inspire confiance.",
+       "max": 4,
+       "min": 4
+      },
+      {
+       "id": "niveau-5",
+       "labelKey": "L'engin le plus complexe semble devenir docile entre ses mains, sans geste inutile ni hésitation.",
+       "max": null,
+       "min": 5
+      }
+     ],
+     "tags": []
+    },
+    {
+     "basis": "percent",
+     "descriptionKey": "Ce que l'on perçoit de Vitalité, en part de son maximum.",
+     "enabled": true,
+     "id": "etat-vitalite",
+     "nameKey": "État observable : Vitalité",
+     "order": 390,
+     "rows": [
+      {
+       "id": "tranche-0",
+       "labelKey": "Son corps ne répond plus normalement ; il est hors de combat, sans que l’on puisse conclure à sa mort.",
+       "max": 0,
+       "min": null
+      },
+      {
+       "id": "tranche-1-25",
+       "labelKey": "Chaque mouvement semble lui arracher un effort ; ses blessures ou son épuisement physique sont alarmants.",
+       "max": 25,
        "min": 0.01
       },
       {
-       "id": "hors-de-combat",
-       "labelKey": "Coma, mort ou stabilisé",
+       "id": "tranche-26-50",
+       "labelKey": "Il se tient encore debout, mais la douleur et les atteintes subies marquent nettement sa posture.",
+       "max": 50,
+       "min": 25.01
+      },
+      {
+       "id": "tranche-51-75",
+       "labelKey": "Des traces de souffrance demeurent dans ses gestes ; il paraît diminué sans être brisé.",
+       "max": 75,
+       "min": 50.01
+      },
+      {
+       "id": "tranche-76-99",
+       "labelKey": "Quelques marques ou raideurs trahissent les épreuves récentes, sans entraver franchement son allure.",
+       "max": 99.99,
+       "min": 75.01
+      },
+      {
+       "id": "tranche-100",
+       "labelKey": "Il ne montre aucun signe évident de blessure ou de faiblesse physique immédiate.",
+       "max": null,
+       "min": 100
+      }
+     ],
+     "tags": []
+    },
+    {
+     "basis": "percent",
+     "descriptionKey": "Ce que l'on perçoit de Endurance, en part de son maximum.",
+     "enabled": true,
+     "id": "etat-endurance",
+     "nameKey": "État observable : Endurance",
+     "order": 400,
+     "rows": [
+      {
+       "id": "tranche-0",
+       "labelKey": "Son souffle et ses muscles ont atteint leur limite ; tout effort physique soutenu lui est momentanément impossible.",
        "max": 0,
        "min": null
+      },
+      {
+       "id": "tranche-1-25",
+       "labelKey": "Il cherche l’air, ses gestes se font lourds ; reprendre l’effort semble presque hors de portée.",
+       "max": 25,
+       "min": 0.01
+      },
+      {
+       "id": "tranche-26-50",
+       "labelKey": "Sa respiration est courte et son corps accuse franchement la fatigue.",
+       "max": 50,
+       "min": 25.01
+      },
+      {
+       "id": "tranche-51-75",
+       "labelKey": "Le souffle s’accélère et quelques signes de lassitude percent dans ses mouvements.",
+       "max": 75,
+       "min": 50.01
+      },
+      {
+       "id": "tranche-76-99",
+       "labelKey": "Son rythme reste sûr, bien qu’une légère fatigue puisse se deviner.",
+       "max": 99.99,
+       "min": 75.01
+      },
+      {
+       "id": "tranche-100",
+       "labelKey": "Sa respiration est posée et ses mouvements semblent disposer de toute leur réserve.",
+       "max": null,
+       "min": 100
+      }
+     ],
+     "tags": []
+    },
+    {
+     "basis": "percent",
+     "descriptionKey": "Ce que l'on perçoit de Énergie, en part de son maximum.",
+     "enabled": true,
+     "id": "etat-energie",
+     "nameKey": "État observable : Énergie",
+     "order": 410,
+     "rows": [
+      {
+       "id": "tranche-0",
+       "labelKey": "La réserve qui soutient ses manifestations extraordinaires semble épuisée ; aucun effet visible ne permet à lui seul d’en connaître la cause.",
+       "max": 0,
+       "min": null
+      },
+      {
+       "id": "tranche-1-25",
+       "labelKey": "Lorsqu’il sollicite ses pouvoirs, la manifestation paraît ténue, instable ou laborieuse, si elle est perceptible.",
+       "max": 25,
+       "min": 0.01
+      },
+      {
+       "id": "tranche-26-50",
+       "labelKey": "Les manifestations visibles paraissent lui demander une concentration inhabituelle.",
+       "max": 50,
+       "min": 25.01
+      },
+      {
+       "id": "tranche-51-75",
+       "labelKey": "Une certaine retenue apparaît dans l’usage de ses manifestations, lorsque celles-ci sont observables.",
+       "max": 75,
+       "min": 50.01
+      },
+      {
+       "id": "tranche-76-99",
+       "labelKey": "Ses manifestations visibles conservent de l’aisance, malgré de possibles signes discrets de dépense.",
+       "max": 99.99,
+       "min": 75.01
+      },
+      {
+       "id": "tranche-100",
+       "labelKey": "Aucune fatigue liée à ses manifestations ne se laisse discerner ; sa réserve réelle reste invisible à un témoin ordinaire.",
+       "max": null,
+       "min": 100
       }
      ],
      "tags": []
@@ -74715,33 +76605,14 @@
               }
              },
              {
-              "display": "description",
-              "id": "etat-vitalite",
-              "kind": "value",
-              "labelKey": "État de santé",
-              "seenBy": [
-               "observer"
-              ],
-              "source": {
-               "kind": "output",
-               "reference": {
-                "capabilityId": "pool",
-                "objectId": "vitalite",
-                "objectKind": "definition",
-                "outputId": "pool.current",
-                "slotId": "points"
-               }
-              },
-              "style": {
-               "italic": true,
-               "label": "top"
-              }
-             },
-             {
               "display": "gauge",
               "id": "jauge-endurance",
               "kind": "value",
               "labelKey": "Endurance",
+              "seenBy": [
+               "player",
+               "gm"
+              ],
               "source": {
                "kind": "output",
                "reference": {
@@ -74766,6 +76637,10 @@
               "id": "jauge-energie",
               "kind": "value",
               "labelKey": "Énergie",
+              "seenBy": [
+               "player",
+               "gm"
+              ],
               "source": {
                "kind": "output",
                "reference": {
@@ -74783,6 +76658,66 @@
               },
               "write": {
                "operation": "adjust"
+              }
+             },
+             {
+              "display": "description",
+              "id": "etat-vitalite",
+              "kind": "value",
+              "labelKey": "Vitalité",
+              "source": {
+               "kind": "output",
+               "reference": {
+                "capabilityId": "pool",
+                "objectId": "vitalite",
+                "objectKind": "definition",
+                "outputId": "pool.current",
+                "slotId": "points"
+               }
+              },
+              "style": {
+               "italic": true,
+               "label": "top"
+              }
+             },
+             {
+              "display": "description",
+              "id": "etat-endurance",
+              "kind": "value",
+              "labelKey": "Endurance",
+              "source": {
+               "kind": "output",
+               "reference": {
+                "capabilityId": "pool",
+                "objectId": "endurance",
+                "objectKind": "definition",
+                "outputId": "pool.current",
+                "slotId": "points"
+               }
+              },
+              "style": {
+               "italic": true,
+               "label": "top"
+              }
+             },
+             {
+              "display": "description",
+              "id": "etat-energie",
+              "kind": "value",
+              "labelKey": "Énergie",
+              "source": {
+               "kind": "output",
+               "reference": {
+                "capabilityId": "pool",
+                "objectId": "energie",
+                "objectKind": "definition",
+                "outputId": "pool.current",
+                "slotId": "points"
+               }
+              },
+              "style": {
+               "italic": true,
+               "label": "top"
               }
              }
             ],
@@ -75101,6 +77036,137 @@
           "id": "onglet-competences",
           "kind": "tab",
           "labelKey": "Compétences"
+         },
+         {
+          "children": [
+           {
+            "children": [
+             {
+              "children": [
+               {
+                "display": "description",
+                "id": "etat-caracteristiques",
+                "kind": "value",
+                "source": {
+                 "capabilityId": "value",
+                 "kind": "each",
+                 "outputId": "value.final"
+                },
+                "style": {
+                 "italic": true
+                }
+               }
+              ],
+              "columns": 1,
+              "id": "liste-observables-caracteristiques",
+              "kind": "repeater",
+              "query": {
+               "definitionTypeId": "caracteristique"
+              }
+             }
+            ],
+            "columns": 1,
+            "id": "observables-caracteristiques",
+            "kind": "section",
+            "labelKey": "Caractéristiques"
+           },
+           {
+            "children": [
+             {
+              "children": [
+               {
+                "display": "description",
+                "id": "etat-competences",
+                "kind": "value",
+                "source": {
+                 "capabilityId": "value",
+                 "kind": "each",
+                 "outputId": "value.final"
+                },
+                "style": {
+                 "italic": true
+                }
+               }
+              ],
+              "columns": 1,
+              "id": "liste-observables-competences",
+              "kind": "repeater",
+              "query": {
+               "definitionTypeId": "competence"
+              }
+             }
+            ],
+            "columns": 1,
+            "id": "observables-competences",
+            "kind": "section",
+            "labelKey": "Compétences"
+           },
+           {
+            "children": [
+             {
+              "children": [
+               {
+                "display": "description",
+                "id": "etat-maitrises-combat",
+                "kind": "value",
+                "source": {
+                 "capabilityId": "value",
+                 "kind": "each",
+                 "outputId": "value.final"
+                },
+                "style": {
+                 "italic": true
+                }
+               }
+              ],
+              "columns": 1,
+              "id": "liste-observables-maitrises-combat",
+              "kind": "repeater",
+              "query": {
+               "definitionTypeId": "maitrise-combat"
+              }
+             }
+            ],
+            "columns": 1,
+            "id": "observables-maitrises-combat",
+            "kind": "section",
+            "labelKey": "Maîtrises de combat"
+           },
+           {
+            "children": [
+             {
+              "children": [
+               {
+                "display": "description",
+                "id": "etat-maitrises-deplacement",
+                "kind": "value",
+                "source": {
+                 "capabilityId": "value",
+                 "kind": "each",
+                 "outputId": "value.final"
+                },
+                "style": {
+                 "italic": true
+                }
+               }
+              ],
+              "columns": 1,
+              "id": "liste-observables-maitrises-deplacement",
+              "kind": "repeater",
+              "query": {
+               "definitionTypeId": "maitrise-deplacement"
+              }
+             }
+            ],
+            "columns": 1,
+            "id": "observables-maitrises-deplacement",
+            "kind": "section",
+            "labelKey": "Maîtrises de déplacement"
+           }
+          ],
+          "id": "onglet-etats-observables",
+          "kind": "tab",
+          "labelKey": "États observables"
          },
          {
           "children": [
@@ -76001,12 +78067,12 @@
      "tags": []
     }
    ],
-   "version": "2.2.0"
+   "version": "2.3.0"
   },
   "rulesetId": "rwf",
   "status": "ready",
-  "version": "2.2.0",
-  "versionId": "rwf-2-2-0",
+  "version": "2.3.0",
+  "versionId": "rwf-2-3-0",
   "workingDraft": {
    "actions": [
     {
@@ -144473,6 +146539,7 @@
      "key": "force",
      "nameKey": "Force",
      "order": 10,
+     "scaleRef": "etat-force",
      "tags": []
     },
     {
@@ -144487,6 +146554,7 @@
      "key": "agilite",
      "nameKey": "Agilité",
      "order": 20,
+     "scaleRef": "etat-agilite",
      "tags": []
     },
     {
@@ -144501,6 +146569,7 @@
      "key": "constitution",
      "nameKey": "Constitution",
      "order": 30,
+     "scaleRef": "etat-constitution",
      "tags": []
     },
     {
@@ -144515,6 +146584,7 @@
      "key": "esprit",
      "nameKey": "Esprit",
      "order": 40,
+     "scaleRef": "etat-esprit",
      "tags": []
     },
     {
@@ -144529,6 +146599,7 @@
      "key": "presence",
      "nameKey": "Présence",
      "order": 50,
+     "scaleRef": "etat-presence",
      "tags": []
     },
     {
@@ -144552,6 +146623,7 @@
      "key": "athletisme",
      "nameKey": "Athlétisme",
      "order": 60,
+     "scaleRef": "etat-athletisme",
      "tags": []
     },
     {
@@ -144575,6 +146647,7 @@
      "key": "discretion",
      "nameKey": "Discrétion",
      "order": 70,
+     "scaleRef": "etat-discretion",
      "tags": []
     },
     {
@@ -144598,6 +146671,7 @@
      "key": "vigilance",
      "nameKey": "Vigilance",
      "order": 80,
+     "scaleRef": "etat-vigilance",
      "tags": []
     },
     {
@@ -144621,6 +146695,7 @@
      "key": "investigation",
      "nameKey": "Investigation",
      "order": 90,
+     "scaleRef": "etat-investigation",
      "tags": []
     },
     {
@@ -144644,6 +146719,7 @@
      "key": "survie",
      "nameKey": "Survie",
      "order": 100,
+     "scaleRef": "etat-survie",
      "tags": []
     },
     {
@@ -144667,6 +146743,7 @@
      "key": "technique",
      "nameKey": "Technique",
      "order": 110,
+     "scaleRef": "etat-technique",
      "tags": []
     },
     {
@@ -144690,6 +146767,7 @@
      "key": "informatique",
      "nameKey": "Informatique",
      "order": 120,
+     "scaleRef": "etat-informatique",
      "tags": []
     },
     {
@@ -144713,6 +146791,7 @@
      "key": "sciences",
      "nameKey": "Sciences",
      "order": 130,
+     "scaleRef": "etat-sciences",
      "tags": []
     },
     {
@@ -144736,6 +146815,7 @@
      "key": "medecine",
      "nameKey": "Médecine",
      "order": 140,
+     "scaleRef": "etat-medecine",
      "tags": []
     },
     {
@@ -144759,6 +146839,7 @@
      "key": "culture",
      "nameKey": "Culture",
      "order": 150,
+     "scaleRef": "etat-culture",
      "tags": []
     },
     {
@@ -144782,6 +146863,7 @@
      "key": "influence",
      "nameKey": "Influence",
      "order": 160,
+     "scaleRef": "etat-influence",
      "tags": []
     },
     {
@@ -144805,6 +146887,7 @@
      "key": "empathie",
      "nameKey": "Empathie",
      "order": 170,
+     "scaleRef": "etat-empathie",
      "tags": []
     },
     {
@@ -144828,6 +146911,7 @@
      "key": "langues",
      "nameKey": "Langues",
      "order": 180,
+     "scaleRef": "etat-langues",
      "tags": []
     },
     {
@@ -144851,6 +146935,7 @@
      "key": "arts",
      "nameKey": "Arts",
      "order": 190,
+     "scaleRef": "etat-arts",
      "tags": []
     },
     {
@@ -144874,6 +146959,7 @@
      "key": "occultisme",
      "nameKey": "Occultisme",
      "order": 200,
+     "scaleRef": "etat-occultisme",
      "tags": []
     },
     {
@@ -144897,6 +146983,7 @@
      "key": "corps-a-corps",
      "nameKey": "Corps à corps",
      "order": 210,
+     "scaleRef": "etat-corps-a-corps",
      "tags": []
     },
     {
@@ -144920,6 +147007,7 @@
      "key": "armes-de-melee",
      "nameKey": "Armes de mêlée",
      "order": 220,
+     "scaleRef": "etat-armes-de-melee",
      "tags": []
     },
     {
@@ -144943,6 +147031,7 @@
      "key": "armes-de-poing",
      "nameKey": "Armes de poing",
      "order": 230,
+     "scaleRef": "etat-armes-de-poing",
      "tags": []
     },
     {
@@ -144966,6 +147055,7 @@
      "key": "armes-d-epaule",
      "nameKey": "Armes d'épaule",
      "order": 240,
+     "scaleRef": "etat-armes-d-epaule",
      "tags": []
     },
     {
@@ -144989,6 +147079,7 @@
      "key": "armes-lourdes",
      "nameKey": "Armes lourdes",
      "order": 250,
+     "scaleRef": "etat-armes-lourdes",
      "tags": []
     },
     {
@@ -145012,6 +147103,7 @@
      "key": "armes-de-jet",
      "nameKey": "Armes de jet",
      "order": 260,
+     "scaleRef": "etat-armes-de-jet",
      "tags": []
     },
     {
@@ -145035,6 +147127,7 @@
      "key": "armes-de-trait",
      "nameKey": "Armes de trait",
      "order": 270,
+     "scaleRef": "etat-armes-de-trait",
      "tags": []
     },
     {
@@ -145058,6 +147151,7 @@
      "key": "course-a-pied",
      "nameKey": "Course à pied",
      "order": 280,
+     "scaleRef": "etat-course-a-pied",
      "tags": []
     },
     {
@@ -145081,6 +147175,7 @@
      "key": "vehicules-legers",
      "nameKey": "Véhicules légers",
      "order": 290,
+     "scaleRef": "etat-vehicules-legers",
      "tags": []
     },
     {
@@ -145104,6 +147199,7 @@
      "key": "deux-roues-motorises",
      "nameKey": "Deux-roues motorisés",
      "order": 300,
+     "scaleRef": "etat-deux-roues-motorises",
      "tags": []
     },
     {
@@ -145127,6 +147223,7 @@
      "key": "poids-lourds",
      "nameKey": "Poids lourds",
      "order": 310,
+     "scaleRef": "etat-poids-lourds",
      "tags": []
     },
     {
@@ -145150,6 +147247,7 @@
      "key": "transport-collectif",
      "nameKey": "Transport collectif",
      "order": 320,
+     "scaleRef": "etat-transport-collectif",
      "tags": []
     },
     {
@@ -145173,6 +147271,7 @@
      "key": "cyclisme",
      "nameKey": "Cyclisme",
      "order": 330,
+     "scaleRef": "etat-cyclisme",
      "tags": []
     },
     {
@@ -145196,6 +147295,7 @@
      "key": "equitation",
      "nameKey": "Équitation / Monture",
      "order": 340,
+     "scaleRef": "etat-equitation",
      "tags": []
     },
     {
@@ -145219,6 +147319,7 @@
      "key": "navigation",
      "nameKey": "Navigation",
      "order": 350,
+     "scaleRef": "etat-navigation",
      "tags": []
     },
     {
@@ -145242,6 +147343,7 @@
      "key": "ski-glisse",
      "nameKey": "Ski / Glisse",
      "order": 360,
+     "scaleRef": "etat-ski-glisse",
      "tags": []
     },
     {
@@ -145265,6 +147367,7 @@
      "key": "pilotage-aerien",
      "nameKey": "Pilotage aérien",
      "order": 370,
+     "scaleRef": "etat-pilotage-aerien",
      "tags": []
     },
     {
@@ -145288,6 +147391,7 @@
      "key": "engins-specialises",
      "nameKey": "Engins spécialisés",
      "order": 380,
+     "scaleRef": "etat-engins-specialises",
      "tags": []
     },
     {
@@ -145302,7 +147406,7 @@
      "key": "vitalite",
      "nameKey": "Vitalité",
      "order": 390,
-     "scaleRef": "etat-de-sante",
+     "scaleRef": "etat-vitalite",
      "slots": {
       "pool": [
        {
@@ -145336,6 +147440,7 @@
      "key": "endurance",
      "nameKey": "Endurance",
      "order": 400,
+     "scaleRef": "etat-endurance",
      "slots": {
       "pool": [
        {
@@ -145369,6 +147474,7 @@
      "key": "energie",
      "nameKey": "Énergie",
      "order": 410,
+     "scaleRef": "etat-energie",
      "slots": {
       "pool": [
        {
@@ -150617,48 +152723,1898 @@
    ],
    "scales": [
     {
-     "basis": "percent",
-     "descriptionKey": "Ce qu'un observateur lit de la Vitalité d'un personnage, en part de sa Vitalité maximale.",
+     "basis": "value",
+     "descriptionKey": "Ce que l'on perçoit de Force selon son niveau.",
      "enabled": true,
-     "id": "etat-de-sante",
-     "nameKey": "État de santé",
+     "id": "etat-force",
+     "nameKey": "État observable : Force",
      "order": 10,
      "rows": [
       {
-       "id": "pleine-forme",
-       "labelKey": "Semble en pleine forme",
+       "id": "niveau-1",
+       "labelKey": "Sa silhouette frêle et ses gestes mesurés laissent deviner un corps peu habitué aux efforts physiques importants.",
+       "max": 1,
+       "min": null
+      },
+      {
+       "id": "niveau-2",
+       "labelKey": "Sa carrure ordinaire ne révèle aucune puissance particulière, mais ses mouvements témoignent d'une force suffisante pour les exigences du quotidien.",
+       "max": 2,
+       "min": 2
+      },
+      {
+       "id": "niveau-3",
+       "labelKey": "Sous ses vêtements se devine une musculature harmonieusement développée. Sa posture assurée et ses gestes fermes suggèrent une force patiemment acquise.",
+       "max": 3,
+       "min": 3
+      },
+      {
+       "id": "niveau-4",
+       "labelKey": "Sa carrure imposante attire naturellement le regard. Chaque mouvement révèle une puissance musculaire remarquable, maîtrisée avec une aisance presque déconcertante.",
+       "max": 4,
+       "min": 4
+      },
+      {
+       "id": "niveau-5",
+       "labelKey": "Sa constitution physique impressionne immédiatement. Une puissance exceptionnelle émane de chacun de ses gestes, comme si les limites ordinaires du corps humain ne s'appliquaient pas tout à fait à lui.",
        "max": null,
-       "min": 100
+       "min": 5
+      }
+     ],
+     "tags": []
+    },
+    {
+     "basis": "value",
+     "descriptionKey": "Ce que l'on perçoit de Agilité selon son niveau.",
+     "enabled": true,
+     "id": "etat-agilite",
+     "nameKey": "État observable : Agilité",
+     "order": 20,
+     "rows": [
+      {
+       "id": "niveau-1",
+       "labelKey": "Ses mouvements paraissent parfois hésitants, ses gestes manquent de précision et son corps semble chercher son équilibre plus souvent qu'il ne le trouve.",
+       "max": 1,
+       "min": null
       },
       {
-       "id": "un-peu-blesse",
-       "labelKey": "Un peu blessé",
-       "max": 99.99,
-       "min": 75
+       "id": "niveau-2",
+       "labelKey": "Sa gestuelle est naturelle, quoique légèrement maladroite dans les situations exigeantes. Rien dans sa démarche ne laisse présager une souplesse particulière.",
+       "max": 2,
+       "min": 2
       },
       {
-       "id": "blesse",
-       "labelKey": "Blessé",
-       "max": 74.99,
-       "min": 50
+       "id": "niveau-3",
+       "labelKey": "Ses déplacements possèdent une fluidité agréable à observer. Ses gestes précis et son équilibre assuré révèlent une excellente coordination corporelle.",
+       "max": 3,
+       "min": 3
       },
       {
-       "id": "mal-en-point",
-       "labelKey": "Mal en point",
-       "max": 49.99,
-       "min": 25
+       "id": "niveau-4",
+       "labelKey": "Une remarquable élégance accompagne chacun de ses mouvements. Il semble glisser entre les obstacles avec une aisance instinctive, comme si son corps anticipait déjà la trajectoire suivante.",
+       "max": 4,
+       "min": 4
       },
       {
-       "id": "etat-critique",
-       "labelKey": "État critique",
-       "max": 24.99,
+       "id": "niveau-5",
+       "labelKey": "Ses mouvements défient presque le regard tant ils sont fluides et précis. Chaque geste semble parfaitement calculé, chaque déplacement exécuté avec une grâce fascinante, à la frontière de l'impossible.",
+       "max": null,
+       "min": 5
+      }
+     ],
+     "tags": []
+    },
+    {
+     "basis": "value",
+     "descriptionKey": "Ce que l'on perçoit de Constitution selon son niveau.",
+     "enabled": true,
+     "id": "etat-constitution",
+     "nameKey": "État observable : Constitution",
+     "order": 30,
+     "rows": [
+      {
+       "id": "niveau-1",
+       "labelKey": "Son apparence laisse deviner une certaine fragilité physique. Les efforts prolongés semblent rapidement entamer ses forces, et la fatigue marque facilement ses traits.",
+       "max": 1,
+       "min": null
+      },
+      {
+       "id": "niveau-2",
+       "labelKey": "Sa résistance paraît comparable à celle de la plupart des gens. Il supporte les contraintes ordinaires, mais les longues épreuves finissent par laisser des traces visibles.",
+       "max": 2,
+       "min": 2
+      },
+      {
+       "id": "niveau-3",
+       "labelKey": "Une vigueur rassurante se dégage de son attitude. Même après une journée éprouvante, il conserve une présence solide et semble récupérer avec une facilité appréciable.",
+       "max": 3,
+       "min": 3
+      },
+      {
+       "id": "niveau-4",
+       "labelKey": "Son organisme semble taillé pour résister aux épreuves. Là où d'autres commencent à fléchir, il conserve une énergie physique étonnante et une résistance particulièrement impressionnante.",
+       "max": 4,
+       "min": 4
+      },
+      {
+       "id": "niveau-5",
+       "labelKey": "Sa résistance physique paraît presque inexplicable. Les privations, les efforts et les conditions éprouvantes semblent glisser sur lui sans parvenir à entamer durablement son extraordinaire vitalité.",
+       "max": null,
+       "min": 5
+      }
+     ],
+     "tags": []
+    },
+    {
+     "basis": "value",
+     "descriptionKey": "Ce que l'on perçoit de Esprit selon son niveau.",
+     "enabled": true,
+     "id": "etat-esprit",
+     "nameKey": "État observable : Esprit",
+     "order": 40,
+     "rows": [
+      {
+       "id": "niveau-1",
+       "labelKey": "Face aux situations complexes, son regard trahit souvent une certaine perplexité. Il privilégie les évidences et les solutions immédiates, parfois au détriment des subtilités.",
+       "max": 1,
+       "min": null
+      },
+      {
+       "id": "niveau-2",
+       "labelKey": "Son raisonnement suit une logique simple et pragmatique. Il comprend aisément les situations familières, mais les problèmes inhabituels réclament davantage de réflexion.",
+       "max": 2,
+       "min": 2
+      },
+      {
+       "id": "niveau-3",
+       "labelKey": "Une vivacité intellectuelle se révèle dans ses conversations. Ses questions pertinentes et sa capacité à relier les idées témoignent d'un esprit curieux et bien structuré.",
+       "max": 3,
+       "min": 3
+      },
+      {
+       "id": "niveau-4",
+       "labelKey": "Son intelligence se manifeste par une étonnante rapidité d'analyse. Il perçoit les liens invisibles entre les faits et formule des conclusions auxquelles peu de personnes seraient parvenues aussi vite.",
+       "max": 4,
+       "min": 4
+      },
+      {
+       "id": "niveau-5",
+       "labelKey": "Son esprit semble évoluer plusieurs raisonnements en avance sur ceux qui l'entourent. Des problèmes réputés insolubles deviennent entre ses mains d'élégantes évidences, suscitant autant d'admiration que d'incompréhension.",
+       "max": null,
+       "min": 5
+      }
+     ],
+     "tags": []
+    },
+    {
+     "basis": "value",
+     "descriptionKey": "Ce que l'on perçoit de Présence selon son niveau.",
+     "enabled": true,
+     "id": "etat-presence",
+     "nameKey": "État observable : Présence",
+     "order": 50,
+     "rows": [
+      {
+       "id": "niveau-1",
+       "labelKey": "Sa présence se fond facilement dans le décor. Ses paroles hésitantes et son attitude effacée peinent à retenir l'attention, même lorsqu'il cherche à se faire entendre.",
+       "max": 1,
+       "min": null
+      },
+      {
+       "id": "niveau-2",
+       "labelKey": "Son attitude inspire une impression agréable mais discrète. Il participe naturellement aux échanges sans particulièrement chercher, ni parvenir, à attirer les regards.",
+       "max": 2,
+       "min": 2
+      },
+      {
+       "id": "niveau-3",
+       "labelKey": "Une assurance tranquille émane de sa personne. Son regard, sa voix et sa manière d'être inspirent spontanément l'écoute et donnent à ses paroles un poids certain.",
+       "max": 3,
+       "min": 3
+      },
+      {
+       "id": "niveau-4",
+       "labelKey": "Il possède ce magnétisme rare qui transforme une simple apparition en événement. Les regards convergent naturellement vers lui, et sa parole semble captiver avant même qu'il ait terminé sa première phrase.",
+       "max": 4,
+       "min": 4
+      },
+      {
+       "id": "niveau-5",
+       "labelKey": "Sa seule présence semble modifier imperceptiblement l'atmosphère d'une pièce. Son charisme exceptionnel captive les regards, impose le silence ou éveille les passions, laissant rarement ceux qui le croisent indifférents.",
+       "max": null,
+       "min": 5
+      }
+     ],
+     "tags": []
+    },
+    {
+     "basis": "value",
+     "descriptionKey": "Ce que l'on perçoit de Athlétisme selon son niveau.",
+     "enabled": true,
+     "id": "etat-athletisme",
+     "nameKey": "État observable : Athlétisme",
+     "order": 60,
+     "rows": [
+      {
+       "id": "niveau-0",
+       "labelKey": "L'effort athlétique le déborde vite ; ses mouvements perdent leur cohérence dès que le rythme monte.",
+       "max": 0,
+       "min": null
+      },
+      {
+       "id": "niveau-1",
+       "labelKey": "Il participe avec bonne volonté, mais le souffle et la coordination ne suivent pas toujours.",
+       "max": 1,
+       "min": 1
+      },
+      {
+       "id": "niveau-2",
+       "labelKey": "Il court, grimpe et se dépense sans se distinguer du commun.",
+       "max": 2,
+       "min": 2
+      },
+      {
+       "id": "niveau-3",
+       "labelKey": "Il aborde les obstacles avec assurance ; son corps connaît les bons appuis.",
+       "max": 3,
+       "min": 3
+      },
+      {
+       "id": "niveau-4",
+       "labelKey": "Sa foulée et ses impulsions révèlent un entraînement soutenu ; les obstacles semblent plus petits devant lui.",
+       "max": 4,
+       "min": 4
+      },
+      {
+       "id": "niveau-5",
+       "labelKey": "Ses performances ont l'évidence des athlètes d'exception ; chaque mouvement paraît admirablement maîtrisé.",
+       "max": null,
+       "min": 5
+      }
+     ],
+     "tags": []
+    },
+    {
+     "basis": "value",
+     "descriptionKey": "Ce que l'on perçoit de Discrétion selon son niveau.",
+     "enabled": true,
+     "id": "etat-discretion",
+     "nameKey": "État observable : Discrétion",
+     "order": 70,
+     "rows": [
+      {
+       "id": "niveau-0",
+       "labelKey": "Même immobile, il attire l'attention ; ses pas, ses gestes ou sa présence le trahissent.",
+       "max": 0,
+       "min": null
+      },
+      {
+       "id": "niveau-1",
+       "labelKey": "Il tente de se fondre dans le décor, mais une maladresse finit souvent par le révéler.",
+       "max": 1,
+       "min": 1
+      },
+      {
+       "id": "niveau-2",
+       "labelKey": "Il sait ne pas se faire remarquer lorsqu'il prend quelques précautions.",
+       "max": 2,
+       "min": 2
+      },
+      {
+       "id": "niveau-3",
+       "labelKey": "Il se déplace sans bruit et choisit instinctivement les endroits où le regard ne s'attarde pas.",
+       "max": 3,
+       "min": 3
+      },
+      {
+       "id": "niveau-4",
+       "labelKey": "Il traverse les lieux comme une ombre familière des angles morts.",
+       "max": 4,
+       "min": 4
+      },
+      {
+       "id": "niveau-5",
+       "labelKey": "Sa présence semble s'effacer de la mémoire immédiate ; on se surprend à ignorer quand il est arrivé.",
+       "max": null,
+       "min": 5
+      }
+     ],
+     "tags": []
+    },
+    {
+     "basis": "value",
+     "descriptionKey": "Ce que l'on perçoit de Vigilance selon son niveau.",
+     "enabled": true,
+     "id": "etat-vigilance",
+     "nameKey": "État observable : Vigilance",
+     "order": 80,
+     "rows": [
+      {
+       "id": "niveau-0",
+       "labelKey": "Les signes les plus visibles lui échappent dès que son attention se disperse.",
+       "max": 0,
+       "min": null
+      },
+      {
+       "id": "niveau-1",
+       "labelKey": "Il remarque l'évidence, mais laisse filer nombre de détails autour de lui.",
+       "max": 1,
+       "min": 1
+      },
+      {
+       "id": "niveau-2",
+       "labelKey": "Son regard suit naturellement ce qui change dans son environnement.",
+       "max": 2,
+       "min": 2
+      },
+      {
+       "id": "niveau-3",
+       "labelKey": "Un bruit déplacé ou un geste inhabituel suffit à éveiller son attention.",
+       "max": 3,
+       "min": 3
+      },
+      {
+       "id": "niveau-4",
+       "labelKey": "Il capte les détails subtils sans cesser de suivre la conversation.",
+       "max": 4,
+       "min": 4
+      },
+      {
+       "id": "niveau-5",
+       "labelKey": "Rien ne semble anodin à ses yeux ; il perçoit des anomalies avant que quiconque comprenne qu'elles existent.",
+       "max": null,
+       "min": 5
+      }
+     ],
+     "tags": []
+    },
+    {
+     "basis": "value",
+     "descriptionKey": "Ce que l'on perçoit de Investigation selon son niveau.",
+     "enabled": true,
+     "id": "etat-investigation",
+     "nameKey": "État observable : Investigation",
+     "order": 90,
+     "rows": [
+      {
+       "id": "niveau-0",
+       "labelKey": "Face aux indices, il se précipite sur la première explication et oublie les contradictions.",
+       "max": 0,
+       "min": null
+      },
+      {
+       "id": "niveau-1",
+       "labelKey": "Il pose quelques questions utiles, mais les rapprochements difficiles lui échappent.",
+       "max": 1,
+       "min": 1
+      },
+      {
+       "id": "niveau-2",
+       "labelKey": "Il cherche méthodiquement et sait reconnaître une piste vraisemblable.",
+       "max": 2,
+       "min": 2
+      },
+      {
+       "id": "niveau-3",
+       "labelKey": "Il relève les incohérences avec une patience qui finit souvent par payer.",
+       "max": 3,
+       "min": 3
+      },
+      {
+       "id": "niveau-4",
+       "labelKey": "Son regard relie traces, silences et chronologies avec une logique remarquable.",
+       "max": 4,
+       "min": 4
+      },
+      {
+       "id": "niveau-5",
+       "labelKey": "Il reconstruit les faits à partir de presque rien ; le détail oublié par tous devient chez lui une clef.",
+       "max": null,
+       "min": 5
+      }
+     ],
+     "tags": []
+    },
+    {
+     "basis": "value",
+     "descriptionKey": "Ce que l'on perçoit de Survie selon son niveau.",
+     "enabled": true,
+     "id": "etat-survie",
+     "nameKey": "État observable : Survie",
+     "order": 100,
+     "rows": [
+      {
+       "id": "niveau-0",
+       "labelKey": "Hors des chemins connus, il paraît vite démuni face au terrain et aux éléments.",
+       "max": 0,
+       "min": null
+      },
+      {
+       "id": "niveau-1",
+       "labelKey": "Il reconnaît les précautions élémentaires, mais hésite lorsqu'il faut improviser.",
+       "max": 1,
+       "min": 1
+      },
+      {
+       "id": "niveau-2",
+       "labelKey": "Il sait se débrouiller dans un environnement peu familier avec des moyens simples.",
+       "max": 2,
+       "min": 2
+      },
+      {
+       "id": "niveau-3",
+       "labelKey": "Il lit le sol, le ciel et les traces avec une assurance acquise dehors.",
+       "max": 3,
+       "min": 3
+      },
+      {
+       "id": "niveau-4",
+       "labelKey": "Le terrain semble lui parler ; il anticipe le froid, l'eau et les dangers avant qu'ils ne se présentent.",
+       "max": 4,
+       "min": 4
+      },
+      {
+       "id": "niveau-5",
+       "labelKey": "Même dans un milieu hostile, il trouve des signes et des solutions que d'autres ne sauraient imaginer.",
+       "max": null,
+       "min": 5
+      }
+     ],
+     "tags": []
+    },
+    {
+     "basis": "value",
+     "descriptionKey": "Ce que l'on perçoit de Technique selon son niveau.",
+     "enabled": true,
+     "id": "etat-technique",
+     "nameKey": "État observable : Technique",
+     "order": 110,
+     "rows": [
+      {
+       "id": "niveau-0",
+       "labelKey": "Un mécanisme banal suffit à l'embarrasser ; il craint d'aggraver la panne en touchant quoi que ce soit.",
+       "max": 0,
+       "min": null
+      },
+      {
+       "id": "niveau-1",
+       "labelKey": "Il exécute des gestes simples, mais sort difficilement d'une procédure connue.",
+       "max": 1,
+       "min": 1
+      },
+      {
+       "id": "niveau-2",
+       "labelKey": "Il utilise et entretient les appareils courants avec un sens pratique convenable.",
+       "max": 2,
+       "min": 2
+      },
+      {
+       "id": "niveau-3",
+       "labelKey": "Ses mains trouvent vite la pièce défectueuse ; il comprend comment les choses s'assemblent.",
+       "max": 3,
+       "min": 3
+      },
+      {
+       "id": "niveau-4",
+       "labelKey": "Il diagnostique une panne complexe au son, à l'odeur ou à quelques mesures bien choisies.",
+       "max": 4,
+       "min": 4
+      },
+      {
+       "id": "niveau-5",
+       "labelKey": "Les machines paraissent transparentes à son regard ; il leur rend vie avec une inventivité saisissante.",
+       "max": null,
+       "min": 5
+      }
+     ],
+     "tags": []
+    },
+    {
+     "basis": "value",
+     "descriptionKey": "Ce que l'on perçoit de Informatique selon son niveau.",
+     "enabled": true,
+     "id": "etat-informatique",
+     "nameKey": "État observable : Informatique",
+     "order": 120,
+     "rows": [
+      {
+       "id": "niveau-0",
+       "labelKey": "Face à un écran inhabituel, il se perd rapidement dans les menus et les messages.",
+       "max": 0,
+       "min": null
+      },
+      {
+       "id": "niveau-1",
+       "labelKey": "Il sait accomplir les tâches courantes, mais hésite dès que l'environnement change.",
+       "max": 1,
+       "min": 1
+      },
+      {
+       "id": "niveau-2",
+       "labelKey": "Il utilise les outils numériques avec autonomie et résout les petits incidents ordinaires.",
+       "max": 2,
+       "min": 2
+      },
+      {
+       "id": "niveau-3",
+       "labelKey": "Sa navigation est rapide ; ses manipulations révèlent une vraie compréhension des systèmes.",
+       "max": 3,
+       "min": 3
+      },
+      {
+       "id": "niveau-4",
+       "labelKey": "Il démêle configurations et anomalies complexes comme d'autres trient quelques dossiers.",
+       "max": 4,
+       "min": 4
+      },
+      {
+       "id": "niveau-5",
+       "labelKey": "Devant un système opaque, il semble en deviner l'architecture et trouver le point juste où intervenir.",
+       "max": null,
+       "min": 5
+      }
+     ],
+     "tags": []
+    },
+    {
+     "basis": "value",
+     "descriptionKey": "Ce que l'on perçoit de Sciences selon son niveau.",
+     "enabled": true,
+     "id": "etat-sciences",
+     "nameKey": "État observable : Sciences",
+     "order": 130,
+     "rows": [
+      {
+       "id": "niveau-0",
+       "labelKey": "Les explications scientifiques le désorientent et il confond facilement hypothèse et certitude.",
+       "max": 0,
+       "min": null
+      },
+      {
+       "id": "niveau-1",
+       "labelKey": "Il connaît quelques principes mais peine à les appliquer hors d'un exemple familier.",
+       "max": 1,
+       "min": 1
+      },
+      {
+       "id": "niveau-2",
+       "labelKey": "Il discute des phénomènes connus avec curiosité et un raisonnement raisonnable.",
+       "max": 2,
+       "min": 2
+      },
+      {
+       "id": "niveau-3",
+       "labelKey": "Il formule des hypothèses solides et sait distinguer observation et interprétation.",
+       "max": 3,
+       "min": 3
+      },
+      {
+       "id": "niveau-4",
+       "labelKey": "Sa rigueur lui permet de voir des modèles là où les autres ne perçoivent que des faits épars.",
+       "max": 4,
+       "min": 4
+      },
+      {
+       "id": "niveau-5",
+       "labelKey": "Sa manière d'interroger le réel révèle un esprit scientifique exceptionnel, précis jusque dans l'inattendu.",
+       "max": null,
+       "min": 5
+      }
+     ],
+     "tags": []
+    },
+    {
+     "basis": "value",
+     "descriptionKey": "Ce que l'on perçoit de Médecine selon son niveau.",
+     "enabled": true,
+     "id": "etat-medecine",
+     "nameKey": "État observable : Médecine",
+     "order": 140,
+     "rows": [
+      {
+       "id": "niveau-0",
+       "labelKey": "Au moindre incident de santé, il panique ou risque un geste maladroit.",
+       "max": 0,
+       "min": null
+      },
+      {
+       "id": "niveau-1",
+       "labelKey": "Il connaît quelques réflexes de secours, sans grande assurance.",
+       "max": 1,
+       "min": 1
+      },
+      {
+       "id": "niveau-2",
+       "labelKey": "Il reconnaît les signes courants et adopte des gestes d'aide appropriés.",
+       "max": 2,
+       "min": 2
+      },
+      {
+       "id": "niveau-3",
+       "labelKey": "Il évalue calmement une situation médicale et agit avec une précision rassurante.",
+       "max": 3,
+       "min": 3
+      },
+      {
+       "id": "niveau-4",
+       "labelKey": "Son observation clinique et sa sûreté de main inspirent confiance même dans l'urgence.",
+       "max": 4,
+       "min": 4
+      },
+      {
+       "id": "niveau-5",
+       "labelKey": "Dans le chaos, il décèle les signes infimes et intervient avec une maîtrise qui force le respect.",
+       "max": null,
+       "min": 5
+      }
+     ],
+     "tags": []
+    },
+    {
+     "basis": "value",
+     "descriptionKey": "Ce que l'on perçoit de Culture selon son niveau.",
+     "enabled": true,
+     "id": "etat-culture",
+     "nameKey": "État observable : Culture",
+     "order": 150,
+     "rows": [
+      {
+       "id": "niveau-0",
+       "labelKey": "Références et contextes lui échappent ; il peine à situer les événements les plus connus.",
+       "max": 0,
+       "min": null
+      },
+      {
+       "id": "niveau-1",
+       "labelKey": "Il possède des repères dispersés mais les rapproche parfois de travers.",
+       "max": 1,
+       "min": 1
+      },
+      {
+       "id": "niveau-2",
+       "labelKey": "Il entretient une culture générale qui lui permet de participer aux échanges.",
+       "max": 2,
+       "min": 2
+      },
+      {
+       "id": "niveau-3",
+       "labelKey": "Il replace spontanément les œuvres, les faits et les usages dans leur contexte.",
+       "max": 3,
+       "min": 3
+      },
+      {
+       "id": "niveau-4",
+       "labelKey": "Ses références traversent les époques et les milieux avec une aisance étonnante.",
+       "max": 4,
+       "min": 4
+      },
+      {
+       "id": "niveau-5",
+       "labelKey": "Il fait dialoguer des savoirs éloignés et éclaire une situation d'un exemple que nul n'aurait songé à citer.",
+       "max": null,
+       "min": 5
+      }
+     ],
+     "tags": []
+    },
+    {
+     "basis": "value",
+     "descriptionKey": "Ce que l'on perçoit de Influence selon son niveau.",
+     "enabled": true,
+     "id": "etat-influence",
+     "nameKey": "État observable : Influence",
+     "order": 160,
+     "rows": [
+      {
+       "id": "niveau-0",
+       "labelKey": "Ses arguments tombent à plat ; ses tentatives de convaincre suscitent surtout la gêne.",
+       "max": 0,
+       "min": null
+      },
+      {
+       "id": "niveau-1",
+       "labelKey": "Il sait défendre une idée simple, mais perd pied devant la contradiction.",
+       "max": 1,
+       "min": 1
+      },
+      {
+       "id": "niveau-2",
+       "labelKey": "Il explique son point de vue avec assez de clarté pour être entendu.",
+       "max": 2,
+       "min": 2
+      },
+      {
+       "id": "niveau-3",
+       "labelKey": "Il choisit ses mots et son moment ; son discours fait progressivement évoluer les positions.",
+       "max": 3,
+       "min": 3
+      },
+      {
+       "id": "niveau-4",
+       "labelKey": "Il oriente une discussion sans paraître l'imposer, avec un sens rare des résistances.",
+       "max": 4,
+       "min": 4
+      },
+      {
+       "id": "niveau-5",
+       "labelKey": "Quelques phrases lui suffisent à déplacer les convictions d'une assemblée pourtant réticente.",
+       "max": null,
+       "min": 5
+      }
+     ],
+     "tags": []
+    },
+    {
+     "basis": "value",
+     "descriptionKey": "Ce que l'on perçoit de Empathie selon son niveau.",
+     "enabled": true,
+     "id": "etat-empathie",
+     "nameKey": "État observable : Empathie",
+     "order": 170,
+     "rows": [
+      {
+       "id": "niveau-0",
+       "labelKey": "Il ne perçoit guère la tension de son interlocuteur et manque souvent les émotions évidentes.",
+       "max": 0,
+       "min": null
+      },
+      {
+       "id": "niveau-1",
+       "labelKey": "Il sent parfois un malaise, sans toujours en saisir la cause.",
+       "max": 1,
+       "min": 1
+      },
+      {
+       "id": "niveau-2",
+       "labelKey": "Il reconnaît les émotions usuelles et adapte ses paroles avec une attention sincère.",
+       "max": 2,
+       "min": 2
+      },
+      {
+       "id": "niveau-3",
+       "labelKey": "Il déchiffre les hésitations, les regards et les silences avec finesse.",
+       "max": 3,
+       "min": 3
+      },
+      {
+       "id": "niveau-4",
+       "labelKey": "Il comprend ce qui n'est pas dit et trouve souvent la distance juste pour approcher l'autre.",
+       "max": 4,
+       "min": 4
+      },
+      {
+       "id": "niveau-5",
+       "labelKey": "Il paraît lire les nuances les plus secrètes d'une émotion, sans pour autant connaître les pensées d'autrui.",
+       "max": null,
+       "min": 5
+      }
+     ],
+     "tags": []
+    },
+    {
+     "basis": "value",
+     "descriptionKey": "Ce que l'on perçoit de Langues selon son niveau.",
+     "enabled": true,
+     "id": "etat-langues",
+     "nameKey": "État observable : Langues",
+     "order": 180,
+     "rows": [
+      {
+       "id": "niveau-0",
+       "labelKey": "Hors de sa langue habituelle, il reste sans repères et les échanges tournent court.",
+       "max": 0,
+       "min": null
+      },
+      {
+       "id": "niveau-1",
+       "labelKey": "Quelques expressions apprises lui permettent de se faire comprendre avec peine.",
+       "max": 1,
+       "min": 1
+      },
+      {
+       "id": "niveau-2",
+       "labelKey": "Il parvient à établir une communication simple dans les langues qu'il a pratiquées.",
+       "max": 2,
+       "min": 2
+      },
+      {
+       "id": "niveau-3",
+       "labelKey": "Il passe d'un registre à l'autre avec une aisance qui facilite les rencontres.",
+       "max": 3,
+       "min": 3
+      },
+      {
+       "id": "niveau-4",
+       "labelKey": "Ses nuances de vocabulaire et son oreille pour les accents révèlent une pratique étendue.",
+       "max": 4,
+       "min": 4
+      },
+      {
+       "id": "niveau-5",
+       "labelKey": "Il manie les langues apprises avec une précision subtile, jusqu'aux inflexions culturelles qui échappent à beaucoup.",
+       "max": null,
+       "min": 5
+      }
+     ],
+     "tags": []
+    },
+    {
+     "basis": "value",
+     "descriptionKey": "Ce que l'on perçoit de Arts selon son niveau.",
+     "enabled": true,
+     "id": "etat-arts",
+     "nameKey": "État observable : Arts",
+     "order": 190,
+     "rows": [
+      {
+       "id": "niveau-0",
+       "labelKey": "Ses essais créatifs demeurent maladroits, et l'intention peine à prendre forme.",
+       "max": 0,
+       "min": null
+      },
+      {
+       "id": "niveau-1",
+       "labelKey": "Une sensibilité transparaît parfois, malgré une technique encore incertaine.",
+       "max": 1,
+       "min": 1
+      },
+      {
+       "id": "niveau-2",
+       "labelKey": "Il sait produire ou interpréter une œuvre simple avec un plaisir communicatif.",
+       "max": 2,
+       "min": 2
+      },
+      {
+       "id": "niveau-3",
+       "labelKey": "Son geste artistique est sûr ; il donne une forme personnelle à ce qu'il exprime.",
+       "max": 3,
+       "min": 3
+      },
+      {
+       "id": "niveau-4",
+       "labelKey": "Son travail porte une signature sensible et une maîtrise technique rare.",
+       "max": 4,
+       "min": 4
+      },
+      {
+       "id": "niveau-5",
+       "labelKey": "Ses créations captivent durablement ; une émotion singulière semble naître au moindre trait, mot ou son.",
+       "max": null,
+       "min": 5
+      }
+     ],
+     "tags": []
+    },
+    {
+     "basis": "value",
+     "descriptionKey": "Ce que l'on perçoit de Occultisme selon son niveau. Formulation proposée, à remplacer par celle de l'auteur.",
+     "enabled": true,
+     "id": "etat-occultisme",
+     "nameKey": "État observable : Occultisme",
+     "order": 200,
+     "rows": [
+      {
+       "id": "niveau-0",
+       "labelKey": "Les récits d'étrange le laissent sceptique ou désemparé ; il confond folklore, rumeur et véritable signe.",
+       "max": 0,
+       "min": null
+      },
+      {
+       "id": "niveau-1",
+       "labelKey": "Il connaît quelques légendes et symboles, mais en tire des conclusions hasardeuses.",
+       "max": 1,
+       "min": 1
+      },
+      {
+       "id": "niveau-2",
+       "labelKey": "Il reconnaît les traditions ésotériques courantes et sait où chercher une référence.",
+       "max": 2,
+       "min": 2
+      },
+      {
+       "id": "niveau-3",
+       "labelKey": "Il identifie rituels, symboles et pratiques avec assurance, et distingue l'imitation du véritable savoir.",
+       "max": 3,
+       "min": 3
+      },
+      {
+       "id": "niveau-4",
+       "labelKey": "Il relie traditions oubliées et manifestations récentes avec une érudition troublante.",
+       "max": 4,
+       "min": 4
+      },
+      {
+       "id": "niveau-5",
+       "labelKey": "Les arcanes semblent lui être familiers ; il perçoit dans un détail anodin la trace de forces que d'autres ne soupçonnent pas.",
+       "max": null,
+       "min": 5
+      }
+     ],
+     "tags": []
+    },
+    {
+     "basis": "value",
+     "descriptionKey": "Ce que l'on perçoit de Corps à corps selon son niveau.",
+     "enabled": true,
+     "id": "etat-corps-a-corps",
+     "nameKey": "État observable : Corps à corps",
+     "order": 210,
+     "rows": [
+      {
+       "id": "niveau-0",
+       "labelKey": "Ses gestes se dispersent ; il se découvre et perd l'équilibre au moindre échange.",
+       "max": 0,
+       "min": null
+      },
+      {
+       "id": "niveau-1",
+       "labelKey": "Il adopte une garde approximative et réagit davantage par instinct que par technique.",
+       "max": 1,
+       "min": 1
+      },
+      {
+       "id": "niveau-2",
+       "labelKey": "Il sait se protéger et placer quelques gestes efficaces dans une confrontation simple.",
+       "max": 2,
+       "min": 2
+      },
+      {
+       "id": "niveau-3",
+       "labelKey": "Ses appuis sont solides ; ses réactions témoignent d'une pratique régulière.",
+       "max": 3,
+       "min": 3
+      },
+      {
+       "id": "niveau-4",
+       "labelKey": "Ses déplacements courts et précis laissent voir une remarquable science de la distance.",
+       "max": 4,
+       "min": 4
+      },
+      {
+       "id": "niveau-5",
+       "labelKey": "Chaque feinte et chaque esquive semblent surgir au moment parfait, avec une maîtrise presque déroutante.",
+       "max": null,
+       "min": 5
+      }
+     ],
+     "tags": []
+    },
+    {
+     "basis": "value",
+     "descriptionKey": "Ce que l'on perçoit de Armes de mêlée selon son niveau.",
+     "enabled": true,
+     "id": "etat-armes-de-melee",
+     "nameKey": "État observable : Armes de mêlée",
+     "order": 220,
+     "rows": [
+      {
+       "id": "niveau-0",
+       "labelKey": "Une arme tenue en main paraît le gêner plus qu'elle ne le protège.",
+       "max": 0,
+       "min": null
+      },
+      {
+       "id": "niveau-1",
+       "labelKey": "Il sait la manier prudemment, mais sa garde laisse encore des ouvertures.",
+       "max": 1,
+       "min": 1
+      },
+      {
+       "id": "niveau-2",
+       "labelKey": "Il coordonne portée, appuis et mouvements d'une manière convenable.",
+       "max": 2,
+       "min": 2
+      },
+      {
+       "id": "niveau-3",
+       "labelKey": "Il guide la lame ou l'outil avec assurance, sans mouvement superflu.",
+       "max": 3,
+       "min": 3
+      },
+      {
+       "id": "niveau-4",
+       "labelKey": "Sa maîtrise de la distance et du rythme rend ses gestes difficiles à anticiper.",
+       "max": 4,
+       "min": 4
+      },
+      {
+       "id": "niveau-5",
+       "labelKey": "L'arme semble prolonger sa volonté ; ses mouvements sont d'une précision redoutable.",
+       "max": null,
+       "min": 5
+      }
+     ],
+     "tags": []
+    },
+    {
+     "basis": "value",
+     "descriptionKey": "Ce que l'on perçoit de Armes de poing selon son niveau.",
+     "enabled": true,
+     "id": "etat-armes-de-poing",
+     "nameKey": "État observable : Armes de poing",
+     "order": 230,
+     "rows": [
+      {
+       "id": "niveau-0",
+       "labelKey": "Sa prise est hésitante et ses gestes trahissent un manque évident de familiarité.",
+       "max": 0,
+       "min": null
+      },
+      {
+       "id": "niveau-1",
+       "labelKey": "Il connaît les bases, mais son alignement et ses réactions restent incertains.",
+       "max": 1,
+       "min": 1
+      },
+      {
+       "id": "niveau-2",
+       "labelKey": "Il manipule l'arme avec méthode et conserve une attitude contrôlée.",
+       "max": 2,
+       "min": 2
+      },
+      {
+       "id": "niveau-3",
+       "labelKey": "Sa gestuelle est rapide et stable, manifestement issue d'un entraînement sérieux.",
+       "max": 3,
+       "min": 3
+      },
+      {
+       "id": "niveau-4",
+       "labelKey": "Sa maîtrise du placement et du recul lui donne une efficacité saisissante.",
+       "max": 4,
+       "min": 4
+      },
+      {
+       "id": "niveau-5",
+       "labelKey": "Chaque geste est mesuré, fluide, sans la moindre précipitation ; son sang-froid impressionne.",
+       "max": null,
+       "min": 5
+      }
+     ],
+     "tags": []
+    },
+    {
+     "basis": "value",
+     "descriptionKey": "Ce que l'on perçoit de Armes d'épaule selon son niveau.",
+     "enabled": true,
+     "id": "etat-armes-d-epaule",
+     "nameKey": "État observable : Armes d'épaule",
+     "order": 240,
+     "rows": [
+      {
+       "id": "niveau-0",
+       "labelKey": "L'arme lui paraît encombrante ; trouver une position stable lui prend du temps.",
+       "max": 0,
+       "min": null
+      },
+      {
+       "id": "niveau-1",
+       "labelKey": "Il se place correctement, mais manque encore de régularité dans la manipulation.",
+       "max": 1,
+       "min": 1
+      },
+      {
+       "id": "niveau-2",
+       "labelKey": "Il épaule et vise avec les gestes attendus d'un pratiquant ordinaire.",
+       "max": 2,
+       "min": 2
+      },
+      {
+       "id": "niveau-3",
+       "labelKey": "Sa posture, son souffle et sa gestion de la distance montrent une véritable expérience.",
+       "max": 3,
+       "min": 3
+      },
+      {
+       "id": "niveau-4",
+       "labelKey": "Il manie l'arme avec une aisance constante, même lorsque l'environnement se complique.",
+       "max": 4,
+       "min": 4
+      },
+      {
+       "id": "niveau-5",
+       "labelKey": "Il semble parfaitement accorder respiration, équilibre et visée, avec une maîtrise exceptionnelle.",
+       "max": null,
+       "min": 5
+      }
+     ],
+     "tags": []
+    },
+    {
+     "basis": "value",
+     "descriptionKey": "Ce que l'on perçoit de Armes lourdes selon son niveau.",
+     "enabled": true,
+     "id": "etat-armes-lourdes",
+     "nameKey": "État observable : Armes lourdes",
+     "order": 250,
+     "rows": [
+      {
+       "id": "niveau-0",
+       "labelKey": "Le poids et la complexité du matériel le dépassent dès la prise en main.",
+       "max": 0,
+       "min": null
+      },
+      {
+       "id": "niveau-1",
+       "labelKey": "Il en connaît les commandes élémentaires, mais peine à garder le contrôle du dispositif.",
+       "max": 1,
+       "min": 1
+      },
+      {
+       "id": "niveau-2",
+       "labelKey": "Il suit une procédure de manipulation avec prudence et méthode.",
+       "max": 2,
+       "min": 2
+      },
+      {
+       "id": "niveau-3",
+       "labelKey": "Il domine l'encombrement de l'arme et organise ses gestes sans hésitation.",
+       "max": 3,
+       "min": 3
+      },
+      {
+       "id": "niveau-4",
+       "labelKey": "Sa coordination et son sens du matériel évoquent un spécialiste aguerri.",
+       "max": 4,
+       "min": 4
+      },
+      {
+       "id": "niveau-5",
+       "labelKey": "Même la puissance et la complexité de l'engin semblent ne jamais rompre la précision de ses gestes.",
+       "max": null,
+       "min": 5
+      }
+     ],
+     "tags": []
+    },
+    {
+     "basis": "value",
+     "descriptionKey": "Ce que l'on perçoit de Armes de jet selon son niveau.",
+     "enabled": true,
+     "id": "etat-armes-de-jet",
+     "nameKey": "État observable : Armes de jet",
+     "order": 260,
+     "rows": [
+      {
+       "id": "niveau-0",
+       "labelKey": "Ses lancers manquent d'équilibre et prennent des trajectoires imprévisibles.",
+       "max": 0,
+       "min": null
+      },
+      {
+       "id": "niveau-1",
+       "labelKey": "Il atteint parfois son intention, mais le geste reste irrégulier.",
+       "max": 1,
+       "min": 1
+      },
+      {
+       "id": "niveau-2",
+       "labelKey": "Il lance avec une coordination correcte et sait estimer une distance simple.",
+       "max": 2,
+       "min": 2
+      },
+      {
+       "id": "niveau-3",
+       "labelKey": "Son bras trouve naturellement l'angle et la force appropriés.",
+       "max": 3,
+       "min": 3
+      },
+      {
+       "id": "niveau-4",
+       "labelKey": "Ses projectiles décrivent des trajectoires d'une netteté remarquable.",
+       "max": 4,
+       "min": 4
+      },
+      {
+       "id": "niveau-5",
+       "labelKey": "Son sens du mouvement paraît prodigieux ; chaque lancer semble calculé à l'instant même.",
+       "max": null,
+       "min": 5
+      }
+     ],
+     "tags": []
+    },
+    {
+     "basis": "value",
+     "descriptionKey": "Ce que l'on perçoit de Armes de trait selon son niveau.",
+     "enabled": true,
+     "id": "etat-armes-de-trait",
+     "nameKey": "État observable : Armes de trait",
+     "order": 270,
+     "rows": [
+      {
+       "id": "niveau-0",
+       "labelKey": "Il lutte contre la tension de l'arme et peine à stabiliser sa visée.",
+       "max": 0,
+       "min": null
+      },
+      {
+       "id": "niveau-1",
+       "labelKey": "Il connaît les gestes essentiels, sans parvenir encore à les répéter avec constance.",
+       "max": 1,
+       "min": 1
+      },
+      {
+       "id": "niveau-2",
+       "labelKey": "Il arme, aligne et libère son tir avec une technique convenable.",
+       "max": 2,
+       "min": 2
+      },
+      {
+       "id": "niveau-3",
+       "labelKey": "Sa posture reste souple et sûre ; son geste de tir paraît entraîné.",
+       "max": 3,
+       "min": 3
+      },
+      {
+       "id": "niveau-4",
+       "labelKey": "Le mouvement est si régulier et silencieux qu'il semble réglé par une mécanique invisible.",
+       "max": 4,
+       "min": 4
+      },
+      {
+       "id": "niveau-5",
+       "labelKey": "Son tir possède une élégance et une exactitude rares, jusque dans les conditions difficiles.",
+       "max": null,
+       "min": 5
+      }
+     ],
+     "tags": []
+    },
+    {
+     "basis": "value",
+     "descriptionKey": "Ce que l'on perçoit de Course à pied selon son niveau.",
+     "enabled": true,
+     "id": "etat-course-a-pied",
+     "nameKey": "État observable : Course à pied",
+     "order": 280,
+     "rows": [
+      {
+       "id": "niveau-0",
+       "labelKey": "Quelques foulées suffisent à désorganiser son souffle et sa cadence.",
+       "max": 0,
+       "min": null
+      },
+      {
+       "id": "niveau-1",
+       "labelKey": "Il peut courir, mais son rythme se brise vite lorsque l'allure augmente.",
+       "max": 1,
+       "min": 1
+      },
+      {
+       "id": "niveau-2",
+       "labelKey": "Sa foulée est naturelle et lui permet de soutenir une course ordinaire.",
+       "max": 2,
+       "min": 2
+      },
+      {
+       "id": "niveau-3",
+       "labelKey": "Il dose parfaitement ses appuis et son souffle ; sa course paraît légère.",
+       "max": 3,
+       "min": 3
+      },
+      {
+       "id": "niveau-4",
+       "labelKey": "Ses foulées absorbent le terrain avec une économie remarquable.",
+       "max": 4,
+       "min": 4
+      },
+      {
+       "id": "niveau-5",
+       "labelKey": "Il avale la distance avec une fluidité presque irréelle, comme si la fatigue tardait à le rejoindre.",
+       "max": null,
+       "min": 5
+      }
+     ],
+     "tags": []
+    },
+    {
+     "basis": "value",
+     "descriptionKey": "Ce que l'on perçoit de Véhicules légers selon son niveau.",
+     "enabled": true,
+     "id": "etat-vehicules-legers",
+     "nameKey": "État observable : Véhicules légers",
+     "order": 290,
+     "rows": [
+      {
+       "id": "niveau-0",
+       "labelKey": "Derrière un volant, ses gestes sont brusques et l'anticipation lui fait défaut.",
+       "max": 0,
+       "min": null
+      },
+      {
+       "id": "niveau-1",
+       "labelKey": "Il conduit prudemment sur terrain simple mais se crispe dès que survient l'imprévu.",
+       "max": 1,
+       "min": 1
+      },
+      {
+       "id": "niveau-2",
+       "labelKey": "Il tient sa trajectoire et s'adapte aux situations routières habituelles.",
+       "max": 2,
+       "min": 2
+      },
+      {
+       "id": "niveau-3",
+       "labelKey": "Ses mains corrigent la trajectoire en douceur ; il lit la circulation avec avance.",
+       "max": 3,
+       "min": 3
+      },
+      {
+       "id": "niveau-4",
+       "labelKey": "Il place le véhicule avec une précision qui trahit une grande expérience.",
+       "max": 4,
+       "min": 4
+      },
+      {
+       "id": "niveau-5",
+       "labelKey": "Il semble sentir l'adhérence et l'espace avant même que les roues ne réagissent.",
+       "max": null,
+       "min": 5
+      }
+     ],
+     "tags": []
+    },
+    {
+     "basis": "value",
+     "descriptionKey": "Ce que l'on perçoit de Deux-roues motorisés selon son niveau.",
+     "enabled": true,
+     "id": "etat-deux-roues-motorises",
+     "nameKey": "État observable : Deux-roues motorisés",
+     "order": 300,
+     "rows": [
+      {
+       "id": "niveau-0",
+       "labelKey": "La machine le déséquilibre ; chaque changement de direction paraît risqué.",
+       "max": 0,
+       "min": null
+      },
+      {
+       "id": "niveau-1",
+       "labelKey": "Il la contrôle à petite allure mais manque d'aisance dans les manœuvres délicates.",
+       "max": 1,
+       "min": 1
+      },
+      {
+       "id": "niveau-2",
+       "labelKey": "Il garde son équilibre et pilote avec une assurance ordinaire.",
+       "max": 2,
+       "min": 2
+      },
+      {
+       "id": "niveau-3",
+       "labelKey": "Son regard et son corps accompagnent les courbes avec une coordination sûre.",
+       "max": 3,
+       "min": 3
+      },
+      {
+       "id": "niveau-4",
+       "labelKey": "La machine semble répondre à ses intentions sans délai, même sur une route exigeante.",
+       "max": 4,
+       "min": 4
+      },
+      {
+       "id": "niveau-5",
+       "labelKey": "Pilote et machine donnent l'impression de ne faire qu'un, dans une précision saisissante.",
+       "max": null,
+       "min": 5
+      }
+     ],
+     "tags": []
+    },
+    {
+     "basis": "value",
+     "descriptionKey": "Ce que l'on perçoit de Poids lourds selon son niveau.",
+     "enabled": true,
+     "id": "etat-poids-lourds",
+     "nameKey": "État observable : Poids lourds",
+     "order": 310,
+     "rows": [
+      {
+       "id": "niveau-0",
+       "labelKey": "Il mesure mal le gabarit ; manœuvrer le véhicule paraît le submerger.",
+       "max": 0,
+       "min": null
+      },
+      {
+       "id": "niveau-1",
+       "labelKey": "Il avance avec prudence, mais hésite devant les espaces étroits.",
+       "max": 1,
+       "min": 1
+      },
+      {
+       "id": "niveau-2",
+       "labelKey": "Il apprécie les dimensions et conduit sans difficulté majeure dans des conditions courantes.",
+       "max": 2,
+       "min": 2
+      },
+      {
+       "id": "niveau-3",
+       "labelKey": "Il anticipe inertie, angles morts et trajectoires avec une assurance professionnelle.",
+       "max": 3,
+       "min": 3
+      },
+      {
+       "id": "niveau-4",
+       "labelKey": "Il place une masse imposante avec une finesse surprenante.",
+       "max": 4,
+       "min": 4
+      },
+      {
+       "id": "niveau-5",
+       "labelKey": "Chaque manœuvre révèle une compréhension presque instinctive du poids, de l'élan et de l'espace.",
+       "max": null,
+       "min": 5
+      }
+     ],
+     "tags": []
+    },
+    {
+     "basis": "value",
+     "descriptionKey": "Ce que l'on perçoit de Transport collectif selon son niveau.",
+     "enabled": true,
+     "id": "etat-transport-collectif",
+     "nameKey": "État observable : Transport collectif",
+     "order": 320,
+     "rows": [
+      {
+       "id": "niveau-0",
+       "labelKey": "La responsabilité du véhicule et de ses passagers semble le dépasser.",
+       "max": 0,
+       "min": null
+      },
+      {
+       "id": "niveau-1",
+       "labelKey": "Il connaît les gestes de base, mais les situations chargées le mettent en difficulté.",
+       "max": 1,
+       "min": 1
+      },
+      {
+       "id": "niveau-2",
+       "labelKey": "Il assure un trajet régulier avec calme et vigilance.",
+       "max": 2,
+       "min": 2
+      },
+      {
+       "id": "niveau-3",
+       "labelKey": "Il combine souplesse, anticipation et attention au confort des passagers.",
+       "max": 3,
+       "min": 3
+      },
+      {
+       "id": "niveau-4",
+       "labelKey": "Il garde une maîtrise remarquable malgré les contraintes de circulation et de service.",
+       "max": 4,
+       "min": 4
+      },
+      {
+       "id": "niveau-5",
+       "labelKey": "À bord, les manœuvres les plus délicates paraissent simples, tant sa conduite reste précise et sereine.",
+       "max": null,
+       "min": 5
+      }
+     ],
+     "tags": []
+    },
+    {
+     "basis": "value",
+     "descriptionKey": "Ce que l'on perçoit de Cyclisme selon son niveau.",
+     "enabled": true,
+     "id": "etat-cyclisme",
+     "nameKey": "État observable : Cyclisme",
+     "order": 330,
+     "rows": [
+      {
+       "id": "niveau-0",
+       "labelKey": "Son équilibre et sa cadence se dérèglent dès que le terrain devient difficile.",
+       "max": 0,
+       "min": null
+      },
+      {
+       "id": "niveau-1",
+       "labelKey": "Il pédale correctement mais manque d'aisance dans les passages techniques.",
+       "max": 1,
+       "min": 1
+      },
+      {
+       "id": "niveau-2",
+       "labelKey": "Il circule à vélo avec une maîtrise courante et une allure régulière.",
+       "max": 2,
+       "min": 2
+      },
+      {
+       "id": "niveau-3",
+       "labelKey": "Son corps accompagne naturellement le vélo ; il choisit ses trajectoires avec justesse.",
+       "max": 3,
+       "min": 3
+      },
+      {
+       "id": "niveau-4",
+       "labelKey": "Il lit les reliefs et garde sa vitesse avec une élégance sportive.",
+       "max": 4,
+       "min": 4
+      },
+      {
+       "id": "niveau-5",
+       "labelKey": "Le vélo semble danser sous lui : obstacles, virages et relances s'enchaînent sans effort apparent.",
+       "max": null,
+       "min": 5
+      }
+     ],
+     "tags": []
+    },
+    {
+     "basis": "value",
+     "descriptionKey": "Ce que l'on perçoit de Équitation / Monture selon son niveau.",
+     "enabled": true,
+     "id": "etat-equitation",
+     "nameKey": "État observable : Équitation / Monture",
+     "order": 340,
+     "rows": [
+      {
+       "id": "niveau-0",
+       "labelKey": "La monture perçoit son hésitation ; le moindre mouvement le désarçonne presque.",
+       "max": 0,
+       "min": null
+      },
+      {
+       "id": "niveau-1",
+       "labelKey": "Il tient en selle, mais ses demandes restent confuses pour l'animal.",
+       "max": 1,
+       "min": 1
+      },
+      {
+       "id": "niveau-2",
+       "labelKey": "Il accompagne l'allure et entretient un contact convenable avec sa monture.",
+       "max": 2,
+       "min": 2
+      },
+      {
+       "id": "niveau-3",
+       "labelKey": "Ses aides sont discrètes et claires ; l'animal semble comprendre ses intentions.",
+       "max": 3,
+       "min": 3
+      },
+      {
+       "id": "niveau-4",
+       "labelKey": "La relation entre cavalier et monture est d'une rare finesse, jusque dans l'imprévu.",
+       "max": 4,
+       "min": 4
+      },
+      {
+       "id": "niveau-5",
+       "labelKey": "Il semble converser par le seul mouvement du corps ; la monture répond avant même qu'on voie la demande.",
+       "max": null,
+       "min": 5
+      }
+     ],
+     "tags": []
+    },
+    {
+     "basis": "value",
+     "descriptionKey": "Ce que l'on perçoit de Navigation selon son niveau.",
+     "enabled": true,
+     "id": "etat-navigation",
+     "nameKey": "État observable : Navigation",
+     "order": 350,
+     "rows": [
+      {
+       "id": "niveau-0",
+       "labelKey": "Sur l'eau, il lit mal les conditions et peine à conserver un cap.",
+       "max": 0,
+       "min": null
+      },
+      {
+       "id": "niveau-1",
+       "labelKey": "Il connaît quelques manœuvres, mais les changements de vent ou de courant le désorientent.",
+       "max": 1,
+       "min": 1
+      },
+      {
+       "id": "niveau-2",
+       "labelKey": "Il conduit une embarcation dans des conditions habituelles avec prudence.",
+       "max": 2,
+       "min": 2
+      },
+      {
+       "id": "niveau-3",
+       "labelKey": "Il lit les courants et ajuste sa trajectoire avec sûreté.",
+       "max": 3,
+       "min": 3
+      },
+      {
+       "id": "niveau-4",
+       "labelKey": "Ses décisions anticipent la météo, le mouvement de l'eau et les réactions du bateau.",
+       "max": 4,
+       "min": 4
+      },
+      {
+       "id": "niveau-5",
+       "labelKey": "Il paraît comprendre la mer dans ses plus fines variations ; sa navigation force l'admiration.",
+       "max": null,
+       "min": 5
+      }
+     ],
+     "tags": []
+    },
+    {
+     "basis": "value",
+     "descriptionKey": "Ce que l'on perçoit de Ski / Glisse selon son niveau.",
+     "enabled": true,
+     "id": "etat-ski-glisse",
+     "nameKey": "État observable : Ski / Glisse",
+     "order": 360,
+     "rows": [
+      {
+       "id": "niveau-0",
+       "labelKey": "La pente le fige ; ses mouvements manquent de contrôle et d'équilibre.",
+       "max": 0,
+       "min": null
+      },
+      {
+       "id": "niveau-1",
+       "labelKey": "Il descend avec prudence, parfois au prix de gestes saccadés.",
+       "max": 1,
+       "min": 1
+      },
+      {
+       "id": "niveau-2",
+       "labelKey": "Il maîtrise les virages usuels et conserve son équilibre sur des parcours accessibles.",
+       "max": 2,
+       "min": 2
+      },
+      {
+       "id": "niveau-3",
+       "labelKey": "Ses appuis sont souples et sûrs ; il épouse les reliefs du terrain.",
+       "max": 3,
+       "min": 3
+      },
+      {
+       "id": "niveau-4",
+       "labelKey": "Il trace sa ligne avec une aisance spectaculaire, même dans des conditions difficiles.",
+       "max": 4,
+       "min": 4
+      },
+      {
+       "id": "niveau-5",
+       "labelKey": "Sa glisse semble défier le relief : chaque courbe devient un mouvement limpide et parfaitement mesuré.",
+       "max": null,
+       "min": 5
+      }
+     ],
+     "tags": []
+    },
+    {
+     "basis": "value",
+     "descriptionKey": "Ce que l'on perçoit de Pilotage aérien selon son niveau.",
+     "enabled": true,
+     "id": "etat-pilotage-aerien",
+     "nameKey": "État observable : Pilotage aérien",
+     "order": 370,
+     "rows": [
+      {
+       "id": "niveau-0",
+       "labelKey": "Les instruments et les mouvements de l'appareil l'accaparent au point de perdre ses repères.",
+       "max": 0,
+       "min": null
+      },
+      {
+       "id": "niveau-1",
+       "labelKey": "Il comprend les principes mais peine encore à coordonner toutes les commandes.",
+       "max": 1,
+       "min": 1
+      },
+      {
+       "id": "niveau-2",
+       "labelKey": "Il maintient un pilotage stable dans une situation normale.",
+       "max": 2,
+       "min": 2
+      },
+      {
+       "id": "niveau-3",
+       "labelKey": "Il anticipe les réactions de l'appareil et garde une conduite précise.",
+       "max": 3,
+       "min": 3
+      },
+      {
+       "id": "niveau-4",
+       "labelKey": "Sa lecture de l'espace aérien et des paramètres révèle un pilote chevronné.",
+       "max": 4,
+       "min": 4
+      },
+      {
+       "id": "niveau-5",
+       "labelKey": "Il paraît ne faire qu'un avec l'appareil, capable de conserver une lucidité absolue sous pression.",
+       "max": null,
+       "min": 5
+      }
+     ],
+     "tags": []
+    },
+    {
+     "basis": "value",
+     "descriptionKey": "Ce que l'on perçoit de Engins spécialisés selon son niveau.",
+     "enabled": true,
+     "id": "etat-engins-specialises",
+     "nameKey": "État observable : Engins spécialisés",
+     "order": 380,
+     "rows": [
+      {
+       "id": "niveau-0",
+       "labelKey": "La machine lui semble étrangère ; ses commandes provoquent des réactions maladroites.",
+       "max": 0,
+       "min": null
+      },
+      {
+       "id": "niveau-1",
+       "labelKey": "Il connaît une procédure élémentaire mais redoute les configurations inhabituelles.",
+       "max": 1,
+       "min": 1
+      },
+      {
+       "id": "niveau-2",
+       "labelKey": "Il utilise l'engin dans ses fonctions courantes avec une précaution suffisante.",
+       "max": 2,
+       "min": 2
+      },
+      {
+       "id": "niveau-3",
+       "labelKey": "Il manœuvre avec précision et comprend le comportement du matériel.",
+       "max": 3,
+       "min": 3
+      },
+      {
+       "id": "niveau-4",
+       "labelKey": "Même les opérations délicates lui paraissent familières ; son contrôle inspire confiance.",
+       "max": 4,
+       "min": 4
+      },
+      {
+       "id": "niveau-5",
+       "labelKey": "L'engin le plus complexe semble devenir docile entre ses mains, sans geste inutile ni hésitation.",
+       "max": null,
+       "min": 5
+      }
+     ],
+     "tags": []
+    },
+    {
+     "basis": "percent",
+     "descriptionKey": "Ce que l'on perçoit de Vitalité, en part de son maximum.",
+     "enabled": true,
+     "id": "etat-vitalite",
+     "nameKey": "État observable : Vitalité",
+     "order": 390,
+     "rows": [
+      {
+       "id": "tranche-0",
+       "labelKey": "Son corps ne répond plus normalement ; il est hors de combat, sans que l’on puisse conclure à sa mort.",
+       "max": 0,
+       "min": null
+      },
+      {
+       "id": "tranche-1-25",
+       "labelKey": "Chaque mouvement semble lui arracher un effort ; ses blessures ou son épuisement physique sont alarmants.",
+       "max": 25,
        "min": 0.01
       },
       {
-       "id": "hors-de-combat",
-       "labelKey": "Coma, mort ou stabilisé",
+       "id": "tranche-26-50",
+       "labelKey": "Il se tient encore debout, mais la douleur et les atteintes subies marquent nettement sa posture.",
+       "max": 50,
+       "min": 25.01
+      },
+      {
+       "id": "tranche-51-75",
+       "labelKey": "Des traces de souffrance demeurent dans ses gestes ; il paraît diminué sans être brisé.",
+       "max": 75,
+       "min": 50.01
+      },
+      {
+       "id": "tranche-76-99",
+       "labelKey": "Quelques marques ou raideurs trahissent les épreuves récentes, sans entraver franchement son allure.",
+       "max": 99.99,
+       "min": 75.01
+      },
+      {
+       "id": "tranche-100",
+       "labelKey": "Il ne montre aucun signe évident de blessure ou de faiblesse physique immédiate.",
+       "max": null,
+       "min": 100
+      }
+     ],
+     "tags": []
+    },
+    {
+     "basis": "percent",
+     "descriptionKey": "Ce que l'on perçoit de Endurance, en part de son maximum.",
+     "enabled": true,
+     "id": "etat-endurance",
+     "nameKey": "État observable : Endurance",
+     "order": 400,
+     "rows": [
+      {
+       "id": "tranche-0",
+       "labelKey": "Son souffle et ses muscles ont atteint leur limite ; tout effort physique soutenu lui est momentanément impossible.",
        "max": 0,
        "min": null
+      },
+      {
+       "id": "tranche-1-25",
+       "labelKey": "Il cherche l’air, ses gestes se font lourds ; reprendre l’effort semble presque hors de portée.",
+       "max": 25,
+       "min": 0.01
+      },
+      {
+       "id": "tranche-26-50",
+       "labelKey": "Sa respiration est courte et son corps accuse franchement la fatigue.",
+       "max": 50,
+       "min": 25.01
+      },
+      {
+       "id": "tranche-51-75",
+       "labelKey": "Le souffle s’accélère et quelques signes de lassitude percent dans ses mouvements.",
+       "max": 75,
+       "min": 50.01
+      },
+      {
+       "id": "tranche-76-99",
+       "labelKey": "Son rythme reste sûr, bien qu’une légère fatigue puisse se deviner.",
+       "max": 99.99,
+       "min": 75.01
+      },
+      {
+       "id": "tranche-100",
+       "labelKey": "Sa respiration est posée et ses mouvements semblent disposer de toute leur réserve.",
+       "max": null,
+       "min": 100
+      }
+     ],
+     "tags": []
+    },
+    {
+     "basis": "percent",
+     "descriptionKey": "Ce que l'on perçoit de Énergie, en part de son maximum.",
+     "enabled": true,
+     "id": "etat-energie",
+     "nameKey": "État observable : Énergie",
+     "order": 410,
+     "rows": [
+      {
+       "id": "tranche-0",
+       "labelKey": "La réserve qui soutient ses manifestations extraordinaires semble épuisée ; aucun effet visible ne permet à lui seul d’en connaître la cause.",
+       "max": 0,
+       "min": null
+      },
+      {
+       "id": "tranche-1-25",
+       "labelKey": "Lorsqu’il sollicite ses pouvoirs, la manifestation paraît ténue, instable ou laborieuse, si elle est perceptible.",
+       "max": 25,
+       "min": 0.01
+      },
+      {
+       "id": "tranche-26-50",
+       "labelKey": "Les manifestations visibles paraissent lui demander une concentration inhabituelle.",
+       "max": 50,
+       "min": 25.01
+      },
+      {
+       "id": "tranche-51-75",
+       "labelKey": "Une certaine retenue apparaît dans l’usage de ses manifestations, lorsque celles-ci sont observables.",
+       "max": 75,
+       "min": 50.01
+      },
+      {
+       "id": "tranche-76-99",
+       "labelKey": "Ses manifestations visibles conservent de l’aisance, malgré de possibles signes discrets de dépense.",
+       "max": 99.99,
+       "min": 75.01
+      },
+      {
+       "id": "tranche-100",
+       "labelKey": "Aucune fatigue liée à ses manifestations ne se laisse discerner ; sa réserve réelle reste invisible à un témoin ordinaire.",
+       "max": null,
+       "min": 100
       }
      ],
      "tags": []
@@ -150716,33 +154672,14 @@
               }
              },
              {
-              "display": "description",
-              "id": "etat-vitalite",
-              "kind": "value",
-              "labelKey": "État de santé",
-              "seenBy": [
-               "observer"
-              ],
-              "source": {
-               "kind": "output",
-               "reference": {
-                "capabilityId": "pool",
-                "objectId": "vitalite",
-                "objectKind": "definition",
-                "outputId": "pool.current",
-                "slotId": "points"
-               }
-              },
-              "style": {
-               "italic": true,
-               "label": "top"
-              }
-             },
-             {
               "display": "gauge",
               "id": "jauge-endurance",
               "kind": "value",
               "labelKey": "Endurance",
+              "seenBy": [
+               "player",
+               "gm"
+              ],
               "source": {
                "kind": "output",
                "reference": {
@@ -150767,6 +154704,10 @@
               "id": "jauge-energie",
               "kind": "value",
               "labelKey": "Énergie",
+              "seenBy": [
+               "player",
+               "gm"
+              ],
               "source": {
                "kind": "output",
                "reference": {
@@ -150784,6 +154725,66 @@
               },
               "write": {
                "operation": "adjust"
+              }
+             },
+             {
+              "display": "description",
+              "id": "etat-vitalite",
+              "kind": "value",
+              "labelKey": "Vitalité",
+              "source": {
+               "kind": "output",
+               "reference": {
+                "capabilityId": "pool",
+                "objectId": "vitalite",
+                "objectKind": "definition",
+                "outputId": "pool.current",
+                "slotId": "points"
+               }
+              },
+              "style": {
+               "italic": true,
+               "label": "top"
+              }
+             },
+             {
+              "display": "description",
+              "id": "etat-endurance",
+              "kind": "value",
+              "labelKey": "Endurance",
+              "source": {
+               "kind": "output",
+               "reference": {
+                "capabilityId": "pool",
+                "objectId": "endurance",
+                "objectKind": "definition",
+                "outputId": "pool.current",
+                "slotId": "points"
+               }
+              },
+              "style": {
+               "italic": true,
+               "label": "top"
+              }
+             },
+             {
+              "display": "description",
+              "id": "etat-energie",
+              "kind": "value",
+              "labelKey": "Énergie",
+              "source": {
+               "kind": "output",
+               "reference": {
+                "capabilityId": "pool",
+                "objectId": "energie",
+                "objectKind": "definition",
+                "outputId": "pool.current",
+                "slotId": "points"
+               }
+              },
+              "style": {
+               "italic": true,
+               "label": "top"
               }
              }
             ],
@@ -151102,6 +155103,137 @@
           "id": "onglet-competences",
           "kind": "tab",
           "labelKey": "Compétences"
+         },
+         {
+          "children": [
+           {
+            "children": [
+             {
+              "children": [
+               {
+                "display": "description",
+                "id": "etat-caracteristiques",
+                "kind": "value",
+                "source": {
+                 "capabilityId": "value",
+                 "kind": "each",
+                 "outputId": "value.final"
+                },
+                "style": {
+                 "italic": true
+                }
+               }
+              ],
+              "columns": 1,
+              "id": "liste-observables-caracteristiques",
+              "kind": "repeater",
+              "query": {
+               "definitionTypeId": "caracteristique"
+              }
+             }
+            ],
+            "columns": 1,
+            "id": "observables-caracteristiques",
+            "kind": "section",
+            "labelKey": "Caractéristiques"
+           },
+           {
+            "children": [
+             {
+              "children": [
+               {
+                "display": "description",
+                "id": "etat-competences",
+                "kind": "value",
+                "source": {
+                 "capabilityId": "value",
+                 "kind": "each",
+                 "outputId": "value.final"
+                },
+                "style": {
+                 "italic": true
+                }
+               }
+              ],
+              "columns": 1,
+              "id": "liste-observables-competences",
+              "kind": "repeater",
+              "query": {
+               "definitionTypeId": "competence"
+              }
+             }
+            ],
+            "columns": 1,
+            "id": "observables-competences",
+            "kind": "section",
+            "labelKey": "Compétences"
+           },
+           {
+            "children": [
+             {
+              "children": [
+               {
+                "display": "description",
+                "id": "etat-maitrises-combat",
+                "kind": "value",
+                "source": {
+                 "capabilityId": "value",
+                 "kind": "each",
+                 "outputId": "value.final"
+                },
+                "style": {
+                 "italic": true
+                }
+               }
+              ],
+              "columns": 1,
+              "id": "liste-observables-maitrises-combat",
+              "kind": "repeater",
+              "query": {
+               "definitionTypeId": "maitrise-combat"
+              }
+             }
+            ],
+            "columns": 1,
+            "id": "observables-maitrises-combat",
+            "kind": "section",
+            "labelKey": "Maîtrises de combat"
+           },
+           {
+            "children": [
+             {
+              "children": [
+               {
+                "display": "description",
+                "id": "etat-maitrises-deplacement",
+                "kind": "value",
+                "source": {
+                 "capabilityId": "value",
+                 "kind": "each",
+                 "outputId": "value.final"
+                },
+                "style": {
+                 "italic": true
+                }
+               }
+              ],
+              "columns": 1,
+              "id": "liste-observables-maitrises-deplacement",
+              "kind": "repeater",
+              "query": {
+               "definitionTypeId": "maitrise-deplacement"
+              }
+             }
+            ],
+            "columns": 1,
+            "id": "observables-maitrises-deplacement",
+            "kind": "section",
+            "labelKey": "Maîtrises de déplacement"
+           }
+          ],
+          "id": "onglet-etats-observables",
+          "kind": "tab",
+          "labelKey": "États observables"
          },
          {
           "children": [
@@ -152002,7 +156134,7 @@
      "tags": []
     }
    ],
-   "version": "2.2.0"
+   "version": "2.3.0"
   }
  }
 }

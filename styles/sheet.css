@@ -282,6 +282,17 @@
   font-weight: 600;
 }
 
+/* The words of a scale read as prose: they wrap and keep the body weight. */
+.rta-sheet-value__words {
+  font-weight: normal;
+  white-space: normal;
+}
+
+.rta-sheet-value__control:has(> .rta-sheet-value__words) {
+  flex: 1 1 auto;
+  min-inline-size: 0;
+}
+
 .rta-sheet-value__bound {
   color: var(--rta-color-text-secondary);
 }

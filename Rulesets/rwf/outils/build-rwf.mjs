@@ -13,7 +13,7 @@ const {RWF_DEFAULT_AGE_GROUPS, RWF_DEFAULT_BACKGROUNDS} = await imp(`${sysDir}/m
 const {RWF_BASE_PROFESSIONS} = await imp(`${sysDir}/module/professions.mjs`);
 const pack = name => JSON.parse(readFileSync(`${packDir}/${name}`, "utf8"));
 
-const R = {id: "rwf", nameKey: "Real World Fantasy", descriptionKey: "Jeu de rôle contemporain fantastique : notre monde, plus les Fantaisies que le MJ rend vraies. Règles extraites du système RWF v0.1.475, contenus du RWF Super Pack v0.4.1.", version: "2.2.0", color: "#2f6f8f",
+const R = {id: "rwf", nameKey: "Real World Fantasy", descriptionKey: "Jeu de rôle contemporain fantastique : notre monde, plus les Fantaisies que le MJ rend vraies. Règles extraites du système RWF v0.1.475, contenus du RWF Super Pack v0.4.1.", version: "2.3.0", color: "#2f6f8f",
   // COMBAT-01: 1d20 + Agilité + Esprit, rerolled every round; ties go to Agilité, then Esprit.
   // COMBAT-02: the round is played in passes 1, 2, 3; a combatant acts in as many passes as its best mastery gives attacks.
   initiative: {testRef: "initiative", tableRef: null, tieBreakFormulaRef: "departage-initiative", eachRound: true, bySide: false, passes: {countFormulaRef: "attaques-meilleure"}}};
@@ -649,17 +649,41 @@ add("creationSystems", generic({id: "creation-pj", nameKey: "Création d'un pers
   {id: "finalisation", name: "Finalisation", kind: "review", required: false, min: 0, max: 0, options: []}
 ]}));
 
-/* ---------- État de santé (règle RWF) et feuille de PJ ---------- */
-// Ce que les autres lisent de la Vitalité d'un personnage, au lieu du nombre : 5 pleine forme … 0 coma, mort ou stabilisé.
-add("scales", generic({id: "etat-de-sante", nameKey: "État de santé", descriptionKey: "Ce qu'un observateur lit de la Vitalité d'un personnage, en part de sa Vitalité maximale.", basis: "percent", rows: [
-  {id: "pleine-forme", labelKey: "Semble en pleine forme", min: 100, max: null},
-  {id: "un-peu-blesse", labelKey: "Un peu blessé", min: 75, max: 99.99},
-  {id: "blesse", labelKey: "Blessé", min: 50, max: 74.99},
-  {id: "mal-en-point", labelKey: "Mal en point", min: 25, max: 49.99},
-  {id: "etat-critique", labelKey: "État critique", min: 0.01, max: 24.99},
-  {id: "hors-de-combat", labelKey: "Coma, mort ou stabilisé", min: null, max: 0}
-]}));
-C.definitions.find(d => d.id === "vitalite").scaleRef = "etat-de-sante";
+/* ---------- États observables (2.3.0) et feuille de PJ ---------- */
+// What one sees of a character instead of a number: one description Scale per characteristic, skill, mastery and
+// resource, from Luca's catalogue (sources/etats-observables.json). Levels 0 to 5 (characteristics 1 to 5); the lowest
+// row also holds what is below, the highest what is above (an NPC or a creature is not bounded).
+const catalogue = JSON.parse(readFileSync(new URL("../sources/etats-observables.json", import.meta.url), "utf8"));
+// Occultisme (the 15th skill) is not in the catalogue: proposed wording, in the same style, until Luca writes his own.
+catalogue.categories["Compétences"].push({key: "occultism", label: "Occultisme", proposed: true, observations: {
+  0: "Les récits d'étrange le laissent sceptique ou désemparé ; il confond folklore, rumeur et véritable signe.",
+  1: "Il connaît quelques légendes et symboles, mais en tire des conclusions hasardeuses.",
+  2: "Il reconnaît les traditions ésotériques courantes et sait où chercher une référence.",
+  3: "Il identifie rituels, symboles et pratiques avec assurance, et distingue l'imitation du véritable savoir.",
+  4: "Il relie traditions oubliées et manifestations récentes avec une érudition troublante.",
+  5: "Les arcanes semblent lui être familiers ; il perçoit dans un détail anodin la trace de forces que d'autres ne soupçonnent pas."}});
+const sameName = (a, b) => String(a).replace(/[’']/g, "'").toLowerCase() === String(b).replace(/[’']/g, "'").toLowerCase();
+const definitionNamed = (label, typeIds) => {
+  const found = C.definitions.filter(d => typeIds.includes(d.definitionTypeId) && sameName(d.nameKey, label));
+  if (found.length !== 1) throw new Error(`États observables : « ${label} » ne désigne pas une seule Définition.`);
+  return found[0];
+};
+const LEVEL_TYPES = ["caracteristique", "competence", "maitrise-combat", "maitrise-deplacement"];
+for (const entries of Object.values(catalogue.categories)) for (const entry of entries) {
+  const definition = definitionNamed(entry.label, LEVEL_TYPES);
+  const levels = Object.keys(entry.observations).map(Number).sort((a, b) => a - b);
+  add("scales", generic({id: `etat-${definition.id}`, nameKey: `État observable : ${definition.nameKey}`, descriptionKey: `Ce que l'on perçoit de ${definition.nameKey} selon son niveau.${entry.proposed ? " Formulation proposée, à remplacer par celle de l'auteur." : ""}`, basis: "value",
+    rows: levels.map((level, i) => ({id: `niveau-${level}`, labelKey: entry.observations[level], min: i === 0 ? null : level, max: i === levels.length - 1 ? null : level}))}));
+  definition.scaleRef = `etat-${definition.id}`;
+}
+// Resources: by share of the maximum (0 %, 1–25 %, 26–50 %, 51–75 %, 76–99 %, 100 %).
+const PERCENT_ROWS = {"0 %": [null, 0], "1–25 %": [0.01, 25], "26–50 %": [25.01, 50], "51–75 %": [50.01, 75], "76–99 %": [75.01, 99.99], "100 %": [100, null]};
+for (const [label, rows] of Object.entries(catalogue.resources)) {
+  const definition = definitionNamed(label, ["ressource"]);
+  add("scales", generic({id: `etat-${definition.id}`, nameKey: `État observable : ${definition.nameKey}`, descriptionKey: `Ce que l'on perçoit de ${definition.nameKey}, en part de son maximum.`, basis: "percent",
+    rows: rows.map(row => { const bounds = PERCENT_ROWS[row.range]; if (!bounds) throw new Error(`Tranche inconnue : ${row.range}`); return {id: `tranche-${slug(row.range) || "0"}`, labelKey: row.observation, min: bounds[0], max: bounds[1]}; })}));
+  definition.scaleRef = `etat-${definition.id}`;
+}
 
 // Feuille de PJ : le joueur voit sa jauge de Vitalité, un observateur son état de santé, le MJ la jauge et ses − / +.
 const each = (capabilityId, outputId) => ({kind: "each", capabilityId, outputId});
@@ -671,11 +695,12 @@ const ruleOnly = ["test-demande", "nouveau-round", "debut-de-tour", "bilan-effor
 const actionIds = C.actions.map(a => a.id).filter(id => !ruleOnly.includes(id));
 add("sheetDefinitions", generic({id: "feuille-pj", nameKey: "Feuille de PJ", descriptionKey: "Personnage, compétences, équipement et actions. La Vitalité exacte n'est visible que du joueur et du MJ ; les observateurs lisent l'état de santé.", target: "actor", contentTypeIds: [], root: {id: "root", kind: "grid", columns: 1, children: [{id: "onglets", kind: "tabs", children: [
   {id: "onglet-personnage", kind: "tab", labelKey: "Personnage", children: [
+    // The player and the GM read the gauges; everyone reads what shows of them (an observer only that).
     {id: "sante", kind: "section", labelKey: "Santé", columns: 3, children: [
       {...gauge("vitalite", "Vitalité", {fill: "danger", fillTo: "success"}, {operation: "adjust", by: "gm"}), seenBy: ["player", "gm"]},
-      {id: "etat-vitalite", kind: "value", labelKey: "État de santé", source: {kind: "output", reference: pool("vitalite")}, display: "description", seenBy: ["observer"], style: {label: "top", italic: true}},
-      gauge("endurance", "Endurance", {fill: "warning", fillTo: "success"}),
-      gauge("energie", "Énergie", {fill: "highlight", fillTo: "accent"})]},
+      {...gauge("endurance", "Endurance", {fill: "warning", fillTo: "success"}), seenBy: ["player", "gm"]},
+      {...gauge("energie", "Énergie", {fill: "highlight", fillTo: "accent"}), seenBy: ["player", "gm"]},
+      ...[["vitalite", "Vitalité"], ["endurance", "Endurance"], ["energie", "Énergie"]].map(([id, label]) => ({id: `etat-${id}`, kind: "value", labelKey: label, source: {kind: "output", reference: pool(id)}, display: "description", style: {label: "top", italic: true}}))]},
     {id: "caracteristiques", kind: "section", labelKey: "Caractéristiques", columns: 1, children: [list("caracteristiques", "caracteristique", [
       {id: "valeur-caracteristique", kind: "value", source: each("value", "value.final")},
       {id: "tester-caracteristique", kind: "action", actionRef: "tester-caracteristique", labelKey: "Tester"}], 2)]},
@@ -696,6 +721,9 @@ add("sheetDefinitions", generic({id: "feuille-pj", nameKey: "Feuille de PJ", des
       {id: "texte-pratique", kind: "text", textKey: "Une réussite à un test demandé par le MJ rapporte 1 point de pratique (2 sur un critique) ; en combat, chaque attaque réussie compte. La pratique d'un niveau paie le suivant."},
       list("pratiques", "pratique", [{id: "valeur-pratique", kind: "value", source: each("value", "value.final"), write: {operation: "set", by: "gm"}}], 3),
       {id: "progression-pratique", kind: "progression", progressionSystemRef: "pratique"}]}]},
+  // What shows of the character, level by level (sources/etats-observables.json).
+  {id: "onglet-etats-observables", kind: "tab", labelKey: "États observables", children: [["caracteristiques", "caracteristique", "Caractéristiques"], ["competences", "competence", "Compétences"], ["maitrises-combat", "maitrise-combat", "Maîtrises de combat"], ["maitrises-deplacement", "maitrise-deplacement", "Maîtrises de déplacement"]].map(([id, typeId, label]) =>
+    ({id: `observables-${id}`, kind: "section", labelKey: label, columns: 1, children: [{id: `liste-observables-${id}`, kind: "repeater", query: {definitionTypeId: typeId}, columns: 1, children: [{id: `etat-${id}`, kind: "value", source: each("value", "value.final"), display: "description", style: {italic: true}}]}]}))},
   {id: "onglet-equipement", kind: "tab", labelKey: "Équipement", children: [{id: "possessions", kind: "contents"}]},
   {id: "onglet-actions", kind: "tab", labelKey: "Actions", children: [
     {id: "actions-joueur", kind: "section", labelKey: "Actions", columns: 3, children: actionIds.filter(id => !gmActions.includes(id) && !["tester-caracteristique", "tester-competence"].includes(id)).map(id => ({id: `action-${id}`, kind: "action", actionRef: id}))},
@@ -707,13 +735,13 @@ add("sheetDefinitions", generic({id: "feuille-pj", nameKey: "Feuille de PJ", des
 /* ---------- Build, validate, publish, export ---------- */
 class Storage { constructor() { this.data = emptyStorageSnapshot(); } async load() { return structuredClone(this.data); } async save(d) { this.data = structuredClone(d); } }
 const api = await createConfiguratorAPI(new Storage(), {onError: e => { throw e; }});
-const {versionId} = await api.createRuleset({...R, ...C, versionId: "rwf-2-2-0"});
+const {versionId} = await api.createRuleset({...R, ...C, versionId: "rwf-2-3-0"});
 const draft = api.validateRuleset(api.getRuleset(versionId), {scope: "publish"});
 if (!draft.valid) { console.error(draft.errors.map(e=>`${e.code} ${e.path}: ${e.message}`).join("\n")); process.exit(1); }
 await api.publishRuleset(versionId);
 const exported = api.exportRuleset(versionId);
 mkdirSync(outDir, {recursive: true});
-writeFileSync(`${outDir}/rwf-ruleset-2.2.0.json`, JSON.stringify(exported, null, 1));
+writeFileSync(`${outDir}/rwf-ruleset-2.3.0.json`, JSON.stringify(exported, null, 1));
 const counts = Object.fromEntries(Object.entries(C).map(([k, v]) => [k, v.length]).filter(([, n]) => n));
 writeFileSync(`${outDir}/build-report.json`, JSON.stringify({counts, warnings: draft.warnings?.length ?? 0, fixes: report.fixes}, null, 1));
 console.log(JSON.stringify({counts, warnings: draft.warnings?.slice?.(0, 10)}, null, 1));

@@ -1,0 +1,552 @@
+{
+  "metadata": {
+    "source_inspiration": "RWF historique v0.1.475",
+    "status": "proposition narrative",
+    "levels": [
+      0,
+      1,
+      2,
+      3,
+      4,
+      5
+    ],
+    "characteristic_levels": [
+      1,
+      2,
+      3,
+      4,
+      5
+    ],
+    "characteristic_level_zero_allowed": false,
+    "note_levels": "Caractéristiques PJ : niveaux 1 à 5 ; compétences et maîtrises : niveaux 0 à 5."
+  },
+  "categories": {
+    "Caractéristiques": [
+      {
+        "key": "strength",
+        "label": "Force",
+        "observations": {
+          "1": "Sa silhouette frêle et ses gestes mesurés laissent deviner un corps peu habitué aux efforts physiques importants.",
+          "2": "Sa carrure ordinaire ne révèle aucune puissance particulière, mais ses mouvements témoignent d'une force suffisante pour les exigences du quotidien.",
+          "3": "Sous ses vêtements se devine une musculature harmonieusement développée. Sa posture assurée et ses gestes fermes suggèrent une force patiemment acquise.",
+          "4": "Sa carrure imposante attire naturellement le regard. Chaque mouvement révèle une puissance musculaire remarquable, maîtrisée avec une aisance presque déconcertante.",
+          "5": "Sa constitution physique impressionne immédiatement. Une puissance exceptionnelle émane de chacun de ses gestes, comme si les limites ordinaires du corps humain ne s'appliquaient pas tout à fait à lui."
+        }
+      },
+      {
+        "key": "agility",
+        "label": "Agilité",
+        "observations": {
+          "1": "Ses mouvements paraissent parfois hésitants, ses gestes manquent de précision et son corps semble chercher son équilibre plus souvent qu'il ne le trouve.",
+          "2": "Sa gestuelle est naturelle, quoique légèrement maladroite dans les situations exigeantes. Rien dans sa démarche ne laisse présager une souplesse particulière.",
+          "3": "Ses déplacements possèdent une fluidité agréable à observer. Ses gestes précis et son équilibre assuré révèlent une excellente coordination corporelle.",
+          "4": "Une remarquable élégance accompagne chacun de ses mouvements. Il semble glisser entre les obstacles avec une aisance instinctive, comme si son corps anticipait déjà la trajectoire suivante.",
+          "5": "Ses mouvements défient presque le regard tant ils sont fluides et précis. Chaque geste semble parfaitement calculé, chaque déplacement exécuté avec une grâce fascinante, à la frontière de l'impossible."
+        }
+      },
+      {
+        "key": "constitution",
+        "label": "Constitution",
+        "observations": {
+          "1": "Son apparence laisse deviner une certaine fragilité physique. Les efforts prolongés semblent rapidement entamer ses forces, et la fatigue marque facilement ses traits.",
+          "2": "Sa résistance paraît comparable à celle de la plupart des gens. Il supporte les contraintes ordinaires, mais les longues épreuves finissent par laisser des traces visibles.",
+          "3": "Une vigueur rassurante se dégage de son attitude. Même après une journée éprouvante, il conserve une présence solide et semble récupérer avec une facilité appréciable.",
+          "4": "Son organisme semble taillé pour résister aux épreuves. Là où d'autres commencent à fléchir, il conserve une énergie physique étonnante et une résistance particulièrement impressionnante.",
+          "5": "Sa résistance physique paraît presque inexplicable. Les privations, les efforts et les conditions éprouvantes semblent glisser sur lui sans parvenir à entamer durablement son extraordinaire vitalité."
+        }
+      },
+      {
+        "key": "mind",
+        "label": "Esprit",
+        "observations": {
+          "1": "Face aux situations complexes, son regard trahit souvent une certaine perplexité. Il privilégie les évidences et les solutions immédiates, parfois au détriment des subtilités.",
+          "2": "Son raisonnement suit une logique simple et pragmatique. Il comprend aisément les situations familières, mais les problèmes inhabituels réclament davantage de réflexion.",
+          "3": "Une vivacité intellectuelle se révèle dans ses conversations. Ses questions pertinentes et sa capacité à relier les idées témoignent d'un esprit curieux et bien structuré.",
+          "4": "Son intelligence se manifeste par une étonnante rapidité d'analyse. Il perçoit les liens invisibles entre les faits et formule des conclusions auxquelles peu de personnes seraient parvenues aussi vite.",
+          "5": "Son esprit semble évoluer plusieurs raisonnements en avance sur ceux qui l'entourent. Des problèmes réputés insolubles deviennent entre ses mains d'élégantes évidences, suscitant autant d'admiration que d'incompréhension."
+        }
+      },
+      {
+        "key": "presence",
+        "label": "Présence",
+        "observations": {
+          "1": "Sa présence se fond facilement dans le décor. Ses paroles hésitantes et son attitude effacée peinent à retenir l'attention, même lorsqu'il cherche à se faire entendre.",
+          "2": "Son attitude inspire une impression agréable mais discrète. Il participe naturellement aux échanges sans particulièrement chercher, ni parvenir, à attirer les regards.",
+          "3": "Une assurance tranquille émane de sa personne. Son regard, sa voix et sa manière d'être inspirent spontanément l'écoute et donnent à ses paroles un poids certain.",
+          "4": "Il possède ce magnétisme rare qui transforme une simple apparition en événement. Les regards convergent naturellement vers lui, et sa parole semble captiver avant même qu'il ait terminé sa première phrase.",
+          "5": "Sa seule présence semble modifier imperceptiblement l'atmosphère d'une pièce. Son charisme exceptionnel captive les regards, impose le silence ou éveille les passions, laissant rarement ceux qui le croisent indifférents."
+        }
+      }
+    ],
+    "Compétences": [
+      {
+        "key": "athletics",
+        "label": "Athlétisme",
+        "observations": {
+          "0": "L'effort athlétique le déborde vite ; ses mouvements perdent leur cohérence dès que le rythme monte.",
+          "1": "Il participe avec bonne volonté, mais le souffle et la coordination ne suivent pas toujours.",
+          "2": "Il court, grimpe et se dépense sans se distinguer du commun.",
+          "3": "Il aborde les obstacles avec assurance ; son corps connaît les bons appuis.",
+          "4": "Sa foulée et ses impulsions révèlent un entraînement soutenu ; les obstacles semblent plus petits devant lui.",
+          "5": "Ses performances ont l'évidence des athlètes d'exception ; chaque mouvement paraît admirablement maîtrisé."
+        }
+      },
+      {
+        "key": "stealth",
+        "label": "Discrétion",
+        "observations": {
+          "0": "Même immobile, il attire l'attention ; ses pas, ses gestes ou sa présence le trahissent.",
+          "1": "Il tente de se fondre dans le décor, mais une maladresse finit souvent par le révéler.",
+          "2": "Il sait ne pas se faire remarquer lorsqu'il prend quelques précautions.",
+          "3": "Il se déplace sans bruit et choisit instinctivement les endroits où le regard ne s'attarde pas.",
+          "4": "Il traverse les lieux comme une ombre familière des angles morts.",
+          "5": "Sa présence semble s'effacer de la mémoire immédiate ; on se surprend à ignorer quand il est arrivé."
+        }
+      },
+      {
+        "key": "perception",
+        "label": "Vigilance",
+        "observations": {
+          "0": "Les signes les plus visibles lui échappent dès que son attention se disperse.",
+          "1": "Il remarque l'évidence, mais laisse filer nombre de détails autour de lui.",
+          "2": "Son regard suit naturellement ce qui change dans son environnement.",
+          "3": "Un bruit déplacé ou un geste inhabituel suffit à éveiller son attention.",
+          "4": "Il capte les détails subtils sans cesser de suivre la conversation.",
+          "5": "Rien ne semble anodin à ses yeux ; il perçoit des anomalies avant que quiconque comprenne qu'elles existent."
+        }
+      },
+      {
+        "key": "investigation",
+        "label": "Investigation",
+        "observations": {
+          "0": "Face aux indices, il se précipite sur la première explication et oublie les contradictions.",
+          "1": "Il pose quelques questions utiles, mais les rapprochements difficiles lui échappent.",
+          "2": "Il cherche méthodiquement et sait reconnaître une piste vraisemblable.",
+          "3": "Il relève les incohérences avec une patience qui finit souvent par payer.",
+          "4": "Son regard relie traces, silences et chronologies avec une logique remarquable.",
+          "5": "Il reconstruit les faits à partir de presque rien ; le détail oublié par tous devient chez lui une clef."
+        }
+      },
+      {
+        "key": "survival",
+        "label": "Survie",
+        "observations": {
+          "0": "Hors des chemins connus, il paraît vite démuni face au terrain et aux éléments.",
+          "1": "Il reconnaît les précautions élémentaires, mais hésite lorsqu'il faut improviser.",
+          "2": "Il sait se débrouiller dans un environnement peu familier avec des moyens simples.",
+          "3": "Il lit le sol, le ciel et les traces avec une assurance acquise dehors.",
+          "4": "Le terrain semble lui parler ; il anticipe le froid, l'eau et les dangers avant qu'ils ne se présentent.",
+          "5": "Même dans un milieu hostile, il trouve des signes et des solutions que d'autres ne sauraient imaginer."
+        }
+      },
+      {
+        "key": "technology",
+        "label": "Technique",
+        "observations": {
+          "0": "Un mécanisme banal suffit à l'embarrasser ; il craint d'aggraver la panne en touchant quoi que ce soit.",
+          "1": "Il exécute des gestes simples, mais sort difficilement d'une procédure connue.",
+          "2": "Il utilise et entretient les appareils courants avec un sens pratique convenable.",
+          "3": "Ses mains trouvent vite la pièce défectueuse ; il comprend comment les choses s'assemblent.",
+          "4": "Il diagnostique une panne complexe au son, à l'odeur ou à quelques mesures bien choisies.",
+          "5": "Les machines paraissent transparentes à son regard ; il leur rend vie avec une inventivité saisissante."
+        }
+      },
+      {
+        "key": "computing",
+        "label": "Informatique",
+        "observations": {
+          "0": "Face à un écran inhabituel, il se perd rapidement dans les menus et les messages.",
+          "1": "Il sait accomplir les tâches courantes, mais hésite dès que l'environnement change.",
+          "2": "Il utilise les outils numériques avec autonomie et résout les petits incidents ordinaires.",
+          "3": "Sa navigation est rapide ; ses manipulations révèlent une vraie compréhension des systèmes.",
+          "4": "Il démêle configurations et anomalies complexes comme d'autres trient quelques dossiers.",
+          "5": "Devant un système opaque, il semble en deviner l'architecture et trouver le point juste où intervenir."
+        }
+      },
+      {
+        "key": "science",
+        "label": "Sciences",
+        "observations": {
+          "0": "Les explications scientifiques le désorientent et il confond facilement hypothèse et certitude.",
+          "1": "Il connaît quelques principes mais peine à les appliquer hors d'un exemple familier.",
+          "2": "Il discute des phénomènes connus avec curiosité et un raisonnement raisonnable.",
+          "3": "Il formule des hypothèses solides et sait distinguer observation et interprétation.",
+          "4": "Sa rigueur lui permet de voir des modèles là où les autres ne perçoivent que des faits épars.",
+          "5": "Sa manière d'interroger le réel révèle un esprit scientifique exceptionnel, précis jusque dans l'inattendu."
+        }
+      },
+      {
+        "key": "medicine",
+        "label": "Médecine",
+        "observations": {
+          "0": "Au moindre incident de santé, il panique ou risque un geste maladroit.",
+          "1": "Il connaît quelques réflexes de secours, sans grande assurance.",
+          "2": "Il reconnaît les signes courants et adopte des gestes d'aide appropriés.",
+          "3": "Il évalue calmement une situation médicale et agit avec une précision rassurante.",
+          "4": "Son observation clinique et sa sûreté de main inspirent confiance même dans l'urgence.",
+          "5": "Dans le chaos, il décèle les signes infimes et intervient avec une maîtrise qui force le respect."
+        }
+      },
+      {
+        "key": "culture",
+        "label": "Culture",
+        "observations": {
+          "0": "Références et contextes lui échappent ; il peine à situer les événements les plus connus.",
+          "1": "Il possède des repères dispersés mais les rapproche parfois de travers.",
+          "2": "Il entretient une culture générale qui lui permet de participer aux échanges.",
+          "3": "Il replace spontanément les œuvres, les faits et les usages dans leur contexte.",
+          "4": "Ses références traversent les époques et les milieux avec une aisance étonnante.",
+          "5": "Il fait dialoguer des savoirs éloignés et éclaire une situation d'un exemple que nul n'aurait songé à citer."
+        }
+      },
+      {
+        "key": "influence",
+        "label": "Influence",
+        "observations": {
+          "0": "Ses arguments tombent à plat ; ses tentatives de convaincre suscitent surtout la gêne.",
+          "1": "Il sait défendre une idée simple, mais perd pied devant la contradiction.",
+          "2": "Il explique son point de vue avec assez de clarté pour être entendu.",
+          "3": "Il choisit ses mots et son moment ; son discours fait progressivement évoluer les positions.",
+          "4": "Il oriente une discussion sans paraître l'imposer, avec un sens rare des résistances.",
+          "5": "Quelques phrases lui suffisent à déplacer les convictions d'une assemblée pourtant réticente."
+        }
+      },
+      {
+        "key": "empathy",
+        "label": "Empathie",
+        "observations": {
+          "0": "Il ne perçoit guère la tension de son interlocuteur et manque souvent les émotions évidentes.",
+          "1": "Il sent parfois un malaise, sans toujours en saisir la cause.",
+          "2": "Il reconnaît les émotions usuelles et adapte ses paroles avec une attention sincère.",
+          "3": "Il déchiffre les hésitations, les regards et les silences avec finesse.",
+          "4": "Il comprend ce qui n'est pas dit et trouve souvent la distance juste pour approcher l'autre.",
+          "5": "Il paraît lire les nuances les plus secrètes d'une émotion, sans pour autant connaître les pensées d'autrui."
+        }
+      },
+      {
+        "key": "languages",
+        "label": "Langues",
+        "observations": {
+          "0": "Hors de sa langue habituelle, il reste sans repères et les échanges tournent court.",
+          "1": "Quelques expressions apprises lui permettent de se faire comprendre avec peine.",
+          "2": "Il parvient à établir une communication simple dans les langues qu'il a pratiquées.",
+          "3": "Il passe d'un registre à l'autre avec une aisance qui facilite les rencontres.",
+          "4": "Ses nuances de vocabulaire et son oreille pour les accents révèlent une pratique étendue.",
+          "5": "Il manie les langues apprises avec une précision subtile, jusqu'aux inflexions culturelles qui échappent à beaucoup."
+        }
+      },
+      {
+        "key": "arts",
+        "label": "Arts",
+        "observations": {
+          "0": "Ses essais créatifs demeurent maladroits, et l'intention peine à prendre forme.",
+          "1": "Une sensibilité transparaît parfois, malgré une technique encore incertaine.",
+          "2": "Il sait produire ou interpréter une œuvre simple avec un plaisir communicatif.",
+          "3": "Son geste artistique est sûr ; il donne une forme personnelle à ce qu'il exprime.",
+          "4": "Son travail porte une signature sensible et une maîtrise technique rare.",
+          "5": "Ses créations captivent durablement ; une émotion singulière semble naître au moindre trait, mot ou son."
+        }
+      }
+    ],
+    "Maîtrises de combat": [
+      {
+        "key": "unarmed",
+        "label": "Corps à corps",
+        "observations": {
+          "0": "Ses gestes se dispersent ; il se découvre et perd l'équilibre au moindre échange.",
+          "1": "Il adopte une garde approximative et réagit davantage par instinct que par technique.",
+          "2": "Il sait se protéger et placer quelques gestes efficaces dans une confrontation simple.",
+          "3": "Ses appuis sont solides ; ses réactions témoignent d'une pratique régulière.",
+          "4": "Ses déplacements courts et précis laissent voir une remarquable science de la distance.",
+          "5": "Chaque feinte et chaque esquive semblent surgir au moment parfait, avec une maîtrise presque déroutante."
+        }
+      },
+      {
+        "key": "melee",
+        "label": "Armes de mêlée",
+        "observations": {
+          "0": "Une arme tenue en main paraît le gêner plus qu'elle ne le protège.",
+          "1": "Il sait la manier prudemment, mais sa garde laisse encore des ouvertures.",
+          "2": "Il coordonne portée, appuis et mouvements d'une manière convenable.",
+          "3": "Il guide la lame ou l'outil avec assurance, sans mouvement superflu.",
+          "4": "Sa maîtrise de la distance et du rythme rend ses gestes difficiles à anticiper.",
+          "5": "L'arme semble prolonger sa volonté ; ses mouvements sont d'une précision redoutable."
+        }
+      },
+      {
+        "key": "handgun",
+        "label": "Armes de poing",
+        "observations": {
+          "0": "Sa prise est hésitante et ses gestes trahissent un manque évident de familiarité.",
+          "1": "Il connaît les bases, mais son alignement et ses réactions restent incertains.",
+          "2": "Il manipule l'arme avec méthode et conserve une attitude contrôlée.",
+          "3": "Sa gestuelle est rapide et stable, manifestement issue d'un entraînement sérieux.",
+          "4": "Sa maîtrise du placement et du recul lui donne une efficacité saisissante.",
+          "5": "Chaque geste est mesuré, fluide, sans la moindre précipitation ; son sang-froid impressionne."
+        }
+      },
+      {
+        "key": "shoulderArms",
+        "label": "Armes d’épaule",
+        "observations": {
+          "0": "L'arme lui paraît encombrante ; trouver une position stable lui prend du temps.",
+          "1": "Il se place correctement, mais manque encore de régularité dans la manipulation.",
+          "2": "Il épaule et vise avec les gestes attendus d'un pratiquant ordinaire.",
+          "3": "Sa posture, son souffle et sa gestion de la distance montrent une véritable expérience.",
+          "4": "Il manie l'arme avec une aisance constante, même lorsque l'environnement se complique.",
+          "5": "Il semble parfaitement accorder respiration, équilibre et visée, avec une maîtrise exceptionnelle."
+        }
+      },
+      {
+        "key": "heavyWeapons",
+        "label": "Armes lourdes",
+        "observations": {
+          "0": "Le poids et la complexité du matériel le dépassent dès la prise en main.",
+          "1": "Il en connaît les commandes élémentaires, mais peine à garder le contrôle du dispositif.",
+          "2": "Il suit une procédure de manipulation avec prudence et méthode.",
+          "3": "Il domine l'encombrement de l'arme et organise ses gestes sans hésitation.",
+          "4": "Sa coordination et son sens du matériel évoquent un spécialiste aguerri.",
+          "5": "Même la puissance et la complexité de l'engin semblent ne jamais rompre la précision de ses gestes."
+        }
+      },
+      {
+        "key": "thrown",
+        "label": "Armes de jet",
+        "observations": {
+          "0": "Ses lancers manquent d'équilibre et prennent des trajectoires imprévisibles.",
+          "1": "Il atteint parfois son intention, mais le geste reste irrégulier.",
+          "2": "Il lance avec une coordination correcte et sait estimer une distance simple.",
+          "3": "Son bras trouve naturellement l'angle et la force appropriés.",
+          "4": "Ses projectiles décrivent des trajectoires d'une netteté remarquable.",
+          "5": "Son sens du mouvement paraît prodigieux ; chaque lancer semble calculé à l'instant même."
+        }
+      },
+      {
+        "key": "bow",
+        "label": "Armes de trait",
+        "observations": {
+          "0": "Il lutte contre la tension de l'arme et peine à stabiliser sa visée.",
+          "1": "Il connaît les gestes essentiels, sans parvenir encore à les répéter avec constance.",
+          "2": "Il arme, aligne et libère son tir avec une technique convenable.",
+          "3": "Sa posture reste souple et sûre ; son geste de tir paraît entraîné.",
+          "4": "Le mouvement est si régulier et silencieux qu'il semble réglé par une mécanique invisible.",
+          "5": "Son tir possède une élégance et une exactitude rares, jusque dans les conditions difficiles."
+        }
+      }
+    ],
+    "Maîtrises de déplacement": [
+      {
+        "key": "running",
+        "label": "Course à pied",
+        "observations": {
+          "0": "Quelques foulées suffisent à désorganiser son souffle et sa cadence.",
+          "1": "Il peut courir, mais son rythme se brise vite lorsque l'allure augmente.",
+          "2": "Sa foulée est naturelle et lui permet de soutenir une course ordinaire.",
+          "3": "Il dose parfaitement ses appuis et son souffle ; sa course paraît légère.",
+          "4": "Ses foulées absorbent le terrain avec une économie remarquable.",
+          "5": "Il avale la distance avec une fluidité presque irréelle, comme si la fatigue tardait à le rejoindre."
+        }
+      },
+      {
+        "key": "lightVehicle",
+        "label": "Véhicules légers",
+        "observations": {
+          "0": "Derrière un volant, ses gestes sont brusques et l'anticipation lui fait défaut.",
+          "1": "Il conduit prudemment sur terrain simple mais se crispe dès que survient l'imprévu.",
+          "2": "Il tient sa trajectoire et s'adapte aux situations routières habituelles.",
+          "3": "Ses mains corrigent la trajectoire en douceur ; il lit la circulation avec avance.",
+          "4": "Il place le véhicule avec une précision qui trahit une grande expérience.",
+          "5": "Il semble sentir l'adhérence et l'espace avant même que les roues ne réagissent."
+        }
+      },
+      {
+        "key": "motorcycle",
+        "label": "Deux-roues motorisés",
+        "observations": {
+          "0": "La machine le déséquilibre ; chaque changement de direction paraît risqué.",
+          "1": "Il la contrôle à petite allure mais manque d'aisance dans les manœuvres délicates.",
+          "2": "Il garde son équilibre et pilote avec une assurance ordinaire.",
+          "3": "Son regard et son corps accompagnent les courbes avec une coordination sûre.",
+          "4": "La machine semble répondre à ses intentions sans délai, même sur une route exigeante.",
+          "5": "Pilote et machine donnent l'impression de ne faire qu'un, dans une précision saisissante."
+        }
+      },
+      {
+        "key": "heavyVehicle",
+        "label": "Poids lourds",
+        "observations": {
+          "0": "Il mesure mal le gabarit ; manœuvrer le véhicule paraît le submerger.",
+          "1": "Il avance avec prudence, mais hésite devant les espaces étroits.",
+          "2": "Il apprécie les dimensions et conduit sans difficulté majeure dans des conditions courantes.",
+          "3": "Il anticipe inertie, angles morts et trajectoires avec une assurance professionnelle.",
+          "4": "Il place une masse imposante avec une finesse surprenante.",
+          "5": "Chaque manœuvre révèle une compréhension presque instinctive du poids, de l'élan et de l'espace."
+        }
+      },
+      {
+        "key": "publicTransport",
+        "label": "Transport collectif",
+        "observations": {
+          "0": "La responsabilité du véhicule et de ses passagers semble le dépasser.",
+          "1": "Il connaît les gestes de base, mais les situations chargées le mettent en difficulté.",
+          "2": "Il assure un trajet régulier avec calme et vigilance.",
+          "3": "Il combine souplesse, anticipation et attention au confort des passagers.",
+          "4": "Il garde une maîtrise remarquable malgré les contraintes de circulation et de service.",
+          "5": "À bord, les manœuvres les plus délicates paraissent simples, tant sa conduite reste précise et sereine."
+        }
+      },
+      {
+        "key": "cycling",
+        "label": "Cyclisme",
+        "observations": {
+          "0": "Son équilibre et sa cadence se dérèglent dès que le terrain devient difficile.",
+          "1": "Il pédale correctement mais manque d'aisance dans les passages techniques.",
+          "2": "Il circule à vélo avec une maîtrise courante et une allure régulière.",
+          "3": "Son corps accompagne naturellement le vélo ; il choisit ses trajectoires avec justesse.",
+          "4": "Il lit les reliefs et garde sa vitesse avec une élégance sportive.",
+          "5": "Le vélo semble danser sous lui : obstacles, virages et relances s'enchaînent sans effort apparent."
+        }
+      },
+      {
+        "key": "riding",
+        "label": "Équitation / Monture",
+        "observations": {
+          "0": "La monture perçoit son hésitation ; le moindre mouvement le désarçonne presque.",
+          "1": "Il tient en selle, mais ses demandes restent confuses pour l'animal.",
+          "2": "Il accompagne l'allure et entretient un contact convenable avec sa monture.",
+          "3": "Ses aides sont discrètes et claires ; l'animal semble comprendre ses intentions.",
+          "4": "La relation entre cavalier et monture est d'une rare finesse, jusque dans l'imprévu.",
+          "5": "Il semble converser par le seul mouvement du corps ; la monture répond avant même qu'on voie la demande."
+        }
+      },
+      {
+        "key": "nautical",
+        "label": "Navigation",
+        "observations": {
+          "0": "Sur l'eau, il lit mal les conditions et peine à conserver un cap.",
+          "1": "Il connaît quelques manœuvres, mais les changements de vent ou de courant le désorientent.",
+          "2": "Il conduit une embarcation dans des conditions habituelles avec prudence.",
+          "3": "Il lit les courants et ajuste sa trajectoire avec sûreté.",
+          "4": "Ses décisions anticipent la météo, le mouvement de l'eau et les réactions du bateau.",
+          "5": "Il paraît comprendre la mer dans ses plus fines variations ; sa navigation force l'admiration."
+        }
+      },
+      {
+        "key": "ski",
+        "label": "Ski / Glisse",
+        "observations": {
+          "0": "La pente le fige ; ses mouvements manquent de contrôle et d'équilibre.",
+          "1": "Il descend avec prudence, parfois au prix de gestes saccadés.",
+          "2": "Il maîtrise les virages usuels et conserve son équilibre sur des parcours accessibles.",
+          "3": "Ses appuis sont souples et sûrs ; il épouse les reliefs du terrain.",
+          "4": "Il trace sa ligne avec une aisance spectaculaire, même dans des conditions difficiles.",
+          "5": "Sa glisse semble défier le relief : chaque courbe devient un mouvement limpide et parfaitement mesuré."
+        }
+      },
+      {
+        "key": "air",
+        "label": "Pilotage aérien",
+        "observations": {
+          "0": "Les instruments et les mouvements de l'appareil l'accaparent au point de perdre ses repères.",
+          "1": "Il comprend les principes mais peine encore à coordonner toutes les commandes.",
+          "2": "Il maintient un pilotage stable dans une situation normale.",
+          "3": "Il anticipe les réactions de l'appareil et garde une conduite précise.",
+          "4": "Sa lecture de l'espace aérien et des paramètres révèle un pilote chevronné.",
+          "5": "Il paraît ne faire qu'un avec l'appareil, capable de conserver une lucidité absolue sous pression."
+        }
+      },
+      {
+        "key": "specialized",
+        "label": "Engins spécialisés",
+        "observations": {
+          "0": "La machine lui semble étrangère ; ses commandes provoquent des réactions maladroites.",
+          "1": "Il connaît une procédure élémentaire mais redoute les configurations inhabituelles.",
+          "2": "Il utilise l'engin dans ses fonctions courantes avec une précaution suffisante.",
+          "3": "Il manœuvre avec précision et comprend le comportement du matériel.",
+          "4": "Même les opérations délicates lui paraissent familières ; son contrôle inspire confiance.",
+          "5": "L'engin le plus complexe semble devenir docile entre ses mains, sans geste inutile ni hésitation."
+        }
+      }
+    ]
+  },
+  "resources": {
+    "Vitalité": [
+      {
+        "range": "0 %",
+        "observation": "Son corps ne répond plus normalement ; il est hors de combat, sans que l’on puisse conclure à sa mort."
+      },
+      {
+        "range": "1–25 %",
+        "observation": "Chaque mouvement semble lui arracher un effort ; ses blessures ou son épuisement physique sont alarmants."
+      },
+      {
+        "range": "26–50 %",
+        "observation": "Il se tient encore debout, mais la douleur et les atteintes subies marquent nettement sa posture."
+      },
+      {
+        "range": "51–75 %",
+        "observation": "Des traces de souffrance demeurent dans ses gestes ; il paraît diminué sans être brisé."
+      },
+      {
+        "range": "76–99 %",
+        "observation": "Quelques marques ou raideurs trahissent les épreuves récentes, sans entraver franchement son allure."
+      },
+      {
+        "range": "100 %",
+        "observation": "Il ne montre aucun signe évident de blessure ou de faiblesse physique immédiate."
+      }
+    ],
+    "Endurance": [
+      {
+        "range": "0 %",
+        "observation": "Son souffle et ses muscles ont atteint leur limite ; tout effort physique soutenu lui est momentanément impossible."
+      },
+      {
+        "range": "1–25 %",
+        "observation": "Il cherche l’air, ses gestes se font lourds ; reprendre l’effort semble presque hors de portée."
+      },
+      {
+        "range": "26–50 %",
+        "observation": "Sa respiration est courte et son corps accuse franchement la fatigue."
+      },
+      {
+        "range": "51–75 %",
+        "observation": "Le souffle s’accélère et quelques signes de lassitude percent dans ses mouvements."
+      },
+      {
+        "range": "76–99 %",
+        "observation": "Son rythme reste sûr, bien qu’une légère fatigue puisse se deviner."
+      },
+      {
+        "range": "100 %",
+        "observation": "Sa respiration est posée et ses mouvements semblent disposer de toute leur réserve."
+      }
+    ],
+    "Énergie": [
+      {
+        "range": "0 %",
+        "observation": "La réserve qui soutient ses manifestations extraordinaires semble épuisée ; aucun effet visible ne permet à lui seul d’en connaître la cause."
+      },
+      {
+        "range": "1–25 %",
+        "observation": "Lorsqu’il sollicite ses pouvoirs, la manifestation paraît ténue, instable ou laborieuse, si elle est perceptible."
+      },
+      {
+        "range": "26–50 %",
+        "observation": "Les manifestations visibles paraissent lui demander une concentration inhabituelle."
+      },
+      {
+        "range": "51–75 %",
+        "observation": "Une certaine retenue apparaît dans l’usage de ses manifestations, lorsque celles-ci sont observables."
+      },
+      {
+        "range": "76–99 %",
+        "observation": "Ses manifestations visibles conservent de l’aisance, malgré de possibles signes discrets de dépense."
+      },
+      {
+        "range": "100 %",
+        "observation": "Aucune fatigue liée à ses manifestations ne se laisse discerner ; sa réserve réelle reste invisible à un témoin ordinaire."
+      }
+    ]
+  }
+}

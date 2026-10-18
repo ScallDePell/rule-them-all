@@ -385,6 +385,29 @@ nextNatural = 10; await bridge.executeAcquiredAction(v, actor.uuid, "poursuite-v
 assert.equal(await valueOf("efforts-physiques"), 0, "en véhicule, pas d'effort");
 log("poursuite à pied : la troisième action essouffle (−1 Endurance), pas en véhicule");
 
+
+// 12. Observable states (2.3.0): one description Scale per characteristic, skill, mastery and resource, shown on the sheet.
+const {descriptionScale, scaleWords} = await imp("configurator/rule-contracts.mjs");
+const catalogue = JSON.parse(readFileSync(new URL("../sources/etats-observables.json", import.meta.url), "utf8"));
+const rs = api.getRuleset(v);
+const levelled = rs.definitions.filter(d => ["caracteristique", "competence", "maitrise-combat", "maitrise-deplacement", "ressource"].includes(d.definitionTypeId));
+assert.deepEqual(levelled.filter(d => !descriptionScale(rs, d.id)).map(d => d.id), [], "chaque niveau a ses mots");
+const words = (id, value, maximum) => scaleWords(descriptionScale(rs, id), value, maximum);
+const strength = catalogue.categories["Caractéristiques"].find(e => e.label === "Force").observations;
+assert.deepEqual([words("force", 1), words("force", 3), words("force", 5), words("force", 9), words("force", 0)], [strength[1], strength[3], strength[5], strength[5], strength[1]]);
+const vitality = catalogue.resources["Vitalité"].map(r => r.observation);
+assert.deepEqual([0, 1, 3, 6, 9, 11, 12].map(n => words("vitalite", n, 12)), [vitality[0], vitality[1], vitality[1], vitality[2], vitality[3], vitality[4], vitality[5]]);
+assert.equal(words("armes-d-epaule", 0), catalogue.categories["Maîtrises de combat"].find(e => e.key === "shoulderArms").observations[0]);
+const sheetDef = rs.sheetDefinitions.find(sh => sh.id === "feuille-pj");
+const collect = (node, out = []) => { if (!node) return out; if (node.display === "description") out.push(node); for (const child of [...(node.children ?? []), ...(node.rows ?? []).flatMap(r => r.children)]) collect(child, out); return out; };
+runtime.adapter.users.set("observateur", {role: "player", isGM: false}); runtime.adapter.ownership.set(`${actor.uuid}|observateur`, "observer"); runtime.adapter.currentUserId = "observateur";
+const seen = await runtime.projectSheet(v, sheetDef, {actor: actor.uuid});
+runtime.adapter.currentUserId = "gm";
+const described = collect(seen.root);
+assert.equal(described.filter(n => n.error !== undefined || !n.value).length, 0, "aucune description vide");
+assert.ok(described.length >= 3 + 5 + 15 + 7, `${described.length} descriptions`);
+assert.ok(!JSON.stringify(seen.root).includes('"jauge-vitalite"'), "l'observateur ne voit pas les jauges");
+log(`états observables : ${levelled.length} échelles, ${described.length} descriptions sur la feuille d'un observateur, sans jauge`);
 // 10. GM states are exclusive.
 await runtime.executeAction(v, "etat-coma", both);
 await runtime.executeAction(v, "etat-mort", both);

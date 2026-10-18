@@ -213,3 +213,12 @@ test('the properties show the new settings only where they apply', ()=>{
   assert.match(section,/data-layout-prop="collapsible"/);assert.match(section,/data-layout-prop="overlay"/);
   assert.match(renderLayoutPropertiesHTML({id:'s',kind:'separator',look:'image',src:''},ctx),/data-layout-pick="src"/);
 });
+
+test('a list whose cell shows words gives them the free width and keeps the names whole', ()=>{
+  const list=words=>({id:'l',kind:'repeater',columns:2,rows:[{definitionId:'str',label:'Strength',children:[{id:'c',kind:'value',...(words?{display:'description',valueType:'string',value:'Broad shoulders'}:{valueType:'number',value:3}),label:''}]}]});
+  const template=html=>html.match(/--rta-sheet-list-narrow: ([^;"]+)/)[1];
+  assert.equal(template(renderSheetHTML({root:list(false)})),'minmax(0, 1fr) auto');
+  const html=renderSheetHTML({root:list(true)});
+  assert.equal(template(html),'minmax(min-content, max-content) minmax(0, 1fr)');
+  assert.match(html,/rta-sheet-value__words">Broad shoulders</);
+});

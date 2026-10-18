@@ -1,5 +1,10 @@
 # Changelog
 
+## 1.0.10
+
+- Sheets: words of a description scale read as prose (they wrap, at the body weight); in a list, they take the free width and the names stay whole.
+- Real World Fantasy 2.3.0 in `Rulesets/rwf`: observable states, one description scale per characteristic, skill, mastery and resource, shown in an "États observables" tab and under the health gauges.
+
 ## 1.0.9
 
 - An Effect can write a number field of the Content used ("Field of the Content used": a weapon's ammunition), and the next Effects of the Action read what it did in `variables.effects.<id>` (`before`, `after`, `operand`).
