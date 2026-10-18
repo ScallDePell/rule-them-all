@@ -23,6 +23,7 @@ class Adapter extends MemoryRuntimeAdapter {
   async roll(formula) {
     rolled.push(formula);
     if (formula === "1d20") return {formula, result: String(nextNatural), total: nextNatural, natural: nextNatural};
+    if (/^\d+$/.test(formula)) return {formula, result: formula, total: Number(formula)};
     const dice = [...formula.matchAll(/(\d+)d\d+/g)].reduce((n, m) => n + Number(m[1]), 0);
     return {formula, result: String(dice * 3), total: dice * 3};
   }
@@ -211,19 +212,28 @@ await runtime.emitSystemEvent("rta.time.elapsed", timeElapsedPayload(86400 * 3, 
 assert.equal(await poolOf(actor.uuid, "vitalite"), 7);
 log("temps : +1 Vitalité par jour écoulé");
 
-// 7. Practice: a success on a test asked by the GM gives 1, a critical 2; a free roll gives nothing.
+// 7. Practice: only a test the GM asks for (module RWF tools, run on the GM's client with the announced d20) gives
+// practice, 1 on a success, 2 on a critical; a free roll from the sheet gives nothing, and a player cannot run it.
 const practice = async id => (await runtime.getContainerState(actor.uuid)).definitionStates[`pratique-${id}`].capabilityStates.value.base;
-const ask = (id, extra = {}) => runtime.executeAction(v, "tester-competence", {...self, variables: {definition: def(id), input: {dd: 13, ...extra}}});
-nextNatural = 12; await ask("investigation");
+const free = id => runtime.executeAction(v, "tester-competence", {...self, variables: {definition: def(id), input: {dd: 13}}});
+const asked = (id, de) => runtime.executeAction(v, "test-demande", {...self, variables: {definition: def(id), input: {dd: 13, de}}});
+nextNatural = 20; await free("investigation");
 assert.equal(await practice("investigation"), 0, "jet libre");
-await ask("investigation", {pratique: true});
+await asked("investigation", 12);
 assert.equal(await practice("investigation"), 1);
-nextNatural = 20; await ask("investigation", {pratique: true});
+await asked("investigation", 20);
 assert.equal(await practice("investigation"), 3);
-nextNatural = 2; await ask("investigation", {pratique: true});
+await asked("investigation", 2);
 assert.equal(await practice("investigation"), 3, "échec : rien");
+assert.ok(!rolled.slice(-3).includes("1d20"), "le d20 annoncé n'est pas relancé");
+runtime.adapter.users.set("joueur", {role: "player", isGM: false}); runtime.adapter.ownership.set(`${actor.uuid}|joueur`, "owner"); runtime.adapter.currentUserId = "joueur";
+await assert.rejects(() => asked("investigation", 20));
+assert.equal(await practice("investigation"), 3, "un joueur ne lance pas un test demandé");
+runtime.adapter.currentUserId = "gm";
 await runtime.executeAction(v, "tester-caracteristique", {...self, variables: {definition: def("presence"), input: {dd: 13}}});
-log("pratique : +1 réussite, +2 critique, rien sur un échec ni sur un jet libre");
+const dds = api.getRuleset(v).parameters.filter(p => p.tags.includes("difficulte")).map(p => p.value).sort((a, b) => a - b);
+assert.deepEqual(dds, [10, 13, 16, 19, 22]);
+log("pratique : seul un test demandé par le MJ rapporte (+1, +2 critique), jamais un jet libre ni un joueur seul ; DD 10 à 22");
 // Investigation 3 → 4 costs 40 for an adult; a teenager (×1,5) pays 27.
 await runtime.setDefinitionState(v, actor.uuid, "pratique-investigation", {base: 39});
 let progress = await runtime.advance(v, "pratique", actor.uuid, "progresser-investigation", "investigation");

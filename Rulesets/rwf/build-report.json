@@ -5,13 +5,13 @@
   "parameters": 35,
   "formulas": 58,
   "formulaBindings": 3,
-  "conditions": 20,
-  "rolls": 3,
+  "conditions": 19,
+  "rolls": 4,
   "outcomes": 4,
-  "tests": 14,
+  "tests": 15,
   "effects": 16,
-  "actions": 34,
-  "permissionPolicies": 2,
+  "actions": 35,
+  "permissionPolicies": 4,
   "triggers": 5,
   "contentTypes": 14,
   "contentTemplates": 461,
@@ -20,7 +20,7 @@
   "progressionSystems": 1,
   "sheetDefinitions": 1,
   "scales": 1,
-  "tags": 26
+  "tags": 27
  },
  "warnings": 0,
  "fixes": [

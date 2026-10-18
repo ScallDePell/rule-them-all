@@ -3,8 +3,8 @@
  "format": "rta-ruleset",
  "formatVersion": 3,
  "rulesetId": "rwf",
- "version": "2.0.0",
- "versionId": "rwf-2-0-0",
+ "version": "2.1.0",
+ "versionId": "rwf-2-1-0",
  "versionRecord": {
   "publishedSnapshot": {
    "actions": [
@@ -322,32 +322,12 @@
        "labelKey": "DD",
        "required": true,
        "valueType": "number"
-      },
-      {
-       "defaultValue": false,
-       "id": "pratique",
-       "labelKey": "Demandé par le MJ (rapporte de la pratique)",
-       "required": false,
-       "valueType": "boolean"
       }
      ],
      "modifierApplications": [],
      "nameKey": "Tester une compétence ou une maîtrise",
      "order": 110,
-     "outcomeMappings": [
-      {
-       "actionRefs": [
-        "pratique-test"
-       ],
-       "outcomeId": "reussite-critique"
-      },
-      {
-       "actionRefs": [
-        "pratique-test"
-       ],
-       "outcomeId": "reussite"
-      }
-     ],
+     "outcomeMappings": [],
      "stateApplications": [],
      "stateRemovals": [],
      "tags": [],
@@ -716,7 +696,6 @@
      "acquisitions": [],
      "conditionRefs": [
       "est-pj",
-      "demande-par-le-mj",
       "maitrise-pratiquee"
      ],
      "costEffectRefs": [],
@@ -786,6 +765,53 @@
      "acquisitions": [],
      "conditionRefs": [],
      "costEffectRefs": [],
+     "descriptionKey": "Lancé par le module RWF tools quand le joueur répond à la demande du MJ. Une réussite rapporte de la pratique.",
+     "effectRefs": [],
+     "enabled": true,
+     "eventTypeRefs": [],
+     "id": "test-demande",
+     "inputs": [
+      {
+       "defaultValue": 13,
+       "id": "dd",
+       "labelKey": "DD",
+       "required": true,
+       "valueType": "number"
+      },
+      {
+       "defaultValue": 10,
+       "id": "de",
+       "labelKey": "Résultat du d20",
+       "required": true,
+       "valueType": "number"
+      }
+     ],
+     "modifierApplications": [],
+     "nameKey": "Test demandé par le MJ",
+     "order": 270,
+     "outcomeMappings": [
+      {
+       "actionRefs": [
+        "pratique-test"
+       ],
+       "outcomeId": "reussite-critique"
+      },
+      {
+       "actionRefs": [
+        "pratique-test"
+       ],
+       "outcomeId": "reussite"
+      }
+     ],
+     "stateApplications": [],
+     "stateRemovals": [],
+     "tags": [],
+     "testRef": "test-competence-demande"
+    },
+    {
+     "acquisitions": [],
+     "conditionRefs": [],
+     "costEffectRefs": [],
      "descriptionKey": "Test de poursuite avec ce véhicule (DD 13). À +3 on rattrape ou on s'échappe, à −3 on perd la cible ou on est rattrapé.",
      "effectRefs": [
       "avancer-poursuite"
@@ -818,7 +844,7 @@
      ],
      "modifierApplications": [],
      "nameKey": "Poursuite : Continuer",
-     "order": 270,
+     "order": 280,
      "outcomeMappings": [],
      "stateApplications": [],
      "stateRemovals": [],
@@ -863,7 +889,7 @@
      ],
      "modifierApplications": [],
      "nameKey": "Poursuite à pied : Continuer",
-     "order": 280,
+     "order": 290,
      "outcomeMappings": [],
      "stateApplications": [],
      "stateRemovals": [],
@@ -906,7 +932,7 @@
      ],
      "modifierApplications": [],
      "nameKey": "Poursuite : Raccourci",
-     "order": 290,
+     "order": 300,
      "outcomeMappings": [],
      "stateApplications": [],
      "stateRemovals": [],
@@ -951,7 +977,7 @@
      ],
      "modifierApplications": [],
      "nameKey": "Poursuite à pied : Raccourci",
-     "order": 300,
+     "order": 310,
      "outcomeMappings": [],
      "stateApplications": [],
      "stateRemovals": [],
@@ -994,7 +1020,7 @@
      ],
      "modifierApplications": [],
      "nameKey": "Poursuite : Prise de risque",
-     "order": 310,
+     "order": 320,
      "outcomeMappings": [],
      "stateApplications": [],
      "stateRemovals": [],
@@ -1039,7 +1065,7 @@
      ],
      "modifierApplications": [],
      "nameKey": "Poursuite à pied : Prise de risque",
-     "order": 320,
+     "order": 330,
      "outcomeMappings": [],
      "stateApplications": [],
      "stateRemovals": [],
@@ -1059,7 +1085,7 @@
      "id": "poursuite-arret",
      "modifierApplications": [],
      "nameKey": "Poursuite : s'arrêter",
-     "order": 330,
+     "order": 340,
      "outcomeMappings": [],
      "stateApplications": [],
      "stateRemovals": [],
@@ -1079,7 +1105,7 @@
      "id": "poursuite-nouvelle",
      "modifierApplications": [],
      "nameKey": "Nouvelle poursuite",
-     "order": 340,
+     "order": 350,
      "outcomeMappings": [],
      "stateApplications": [],
      "stateRemovals": [],
@@ -1535,25 +1561,6 @@
      "tags": []
     },
     {
-     "descriptionKey": "Seul un test demandé par le MJ rapporte de la pratique ; un jet libre depuis la fiche n'en rapporte pas.",
-     "enabled": true,
-     "expression": {
-      "left": {
-       "path": "variables.input.pratique",
-       "type": "context"
-      },
-      "right": {
-       "type": "literal",
-       "value": true
-      },
-      "type": "eq"
-     },
-     "id": "demande-par-le-mj",
-     "nameKey": "Test demandé par le MJ",
-     "order": 160,
-     "tags": []
-    },
-    {
      "descriptionKey": "",
      "enabled": true,
      "expression": {
@@ -1574,7 +1581,7 @@
      },
      "id": "est-pj",
      "nameKey": "Personnage joueur",
-     "order": 170,
+     "order": 160,
      "tags": []
     },
     {
@@ -1597,7 +1604,7 @@
      },
      "id": "maitrise-pratiquee",
      "nameKey": "La maîtrise ou compétence progresse",
-     "order": 180,
+     "order": 170,
      "tags": []
     },
     {
@@ -1616,7 +1623,7 @@
      },
      "id": "option-age-compatible",
      "nameKey": "Accessible à cet âge",
-     "order": 190,
+     "order": 180,
      "tags": []
     },
     {
@@ -1635,7 +1642,7 @@
      },
      "id": "permis-accessible",
      "nameKey": "19 ans ou plus",
-     "order": 200,
+     "order": 190,
      "tags": []
     }
    ],
@@ -67187,7 +67194,9 @@
      "nameKey": "DD Facile",
      "order": 10,
      "scope": "ruleset",
-     "tags": [],
+     "tags": [
+      "difficulte"
+     ],
      "value": 10,
      "valueType": "integer"
     },
@@ -67198,7 +67207,9 @@
      "nameKey": "DD Standard",
      "order": 20,
      "scope": "ruleset",
-     "tags": [],
+     "tags": [
+      "difficulte"
+     ],
      "value": 13,
      "valueType": "integer"
     },
@@ -67209,7 +67220,9 @@
      "nameKey": "DD Difficile",
      "order": 30,
      "scope": "ruleset",
-     "tags": [],
+     "tags": [
+      "difficulte"
+     ],
      "value": 16,
      "valueType": "integer"
     },
@@ -67220,7 +67233,9 @@
      "nameKey": "DD Extrême",
      "order": 40,
      "scope": "ruleset",
-     "tags": [],
+     "tags": [
+      "difficulte"
+     ],
      "value": 19,
      "valueType": "integer"
     },
@@ -67231,7 +67246,9 @@
      "nameKey": "DD Héroïque",
      "order": 50,
      "scope": "ruleset",
-     "tags": [],
+     "tags": [
+      "difficulte"
+     ],
      "value": 22,
      "valueType": "integer"
     },
@@ -67605,11 +67622,65 @@
     },
     {
      "defaultEffect": "DENY",
+     "descriptionKey": "Seul le client du MJ lance un test demandé : un joueur ne se donne pas de pratique.",
+     "enabled": true,
+     "id": "test-demande-mj",
+     "nameKey": "Test demandé lancé par le MJ",
+     "order": 20,
+     "rules": [
+      {
+       "effect": "ALLOW",
+       "id": "mj",
+       "operations": [
+        "read",
+        "execute"
+       ],
+       "priority": 10,
+       "roles": [
+        "assistant",
+        "gamemaster"
+       ]
+      }
+     ],
+     "scope": {
+      "objectId": "test-demande",
+      "objectKind": "action"
+     }
+    },
+    {
+     "defaultEffect": "DENY",
+     "descriptionKey": "Seul le client du MJ lance un test demandé : un joueur ne se donne pas de pratique.",
+     "enabled": true,
+     "id": "pratique-mj",
+     "nameKey": "Pratique donnée par le MJ",
+     "order": 30,
+     "rules": [
+      {
+       "effect": "ALLOW",
+       "id": "mj",
+       "operations": [
+        "read",
+        "execute"
+       ],
+       "priority": 10,
+       "roles": [
+        "assistant",
+        "gamemaster"
+       ]
+      }
+     ],
+     "scope": {
+      "objectId": "pratique-test",
+      "objectKind": "action"
+     }
+    },
+    {
+     "defaultEffect": "DENY",
      "descriptionKey": "Un joueur ne s'ajoute pas de pouvoir ; il utilise ceux que le MJ lui a donnés.",
      "enabled": true,
      "id": "pouvoirs-mj",
      "nameKey": "Pouvoirs attribués par le MJ",
-     "order": 20,
+     "order": 40,
      "rules": [
       {
        "effect": "ALLOW",
@@ -68263,6 +68334,16 @@
      "nameKey": "1d4",
      "order": 30,
      "tags": []
+    },
+    {
+     "data": {},
+     "descriptionKey": "Le d20 que le joueur a lancé, avec les dés de Foundry ou sur la table.",
+     "enabled": true,
+     "formula": "@input.de",
+     "id": "d20-annonce",
+     "nameKey": "d20 annoncé",
+     "order": 40,
+     "tags": []
     }
    ],
    "scales": [
@@ -68896,186 +68977,193 @@
    "tables": [],
    "tags": [
     {
+     "color": null,
+     "descriptionKey": "",
+     "id": "difficulte",
+     "nameKey": "Difficulté de test",
+     "order": 10
+    },
+    {
      "color": "#7a4f8f",
      "descriptionKey": "",
      "id": "tradition-magie",
      "nameKey": "Magie",
-     "order": 10
+     "order": 20
     },
     {
      "color": "#7a4f8f",
      "descriptionKey": "",
      "id": "tradition-psychique",
      "nameKey": "Psychique",
-     "order": 20
+     "order": 30
     },
     {
      "color": "#7a4f8f",
      "descriptionKey": "",
      "id": "tradition-fantaisie",
      "nameKey": "Fantaisie",
-     "order": 30
+     "order": 40
     },
     {
      "color": "#7a4f8f",
      "descriptionKey": "",
      "id": "tradition-autre",
      "nameKey": "Autre tradition",
-     "order": 40
+     "order": 50
     },
     {
      "color": "#8f3b3b",
      "descriptionKey": "",
      "id": "arme-mains-nues",
      "nameKey": "Mains nues",
-     "order": 50
+     "order": 60
     },
     {
      "color": "#8f3b3b",
      "descriptionKey": "",
      "id": "arme-melee",
      "nameKey": "Mêlée",
-     "order": 60
+     "order": 70
     },
     {
      "color": "#8f3b3b",
      "descriptionKey": "",
      "id": "arme-distance",
      "nameKey": "Distance",
-     "order": 70
+     "order": 80
     },
     {
      "color": "#8f3b3b",
      "descriptionKey": "",
      "id": "arme-a-feu",
      "nameKey": "Arme à feu",
-     "order": 80
+     "order": 90
     },
     {
      "color": null,
      "descriptionKey": "Catégorie de Fantaisie.",
      "id": "fantaisie-psy",
      "nameKey": "Psy",
-     "order": 90
+     "order": 100
     },
     {
      "color": null,
      "descriptionKey": "Catégorie de Fantaisie.",
      "id": "fantaisie-mythologie",
      "nameKey": "Mythologie",
-     "order": 100
+     "order": 110
     },
     {
      "color": null,
      "descriptionKey": "Catégorie de Fantaisie.",
      "id": "fantaisie-cosmique",
      "nameKey": "Cosmique",
-     "order": 110
+     "order": 120
     },
     {
      "color": null,
      "descriptionKey": "Catégorie de Fantaisie.",
      "id": "fantaisie-merveilleux",
      "nameKey": "Merveilleux",
-     "order": 120
+     "order": 130
     },
     {
      "color": null,
      "descriptionKey": "Catégorie de Fantaisie.",
      "id": "fantaisie-histoire-secrete",
      "nameKey": "Histoire secrète",
-     "order": 130
+     "order": 140
     },
     {
      "color": null,
      "descriptionKey": "Catégorie de Fantaisie.",
      "id": "fantaisie-cryptide",
      "nameKey": "Cryptide",
-     "order": 140
+     "order": 150
     },
     {
      "color": null,
      "descriptionKey": "Catégorie de Fantaisie.",
      "id": "fantaisie-etrange",
      "nameKey": "Étrange",
-     "order": 150
+     "order": 160
     },
     {
      "color": null,
      "descriptionKey": "Catégorie de Fantaisie.",
      "id": "fantaisie-conspiration",
      "nameKey": "Conspiration",
-     "order": 160
+     "order": 170
     },
     {
      "color": null,
      "descriptionKey": "Catégorie de Fantaisie.",
      "id": "fantaisie-lieu-anormal",
      "nameKey": "Lieu anormal",
-     "order": 170
+     "order": 180
     },
     {
      "color": null,
      "descriptionKey": "Catégorie de Fantaisie.",
      "id": "fantaisie-monde-impossible",
      "nameKey": "Monde impossible",
-     "order": 180
+     "order": 190
     },
     {
      "color": null,
      "descriptionKey": "Catégorie de Fantaisie.",
      "id": "fantaisie-technologie",
      "nameKey": "Technologie",
-     "order": 190
+     "order": 200
     },
     {
      "color": null,
      "descriptionKey": "Catégorie de Fantaisie.",
      "id": "fantaisie-paranormal",
      "nameKey": "Paranormal",
-     "order": 200
+     "order": 210
     },
     {
      "color": null,
      "descriptionKey": "Catégorie de Fantaisie.",
      "id": "fantaisie-temps-et-realites",
      "nameKey": "Temps et réalités",
-     "order": 210
+     "order": 220
     },
     {
      "color": null,
      "descriptionKey": "Catégorie de Fantaisie.",
      "id": "fantaisie-extraterrestre",
      "nameKey": "Extraterrestre",
-     "order": 220
+     "order": 230
     },
     {
      "color": null,
      "descriptionKey": "",
      "id": "pnj-humain",
      "nameKey": "Humain",
-     "order": 230
+     "order": 240
     },
     {
      "color": null,
      "descriptionKey": "",
      "id": "pnj-creature",
      "nameKey": "Créature",
-     "order": 240
+     "order": 250
     },
     {
      "color": null,
      "descriptionKey": "",
      "id": "pnj-animal",
      "nameKey": "Animal",
-     "order": 250
+     "order": 260
     },
     {
      "color": null,
      "descriptionKey": "",
      "id": "contenu-a-illustrer",
      "nameKey": "Image à produire",
-     "order": 260
+     "order": 270
     }
    ],
    "tests": [
@@ -69158,6 +69246,45 @@
      "totalFormulaRef": null
     },
     {
+     "bonusFormulaRef": "bonus-competence",
+     "descriptionKey": "Le d20 annoncé par le joueur + la compétence + sa caractéristique, contre la DD choisie par le MJ.",
+     "enabled": true,
+     "fallbackOutcomeRef": "echec",
+     "id": "test-competence-demande",
+     "inputBindings": [
+      {
+       "id": "definition",
+       "required": true,
+       "source": {
+        "formulaRef": "definition-demandee"
+       },
+       "valueType": "reference"
+      },
+      {
+       "defaultValue": 13,
+       "id": "dd",
+       "required": true,
+       "source": {
+        "formulaRef": "dd-demandee"
+       },
+       "valueType": "number"
+      }
+     ],
+     "marginFormulaRef": null,
+     "nameKey": "Test de compétence demandé par le MJ",
+     "order": 30,
+     "outcomeRefs": [
+      "reussite-critique",
+      "complication",
+      "reussite"
+     ],
+     "rollRef": "d20-annonce",
+     "tags": [],
+     "targetFormulaRef": "dd-du-test",
+     "targetValue": null,
+     "totalFormulaRef": null
+    },
+    {
      "bonusFormulaRef": "bonus-agilite-esprit",
      "descriptionKey": "1d20 + Agilité + Esprit. Le plus haut agit en premier.",
      "enabled": true,
@@ -69166,7 +69293,7 @@
      "inputBindings": [],
      "marginFormulaRef": null,
      "nameKey": "Initiative",
-     "order": 30,
+     "order": 40,
      "outcomeRefs": [],
      "rollRef": "d20",
      "tags": [],
@@ -69195,7 +69322,7 @@
      ],
      "marginFormulaRef": null,
      "nameKey": "Repérer (Vigilance)",
-     "order": 40,
+     "order": 50,
      "outcomeRefs": [],
      "rollRef": "d20",
      "tags": [],
@@ -69225,7 +69352,7 @@
      "marginFormulaRef": null,
      "nameKey": "Se cacher (Discrétion contre Vigilance)",
      "opposedTestRef": "reperer",
-     "order": 50,
+     "order": 60,
      "outcomeRefs": [
       "reussite-critique",
       "complication",
@@ -69256,7 +69383,7 @@
      ],
      "marginFormulaRef": null,
      "nameKey": "Attaque avec une arme",
-     "order": 60,
+     "order": 70,
      "outcomeRefs": [
       "reussite-critique",
       "complication",
@@ -69287,7 +69414,7 @@
      ],
      "marginFormulaRef": null,
      "nameKey": "Attaque à mains nues",
-     "order": 70,
+     "order": 80,
      "outcomeRefs": [
       "reussite-critique",
       "complication",
@@ -69308,7 +69435,7 @@
      "inputBindings": [],
      "marginFormulaRef": null,
      "nameKey": "Utilisation d'un pouvoir",
-     "order": 80,
+     "order": 90,
      "outcomeRefs": [
       "reussite-critique",
       "complication",
@@ -69329,7 +69456,7 @@
      "inputBindings": [],
      "marginFormulaRef": null,
      "nameKey": "Poursuite en véhicule : Continuer",
-     "order": 90,
+     "order": 100,
      "outcomeRefs": [
       "reussite-critique",
       "complication",
@@ -69350,7 +69477,7 @@
      "inputBindings": [],
      "marginFormulaRef": null,
      "nameKey": "Poursuite à pied : Continuer",
-     "order": 100,
+     "order": 110,
      "outcomeRefs": [
       "reussite-critique",
       "complication",
@@ -69371,7 +69498,7 @@
      "inputBindings": [],
      "marginFormulaRef": null,
      "nameKey": "Poursuite en véhicule : Raccourci",
-     "order": 110,
+     "order": 120,
      "outcomeRefs": [
       "reussite-critique",
       "complication",
@@ -69392,7 +69519,7 @@
      "inputBindings": [],
      "marginFormulaRef": null,
      "nameKey": "Poursuite à pied : Raccourci",
-     "order": 120,
+     "order": 130,
      "outcomeRefs": [
       "reussite-critique",
       "complication",
@@ -69413,7 +69540,7 @@
      "inputBindings": [],
      "marginFormulaRef": null,
      "nameKey": "Poursuite en véhicule : Prise de risque",
-     "order": 130,
+     "order": 140,
      "outcomeRefs": [
       "reussite-critique",
       "complication",
@@ -69434,7 +69561,7 @@
      "inputBindings": [],
      "marginFormulaRef": null,
      "nameKey": "Poursuite à pied : Prise de risque",
-     "order": 140,
+     "order": 150,
      "outcomeRefs": [
       "reussite-critique",
       "complication",
@@ -69521,12 +69648,12 @@
      "tags": []
     }
    ],
-   "version": "2.0.0"
+   "version": "2.1.0"
   },
   "rulesetId": "rwf",
   "status": "ready",
-  "version": "2.0.0",
-  "versionId": "rwf-2-0-0",
+  "version": "2.1.0",
+  "versionId": "rwf-2-1-0",
   "workingDraft": {
    "actions": [
     {
@@ -69843,32 +69970,12 @@
        "labelKey": "DD",
        "required": true,
        "valueType": "number"
-      },
-      {
-       "defaultValue": false,
-       "id": "pratique",
-       "labelKey": "Demandé par le MJ (rapporte de la pratique)",
-       "required": false,
-       "valueType": "boolean"
       }
      ],
      "modifierApplications": [],
      "nameKey": "Tester une compétence ou une maîtrise",
      "order": 110,
-     "outcomeMappings": [
-      {
-       "actionRefs": [
-        "pratique-test"
-       ],
-       "outcomeId": "reussite-critique"
-      },
-      {
-       "actionRefs": [
-        "pratique-test"
-       ],
-       "outcomeId": "reussite"
-      }
-     ],
+     "outcomeMappings": [],
      "stateApplications": [],
      "stateRemovals": [],
      "tags": [],
@@ -70237,7 +70344,6 @@
      "acquisitions": [],
      "conditionRefs": [
       "est-pj",
-      "demande-par-le-mj",
       "maitrise-pratiquee"
      ],
      "costEffectRefs": [],
@@ -70307,6 +70413,53 @@
      "acquisitions": [],
      "conditionRefs": [],
      "costEffectRefs": [],
+     "descriptionKey": "Lancé par le module RWF tools quand le joueur répond à la demande du MJ. Une réussite rapporte de la pratique.",
+     "effectRefs": [],
+     "enabled": true,
+     "eventTypeRefs": [],
+     "id": "test-demande",
+     "inputs": [
+      {
+       "defaultValue": 13,
+       "id": "dd",
+       "labelKey": "DD",
+       "required": true,
+       "valueType": "number"
+      },
+      {
+       "defaultValue": 10,
+       "id": "de",
+       "labelKey": "Résultat du d20",
+       "required": true,
+       "valueType": "number"
+      }
+     ],
+     "modifierApplications": [],
+     "nameKey": "Test demandé par le MJ",
+     "order": 270,
+     "outcomeMappings": [
+      {
+       "actionRefs": [
+        "pratique-test"
+       ],
+       "outcomeId": "reussite-critique"
+      },
+      {
+       "actionRefs": [
+        "pratique-test"
+       ],
+       "outcomeId": "reussite"
+      }
+     ],
+     "stateApplications": [],
+     "stateRemovals": [],
+     "tags": [],
+     "testRef": "test-competence-demande"
+    },
+    {
+     "acquisitions": [],
+     "conditionRefs": [],
+     "costEffectRefs": [],
      "descriptionKey": "Test de poursuite avec ce véhicule (DD 13). À +3 on rattrape ou on s'échappe, à −3 on perd la cible ou on est rattrapé.",
      "effectRefs": [
       "avancer-poursuite"
@@ -70339,7 +70492,7 @@
      ],
      "modifierApplications": [],
      "nameKey": "Poursuite : Continuer",
-     "order": 270,
+     "order": 280,
      "outcomeMappings": [],
      "stateApplications": [],
      "stateRemovals": [],
@@ -70384,7 +70537,7 @@
      ],
      "modifierApplications": [],
      "nameKey": "Poursuite à pied : Continuer",
-     "order": 280,
+     "order": 290,
      "outcomeMappings": [],
      "stateApplications": [],
      "stateRemovals": [],
@@ -70427,7 +70580,7 @@
      ],
      "modifierApplications": [],
      "nameKey": "Poursuite : Raccourci",
-     "order": 290,
+     "order": 300,
      "outcomeMappings": [],
      "stateApplications": [],
      "stateRemovals": [],
@@ -70472,7 +70625,7 @@
      ],
      "modifierApplications": [],
      "nameKey": "Poursuite à pied : Raccourci",
-     "order": 300,
+     "order": 310,
      "outcomeMappings": [],
      "stateApplications": [],
      "stateRemovals": [],
@@ -70515,7 +70668,7 @@
      ],
      "modifierApplications": [],
      "nameKey": "Poursuite : Prise de risque",
-     "order": 310,
+     "order": 320,
      "outcomeMappings": [],
      "stateApplications": [],
      "stateRemovals": [],
@@ -70560,7 +70713,7 @@
      ],
      "modifierApplications": [],
      "nameKey": "Poursuite à pied : Prise de risque",
-     "order": 320,
+     "order": 330,
      "outcomeMappings": [],
      "stateApplications": [],
      "stateRemovals": [],
@@ -70580,7 +70733,7 @@
      "id": "poursuite-arret",
      "modifierApplications": [],
      "nameKey": "Poursuite : s'arrêter",
-     "order": 330,
+     "order": 340,
      "outcomeMappings": [],
      "stateApplications": [],
      "stateRemovals": [],
@@ -70600,7 +70753,7 @@
      "id": "poursuite-nouvelle",
      "modifierApplications": [],
      "nameKey": "Nouvelle poursuite",
-     "order": 340,
+     "order": 350,
      "outcomeMappings": [],
      "stateApplications": [],
      "stateRemovals": [],
@@ -71056,25 +71209,6 @@
      "tags": []
     },
     {
-     "descriptionKey": "Seul un test demandé par le MJ rapporte de la pratique ; un jet libre depuis la fiche n'en rapporte pas.",
-     "enabled": true,
-     "expression": {
-      "left": {
-       "path": "variables.input.pratique",
-       "type": "context"
-      },
-      "right": {
-       "type": "literal",
-       "value": true
-      },
-      "type": "eq"
-     },
-     "id": "demande-par-le-mj",
-     "nameKey": "Test demandé par le MJ",
-     "order": 160,
-     "tags": []
-    },
-    {
      "descriptionKey": "",
      "enabled": true,
      "expression": {
@@ -71095,7 +71229,7 @@
      },
      "id": "est-pj",
      "nameKey": "Personnage joueur",
-     "order": 170,
+     "order": 160,
      "tags": []
     },
     {
@@ -71118,7 +71252,7 @@
      },
      "id": "maitrise-pratiquee",
      "nameKey": "La maîtrise ou compétence progresse",
-     "order": 180,
+     "order": 170,
      "tags": []
     },
     {
@@ -71137,7 +71271,7 @@
      },
      "id": "option-age-compatible",
      "nameKey": "Accessible à cet âge",
-     "order": 190,
+     "order": 180,
      "tags": []
     },
     {
@@ -71156,7 +71290,7 @@
      },
      "id": "permis-accessible",
      "nameKey": "19 ans ou plus",
-     "order": 200,
+     "order": 190,
      "tags": []
     }
    ],
@@ -136708,7 +136842,9 @@
      "nameKey": "DD Facile",
      "order": 10,
      "scope": "ruleset",
-     "tags": [],
+     "tags": [
+      "difficulte"
+     ],
      "value": 10,
      "valueType": "integer"
     },
@@ -136719,7 +136855,9 @@
      "nameKey": "DD Standard",
      "order": 20,
      "scope": "ruleset",
-     "tags": [],
+     "tags": [
+      "difficulte"
+     ],
      "value": 13,
      "valueType": "integer"
     },
@@ -136730,7 +136868,9 @@
      "nameKey": "DD Difficile",
      "order": 30,
      "scope": "ruleset",
-     "tags": [],
+     "tags": [
+      "difficulte"
+     ],
      "value": 16,
      "valueType": "integer"
     },
@@ -136741,7 +136881,9 @@
      "nameKey": "DD Extrême",
      "order": 40,
      "scope": "ruleset",
-     "tags": [],
+     "tags": [
+      "difficulte"
+     ],
      "value": 19,
      "valueType": "integer"
     },
@@ -136752,7 +136894,9 @@
      "nameKey": "DD Héroïque",
      "order": 50,
      "scope": "ruleset",
-     "tags": [],
+     "tags": [
+      "difficulte"
+     ],
      "value": 22,
      "valueType": "integer"
     },
@@ -137126,11 +137270,65 @@
     },
     {
      "defaultEffect": "DENY",
+     "descriptionKey": "Seul le client du MJ lance un test demandé : un joueur ne se donne pas de pratique.",
+     "enabled": true,
+     "id": "test-demande-mj",
+     "nameKey": "Test demandé lancé par le MJ",
+     "order": 20,
+     "rules": [
+      {
+       "effect": "ALLOW",
+       "id": "mj",
+       "operations": [
+        "read",
+        "execute"
+       ],
+       "priority": 10,
+       "roles": [
+        "assistant",
+        "gamemaster"
+       ]
+      }
+     ],
+     "scope": {
+      "objectId": "test-demande",
+      "objectKind": "action"
+     }
+    },
+    {
+     "defaultEffect": "DENY",
+     "descriptionKey": "Seul le client du MJ lance un test demandé : un joueur ne se donne pas de pratique.",
+     "enabled": true,
+     "id": "pratique-mj",
+     "nameKey": "Pratique donnée par le MJ",
+     "order": 30,
+     "rules": [
+      {
+       "effect": "ALLOW",
+       "id": "mj",
+       "operations": [
+        "read",
+        "execute"
+       ],
+       "priority": 10,
+       "roles": [
+        "assistant",
+        "gamemaster"
+       ]
+      }
+     ],
+     "scope": {
+      "objectId": "pratique-test",
+      "objectKind": "action"
+     }
+    },
+    {
+     "defaultEffect": "DENY",
      "descriptionKey": "Un joueur ne s'ajoute pas de pouvoir ; il utilise ceux que le MJ lui a donnés.",
      "enabled": true,
      "id": "pouvoirs-mj",
      "nameKey": "Pouvoirs attribués par le MJ",
-     "order": 20,
+     "order": 40,
      "rules": [
       {
        "effect": "ALLOW",
@@ -137784,6 +137982,16 @@
      "nameKey": "1d4",
      "order": 30,
      "tags": []
+    },
+    {
+     "data": {},
+     "descriptionKey": "Le d20 que le joueur a lancé, avec les dés de Foundry ou sur la table.",
+     "enabled": true,
+     "formula": "@input.de",
+     "id": "d20-annonce",
+     "nameKey": "d20 annoncé",
+     "order": 40,
+     "tags": []
     }
    ],
    "scales": [
@@ -138417,186 +138625,193 @@
    "tables": [],
    "tags": [
     {
+     "color": null,
+     "descriptionKey": "",
+     "id": "difficulte",
+     "nameKey": "Difficulté de test",
+     "order": 10
+    },
+    {
      "color": "#7a4f8f",
      "descriptionKey": "",
      "id": "tradition-magie",
      "nameKey": "Magie",
-     "order": 10
+     "order": 20
     },
     {
      "color": "#7a4f8f",
      "descriptionKey": "",
      "id": "tradition-psychique",
      "nameKey": "Psychique",
-     "order": 20
+     "order": 30
     },
     {
      "color": "#7a4f8f",
      "descriptionKey": "",
      "id": "tradition-fantaisie",
      "nameKey": "Fantaisie",
-     "order": 30
+     "order": 40
     },
     {
      "color": "#7a4f8f",
      "descriptionKey": "",
      "id": "tradition-autre",
      "nameKey": "Autre tradition",
-     "order": 40
+     "order": 50
     },
     {
      "color": "#8f3b3b",
      "descriptionKey": "",
      "id": "arme-mains-nues",
      "nameKey": "Mains nues",
-     "order": 50
+     "order": 60
     },
     {
      "color": "#8f3b3b",
      "descriptionKey": "",
      "id": "arme-melee",
      "nameKey": "Mêlée",
-     "order": 60
+     "order": 70
     },
     {
      "color": "#8f3b3b",
      "descriptionKey": "",
      "id": "arme-distance",
      "nameKey": "Distance",
-     "order": 70
+     "order": 80
     },
     {
      "color": "#8f3b3b",
      "descriptionKey": "",
      "id": "arme-a-feu",
      "nameKey": "Arme à feu",
-     "order": 80
+     "order": 90
     },
     {
      "color": null,
      "descriptionKey": "Catégorie de Fantaisie.",
      "id": "fantaisie-psy",
      "nameKey": "Psy",
-     "order": 90
+     "order": 100
     },
     {
      "color": null,
      "descriptionKey": "Catégorie de Fantaisie.",
      "id": "fantaisie-mythologie",
      "nameKey": "Mythologie",
-     "order": 100
+     "order": 110
     },
     {
      "color": null,
      "descriptionKey": "Catégorie de Fantaisie.",
      "id": "fantaisie-cosmique",
      "nameKey": "Cosmique",
-     "order": 110
+     "order": 120
     },
     {
      "color": null,
      "descriptionKey": "Catégorie de Fantaisie.",
      "id": "fantaisie-merveilleux",
      "nameKey": "Merveilleux",
-     "order": 120
+     "order": 130
     },
     {
      "color": null,
      "descriptionKey": "Catégorie de Fantaisie.",
      "id": "fantaisie-histoire-secrete",
      "nameKey": "Histoire secrète",
-     "order": 130
+     "order": 140
     },
     {
      "color": null,
      "descriptionKey": "Catégorie de Fantaisie.",
      "id": "fantaisie-cryptide",
      "nameKey": "Cryptide",
-     "order": 140
+     "order": 150
     },
     {
      "color": null,
      "descriptionKey": "Catégorie de Fantaisie.",
      "id": "fantaisie-etrange",
      "nameKey": "Étrange",
-     "order": 150
+     "order": 160
     },
     {
      "color": null,
      "descriptionKey": "Catégorie de Fantaisie.",
      "id": "fantaisie-conspiration",
      "nameKey": "Conspiration",
-     "order": 160
+     "order": 170
     },
     {
      "color": null,
      "descriptionKey": "Catégorie de Fantaisie.",
      "id": "fantaisie-lieu-anormal",
      "nameKey": "Lieu anormal",
-     "order": 170
+     "order": 180
     },
     {
      "color": null,
      "descriptionKey": "Catégorie de Fantaisie.",
      "id": "fantaisie-monde-impossible",
      "nameKey": "Monde impossible",
-     "order": 180
+     "order": 190
     },
     {
      "color": null,
      "descriptionKey": "Catégorie de Fantaisie.",
      "id": "fantaisie-technologie",
      "nameKey": "Technologie",
-     "order": 190
+     "order": 200
     },
     {
      "color": null,
      "descriptionKey": "Catégorie de Fantaisie.",
      "id": "fantaisie-paranormal",
      "nameKey": "Paranormal",
-     "order": 200
+     "order": 210
     },
     {
      "color": null,
      "descriptionKey": "Catégorie de Fantaisie.",
      "id": "fantaisie-temps-et-realites",
      "nameKey": "Temps et réalités",
-     "order": 210
+     "order": 220
     },
     {
      "color": null,
      "descriptionKey": "Catégorie de Fantaisie.",
      "id": "fantaisie-extraterrestre",
      "nameKey": "Extraterrestre",
-     "order": 220
+     "order": 230
     },
     {
      "color": null,
      "descriptionKey": "",
      "id": "pnj-humain",
      "nameKey": "Humain",
-     "order": 230
+     "order": 240
     },
     {
      "color": null,
      "descriptionKey": "",
      "id": "pnj-creature",
      "nameKey": "Créature",
-     "order": 240
+     "order": 250
     },
     {
      "color": null,
      "descriptionKey": "",
      "id": "pnj-animal",
      "nameKey": "Animal",
-     "order": 250
+     "order": 260
     },
     {
      "color": null,
      "descriptionKey": "",
      "id": "contenu-a-illustrer",
      "nameKey": "Image à produire",
-     "order": 260
+     "order": 270
     }
    ],
    "tests": [
@@ -138679,6 +138894,45 @@
      "totalFormulaRef": null
     },
     {
+     "bonusFormulaRef": "bonus-competence",
+     "descriptionKey": "Le d20 annoncé par le joueur + la compétence + sa caractéristique, contre la DD choisie par le MJ.",
+     "enabled": true,
+     "fallbackOutcomeRef": "echec",
+     "id": "test-competence-demande",
+     "inputBindings": [
+      {
+       "id": "definition",
+       "required": true,
+       "source": {
+        "formulaRef": "definition-demandee"
+       },
+       "valueType": "reference"
+      },
+      {
+       "defaultValue": 13,
+       "id": "dd",
+       "required": true,
+       "source": {
+        "formulaRef": "dd-demandee"
+       },
+       "valueType": "number"
+      }
+     ],
+     "marginFormulaRef": null,
+     "nameKey": "Test de compétence demandé par le MJ",
+     "order": 30,
+     "outcomeRefs": [
+      "reussite-critique",
+      "complication",
+      "reussite"
+     ],
+     "rollRef": "d20-annonce",
+     "tags": [],
+     "targetFormulaRef": "dd-du-test",
+     "targetValue": null,
+     "totalFormulaRef": null
+    },
+    {
      "bonusFormulaRef": "bonus-agilite-esprit",
      "descriptionKey": "1d20 + Agilité + Esprit. Le plus haut agit en premier.",
      "enabled": true,
@@ -138687,7 +138941,7 @@
      "inputBindings": [],
      "marginFormulaRef": null,
      "nameKey": "Initiative",
-     "order": 30,
+     "order": 40,
      "outcomeRefs": [],
      "rollRef": "d20",
      "tags": [],
@@ -138716,7 +138970,7 @@
      ],
      "marginFormulaRef": null,
      "nameKey": "Repérer (Vigilance)",
-     "order": 40,
+     "order": 50,
      "outcomeRefs": [],
      "rollRef": "d20",
      "tags": [],
@@ -138746,7 +139000,7 @@
      "marginFormulaRef": null,
      "nameKey": "Se cacher (Discrétion contre Vigilance)",
      "opposedTestRef": "reperer",
-     "order": 50,
+     "order": 60,
      "outcomeRefs": [
       "reussite-critique",
       "complication",
@@ -138777,7 +139031,7 @@
      ],
      "marginFormulaRef": null,
      "nameKey": "Attaque avec une arme",
-     "order": 60,
+     "order": 70,
      "outcomeRefs": [
       "reussite-critique",
       "complication",
@@ -138808,7 +139062,7 @@
      ],
      "marginFormulaRef": null,
      "nameKey": "Attaque à mains nues",
-     "order": 70,
+     "order": 80,
      "outcomeRefs": [
       "reussite-critique",
       "complication",
@@ -138829,7 +139083,7 @@
      "inputBindings": [],
      "marginFormulaRef": null,
      "nameKey": "Utilisation d'un pouvoir",
-     "order": 80,
+     "order": 90,
      "outcomeRefs": [
       "reussite-critique",
       "complication",
@@ -138850,7 +139104,7 @@
      "inputBindings": [],
      "marginFormulaRef": null,
      "nameKey": "Poursuite en véhicule : Continuer",
-     "order": 90,
+     "order": 100,
      "outcomeRefs": [
       "reussite-critique",
       "complication",
@@ -138871,7 +139125,7 @@
      "inputBindings": [],
      "marginFormulaRef": null,
      "nameKey": "Poursuite à pied : Continuer",
-     "order": 100,
+     "order": 110,
      "outcomeRefs": [
       "reussite-critique",
       "complication",
@@ -138892,7 +139146,7 @@
      "inputBindings": [],
      "marginFormulaRef": null,
      "nameKey": "Poursuite en véhicule : Raccourci",
-     "order": 110,
+     "order": 120,
      "outcomeRefs": [
       "reussite-critique",
       "complication",
@@ -138913,7 +139167,7 @@
      "inputBindings": [],
      "marginFormulaRef": null,
      "nameKey": "Poursuite à pied : Raccourci",
-     "order": 120,
+     "order": 130,
      "outcomeRefs": [
       "reussite-critique",
       "complication",
@@ -138934,7 +139188,7 @@
      "inputBindings": [],
      "marginFormulaRef": null,
      "nameKey": "Poursuite en véhicule : Prise de risque",
-     "order": 130,
+     "order": 140,
      "outcomeRefs": [
       "reussite-critique",
       "complication",
@@ -138955,7 +139209,7 @@
      "inputBindings": [],
      "marginFormulaRef": null,
      "nameKey": "Poursuite à pied : Prise de risque",
-     "order": 140,
+     "order": 150,
      "outcomeRefs": [
       "reussite-critique",
       "complication",
@@ -139042,7 +139296,7 @@
      "tags": []
     }
    ],
-   "version": "2.0.0"
+   "version": "2.1.0"
   }
  }
 }

@@ -13,7 +13,7 @@ const {RWF_DEFAULT_AGE_GROUPS, RWF_DEFAULT_BACKGROUNDS} = await imp(`${sysDir}/m
 const {RWF_BASE_PROFESSIONS} = await imp(`${sysDir}/module/professions.mjs`);
 const pack = name => JSON.parse(readFileSync(`${packDir}/${name}`, "utf8"));
 
-const R = {id: "rwf", nameKey: "Real World Fantasy", descriptionKey: "Jeu de rôle contemporain fantastique : notre monde, plus les Fantaisies que le MJ rend vraies. Règles extraites du système RWF v0.1.475, contenus du RWF Super Pack v0.4.1.", version: "2.0.0", color: "#2f6f8f",
+const R = {id: "rwf", nameKey: "Real World Fantasy", descriptionKey: "Jeu de rôle contemporain fantastique : notre monde, plus les Fantaisies que le MJ rend vraies. Règles extraites du système RWF v0.1.475, contenus du RWF Super Pack v0.4.1.", version: "2.1.0", color: "#2f6f8f",
   // COMBAT-01: 1d20 + Agilité + Esprit, rerolled every round; ties go to Agilité, then Esprit.
   initiative: {testRef: "initiative", tableRef: null, tieBreakFormulaRef: "departage-initiative", eachRound: true, bySide: false, passes: null}};
 const C = Object.fromEntries(["definitionTypes","definitions","parameters","formulas","formulaBindings","conditions","rolls","outcomes","tests","effects","actions","permissionPolicies","eventTypes","triggers","contentTypes","contentTemplates","modifiers","durations","creationSystems","progressionSystems","sheetDefinitions","scales","tags"].map(k => [k, []]));
@@ -216,6 +216,8 @@ K("troisieme-round", "Tous les trois rounds", cmp("eq", {type: "mod", args: [ctx
 add("rolls", generic({id: "d20", nameKey: "1d20", formula: "1d20", data: {}}));
 add("rolls", generic({id: "degats-contenu", nameKey: "Dés de dégâts de l'arme ou du pouvoir", descriptionKey: "Les dés écrits sur l'arme ou le pouvoir utilisé.", formula: "@content.degats", data: {}}));
 add("rolls", generic({id: "degats-mains-nues", nameKey: "1d4", formula: "1d4", data: {}}));
+// A test the GM asks for (module RWF tools): the player rolls the d20 or reads it from the table, the result arrives as input.
+add("rolls", generic({id: "d20-annonce", nameKey: "d20 annoncé", descriptionKey: "Le d20 que le joueur a lancé, avec les dés de Foundry ou sur la table.", formula: "@input.de", data: {}}));
 const O = (id, nameKey, resultKey, conditionRef, descriptionKey) => add("outcomes", generic({id, nameKey, descriptionKey, resultKey, conditionRef, labelKey: nameKey}));
 O("reussite-critique", "Réussite critique", "critique", "est-critique", "20 naturel : réussite automatique et spectaculaire. Double les dés de dégâts d'une attaque.");
 O("complication", "Complication", "complication", "est-complication", "1 naturel : échec avec complication, même si le total suffisait.");
@@ -239,6 +241,7 @@ const attrOf = id => C.definitions.find(d => d.id === id).data.caracteristique.o
 const ASKED_INPUT = {id: "definition", source: {formulaRef: "definition-demandee"}, valueType: "reference", required: true};
 T("test-caracteristique", "Test de caractéristique", "bonus-caracteristique", {descriptionKey: "1d20 + la caractéristique choisie contre la DD.", inputBindings: [ASKED_INPUT, DD_INPUT]});
 T("test-competence", "Test de compétence ou de maîtrise", "bonus-competence", {descriptionKey: "1d20 + la compétence ou maîtrise choisie + sa caractéristique, contre la DD.", inputBindings: [ASKED_INPUT, DD_INPUT]});
+T("test-competence-demande", "Test de compétence demandé par le MJ", "bonus-competence", {descriptionKey: "Le d20 annoncé par le joueur + la compétence + sa caractéristique, contre la DD choisie par le MJ.", rollRef: "d20-annonce", inputBindings: [ASKED_INPUT, DD_INPUT]});
 add("tests", generic({id: "initiative", nameKey: "Initiative", descriptionKey: "1d20 + Agilité + Esprit. Le plus haut agit en premier.", rollRef: "d20", inputBindings: [], bonusFormulaRef: bonusFormula(["agilite", "esprit"]), totalFormulaRef: null, targetFormulaRef: null, targetValue: null, marginFormulaRef: null, outcomeRefs: [], fallbackOutcomeRef: null}));
 // Opposed: hiding against the target's Vigilance; the margin is between the two totals.
 const fixedSkill = id => ({id: "definition", source: {literal: {objectKind: "definition", objectId: id}}, valueType: "reference", required: true});
@@ -314,7 +317,6 @@ Object.assign(C.actions.find(a => a.id === "sprinter"), {conditionRefs: ["endura
 F("pratique-gagnee", "Pratique gagnée", iff(cmp("eq", ctx("variables.test.outcome.resultKey"), lit("critique")), par("pratique-critique"), par("pratique-reussite")), "integer", "2 sur une réussite critique, 1 sur une réussite.");
 add("formulas", generic({id: "pratique-de-la-definition", nameKey: "Pratique de la définition testée", descriptionKey: "La pratique de la compétence ou de la maîtrise testée.", resultType: "reference", expression: defField(asked, "pratique")}));
 add("formulas", generic({id: "pratique-de-l-arme", nameKey: "Pratique de la maîtrise de l'arme", resultType: "reference", expression: defField(cf("maitrise"), "pratique")}));
-K("demande-par-le-mj", "Test demandé par le MJ", cmp("eq", ctx("variables.input.pratique"), lit(true)), "Seul un test demandé par le MJ rapporte de la pratique ; un jet libre depuis la fiche n'en rapporte pas.");
 K("est-pj", "Personnage joueur", cmp("eq", estPJ, lit(true)));
 K("maitrise-pratiquee", "La maîtrise ou compétence progresse", cmp("neq", defField(asked, "pratique"), lit(null)), "Une caractéristique ne progresse pas par la pratique.");
 E("gain-pratique", "Pratique de la compétence testée", base("pratique-athletisme"), "add", {kind: "formula", id: "pratique-gagnee"}, "self", "La pratique va à la compétence ou à la maîtrise testée.");
@@ -322,14 +324,16 @@ C.effects.at(-1).targetDefinitionFormulaRef = "pratique-de-la-definition";
 E("gain-pratique-arme", "Pratique de la maîtrise de l'arme", base("pratique-armes-de-poing"), "add", {kind: "formula", id: "pratique-gagnee"}, "self");
 C.effects.at(-1).targetDefinitionFormulaRef = "pratique-de-l-arme";
 E("gain-pratique-mains-nues", "Pratique du Corps à corps", base("pratique-corps-a-corps"), "add", {kind: "formula", id: "pratique-gagnee"}, "self");
-A("pratique-test", "Pratique d'un test demandé", {conditionRefs: ["est-pj", "demande-par-le-mj", "maitrise-pratiquee"], effectRefs: ["gain-pratique"]});
+A("pratique-test", "Pratique d'un test demandé", {conditionRefs: ["est-pj", "maitrise-pratiquee"], effectRefs: ["gain-pratique"]});
 A("pratique-arme", "Pratique d'une attaque en combat", {conditionRefs: ["est-pj", "est-en-combat"], effectRefs: ["gain-pratique-arme"]});
 A("pratique-mains-nues", "Pratique d'une attaque à mains nues en combat", {conditionRefs: ["est-pj", "est-en-combat"], effectRefs: ["gain-pratique-mains-nues"]});
 const DD_ASKED = {id: "dd", labelKey: "DD", valueType: "number", required: true, defaultValue: 13};
-const ASKED_BY_GM = {id: "pratique", labelKey: "Demandé par le MJ (rapporte de la pratique)", valueType: "boolean", required: false, defaultValue: false};
+const D20_ANNOUNCED = {id: "de", labelKey: "Résultat du d20", valueType: "number", required: true, defaultValue: 10};
 const COVER_ASKED = {id: "couverture", labelKey: "Couverture de la cible", valueType: "number", required: true, defaultValue: 0};
 const succeeded = actionRefs => [{outcomeId: "reussite-critique", actionRefs}, {outcomeId: "reussite", actionRefs}];
-Object.assign(C.actions.find(a => a.id === "tester-competence"), {inputs: [DD_ASKED, ASKED_BY_GM], outcomeMappings: succeeded(["pratique-test"])});
+Object.assign(C.actions.find(a => a.id === "tester-competence"), {inputs: [DD_ASKED]});
+// Only a test the GM asked for gives practice: the GM's client runs it (module RWF tools), with the d20 the player announced.
+A("test-demande", "Test demandé par le MJ", {descriptionKey: "Lancé par le module RWF tools quand le joueur répond à la demande du MJ. Une réussite rapporte de la pratique.", testRef: "test-competence-demande", inputs: [DD_ASKED, D20_ANNOUNCED], outcomeMappings: succeeded(["pratique-test"])});
 Object.assign(C.actions.find(a => a.id === "tester-caracteristique"), {inputs: [DD_ASKED]});
 // COMBAT-05: a critical hit doubles the dice and leaves a wound.
 const hit = (damage, practice) => [{outcomeId: "reussite-critique", effectRefs: [damage], actionRefs: [practice, "infliger-blessure"]}, {outcomeId: "reussite", effectRefs: [damage], actionRefs: [practice]}, ...missed];
@@ -369,6 +373,9 @@ add("progressionSystems", generic({id: "pratique", nameKey: "Progression par la 
 /* ---------- Categories and tags ---------- */
 const fantasies = pack("fantasies/fantasies.json");
 const TAG = (id, nameKey, color = null) => add("tags", {id, nameKey, descriptionKey: "", color});
+// The DDs the GM picks from when asking for a test (module RWF tools).
+TAG("difficulte", "Difficulté de test");
+for (const id of ["dd-facile", "dd-standard", "dd-difficile", "dd-extreme", "dd-heroique"]) C.parameters.find(p => p.id === id).tags = ["difficulte"];
 const TRAD = {magic: ["tradition-magie", "Magie"], psychic: ["tradition-psychique", "Psychique"], fantasy: ["tradition-fantaisie", "Fantaisie"], other: ["tradition-autre", "Autre tradition"]};
 for (const [id, label] of Object.values(TRAD)) TAG(id, label, "#7a4f8f");
 const WCAT = {unarmed: ["arme-mains-nues", "Mains nues"], melee: ["arme-melee", "Mêlée"], ranged: ["arme-distance", "Distance"], firearm: ["arme-a-feu", "Arme à feu"]};
@@ -516,6 +523,8 @@ for (const f of fantasies) {
 add("permissionPolicies", {id: "caracteristiques-mj", nameKey: "Caractéristiques réservées au MJ", descriptionKey: "Les caractéristiques restent stables : seul le MJ les modifie.", enabled: true, scope: {objectKind: "definitionType", objectId: "caracteristique"}, defaultEffect: "DENY", rules: [
   {id: "lecture", effect: "ALLOW", operations: ["read", "execute"], priority: 0},
   {id: "ecriture-mj", effect: "ALLOW", operations: ["write", "configure"], roles: ["assistant", "gamemaster"], priority: 10}]});
+for (const [id, action] of [["test-demande-mj", "test-demande"], ["pratique-mj", "pratique-test"]]) add("permissionPolicies", {id, nameKey: action === "test-demande" ? "Test demandé lancé par le MJ" : "Pratique donnée par le MJ", descriptionKey: "Seul le client du MJ lance un test demandé : un joueur ne se donne pas de pratique.", enabled: true, scope: {objectKind: "action", objectId: action}, defaultEffect: "DENY", rules: [
+  {id: "mj", effect: "ALLOW", operations: ["read", "execute"], roles: ["assistant", "gamemaster"], priority: 10}]});
 add("permissionPolicies", {id: "pouvoirs-mj", nameKey: "Pouvoirs attribués par le MJ", descriptionKey: "Un joueur ne s'ajoute pas de pouvoir ; il utilise ceux que le MJ lui a donnés.", enabled: true, scope: {objectKind: "contentType", objectId: "pouvoir"}, defaultEffect: "DENY", rules: [
   {id: "usage", effect: "ALLOW", operations: ["read", "execute"], minimumOwnership: "owner", priority: 0},
   {id: "attribution-mj", effect: "ALLOW", operations: ["read", "write", "execute", "configure"], roles: ["assistant", "gamemaster"], priority: 10}]});
@@ -567,7 +576,7 @@ const list = (id, typeId, children, columns = 1) => ({id: `liste-${id}`, kind: "
 const gauge = (id, label, style, write = {operation: "adjust"}) => ({id: `jauge-${id}`, kind: "value", labelKey: label, source: {kind: "output", reference: pool(id)}, display: "gauge", write, style: {label: "top", ...style}});
 const gmActions = ["mettre-hors-de-combat", "etat-stabilise", "etat-coma", "etat-mort", "infliger-blessure", "infliger-blessure-grave"];
 // Actions run by the rules themselves (rounds, practice) or from a Content (a vehicle's pursuit) are not sheet buttons.
-const ruleOnly = ["nouveau-round", "entrer-en-combat", "sortir-du-combat", "pratique-test", "pratique-arme", "pratique-mains-nues", "s-essouffler", "recuperer", ...Object.keys(moveBonus).map(move => `poursuite-vehicule-${move}`)];
+const ruleOnly = ["test-demande", "nouveau-round", "entrer-en-combat", "sortir-du-combat", "pratique-test", "pratique-arme", "pratique-mains-nues", "s-essouffler", "recuperer", ...Object.keys(moveBonus).map(move => `poursuite-vehicule-${move}`)];
 const actionIds = C.actions.map(a => a.id).filter(id => !ruleOnly.includes(id));
 add("sheetDefinitions", generic({id: "feuille-pj", nameKey: "Feuille de PJ", descriptionKey: "Personnage, compétences, équipement et actions. La Vitalité exacte n'est visible que du joueur et du MJ ; les observateurs lisent l'état de santé.", target: "actor", contentTypeIds: [], root: {id: "root", kind: "grid", columns: 1, children: [{id: "onglets", kind: "tabs", children: [
   {id: "onglet-personnage", kind: "tab", labelKey: "Personnage", children: [
@@ -605,13 +614,13 @@ add("sheetDefinitions", generic({id: "feuille-pj", nameKey: "Feuille de PJ", des
 /* ---------- Build, validate, publish, export ---------- */
 class Storage { constructor() { this.data = emptyStorageSnapshot(); } async load() { return structuredClone(this.data); } async save(d) { this.data = structuredClone(d); } }
 const api = await createConfiguratorAPI(new Storage(), {onError: e => { throw e; }});
-const {versionId} = await api.createRuleset({...R, ...C, versionId: "rwf-2-0-0"});
+const {versionId} = await api.createRuleset({...R, ...C, versionId: "rwf-2-1-0"});
 const draft = api.validateRuleset(api.getRuleset(versionId), {scope: "publish"});
 if (!draft.valid) { console.error(draft.errors.map(e=>`${e.code} ${e.path}: ${e.message}`).join("\n")); process.exit(1); }
 await api.publishRuleset(versionId);
 const exported = api.exportRuleset(versionId);
 mkdirSync(outDir, {recursive: true});
-writeFileSync(`${outDir}/rwf-ruleset-2.0.0.json`, JSON.stringify(exported, null, 1));
+writeFileSync(`${outDir}/rwf-ruleset-2.1.0.json`, JSON.stringify(exported, null, 1));
 const counts = Object.fromEntries(Object.entries(C).map(([k, v]) => [k, v.length]).filter(([, n]) => n));
 writeFileSync(`${outDir}/build-report.json`, JSON.stringify({counts, warnings: draft.warnings?.length ?? 0, fixes: report.fixes}, null, 1));
 console.log(JSON.stringify({counts, warnings: draft.warnings?.slice?.(0, 10)}, null, 1));
