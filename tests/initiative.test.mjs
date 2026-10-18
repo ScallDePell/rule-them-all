@@ -70,8 +70,8 @@ test('The Ruleset editor saves the initiative settings, and none when the game s
   const {collectEntryData}=await import('../src/configurator/entry-data-collector.mjs');
   const collect=(values,current={id:'r',nameKey:'R'})=>{const fd=new Map(Object.entries({nameKey:'R',version:'1',...values}));
     return collectEntryData('ruleset',{fd,current,bool:key=>fd.get(key)==='on',checkedIds:()=>[],queryOne:()=>null,queryAll:()=>[],uid:()=>'x',fieldUid:()=>'y'}).initiative;};
-  assert.deepEqual(collect({initiativeSource:'test:init',initiativeTieBreakFormulaRef:'agility',initiativeEachRound:'on'}),{testRef:'init',tieBreakFormulaRef:'agility',eachRound:true,bySide:false,passes:null});
-  assert.deepEqual(collect({initiativeSource:'table:deck',initiativeBySide:'on',initiativePassStep:'10',initiativePassThreshold:''}),{tableRef:'deck',tieBreakFormulaRef:null,eachRound:false,bySide:true,passes:{step:10,threshold:0}});
+  assert.deepEqual(collect({initiativeSource:'test:init',initiativeTieBreakFormulaRef:'agility',initiativeEachRound:'on',initiativeDefeatedConditionRef:'down'}),{testRef:'init',tieBreakFormulaRef:'agility',eachRound:true,bySide:false,passes:null,defeatedConditionRef:'down'});
+  assert.deepEqual(collect({initiativeSource:'table:deck',initiativeBySide:'on',initiativePassStep:'10',initiativePassThreshold:''}),{tableRef:'deck',tieBreakFormulaRef:null,eachRound:false,bySide:true,passes:{step:10,threshold:0},defeatedConditionRef:null});
   assert.equal(collect({initiativeSource:''}),null);
   assert.deepEqual(collect({},{id:'r',initiative:{testRef:'init',eachRound:false}}),{testRef:'init',eachRound:false},'a form without the fields keeps them');
 });
@@ -141,6 +141,7 @@ test('Initiative passes counted by a Formula: each combatant acts in as many pas
   const {api,v}=await setup(null);
   await assert.rejects(api.updateRuleset(v,{initiative:{testRef:'init',passes:{countFormulaRef:'missing'}}}),/formula\/missing/);
   await assert.rejects(api.updateRuleset(v,{initiative:{testRef:'init',passes:{countFormulaRef:'dex',step:5}}}),/not both/);
+  await assert.rejects(api.updateRuleset(v,{initiative:{testRef:'init',defeatedConditionRef:'missing'}}),/condition\/missing/);
   await api.updateRuleset(v,{initiative:{testRef:'init',passes:{countFormulaRef:'dex'}}});
   const {collectEntryData}=await import('../src/configurator/entry-data-collector.mjs');
   const fd=new Map(Object.entries({nameKey:'R',version:'1',initiativeSource:'test:init',initiativePassCountFormulaRef:'dex',initiativePassStep:'10'}));

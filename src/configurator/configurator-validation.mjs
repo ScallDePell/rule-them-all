@@ -147,7 +147,9 @@ export function validateRuleset(ruleset, {scope = "save"} = {}) {
     if (!isRecord(initiative)) issue("OBJECT_TYPE", "initiative", "initiative must be an object or null.");
     else {
       // A Test rolled by each combatant, or a Table drawn without replacement each round (a deck of cards); bySide: one roll per disposition.
-      exactFields(initiative, ["testRef", "tableRef", "tieBreakFormulaRef", "eachRound", "bySide", "passes"], "initiative", issue);
+      exactFields(initiative, ["testRef", "tableRef", "tieBreakFormulaRef", "eachRound", "bySide", "passes", "defeatedConditionRef"], "initiative", issue);
+      // defeatedConditionRef: a Condition on a combatant's Actor; while it holds, the combatant is defeated in the combat tracker.
+      if (!(initiative.defeatedConditionRef === undefined || initiative.defeatedConditionRef === null) && !(ruleset.conditions ?? []).some(condition => condition?.id === initiative.defeatedConditionRef)) issue("REFERENCE", "initiative.defeatedConditionRef", `Missing reference: condition/${initiative.defeatedConditionRef}.`);
       // passes: {step, threshold}: another pass for those whose initiative minus step per pass stays above threshold;
       // or {countFormulaRef}: each combatant acts in as many passes as that Formula gives for it (attacks per round).
       const passes = initiative.passes ?? null;

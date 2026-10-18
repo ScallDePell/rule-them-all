@@ -3,8 +3,8 @@
  "format": "rta-ruleset",
  "formatVersion": 3,
  "rulesetId": "rwf",
- "version": "2.3.0",
- "versionId": "rwf-2-3-0",
+ "version": "2.4.0",
+ "versionId": "rwf-2-4-0",
  "versionRecord": {
   "publishedSnapshot": {
    "actions": [
@@ -713,7 +713,8 @@
      "effectRefs": [
       "remise-attaques",
       "remise-passe",
-      "remise-derniere-passe"
+      "remise-derniere-passe",
+      "noter-le-round"
      ],
      "enabled": true,
      "eventTypeRefs": [],
@@ -736,7 +737,8 @@
       "remise-attaques",
       "remise-passe",
       "remise-derniere-passe",
-      "remise-effort"
+      "remise-effort",
+      "noter-le-round"
      ],
      "enabled": true,
      "eventTypeRefs": [],
@@ -769,7 +771,8 @@
       "remise-attaques",
       "remise-passe",
       "remise-derniere-passe",
-      "remise-effort"
+      "remise-effort",
+      "remise-round"
      ],
      "enabled": true,
      "eventTypeRefs": [],
@@ -2213,6 +2216,30 @@
      "tags": []
     },
     {
+     "descriptionKey": "Le bilan d'un round ne se fait qu'une fois.",
+     "enabled": true,
+     "expression": {
+      "left": {
+       "reference": {
+        "capabilityId": "value",
+        "objectId": "round-en-cours",
+        "objectKind": "definition",
+        "outputId": "value.final"
+       },
+       "type": "reference"
+      },
+      "right": {
+       "path": "event.payload.round",
+       "type": "context"
+      },
+      "type": "neq"
+     },
+     "id": "round-pas-encore-compte",
+     "nameKey": "Round pas encore compté",
+     "order": 220,
+     "tags": []
+    },
+    {
      "descriptionKey": "",
      "enabled": true,
      "expression": {
@@ -2233,7 +2260,7 @@
      },
      "id": "aucune-attaque-ce-round",
      "nameKey": "Aucune attaque ce round",
-     "order": 220,
+     "order": 230,
      "tags": []
     },
     {
@@ -2257,7 +2284,7 @@
      },
      "id": "aucun-effort-ce-round",
      "nameKey": "Aucun effort ce round",
-     "order": 230,
+     "order": 240,
      "tags": []
     },
     {
@@ -2280,7 +2307,7 @@
      },
      "id": "munitions-pour-un-tir",
      "nameKey": "Munitions chargées",
-     "order": 240,
+     "order": 250,
      "tags": []
     },
     {
@@ -2303,7 +2330,7 @@
      },
      "id": "arme-automatique",
      "nameKey": "Arme automatique",
-     "order": 250,
+     "order": 260,
      "tags": []
     },
     {
@@ -2326,7 +2353,7 @@
      },
      "id": "munitions-pour-une-rafale",
      "nameKey": "Munitions pour une rafale",
-     "order": 260,
+     "order": 270,
      "tags": []
     },
     {
@@ -2353,7 +2380,7 @@
      },
      "id": "chargeur-incomplet",
      "nameKey": "Chargeur incomplet",
-     "order": 270,
+     "order": 280,
      "tags": []
     },
     {
@@ -2376,7 +2403,7 @@
      },
      "id": "reserve-disponible",
      "nameKey": "Réserve disponible",
-     "order": 280,
+     "order": 290,
      "tags": []
     },
     {
@@ -2395,7 +2422,7 @@
      },
      "id": "option-age-compatible",
      "nameKey": "Accessible à cet âge",
-     "order": 290,
+     "order": 300,
      "tags": []
     },
     {
@@ -2414,7 +2441,7 @@
      },
      "id": "permis-accessible",
      "nameKey": "19 ans ou plus",
-     "order": 300,
+     "order": 310,
      "tags": []
     }
    ],
@@ -3059,6 +3086,14 @@
        "operation": "grant",
        "targetRef": {
         "objectId": "en-combat",
+        "objectKind": "definition"
+       }
+      },
+      {
+       "id": "round-en-cours",
+       "operation": "grant",
+       "targetRef": {
+        "objectId": "round-en-cours",
         "objectKind": "definition"
        }
       },
@@ -19681,6 +19716,14 @@
        }
       },
       {
+       "id": "round-en-cours",
+       "operation": "grant",
+       "targetRef": {
+        "objectId": "round-en-cours",
+        "objectKind": "definition"
+       }
+      },
+      {
        "id": "attaques-utilisees",
        "operation": "grant",
        "targetRef": {
@@ -20050,6 +20093,14 @@
        }
       },
       {
+       "id": "round-en-cours",
+       "operation": "grant",
+       "targetRef": {
+        "objectId": "round-en-cours",
+        "objectKind": "definition"
+       }
+      },
+      {
        "id": "attaques-utilisees",
        "operation": "grant",
        "targetRef": {
@@ -20415,6 +20466,14 @@
        }
       },
       {
+       "id": "round-en-cours",
+       "operation": "grant",
+       "targetRef": {
+        "objectId": "round-en-cours",
+        "objectKind": "definition"
+       }
+      },
+      {
        "id": "attaques-utilisees",
        "operation": "grant",
        "targetRef": {
@@ -20770,6 +20829,14 @@
        "operation": "grant",
        "targetRef": {
         "objectId": "en-combat",
+        "objectKind": "definition"
+       }
+      },
+      {
+       "id": "round-en-cours",
+       "operation": "grant",
+       "targetRef": {
+        "objectId": "round-en-cours",
         "objectKind": "definition"
        }
       },
@@ -21138,6 +21205,14 @@
        }
       },
       {
+       "id": "round-en-cours",
+       "operation": "grant",
+       "targetRef": {
+        "objectId": "round-en-cours",
+        "objectKind": "definition"
+       }
+      },
+      {
        "id": "attaques-utilisees",
        "operation": "grant",
        "targetRef": {
@@ -21493,6 +21568,14 @@
        "operation": "grant",
        "targetRef": {
         "objectId": "en-combat",
+        "objectKind": "definition"
+       }
+      },
+      {
+       "id": "round-en-cours",
+       "operation": "grant",
+       "targetRef": {
+        "objectId": "round-en-cours",
         "objectKind": "definition"
        }
       },
@@ -21860,6 +21943,14 @@
        }
       },
       {
+       "id": "round-en-cours",
+       "operation": "grant",
+       "targetRef": {
+        "objectId": "round-en-cours",
+        "objectKind": "definition"
+       }
+      },
+      {
        "id": "attaques-utilisees",
        "operation": "grant",
        "targetRef": {
@@ -22221,6 +22312,14 @@
        }
       },
       {
+       "id": "round-en-cours",
+       "operation": "grant",
+       "targetRef": {
+        "objectId": "round-en-cours",
+        "objectKind": "definition"
+       }
+      },
+      {
        "id": "attaques-utilisees",
        "operation": "grant",
        "targetRef": {
@@ -22578,6 +22677,14 @@
        }
       },
       {
+       "id": "round-en-cours",
+       "operation": "grant",
+       "targetRef": {
+        "objectId": "round-en-cours",
+        "objectKind": "definition"
+       }
+      },
+      {
        "id": "attaques-utilisees",
        "operation": "grant",
        "targetRef": {
@@ -22929,6 +23036,14 @@
        "operation": "grant",
        "targetRef": {
         "objectId": "en-combat",
+        "objectKind": "definition"
+       }
+      },
+      {
+       "id": "round-en-cours",
+       "operation": "grant",
+       "targetRef": {
+        "objectId": "round-en-cours",
         "objectKind": "definition"
        }
       },
@@ -23295,6 +23410,14 @@
        }
       },
       {
+       "id": "round-en-cours",
+       "operation": "grant",
+       "targetRef": {
+        "objectId": "round-en-cours",
+        "objectKind": "definition"
+       }
+      },
+      {
        "id": "attaques-utilisees",
        "operation": "grant",
        "targetRef": {
@@ -23645,6 +23768,14 @@
        "operation": "grant",
        "targetRef": {
         "objectId": "en-combat",
+        "objectKind": "definition"
+       }
+      },
+      {
+       "id": "round-en-cours",
+       "operation": "grant",
+       "targetRef": {
+        "objectId": "round-en-cours",
         "objectKind": "definition"
        }
       },
@@ -24010,6 +24141,14 @@
        }
       },
       {
+       "id": "round-en-cours",
+       "operation": "grant",
+       "targetRef": {
+        "objectId": "round-en-cours",
+        "objectKind": "definition"
+       }
+      },
+      {
        "id": "attaques-utilisees",
        "operation": "grant",
        "targetRef": {
@@ -24360,6 +24499,14 @@
        "operation": "grant",
        "targetRef": {
         "objectId": "en-combat",
+        "objectKind": "definition"
+       }
+      },
+      {
+       "id": "round-en-cours",
+       "operation": "grant",
+       "targetRef": {
+        "objectId": "round-en-cours",
         "objectKind": "definition"
        }
       },
@@ -24719,6 +24866,14 @@
        }
       },
       {
+       "id": "round-en-cours",
+       "operation": "grant",
+       "targetRef": {
+        "objectId": "round-en-cours",
+        "objectKind": "definition"
+       }
+      },
+      {
        "id": "attaques-utilisees",
        "operation": "grant",
        "targetRef": {
@@ -25071,6 +25226,14 @@
        "operation": "grant",
        "targetRef": {
         "objectId": "en-combat",
+        "objectKind": "definition"
+       }
+      },
+      {
+       "id": "round-en-cours",
+       "operation": "grant",
+       "targetRef": {
+        "objectId": "round-en-cours",
         "objectKind": "definition"
        }
       },
@@ -25439,6 +25602,14 @@
        }
       },
       {
+       "id": "round-en-cours",
+       "operation": "grant",
+       "targetRef": {
+        "objectId": "round-en-cours",
+        "objectKind": "definition"
+       }
+      },
+      {
        "id": "attaques-utilisees",
        "operation": "grant",
        "targetRef": {
@@ -25789,6 +25960,14 @@
        "operation": "grant",
        "targetRef": {
         "objectId": "en-combat",
+        "objectKind": "definition"
+       }
+      },
+      {
+       "id": "round-en-cours",
+       "operation": "grant",
+       "targetRef": {
+        "objectId": "round-en-cours",
         "objectKind": "definition"
        }
       },
@@ -26144,6 +26323,14 @@
        "operation": "grant",
        "targetRef": {
         "objectId": "en-combat",
+        "objectKind": "definition"
+       }
+      },
+      {
+       "id": "round-en-cours",
+       "operation": "grant",
+       "targetRef": {
+        "objectId": "round-en-cours",
         "objectKind": "definition"
        }
       },
@@ -26508,6 +26695,14 @@
        }
       },
       {
+       "id": "round-en-cours",
+       "operation": "grant",
+       "targetRef": {
+        "objectId": "round-en-cours",
+        "objectKind": "definition"
+       }
+      },
+      {
        "id": "attaques-utilisees",
        "operation": "grant",
        "targetRef": {
@@ -26858,6 +27053,14 @@
        "operation": "grant",
        "targetRef": {
         "objectId": "en-combat",
+        "objectKind": "definition"
+       }
+      },
+      {
+       "id": "round-en-cours",
+       "operation": "grant",
+       "targetRef": {
+        "objectId": "round-en-cours",
         "objectKind": "definition"
        }
       },
@@ -27217,6 +27420,14 @@
        }
       },
       {
+       "id": "round-en-cours",
+       "operation": "grant",
+       "targetRef": {
+        "objectId": "round-en-cours",
+        "objectKind": "definition"
+       }
+      },
+      {
        "id": "attaques-utilisees",
        "operation": "grant",
        "targetRef": {
@@ -27568,6 +27779,14 @@
        "operation": "grant",
        "targetRef": {
         "objectId": "en-combat",
+        "objectKind": "definition"
+       }
+      },
+      {
+       "id": "round-en-cours",
+       "operation": "grant",
+       "targetRef": {
+        "objectId": "round-en-cours",
         "objectKind": "definition"
        }
       },
@@ -27924,6 +28143,14 @@
        "operation": "grant",
        "targetRef": {
         "objectId": "en-combat",
+        "objectKind": "definition"
+       }
+      },
+      {
+       "id": "round-en-cours",
+       "operation": "grant",
+       "targetRef": {
+        "objectId": "round-en-cours",
         "objectKind": "definition"
        }
       },
@@ -28289,6 +28516,14 @@
        }
       },
       {
+       "id": "round-en-cours",
+       "operation": "grant",
+       "targetRef": {
+        "objectId": "round-en-cours",
+        "objectKind": "definition"
+       }
+      },
+      {
        "id": "attaques-utilisees",
        "operation": "grant",
        "targetRef": {
@@ -28637,6 +28872,14 @@
        "operation": "grant",
        "targetRef": {
         "objectId": "en-combat",
+        "objectKind": "definition"
+       }
+      },
+      {
+       "id": "round-en-cours",
+       "operation": "grant",
+       "targetRef": {
+        "objectId": "round-en-cours",
         "objectKind": "definition"
        }
       },
@@ -28998,6 +29241,14 @@
        }
       },
       {
+       "id": "round-en-cours",
+       "operation": "grant",
+       "targetRef": {
+        "objectId": "round-en-cours",
+        "objectKind": "definition"
+       }
+      },
+      {
        "id": "attaques-utilisees",
        "operation": "grant",
        "targetRef": {
@@ -29351,6 +29602,14 @@
        "operation": "grant",
        "targetRef": {
         "objectId": "en-combat",
+        "objectKind": "definition"
+       }
+      },
+      {
+       "id": "round-en-cours",
+       "operation": "grant",
+       "targetRef": {
+        "objectId": "round-en-cours",
         "objectKind": "definition"
        }
       },
@@ -29712,6 +29971,14 @@
        }
       },
       {
+       "id": "round-en-cours",
+       "operation": "grant",
+       "targetRef": {
+        "objectId": "round-en-cours",
+        "objectKind": "definition"
+       }
+      },
+      {
        "id": "attaques-utilisees",
        "operation": "grant",
        "targetRef": {
@@ -30065,6 +30332,14 @@
        "operation": "grant",
        "targetRef": {
         "objectId": "en-combat",
+        "objectKind": "definition"
+       }
+      },
+      {
+       "id": "round-en-cours",
+       "operation": "grant",
+       "targetRef": {
+        "objectId": "round-en-cours",
         "objectKind": "definition"
        }
       },
@@ -30426,6 +30701,14 @@
        }
       },
       {
+       "id": "round-en-cours",
+       "operation": "grant",
+       "targetRef": {
+        "objectId": "round-en-cours",
+        "objectKind": "definition"
+       }
+      },
+      {
        "id": "attaques-utilisees",
        "operation": "grant",
        "targetRef": {
@@ -30779,6 +31062,14 @@
        "operation": "grant",
        "targetRef": {
         "objectId": "en-combat",
+        "objectKind": "definition"
+       }
+      },
+      {
+       "id": "round-en-cours",
+       "operation": "grant",
+       "targetRef": {
+        "objectId": "round-en-cours",
         "objectKind": "definition"
        }
       },
@@ -31140,6 +31431,14 @@
        }
       },
       {
+       "id": "round-en-cours",
+       "operation": "grant",
+       "targetRef": {
+        "objectId": "round-en-cours",
+        "objectKind": "definition"
+       }
+      },
+      {
        "id": "attaques-utilisees",
        "operation": "grant",
        "targetRef": {
@@ -31493,6 +31792,14 @@
        "operation": "grant",
        "targetRef": {
         "objectId": "en-combat",
+        "objectKind": "definition"
+       }
+      },
+      {
+       "id": "round-en-cours",
+       "operation": "grant",
+       "targetRef": {
+        "objectId": "round-en-cours",
         "objectKind": "definition"
        }
       },
@@ -31854,6 +32161,14 @@
        }
       },
       {
+       "id": "round-en-cours",
+       "operation": "grant",
+       "targetRef": {
+        "objectId": "round-en-cours",
+        "objectKind": "definition"
+       }
+      },
+      {
        "id": "attaques-utilisees",
        "operation": "grant",
        "targetRef": {
@@ -32202,6 +32517,14 @@
        "operation": "grant",
        "targetRef": {
         "objectId": "en-combat",
+        "objectKind": "definition"
+       }
+      },
+      {
+       "id": "round-en-cours",
+       "operation": "grant",
+       "targetRef": {
+        "objectId": "round-en-cours",
         "objectKind": "definition"
        }
       },
@@ -32563,6 +32886,14 @@
        }
       },
       {
+       "id": "round-en-cours",
+       "operation": "grant",
+       "targetRef": {
+        "objectId": "round-en-cours",
+        "objectKind": "definition"
+       }
+      },
+      {
        "id": "attaques-utilisees",
        "operation": "grant",
        "targetRef": {
@@ -32911,6 +33242,14 @@
        "operation": "grant",
        "targetRef": {
         "objectId": "en-combat",
+        "objectKind": "definition"
+       }
+      },
+      {
+       "id": "round-en-cours",
+       "operation": "grant",
+       "targetRef": {
+        "objectId": "round-en-cours",
         "objectKind": "definition"
        }
       },
@@ -33272,6 +33611,14 @@
        }
       },
       {
+       "id": "round-en-cours",
+       "operation": "grant",
+       "targetRef": {
+        "objectId": "round-en-cours",
+        "objectKind": "definition"
+       }
+      },
+      {
        "id": "attaques-utilisees",
        "operation": "grant",
        "targetRef": {
@@ -33625,6 +33972,14 @@
        "operation": "grant",
        "targetRef": {
         "objectId": "en-combat",
+        "objectKind": "definition"
+       }
+      },
+      {
+       "id": "round-en-cours",
+       "operation": "grant",
+       "targetRef": {
+        "objectId": "round-en-cours",
         "objectKind": "definition"
        }
       },
@@ -33986,6 +34341,14 @@
        }
       },
       {
+       "id": "round-en-cours",
+       "operation": "grant",
+       "targetRef": {
+        "objectId": "round-en-cours",
+        "objectKind": "definition"
+       }
+      },
+      {
        "id": "attaques-utilisees",
        "operation": "grant",
        "targetRef": {
@@ -34339,6 +34702,14 @@
        "operation": "grant",
        "targetRef": {
         "objectId": "en-combat",
+        "objectKind": "definition"
+       }
+      },
+      {
+       "id": "round-en-cours",
+       "operation": "grant",
+       "targetRef": {
+        "objectId": "round-en-cours",
         "objectKind": "definition"
        }
       },
@@ -34700,6 +35071,14 @@
        }
       },
       {
+       "id": "round-en-cours",
+       "operation": "grant",
+       "targetRef": {
+        "objectId": "round-en-cours",
+        "objectKind": "definition"
+       }
+      },
+      {
        "id": "attaques-utilisees",
        "operation": "grant",
        "targetRef": {
@@ -35053,6 +35432,14 @@
        "operation": "grant",
        "targetRef": {
         "objectId": "en-combat",
+        "objectKind": "definition"
+       }
+      },
+      {
+       "id": "round-en-cours",
+       "operation": "grant",
+       "targetRef": {
+        "objectId": "round-en-cours",
         "objectKind": "definition"
        }
       },
@@ -35414,6 +35801,14 @@
        }
       },
       {
+       "id": "round-en-cours",
+       "operation": "grant",
+       "targetRef": {
+        "objectId": "round-en-cours",
+        "objectKind": "definition"
+       }
+      },
+      {
        "id": "attaques-utilisees",
        "operation": "grant",
        "targetRef": {
@@ -35767,6 +36162,14 @@
        "operation": "grant",
        "targetRef": {
         "objectId": "en-combat",
+        "objectKind": "definition"
+       }
+      },
+      {
+       "id": "round-en-cours",
+       "operation": "grant",
+       "targetRef": {
+        "objectId": "round-en-cours",
         "objectKind": "definition"
        }
       },
@@ -36128,6 +36531,14 @@
        }
       },
       {
+       "id": "round-en-cours",
+       "operation": "grant",
+       "targetRef": {
+        "objectId": "round-en-cours",
+        "objectKind": "definition"
+       }
+      },
+      {
        "id": "attaques-utilisees",
        "operation": "grant",
        "targetRef": {
@@ -36481,6 +36892,14 @@
        "operation": "grant",
        "targetRef": {
         "objectId": "en-combat",
+        "objectKind": "definition"
+       }
+      },
+      {
+       "id": "round-en-cours",
+       "operation": "grant",
+       "targetRef": {
+        "objectId": "round-en-cours",
         "objectKind": "definition"
        }
       },
@@ -36842,6 +37261,14 @@
        }
       },
       {
+       "id": "round-en-cours",
+       "operation": "grant",
+       "targetRef": {
+        "objectId": "round-en-cours",
+        "objectKind": "definition"
+       }
+      },
+      {
        "id": "attaques-utilisees",
        "operation": "grant",
        "targetRef": {
@@ -37195,6 +37622,14 @@
        "operation": "grant",
        "targetRef": {
         "objectId": "en-combat",
+        "objectKind": "definition"
+       }
+      },
+      {
+       "id": "round-en-cours",
+       "operation": "grant",
+       "targetRef": {
+        "objectId": "round-en-cours",
         "objectKind": "definition"
        }
       },
@@ -37556,6 +37991,14 @@
        }
       },
       {
+       "id": "round-en-cours",
+       "operation": "grant",
+       "targetRef": {
+        "objectId": "round-en-cours",
+        "objectKind": "definition"
+       }
+      },
+      {
        "id": "attaques-utilisees",
        "operation": "grant",
        "targetRef": {
@@ -37909,6 +38352,14 @@
        "operation": "grant",
        "targetRef": {
         "objectId": "en-combat",
+        "objectKind": "definition"
+       }
+      },
+      {
+       "id": "round-en-cours",
+       "operation": "grant",
+       "targetRef": {
+        "objectId": "round-en-cours",
         "objectKind": "definition"
        }
       },
@@ -38270,6 +38721,14 @@
        }
       },
       {
+       "id": "round-en-cours",
+       "operation": "grant",
+       "targetRef": {
+        "objectId": "round-en-cours",
+        "objectKind": "definition"
+       }
+      },
+      {
        "id": "attaques-utilisees",
        "operation": "grant",
        "targetRef": {
@@ -38623,6 +39082,14 @@
        "operation": "grant",
        "targetRef": {
         "objectId": "en-combat",
+        "objectKind": "definition"
+       }
+      },
+      {
+       "id": "round-en-cours",
+       "operation": "grant",
+       "targetRef": {
+        "objectId": "round-en-cours",
         "objectKind": "definition"
        }
       },
@@ -38984,6 +39451,14 @@
        }
       },
       {
+       "id": "round-en-cours",
+       "operation": "grant",
+       "targetRef": {
+        "objectId": "round-en-cours",
+        "objectKind": "definition"
+       }
+      },
+      {
        "id": "attaques-utilisees",
        "operation": "grant",
        "targetRef": {
@@ -39337,6 +39812,14 @@
        "operation": "grant",
        "targetRef": {
         "objectId": "en-combat",
+        "objectKind": "definition"
+       }
+      },
+      {
+       "id": "round-en-cours",
+       "operation": "grant",
+       "targetRef": {
+        "objectId": "round-en-cours",
         "objectKind": "definition"
        }
       },
@@ -39698,6 +40181,14 @@
        }
       },
       {
+       "id": "round-en-cours",
+       "operation": "grant",
+       "targetRef": {
+        "objectId": "round-en-cours",
+        "objectKind": "definition"
+       }
+      },
+      {
        "id": "attaques-utilisees",
        "operation": "grant",
        "targetRef": {
@@ -40051,6 +40542,14 @@
        "operation": "grant",
        "targetRef": {
         "objectId": "en-combat",
+        "objectKind": "definition"
+       }
+      },
+      {
+       "id": "round-en-cours",
+       "operation": "grant",
+       "targetRef": {
+        "objectId": "round-en-cours",
         "objectKind": "definition"
        }
       },
@@ -40412,6 +40911,14 @@
        }
       },
       {
+       "id": "round-en-cours",
+       "operation": "grant",
+       "targetRef": {
+        "objectId": "round-en-cours",
+        "objectKind": "definition"
+       }
+      },
+      {
        "id": "attaques-utilisees",
        "operation": "grant",
        "targetRef": {
@@ -40769,6 +41276,14 @@
        }
       },
       {
+       "id": "round-en-cours",
+       "operation": "grant",
+       "targetRef": {
+        "objectId": "round-en-cours",
+        "objectKind": "definition"
+       }
+      },
+      {
        "id": "attaques-utilisees",
        "operation": "grant",
        "targetRef": {
@@ -41117,6 +41632,14 @@
        "operation": "grant",
        "targetRef": {
         "objectId": "en-combat",
+        "objectKind": "definition"
+       }
+      },
+      {
+       "id": "round-en-cours",
+       "operation": "grant",
+       "targetRef": {
+        "objectId": "round-en-cours",
         "objectKind": "definition"
        }
       },
@@ -41478,6 +42001,14 @@
        }
       },
       {
+       "id": "round-en-cours",
+       "operation": "grant",
+       "targetRef": {
+        "objectId": "round-en-cours",
+        "objectKind": "definition"
+       }
+      },
+      {
        "id": "attaques-utilisees",
        "operation": "grant",
        "targetRef": {
@@ -41831,6 +42362,14 @@
        "operation": "grant",
        "targetRef": {
         "objectId": "en-combat",
+        "objectKind": "definition"
+       }
+      },
+      {
+       "id": "round-en-cours",
+       "operation": "grant",
+       "targetRef": {
+        "objectId": "round-en-cours",
         "objectKind": "definition"
        }
       },
@@ -42192,6 +42731,14 @@
        }
       },
       {
+       "id": "round-en-cours",
+       "operation": "grant",
+       "targetRef": {
+        "objectId": "round-en-cours",
+        "objectKind": "definition"
+       }
+      },
+      {
        "id": "attaques-utilisees",
        "operation": "grant",
        "targetRef": {
@@ -42545,6 +43092,14 @@
        "operation": "grant",
        "targetRef": {
         "objectId": "en-combat",
+        "objectKind": "definition"
+       }
+      },
+      {
+       "id": "round-en-cours",
+       "operation": "grant",
+       "targetRef": {
+        "objectId": "round-en-cours",
         "objectKind": "definition"
        }
       },
@@ -42906,6 +43461,14 @@
        }
       },
       {
+       "id": "round-en-cours",
+       "operation": "grant",
+       "targetRef": {
+        "objectId": "round-en-cours",
+        "objectKind": "definition"
+       }
+      },
+      {
        "id": "attaques-utilisees",
        "operation": "grant",
        "targetRef": {
@@ -43259,6 +43822,14 @@
        "operation": "grant",
        "targetRef": {
         "objectId": "en-combat",
+        "objectKind": "definition"
+       }
+      },
+      {
+       "id": "round-en-cours",
+       "operation": "grant",
+       "targetRef": {
+        "objectId": "round-en-cours",
         "objectKind": "definition"
        }
       },
@@ -43620,6 +44191,14 @@
        }
       },
       {
+       "id": "round-en-cours",
+       "operation": "grant",
+       "targetRef": {
+        "objectId": "round-en-cours",
+        "objectKind": "definition"
+       }
+      },
+      {
        "id": "attaques-utilisees",
        "operation": "grant",
        "targetRef": {
@@ -43973,6 +44552,14 @@
        "operation": "grant",
        "targetRef": {
         "objectId": "en-combat",
+        "objectKind": "definition"
+       }
+      },
+      {
+       "id": "round-en-cours",
+       "operation": "grant",
+       "targetRef": {
+        "objectId": "round-en-cours",
         "objectKind": "definition"
        }
       },
@@ -44334,6 +44921,14 @@
        }
       },
       {
+       "id": "round-en-cours",
+       "operation": "grant",
+       "targetRef": {
+        "objectId": "round-en-cours",
+        "objectKind": "definition"
+       }
+      },
+      {
        "id": "attaques-utilisees",
        "operation": "grant",
        "targetRef": {
@@ -44682,6 +45277,14 @@
        "operation": "grant",
        "targetRef": {
         "objectId": "en-combat",
+        "objectKind": "definition"
+       }
+      },
+      {
+       "id": "round-en-cours",
+       "operation": "grant",
+       "targetRef": {
+        "objectId": "round-en-cours",
         "objectKind": "definition"
        }
       },
@@ -45043,6 +45646,14 @@
        }
       },
       {
+       "id": "round-en-cours",
+       "operation": "grant",
+       "targetRef": {
+        "objectId": "round-en-cours",
+        "objectKind": "definition"
+       }
+      },
+      {
        "id": "attaques-utilisees",
        "operation": "grant",
        "targetRef": {
@@ -45396,6 +46007,14 @@
        "operation": "grant",
        "targetRef": {
         "objectId": "en-combat",
+        "objectKind": "definition"
+       }
+      },
+      {
+       "id": "round-en-cours",
+       "operation": "grant",
+       "targetRef": {
+        "objectId": "round-en-cours",
         "objectKind": "definition"
        }
       },
@@ -45757,6 +46376,14 @@
        }
       },
       {
+       "id": "round-en-cours",
+       "operation": "grant",
+       "targetRef": {
+        "objectId": "round-en-cours",
+        "objectKind": "definition"
+       }
+      },
+      {
        "id": "attaques-utilisees",
        "operation": "grant",
        "targetRef": {
@@ -46114,6 +46741,14 @@
        }
       },
       {
+       "id": "round-en-cours",
+       "operation": "grant",
+       "targetRef": {
+        "objectId": "round-en-cours",
+        "objectKind": "definition"
+       }
+      },
+      {
        "id": "attaques-utilisees",
        "operation": "grant",
        "targetRef": {
@@ -46462,6 +47097,14 @@
        "operation": "grant",
        "targetRef": {
         "objectId": "en-combat",
+        "objectKind": "definition"
+       }
+      },
+      {
+       "id": "round-en-cours",
+       "operation": "grant",
+       "targetRef": {
+        "objectId": "round-en-cours",
         "objectKind": "definition"
        }
       },
@@ -46818,6 +47461,14 @@
        }
       },
       {
+       "id": "round-en-cours",
+       "operation": "grant",
+       "targetRef": {
+        "objectId": "round-en-cours",
+        "objectKind": "definition"
+       }
+      },
+      {
        "id": "attaques-utilisees",
        "operation": "grant",
        "targetRef": {
@@ -47166,6 +47817,14 @@
        "operation": "grant",
        "targetRef": {
         "objectId": "en-combat",
+        "objectKind": "definition"
+       }
+      },
+      {
+       "id": "round-en-cours",
+       "operation": "grant",
+       "targetRef": {
+        "objectId": "round-en-cours",
         "objectKind": "definition"
        }
       },
@@ -47522,6 +48181,14 @@
        }
       },
       {
+       "id": "round-en-cours",
+       "operation": "grant",
+       "targetRef": {
+        "objectId": "round-en-cours",
+        "objectKind": "definition"
+       }
+      },
+      {
        "id": "attaques-utilisees",
        "operation": "grant",
        "targetRef": {
@@ -47870,6 +48537,14 @@
        "operation": "grant",
        "targetRef": {
         "objectId": "en-combat",
+        "objectKind": "definition"
+       }
+      },
+      {
+       "id": "round-en-cours",
+       "operation": "grant",
+       "targetRef": {
+        "objectId": "round-en-cours",
         "objectKind": "definition"
        }
       },
@@ -48226,6 +48901,14 @@
        }
       },
       {
+       "id": "round-en-cours",
+       "operation": "grant",
+       "targetRef": {
+        "objectId": "round-en-cours",
+        "objectKind": "definition"
+       }
+      },
+      {
        "id": "attaques-utilisees",
        "operation": "grant",
        "targetRef": {
@@ -48574,6 +49257,14 @@
        "operation": "grant",
        "targetRef": {
         "objectId": "en-combat",
+        "objectKind": "definition"
+       }
+      },
+      {
+       "id": "round-en-cours",
+       "operation": "grant",
+       "targetRef": {
+        "objectId": "round-en-cours",
         "objectKind": "definition"
        }
       },
@@ -48930,6 +49621,14 @@
        }
       },
       {
+       "id": "round-en-cours",
+       "operation": "grant",
+       "targetRef": {
+        "objectId": "round-en-cours",
+        "objectKind": "definition"
+       }
+      },
+      {
        "id": "attaques-utilisees",
        "operation": "grant",
        "targetRef": {
@@ -49278,6 +49977,14 @@
        "operation": "grant",
        "targetRef": {
         "objectId": "en-combat",
+        "objectKind": "definition"
+       }
+      },
+      {
+       "id": "round-en-cours",
+       "operation": "grant",
+       "targetRef": {
+        "objectId": "round-en-cours",
         "objectKind": "definition"
        }
       },
@@ -49634,6 +50341,14 @@
        }
       },
       {
+       "id": "round-en-cours",
+       "operation": "grant",
+       "targetRef": {
+        "objectId": "round-en-cours",
+        "objectKind": "definition"
+       }
+      },
+      {
        "id": "attaques-utilisees",
        "operation": "grant",
        "targetRef": {
@@ -49982,6 +50697,14 @@
        "operation": "grant",
        "targetRef": {
         "objectId": "en-combat",
+        "objectKind": "definition"
+       }
+      },
+      {
+       "id": "round-en-cours",
+       "operation": "grant",
+       "targetRef": {
+        "objectId": "round-en-cours",
         "objectKind": "definition"
        }
       },
@@ -50338,6 +51061,14 @@
        }
       },
       {
+       "id": "round-en-cours",
+       "operation": "grant",
+       "targetRef": {
+        "objectId": "round-en-cours",
+        "objectKind": "definition"
+       }
+      },
+      {
        "id": "attaques-utilisees",
        "operation": "grant",
        "targetRef": {
@@ -50686,6 +51417,14 @@
        "operation": "grant",
        "targetRef": {
         "objectId": "en-combat",
+        "objectKind": "definition"
+       }
+      },
+      {
+       "id": "round-en-cours",
+       "operation": "grant",
+       "targetRef": {
+        "objectId": "round-en-cours",
         "objectKind": "definition"
        }
       },
@@ -51042,6 +51781,14 @@
        }
       },
       {
+       "id": "round-en-cours",
+       "operation": "grant",
+       "targetRef": {
+        "objectId": "round-en-cours",
+        "objectKind": "definition"
+       }
+      },
+      {
        "id": "attaques-utilisees",
        "operation": "grant",
        "targetRef": {
@@ -51390,6 +52137,14 @@
        "operation": "grant",
        "targetRef": {
         "objectId": "en-combat",
+        "objectKind": "definition"
+       }
+      },
+      {
+       "id": "round-en-cours",
+       "operation": "grant",
+       "targetRef": {
+        "objectId": "round-en-cours",
         "objectKind": "definition"
        }
       },
@@ -51746,6 +52501,14 @@
        }
       },
       {
+       "id": "round-en-cours",
+       "operation": "grant",
+       "targetRef": {
+        "objectId": "round-en-cours",
+        "objectKind": "definition"
+       }
+      },
+      {
        "id": "attaques-utilisees",
        "operation": "grant",
        "targetRef": {
@@ -52094,6 +52857,14 @@
        "operation": "grant",
        "targetRef": {
         "objectId": "en-combat",
+        "objectKind": "definition"
+       }
+      },
+      {
+       "id": "round-en-cours",
+       "operation": "grant",
+       "targetRef": {
+        "objectId": "round-en-cours",
         "objectKind": "definition"
        }
       },
@@ -52450,6 +53221,14 @@
        }
       },
       {
+       "id": "round-en-cours",
+       "operation": "grant",
+       "targetRef": {
+        "objectId": "round-en-cours",
+        "objectKind": "definition"
+       }
+      },
+      {
        "id": "attaques-utilisees",
        "operation": "grant",
        "targetRef": {
@@ -52798,6 +53577,14 @@
        "operation": "grant",
        "targetRef": {
         "objectId": "en-combat",
+        "objectKind": "definition"
+       }
+      },
+      {
+       "id": "round-en-cours",
+       "operation": "grant",
+       "targetRef": {
+        "objectId": "round-en-cours",
         "objectKind": "definition"
        }
       },
@@ -53154,6 +53941,14 @@
        }
       },
       {
+       "id": "round-en-cours",
+       "operation": "grant",
+       "targetRef": {
+        "objectId": "round-en-cours",
+        "objectKind": "definition"
+       }
+      },
+      {
        "id": "attaques-utilisees",
        "operation": "grant",
        "targetRef": {
@@ -53502,6 +54297,14 @@
        "operation": "grant",
        "targetRef": {
         "objectId": "en-combat",
+        "objectKind": "definition"
+       }
+      },
+      {
+       "id": "round-en-cours",
+       "operation": "grant",
+       "targetRef": {
+        "objectId": "round-en-cours",
         "objectKind": "definition"
        }
       },
@@ -53858,6 +54661,14 @@
        }
       },
       {
+       "id": "round-en-cours",
+       "operation": "grant",
+       "targetRef": {
+        "objectId": "round-en-cours",
+        "objectKind": "definition"
+       }
+      },
+      {
        "id": "attaques-utilisees",
        "operation": "grant",
        "targetRef": {
@@ -54206,6 +55017,14 @@
        "operation": "grant",
        "targetRef": {
         "objectId": "en-combat",
+        "objectKind": "definition"
+       }
+      },
+      {
+       "id": "round-en-cours",
+       "operation": "grant",
+       "targetRef": {
+        "objectId": "round-en-cours",
         "objectKind": "definition"
        }
       },
@@ -54562,6 +55381,14 @@
        }
       },
       {
+       "id": "round-en-cours",
+       "operation": "grant",
+       "targetRef": {
+        "objectId": "round-en-cours",
+        "objectKind": "definition"
+       }
+      },
+      {
        "id": "attaques-utilisees",
        "operation": "grant",
        "targetRef": {
@@ -54910,6 +55737,14 @@
        "operation": "grant",
        "targetRef": {
         "objectId": "en-combat",
+        "objectKind": "definition"
+       }
+      },
+      {
+       "id": "round-en-cours",
+       "operation": "grant",
+       "targetRef": {
+        "objectId": "round-en-cours",
         "objectKind": "definition"
        }
       },
@@ -55266,6 +56101,14 @@
        }
       },
       {
+       "id": "round-en-cours",
+       "operation": "grant",
+       "targetRef": {
+        "objectId": "round-en-cours",
+        "objectKind": "definition"
+       }
+      },
+      {
        "id": "attaques-utilisees",
        "operation": "grant",
        "targetRef": {
@@ -55614,6 +56457,14 @@
        "operation": "grant",
        "targetRef": {
         "objectId": "en-combat",
+        "objectKind": "definition"
+       }
+      },
+      {
+       "id": "round-en-cours",
+       "operation": "grant",
+       "targetRef": {
+        "objectId": "round-en-cours",
         "objectKind": "definition"
        }
       },
@@ -55970,6 +56821,14 @@
        }
       },
       {
+       "id": "round-en-cours",
+       "operation": "grant",
+       "targetRef": {
+        "objectId": "round-en-cours",
+        "objectKind": "definition"
+       }
+      },
+      {
        "id": "attaques-utilisees",
        "operation": "grant",
        "targetRef": {
@@ -56322,6 +57181,14 @@
        }
       },
       {
+       "id": "round-en-cours",
+       "operation": "grant",
+       "targetRef": {
+        "objectId": "round-en-cours",
+        "objectKind": "definition"
+       }
+      },
+      {
        "id": "attaques-utilisees",
        "operation": "grant",
        "targetRef": {
@@ -56669,6 +57536,14 @@
        }
       },
       {
+       "id": "round-en-cours",
+       "operation": "grant",
+       "targetRef": {
+        "objectId": "round-en-cours",
+        "objectKind": "definition"
+       }
+      },
+      {
        "id": "attaques-utilisees",
        "operation": "grant",
        "targetRef": {
@@ -57012,6 +57887,14 @@
        "operation": "grant",
        "targetRef": {
         "objectId": "en-combat",
+        "objectKind": "definition"
+       }
+      },
+      {
+       "id": "round-en-cours",
+       "operation": "grant",
+       "targetRef": {
+        "objectId": "round-en-cours",
         "objectKind": "definition"
        }
       },
@@ -57368,6 +58251,14 @@
        }
       },
       {
+       "id": "round-en-cours",
+       "operation": "grant",
+       "targetRef": {
+        "objectId": "round-en-cours",
+        "objectKind": "definition"
+       }
+      },
+      {
        "id": "attaques-utilisees",
        "operation": "grant",
        "targetRef": {
@@ -57716,6 +58607,14 @@
        "operation": "grant",
        "targetRef": {
         "objectId": "en-combat",
+        "objectKind": "definition"
+       }
+      },
+      {
+       "id": "round-en-cours",
+       "operation": "grant",
+       "targetRef": {
+        "objectId": "round-en-cours",
         "objectKind": "definition"
        }
       },
@@ -58072,6 +58971,14 @@
        }
       },
       {
+       "id": "round-en-cours",
+       "operation": "grant",
+       "targetRef": {
+        "objectId": "round-en-cours",
+        "objectKind": "definition"
+       }
+      },
+      {
        "id": "attaques-utilisees",
        "operation": "grant",
        "targetRef": {
@@ -58424,6 +59331,14 @@
        }
       },
       {
+       "id": "round-en-cours",
+       "operation": "grant",
+       "targetRef": {
+        "objectId": "round-en-cours",
+        "objectKind": "definition"
+       }
+      },
+      {
        "id": "attaques-utilisees",
        "operation": "grant",
        "targetRef": {
@@ -58767,6 +59682,14 @@
        "operation": "grant",
        "targetRef": {
         "objectId": "en-combat",
+        "objectKind": "definition"
+       }
+      },
+      {
+       "id": "round-en-cours",
+       "operation": "grant",
+       "targetRef": {
+        "objectId": "round-en-cours",
         "objectKind": "definition"
        }
       },
@@ -59118,6 +60041,14 @@
        }
       },
       {
+       "id": "round-en-cours",
+       "operation": "grant",
+       "targetRef": {
+        "objectId": "round-en-cours",
+        "objectKind": "definition"
+       }
+      },
+      {
        "id": "attaques-utilisees",
        "operation": "grant",
        "targetRef": {
@@ -59465,6 +60396,14 @@
        }
       },
       {
+       "id": "round-en-cours",
+       "operation": "grant",
+       "targetRef": {
+        "objectId": "round-en-cours",
+        "objectKind": "definition"
+       }
+      },
+      {
        "id": "attaques-utilisees",
        "operation": "grant",
        "targetRef": {
@@ -59808,6 +60747,14 @@
        "operation": "grant",
        "targetRef": {
         "objectId": "en-combat",
+        "objectKind": "definition"
+       }
+      },
+      {
+       "id": "round-en-cours",
+       "operation": "grant",
+       "targetRef": {
+        "objectId": "round-en-cours",
         "objectKind": "definition"
        }
       },
@@ -69631,12 +70578,26 @@
      ],
      "data": {},
      "definitionTypeId": "compteur",
+     "descriptionKey": "Le round du combat dont le personnage a déjà fait le bilan (attaques remises à zéro, effort compté) ; 0 hors combat. Un même round n'est jamais compté deux fois.",
+     "enabled": true,
+     "id": "round-en-cours",
+     "key": "round-en-cours",
+     "nameKey": "Round compté",
+     "order": 560,
+     "tags": []
+    },
+    {
+     "capabilities": [
+      "value"
+     ],
+     "data": {},
+     "definitionTypeId": "compteur",
      "descriptionKey": "1 quand le personnage a attaqué au contact ou sprinté ce round.",
      "enabled": true,
      "id": "effort-physique",
      "key": "effort-physique",
      "nameKey": "Effort physique ce round",
-     "order": 560,
+     "order": 570,
      "tags": []
     },
     {
@@ -69650,7 +70611,7 @@
      "id": "efforts-physiques",
      "key": "efforts-physiques",
      "nameKey": "Efforts physiques comptés",
-     "order": 570,
+     "order": 580,
      "tags": []
     },
     {
@@ -69664,7 +70625,7 @@
      "id": "progression-poursuite",
      "key": "progression-poursuite",
      "nameKey": "Progression de poursuite",
-     "order": 580,
+     "order": 590,
      "tags": []
     },
     {
@@ -69678,7 +70639,7 @@
      "id": "pratique-athletisme",
      "key": "pratique-athletisme",
      "nameKey": "Pratique : Athlétisme",
-     "order": 590,
+     "order": 600,
      "tags": []
     },
     {
@@ -69692,7 +70653,7 @@
      "id": "pratique-discretion",
      "key": "pratique-discretion",
      "nameKey": "Pratique : Discrétion",
-     "order": 600,
+     "order": 610,
      "tags": []
     },
     {
@@ -69706,7 +70667,7 @@
      "id": "pratique-vigilance",
      "key": "pratique-vigilance",
      "nameKey": "Pratique : Vigilance",
-     "order": 610,
+     "order": 620,
      "tags": []
     },
     {
@@ -69720,7 +70681,7 @@
      "id": "pratique-investigation",
      "key": "pratique-investigation",
      "nameKey": "Pratique : Investigation",
-     "order": 620,
+     "order": 630,
      "tags": []
     },
     {
@@ -69734,7 +70695,7 @@
      "id": "pratique-survie",
      "key": "pratique-survie",
      "nameKey": "Pratique : Survie",
-     "order": 630,
+     "order": 640,
      "tags": []
     },
     {
@@ -69748,7 +70709,7 @@
      "id": "pratique-technique",
      "key": "pratique-technique",
      "nameKey": "Pratique : Technique",
-     "order": 640,
+     "order": 650,
      "tags": []
     },
     {
@@ -69762,7 +70723,7 @@
      "id": "pratique-informatique",
      "key": "pratique-informatique",
      "nameKey": "Pratique : Informatique",
-     "order": 650,
+     "order": 660,
      "tags": []
     },
     {
@@ -69776,7 +70737,7 @@
      "id": "pratique-sciences",
      "key": "pratique-sciences",
      "nameKey": "Pratique : Sciences",
-     "order": 660,
+     "order": 670,
      "tags": []
     },
     {
@@ -69790,7 +70751,7 @@
      "id": "pratique-medecine",
      "key": "pratique-medecine",
      "nameKey": "Pratique : Médecine",
-     "order": 670,
+     "order": 680,
      "tags": []
     },
     {
@@ -69804,7 +70765,7 @@
      "id": "pratique-culture",
      "key": "pratique-culture",
      "nameKey": "Pratique : Culture",
-     "order": 680,
+     "order": 690,
      "tags": []
     },
     {
@@ -69818,7 +70779,7 @@
      "id": "pratique-influence",
      "key": "pratique-influence",
      "nameKey": "Pratique : Influence",
-     "order": 690,
+     "order": 700,
      "tags": []
     },
     {
@@ -69832,7 +70793,7 @@
      "id": "pratique-empathie",
      "key": "pratique-empathie",
      "nameKey": "Pratique : Empathie",
-     "order": 700,
+     "order": 710,
      "tags": []
     },
     {
@@ -69846,7 +70807,7 @@
      "id": "pratique-langues",
      "key": "pratique-langues",
      "nameKey": "Pratique : Langues",
-     "order": 710,
+     "order": 720,
      "tags": []
     },
     {
@@ -69860,7 +70821,7 @@
      "id": "pratique-arts",
      "key": "pratique-arts",
      "nameKey": "Pratique : Arts",
-     "order": 720,
+     "order": 730,
      "tags": []
     },
     {
@@ -69874,7 +70835,7 @@
      "id": "pratique-occultisme",
      "key": "pratique-occultisme",
      "nameKey": "Pratique : Occultisme",
-     "order": 730,
+     "order": 740,
      "tags": []
     },
     {
@@ -69888,7 +70849,7 @@
      "id": "pratique-corps-a-corps",
      "key": "pratique-corps-a-corps",
      "nameKey": "Pratique : Corps à corps",
-     "order": 740,
+     "order": 750,
      "tags": []
     },
     {
@@ -69902,7 +70863,7 @@
      "id": "pratique-armes-de-melee",
      "key": "pratique-armes-de-melee",
      "nameKey": "Pratique : Armes de mêlée",
-     "order": 750,
+     "order": 760,
      "tags": []
     },
     {
@@ -69916,7 +70877,7 @@
      "id": "pratique-armes-de-poing",
      "key": "pratique-armes-de-poing",
      "nameKey": "Pratique : Armes de poing",
-     "order": 760,
+     "order": 770,
      "tags": []
     },
     {
@@ -69930,7 +70891,7 @@
      "id": "pratique-armes-d-epaule",
      "key": "pratique-armes-d-epaule",
      "nameKey": "Pratique : Armes d'épaule",
-     "order": 770,
+     "order": 780,
      "tags": []
     },
     {
@@ -69944,7 +70905,7 @@
      "id": "pratique-armes-lourdes",
      "key": "pratique-armes-lourdes",
      "nameKey": "Pratique : Armes lourdes",
-     "order": 780,
+     "order": 790,
      "tags": []
     },
     {
@@ -69958,7 +70919,7 @@
      "id": "pratique-armes-de-jet",
      "key": "pratique-armes-de-jet",
      "nameKey": "Pratique : Armes de jet",
-     "order": 790,
+     "order": 800,
      "tags": []
     },
     {
@@ -69972,7 +70933,7 @@
      "id": "pratique-armes-de-trait",
      "key": "pratique-armes-de-trait",
      "nameKey": "Pratique : Armes de trait",
-     "order": 800,
+     "order": 810,
      "tags": []
     },
     {
@@ -69986,7 +70947,7 @@
      "id": "pratique-vehicules-legers",
      "key": "pratique-vehicules-legers",
      "nameKey": "Pratique : Véhicules légers",
-     "order": 810,
+     "order": 820,
      "tags": []
     },
     {
@@ -70000,7 +70961,7 @@
      "id": "pratique-deux-roues-motorises",
      "key": "pratique-deux-roues-motorises",
      "nameKey": "Pratique : Deux-roues motorisés",
-     "order": 820,
+     "order": 830,
      "tags": []
     },
     {
@@ -70014,7 +70975,7 @@
      "id": "pratique-poids-lourds",
      "key": "pratique-poids-lourds",
      "nameKey": "Pratique : Poids lourds",
-     "order": 830,
+     "order": 840,
      "tags": []
     },
     {
@@ -70028,7 +70989,7 @@
      "id": "pratique-transport-collectif",
      "key": "pratique-transport-collectif",
      "nameKey": "Pratique : Transport collectif",
-     "order": 840,
+     "order": 850,
      "tags": []
     },
     {
@@ -70042,7 +71003,7 @@
      "id": "pratique-cyclisme",
      "key": "pratique-cyclisme",
      "nameKey": "Pratique : Cyclisme",
-     "order": 850,
+     "order": 860,
      "tags": []
     },
     {
@@ -70056,7 +71017,7 @@
      "id": "pratique-equitation",
      "key": "pratique-equitation",
      "nameKey": "Pratique : Équitation / Monture",
-     "order": 860,
+     "order": 870,
      "tags": []
     },
     {
@@ -70070,7 +71031,7 @@
      "id": "pratique-navigation",
      "key": "pratique-navigation",
      "nameKey": "Pratique : Navigation",
-     "order": 870,
+     "order": 880,
      "tags": []
     },
     {
@@ -70084,7 +71045,7 @@
      "id": "pratique-ski-glisse",
      "key": "pratique-ski-glisse",
      "nameKey": "Pratique : Ski / Glisse",
-     "order": 880,
+     "order": 890,
      "tags": []
     },
     {
@@ -70098,7 +71059,7 @@
      "id": "pratique-pilotage-aerien",
      "key": "pratique-pilotage-aerien",
      "nameKey": "Pratique : Pilotage aérien",
-     "order": 890,
+     "order": 900,
      "tags": []
     },
     {
@@ -70112,7 +71073,7 @@
      "id": "pratique-engins-specialises",
      "key": "pratique-engins-specialises",
      "nameKey": "Pratique : Engins spécialisés",
-     "order": 900,
+     "order": 910,
      "tags": []
     }
    ],
@@ -70682,6 +71643,46 @@
     {
      "descriptionKey": "",
      "enabled": true,
+     "id": "noter-le-round",
+     "nameKey": "Round compté",
+     "operand": {
+      "id": "round-annonce",
+      "kind": "formula"
+     },
+     "operation": "set",
+     "order": 260,
+     "tags": [],
+     "targetRef": {
+      "capabilityId": "value",
+      "objectId": "round-en-cours",
+      "objectKind": "definition",
+      "outputId": "value.base"
+     },
+     "targetRole": "self"
+    },
+    {
+     "descriptionKey": "",
+     "enabled": true,
+     "id": "remise-round",
+     "nameKey": "Plus de round compté",
+     "operand": {
+      "kind": "literal",
+      "value": 0
+     },
+     "operation": "set",
+     "order": 270,
+     "tags": [],
+     "targetRef": {
+      "capabilityId": "value",
+      "objectId": "round-en-cours",
+      "objectKind": "definition",
+      "outputId": "value.base"
+     },
+     "targetRole": "self"
+    },
+    {
+     "descriptionKey": "",
+     "enabled": true,
      "id": "effort-poursuite",
      "nameKey": "Effort de la poursuite à pied",
      "operand": {
@@ -70689,7 +71690,7 @@
       "value": 1
      },
      "operation": "add",
-     "order": 260,
+     "order": 280,
      "tags": [],
      "targetRef": {
       "capabilityId": "value",
@@ -70709,7 +71710,7 @@
       "kind": "formula"
      },
      "operation": "add",
-     "order": 270,
+     "order": 290,
      "tags": [],
      "targetRef": {
       "capabilityId": "pool",
@@ -70730,7 +71731,7 @@
       "kind": "formula"
      },
      "operation": "set",
-     "order": 280,
+     "order": 300,
      "tags": [],
      "targetRef": {
       "capabilityId": "value",
@@ -70750,7 +71751,7 @@
       "kind": "formula"
      },
      "operation": "subtract",
-     "order": 290,
+     "order": 310,
      "tags": [],
      "targetContentField": "munitions",
      "targetRef": null,
@@ -70766,7 +71767,7 @@
       "kind": "parameter"
      },
      "operation": "subtract",
-     "order": 300,
+     "order": 320,
      "tags": [],
      "targetContentField": "munitions",
      "targetRef": null,
@@ -70782,7 +71783,7 @@
       "kind": "formula"
      },
      "operation": "subtract",
-     "order": 310,
+     "order": 330,
      "tags": [],
      "targetContentField": "munitions",
      "targetRef": null,
@@ -70798,7 +71799,7 @@
       "kind": "formula"
      },
      "operation": "add",
-     "order": 320,
+     "order": 340,
      "tags": [],
      "targetContentField": "munitions",
      "targetRef": null,
@@ -70814,7 +71815,7 @@
       "kind": "formula"
      },
      "operation": "subtract",
-     "order": 330,
+     "order": 350,
      "tags": [],
      "targetContentField": "reserve",
      "targetRef": null,
@@ -72920,6 +73921,19 @@
      "tags": []
     },
     {
+     "descriptionKey": "Le round que le combat annonce.",
+     "enabled": true,
+     "expression": {
+      "path": "event.payload.round",
+      "type": "context"
+     },
+     "id": "round-annonce",
+     "nameKey": "Round annoncé",
+     "order": 560,
+     "resultType": "number",
+     "tags": []
+    },
+    {
      "descriptionKey": "",
      "enabled": true,
      "expression": {
@@ -72946,7 +73960,7 @@
      },
      "id": "quart-endurance",
      "nameKey": "Quart de l'Endurance maximale",
-     "order": 560,
+     "order": 570,
      "resultType": "number",
      "tags": []
     },
@@ -72981,7 +73995,7 @@
      },
      "id": "munitions-par-tir",
      "nameKey": "Munitions d'un tir",
-     "order": 570,
+     "order": 580,
      "resultType": "number",
      "tags": []
     },
@@ -73073,7 +74087,7 @@
      },
      "id": "munitions-full-auto",
      "nameKey": "Munitions d'une rafale full-auto",
-     "order": 580,
+     "order": 590,
      "resultType": "number",
      "tags": []
     },
@@ -73116,7 +74130,7 @@
      },
      "id": "munitions-a-charger",
      "nameKey": "Munitions à charger",
-     "order": 590,
+     "order": 600,
      "resultType": "number",
      "tags": []
     },
@@ -73129,7 +74143,7 @@
      },
      "id": "munitions-chargees",
      "nameKey": "Munitions prises dans la réserve",
-     "order": 600,
+     "order": 610,
      "resultType": "number",
      "tags": []
     },
@@ -73151,7 +74165,7 @@
      },
      "id": "bonus-attaque-rafale",
      "nameKey": "Bonus d'une rafale",
-     "order": 610,
+     "order": 620,
      "resultType": "number",
      "tags": []
     },
@@ -73175,7 +74189,7 @@
      },
      "id": "multiplicateur-apprentissage",
      "nameKey": "Multiplicateur d'apprentissage",
-     "order": 620,
+     "order": 630,
      "resultType": "number",
      "tags": []
     },
@@ -73281,7 +74295,7 @@
      },
      "id": "cout-pratique",
      "nameKey": "Pratique pour le niveau suivant",
-     "order": 630,
+     "order": 640,
      "resultType": "number",
      "tags": []
     },
@@ -73294,7 +74308,7 @@
      },
      "id": "creation-backgrounds",
      "nameKey": "Backgrounds de la tranche d'âge",
-     "order": 640,
+     "order": 650,
      "resultType": "number",
      "tags": []
     },
@@ -73307,7 +74321,7 @@
      },
      "id": "creation-evenements-minimum",
      "nameKey": "Événements minimum de la tranche d'âge",
-     "order": 650,
+     "order": 660,
      "resultType": "number",
      "tags": []
     },
@@ -73320,7 +74334,7 @@
      },
      "id": "creation-evenements-maximum",
      "nameKey": "Événements maximum de la tranche d'âge",
-     "order": 660,
+     "order": 670,
      "resultType": "number",
      "tags": []
     },
@@ -73333,7 +74347,7 @@
      },
      "id": "creation-points-caracteristiques",
      "nameKey": "Points de caractéristiques de la tranche d'âge",
-     "order": 670,
+     "order": 680,
      "resultType": "number",
      "tags": []
     },
@@ -73346,7 +74360,7 @@
      },
      "id": "creation-points-competences",
      "nameKey": "Points de compétences de la tranche d'âge",
-     "order": 680,
+     "order": 690,
      "resultType": "number",
      "tags": []
     },
@@ -73368,7 +74382,7 @@
      },
      "id": "creation-plafond-caracteristique",
      "nameKey": "Points par caractéristique",
-     "order": 690,
+     "order": 700,
      "resultType": "number",
      "tags": []
     }
@@ -73376,6 +74390,7 @@
    "id": "rwf",
    "initiative": {
     "bySide": false,
+    "defeatedConditionRef": "vitalite-a-zero",
     "eachRound": true,
     "passes": {
      "countFormulaRef": "attaques-meilleure"
@@ -78014,7 +79029,9 @@
       "bilan-effort",
       "s-essouffler"
      ],
-     "conditionRefs": [],
+     "conditionRefs": [
+      "round-pas-encore-compte"
+     ],
      "descriptionKey": "Compte le round s'il était physique, puis essouffle au troisième.",
      "enabled": true,
      "eventFilter": null,
@@ -78028,7 +79045,9 @@
      "actionRefs": [
       "nouveau-round"
      ],
-     "conditionRefs": [],
+     "conditionRefs": [
+      "round-pas-encore-compte"
+     ],
      "descriptionKey": "Les attaques du round repartent de zéro.",
      "enabled": true,
      "eventFilter": null,
@@ -78067,12 +79086,12 @@
      "tags": []
     }
    ],
-   "version": "2.3.0"
+   "version": "2.4.0"
   },
   "rulesetId": "rwf",
   "status": "ready",
-  "version": "2.3.0",
-  "versionId": "rwf-2-3-0",
+  "version": "2.4.0",
+  "versionId": "rwf-2-4-0",
   "workingDraft": {
    "actions": [
     {
@@ -78780,7 +79799,8 @@
      "effectRefs": [
       "remise-attaques",
       "remise-passe",
-      "remise-derniere-passe"
+      "remise-derniere-passe",
+      "noter-le-round"
      ],
      "enabled": true,
      "eventTypeRefs": [],
@@ -78803,7 +79823,8 @@
       "remise-attaques",
       "remise-passe",
       "remise-derniere-passe",
-      "remise-effort"
+      "remise-effort",
+      "noter-le-round"
      ],
      "enabled": true,
      "eventTypeRefs": [],
@@ -78836,7 +79857,8 @@
       "remise-attaques",
       "remise-passe",
       "remise-derniere-passe",
-      "remise-effort"
+      "remise-effort",
+      "remise-round"
      ],
      "enabled": true,
      "eventTypeRefs": [],
@@ -80280,6 +81302,30 @@
      "tags": []
     },
     {
+     "descriptionKey": "Le bilan d'un round ne se fait qu'une fois.",
+     "enabled": true,
+     "expression": {
+      "left": {
+       "reference": {
+        "capabilityId": "value",
+        "objectId": "round-en-cours",
+        "objectKind": "definition",
+        "outputId": "value.final"
+       },
+       "type": "reference"
+      },
+      "right": {
+       "path": "event.payload.round",
+       "type": "context"
+      },
+      "type": "neq"
+     },
+     "id": "round-pas-encore-compte",
+     "nameKey": "Round pas encore compté",
+     "order": 220,
+     "tags": []
+    },
+    {
      "descriptionKey": "",
      "enabled": true,
      "expression": {
@@ -80300,7 +81346,7 @@
      },
      "id": "aucune-attaque-ce-round",
      "nameKey": "Aucune attaque ce round",
-     "order": 220,
+     "order": 230,
      "tags": []
     },
     {
@@ -80324,7 +81370,7 @@
      },
      "id": "aucun-effort-ce-round",
      "nameKey": "Aucun effort ce round",
-     "order": 230,
+     "order": 240,
      "tags": []
     },
     {
@@ -80347,7 +81393,7 @@
      },
      "id": "munitions-pour-un-tir",
      "nameKey": "Munitions chargées",
-     "order": 240,
+     "order": 250,
      "tags": []
     },
     {
@@ -80370,7 +81416,7 @@
      },
      "id": "arme-automatique",
      "nameKey": "Arme automatique",
-     "order": 250,
+     "order": 260,
      "tags": []
     },
     {
@@ -80393,7 +81439,7 @@
      },
      "id": "munitions-pour-une-rafale",
      "nameKey": "Munitions pour une rafale",
-     "order": 260,
+     "order": 270,
      "tags": []
     },
     {
@@ -80420,7 +81466,7 @@
      },
      "id": "chargeur-incomplet",
      "nameKey": "Chargeur incomplet",
-     "order": 270,
+     "order": 280,
      "tags": []
     },
     {
@@ -80443,7 +81489,7 @@
      },
      "id": "reserve-disponible",
      "nameKey": "Réserve disponible",
-     "order": 280,
+     "order": 290,
      "tags": []
     },
     {
@@ -80462,7 +81508,7 @@
      },
      "id": "option-age-compatible",
      "nameKey": "Accessible à cet âge",
-     "order": 290,
+     "order": 300,
      "tags": []
     },
     {
@@ -80481,7 +81527,7 @@
      },
      "id": "permis-accessible",
      "nameKey": "19 ans ou plus",
-     "order": 300,
+     "order": 310,
      "tags": []
     }
    ],
@@ -81126,6 +82172,14 @@
        "operation": "grant",
        "targetRef": {
         "objectId": "en-combat",
+        "objectKind": "definition"
+       }
+      },
+      {
+       "id": "round-en-cours",
+       "operation": "grant",
+       "targetRef": {
+        "objectId": "round-en-cours",
         "objectKind": "definition"
        }
       },
@@ -97748,6 +98802,14 @@
        }
       },
       {
+       "id": "round-en-cours",
+       "operation": "grant",
+       "targetRef": {
+        "objectId": "round-en-cours",
+        "objectKind": "definition"
+       }
+      },
+      {
        "id": "attaques-utilisees",
        "operation": "grant",
        "targetRef": {
@@ -98117,6 +99179,14 @@
        }
       },
       {
+       "id": "round-en-cours",
+       "operation": "grant",
+       "targetRef": {
+        "objectId": "round-en-cours",
+        "objectKind": "definition"
+       }
+      },
+      {
        "id": "attaques-utilisees",
        "operation": "grant",
        "targetRef": {
@@ -98482,6 +99552,14 @@
        }
       },
       {
+       "id": "round-en-cours",
+       "operation": "grant",
+       "targetRef": {
+        "objectId": "round-en-cours",
+        "objectKind": "definition"
+       }
+      },
+      {
        "id": "attaques-utilisees",
        "operation": "grant",
        "targetRef": {
@@ -98837,6 +99915,14 @@
        "operation": "grant",
        "targetRef": {
         "objectId": "en-combat",
+        "objectKind": "definition"
+       }
+      },
+      {
+       "id": "round-en-cours",
+       "operation": "grant",
+       "targetRef": {
+        "objectId": "round-en-cours",
         "objectKind": "definition"
        }
       },
@@ -99205,6 +100291,14 @@
        }
       },
       {
+       "id": "round-en-cours",
+       "operation": "grant",
+       "targetRef": {
+        "objectId": "round-en-cours",
+        "objectKind": "definition"
+       }
+      },
+      {
        "id": "attaques-utilisees",
        "operation": "grant",
        "targetRef": {
@@ -99560,6 +100654,14 @@
        "operation": "grant",
        "targetRef": {
         "objectId": "en-combat",
+        "objectKind": "definition"
+       }
+      },
+      {
+       "id": "round-en-cours",
+       "operation": "grant",
+       "targetRef": {
+        "objectId": "round-en-cours",
         "objectKind": "definition"
        }
       },
@@ -99927,6 +101029,14 @@
        }
       },
       {
+       "id": "round-en-cours",
+       "operation": "grant",
+       "targetRef": {
+        "objectId": "round-en-cours",
+        "objectKind": "definition"
+       }
+      },
+      {
        "id": "attaques-utilisees",
        "operation": "grant",
        "targetRef": {
@@ -100288,6 +101398,14 @@
        }
       },
       {
+       "id": "round-en-cours",
+       "operation": "grant",
+       "targetRef": {
+        "objectId": "round-en-cours",
+        "objectKind": "definition"
+       }
+      },
+      {
        "id": "attaques-utilisees",
        "operation": "grant",
        "targetRef": {
@@ -100645,6 +101763,14 @@
        }
       },
       {
+       "id": "round-en-cours",
+       "operation": "grant",
+       "targetRef": {
+        "objectId": "round-en-cours",
+        "objectKind": "definition"
+       }
+      },
+      {
        "id": "attaques-utilisees",
        "operation": "grant",
        "targetRef": {
@@ -100996,6 +102122,14 @@
        "operation": "grant",
        "targetRef": {
         "objectId": "en-combat",
+        "objectKind": "definition"
+       }
+      },
+      {
+       "id": "round-en-cours",
+       "operation": "grant",
+       "targetRef": {
+        "objectId": "round-en-cours",
         "objectKind": "definition"
        }
       },
@@ -101362,6 +102496,14 @@
        }
       },
       {
+       "id": "round-en-cours",
+       "operation": "grant",
+       "targetRef": {
+        "objectId": "round-en-cours",
+        "objectKind": "definition"
+       }
+      },
+      {
        "id": "attaques-utilisees",
        "operation": "grant",
        "targetRef": {
@@ -101712,6 +102854,14 @@
        "operation": "grant",
        "targetRef": {
         "objectId": "en-combat",
+        "objectKind": "definition"
+       }
+      },
+      {
+       "id": "round-en-cours",
+       "operation": "grant",
+       "targetRef": {
+        "objectId": "round-en-cours",
         "objectKind": "definition"
        }
       },
@@ -102077,6 +103227,14 @@
        }
       },
       {
+       "id": "round-en-cours",
+       "operation": "grant",
+       "targetRef": {
+        "objectId": "round-en-cours",
+        "objectKind": "definition"
+       }
+      },
+      {
        "id": "attaques-utilisees",
        "operation": "grant",
        "targetRef": {
@@ -102427,6 +103585,14 @@
        "operation": "grant",
        "targetRef": {
         "objectId": "en-combat",
+        "objectKind": "definition"
+       }
+      },
+      {
+       "id": "round-en-cours",
+       "operation": "grant",
+       "targetRef": {
+        "objectId": "round-en-cours",
         "objectKind": "definition"
        }
       },
@@ -102786,6 +103952,14 @@
        }
       },
       {
+       "id": "round-en-cours",
+       "operation": "grant",
+       "targetRef": {
+        "objectId": "round-en-cours",
+        "objectKind": "definition"
+       }
+      },
+      {
        "id": "attaques-utilisees",
        "operation": "grant",
        "targetRef": {
@@ -103138,6 +104312,14 @@
        "operation": "grant",
        "targetRef": {
         "objectId": "en-combat",
+        "objectKind": "definition"
+       }
+      },
+      {
+       "id": "round-en-cours",
+       "operation": "grant",
+       "targetRef": {
+        "objectId": "round-en-cours",
         "objectKind": "definition"
        }
       },
@@ -103506,6 +104688,14 @@
        }
       },
       {
+       "id": "round-en-cours",
+       "operation": "grant",
+       "targetRef": {
+        "objectId": "round-en-cours",
+        "objectKind": "definition"
+       }
+      },
+      {
        "id": "attaques-utilisees",
        "operation": "grant",
        "targetRef": {
@@ -103856,6 +105046,14 @@
        "operation": "grant",
        "targetRef": {
         "objectId": "en-combat",
+        "objectKind": "definition"
+       }
+      },
+      {
+       "id": "round-en-cours",
+       "operation": "grant",
+       "targetRef": {
+        "objectId": "round-en-cours",
         "objectKind": "definition"
        }
       },
@@ -104211,6 +105409,14 @@
        "operation": "grant",
        "targetRef": {
         "objectId": "en-combat",
+        "objectKind": "definition"
+       }
+      },
+      {
+       "id": "round-en-cours",
+       "operation": "grant",
+       "targetRef": {
+        "objectId": "round-en-cours",
         "objectKind": "definition"
        }
       },
@@ -104575,6 +105781,14 @@
        }
       },
       {
+       "id": "round-en-cours",
+       "operation": "grant",
+       "targetRef": {
+        "objectId": "round-en-cours",
+        "objectKind": "definition"
+       }
+      },
+      {
        "id": "attaques-utilisees",
        "operation": "grant",
        "targetRef": {
@@ -104925,6 +106139,14 @@
        "operation": "grant",
        "targetRef": {
         "objectId": "en-combat",
+        "objectKind": "definition"
+       }
+      },
+      {
+       "id": "round-en-cours",
+       "operation": "grant",
+       "targetRef": {
+        "objectId": "round-en-cours",
         "objectKind": "definition"
        }
       },
@@ -105284,6 +106506,14 @@
        }
       },
       {
+       "id": "round-en-cours",
+       "operation": "grant",
+       "targetRef": {
+        "objectId": "round-en-cours",
+        "objectKind": "definition"
+       }
+      },
+      {
        "id": "attaques-utilisees",
        "operation": "grant",
        "targetRef": {
@@ -105635,6 +106865,14 @@
        "operation": "grant",
        "targetRef": {
         "objectId": "en-combat",
+        "objectKind": "definition"
+       }
+      },
+      {
+       "id": "round-en-cours",
+       "operation": "grant",
+       "targetRef": {
+        "objectId": "round-en-cours",
         "objectKind": "definition"
        }
       },
@@ -105991,6 +107229,14 @@
        "operation": "grant",
        "targetRef": {
         "objectId": "en-combat",
+        "objectKind": "definition"
+       }
+      },
+      {
+       "id": "round-en-cours",
+       "operation": "grant",
+       "targetRef": {
+        "objectId": "round-en-cours",
         "objectKind": "definition"
        }
       },
@@ -106356,6 +107602,14 @@
        }
       },
       {
+       "id": "round-en-cours",
+       "operation": "grant",
+       "targetRef": {
+        "objectId": "round-en-cours",
+        "objectKind": "definition"
+       }
+      },
+      {
        "id": "attaques-utilisees",
        "operation": "grant",
        "targetRef": {
@@ -106704,6 +107958,14 @@
        "operation": "grant",
        "targetRef": {
         "objectId": "en-combat",
+        "objectKind": "definition"
+       }
+      },
+      {
+       "id": "round-en-cours",
+       "operation": "grant",
+       "targetRef": {
+        "objectId": "round-en-cours",
         "objectKind": "definition"
        }
       },
@@ -107065,6 +108327,14 @@
        }
       },
       {
+       "id": "round-en-cours",
+       "operation": "grant",
+       "targetRef": {
+        "objectId": "round-en-cours",
+        "objectKind": "definition"
+       }
+      },
+      {
        "id": "attaques-utilisees",
        "operation": "grant",
        "targetRef": {
@@ -107418,6 +108688,14 @@
        "operation": "grant",
        "targetRef": {
         "objectId": "en-combat",
+        "objectKind": "definition"
+       }
+      },
+      {
+       "id": "round-en-cours",
+       "operation": "grant",
+       "targetRef": {
+        "objectId": "round-en-cours",
         "objectKind": "definition"
        }
       },
@@ -107779,6 +109057,14 @@
        }
       },
       {
+       "id": "round-en-cours",
+       "operation": "grant",
+       "targetRef": {
+        "objectId": "round-en-cours",
+        "objectKind": "definition"
+       }
+      },
+      {
        "id": "attaques-utilisees",
        "operation": "grant",
        "targetRef": {
@@ -108132,6 +109418,14 @@
        "operation": "grant",
        "targetRef": {
         "objectId": "en-combat",
+        "objectKind": "definition"
+       }
+      },
+      {
+       "id": "round-en-cours",
+       "operation": "grant",
+       "targetRef": {
+        "objectId": "round-en-cours",
         "objectKind": "definition"
        }
       },
@@ -108493,6 +109787,14 @@
        }
       },
       {
+       "id": "round-en-cours",
+       "operation": "grant",
+       "targetRef": {
+        "objectId": "round-en-cours",
+        "objectKind": "definition"
+       }
+      },
+      {
        "id": "attaques-utilisees",
        "operation": "grant",
        "targetRef": {
@@ -108846,6 +110148,14 @@
        "operation": "grant",
        "targetRef": {
         "objectId": "en-combat",
+        "objectKind": "definition"
+       }
+      },
+      {
+       "id": "round-en-cours",
+       "operation": "grant",
+       "targetRef": {
+        "objectId": "round-en-cours",
         "objectKind": "definition"
        }
       },
@@ -109207,6 +110517,14 @@
        }
       },
       {
+       "id": "round-en-cours",
+       "operation": "grant",
+       "targetRef": {
+        "objectId": "round-en-cours",
+        "objectKind": "definition"
+       }
+      },
+      {
        "id": "attaques-utilisees",
        "operation": "grant",
        "targetRef": {
@@ -109560,6 +110878,14 @@
        "operation": "grant",
        "targetRef": {
         "objectId": "en-combat",
+        "objectKind": "definition"
+       }
+      },
+      {
+       "id": "round-en-cours",
+       "operation": "grant",
+       "targetRef": {
+        "objectId": "round-en-cours",
         "objectKind": "definition"
        }
       },
@@ -109921,6 +111247,14 @@
        }
       },
       {
+       "id": "round-en-cours",
+       "operation": "grant",
+       "targetRef": {
+        "objectId": "round-en-cours",
+        "objectKind": "definition"
+       }
+      },
+      {
        "id": "attaques-utilisees",
        "operation": "grant",
        "targetRef": {
@@ -110269,6 +111603,14 @@
        "operation": "grant",
        "targetRef": {
         "objectId": "en-combat",
+        "objectKind": "definition"
+       }
+      },
+      {
+       "id": "round-en-cours",
+       "operation": "grant",
+       "targetRef": {
+        "objectId": "round-en-cours",
         "objectKind": "definition"
        }
       },
@@ -110630,6 +111972,14 @@
        }
       },
       {
+       "id": "round-en-cours",
+       "operation": "grant",
+       "targetRef": {
+        "objectId": "round-en-cours",
+        "objectKind": "definition"
+       }
+      },
+      {
        "id": "attaques-utilisees",
        "operation": "grant",
        "targetRef": {
@@ -110978,6 +112328,14 @@
        "operation": "grant",
        "targetRef": {
         "objectId": "en-combat",
+        "objectKind": "definition"
+       }
+      },
+      {
+       "id": "round-en-cours",
+       "operation": "grant",
+       "targetRef": {
+        "objectId": "round-en-cours",
         "objectKind": "definition"
        }
       },
@@ -111339,6 +112697,14 @@
        }
       },
       {
+       "id": "round-en-cours",
+       "operation": "grant",
+       "targetRef": {
+        "objectId": "round-en-cours",
+        "objectKind": "definition"
+       }
+      },
+      {
        "id": "attaques-utilisees",
        "operation": "grant",
        "targetRef": {
@@ -111692,6 +113058,14 @@
        "operation": "grant",
        "targetRef": {
         "objectId": "en-combat",
+        "objectKind": "definition"
+       }
+      },
+      {
+       "id": "round-en-cours",
+       "operation": "grant",
+       "targetRef": {
+        "objectId": "round-en-cours",
         "objectKind": "definition"
        }
       },
@@ -112053,6 +113427,14 @@
        }
       },
       {
+       "id": "round-en-cours",
+       "operation": "grant",
+       "targetRef": {
+        "objectId": "round-en-cours",
+        "objectKind": "definition"
+       }
+      },
+      {
        "id": "attaques-utilisees",
        "operation": "grant",
        "targetRef": {
@@ -112406,6 +113788,14 @@
        "operation": "grant",
        "targetRef": {
         "objectId": "en-combat",
+        "objectKind": "definition"
+       }
+      },
+      {
+       "id": "round-en-cours",
+       "operation": "grant",
+       "targetRef": {
+        "objectId": "round-en-cours",
         "objectKind": "definition"
        }
       },
@@ -112767,6 +114157,14 @@
        }
       },
       {
+       "id": "round-en-cours",
+       "operation": "grant",
+       "targetRef": {
+        "objectId": "round-en-cours",
+        "objectKind": "definition"
+       }
+      },
+      {
        "id": "attaques-utilisees",
        "operation": "grant",
        "targetRef": {
@@ -113120,6 +114518,14 @@
        "operation": "grant",
        "targetRef": {
         "objectId": "en-combat",
+        "objectKind": "definition"
+       }
+      },
+      {
+       "id": "round-en-cours",
+       "operation": "grant",
+       "targetRef": {
+        "objectId": "round-en-cours",
         "objectKind": "definition"
        }
       },
@@ -113481,6 +114887,14 @@
        }
       },
       {
+       "id": "round-en-cours",
+       "operation": "grant",
+       "targetRef": {
+        "objectId": "round-en-cours",
+        "objectKind": "definition"
+       }
+      },
+      {
        "id": "attaques-utilisees",
        "operation": "grant",
        "targetRef": {
@@ -113834,6 +115248,14 @@
        "operation": "grant",
        "targetRef": {
         "objectId": "en-combat",
+        "objectKind": "definition"
+       }
+      },
+      {
+       "id": "round-en-cours",
+       "operation": "grant",
+       "targetRef": {
+        "objectId": "round-en-cours",
         "objectKind": "definition"
        }
       },
@@ -114195,6 +115617,14 @@
        }
       },
       {
+       "id": "round-en-cours",
+       "operation": "grant",
+       "targetRef": {
+        "objectId": "round-en-cours",
+        "objectKind": "definition"
+       }
+      },
+      {
        "id": "attaques-utilisees",
        "operation": "grant",
        "targetRef": {
@@ -114548,6 +115978,14 @@
        "operation": "grant",
        "targetRef": {
         "objectId": "en-combat",
+        "objectKind": "definition"
+       }
+      },
+      {
+       "id": "round-en-cours",
+       "operation": "grant",
+       "targetRef": {
+        "objectId": "round-en-cours",
         "objectKind": "definition"
        }
       },
@@ -114909,6 +116347,14 @@
        }
       },
       {
+       "id": "round-en-cours",
+       "operation": "grant",
+       "targetRef": {
+        "objectId": "round-en-cours",
+        "objectKind": "definition"
+       }
+      },
+      {
        "id": "attaques-utilisees",
        "operation": "grant",
        "targetRef": {
@@ -115262,6 +116708,14 @@
        "operation": "grant",
        "targetRef": {
         "objectId": "en-combat",
+        "objectKind": "definition"
+       }
+      },
+      {
+       "id": "round-en-cours",
+       "operation": "grant",
+       "targetRef": {
+        "objectId": "round-en-cours",
         "objectKind": "definition"
        }
       },
@@ -115623,6 +117077,14 @@
        }
       },
       {
+       "id": "round-en-cours",
+       "operation": "grant",
+       "targetRef": {
+        "objectId": "round-en-cours",
+        "objectKind": "definition"
+       }
+      },
+      {
        "id": "attaques-utilisees",
        "operation": "grant",
        "targetRef": {
@@ -115976,6 +117438,14 @@
        "operation": "grant",
        "targetRef": {
         "objectId": "en-combat",
+        "objectKind": "definition"
+       }
+      },
+      {
+       "id": "round-en-cours",
+       "operation": "grant",
+       "targetRef": {
+        "objectId": "round-en-cours",
         "objectKind": "definition"
        }
       },
@@ -116337,6 +117807,14 @@
        }
       },
       {
+       "id": "round-en-cours",
+       "operation": "grant",
+       "targetRef": {
+        "objectId": "round-en-cours",
+        "objectKind": "definition"
+       }
+      },
+      {
        "id": "attaques-utilisees",
        "operation": "grant",
        "targetRef": {
@@ -116690,6 +118168,14 @@
        "operation": "grant",
        "targetRef": {
         "objectId": "en-combat",
+        "objectKind": "definition"
+       }
+      },
+      {
+       "id": "round-en-cours",
+       "operation": "grant",
+       "targetRef": {
+        "objectId": "round-en-cours",
         "objectKind": "definition"
        }
       },
@@ -117051,6 +118537,14 @@
        }
       },
       {
+       "id": "round-en-cours",
+       "operation": "grant",
+       "targetRef": {
+        "objectId": "round-en-cours",
+        "objectKind": "definition"
+       }
+      },
+      {
        "id": "attaques-utilisees",
        "operation": "grant",
        "targetRef": {
@@ -117404,6 +118898,14 @@
        "operation": "grant",
        "targetRef": {
         "objectId": "en-combat",
+        "objectKind": "definition"
+       }
+      },
+      {
+       "id": "round-en-cours",
+       "operation": "grant",
+       "targetRef": {
+        "objectId": "round-en-cours",
         "objectKind": "definition"
        }
       },
@@ -117765,6 +119267,14 @@
        }
       },
       {
+       "id": "round-en-cours",
+       "operation": "grant",
+       "targetRef": {
+        "objectId": "round-en-cours",
+        "objectKind": "definition"
+       }
+      },
+      {
        "id": "attaques-utilisees",
        "operation": "grant",
        "targetRef": {
@@ -118118,6 +119628,14 @@
        "operation": "grant",
        "targetRef": {
         "objectId": "en-combat",
+        "objectKind": "definition"
+       }
+      },
+      {
+       "id": "round-en-cours",
+       "operation": "grant",
+       "targetRef": {
+        "objectId": "round-en-cours",
         "objectKind": "definition"
        }
       },
@@ -118479,6 +119997,14 @@
        }
       },
       {
+       "id": "round-en-cours",
+       "operation": "grant",
+       "targetRef": {
+        "objectId": "round-en-cours",
+        "objectKind": "definition"
+       }
+      },
+      {
        "id": "attaques-utilisees",
        "operation": "grant",
        "targetRef": {
@@ -118836,6 +120362,14 @@
        }
       },
       {
+       "id": "round-en-cours",
+       "operation": "grant",
+       "targetRef": {
+        "objectId": "round-en-cours",
+        "objectKind": "definition"
+       }
+      },
+      {
        "id": "attaques-utilisees",
        "operation": "grant",
        "targetRef": {
@@ -119184,6 +120718,14 @@
        "operation": "grant",
        "targetRef": {
         "objectId": "en-combat",
+        "objectKind": "definition"
+       }
+      },
+      {
+       "id": "round-en-cours",
+       "operation": "grant",
+       "targetRef": {
+        "objectId": "round-en-cours",
         "objectKind": "definition"
        }
       },
@@ -119545,6 +121087,14 @@
        }
       },
       {
+       "id": "round-en-cours",
+       "operation": "grant",
+       "targetRef": {
+        "objectId": "round-en-cours",
+        "objectKind": "definition"
+       }
+      },
+      {
        "id": "attaques-utilisees",
        "operation": "grant",
        "targetRef": {
@@ -119898,6 +121448,14 @@
        "operation": "grant",
        "targetRef": {
         "objectId": "en-combat",
+        "objectKind": "definition"
+       }
+      },
+      {
+       "id": "round-en-cours",
+       "operation": "grant",
+       "targetRef": {
+        "objectId": "round-en-cours",
         "objectKind": "definition"
        }
       },
@@ -120259,6 +121817,14 @@
        }
       },
       {
+       "id": "round-en-cours",
+       "operation": "grant",
+       "targetRef": {
+        "objectId": "round-en-cours",
+        "objectKind": "definition"
+       }
+      },
+      {
        "id": "attaques-utilisees",
        "operation": "grant",
        "targetRef": {
@@ -120612,6 +122178,14 @@
        "operation": "grant",
        "targetRef": {
         "objectId": "en-combat",
+        "objectKind": "definition"
+       }
+      },
+      {
+       "id": "round-en-cours",
+       "operation": "grant",
+       "targetRef": {
+        "objectId": "round-en-cours",
         "objectKind": "definition"
        }
       },
@@ -120973,6 +122547,14 @@
        }
       },
       {
+       "id": "round-en-cours",
+       "operation": "grant",
+       "targetRef": {
+        "objectId": "round-en-cours",
+        "objectKind": "definition"
+       }
+      },
+      {
        "id": "attaques-utilisees",
        "operation": "grant",
        "targetRef": {
@@ -121326,6 +122908,14 @@
        "operation": "grant",
        "targetRef": {
         "objectId": "en-combat",
+        "objectKind": "definition"
+       }
+      },
+      {
+       "id": "round-en-cours",
+       "operation": "grant",
+       "targetRef": {
+        "objectId": "round-en-cours",
         "objectKind": "definition"
        }
       },
@@ -121687,6 +123277,14 @@
        }
       },
       {
+       "id": "round-en-cours",
+       "operation": "grant",
+       "targetRef": {
+        "objectId": "round-en-cours",
+        "objectKind": "definition"
+       }
+      },
+      {
        "id": "attaques-utilisees",
        "operation": "grant",
        "targetRef": {
@@ -122040,6 +123638,14 @@
        "operation": "grant",
        "targetRef": {
         "objectId": "en-combat",
+        "objectKind": "definition"
+       }
+      },
+      {
+       "id": "round-en-cours",
+       "operation": "grant",
+       "targetRef": {
+        "objectId": "round-en-cours",
         "objectKind": "definition"
        }
       },
@@ -122401,6 +124007,14 @@
        }
       },
       {
+       "id": "round-en-cours",
+       "operation": "grant",
+       "targetRef": {
+        "objectId": "round-en-cours",
+        "objectKind": "definition"
+       }
+      },
+      {
        "id": "attaques-utilisees",
        "operation": "grant",
        "targetRef": {
@@ -122749,6 +124363,14 @@
        "operation": "grant",
        "targetRef": {
         "objectId": "en-combat",
+        "objectKind": "definition"
+       }
+      },
+      {
+       "id": "round-en-cours",
+       "operation": "grant",
+       "targetRef": {
+        "objectId": "round-en-cours",
         "objectKind": "definition"
        }
       },
@@ -123110,6 +124732,14 @@
        }
       },
       {
+       "id": "round-en-cours",
+       "operation": "grant",
+       "targetRef": {
+        "objectId": "round-en-cours",
+        "objectKind": "definition"
+       }
+      },
+      {
        "id": "attaques-utilisees",
        "operation": "grant",
        "targetRef": {
@@ -123463,6 +125093,14 @@
        "operation": "grant",
        "targetRef": {
         "objectId": "en-combat",
+        "objectKind": "definition"
+       }
+      },
+      {
+       "id": "round-en-cours",
+       "operation": "grant",
+       "targetRef": {
+        "objectId": "round-en-cours",
         "objectKind": "definition"
        }
       },
@@ -123824,6 +125462,14 @@
        }
       },
       {
+       "id": "round-en-cours",
+       "operation": "grant",
+       "targetRef": {
+        "objectId": "round-en-cours",
+        "objectKind": "definition"
+       }
+      },
+      {
        "id": "attaques-utilisees",
        "operation": "grant",
        "targetRef": {
@@ -124181,6 +125827,14 @@
        }
       },
       {
+       "id": "round-en-cours",
+       "operation": "grant",
+       "targetRef": {
+        "objectId": "round-en-cours",
+        "objectKind": "definition"
+       }
+      },
+      {
        "id": "attaques-utilisees",
        "operation": "grant",
        "targetRef": {
@@ -124529,6 +126183,14 @@
        "operation": "grant",
        "targetRef": {
         "objectId": "en-combat",
+        "objectKind": "definition"
+       }
+      },
+      {
+       "id": "round-en-cours",
+       "operation": "grant",
+       "targetRef": {
+        "objectId": "round-en-cours",
         "objectKind": "definition"
        }
       },
@@ -124885,6 +126547,14 @@
        }
       },
       {
+       "id": "round-en-cours",
+       "operation": "grant",
+       "targetRef": {
+        "objectId": "round-en-cours",
+        "objectKind": "definition"
+       }
+      },
+      {
        "id": "attaques-utilisees",
        "operation": "grant",
        "targetRef": {
@@ -125233,6 +126903,14 @@
        "operation": "grant",
        "targetRef": {
         "objectId": "en-combat",
+        "objectKind": "definition"
+       }
+      },
+      {
+       "id": "round-en-cours",
+       "operation": "grant",
+       "targetRef": {
+        "objectId": "round-en-cours",
         "objectKind": "definition"
        }
       },
@@ -125589,6 +127267,14 @@
        }
       },
       {
+       "id": "round-en-cours",
+       "operation": "grant",
+       "targetRef": {
+        "objectId": "round-en-cours",
+        "objectKind": "definition"
+       }
+      },
+      {
        "id": "attaques-utilisees",
        "operation": "grant",
        "targetRef": {
@@ -125937,6 +127623,14 @@
        "operation": "grant",
        "targetRef": {
         "objectId": "en-combat",
+        "objectKind": "definition"
+       }
+      },
+      {
+       "id": "round-en-cours",
+       "operation": "grant",
+       "targetRef": {
+        "objectId": "round-en-cours",
         "objectKind": "definition"
        }
       },
@@ -126293,6 +127987,14 @@
        }
       },
       {
+       "id": "round-en-cours",
+       "operation": "grant",
+       "targetRef": {
+        "objectId": "round-en-cours",
+        "objectKind": "definition"
+       }
+      },
+      {
        "id": "attaques-utilisees",
        "operation": "grant",
        "targetRef": {
@@ -126641,6 +128343,14 @@
        "operation": "grant",
        "targetRef": {
         "objectId": "en-combat",
+        "objectKind": "definition"
+       }
+      },
+      {
+       "id": "round-en-cours",
+       "operation": "grant",
+       "targetRef": {
+        "objectId": "round-en-cours",
         "objectKind": "definition"
        }
       },
@@ -126997,6 +128707,14 @@
        }
       },
       {
+       "id": "round-en-cours",
+       "operation": "grant",
+       "targetRef": {
+        "objectId": "round-en-cours",
+        "objectKind": "definition"
+       }
+      },
+      {
        "id": "attaques-utilisees",
        "operation": "grant",
        "targetRef": {
@@ -127345,6 +129063,14 @@
        "operation": "grant",
        "targetRef": {
         "objectId": "en-combat",
+        "objectKind": "definition"
+       }
+      },
+      {
+       "id": "round-en-cours",
+       "operation": "grant",
+       "targetRef": {
+        "objectId": "round-en-cours",
         "objectKind": "definition"
        }
       },
@@ -127701,6 +129427,14 @@
        }
       },
       {
+       "id": "round-en-cours",
+       "operation": "grant",
+       "targetRef": {
+        "objectId": "round-en-cours",
+        "objectKind": "definition"
+       }
+      },
+      {
        "id": "attaques-utilisees",
        "operation": "grant",
        "targetRef": {
@@ -128049,6 +129783,14 @@
        "operation": "grant",
        "targetRef": {
         "objectId": "en-combat",
+        "objectKind": "definition"
+       }
+      },
+      {
+       "id": "round-en-cours",
+       "operation": "grant",
+       "targetRef": {
+        "objectId": "round-en-cours",
         "objectKind": "definition"
        }
       },
@@ -128405,6 +130147,14 @@
        }
       },
       {
+       "id": "round-en-cours",
+       "operation": "grant",
+       "targetRef": {
+        "objectId": "round-en-cours",
+        "objectKind": "definition"
+       }
+      },
+      {
        "id": "attaques-utilisees",
        "operation": "grant",
        "targetRef": {
@@ -128753,6 +130503,14 @@
        "operation": "grant",
        "targetRef": {
         "objectId": "en-combat",
+        "objectKind": "definition"
+       }
+      },
+      {
+       "id": "round-en-cours",
+       "operation": "grant",
+       "targetRef": {
+        "objectId": "round-en-cours",
         "objectKind": "definition"
        }
       },
@@ -129109,6 +130867,14 @@
        }
       },
       {
+       "id": "round-en-cours",
+       "operation": "grant",
+       "targetRef": {
+        "objectId": "round-en-cours",
+        "objectKind": "definition"
+       }
+      },
+      {
        "id": "attaques-utilisees",
        "operation": "grant",
        "targetRef": {
@@ -129457,6 +131223,14 @@
        "operation": "grant",
        "targetRef": {
         "objectId": "en-combat",
+        "objectKind": "definition"
+       }
+      },
+      {
+       "id": "round-en-cours",
+       "operation": "grant",
+       "targetRef": {
+        "objectId": "round-en-cours",
         "objectKind": "definition"
        }
       },
@@ -129813,6 +131587,14 @@
        }
       },
       {
+       "id": "round-en-cours",
+       "operation": "grant",
+       "targetRef": {
+        "objectId": "round-en-cours",
+        "objectKind": "definition"
+       }
+      },
+      {
        "id": "attaques-utilisees",
        "operation": "grant",
        "targetRef": {
@@ -130161,6 +131943,14 @@
        "operation": "grant",
        "targetRef": {
         "objectId": "en-combat",
+        "objectKind": "definition"
+       }
+      },
+      {
+       "id": "round-en-cours",
+       "operation": "grant",
+       "targetRef": {
+        "objectId": "round-en-cours",
         "objectKind": "definition"
        }
       },
@@ -130517,6 +132307,14 @@
        }
       },
       {
+       "id": "round-en-cours",
+       "operation": "grant",
+       "targetRef": {
+        "objectId": "round-en-cours",
+        "objectKind": "definition"
+       }
+      },
+      {
        "id": "attaques-utilisees",
        "operation": "grant",
        "targetRef": {
@@ -130865,6 +132663,14 @@
        "operation": "grant",
        "targetRef": {
         "objectId": "en-combat",
+        "objectKind": "definition"
+       }
+      },
+      {
+       "id": "round-en-cours",
+       "operation": "grant",
+       "targetRef": {
+        "objectId": "round-en-cours",
         "objectKind": "definition"
        }
       },
@@ -131221,6 +133027,14 @@
        }
       },
       {
+       "id": "round-en-cours",
+       "operation": "grant",
+       "targetRef": {
+        "objectId": "round-en-cours",
+        "objectKind": "definition"
+       }
+      },
+      {
        "id": "attaques-utilisees",
        "operation": "grant",
        "targetRef": {
@@ -131569,6 +133383,14 @@
        "operation": "grant",
        "targetRef": {
         "objectId": "en-combat",
+        "objectKind": "definition"
+       }
+      },
+      {
+       "id": "round-en-cours",
+       "operation": "grant",
+       "targetRef": {
+        "objectId": "round-en-cours",
         "objectKind": "definition"
        }
       },
@@ -131925,6 +133747,14 @@
        }
       },
       {
+       "id": "round-en-cours",
+       "operation": "grant",
+       "targetRef": {
+        "objectId": "round-en-cours",
+        "objectKind": "definition"
+       }
+      },
+      {
        "id": "attaques-utilisees",
        "operation": "grant",
        "targetRef": {
@@ -132273,6 +134103,14 @@
        "operation": "grant",
        "targetRef": {
         "objectId": "en-combat",
+        "objectKind": "definition"
+       }
+      },
+      {
+       "id": "round-en-cours",
+       "operation": "grant",
+       "targetRef": {
+        "objectId": "round-en-cours",
         "objectKind": "definition"
        }
       },
@@ -132629,6 +134467,14 @@
        }
       },
       {
+       "id": "round-en-cours",
+       "operation": "grant",
+       "targetRef": {
+        "objectId": "round-en-cours",
+        "objectKind": "definition"
+       }
+      },
+      {
        "id": "attaques-utilisees",
        "operation": "grant",
        "targetRef": {
@@ -132977,6 +134823,14 @@
        "operation": "grant",
        "targetRef": {
         "objectId": "en-combat",
+        "objectKind": "definition"
+       }
+      },
+      {
+       "id": "round-en-cours",
+       "operation": "grant",
+       "targetRef": {
+        "objectId": "round-en-cours",
         "objectKind": "definition"
        }
       },
@@ -133333,6 +135187,14 @@
        }
       },
       {
+       "id": "round-en-cours",
+       "operation": "grant",
+       "targetRef": {
+        "objectId": "round-en-cours",
+        "objectKind": "definition"
+       }
+      },
+      {
        "id": "attaques-utilisees",
        "operation": "grant",
        "targetRef": {
@@ -133681,6 +135543,14 @@
        "operation": "grant",
        "targetRef": {
         "objectId": "en-combat",
+        "objectKind": "definition"
+       }
+      },
+      {
+       "id": "round-en-cours",
+       "operation": "grant",
+       "targetRef": {
+        "objectId": "round-en-cours",
         "objectKind": "definition"
        }
       },
@@ -134037,6 +135907,14 @@
        }
       },
       {
+       "id": "round-en-cours",
+       "operation": "grant",
+       "targetRef": {
+        "objectId": "round-en-cours",
+        "objectKind": "definition"
+       }
+      },
+      {
        "id": "attaques-utilisees",
        "operation": "grant",
        "targetRef": {
@@ -134389,6 +136267,14 @@
        }
       },
       {
+       "id": "round-en-cours",
+       "operation": "grant",
+       "targetRef": {
+        "objectId": "round-en-cours",
+        "objectKind": "definition"
+       }
+      },
+      {
        "id": "attaques-utilisees",
        "operation": "grant",
        "targetRef": {
@@ -134736,6 +136622,14 @@
        }
       },
       {
+       "id": "round-en-cours",
+       "operation": "grant",
+       "targetRef": {
+        "objectId": "round-en-cours",
+        "objectKind": "definition"
+       }
+      },
+      {
        "id": "attaques-utilisees",
        "operation": "grant",
        "targetRef": {
@@ -135079,6 +136973,14 @@
        "operation": "grant",
        "targetRef": {
         "objectId": "en-combat",
+        "objectKind": "definition"
+       }
+      },
+      {
+       "id": "round-en-cours",
+       "operation": "grant",
+       "targetRef": {
+        "objectId": "round-en-cours",
         "objectKind": "definition"
        }
       },
@@ -135435,6 +137337,14 @@
        }
       },
       {
+       "id": "round-en-cours",
+       "operation": "grant",
+       "targetRef": {
+        "objectId": "round-en-cours",
+        "objectKind": "definition"
+       }
+      },
+      {
        "id": "attaques-utilisees",
        "operation": "grant",
        "targetRef": {
@@ -135783,6 +137693,14 @@
        "operation": "grant",
        "targetRef": {
         "objectId": "en-combat",
+        "objectKind": "definition"
+       }
+      },
+      {
+       "id": "round-en-cours",
+       "operation": "grant",
+       "targetRef": {
+        "objectId": "round-en-cours",
         "objectKind": "definition"
        }
       },
@@ -136139,6 +138057,14 @@
        }
       },
       {
+       "id": "round-en-cours",
+       "operation": "grant",
+       "targetRef": {
+        "objectId": "round-en-cours",
+        "objectKind": "definition"
+       }
+      },
+      {
        "id": "attaques-utilisees",
        "operation": "grant",
        "targetRef": {
@@ -136491,6 +138417,14 @@
        }
       },
       {
+       "id": "round-en-cours",
+       "operation": "grant",
+       "targetRef": {
+        "objectId": "round-en-cours",
+        "objectKind": "definition"
+       }
+      },
+      {
        "id": "attaques-utilisees",
        "operation": "grant",
        "targetRef": {
@@ -136834,6 +138768,14 @@
        "operation": "grant",
        "targetRef": {
         "objectId": "en-combat",
+        "objectKind": "definition"
+       }
+      },
+      {
+       "id": "round-en-cours",
+       "operation": "grant",
+       "targetRef": {
+        "objectId": "round-en-cours",
         "objectKind": "definition"
        }
       },
@@ -137185,6 +139127,14 @@
        }
       },
       {
+       "id": "round-en-cours",
+       "operation": "grant",
+       "targetRef": {
+        "objectId": "round-en-cours",
+        "objectKind": "definition"
+       }
+      },
+      {
        "id": "attaques-utilisees",
        "operation": "grant",
        "targetRef": {
@@ -137532,6 +139482,14 @@
        }
       },
       {
+       "id": "round-en-cours",
+       "operation": "grant",
+       "targetRef": {
+        "objectId": "round-en-cours",
+        "objectKind": "definition"
+       }
+      },
+      {
        "id": "attaques-utilisees",
        "operation": "grant",
        "targetRef": {
@@ -137875,6 +139833,14 @@
        "operation": "grant",
        "targetRef": {
         "objectId": "en-combat",
+        "objectKind": "definition"
+       }
+      },
+      {
+       "id": "round-en-cours",
+       "operation": "grant",
+       "targetRef": {
+        "objectId": "round-en-cours",
         "objectKind": "definition"
        }
       },
@@ -147698,12 +149664,26 @@
      ],
      "data": {},
      "definitionTypeId": "compteur",
+     "descriptionKey": "Le round du combat dont le personnage a déjà fait le bilan (attaques remises à zéro, effort compté) ; 0 hors combat. Un même round n'est jamais compté deux fois.",
+     "enabled": true,
+     "id": "round-en-cours",
+     "key": "round-en-cours",
+     "nameKey": "Round compté",
+     "order": 560,
+     "tags": []
+    },
+    {
+     "capabilities": [
+      "value"
+     ],
+     "data": {},
+     "definitionTypeId": "compteur",
      "descriptionKey": "1 quand le personnage a attaqué au contact ou sprinté ce round.",
      "enabled": true,
      "id": "effort-physique",
      "key": "effort-physique",
      "nameKey": "Effort physique ce round",
-     "order": 560,
+     "order": 570,
      "tags": []
     },
     {
@@ -147717,7 +149697,7 @@
      "id": "efforts-physiques",
      "key": "efforts-physiques",
      "nameKey": "Efforts physiques comptés",
-     "order": 570,
+     "order": 580,
      "tags": []
     },
     {
@@ -147731,7 +149711,7 @@
      "id": "progression-poursuite",
      "key": "progression-poursuite",
      "nameKey": "Progression de poursuite",
-     "order": 580,
+     "order": 590,
      "tags": []
     },
     {
@@ -147745,7 +149725,7 @@
      "id": "pratique-athletisme",
      "key": "pratique-athletisme",
      "nameKey": "Pratique : Athlétisme",
-     "order": 590,
+     "order": 600,
      "tags": []
     },
     {
@@ -147759,7 +149739,7 @@
      "id": "pratique-discretion",
      "key": "pratique-discretion",
      "nameKey": "Pratique : Discrétion",
-     "order": 600,
+     "order": 610,
      "tags": []
     },
     {
@@ -147773,7 +149753,7 @@
      "id": "pratique-vigilance",
      "key": "pratique-vigilance",
      "nameKey": "Pratique : Vigilance",
-     "order": 610,
+     "order": 620,
      "tags": []
     },
     {
@@ -147787,7 +149767,7 @@
      "id": "pratique-investigation",
      "key": "pratique-investigation",
      "nameKey": "Pratique : Investigation",
-     "order": 620,
+     "order": 630,
      "tags": []
     },
     {
@@ -147801,7 +149781,7 @@
      "id": "pratique-survie",
      "key": "pratique-survie",
      "nameKey": "Pratique : Survie",
-     "order": 630,
+     "order": 640,
      "tags": []
     },
     {
@@ -147815,7 +149795,7 @@
      "id": "pratique-technique",
      "key": "pratique-technique",
      "nameKey": "Pratique : Technique",
-     "order": 640,
+     "order": 650,
      "tags": []
     },
     {
@@ -147829,7 +149809,7 @@
      "id": "pratique-informatique",
      "key": "pratique-informatique",
      "nameKey": "Pratique : Informatique",
-     "order": 650,
+     "order": 660,
      "tags": []
     },
     {
@@ -147843,7 +149823,7 @@
      "id": "pratique-sciences",
      "key": "pratique-sciences",
      "nameKey": "Pratique : Sciences",
-     "order": 660,
+     "order": 670,
      "tags": []
     },
     {
@@ -147857,7 +149837,7 @@
      "id": "pratique-medecine",
      "key": "pratique-medecine",
      "nameKey": "Pratique : Médecine",
-     "order": 670,
+     "order": 680,
      "tags": []
     },
     {
@@ -147871,7 +149851,7 @@
      "id": "pratique-culture",
      "key": "pratique-culture",
      "nameKey": "Pratique : Culture",
-     "order": 680,
+     "order": 690,
      "tags": []
     },
     {
@@ -147885,7 +149865,7 @@
      "id": "pratique-influence",
      "key": "pratique-influence",
      "nameKey": "Pratique : Influence",
-     "order": 690,
+     "order": 700,
      "tags": []
     },
     {
@@ -147899,7 +149879,7 @@
      "id": "pratique-empathie",
      "key": "pratique-empathie",
      "nameKey": "Pratique : Empathie",
-     "order": 700,
+     "order": 710,
      "tags": []
     },
     {
@@ -147913,7 +149893,7 @@
      "id": "pratique-langues",
      "key": "pratique-langues",
      "nameKey": "Pratique : Langues",
-     "order": 710,
+     "order": 720,
      "tags": []
     },
     {
@@ -147927,7 +149907,7 @@
      "id": "pratique-arts",
      "key": "pratique-arts",
      "nameKey": "Pratique : Arts",
-     "order": 720,
+     "order": 730,
      "tags": []
     },
     {
@@ -147941,7 +149921,7 @@
      "id": "pratique-occultisme",
      "key": "pratique-occultisme",
      "nameKey": "Pratique : Occultisme",
-     "order": 730,
+     "order": 740,
      "tags": []
     },
     {
@@ -147955,7 +149935,7 @@
      "id": "pratique-corps-a-corps",
      "key": "pratique-corps-a-corps",
      "nameKey": "Pratique : Corps à corps",
-     "order": 740,
+     "order": 750,
      "tags": []
     },
     {
@@ -147969,7 +149949,7 @@
      "id": "pratique-armes-de-melee",
      "key": "pratique-armes-de-melee",
      "nameKey": "Pratique : Armes de mêlée",
-     "order": 750,
+     "order": 760,
      "tags": []
     },
     {
@@ -147983,7 +149963,7 @@
      "id": "pratique-armes-de-poing",
      "key": "pratique-armes-de-poing",
      "nameKey": "Pratique : Armes de poing",
-     "order": 760,
+     "order": 770,
      "tags": []
     },
     {
@@ -147997,7 +149977,7 @@
      "id": "pratique-armes-d-epaule",
      "key": "pratique-armes-d-epaule",
      "nameKey": "Pratique : Armes d'épaule",
-     "order": 770,
+     "order": 780,
      "tags": []
     },
     {
@@ -148011,7 +149991,7 @@
      "id": "pratique-armes-lourdes",
      "key": "pratique-armes-lourdes",
      "nameKey": "Pratique : Armes lourdes",
-     "order": 780,
+     "order": 790,
      "tags": []
     },
     {
@@ -148025,7 +150005,7 @@
      "id": "pratique-armes-de-jet",
      "key": "pratique-armes-de-jet",
      "nameKey": "Pratique : Armes de jet",
-     "order": 790,
+     "order": 800,
      "tags": []
     },
     {
@@ -148039,7 +150019,7 @@
      "id": "pratique-armes-de-trait",
      "key": "pratique-armes-de-trait",
      "nameKey": "Pratique : Armes de trait",
-     "order": 800,
+     "order": 810,
      "tags": []
     },
     {
@@ -148053,7 +150033,7 @@
      "id": "pratique-vehicules-legers",
      "key": "pratique-vehicules-legers",
      "nameKey": "Pratique : Véhicules légers",
-     "order": 810,
+     "order": 820,
      "tags": []
     },
     {
@@ -148067,7 +150047,7 @@
      "id": "pratique-deux-roues-motorises",
      "key": "pratique-deux-roues-motorises",
      "nameKey": "Pratique : Deux-roues motorisés",
-     "order": 820,
+     "order": 830,
      "tags": []
     },
     {
@@ -148081,7 +150061,7 @@
      "id": "pratique-poids-lourds",
      "key": "pratique-poids-lourds",
      "nameKey": "Pratique : Poids lourds",
-     "order": 830,
+     "order": 840,
      "tags": []
     },
     {
@@ -148095,7 +150075,7 @@
      "id": "pratique-transport-collectif",
      "key": "pratique-transport-collectif",
      "nameKey": "Pratique : Transport collectif",
-     "order": 840,
+     "order": 850,
      "tags": []
     },
     {
@@ -148109,7 +150089,7 @@
      "id": "pratique-cyclisme",
      "key": "pratique-cyclisme",
      "nameKey": "Pratique : Cyclisme",
-     "order": 850,
+     "order": 860,
      "tags": []
     },
     {
@@ -148123,7 +150103,7 @@
      "id": "pratique-equitation",
      "key": "pratique-equitation",
      "nameKey": "Pratique : Équitation / Monture",
-     "order": 860,
+     "order": 870,
      "tags": []
     },
     {
@@ -148137,7 +150117,7 @@
      "id": "pratique-navigation",
      "key": "pratique-navigation",
      "nameKey": "Pratique : Navigation",
-     "order": 870,
+     "order": 880,
      "tags": []
     },
     {
@@ -148151,7 +150131,7 @@
      "id": "pratique-ski-glisse",
      "key": "pratique-ski-glisse",
      "nameKey": "Pratique : Ski / Glisse",
-     "order": 880,
+     "order": 890,
      "tags": []
     },
     {
@@ -148165,7 +150145,7 @@
      "id": "pratique-pilotage-aerien",
      "key": "pratique-pilotage-aerien",
      "nameKey": "Pratique : Pilotage aérien",
-     "order": 890,
+     "order": 900,
      "tags": []
     },
     {
@@ -148179,7 +150159,7 @@
      "id": "pratique-engins-specialises",
      "key": "pratique-engins-specialises",
      "nameKey": "Pratique : Engins spécialisés",
-     "order": 900,
+     "order": 910,
      "tags": []
     }
    ],
@@ -148749,6 +150729,46 @@
     {
      "descriptionKey": "",
      "enabled": true,
+     "id": "noter-le-round",
+     "nameKey": "Round compté",
+     "operand": {
+      "id": "round-annonce",
+      "kind": "formula"
+     },
+     "operation": "set",
+     "order": 260,
+     "tags": [],
+     "targetRef": {
+      "capabilityId": "value",
+      "objectId": "round-en-cours",
+      "objectKind": "definition",
+      "outputId": "value.base"
+     },
+     "targetRole": "self"
+    },
+    {
+     "descriptionKey": "",
+     "enabled": true,
+     "id": "remise-round",
+     "nameKey": "Plus de round compté",
+     "operand": {
+      "kind": "literal",
+      "value": 0
+     },
+     "operation": "set",
+     "order": 270,
+     "tags": [],
+     "targetRef": {
+      "capabilityId": "value",
+      "objectId": "round-en-cours",
+      "objectKind": "definition",
+      "outputId": "value.base"
+     },
+     "targetRole": "self"
+    },
+    {
+     "descriptionKey": "",
+     "enabled": true,
      "id": "effort-poursuite",
      "nameKey": "Effort de la poursuite à pied",
      "operand": {
@@ -148756,7 +150776,7 @@
       "value": 1
      },
      "operation": "add",
-     "order": 260,
+     "order": 280,
      "tags": [],
      "targetRef": {
       "capabilityId": "value",
@@ -148776,7 +150796,7 @@
       "kind": "formula"
      },
      "operation": "add",
-     "order": 270,
+     "order": 290,
      "tags": [],
      "targetRef": {
       "capabilityId": "pool",
@@ -148797,7 +150817,7 @@
       "kind": "formula"
      },
      "operation": "set",
-     "order": 280,
+     "order": 300,
      "tags": [],
      "targetRef": {
       "capabilityId": "value",
@@ -148817,7 +150837,7 @@
       "kind": "formula"
      },
      "operation": "subtract",
-     "order": 290,
+     "order": 310,
      "tags": [],
      "targetContentField": "munitions",
      "targetRef": null,
@@ -148833,7 +150853,7 @@
       "kind": "parameter"
      },
      "operation": "subtract",
-     "order": 300,
+     "order": 320,
      "tags": [],
      "targetContentField": "munitions",
      "targetRef": null,
@@ -148849,7 +150869,7 @@
       "kind": "formula"
      },
      "operation": "subtract",
-     "order": 310,
+     "order": 330,
      "tags": [],
      "targetContentField": "munitions",
      "targetRef": null,
@@ -148865,7 +150885,7 @@
       "kind": "formula"
      },
      "operation": "add",
-     "order": 320,
+     "order": 340,
      "tags": [],
      "targetContentField": "munitions",
      "targetRef": null,
@@ -148881,7 +150901,7 @@
       "kind": "formula"
      },
      "operation": "subtract",
-     "order": 330,
+     "order": 350,
      "tags": [],
      "targetContentField": "reserve",
      "targetRef": null,
@@ -150987,6 +153007,19 @@
      "tags": []
     },
     {
+     "descriptionKey": "Le round que le combat annonce.",
+     "enabled": true,
+     "expression": {
+      "path": "event.payload.round",
+      "type": "context"
+     },
+     "id": "round-annonce",
+     "nameKey": "Round annoncé",
+     "order": 560,
+     "resultType": "number",
+     "tags": []
+    },
+    {
      "descriptionKey": "",
      "enabled": true,
      "expression": {
@@ -151013,7 +153046,7 @@
      },
      "id": "quart-endurance",
      "nameKey": "Quart de l'Endurance maximale",
-     "order": 560,
+     "order": 570,
      "resultType": "number",
      "tags": []
     },
@@ -151048,7 +153081,7 @@
      },
      "id": "munitions-par-tir",
      "nameKey": "Munitions d'un tir",
-     "order": 570,
+     "order": 580,
      "resultType": "number",
      "tags": []
     },
@@ -151140,7 +153173,7 @@
      },
      "id": "munitions-full-auto",
      "nameKey": "Munitions d'une rafale full-auto",
-     "order": 580,
+     "order": 590,
      "resultType": "number",
      "tags": []
     },
@@ -151183,7 +153216,7 @@
      },
      "id": "munitions-a-charger",
      "nameKey": "Munitions à charger",
-     "order": 590,
+     "order": 600,
      "resultType": "number",
      "tags": []
     },
@@ -151196,7 +153229,7 @@
      },
      "id": "munitions-chargees",
      "nameKey": "Munitions prises dans la réserve",
-     "order": 600,
+     "order": 610,
      "resultType": "number",
      "tags": []
     },
@@ -151218,7 +153251,7 @@
      },
      "id": "bonus-attaque-rafale",
      "nameKey": "Bonus d'une rafale",
-     "order": 610,
+     "order": 620,
      "resultType": "number",
      "tags": []
     },
@@ -151242,7 +153275,7 @@
      },
      "id": "multiplicateur-apprentissage",
      "nameKey": "Multiplicateur d'apprentissage",
-     "order": 620,
+     "order": 630,
      "resultType": "number",
      "tags": []
     },
@@ -151348,7 +153381,7 @@
      },
      "id": "cout-pratique",
      "nameKey": "Pratique pour le niveau suivant",
-     "order": 630,
+     "order": 640,
      "resultType": "number",
      "tags": []
     },
@@ -151361,7 +153394,7 @@
      },
      "id": "creation-backgrounds",
      "nameKey": "Backgrounds de la tranche d'âge",
-     "order": 640,
+     "order": 650,
      "resultType": "number",
      "tags": []
     },
@@ -151374,7 +153407,7 @@
      },
      "id": "creation-evenements-minimum",
      "nameKey": "Événements minimum de la tranche d'âge",
-     "order": 650,
+     "order": 660,
      "resultType": "number",
      "tags": []
     },
@@ -151387,7 +153420,7 @@
      },
      "id": "creation-evenements-maximum",
      "nameKey": "Événements maximum de la tranche d'âge",
-     "order": 660,
+     "order": 670,
      "resultType": "number",
      "tags": []
     },
@@ -151400,7 +153433,7 @@
      },
      "id": "creation-points-caracteristiques",
      "nameKey": "Points de caractéristiques de la tranche d'âge",
-     "order": 670,
+     "order": 680,
      "resultType": "number",
      "tags": []
     },
@@ -151413,7 +153446,7 @@
      },
      "id": "creation-points-competences",
      "nameKey": "Points de compétences de la tranche d'âge",
-     "order": 680,
+     "order": 690,
      "resultType": "number",
      "tags": []
     },
@@ -151435,7 +153468,7 @@
      },
      "id": "creation-plafond-caracteristique",
      "nameKey": "Points par caractéristique",
-     "order": 690,
+     "order": 700,
      "resultType": "number",
      "tags": []
     }
@@ -151443,6 +153476,7 @@
    "id": "rwf",
    "initiative": {
     "bySide": false,
+    "defeatedConditionRef": "vitalite-a-zero",
     "eachRound": true,
     "passes": {
      "countFormulaRef": "attaques-meilleure"
@@ -156081,7 +158115,9 @@
       "bilan-effort",
       "s-essouffler"
      ],
-     "conditionRefs": [],
+     "conditionRefs": [
+      "round-pas-encore-compte"
+     ],
      "descriptionKey": "Compte le round s'il était physique, puis essouffle au troisième.",
      "enabled": true,
      "eventFilter": null,
@@ -156095,7 +158131,9 @@
      "actionRefs": [
       "nouveau-round"
      ],
-     "conditionRefs": [],
+     "conditionRefs": [
+      "round-pas-encore-compte"
+     ],
      "descriptionKey": "Les attaques du round repartent de zéro.",
      "enabled": true,
      "eventFilter": null,
@@ -156134,7 +158172,7 @@
      "tags": []
     }
    ],
-   "version": "2.3.0"
+   "version": "2.4.0"
   }
  }
 }

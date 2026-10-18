@@ -93,7 +93,7 @@ export function collectEntryData(kind,{fd,current,bool,checkedIds,queryOne,query
       const source=fieldPresent(fd,"initiativeSource")?String(fd.get("initiativeSource")??""):"";
       const [sourceKind,sourceId]=[source.slice(0,source.indexOf(":")),source.slice(source.indexOf(":")+1)];
       const initiative=!fieldPresent(fd,"initiativeSource")?current.initiative?{...current.initiative}:null
-        :!source?null:{...(sourceKind==="table"?{tableRef:sourceId}:{testRef:sourceId}),tieBreakFormulaRef:String(fd.get("initiativeTieBreakFormulaRef")??"")||null,eachRound:bool("initiativeEachRound"),bySide:bool("initiativeBySide"),passes:initiativePasses(fd)};
+        :!source?null:{...(sourceKind==="table"?{tableRef:sourceId}:{testRef:sourceId}),tieBreakFormulaRef:String(fd.get("initiativeTieBreakFormulaRef")??"")||null,eachRound:bool("initiativeEachRound"),bySide:bool("initiativeBySide"),passes:initiativePasses(fd),defeatedConditionRef:String(fd.get("initiativeDefeatedConditionRef")??"")||null};
       // The shared lists appear once the Ruleset exists; an unticked list is empty.
       const sharedDefinitions=fieldPresent(fd,"initiativeSource")?{world:checkedIds("sharedWorld"),combat:checkedIds("sharedCombat")}:{world:[],combat:[],...current.sharedDefinitions};
       return{id,initiative,sharedDefinitions,nameKey:name,descriptionKey:String(fd.get("descriptionKey")??""),version:String(fd.get("version")??"1.0.0").trim(),color:color===DEFAULT_RULESET_COLOR?null:color,sectionColors,sectionColorOverrides,familyColors:{...current.familyColors}};

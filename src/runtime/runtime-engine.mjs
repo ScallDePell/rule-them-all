@@ -556,7 +556,9 @@ export class RuntimeEngine{
     for(const ref of refs){
       const state=await this.adapter.load(ref),versionId=state.rulesetVersionId;
       if(!versionId||!this.#hasRuleset(versionId)||!(this.ruleset(versionId).triggers??[]).some(trigger=>enabled(trigger)&&trigger.eventTypeId===eventTypeId))continue;
-      results.push({ref,...await this.emitEvent(versionId,eventTypeId,payload,{roles:{self:ref,...(ref.kind==="combat"?{combat:ref}:{})}})});
+      // One container in error (a Trigger that fails for it) does not stop the event for the others.
+      try{results.push({ref,...await this.emitEvent(versionId,eventTypeId,payload,{roles:{self:ref,...(ref.kind==="combat"?{combat:ref}:{})}})});}
+      catch(error){console.error(`Rule Them'All | ${eventTypeId} failed for`,ref,error);results.push({ref,error:error?.message??String(error)});}
     }
     return results;
   }

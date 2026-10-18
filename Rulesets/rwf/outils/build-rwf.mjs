@@ -13,10 +13,11 @@ const {RWF_DEFAULT_AGE_GROUPS, RWF_DEFAULT_BACKGROUNDS} = await imp(`${sysDir}/m
 const {RWF_BASE_PROFESSIONS} = await imp(`${sysDir}/module/professions.mjs`);
 const pack = name => JSON.parse(readFileSync(`${packDir}/${name}`, "utf8"));
 
-const R = {id: "rwf", nameKey: "Real World Fantasy", descriptionKey: "Jeu de rôle contemporain fantastique : notre monde, plus les Fantaisies que le MJ rend vraies. Règles extraites du système RWF v0.1.475, contenus du RWF Super Pack v0.4.1.", version: "2.3.0", color: "#2f6f8f",
+const R = {id: "rwf", nameKey: "Real World Fantasy", descriptionKey: "Jeu de rôle contemporain fantastique : notre monde, plus les Fantaisies que le MJ rend vraies. Règles extraites du système RWF v0.1.475, contenus du RWF Super Pack v0.4.1.", version: "2.4.0", color: "#2f6f8f",
   // COMBAT-01: 1d20 + Agilité + Esprit, rerolled every round; ties go to Agilité, then Esprit.
   // COMBAT-02: the round is played in passes 1, 2, 3; a combatant acts in as many passes as its best mastery gives attacks.
-  initiative: {testRef: "initiative", tableRef: null, tieBreakFormulaRef: "departage-initiative", eachRound: true, bySide: false, passes: {countFormulaRef: "attaques-meilleure"}}};
+  // At 0 Vitality a character is out of the fight: defeated in Foundry's combat tracker (2.4.0).
+  initiative: {testRef: "initiative", tableRef: null, tieBreakFormulaRef: "departage-initiative", eachRound: true, bySide: false, passes: {countFormulaRef: "attaques-meilleure"}, defeatedConditionRef: "vitalite-a-zero"}};
 const C = Object.fromEntries(["definitionTypes","definitions","parameters","formulas","formulaBindings","conditions","rolls","outcomes","tests","effects","actions","permissionPolicies","eventTypes","triggers","contentTypes","contentTemplates","modifiers","durations","creationSystems","progressionSystems","sheetDefinitions","scales","tags"].map(k => [k, []]));
 const orders = {};
 const add = (collection, entry) => {
@@ -138,6 +139,7 @@ D("en-combat", "statut", "En combat", {}, {descriptionKey: "Actif pendant un com
 D("attaques-utilisees", "compteur", "Attaques utilisées ce round", {}, {descriptionKey: "Remis à 0 à chaque round. Une attaque n'est possible que tant qu'il reste moins d'attaques utilisées que la maîtrise de l'arme n'en permet (passes 1 / 2 / 3)."});
 D("passe-en-cours", "compteur", "Passe d'attaque en cours", {}, {descriptionKey: "La passe (1, 2 ou 3) du tour que le personnage joue ; 0 avant son premier tour du round."});
 D("derniere-passe-attaque", "compteur", "Dernière passe utilisée", {}, {descriptionKey: "La passe où le personnage a déjà attaqué, sprinté ou rechargé : une seule action de ce genre par passe."});
+D("round-en-cours", "compteur", "Round compté", {}, {descriptionKey: "Le round du combat dont le personnage a déjà fait le bilan (attaques remises à zéro, effort compté) ; 0 hors combat. Un même round n'est jamais compté deux fois."});
 D("effort-physique", "compteur", "Effort physique ce round", {}, {descriptionKey: "1 quand le personnage a attaqué au contact ou sprinté ce round."});
 D("efforts-physiques", "compteur", "Efforts physiques comptés", {}, {descriptionKey: "Rounds physiques en combat et actions de poursuite à pied ; au troisième, 1 Endurance est perdue (END-03)."});
 D("progression-poursuite", "poursuite", "Progression de poursuite", {}, {descriptionKey: "De −3 à +3. Continuer, prendre un risque ou un raccourci la fait avancer selon le résultat (+2 critique, +1 réussite, −1 échec, −2 complication) et l'avantage de vitesse ; s'arrêter retire 1."});
@@ -412,6 +414,16 @@ A("bilan-effort", "Bilan de l'effort", {descriptionKey: "Un round où le personn
 // Runs before "nouveau-round": the triggers of an event play in their order.
 C.triggers.splice(C.triggers.findIndex(t => t.id === "nouveau-round"), 0, {...generic({id: "fin-de-round-physique", nameKey: "Fin d'un round physique", descriptionKey: "Compte le round s'il était physique, puis essouffle au troisième.", eventTypeId: "rta.combat.round", eventFilter: null, conditionRefs: [], actionRefs: ["bilan-effort", "s-essouffler"]}), order: 25});
 for (const id of ["entrer-en-combat", "sortir-du-combat"]) action(id).effectRefs.push("remise-effort");
+// 2.4.0: a round is counted once per character, whoever announces it (Rule Them'All, or RWF tools when that was lost):
+// its triggers run only for a round not counted yet, and the last of them notes it. Entering a combat counts its round.
+F("round-annonce", "Round annoncé", ctx("event.payload.round"), "integer", "Le round que le combat annonce.");
+K("round-pas-encore-compte", "Round pas encore compté", cmp("neq", ref(val("round-en-cours")), ctx("event.payload.round")), "Le bilan d'un round ne se fait qu'une fois.");
+E("noter-le-round", "Round compté", base("round-en-cours"), "set", {kind: "formula", id: "round-annonce"}, "self");
+E("remise-round", "Plus de round compté", base("round-en-cours"), "set", {kind: "literal", value: 0}, "self");
+for (const id of ["fin-de-round-physique", "nouveau-round"]) C.triggers.find(t => t.id === id).conditionRefs.push("round-pas-encore-compte");
+action("nouveau-round").effectRefs.push("noter-le-round");
+action("entrer-en-combat").effectRefs.push("noter-le-round");
+action("sortir-du-combat").effectRefs.push("remise-round");
 action("long-repos").effectRefs.push("remise-efforts", "remise-effort");
 action("sprinter").costEffectRefs.push("marquer-la-passe", "effort-combat");
 action("sprinter").conditionRefs.push("attaque-de-la-passe-disponible");
@@ -510,7 +522,7 @@ const strip = html => String(html ?? "").replace(/<[^>]+>/g, " ").replace(/\s+/g
 
 /* Socle: everything a character owns from the start. */
 // What every combatant keeps track of in a fight and a pursuit (NPCs and creatures as well).
-const COMBAT_STATE = ["en-combat", "attaques-utilisees", "passe-en-cours", "derniere-passe-attaque", "effort-physique", "efforts-physiques", "progression-poursuite"];
+const COMBAT_STATE = ["en-combat", "round-en-cours", "attaques-utilisees", "passe-en-cours", "derniere-passe-attaque", "effort-physique", "efforts-physiques", "progression-poursuite"];
 const allSkills = SKILLS.map(([, id]) => id), allCombat = COMBAT.map(([, id]) => id), allMoves = MOVES.map(([, id]) => id);
 TPL("humain", "Humain", "socle", {}, {descriptionKey: "Personnage joueur, caractéristiques à 1, Vitalité, Endurance et Énergie au maximum, Corps à corps et Course à pied natifs.", relations: [
   grant("personnage-joueur", "definition", "personnage-joueur", {"state.active": true}),
@@ -735,13 +747,13 @@ add("sheetDefinitions", generic({id: "feuille-pj", nameKey: "Feuille de PJ", des
 /* ---------- Build, validate, publish, export ---------- */
 class Storage { constructor() { this.data = emptyStorageSnapshot(); } async load() { return structuredClone(this.data); } async save(d) { this.data = structuredClone(d); } }
 const api = await createConfiguratorAPI(new Storage(), {onError: e => { throw e; }});
-const {versionId} = await api.createRuleset({...R, ...C, versionId: "rwf-2-3-0"});
+const {versionId} = await api.createRuleset({...R, ...C, versionId: "rwf-2-4-0"});
 const draft = api.validateRuleset(api.getRuleset(versionId), {scope: "publish"});
 if (!draft.valid) { console.error(draft.errors.map(e=>`${e.code} ${e.path}: ${e.message}`).join("\n")); process.exit(1); }
 await api.publishRuleset(versionId);
 const exported = api.exportRuleset(versionId);
 mkdirSync(outDir, {recursive: true});
-writeFileSync(`${outDir}/rwf-ruleset-2.3.0.json`, JSON.stringify(exported, null, 1));
+writeFileSync(`${outDir}/rwf-ruleset-2.4.0.json`, JSON.stringify(exported, null, 1));
 const counts = Object.fromEntries(Object.entries(C).map(([k, v]) => [k, v.length]).filter(([, n]) => n));
 writeFileSync(`${outDir}/build-report.json`, JSON.stringify({counts, warnings: draft.warnings?.length ?? 0, fixes: report.fixes}, null, 1));
 console.log(JSON.stringify({counts, warnings: draft.warnings?.slice?.(0, 10)}, null, 1));

@@ -1267,6 +1267,8 @@
       "BySide": "One roll per side",
       "RolledSide": "{name} rolls initiative for their side",
       "PassCount": "Passes of each combatant",
+      "Defeated": "Defeated when",
+      "DefeatedNone": "Nobody is defeated automatically",
       "PassCountNone": "By initiative (below)",
       "PassStep": "Initiative lost per extra pass",
       "OnePass": "Empty: one pass per round",

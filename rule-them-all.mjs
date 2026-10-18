@@ -13,6 +13,7 @@ import {combatChangeEvents, combatTurnEvent, timeElapsedPayload} from "./src/con
 import {createModuleEventQueue} from "./src/runtime/module-event-queue.mjs";
 import {registerRulesetDice} from "./src/runtime/foundry-dice.mjs";
 import {installInitiative, installInitiativePasses, rerollEachRound} from "./src/runtime/foundry-initiative.mjs";
+import {installDefeated} from "./src/runtime/foundry-defeated.mjs";
 import {FoundryRuntimeAdapter} from "./src/runtime/foundry-runtime-adapter.mjs";
 import {actionSummary, registerRulesetSheets, repairSheetChoices, translator} from "./src/runtime/foundry-sheets.mjs";
 import {resolveRuntimeRuleset} from "./src/runtime/runtime-contracts.mjs";
@@ -72,6 +73,8 @@ Hooks.once("init", () => {
   installInitiative(CONFIG.Combat.documentClass, () => game.ruleThemAll?.runtime);
   // Rulesets with initiative passes give a second pass (or more) to the fastest combatants before the round ends.
   installInitiativePasses(CONFIG.Combat.documentClass, () => game.ruleThemAll?.runtime);
+  // A Ruleset's "defeated" Condition marks its combatants defeated in the tracker (and the token's status) while it holds.
+  installDefeated(() => game.ruleThemAll?.runtime);
   // The Ruleset's sheets (or AUTO ones), offered for every Actor and Item type next to the game system's.
   rulesetSheets = registerRulesetSheets();
   Hooks.callAll("ruleThemAllInit", game.ruleThemAll);

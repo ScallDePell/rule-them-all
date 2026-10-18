@@ -1,5 +1,11 @@
 # Changelog
 
+## 1.0.17
+
+- Ruleset "Combat et ressources partagées": **Vaincu quand** (initiative.defeatedConditionRef), a Condition that marks a combatant defeated in Foundry's combat tracker (and the token's status) while it holds, and clears the mark when it stops holding. The GM's own toggle stays until the Condition changes.
+- Combat events: one Trigger in error no longer stops the event for the other Actors, nor the next events of the same change (round, turn); the error is logged in the console.
+- RWF Ruleset 2.4.0: defeated at 0 Vitality; each round counted once per character ("Round compté"), so a round announced twice never costs Endurance twice.
+
 ## 1.0.16
 
 - Chat cards: a rolled amount (damage, healing) shows the bonus and factor added to its dice and the amount applied, e.g. "1d4 : 4 + 4 = 8", instead of the dice alone.

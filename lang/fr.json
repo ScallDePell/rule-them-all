@@ -1267,6 +1267,8 @@
       "BySide": "Un jet par camp",
       "RolledSide": "{name} lance l'initiative pour son camp",
       "PassCount": "Passes de chaque combattant",
+      "Defeated": "Vaincu quand",
+      "DefeatedNone": "Personne n'est vaincu automatiquement",
       "PassCountNone": "Selon l'initiative (ci-dessous)",
       "PassStep": "Initiative perdue par passe en plus",
       "OnePass": "Vide : une passe par round",

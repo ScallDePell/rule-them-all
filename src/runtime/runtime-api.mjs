@@ -52,6 +52,7 @@ export function createRuntimeAPI(configurator,{adapter=new FoundryRuntimeAdapter
     describeShared:(versionId,options)=>describeShared(engine,versionId,options),
     setSharedValue:(versionId,ref,definitionId,slotId,value)=>setSharedValue(engine,versionId,ref,definitionId,slotId,value),
     initiativePasses:versionId=>{try{const passes=engine.ruleset(versionId).initiative?.passes;return passes?(passes.countFormulaRef?{countFormulaRef:passes.countFormulaRef}:{step:passes.step,threshold:passes.threshold??0}):null;}catch{return null;}},
+    defeatedConditionRef:versionId=>{try{return engine.ruleset(versionId).initiative?.defeatedConditionRef??null;}catch{return null;}},
     initiativeEachRound:versionId=>{try{return engine.ruleset(versionId).initiative?.eachRound===true;}catch{return false;}},
     describeProgression:(versionId,id,ref)=>engine.describeProgression(versionId,id,ref),
     advance:write("advance"),

@@ -1,8 +1,8 @@
-# Real World Fantasy 2.3.0
+# Real World Fantasy 2.4.0
 
-Ruleset complet de Real World Fantasy pour Rule Them'All. Téléchargez [rwf-ruleset-2.3.0.json](rwf-ruleset-2.3.0.json), puis importez-le dans le configurateur avec le bouton **Importer**. Il arrive comme un nouveau Ruleset, prêt à publier. Pour y passer vos personnages d'une version précédente, suivez « Passer les Acteurs sur une nouvelle version » du [guide du MJ](../../docs/guide-mj.md).
+Ruleset complet de Real World Fantasy pour Rule Them'All. Téléchargez [rwf-ruleset-2.4.0.json](rwf-ruleset-2.4.0.json), puis importez-le dans le configurateur avec le bouton **Importer**. Il arrive comme un nouveau Ruleset, prêt à publier. Pour y passer vos personnages d'une version précédente, suivez « Passer les Acteurs sur une nouvelle version » du [guide du MJ](../../docs/guide-mj.md).
 
-Il demande Rule Them'All 1.0.10 ou plus récent : 1.0.9 pour les munitions des armes et les passes de combat, 1.0.10 pour afficher les longues descriptions des états observables.
+Il demande Rule Them'All 1.0.17 ou plus récent : 1.0.9 pour les munitions des armes et les passes de combat, 1.0.10 pour afficher les longues descriptions des états observables, 1.0.17 pour marquer vaincu dans le suivi de combat un combattant à 0 de Vitalité.
 
 ## Contenu
 
@@ -22,7 +22,7 @@ Il demande Rule Them'All 1.0.10 ou plus récent : 1.0.9 pour les munitions des a
 - **Tests :** 1d20 + caractéristique + compétence ou maîtrise contre la DD (13 par défaut, demandée à chaque test). Un 20 naturel est un critique, un 1 une complication.
 - **Dés sur la table :** les tests, attaques, pouvoirs et poursuites demandent en option le d20 lancé sur la table, et les attaques et pouvoirs les dégâts lancés. Laissés vides, Foundry lance les dés. Au critique, les dégâts annoncés comptent double.
 - **Création :** Socle, tranche d'âge, puis ses effets (une personne âgée répartit +2 sur Esprit et Présence et −2 sur Force, Agilité et Constitution), Parcours, puis un écran pour ses compétences et maîtrises, backgrounds, puis un écran pour leurs compétences, événements de vie, puis un écran pour leurs choix, passé quand aucun n'en propose. Viennent ensuite le point martial, le permis B, et les points libres de caractéristiques et de compétences.
-- **Combat :** initiative 1d20 + Agilité + Esprit, relancée à chaque round, Agilité puis Esprit en cas d'égalité. En combat, une maîtrise de 0 à 2 donne une attaque par round, de 3 à 4 deux, à 5 trois. Le round se joue en passes 1, 2, 3 dans le traqueur de combat : chacun joue autant de passes que sa meilleure maîtrise lui donne d'attaques, et une seule attaque, un sprint ou un rechargement par passe, pendant son tour. Défense = 10 + Agilité + Protection, réduite par la perforation, plus la couverture. Un critique double les dés de dégâts et inflige une Blessure.
+- **Combat :** initiative 1d20 + Agilité + Esprit, relancée à chaque round, Agilité puis Esprit en cas d'égalité. En combat, une maîtrise de 0 à 2 donne une attaque par round, de 3 à 4 deux, à 5 trois. Le round se joue en passes 1, 2, 3 dans le traqueur de combat : chacun joue autant de passes que sa meilleure maîtrise lui donne d'attaques, et une seule attaque, un sprint ou un rechargement par passe, pendant son tour. Défense = 10 + Agilité + Protection, réduite par la perforation, plus la couverture. Un critique double les dés de dégâts et inflige une Blessure. À 0 de Vitalité, le combattant est marqué vaincu dans le suivi de combat, et ne l'est plus s'il remonte au-dessus. Chaque round n'est compté qu'une fois par personnage (compteur « Round compté ») : un round annoncé deux fois ne fait pas perdre deux fois d'Endurance.
 - **Munitions :** chaque tir d'une arme à chargeur consomme une munition ; chargeur vide, il faut **Recharger**, qui prend une passe et charge min(chargeur − munitions, réserve). Une arme automatique **tire une rafale** (3 munitions, +2) ou **en full-auto** (une rafale à chaque passe ; à la dernière, une maîtrise qui ne donne qu'1 ou 2 attaques perd 3 munitions de plus par le recul).
 - **Santé :** à 0 Vitalité, Hors de combat puis Stabilisé, Coma ou Mort au choix du MJ. 1 Vitalité est récupérée par jour qui passe.
 - **Endurance :** un round où l'on attaque au contact (mêlée, mains nues) ou sprinte est un effort physique, comme chaque action de poursuite à pied ; au troisième effort, −1 Endurance. **Reprendre son souffle** (en combat, sans avoir attaqué ni fait d'effort ce round) prend le round et rend ¼ de l'Endurance maximale. Malus physique selon l'Endurance restante, incapacité physique à 0, long repos.
@@ -44,8 +44,8 @@ Il demande Rule Them'All 1.0.10 ou plus récent : 1.0.9 pour les munitions des a
 
 ```
 node outils/build-rwf.mjs <dépôt rule-them-all> <dossier du système RWF> <dossier du Super Pack> <dossier de sortie>
-node outils/verify-rwf.mjs <dépôt rule-them-all> rwf-ruleset-2.3.0.json
-node outils/verify-all.mjs <dépôt rule-them-all> rwf-ruleset-2.3.0.json
+node outils/verify-rwf.mjs <dépôt rule-them-all> rwf-ruleset-2.4.0.json
+node outils/verify-all.mjs <dépôt rule-them-all> rwf-ruleset-2.4.0.json
 ```
 
 `verify-rwf.mjs` rejoue la création, l'âge, les tests, les armes, les pouvoirs, la pratique, le combat (passes, munitions, rafales, essoufflement, dés annoncés) et les poursuites, et les états observables de la feuille. `verify-all.mjs` acquiert les 461 contenus. Les corrections apportées au Super Pack sont listées dans [build-report.json](build-report.json).

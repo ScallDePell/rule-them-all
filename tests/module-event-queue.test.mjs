@@ -18,3 +18,12 @@ test('the first combatant hears its turn after the combat start, whichever hook 
   await queue.idle();
   assert.deepEqual(sent.slice(4),['turn:B','round:A+B+c','turn:A']);
 });
+
+test('an event in error does not take the rest of its batch with it', async()=>{
+  const sent=[],errors=[];
+  const queue=createModuleEventQueue(async type=>{if(type==='rta.combat.start')throw new Error('broken trigger');sent.push(type);},{onError:error=>errors.push(error.message)});
+  queue.push(()=>combatChangeEvents({id:'c',combatants:[{id:'a',actor:{uuid:'A'}}]},{round:0},{round:1,turn:0,combatantId:'a'}));
+  await queue.idle();
+  assert.deepEqual(sent,['rta.combat.round','rta.combat.turn']);
+  assert.deepEqual(errors,['broken trigger']);
+});

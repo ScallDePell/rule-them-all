@@ -10,7 +10,8 @@ export function createModuleEventQueue(emit, {ready = () => null, onError = erro
     for (const {eventTypeId, payload, refs, key} of (await events()).filter(Boolean)) {
       if (eventTypeId === "rta.combat.turn") { if (key && announced.get(payload.combatId) === key) continue; announced.set(payload.combatId, key); }
       else if (eventTypeId === "rta.combat.start" || eventTypeId === "rta.combat.round") announced.delete(payload.combatId);
-      await emit(eventTypeId, payload, refs);
+      // One event that fails (a Trigger in error) does not take the next ones of its batch with it.
+      try { await emit(eventTypeId, payload, refs); } catch (error) { onError(error); }
     }
   }).catch(onError));
   return {push, forget: combatId => announced.delete(combatId), idle: () => queue};
