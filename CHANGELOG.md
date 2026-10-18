@@ -1,5 +1,9 @@
 # Changelog
 
+## 1.0.20
+
+- A Foundry combat flagged `rule-them-all.singlePass` has a single pass per round whatever the Ruleset's passes (for a pursuit or another scene using the combat tracker).
+
 ## 1.0.19
 
 - Ruleset extensions: in the part export dialog, **Exporter comme extension** adds a header (name, version, target Ruleset and minimum Ruleset version). **Importer une partie…** installs it: refused for another Ruleset or an older version; an installed extension is updated by its next version (its own entries replaced without asking, dropped ones removed, entries imported as a copy keep their id).

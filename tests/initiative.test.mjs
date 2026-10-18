@@ -160,4 +160,8 @@ test('Initiative passes counted by a Formula: each combatant acts in as many pas
   for(let i=0;i<8;i++){acted.push(`${combat.getFlag('rule-them-all','initiativePass')??1}:${combat.turns[combat.turn].id}`);await combat.nextTurn();}
   assert.deepEqual(acted,['1:a','1:b','1:o','1:c','2:a','2:c','3:a','1:a']);
   assert.deepEqual(rounds,[2]);
+  // A combat flagged singlePass by another module (a pursuit) has one pass per round.
+  const single=new Combat();single.flags['flags.rule-them-all.singlePass']=true;acted.length=0;
+  for(let i=0;i<5;i++){acted.push(`${single.round}.${single.getFlag('rule-them-all','initiativePass')??1}:${single.turns[single.turn].id}`);await single.nextTurn();}
+  assert.deepEqual(acted,['1.1:a','1.1:b','1.1:o','1.1:c','2.1:a']);
 });

@@ -72,15 +72,17 @@ export async function rerollEachRound(combat, prior, current, getRuntime) {
 /* Initiative passes (Shadowrun): after everyone acted, a combatant whose initiative minus `step` per pass stays above
    `threshold` acts again in another pass of the same round; the others wait for the next round. With `countFormulaRef`,
    a combatant acts in as many passes as that Formula gives for its Actor (one attack per pass, up to its attacks per round).
-   Combatants outside a Ruleset with passes act in the first pass only. The pass is kept in the combat's flags. */
+   Combatants outside a Ruleset with passes act in the first pass only. The pass is kept in the combat's flags.
+   A combat another module flags `singlePass` (a pursuit, a social scene) has one pass per round, whatever the Ruleset. */
 const PASS_FLAG = "initiativePass";
+export const SINGLE_PASS_FLAG = "singlePass";
 
 /** A combatant's initiative in a given pass (1 for the first). */
 export function passScore(initiative, pass, {step}) { return Number(initiative) - Number(step) * (pass - 1); }
 
-async function passRules(combat, runtime) {
+async function passRules(combat, runtime, moduleId) {
   const rules = new Map();
-  if (!runtime?.initiativePasses) return rules;
+  if (!runtime?.initiativePasses || combat.getFlag?.(moduleId, SINGLE_PASS_FLAG)) return rules;
   for (const combatant of combat.turns ?? []) {
     const state = combatant.actor?.uuid ? await runtime.getContainerState(combatant.actor.uuid) : null;
     const passes = state?.rulesetVersionId ? runtime.initiativePasses(state.rulesetVersionId) : null;
@@ -106,12 +108,12 @@ export function installInitiativePasses(CombatClass, getRuntime, {moduleId = "ru
   async function nextTurn(...args) {
     const pass = passOf(this);
     if (pass === 1) return originalTurn.apply(this, args);
-    const rules = await passRules(this, getRuntime()), turns = this.turns ?? [];
+    const rules = await passRules(this, getRuntime(), moduleId), turns = this.turns ?? [];
     for (let index = Number(this.turn ?? -1) + 1; index < turns.length; index++) if (actsIn(turns[index], pass, rules)) { await this.update({turn: index}); return this; }
     return this.nextRound();
   }
   async function nextRound(...args) {
-    const rules = await passRules(this, getRuntime());
+    const rules = await passRules(this, getRuntime(), moduleId);
     if (rules.size) {
       const next = passOf(this) + 1, first = (this.turns ?? []).findIndex(combatant => actsIn(combatant, next, rules));
       if (first >= 0) {

@@ -204,3 +204,5 @@ L'API est disponible sous `game.modules.get("rule-them-all").api` (et `game.rule
 - `creation` : les créations de personnage en cours.
 
 Le hook `ruleThemAllReady` signale que tout est prêt.
+
+Un combat Foundry portant le drapeau `rule-them-all.singlePass` (`combat.setFlag("rule-them-all", "singlePass", true)`) n'a qu'une passe par round, quelles que soient les passes du Ruleset : utile pour une poursuite ou une scène qui réutilise le suivi de combat.
