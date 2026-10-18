@@ -26,6 +26,8 @@ const DICE=Symbol("rta.dice");
 /** The roles seen from the other side: the target acts on the former self (a reaction). */
 /** The context of what follows a Test: its variables (variables.test, with the Outcome). */
 const withTestResult=(context,testResult)=>testResult?{...context,variables:{...(context.variables??{}),...testResult.variables,test:{...testResult.variables.test,outcome:testResult.outcome}}}:context;
+// Each Effect of an Action use is read by the next ones under variables.effects.<id> (before, after, operand): the damage dealt heals the attacker, the ammunition loaded leaves the reserve.
+const withEffectResult=(context,change)=>change?.effectId?{...context,variables:{...(context.variables??{}),effects:{...(context.variables?.effects??{}),[change.effectId]:{before:clone(change.before??null),after:clone(change.after??null),operand:clone(change.operand??null)}}}}:context;
 const swapRoles=context=>{const self=roleRef(context,"self"),target=roleRef(context,"target");return {...context,roles:{...(context.roles??{}),self:target,source:target,target:self,subject:self},defaultRole:"self"};};
 /** A context as it can be kept and replayed later: no event, cause or dice. */
 const plainContext=context=>clone(Object.fromEntries(Object.entries(context).filter(([key])=>key!=="event"&&key!=="cause")));
@@ -171,7 +173,7 @@ export class RuntimeEngine{
       for(const mapping of action.outcomeMappings??[])(mapping?.actionRefs??[]).forEach(visit);
       if(action.tableRef)for(const row of ruleset.tables?.find(x=>x.id===action.tableRef)?.rows??[])(row.actionRefs??[]).forEach(visit);
       const effectIds=[...(action.costEffectRefs??[]),...(action.effectRefs??[]),...(action.outcomeMappings??[]).flatMap(m=>m?.effectRefs??[])];
-      for(const id of effectIds){const effect=ruleset.effects?.find(x=>x.id===id);if(effect)roles.add(effect.targetRole??"target");}
+      for(const id of effectIds){const effect=ruleset.effects?.find(x=>x.id===id);if(effect)roles.add(effect.targetContentField?context.content?.role??"self":effect.targetRole??"target");}
       if(action.turnOrder)turnOrder=true;
       for(const entry of [...(action.stateRemovals??[]),...(action.stateApplications??[]),...(action.modifierApplications??[]),...(action.acquisitions??[])])roles.add(entry.targetRole??"target");
       for(const eventTypeId of action.eventTypeRefs??[])for(const trigger of ruleset.triggers??[])if(trigger.eventTypeId===eventTypeId)(trigger.actionRefs??[]).forEach(visit);
@@ -596,10 +598,24 @@ export class RuntimeEngine{
   async previewEffect(versionId,effectId,context={},staged=new Map(),dice=null){
     const ruleset=this.ruleset(versionId),effect=ruleset.effects?.find(x=>x.id===effectId&&enabled(x));if(!effect)throw new Error(`Effect unavailable: ${effectId}.`);
     const evaluator=this.evaluator(versionId,staged);evaluator.__staged=staged;const role=effect.targetRole??"target";
+    if(effect.targetContentField)return this.#previewContentFieldEffect(versionId,ruleset,effect,context,staged,evaluator,dice);
     // A Formula may name the Definition written (the slot level chosen); the target keeps its capability, output and slot.
     let targetRef=effect.targetRef;
     if(effect.targetDefinitionFormulaRef){const chosen=await evaluator.formula(effect.targetDefinitionFormulaRef,{...context,defaultRole:role}),id=typeof chosen==="string"?chosen:chosen?.objectId;if(!id)throw new Error(`Effect ${effect.id}: its Formula names no Definition.`);targetRef={...effect.targetRef,objectId:id};}
     const target=await this.resolveReference(versionId,targetRef,{...context,defaultRole:role},{forWrite:true,role,staged});const key=this.#refKey(target.containerRef);if(!staged.has(key))staged.set(key,clone(target.state));const state=staged.get(key);let rolled=null,operand;if(effect.operand?.kind==="roll"){rolled=await this.#rollOperand(versionId,effect.operand,context,evaluator,dice?{cache:dice,key:effect.id}:null);operand=rolled.value;}else operand=await this.#operand(versionId,effect.operand,context,evaluator);const before=this.#readOutput(ruleset,state,targetRef);let pool=null;if(targetRef.capabilityId==="pool"){const {slot}=this.#outputContract(ruleset,targetRef);pool={slot,bounds:await this.#poolBounds(slot,{...context,defaultRole:role},evaluator)};}const bounds=targetRef.capabilityId==="value"?await this.#stagedValueBounds(versionId,target.containerRef,state,targetRef.objectId):null;const after=this.#writeOutput(state,targetRef,effect.operation,operand,pool,bounds);return {effectId,before,after,operand,...(rolled?{roll:rolled.roll}:{}),containerRef:target.containerRef};
+  }
+  /** An Effect on a number field of the Content used (a weapon's ammunition), on the container that owns it. */
+  async #previewContentFieldEffect(versionId,ruleset,effect,context,staged,evaluator,dice){
+    const used=context?.content;if(!used?.key)throw new Error(`Effect ${effect.id} writes a field of the Content used, and no Content is used.`);
+    const {ref,state}=await this.#stagedState(versionId,context,used.role??"self",staged),content=state.contents?.[used.key];if(!content)throw new Error(`Owned Content not found: ${used.key}.`);
+    const fieldId=effect.targetContentField,field=ruleset.contentTypes?.find(type=>type.id===content.contentTypeId)?.fields?.[fieldId];
+    if(!field||!["integer","number"].includes(field.valueType))throw new Error(`Effect ${effect.id}: Content Type ${content.contentTypeId} has no number field ${fieldId}.`);
+    let rolled=null,operand;if(effect.operand?.kind==="roll"){rolled=await this.#rollOperand(versionId,effect.operand,context,evaluator,dice?{cache:dice,key:effect.id}:null);operand=rolled.value;}else operand=await this.#operand(versionId,effect.operand,context,evaluator);
+    const template=ruleset.contentTemplates?.find(x=>x.id===content.templateId),before=Number(content.fields?.[fieldId]??template?.data?.[fieldId]??0);
+    const op=effectOperationRegistry.get(effect.operation);if(!op)throw new Error(`Unsupported Effect operation: ${effect.operation}.`);
+    let after=Number(op.apply(before,operand));if(!Number.isFinite(after))throw new Error(`Effect ${effect.id}: the field ${fieldId} would not be a number.`);if(field.valueType==="integer")after=Math.trunc(after);
+    (content.fields??={})[fieldId]=after;
+    return {effectId:effect.id,before,after,operand,...(rolled?{roll:rolled.roll}:{}),containerRef:ref,contentKey:used.key,fieldId};
   }
   /** Instantiate one acquired Definition in a container state (CP-16). Returns the new
    * DefinitionState, null when an `ifAbsent` grant is already there, or "present". */
@@ -759,7 +775,7 @@ export class RuntimeEngine{
     if(many&&!targets.length)throw new Error(`Action ${action.id} needs at least one target.`);
     if(many)context={...context,roles:{...(context.roles??{}),target:targets[0]}};
     for(const conditionId of action.conditionRefs??[])if(!await evaluator.condition(conditionId,context))return {actionId,allowed:false,reason:"condition",conditionId,changes:[]};
-    const changes=[];for(const effectId of action.costEffectRefs??[])changes.push(await this.previewEffect(versionId,effectId,context,staged));
+    const changes=[];for(const effectId of action.costEffectRefs??[]){const change=await this.previewEffect(versionId,effectId,context,staged);changes.push(change);context=withEffectResult(context,change);}
     if(action.group)context=await this.#groupTest(versionId,ruleset,action,context,staged);
     // Acquisitions come before the Effects, which may then target the new DefinitionStates.
     const acquired=[];
@@ -841,8 +857,8 @@ export class RuntimeEngine{
     if(action.testRef){testResult=await this.executeTest(versionId,action.testRef,context,{staged});const mapping=(action.outcomeMappings??[]).find(m=>m?.outcomeId===testResult.outcome?.id||m?.resultKey===testResult.outcome?.resultKey);if(mapping){if(Array.isArray(mapping.effectRefs))effectRefs=mapping.effectRefs;if(mapping.block===true)return {allowed:false,reason:"outcome",testResult};next=[...(mapping.actionRefs??[])];choice=mapping.choice??null;}}
     await this.#stageStates(versionId,ruleset,action,context,staged,evaluator,changes);
     // Effects read the Test under variables.test (total, margin, natural, outcome), e.g. damage that grows with the margin.
-    const effectContext=withTestResult(context,testResult);
-    for(const effectId of effectRefs)changes.push(await this.previewEffect(versionId,effectId,effectContext,staged,evaluator.__dice));
+    let effectContext=withTestResult(context,testResult);
+    for(const effectId of effectRefs){const change=await this.previewEffect(versionId,effectId,effectContext,staged,evaluator.__dice);changes.push(change);effectContext=withEffectResult(effectContext,change);}
     // A turn order change is no container write: it lists who moves and how, and the commit hands it to the combat tracker.
     if(action.turnOrder){const ref=roleRef(effectContext,action.turnOrder.role);if(!ref)throw new Error(`EvaluationContext role is missing: ${action.turnOrder.role}.`);
       const value=action.turnOrder.formulaRef?Number(await evaluator.formula(action.turnOrder.formulaRef,effectContext)):null;if(value!==null&&!Number.isFinite(value))throw new Error(`Action ${action.id}: the turn order Formula is not a number.`);

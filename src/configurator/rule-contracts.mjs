@@ -124,7 +124,7 @@ export function prepareTest(data,options={}){
 }
 
 export function prepareEffect(data,options={}){
-  const x={descriptionKey:'',enabled:true,order:0,tags:[],targetRef:null,targetRole:'target',operation:'set',operand:{kind:'literal',value:0},targetDefinitionFormulaRef:null,...copyJSON(data)};
+  const x={descriptionKey:'',enabled:true,order:0,tags:[],targetRef:null,targetRole:'target',operation:'set',operand:{kind:'literal',value:0},targetDefinitionFormulaRef:null,targetContentField:null,...copyJSON(data)};
   identity(x,'Effect',options);
   // targetDefinitionFormulaRef: a Formula naming the Definition written instead of targetRef's one (the slot level chosen
   // for a spell); targetRef still gives the capability, output and slot written.
@@ -132,7 +132,13 @@ export function prepareEffect(data,options={}){
   if(x.targetDefinitionFormulaRef!==null&&!nonempty(x.targetDefinitionFormulaRef))throw new Error('Effect.targetDefinitionFormulaRef must be null or a Formula id.');
   if(!ROLE_NAME.test(String(x.targetRole)))throw new Error('Effect.targetRole must be a role name.');
   if(x.targetRef!==null&&!isRecord(x.targetRef))throw new Error('Effect.targetRef must be a logical Reference.');
-  need(isRecord(x.targetRef)&&nonempty(x.targetRef.objectKind)&&nonempty(x.targetRef.objectId),'Effect.targetRef must be a logical Reference.',options);
+  // targetContentField: a number field of the Content used, written instead of a Definition (a weapon's ammunition, a wand's charges).
+  if(x.targetContentField==='')x.targetContentField=null;
+  if(x.targetContentField!==null){
+    if(!/^[A-Za-z][A-Za-z0-9_-]*$/.test(String(x.targetContentField)))throw new Error('Effect.targetContentField must be a Content field id.');
+    if(x.targetDefinitionFormulaRef!==null)throw new Error('Effect writes a Content field or a Definition, not both.');
+    x.targetRef=null;
+  }else need(isRecord(x.targetRef)&&nonempty(x.targetRef.objectKind)&&nonempty(x.targetRef.objectId),'Effect.targetRef must be a logical Reference.',options);
   need(nonempty(x.operation),'Effect.operation is required.',options);
   if(nonempty(x.operation)&&!effectOperationRegistry.has(x.operation))throw new Error(`Unknown Effect operation: ${x.operation}.`);
   if(!isRecord(x.operand)||!['literal','parameter','formula','reference','roll'].includes(x.operand.kind))throw new Error('Effect.operand must select literal, parameter, formula, reference or roll.');

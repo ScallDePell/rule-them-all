@@ -197,8 +197,8 @@ used = await bridge.executeAcquiredAction(v, actor.uuid, "attaquer", both, {cont
 assert.equal(used.testResult.bonus, 4, "pas d'essoufflement à distance");
 log("essoufflement : malus 3 en mêlée, aucun à distance");
 for (const round of [1, 2, 3]) await runtime.emitSystemEvent("rta.combat.round", {combatId: "c", round}, [actor.uuid, foe.uuid]);
-assert.equal(await poolOf(actor.uuid, "endurance"), 1);
-log("combat : −1 Endurance au troisième round");
+assert.equal(await poolOf(actor.uuid, "endurance"), 2);
+log("combat : trois rounds sans effort physique n'essoufflent pas");
 await runtime.setDefinitionState(v, actor.uuid, "endurance", {pools: {points: 0}});
 assert.equal((await runtime.executeAction(v, "sprinter", self)).allowed, false);
 assert.equal((await bridge.executeAcquiredAction(v, actor.uuid, "attaquer", both, {contentKey: "poing"})).allowed, false);
@@ -254,6 +254,8 @@ await runtime.executeAction(v, "long-repos", self);
 await runtime.setDefinitionState(v, foe.uuid, "vitalite", {pools: {points: 200}});
 await runtime.emitSystemEvent("rta.combat.start", {combatId: "c2", round: 1}, [actor.uuid, foe.uuid]);
 await runtime.emitSystemEvent("rta.combat.round", {combatId: "c2", round: 1}, [actor.uuid, foe.uuid]);
+const turn = (round, pass, combatId = "c2") => runtime.emitSystemEvent("rta.combat.turn", {combatId, round, turn: 0, pass}, [actor.uuid]);
+await turn(1, 1);
 assert.equal(await runtime.evaluateCondition(v, "est-en-combat", self), true);
 const pistolPractice = await practice("armes-de-poing");
 nextNatural = 15; assert.notEqual((await bridge.executeAcquiredAction(v, actor.uuid, "attaquer", both, {contentKey: "pistolet"})).allowed, false);
@@ -261,11 +263,14 @@ assert.equal(await practice("armes-de-poing"), pistolPractice + 1, "une attaque 
 used = await bridge.executeAcquiredAction(v, actor.uuid, "attaquer", both, {contentKey: "pistolet"});
 assert.equal(used.allowed, false, "Armes de poing 1 : une seule attaque par round");
 await runtime.setDefinitionState(v, actor.uuid, "armes-de-poing", {base: 3});
+assert.equal((await bridge.executeAcquiredAction(v, actor.uuid, "attaquer", both, {contentKey: "pistolet"})).allowed, false, "une attaque par passe");
+await turn(1, 2);
 nextNatural = 20; used = await bridge.executeAcquiredAction(v, actor.uuid, "attaquer", both, {contentKey: "pistolet"});
 assert.notEqual(used.allowed, false, "maîtrise 3 : deux attaques par round");
 assert.ok(((await runtime.getContainerState(foe.uuid)).stateInstances ?? []).some(s => s.definitionId === "blessure"), "le critique blesse");
 assert.equal((await bridge.executeAcquiredAction(v, actor.uuid, "attaquer", both, {contentKey: "pistolet"})).allowed, false);
 await runtime.emitSystemEvent("rta.combat.round", {combatId: "c2", round: 2}, [actor.uuid, foe.uuid]);
+await turn(2, 1);
 assert.notEqual((await bridge.executeAcquiredAction(v, actor.uuid, "attaquer", both, {contentKey: "pistolet"})).allowed, false, "nouveau round");
 await runtime.emitSystemEvent("rta.combat.end", {combatId: "c2", round: 2}, [actor.uuid, foe.uuid]);
 assert.equal(await runtime.evaluateCondition(v, "est-en-combat", self), false);
@@ -288,6 +293,97 @@ nextNatural = 10; used = await bridge.executeAcquiredAction(v, actor.uuid, "pour
 const car = api.getRuleset(v).contentTemplates.find(t => t.id === "vehicule-citadine").data;
 assert.equal(used.testResult.bonus, 3 + 1 + car.maniabilite + 2, "Agilité + Véhicules légers + maniabilité + raccourci");
 log(`poursuite : DD 13, jauge −3 à +3, raccourci +2, risque −2, véhicule (bonus ${used.testResult.bonus})`);
+
+// 11. Combat and pursuit HUD rules (2.2.0): passes, ammunition, bursts, reload, dice from the table, physical effort.
+assert.deepEqual(api.getRuleset(v).initiative.passes, {countFormulaRef: "attaques-meilleure"});
+const field = async (key, id) => (await runtime.getContainerState(actor.uuid)).contents[key].fields[id];
+const valueOf = async id => (await runtime.getContainerState(actor.uuid)).definitionStates[id].capabilityStates.value.base;
+await runtime.executeAction(v, "long-repos", self);
+await runtime.setDefinitionState(v, foe.uuid, "vitalite", {pools: {points: 500}});
+let ammo = await field("pistolet", "munitions");
+nextNatural = 15; await bridge.executeAcquiredAction(v, actor.uuid, "attaquer", both, {contentKey: "pistolet"});
+assert.equal(await field("pistolet", "munitions"), ammo - 1);
+await runtime.setContentField(v, actor.uuid, "pistolet", "munitions", 0);
+assert.equal((await bridge.executeAcquiredAction(v, actor.uuid, "attaquer", both, {contentKey: "pistolet"})).allowed, false, "chargeur vide");
+await bridge.executeAcquiredAction(v, actor.uuid, "recharger", self, {contentKey: "pistolet"});
+assert.deepEqual([await field("pistolet", "munitions"), await field("pistolet", "reserve")], [15, 30 - 15]);
+await runtime.setContentField(v, actor.uuid, "pistolet", "reserve", 4);
+await runtime.setContentField(v, actor.uuid, "pistolet", "munitions", 5);
+await bridge.executeAcquiredAction(v, actor.uuid, "recharger", self, {contentKey: "pistolet"});
+assert.deepEqual([await field("pistolet", "munitions"), await field("pistolet", "reserve")], [9, 0]);
+assert.equal((await bridge.executeAcquiredAction(v, actor.uuid, "recharger", self, {contentKey: "pistolet"})).allowed, false, "réserve vide");
+log("munitions : 1 par tir, chargeur vide refusé, rechargement de min(chargeur − chargées, réserve)");
+
+await bridge.acquireTemplate(v, actor.uuid, "arme-fusil-d-assaut", {sourceItemId: "fusil"});
+nextNatural = 10; const single = await bridge.executeAcquiredAction(v, actor.uuid, "attaquer", both, {contentKey: "fusil"});
+const burstUse = await bridge.executeAcquiredAction(v, actor.uuid, "tirer-rafale", both, {contentKey: "fusil"});
+assert.equal(burstUse.testResult.bonus, single.testResult.bonus + 2);
+assert.equal(await field("fusil", "munitions"), 30 - 1 - 3);
+await assert.rejects(bridge.executeAcquiredAction(v, actor.uuid, "tirer-rafale", both, {contentKey: "pistolet"}), /not granted/, "pistolet non automatique");
+log("rafale : 3 munitions, +2 au test, armes automatiques seulement");
+
+// Dice announced from the table: no Foundry roll.
+await runtime.setDefinitionState(v, foe.uuid, "vitalite", {pools: {points: 500}});
+let count = rolled.length; before = await foeVitality();
+nextNatural = 1; used = await bridge.executeAcquiredAction(v, actor.uuid, "attaquer", {...both, variables: {input: {de: 18, degats: 7}}}, {contentKey: "fusil"});
+assert.equal(used.testResult.roll.natural ?? used.testResult.roll.total, 18);
+assert.deepEqual(rolled.slice(count), ["18", "7"], "aucun dé : les valeurs annoncées");
+assert.equal(await foeVitality(), before - 7);
+await runtime.setDefinitionState(v, foe.uuid, "vitalite", {pools: {points: 500}});
+nextNatural = 1; used = await bridge.executeAcquiredAction(v, actor.uuid, "attaquer", {...both, variables: {input: {de: 20, degats: 7}}}, {contentKey: "fusil"});
+assert.equal(await foeVitality(), before - 14, "critique : les dégâts annoncés comptent double");
+used = await runtime.executeAction(v, "tester-competence", {...self, variables: {definition: def("vigilance"), input: {dd: 13, de: 4}}});
+assert.equal(used.testResult.total, 4 + used.testResult.bonus);
+log("mode table : d20 et dégâts annoncés, doublés au critique, sans dés de Foundry");
+
+// Passes and full-auto in a fight: Armes d'épaule 0 gives one attack, whose burst loses 3 more rounds to recoil.
+await runtime.executeAction(v, "long-repos", self);
+await runtime.emitSystemEvent("rta.combat.start", {combatId: "c3", round: 1}, [actor.uuid, foe.uuid]);
+await runtime.emitSystemEvent("rta.combat.round", {combatId: "c3", round: 1}, [actor.uuid, foe.uuid]);
+assert.equal((await bridge.executeAcquiredAction(v, actor.uuid, "attaquer", both, {contentKey: "pistolet"})).allowed, false, "pas avant son tour");
+await turn(1, 1, "c3");
+ammo = await field("fusil", "munitions");
+nextNatural = 10; assert.notEqual((await bridge.executeAcquiredAction(v, actor.uuid, "tirer-full-auto", both, {contentKey: "fusil"})).allowed, false);
+assert.equal(await field("fusil", "munitions"), ammo - 6, "dernière rafale d'une maîtrise à 1 attaque : 3 + 3 perdues");
+assert.equal(await valueOf("derniere-passe-attaque"), 1);
+log("passes : rien avant son tour, une action par passe ; full-auto 3 + 3 de recul");
+
+// Physical effort: a melee round counts, a shooting round does not; the third costs 1 Endurance.
+const endurance = () => poolOf(actor.uuid, "endurance");
+await runtime.setDefinitionState(v, actor.uuid, "efforts-physiques", {base: 0});
+for (const round of [2, 3, 4]) {
+  await runtime.emitSystemEvent("rta.combat.round", {combatId: "c3", round}, [actor.uuid, foe.uuid]);
+  await turn(round, 1, "c3");
+  nextNatural = 10; assert.notEqual((await runtime.executeAction(v, "attaquer-mains-nues", both)).allowed, false);
+}
+assert.equal(await valueOf("effort-physique"), 1);
+assert.equal(await valueOf("efforts-physiques"), 2);
+await runtime.emitSystemEvent("rta.combat.round", {combatId: "c3", round: 5}, [actor.uuid, foe.uuid]);
+assert.deepEqual([await endurance(), await valueOf("efforts-physiques")], [9, 0]);
+await turn(5, 1, "c3");
+await bridge.executeAcquiredAction(v, actor.uuid, "attaquer", both, {contentKey: "pistolet"});
+await runtime.emitSystemEvent("rta.combat.round", {combatId: "c3", round: 6}, [actor.uuid, foe.uuid]);
+assert.equal(await valueOf("efforts-physiques"), 0, "un tir n'est pas un effort");
+log("essoufflement : 3 rounds physiques → −1 Endurance, le tir ne compte pas");
+
+// A rest round gives back a quarter of the maximum Endurance, and takes the round.
+await runtime.setDefinitionState(v, actor.uuid, "endurance", {pools: {points: 5}});
+await turn(6, 1, "c3");
+assert.notEqual((await runtime.executeAction(v, "reprendre-son-souffle", self)).allowed, false);
+assert.equal(await endurance(), 5 + Math.ceil(10 / 4));
+assert.equal((await runtime.executeAction(v, "attaquer-mains-nues", both)).allowed, false, "le round est pris");
+assert.equal((await runtime.executeAction(v, "reprendre-son-souffle", self)).allowed, false, "une fois par round");
+await runtime.emitSystemEvent("rta.combat.end", {combatId: "c3", round: 6}, [actor.uuid, foe.uuid]);
+assert.equal((await runtime.executeAction(v, "reprendre-son-souffle", self)).allowed, false, "en combat seulement");
+log("round de repos : +¼ de l'Endurance maximale, plus d'attaque ce round");
+
+// Each move of a pursuit on foot is a physical effort.
+await runtime.executeAction(v, "long-repos", self);
+for (const n of [1, 2, 3]) { nextNatural = 10; await runtime.executeAction(v, "poursuite-a-pied-continuer", {...self, variables: {input: {vitesse: 0}}}); }
+assert.deepEqual([await endurance(), await valueOf("efforts-physiques")], [9, 0]);
+nextNatural = 10; await bridge.executeAcquiredAction(v, actor.uuid, "poursuite-vehicule-continuer", {...self, variables: {input: {vitesse: 0}}}, {contentKey: "auto"});
+assert.equal(await valueOf("efforts-physiques"), 0, "en véhicule, pas d'effort");
+log("poursuite à pied : la troisième action essouffle (−1 Endurance), pas en véhicule");
 
 // 10. GM states are exclusive.
 await runtime.executeAction(v, "etat-coma", both);

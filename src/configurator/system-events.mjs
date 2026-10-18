@@ -9,7 +9,8 @@ export const SYSTEM_EVENT_PREFIX = "rta.";
 export const SYSTEM_EVENT_TYPES = Object.freeze([
   type("rta.combat.start", "RTA.SystemEvent.CombatStart", combat),
   type("rta.combat.round", "RTA.SystemEvent.CombatRound", combat),
-  type("rta.combat.turn", "RTA.SystemEvent.CombatTurn", [...combat, field("turn", "Turn", "integer")]),
+  // pass: the initiative pass of the round (1 without passes).
+  type("rta.combat.turn", "RTA.SystemEvent.CombatTurn", [...combat, field("turn", "Turn", "integer"), field("pass", "Pass", "integer")]),
   type("rta.combat.end", "RTA.SystemEvent.CombatEnd", combat),
   // seconds: time just elapsed; days: midnights crossed (a daily recovery).
   type("rta.time.elapsed", "RTA.SystemEvent.TimeElapsed", [field("seconds", "Seconds", "number"), field("days", "Days", "integer"), field("worldTime", "World time", "number")])
@@ -27,7 +28,8 @@ export function combatChangeEvents(combat, prior, current) {
   if (previousRound < 1) events.push({eventTypeId: "rta.combat.start", payload, refs: actors});
   if (round !== previousRound) events.push({eventTypeId: "rta.combat.round", payload, refs: actors});
   const active = [...(combat?.combatants ?? [])].find(c => c.id === current?.combatantId)?.actor?.uuid;
-  if (active) events.push({eventTypeId: "rta.combat.turn", payload: {...payload, turn: Number(current?.turn ?? 0)}, refs: [active]});
+  const pass = Number(combat?.getFlag?.("rule-them-all", "initiativePass") ?? 1) || 1;
+  if (active) events.push({eventTypeId: "rta.combat.turn", payload: {...payload, turn: Number(current?.turn ?? 0), pass}, refs: [active]});
   return events;
 }
 

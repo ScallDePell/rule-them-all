@@ -51,7 +51,7 @@ export function createRuntimeAPI(configurator,{adapter=new FoundryRuntimeAdapter
     /** The shared resources as the GM panel shows them, and one changed (see shared-resources.mjs). */
     describeShared:(versionId,options)=>describeShared(engine,versionId,options),
     setSharedValue:(versionId,ref,definitionId,slotId,value)=>setSharedValue(engine,versionId,ref,definitionId,slotId,value),
-    initiativePasses:versionId=>{try{const passes=engine.ruleset(versionId).initiative?.passes;return passes?{step:passes.step,threshold:passes.threshold??0}:null;}catch{return null;}},
+    initiativePasses:versionId=>{try{const passes=engine.ruleset(versionId).initiative?.passes;return passes?(passes.countFormulaRef?{countFormulaRef:passes.countFormulaRef}:{step:passes.step,threshold:passes.threshold??0}):null;}catch{return null;}},
     initiativeEachRound:versionId=>{try{return engine.ruleset(versionId).initiative?.eachRound===true;}catch{return false;}},
     describeProgression:(versionId,id,ref)=>engine.describeProgression(versionId,id,ref),
     advance:write("advance"),

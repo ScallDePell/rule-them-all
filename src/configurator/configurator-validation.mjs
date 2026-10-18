@@ -148,13 +148,17 @@ export function validateRuleset(ruleset, {scope = "save"} = {}) {
     else {
       // A Test rolled by each combatant, or a Table drawn without replacement each round (a deck of cards); bySide: one roll per disposition.
       exactFields(initiative, ["testRef", "tableRef", "tieBreakFormulaRef", "eachRound", "bySide", "passes"], "initiative", issue);
-      // passes: {step, threshold}: another pass for those whose initiative minus step per pass stays above threshold.
+      // passes: {step, threshold}: another pass for those whose initiative minus step per pass stays above threshold;
+      // or {countFormulaRef}: each combatant acts in as many passes as that Formula gives for it (attacks per round).
       const passes = initiative.passes ?? null;
       if (passes !== null) {
         if (!isRecord(passes)) issue("OBJECT_TYPE", "initiative.passes", "initiative.passes must be an object or null.");
         else {
-          exactFields(passes, ["step", "threshold"], "initiative.passes", issue);
-          if (!(typeof passes.step === "number" && passes.step > 0)) issue("NUMBER_TYPE", "initiative.passes.step", "initiative.passes.step must be a number above 0.");
+          exactFields(passes, ["step", "threshold", "countFormulaRef"], "initiative.passes", issue);
+          const counted = passes.countFormulaRef !== undefined && passes.countFormulaRef !== null;
+          if (counted && !(ruleset.formulas ?? []).some(formula => formula?.id === passes.countFormulaRef)) issue("REFERENCE", "initiative.passes.countFormulaRef", `Missing reference: formula/${passes.countFormulaRef}.`);
+          if (!counted && !(typeof passes.step === "number" && passes.step > 0)) issue("NUMBER_TYPE", "initiative.passes.step", "initiative.passes.step must be a number above 0.");
+          if (counted && passes.step !== undefined) issue("EXCLUSIVE_FIELDS", "initiative.passes", "initiative.passes counts passes by a Formula or by a step, not both.");
           if (!(passes.threshold === undefined || Number.isFinite(passes.threshold))) issue("NUMBER_TYPE", "initiative.passes.threshold", "initiative.passes.threshold must be a number.");
         }
       }

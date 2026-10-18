@@ -57,7 +57,7 @@ Le Configurateur range le Ruleset en rubriques. Chaque élément est une carte :
 - **Formules** et **Sorties dérivées** : les calculs (une valeur finale, un bonus, un seuil).
 - **Conditions** : des tests vrai/faux (« l'Acteur est un PJ », « la cible est à portée »).
 - **Jets**, **Résultats** et **Tests** : comment on lance les dés et comment on lit le résultat (réussite, échec, degrés).
-- **Effets**, **Modificateurs** et **Durées** : ce qui change sur un Acteur, et combien de temps.
+- **Effets**, **Modificateurs** et **Durées** : ce qui change sur un Acteur, et combien de temps. Un Effet peut aussi écrire un champ numérique du Contenu utilisé (« Champ du contenu utilisé : Munitions »), et les Effets suivants de la même Action lisent ce qu'il a fait dans `variables.effects.<id>` (`before`, `after`, `operand`) : recharger retire de la réserve exactement ce qui est entré dans le chargeur.
 - **Actions** : ce que l'on fait depuis une feuille (attaquer, lancer un sort, se reposer). Une Action enchaîne Test, Effets, choix après le résultat, relances. Ses **Boutons de la carte de chat** ajoutent sous le résultat un bouton qui lance une autre Action : « Appliquer les dégâts » pour le MJ, « Se défendre » pour chaque cible, etc. L'Action du bouton lit le premier résultat dans `variables.previous` (total, margin, target, outcome, roll, natural).
 - **Dés** : des dés propres au jeu, lancés par leur lettre (par exemple `2dp`).
 - **Tables** : des tirages au hasard.
@@ -161,7 +161,7 @@ Pendant la création, les bonus et malus des étapes s'additionnent avant que le
 - Le bloc d'un **Système de progression** montre ce que l'Acteur peut acheter (niveau actuel et visé, coût, monnaie dépensée) avec un bouton par achat, puis ses paliers et le bouton « Appliquer les paliers atteints ». Le joueur achète lui-même, sans passer par « Essayer les règles ». Quand une permission du Ruleset le laisse acheter pour un Acteur qu'il ne possède pas, l'achat passe par le MJ connecté. Un observateur voit les coûts sans les boutons.
 - Les **valeurs** se changent sur la feuille dans les limites du Ruleset (bornes, permissions). Un joueur qui modifie un Acteur qu'il ne possède pas passe par le MJ connecté.
 - Glisser un **Objet** sur la feuille le donne à l'Acteur ; un Contenu du Ruleset pose alors ses choix et accorde ce qu'il accorde. Le retirer reprend ce qu'il avait accordé.
-- Le **combat** : l'initiative du Ruleset, ses passes et l'ordre du round sont gérés par le traqueur de combat de Foundry.
+- Le **combat** : l'initiative du Ruleset, ses passes et l'ordre du round sont gérés par le traqueur de combat de Foundry. Les passes se règlent par un seuil d'initiative (Shadowrun) ou par une Formule « Passes de chaque combattant » (RWF : autant de passes que d'attaques) ; l'événement « Début de tour » donne la passe jouée dans `event.payload.pass`.
 - Les **ressources partagées** (fiche du Ruleset, bloc « Combat et ressources partagées ») : des valeurs tenues une seule fois pour la partie (réserve du MJ, horloges) ou pour chaque combat (dé d'escalade). Le bouton **Ressources partagées** du traqueur de combat les montre à tous ; le MJ les modifie avec − / +.
 - Le **temps du monde** fait expirer les états à durée.
 

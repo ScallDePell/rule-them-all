@@ -67,8 +67,9 @@ export async function rerollEachRound(combat, prior, current, getRuntime) {
 }
 
 /* Initiative passes (Shadowrun): after everyone acted, a combatant whose initiative minus `step` per pass stays above
-   `threshold` acts again in another pass of the same round; the others wait for the next round. Combatants outside
-   a Ruleset with passes act in the first pass only. The pass is kept in the combat's flags. */
+   `threshold` acts again in another pass of the same round; the others wait for the next round. With `countFormulaRef`,
+   a combatant acts in as many passes as that Formula gives for its Actor (one attack per pass, up to its attacks per round).
+   Combatants outside a Ruleset with passes act in the first pass only. The pass is kept in the combat's flags. */
 const PASS_FLAG = "initiativePass";
 
 /** A combatant's initiative in a given pass (1 for the first). */
@@ -80,13 +81,17 @@ async function passRules(combat, runtime) {
   for (const combatant of combat.turns ?? []) {
     const state = combatant.actor?.uuid ? await runtime.getContainerState(combatant.actor.uuid) : null;
     const passes = state?.rulesetVersionId ? runtime.initiativePasses(state.rulesetVersionId) : null;
-    if (passes) rules.set(combatant.id, passes);
+    if (passes?.countFormulaRef) {
+      const count = Number(await runtime.evaluateFormula(state.rulesetVersionId, passes.countFormulaRef, {roles: {self: combatant.actor.uuid}, defaultRole: "self"}).catch(() => 1));
+      rules.set(combatant.id, {count: Number.isFinite(count) ? count : 1});
+    } else if (passes) rules.set(combatant.id, passes);
   }
   return rules;
 }
 const actsIn = (combatant, pass, rules) => {
   const rule = rules.get(combatant.id);
   if (!rule) return pass === 1;
+  if (rule.count !== undefined) return pass <= rule.count;
   return Number.isFinite(Number(combatant.initiative)) && combatant.initiative !== null && passScore(combatant.initiative, pass, rule) > rule.threshold;
 };
 

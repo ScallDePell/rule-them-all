@@ -160,6 +160,7 @@ export class DependencyIndex{
       pushRef(this.#edges,{objectKind:'ruleset',objectId:ruleset.id},{objectKind:'test',objectId:ruleset.initiative.testRef},'rulesetInitiative','initiative.testRef');
       pushRef(this.#edges,{objectKind:'ruleset',objectId:ruleset.id},{objectKind:'table',objectId:ruleset.initiative.tableRef},'rulesetInitiative','initiative.tableRef');
       pushRef(this.#edges,{objectKind:'ruleset',objectId:ruleset.id},{objectKind:'formula',objectId:ruleset.initiative.tieBreakFormulaRef},'rulesetInitiative','initiative.tieBreakFormulaRef');
+      pushRef(this.#edges,{objectKind:'ruleset',objectId:ruleset.id},{objectKind:'formula',objectId:ruleset.initiative.passes?.countFormulaRef},'rulesetInitiative','initiative.passes.countFormulaRef');
     }
     for(const [i,system] of (ruleset.progressionSystems??[]).entries()){
       const from={objectKind:'progressionSystem',objectId:system.id},add=(kind,id,role,path)=>{if(id)pushRef(this.#edges,from,{objectKind:kind,objectId:id},role,`progressionSystems[${i}].${path}`);};

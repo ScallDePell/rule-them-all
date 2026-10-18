@@ -131,3 +131,27 @@ test('Initiative passes: the fastest act again in the same round, the others wai
   assert.deepEqual(acted,['1.1:fast','1.1:mid','1.1:npc','1.1:slow','1.2:fast','1.2:mid','1.3:fast','2.1:fast']);
   assert.deepEqual(rounds,[2],'one new round, after the third pass');
 });
+
+test('Initiative passes counted by a Formula: each combatant acts in as many passes as it has attacks', async()=>{
+  const {api,v}=await setup(null);
+  await assert.rejects(api.updateRuleset(v,{initiative:{testRef:'init',passes:{countFormulaRef:'missing'}}}),/formula\/missing/);
+  await assert.rejects(api.updateRuleset(v,{initiative:{testRef:'init',passes:{countFormulaRef:'dex',step:5}}}),/not both/);
+  await api.updateRuleset(v,{initiative:{testRef:'init',passes:{countFormulaRef:'dex'}}});
+  const {collectEntryData}=await import('../src/configurator/entry-data-collector.mjs');
+  const fd=new Map(Object.entries({nameKey:'R',version:'1',initiativeSource:'test:init',initiativePassCountFormulaRef:'dex',initiativePassStep:'10'}));
+  assert.deepEqual(collectEntryData('ruleset',{fd,current:{id:'r',nameKey:'R'},bool:()=>false,checkedIds:()=>[],queryOne:()=>null,queryAll:()=>[],uid:()=>'x',fieldUid:()=>'y'}).initiative.passes,{countFormulaRef:'dex'});
+  const attacks={'Actor.a':3,'Actor.b':1,'Actor.c':2},rounds=[];
+  const runtime={getContainerState:async uuid=>uuid==='Actor.other'?null:{rulesetVersionId:'v'},initiativePasses:()=>({countFormulaRef:'attacks'}),evaluateFormula:async(_v,_id,context)=>attacks[context.roles.self]};
+  class Combat{
+    constructor(){this.round=1;this.turn=0;this.flags={};this.turns=[{id:'a',initiative:20,actor:{uuid:'Actor.a'}},{id:'b',initiative:15,actor:{uuid:'Actor.b'}},{id:'o',initiative:12,actor:{uuid:'Actor.other'}},{id:'c',initiative:5,actor:{uuid:'Actor.c'}}];}
+    getFlag(scope,key){return this.flags[`flags.${scope}.${key}`];}
+    async update(data){for(const [key,value] of Object.entries(data))if(key.startsWith('flags.'))this.flags[key]=value;else this[key]=value;}
+    async nextTurn(){if(this.turn+1<this.turns.length){this.turn++;return this;}return this.nextRound();}
+    async nextRound(){this.round++;this.turn=0;rounds.push(this.round);return this;}
+  }
+  installInitiativePasses(Combat,()=>runtime,{chat:null});
+  const combat=new Combat(),acted=[];
+  for(let i=0;i<8;i++){acted.push(`${combat.getFlag('rule-them-all','initiativePass')??1}:${combat.turns[combat.turn].id}`);await combat.nextTurn();}
+  assert.deepEqual(acted,['1:a','1:b','1:o','1:c','2:a','2:c','3:a','1:a']);
+  assert.deepEqual(rounds,[2]);
+});

@@ -13,9 +13,10 @@ const {RWF_DEFAULT_AGE_GROUPS, RWF_DEFAULT_BACKGROUNDS} = await imp(`${sysDir}/m
 const {RWF_BASE_PROFESSIONS} = await imp(`${sysDir}/module/professions.mjs`);
 const pack = name => JSON.parse(readFileSync(`${packDir}/${name}`, "utf8"));
 
-const R = {id: "rwf", nameKey: "Real World Fantasy", descriptionKey: "Jeu de rôle contemporain fantastique : notre monde, plus les Fantaisies que le MJ rend vraies. Règles extraites du système RWF v0.1.475, contenus du RWF Super Pack v0.4.1.", version: "2.1.0", color: "#2f6f8f",
+const R = {id: "rwf", nameKey: "Real World Fantasy", descriptionKey: "Jeu de rôle contemporain fantastique : notre monde, plus les Fantaisies que le MJ rend vraies. Règles extraites du système RWF v0.1.475, contenus du RWF Super Pack v0.4.1.", version: "2.2.0", color: "#2f6f8f",
   // COMBAT-01: 1d20 + Agilité + Esprit, rerolled every round; ties go to Agilité, then Esprit.
-  initiative: {testRef: "initiative", tableRef: null, tieBreakFormulaRef: "departage-initiative", eachRound: true, bySide: false, passes: null}};
+  // COMBAT-02: the round is played in passes 1, 2, 3; a combatant acts in as many passes as its best mastery gives attacks.
+  initiative: {testRef: "initiative", tableRef: null, tieBreakFormulaRef: "departage-initiative", eachRound: true, bySide: false, passes: {countFormulaRef: "attaques-meilleure"}}};
 const C = Object.fromEntries(["definitionTypes","definitions","parameters","formulas","formulaBindings","conditions","rolls","outcomes","tests","effects","actions","permissionPolicies","eventTypes","triggers","contentTypes","contentTemplates","modifiers","durations","creationSystems","progressionSystems","sheetDefinitions","scales","tags"].map(k => [k, []]));
 const orders = {};
 const add = (collection, entry) => {
@@ -66,6 +67,10 @@ P("pratique-reussite", "Pratique gagnée sur une réussite", 1); P("pratique-cri
 P("poursuite-borne", "Borne de la jauge de poursuite", 3, "À +3 le poursuivant rattrape (ou le fuyard s'échappe) ; à −3 il perd la cible (ou le fuyard est rattrapé).");
 P("dd-poursuite", "DD d'un test de poursuite", 13); P("bonus-raccourci", "Bonus d'un raccourci", 2); P("malus-risque", "Malus d'une prise de risque", 2);
 P("maniabilite-a-pied", "Maniabilité de la course à pied", 2, "Profil natif Course à pied (OBJ-05).");
+// E09 (2.2.0): running on the vehicles' speed scale (−2 to 5), so that a pursuit compares a runner with a vehicle; a bike is 0.
+P("vitesse-a-pied", "Vitesse de la course à pied", -1, "Sur l'échelle de Vitesse des véhicules (−2 à 5) : un vélo vaut 0, une berline 2, une moto 4. Sert à annoncer l'avantage de vitesse d'une poursuite.");
+// TIR-01: a burst fires 3 rounds at +2; full-auto loses 3 more on its last controlled burst when the mastery gives fewer than 3 attacks.
+P("munitions-rafale", "Munitions d'une rafale", 3); P("bonus-rafale", "Bonus d'une rafale", 2); P("munitions-perdues-full-auto", "Munitions perdues par le recul (full-auto)", 3);
 
 /* ---------- Definition Types ---------- */
 const DT = (id, nameKey, caps, fields = {}, descriptionKey = "", color = null) => add("definitionTypes", {id, key: id, nameKey, descriptionKey, color, allowedCapabilities: caps, defaultCapabilities: caps, requiredCapabilities: caps, fields, constraints: []});
@@ -131,6 +136,10 @@ ST("blessure", "Blessure", "Blessure reçue sur un coup critique.");
 ST("blessure-grave", "Blessure grave", "Blessure reçue sur des dégâts d'au moins 75 % de la Vitalité maximale.");
 D("en-combat", "statut", "En combat", {}, {descriptionKey: "Actif pendant un combat engagé dans Foundry : les attaques comptent dans le budget du round et rapportent de la pratique."});
 D("attaques-utilisees", "compteur", "Attaques utilisées ce round", {}, {descriptionKey: "Remis à 0 à chaque round. Une attaque n'est possible que tant qu'il reste moins d'attaques utilisées que la maîtrise de l'arme n'en permet (passes 1 / 2 / 3)."});
+D("passe-en-cours", "compteur", "Passe d'attaque en cours", {}, {descriptionKey: "La passe (1, 2 ou 3) du tour que le personnage joue ; 0 avant son premier tour du round."});
+D("derniere-passe-attaque", "compteur", "Dernière passe utilisée", {}, {descriptionKey: "La passe où le personnage a déjà attaqué, sprinté ou rechargé : une seule action de ce genre par passe."});
+D("effort-physique", "compteur", "Effort physique ce round", {}, {descriptionKey: "1 quand le personnage a attaqué au contact ou sprinté ce round."});
+D("efforts-physiques", "compteur", "Efforts physiques comptés", {}, {descriptionKey: "Rounds physiques en combat et actions de poursuite à pied ; au troisième, 1 Endurance est perdue (END-03)."});
 D("progression-poursuite", "poursuite", "Progression de poursuite", {}, {descriptionKey: "De −3 à +3. Continuer, prendre un risque ou un raccourci la fait avancer selon le résultat (+2 critique, +1 réussite, −1 échec, −2 complication) et l'avantage de vitesse ; s'arrêter retire 1."});
 // PROG-01: every skill and mastery has its own practice; Course à pied gives its practice to Athlétisme (PROG-03).
 const PRACTISED = [...SKILLS.map(([, id]) => id), ...COMBAT.map(([, id]) => id), ...MOVES.map(([, id]) => id).filter(id => id !== "course-a-pied")];
@@ -180,6 +189,11 @@ F("bonus-mains-nues", "Bonus d'attaque à mains nues", {type: "subtract", args: 
 F("multiplicateur-critique", "Dés doublés au critique", iff(cmp("eq", ctx("variables.test.outcome.resultKey"), lit("critique")), lit(2), lit(1)), "integer", "2 sur une réussite critique, sinon 1.");
 F("degats-force-arme", "Force ajoutée aux dégâts", iff(cf("ajouteForce", false), ref(val("force")), lit(0)), "integer", "Force si l'arme l'ajoute à ses dégâts.");
 F("valeur-force", "Force", ref(val("force")), "integer");
+// A critical doubles the dice: the dice announced count twice (the constants once).
+const critique = cmp("eq", ctx("variables.test.outcome.resultKey"), lit("critique"));
+F("critique-des-annonces", "Dés annoncés doublés au critique", iff({type: "and", args: [critique, cmp("gt", ctx("variables.input.degats"), lit(0))]}, ctx("variables.input.degats"), lit(0)), "integer", "Sur une réussite critique, le total annoncé des dés compte une seconde fois.");
+F("bonus-degats-arme", "Bonus aux dégâts de l'arme", sum({type: "formula", id: "degats-force-arme"}, {type: "formula", id: "critique-des-annonces"}), "integer", "Force si l'arme l'ajoute, plus les dés annoncés une seconde fois au critique.");
+F("bonus-degats-mains-nues", "Bonus aux dégâts à mains nues", sum(ref(val("force")), {type: "formula", id: "critique-des-annonces"}), "integer", "Force, plus le d4 annoncé une seconde fois au critique.");
 // Powers: the power used gives its attribute, skill, difficulty and cost.
 F("bonus-pouvoir", "Bonus de pouvoir", sum(defVal(cf("caracteristique")), defVal(cf("competence"))), "integer", "Caractéristique + compétence du pouvoir.");
 F("dd-pouvoir", "DD du pouvoir", cf("difficulte"), "integer");
@@ -210,12 +224,16 @@ K("endurance-disponible", "Endurance au-dessus de 0", {type: "gt", left: ref(poo
 K("attaque-possible", "Attaque possible", {type: "or", args: [cmp("gt", ref(pool("endurance")), lit(0)), cmp("gt", cf("portee", 0), lit(0))]}, "À Endurance 0, plus d'attaque physique : seules les armes à distance restent utilisables.");
 K("energie-suffisante", "Énergie suffisante", cmp("gte", ref(pool("energie")), cf("cout", 0)), "L'Énergie couvre le coût du pouvoir.");
 K("pouvoir-connu", "Pouvoir révélé", cmp("gte", ref(val("esprit")), cf("seuilEsprit", 0)), "Un pouvoir latent se révèle quand l'Esprit atteint son seuil.");
-K("troisieme-round", "Tous les trois rounds", cmp("eq", {type: "mod", args: [ctx("event.payload.round"), lit(3)]}, lit(0)));
+K("trois-efforts", "Trois efforts physiques", cmp("gte", ref(val("efforts-physiques")), lit(3)), "Au troisième round physique ou à la troisième action de poursuite à pied.");
+K("effort-ce-round", "Effort physique ce round", cmp("gte", ref(val("effort-physique")), lit(1)));
+K("de-annonce", "d20 annoncé", cmp("gt", ctx("variables.input.de"), lit(0)), "Le joueur a lancé le d20 sur la table et annonce son résultat.");
+K("degats-annonces", "Dégâts annoncés", cmp("gt", ctx("variables.input.degats"), lit(0)), "Le joueur a lancé les dés de dégâts sur la table et annonce leur total.");
 
 /* ---------- Rolls, outcomes ---------- */
-add("rolls", generic({id: "d20", nameKey: "1d20", formula: "1d20", data: {}}));
-add("rolls", generic({id: "degats-contenu", nameKey: "Dés de dégâts de l'arme ou du pouvoir", descriptionKey: "Les dés écrits sur l'arme ou le pouvoir utilisé.", formula: "@content.degats", data: {}}));
-add("rolls", generic({id: "degats-mains-nues", nameKey: "1d4", formula: "1d4", data: {}}));
+// Mode TABLE (2.2.0): when the player announces the d20 or the damage dice rolled on the table, the Roll reads them instead of throwing dice.
+add("rolls", generic({id: "d20", nameKey: "1d20", descriptionKey: "1d20 de Foundry, ou le d20 annoncé quand le joueur l'a lancé sur la table.", formula: "1d20", data: {}, variants: [{conditionRef: "de-annonce", formula: "@input.de"}]}));
+add("rolls", generic({id: "degats-contenu", nameKey: "Dés de dégâts de l'arme ou du pouvoir", descriptionKey: "Les dés écrits sur l'arme ou le pouvoir utilisé, ou leur total annoncé par le joueur.", formula: "@content.degats", data: {}, variants: [{conditionRef: "degats-annonces", formula: "@input.degats"}]}));
+add("rolls", generic({id: "degats-mains-nues", nameKey: "1d4", descriptionKey: "1d4, ou le d4 annoncé par le joueur.", formula: "1d4", data: {}, variants: [{conditionRef: "degats-annonces", formula: "@input.degats"}]}));
 // A test the GM asks for (module RWF tools): the player rolls the d20 or reads it from the table, the result arrives as input.
 add("rolls", generic({id: "d20-annonce", nameKey: "d20 annoncé", descriptionKey: "Le d20 que le joueur a lancé, avec les dés de Foundry ou sur la table.", formula: "@input.de", data: {}}));
 const O = (id, nameKey, resultKey, conditionRef, descriptionKey) => add("outcomes", generic({id, nameKey, descriptionKey, resultKey, conditionRef, labelKey: nameKey}));
@@ -257,12 +275,13 @@ add("durations", generic({id: "un-round", nameKey: "Un round", mode: "fixed", am
 add("durations", generic({id: "un-jour", nameKey: "Un jour", mode: "fixed", amount: 1, unit: "day"}));
 add("durations", generic({id: "jusqu-au-retrait", nameKey: "Jusqu'au retrait", mode: "untilRemoved"}));
 E("long-repos-endurance", "Endurance au maximum", pool("endurance"), "set", {kind: "reference", reference: pool("endurance", "pool.maximum")}, "self", "Le long repos efface l'essoufflement.");
-E("degats-arme", "Dégâts de l'arme", pool("vitalite"), "subtract", {kind: "roll", rollRef: "degats-contenu", multiplierFormulaRef: "multiplicateur-critique", bonusFormulaRef: "degats-force-arme"}, "target", "Dés de l'arme (doublés au critique) + Force si l'arme l'indique, retirés à la Vitalité de la cible.");
-E("degats-mains-nues", "Dégâts à mains nues", pool("vitalite"), "subtract", {kind: "roll", rollRef: "degats-mains-nues", multiplierFormulaRef: "multiplicateur-critique", bonusFormulaRef: "valeur-force"}, "target", "1d4 (2d4 au critique) + Force.");
+E("degats-arme", "Dégâts de l'arme", pool("vitalite"), "subtract", {kind: "roll", rollRef: "degats-contenu", multiplierFormulaRef: "multiplicateur-critique", bonusFormulaRef: "bonus-degats-arme"}, "target", "Dés de l'arme (doublés au critique) + Force si l'arme l'indique, retirés à la Vitalité de la cible.");
+E("degats-mains-nues", "Dégâts à mains nues", pool("vitalite"), "subtract", {kind: "roll", rollRef: "degats-mains-nues", multiplierFormulaRef: "multiplicateur-critique", bonusFormulaRef: "bonus-degats-mains-nues"}, "target", "1d4 (2d4 au critique) + Force.");
 E("cout-pouvoir", "Coût en Énergie", pool("energie"), "subtract", {kind: "formula", id: "cout-pouvoir"}, "self", "L'Énergie est payée avant le test, même en cas d'échec.");
 E("degats-pouvoir", "Dégâts du pouvoir", pool("vitalite"), "subtract", {kind: "roll", rollRef: "degats-contenu", bonusFormulaRef: "armure-contre-pouvoir", minimum: 0}, "target", "Dés du pouvoir moins max(0, armure − perforation) ; jamais de soin.");
 E("soins-pouvoir", "Soins du pouvoir", pool("vitalite"), "add", {kind: "roll", rollRef: "degats-contenu"}, "target", "Dés du pouvoir rendus en Vitalité.");
 E("essoufflement", "Essoufflement", pool("endurance"), "subtract", {kind: "literal", value: 1}, "self", "−1 Endurance.");
+E("remise-efforts", "Efforts physiques remis à zéro", base("efforts-physiques"), "set", {kind: "literal", value: 0}, "self");
 E("recuperation-naturelle", "Récupération naturelle", pool("vitalite"), "add", {kind: "formula", id: "jours-ecoules"}, "self", "+1 Vitalité par jour écoulé.");
 const A = (id, nameKey, more = {}) => add("actions", generic({id, nameKey, conditionRefs: [], costEffectRefs: [], acquisitions: [], stateRemovals: [], stateApplications: [], modifierApplications: [], effectRefs: [], testRef: null, outcomeMappings: [], eventTypeRefs: [], ...more}));
 const stateApply = (definitionId, targetRole = "target") => ({definitionId, targetRole, durationRef: "jusqu-au-retrait", stacking: "ignore", stacks: 1, severity: null, modifierRefs: []});
@@ -285,10 +304,9 @@ A("attaquer-mains-nues", "Attaquer à mains nues", {conditionRefs: ["endurance-d
 A("utiliser-pouvoir", "Utiliser le pouvoir", {descriptionKey: "Paie l'Énergie puis teste le pouvoir.", conditionRefs: ["energie-suffisante"], costEffectRefs: ["cout-pouvoir"], testRef: "pouvoir"});
 A("pouvoir-degats", "Utiliser le pouvoir (dégâts)", {descriptionKey: "Paie l'Énergie, teste le pouvoir, puis retire ses dégâts à la cible.", conditionRefs: ["energie-suffisante"], costEffectRefs: ["cout-pouvoir"], testRef: "pouvoir", effectRefs: ["degats-pouvoir"], outcomeMappings: missed});
 A("pouvoir-soins", "Utiliser le pouvoir (soins)", {descriptionKey: "Paie l'Énergie, teste le pouvoir, puis rend sa Vitalité à la cible.", conditionRefs: ["energie-suffisante"], costEffectRefs: ["cout-pouvoir"], testRef: "pouvoir", effectRefs: ["soins-pouvoir"], outcomeMappings: missed});
-A("s-essouffler", "S'essouffler", {effectRefs: ["essoufflement"]});
+A("s-essouffler", "S'essouffler", {descriptionKey: "Au troisième effort physique : −1 Endurance, et le compte repart de zéro.", conditionRefs: ["trois-efforts"], effectRefs: ["essoufflement", "remise-efforts"]});
 A("recuperer", "Récupérer", {effectRefs: ["recuperation-naturelle"]});
-// END-03 (simplified: every third combat round, not only physical rounds) and SANTE-05.
-add("triggers", generic({id: "essoufflement-en-combat", nameKey: "Essoufflement en combat", descriptionKey: "Tous les trois rounds de combat, chaque combattant perd 1 Endurance.", eventTypeId: "rta.combat.round", eventFilter: null, conditionRefs: ["troisieme-round"], actionRefs: ["s-essouffler"]}));
+// SANTE-05.
 add("triggers", generic({id: "recuperation-quotidienne", nameKey: "Récupération quotidienne", descriptionKey: "Chaque jour qui passe rend 1 Vitalité.", eventTypeId: "rta.time.elapsed", eventFilter: null, conditionRefs: [], actionRefs: ["recuperer"]}));
 A("action-initiative", "Lancer l'initiative", {testRef: "initiative"});
 
@@ -364,6 +382,79 @@ for (const move of Object.keys(moveBonus)) {
 A("poursuite-arret", "Poursuite : s'arrêter", {descriptionKey: "La jauge de poursuite perd 1.", effectRefs: ["arret-poursuite"]});
 A("poursuite-nouvelle", "Nouvelle poursuite", {descriptionKey: "Remet la jauge de poursuite à 0.", effectRefs: ["remise-poursuite"]});
 
+/* ---------- Combat and pursuit HUD rules (RWF 2.2.0) ---------- */
+// Mode TABLE: the player may announce the d20 and the damage rolled on the table; left empty, Foundry rolls.
+const D20_TABLE = {id: "de", labelKey: "d20 lancé sur la table (vide : dés de Foundry)", valueType: "integer", required: false};
+const DAMAGE_TABLE = {id: "degats", labelKey: "Dégâts lancés sur la table (vide : dés de Foundry)", valueType: "integer", required: false};
+const action = id => C.actions.find(a => a.id === id);
+const withInputs = (id, ...inputs) => { action(id).inputs = [...(action(id).inputs ?? []), ...inputs]; };
+for (const id of ["attaquer", "attaquer-mains-nues", "pouvoir-degats", "pouvoir-soins"]) withInputs(id, D20_TABLE, DAMAGE_TABLE);
+for (const id of ["utiliser-pouvoir", "tester-caracteristique", "tester-competence", ...Object.keys(moveBonus).flatMap(move => [`poursuite-vehicule-${move}`, `poursuite-a-pied-${move}`])]) withInputs(id, D20_TABLE);
+
+// COMBAT-02: in a fight, one attack, sprint or reload per pass, during one's own turn (the pass comes with the turn).
+K("attaque-de-la-passe-disponible", "Action de la passe disponible", {type: "or", args: [cmp("neq", enCombat, lit(true)), cmp("lt", ref(val("derniere-passe-attaque")), ref(val("passe-en-cours")))]}, "Hors combat toujours ; en combat, une attaque, un sprint ou un rechargement par passe, pendant son tour.");
+F("passe-du-tour", "Passe du tour", ctx("event.payload.pass"), "integer", "La passe (1, 2 ou 3) que le combat joue quand le tour du personnage commence.");
+E("debut-de-passe", "Passe du tour", base("passe-en-cours"), "set", {kind: "formula", id: "passe-du-tour"}, "self");
+E("marquer-la-passe", "Passe utilisée", base("derniere-passe-attaque"), "set", {kind: "reference", reference: val("passe-en-cours")}, "self", "En combat, l'action prend la passe en cours.");
+E("remise-passe", "Passe remise à zéro", base("passe-en-cours"), "set", {kind: "literal", value: 0}, "self");
+E("remise-derniere-passe", "Passes utilisées remises à zéro", base("derniere-passe-attaque"), "set", {kind: "literal", value: 0}, "self");
+A("debut-de-tour", "Début de tour", {descriptionKey: "Le personnage joue la passe que le combat annonce.", effectRefs: ["debut-de-passe"]});
+add("triggers", generic({id: "debut-de-tour", nameKey: "Début de tour", descriptionKey: "Le tour d'un combattant commence : il joue la passe en cours (1, 2 ou 3).", eventTypeId: "rta.combat.turn", eventFilter: null, conditionRefs: [], actionRefs: ["debut-de-tour"]}));
+for (const id of ["nouveau-round", "entrer-en-combat", "sortir-du-combat"]) action(id).effectRefs.push("remise-passe", "remise-derniere-passe");
+
+// END-03: a melee attack, an unarmed attack or a sprint makes the round physical; every third physical round costs 1 Endurance.
+F("effort-de-l-arme", "Effort de l'attaque", iff({type: "and", args: [enCombat, cmp("eq", cf("portee", 0), lit(0))]}, lit(1), lit(0)), "integer", "1 pour une attaque au contact en combat, sinon 0.");
+E("effort-arme", "Effort physique de l'attaque", base("effort-physique"), "add", {kind: "formula", id: "effort-de-l-arme"}, "self");
+E("effort-combat", "Effort physique", base("effort-physique"), "add", {kind: "formula", id: "attaque-comptee"}, "self");
+E("bilan-effort", "Round physique compté", base("efforts-physiques"), "add", {kind: "literal", value: 1}, "self");
+E("remise-effort", "Nouveau round sans effort", base("effort-physique"), "set", {kind: "literal", value: 0}, "self");
+A("bilan-effort", "Bilan de l'effort", {descriptionKey: "Un round où le personnage a attaqué au contact ou sprinté compte comme effort physique.", conditionRefs: ["effort-ce-round"], effectRefs: ["bilan-effort", "remise-effort"]});
+// Runs before "nouveau-round": the triggers of an event play in their order.
+C.triggers.splice(C.triggers.findIndex(t => t.id === "nouveau-round"), 0, {...generic({id: "fin-de-round-physique", nameKey: "Fin d'un round physique", descriptionKey: "Compte le round s'il était physique, puis essouffle au troisième.", eventTypeId: "rta.combat.round", eventFilter: null, conditionRefs: [], actionRefs: ["bilan-effort", "s-essouffler"]}), order: 25});
+for (const id of ["entrer-en-combat", "sortir-du-combat"]) action(id).effectRefs.push("remise-effort");
+action("long-repos").effectRefs.push("remise-efforts", "remise-effort");
+action("sprinter").costEffectRefs.push("marquer-la-passe", "effort-combat");
+action("sprinter").conditionRefs.push("attaque-de-la-passe-disponible");
+action("attaquer-mains-nues").costEffectRefs.push("marquer-la-passe", "effort-combat");
+action("attaquer-mains-nues").conditionRefs.push("attaque-de-la-passe-disponible");
+// POUR-04: each move of a pursuit on foot is a physical effort.
+E("effort-poursuite", "Effort de la poursuite à pied", base("efforts-physiques"), "add", {kind: "literal", value: 1}, "self");
+const ALL_OUTCOMES = ["reussite-critique", "complication", "reussite", "echec"];
+for (const move of Object.keys(moveBonus)) Object.assign(action(`poursuite-a-pied-${move}`), {costEffectRefs: ["effort-poursuite"], effectRefs: [], outcomeMappings: ALL_OUTCOMES.map(outcomeId => ({outcomeId, effectRefs: ["avancer-poursuite"], actionRefs: ["s-essouffler"]}))});
+// END-04: a round without action nor movement gives back a quarter of the maximum Endurance.
+F("quart-endurance", "Quart de l'Endurance maximale", {type: "ceil", value: {type: "divide", args: [ref(pool("endurance", "pool.maximum")), lit(4)]}}, "integer");
+E("souffle-repris", "Souffle repris", pool("endurance"), "add", {kind: "formula", id: "quart-endurance"}, "self", "+¼ de l'Endurance maximale (arrondi au supérieur).");
+E("round-de-repos", "Round de repos", base("attaques-utilisees"), "set", {kind: "formula", id: "attaques-meilleure"}, "self", "Le round de repos prend toutes les attaques du round.");
+K("aucune-attaque-ce-round", "Aucune attaque ce round", cmp("eq", usedAttacks, lit(0)));
+K("aucun-effort-ce-round", "Aucun effort ce round", cmp("eq", ref(val("effort-physique")), lit(0)));
+A("reprendre-son-souffle", "Reprendre son souffle", {descriptionKey: "En combat, un round entier sans attaquer ni se déplacer rend ¼ de l'Endurance maximale. À annoncer avant d'agir : le round est perdu.", conditionRefs: ["est-en-combat", "aucune-attaque-ce-round", "aucun-effort-ce-round"], costEffectRefs: ["round-de-repos"], effectRefs: ["souffle-repris"]});
+
+// TIR-01..04: ammunition, short burst, full-auto and reload.
+F("munitions-par-tir", "Munitions d'un tir", iff(cmp("gt", cf("chargeur", 0), lit(0)), lit(1), lit(0)), "integer", "1 pour une arme à chargeur, 0 sinon.");
+K("munitions-pour-un-tir", "Munitions chargées", cmp("gte", cf("munitions", 0), {type: "formula", id: "munitions-par-tir"}), "Une arme à chargeur vide ne tire plus : il faut recharger.");
+K("arme-automatique", "Arme automatique", cmp("eq", cf("automatique", false), lit(true)));
+K("munitions-pour-une-rafale", "Munitions pour une rafale", cmp("gte", cf("munitions", 0), par("munitions-rafale")));
+F("munitions-full-auto", "Munitions d'une rafale full-auto", {type: "min", args: [cf("munitions", 0), sum(par("munitions-rafale"), iff({type: "and", args: [enCombat, cmp("gte", sum(usedAttacks, lit(1)), {type: "formula", id: "attaques-arme"}), cmp("lt", {type: "formula", id: "attaques-arme"}, lit(3))]}, par("munitions-perdues-full-auto"), lit(0)))]}, "integer", "3 munitions ; à la dernière rafale du round, 3 de plus perdues par le recul quand la maîtrise ne donne qu'1 ou 2 attaques.");
+const ammo = (id, nameKey, operation, operand, descriptionKey = "") => add("effects", generic({id, nameKey, descriptionKey, targetRef: null, targetContentField: "munitions", targetRole: "self", operation, operand}));
+ammo("tir", "Munition tirée", "subtract", {kind: "formula", id: "munitions-par-tir"});
+ammo("tir-rafale", "Rafale tirée", "subtract", {kind: "parameter", id: "munitions-rafale"});
+ammo("tir-full-auto", "Rafale full-auto tirée", "subtract", {kind: "formula", id: "munitions-full-auto"});
+F("munitions-a-charger", "Munitions à charger", {type: "min", args: [{type: "subtract", args: [cf("chargeur", 0), cf("munitions", 0)]}, cf("reserve", 0)]}, "integer", "min(chargeur − munitions chargées, réserve).");
+ammo("charger", "Chargeur rempli", "add", {kind: "formula", id: "munitions-a-charger"});
+F("munitions-chargees", "Munitions prises dans la réserve", ctx("variables.effects.charger.operand"), "integer");
+add("effects", generic({id: "puiser-reserve", nameKey: "Réserve entamée", descriptionKey: "La réserve perd ce qui vient d'être chargé.", targetRef: null, targetContentField: "reserve", targetRole: "self", operation: "subtract", operand: {kind: "formula", id: "munitions-chargees"}}));
+K("chargeur-incomplet", "Chargeur incomplet", cmp("lt", cf("munitions", 0), cf("chargeur", 0)));
+K("reserve-disponible", "Réserve disponible", cmp("gt", cf("reserve", 0), lit(0)));
+F("bonus-attaque-rafale", "Bonus d'une rafale", sum({type: "formula", id: "bonus-attaque-arme"}, par("bonus-rafale")), "integer", "Bonus de l'attaque + 2.");
+T("attaque-arme-rafale", "Attaque en rafale", "bonus-attaque-rafale", {descriptionKey: "Comme une attaque avec l'arme, à +2.", inputBindings: [COVER_INPUT], targetFormulaRef: "difficulte-attaque"});
+const WEAPON_COST = ["compter-attaque", "marquer-la-passe", "effort-arme"];
+const weaponConditions = ["attaque-possible", "attaque-arme-disponible", "attaque-de-la-passe-disponible"];
+Object.assign(action("attaquer"), {conditionRefs: [...weaponConditions, "munitions-pour-un-tir"], costEffectRefs: ["tir", ...WEAPON_COST]});
+const burst = {inputs: [COVER_ASKED, D20_TABLE, DAMAGE_TABLE], testRef: "attaque-arme-rafale", outcomeMappings: hit("degats-arme", "pratique-arme")};
+A("tirer-rafale", "Tirer une rafale", {descriptionKey: "Arme automatique : 3 munitions, +2 au test.", conditionRefs: [...weaponConditions, "arme-automatique", "munitions-pour-une-rafale"], costEffectRefs: ["tir-rafale", ...WEAPON_COST], ...burst});
+A("tirer-full-auto", "Tirer en full-auto", {descriptionKey: "Une rafale de 3 à +2 à chaque passe ; à la dernière, une maîtrise qui ne donne qu'1 ou 2 attaques perd 3 munitions de plus par le recul.", conditionRefs: [...weaponConditions, "arme-automatique", "munitions-pour-une-rafale"], costEffectRefs: ["tir-full-auto", ...WEAPON_COST], ...burst});
+A("recharger", "Recharger", {descriptionKey: "Prend une passe en combat et remplit le chargeur depuis la réserve. Un adversaire au contact peut en profiter (au MJ).", conditionRefs: ["attaque-arme-disponible", "attaque-de-la-passe-disponible", "chargeur-incomplet", "reserve-disponible"], costEffectRefs: ["compter-attaque", "marquer-la-passe"], effectRefs: ["charger", "puiser-reserve"]});
+
 // PROG-02: the practice of the level reached pays the next one; the threshold is divided by the age group's learning speed.
 const threshold = current => iff(cmp("lte", current, lit(0)), par("seuil-pratique-1"), iff(cmp("lte", current, lit(1)), par("seuil-pratique-2"), iff(cmp("lte", current, lit(2)), par("seuil-pratique-3"), iff(cmp("lte", current, lit(3)), par("seuil-pratique-4"), par("seuil-pratique-5")))));
 F("multiplicateur-apprentissage", "Multiplicateur d'apprentissage", {type: "max", args: [lit(1), {type: "contentAggregate", operation: "max", contentTypeId: "tranche-age", field: "apprentissage"}]}, "number", "Celui de la tranche d'âge du personnage (1 sans tranche d'âge).");
@@ -419,14 +510,14 @@ const strip = html => String(html ?? "").replace(/<[^>]+>/g, " ").replace(/\s+/g
 
 /* Socle: everything a character owns from the start. */
 // What every combatant keeps track of in a fight and a pursuit (NPCs and creatures as well).
-const COMBAT_STATE = ["en-combat", "attaques-utilisees", "progression-poursuite"];
+const COMBAT_STATE = ["en-combat", "attaques-utilisees", "passe-en-cours", "derniere-passe-attaque", "effort-physique", "efforts-physiques", "progression-poursuite"];
 const allSkills = SKILLS.map(([, id]) => id), allCombat = COMBAT.map(([, id]) => id), allMoves = MOVES.map(([, id]) => id);
 TPL("humain", "Humain", "socle", {}, {descriptionKey: "Personnage joueur, caractéristiques à 1, Vitalité, Endurance et Énergie au maximum, Corps à corps et Course à pied natifs.", relations: [
   grant("personnage-joueur", "definition", "personnage-joueur", {"state.active": true}),
   ...["force", "agilite", "constitution", "esprit", "presence"].map(id => grant(id, "definition", id, {"value.base": 1})),
   ...["vitalite", "endurance", "energie", "protection", "defense"].map(id => grant(id, "definition", id)),
   ...allSkills.map(id => grant(id, "definition", id)), ...allCombat.map(id => grant(id, "definition", id)), grant("course-a-pied", "definition", "course-a-pied"),
-  grant("attaque-mains-nues", "action", "attaquer-mains-nues"), grant("action-long-repos", "action", "long-repos"), grant("action-sprinter", "action", "sprinter"), grant("action-initiative", "action", "action-initiative"),
+  grant("attaque-mains-nues", "action", "attaquer-mains-nues"), grant("action-long-repos", "action", "long-repos"), grant("action-sprinter", "action", "sprinter"), grant("reprendre-son-souffle", "action", "reprendre-son-souffle"), grant("action-initiative", "action", "action-initiative"),
   grant("tester-caracteristique", "action", "tester-caracteristique"), grant("tester-competence", "action", "tester-competence"), grant("se-cacher", "action", "se-cacher"),
   ...PRACTISED.map(id => grant(`pratique-${id}`, "definition", `pratique-${id}`)), ...COMBAT_STATE.map(id => grant(id, "definition", id)),
   ...Object.keys(moveBonus).map(move => grant(`poursuite-a-pied-${move}`, "action", `poursuite-a-pied-${move}`)), grant("poursuite-arret", "action", "poursuite-arret"), grant("poursuite-nouvelle", "action", "poursuite-nouvelle")
@@ -468,7 +559,7 @@ for (const w of pack("resources/weapons.json")) {
   if (PLACEHOLDER[w.name]) { [mastery, category, attribute] = PLACEHOLDER[w.name]; fix(`Arme « ${w.name} » : maîtrise ${s.mastery} → ${MASTERY[mastery]}, catégorie ${category}.`); }
   else if (!COMBAT.some(([k]) => k === mastery)) fix(`Arme « ${w.name} » : maîtrise ${mastery} → ${MASTERY[mastery]}.`);
   const masteryId = MASTERY[mastery], attrId = ATTR[attribute];
-  templateId[w.id] = TPL(`arme-${id}`, w.name, "arme", {categorie: WCAT[category][1], degats: s.damage.replace(/\s*\+\s*@attributes\.strength\.value/, ""), ajouteForce: s.damage.includes("@attributes.strength.value"), caracteristique: {objectKind: "definition", objectId: attrId}, maitrise: {objectKind: "definition", objectId: masteryId}, portee: s.range ?? 0, bonus: s.bonus ?? 0, perforation: s.armorPiercing ?? 0, automatique: !!s.automatic, chargeur: s.magazineSize ?? 0, munitions: s.ammo ?? 0, reserve: s.ammoReserve ?? 0}, {descriptionKey: strip(s.description), tags: [WCAT[category][0], "contenu-a-illustrer"], relations: [grant("attaquer", "action", "attaquer")]});
+  templateId[w.id] = TPL(`arme-${id}`, w.name, "arme", {categorie: WCAT[category][1], degats: s.damage.replace(/\s*\+\s*@attributes\.strength\.value/, ""), ajouteForce: s.damage.includes("@attributes.strength.value"), caracteristique: {objectKind: "definition", objectId: attrId}, maitrise: {objectKind: "definition", objectId: masteryId}, portee: s.range ?? 0, bonus: s.bonus ?? 0, perforation: s.armorPiercing ?? 0, automatique: !!s.automatic, chargeur: s.magazineSize ?? 0, munitions: s.ammo ?? 0, reserve: s.ammoReserve ?? 0}, {descriptionKey: strip(s.description), tags: [WCAT[category][0], "contenu-a-illustrer"], relations: [grant("attaquer", "action", "attaquer"), ...(s.automatic ? [grant("tirer-rafale", "action", "tirer-rafale"), grant("tirer-full-auto", "action", "tirer-full-auto")] : []), ...((s.magazineSize ?? 0) > 0 ? [grant("recharger", "action", "recharger")] : [])]});
 }
 for (const g of pack("resources/gear.json")) {
   const s = g.system;
@@ -498,7 +589,7 @@ const actorTemplate = (r, typeId, tag) => {
   for (const [k, v] of Object.entries(s.skills ?? {})) { const id = SKILL[k]; if (id) skills[id] = Math.max(skills[id] ?? 0, v?.value ?? 0); }
   for (const id of allSkills) rel.push(grant(id, "definition", id, skills[id] ? {"value.base": skills[id]} : undefined));
   if (s.armor) rel.find(x => x.id === "protection").config = {initial: {"value.base": s.armor}};
-  rel.push(grant("corps-a-corps", "definition", "corps-a-corps"), grant("course-a-pied", "definition", "course-a-pied"), grant("attaque-mains-nues", "action", "attaquer-mains-nues"), ...COMBAT_STATE.map(id => grant(id, "definition", id)));
+  rel.push(grant("corps-a-corps", "definition", "corps-a-corps"), grant("course-a-pied", "definition", "course-a-pied"), grant("attaque-mains-nues", "action", "attaquer-mains-nues"), grant("reprendre-son-souffle", "action", "reprendre-son-souffle"), ...COMBAT_STATE.map(id => grant(id, "definition", id)));
   return TPL(`${typeId}-${slug(r.name)}`, r.name, typeId, {menace: s.threat ?? 1, role: strip(s.role), variantes: r.profile?.contextualVariants ?? []}, {descriptionKey: strip(s.biography), tags: [tag, "contenu-a-illustrer"], relations: rel});
 };
 for (const r of pack("resources/npcs.json")) templateId[r.id] = actorTemplate(r, "profil-pnj", "pnj-humain");
@@ -576,7 +667,7 @@ const list = (id, typeId, children, columns = 1) => ({id: `liste-${id}`, kind: "
 const gauge = (id, label, style, write = {operation: "adjust"}) => ({id: `jauge-${id}`, kind: "value", labelKey: label, source: {kind: "output", reference: pool(id)}, display: "gauge", write, style: {label: "top", ...style}});
 const gmActions = ["mettre-hors-de-combat", "etat-stabilise", "etat-coma", "etat-mort", "infliger-blessure", "infliger-blessure-grave"];
 // Actions run by the rules themselves (rounds, practice) or from a Content (a vehicle's pursuit) are not sheet buttons.
-const ruleOnly = ["test-demande", "nouveau-round", "entrer-en-combat", "sortir-du-combat", "pratique-test", "pratique-arme", "pratique-mains-nues", "s-essouffler", "recuperer", ...Object.keys(moveBonus).map(move => `poursuite-vehicule-${move}`)];
+const ruleOnly = ["test-demande", "nouveau-round", "debut-de-tour", "bilan-effort", "tirer-rafale", "tirer-full-auto", "recharger", "entrer-en-combat", "sortir-du-combat", "pratique-test", "pratique-arme", "pratique-mains-nues", "s-essouffler", "recuperer", ...Object.keys(moveBonus).map(move => `poursuite-vehicule-${move}`)];
 const actionIds = C.actions.map(a => a.id).filter(id => !ruleOnly.includes(id));
 add("sheetDefinitions", generic({id: "feuille-pj", nameKey: "Feuille de PJ", descriptionKey: "Personnage, compétences, équipement et actions. La Vitalité exacte n'est visible que du joueur et du MJ ; les observateurs lisent l'état de santé.", target: "actor", contentTypeIds: [], root: {id: "root", kind: "grid", columns: 1, children: [{id: "onglets", kind: "tabs", children: [
   {id: "onglet-personnage", kind: "tab", labelKey: "Personnage", children: [
@@ -592,6 +683,8 @@ add("sheetDefinitions", generic({id: "feuille-pj", nameKey: "Feuille de PJ", des
     {id: "etats", kind: "section", labelKey: "États", columns: 1, children: [list("etats", "etat", [{id: "etat-actif", kind: "value", source: each("state", "state.active"), write: {operation: "set", by: "gm"}}])]},
     {id: "combat-poursuite", kind: "section", labelKey: "Combat et poursuite", columns: 2, children: [
       {id: "attaques-utilisees", kind: "value", labelKey: "Attaques utilisées ce round", source: {kind: "output", reference: val("attaques-utilisees")}, write: {operation: "set", by: "gm"}},
+      {id: "efforts-physiques", kind: "value", labelKey: "Efforts physiques (essoufflement au 3e)", source: {kind: "output", reference: val("efforts-physiques")}, write: {operation: "set", by: "gm"}},
+      {id: "passe-en-cours", kind: "value", labelKey: "Passe en cours", source: {kind: "output", reference: val("passe-en-cours")}, write: {operation: "set", by: "gm"}},
       {id: "progression-poursuite", kind: "value", labelKey: "Progression de poursuite (−3 à +3)", source: {kind: "output", reference: val("progression-poursuite")}, write: {operation: "set", by: "gm"}}]}]},
   {id: "onglet-competences", kind: "tab", labelKey: "Compétences", children: [
     {id: "competences", kind: "section", labelKey: "Compétences", columns: 1, children: [list("competences", "competence", [
@@ -614,13 +707,13 @@ add("sheetDefinitions", generic({id: "feuille-pj", nameKey: "Feuille de PJ", des
 /* ---------- Build, validate, publish, export ---------- */
 class Storage { constructor() { this.data = emptyStorageSnapshot(); } async load() { return structuredClone(this.data); } async save(d) { this.data = structuredClone(d); } }
 const api = await createConfiguratorAPI(new Storage(), {onError: e => { throw e; }});
-const {versionId} = await api.createRuleset({...R, ...C, versionId: "rwf-2-1-0"});
+const {versionId} = await api.createRuleset({...R, ...C, versionId: "rwf-2-2-0"});
 const draft = api.validateRuleset(api.getRuleset(versionId), {scope: "publish"});
 if (!draft.valid) { console.error(draft.errors.map(e=>`${e.code} ${e.path}: ${e.message}`).join("\n")); process.exit(1); }
 await api.publishRuleset(versionId);
 const exported = api.exportRuleset(versionId);
 mkdirSync(outDir, {recursive: true});
-writeFileSync(`${outDir}/rwf-ruleset-2.1.0.json`, JSON.stringify(exported, null, 1));
+writeFileSync(`${outDir}/rwf-ruleset-2.2.0.json`, JSON.stringify(exported, null, 1));
 const counts = Object.fromEntries(Object.entries(C).map(([k, v]) => [k, v.length]).filter(([, n]) => n));
 writeFileSync(`${outDir}/build-report.json`, JSON.stringify({counts, warnings: draft.warnings?.length ?? 0, fixes: report.fixes}, null, 1));
 console.log(JSON.stringify({counts, warnings: draft.warnings?.slice?.(0, 10)}, null, 1));

@@ -1,5 +1,11 @@
 # Changelog
 
+## 1.0.9
+
+- An Effect can write a number field of the Content used ("Field of the Content used": a weapon's ammunition), and the next Effects of the Action read what it did in `variables.effects.<id>` (`before`, `after`, `operand`).
+- Initiative passes can be counted per combatant by a Formula ("Passes of each combatant"); the combat turn event carries the pass played (`event.payload.pass`).
+- Real World Fantasy 2.2.0 in `Rulesets/rwf`: dice announced from the table, passes 1/2/3, ammunition, bursts, full-auto and reload, breathlessness counted on physical rounds and pursuits on foot, catching one's breath.
+
 ## 1.0.8
 
 - `game.ruleThemAll.chat.postActionCard(result, versionId, {speaker})`: another module that runs an Action with `runtime.executeAction` posts the same chat card as the sheet.
