@@ -1,5 +1,16 @@
 # Changelog
 
+## 1.0.6
+
+- An Actor made from an Actor Content (a creature dragged from its compendium) takes on its template: its values, states and Actions, and the Item Contents it grants, created as its Items.
+- A Content that grants other Contents creates them as Items of the Actor, with the fields the grant sets.
+- State rows of an Action can name their state by a Formula; an empty result skips the row.
+- Action inputs choosing a Definition say which ones they offer: those held, all, or those not held.
+- Distances and nearby counts take a default used when nothing can be measured (no scene, a token missing).
+- Critical hits double computed dice counts too: `(@input.level+2)d6` becomes `((@input.level+2)*2)d6`.
+- The generic sheet shows an Action a Content grants on that Content's Item instead of the Actor's buttons.
+- New ready-made Ruleset in `Rulesets/`: SRD 5.2 (5th edition, 2024 rules), in French.
+
 ## 1.0.5
 
 - Creation: a **Choices of the Contents** step asks, on its own screen, the choices of the Contents picked in earlier content steps (the skills a career gives). It is skipped when none of them has a choice.

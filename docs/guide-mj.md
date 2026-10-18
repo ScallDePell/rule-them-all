@@ -29,6 +29,8 @@ Les actions sur une version :
 - **Exporter** télécharge la version en JSON ; **Importer** (depuis la liste des Rulesets) la recharge dans un autre monde.
 - **Créer une nouvelle version** repart d'une version existante.
 
+Des Rulesets prêts à importer sont dans le dossier [Rulesets](../Rulesets/) du dépôt : [Real World Fantasy](../Rulesets/rwf/LISEZMOI.md) et [SRD 5.2](../Rulesets/srd-5.2/LISEZMOI.md) (5e édition, règles 2024). Une créature d'un Contenu de type Acteur, glissée depuis son compendium sur la scène ou dans les Acteurs, prend les valeurs, les actions et les objets de son modèle.
+
 ### Passer les Acteurs sur une nouvelle version
 
 Quand vous remplacez une version par une autre (par exemple en important RWF 1.3.0 à la place de 1.2.0) :
