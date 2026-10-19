@@ -1,5 +1,9 @@
 # Changelog
 
+## Unreleased
+
+- RWF Ruleset 2.5.0: a pursuit gauge is the gap of a fugitive with its pursuers (−3 caught, +3 got away); a pursuer's move (input "sens" −1) narrows its target's gauge. At 0 Endurance a character is exhausted: Incapacité physique, applied automatically, until a long rest.
+
 ## 1.0.20
 
 - A Foundry combat flagged `rule-them-all.singlePass` has a single pass per round whatever the Ruleset's passes (for a pursuit or another scene using the combat tracker).

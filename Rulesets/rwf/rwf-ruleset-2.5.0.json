@@ -3,7 +3,7 @@
  "format": "rta-ruleset",
  "formatVersion": 3,
  "rulesetId": "rwf",
- "version": "2.4.0",
+ "version": "2.5.0",
  "versionId": "rwf-2-4-0",
  "versionRecord": {
   "publishedSnapshot": {
@@ -911,7 +911,7 @@
      "acquisitions": [],
      "conditionRefs": [],
      "costEffectRefs": [],
-     "descriptionKey": "Test de poursuite avec ce véhicule (DD 13). À +3 on rattrape ou on s'échappe, à −3 on perd la cible ou on est rattrapé.",
+     "descriptionKey": "Test de poursuite avec ce véhicule (DD 13). Un fuyard creuse son écart, un poursuivant réduit celui de sa cible ; à −3 le fuyard est rattrapé, à +3 il a semé ses poursuivants.",
      "effectRefs": [
       "avancer-poursuite"
      ],
@@ -922,7 +922,7 @@
       {
        "defaultValue": 0,
        "id": "vitesse",
-       "labelKey": "Vitesse face à la cible de référence",
+       "labelKey": "Vitesse face au camp d'en face",
        "options": [
         {
          "labelKey": "Plus rapide (+1)",
@@ -938,6 +938,23 @@
         }
        ],
        "required": true,
+       "valueType": "integer"
+      },
+      {
+       "defaultValue": 1,
+       "id": "sens",
+       "labelKey": "Rôle dans la poursuite",
+       "options": [
+        {
+         "labelKey": "Fuyard : sur sa propre jauge",
+         "value": 1
+        },
+        {
+         "labelKey": "Poursuivant : sur la jauge de sa cible",
+         "value": -1
+        }
+       ],
+       "required": false,
        "valueType": "integer"
       },
       {
@@ -964,7 +981,7 @@
      "costEffectRefs": [
       "effort-poursuite"
      ],
-     "descriptionKey": "Test de poursuite en courant (DD 13). Impossible à Endurance 0. À +3 on rattrape ou on s'échappe, à −3 on perd la cible ou on est rattrapé.",
+     "descriptionKey": "Test de poursuite en courant (DD 13). Impossible à Endurance 0. Un fuyard creuse son écart, un poursuivant réduit celui de sa cible ; à −3 le fuyard est rattrapé, à +3 il a semé ses poursuivants.",
      "effectRefs": [],
      "enabled": true,
      "eventTypeRefs": [],
@@ -973,7 +990,7 @@
       {
        "defaultValue": 0,
        "id": "vitesse",
-       "labelKey": "Vitesse face à la cible de référence",
+       "labelKey": "Vitesse face au camp d'en face",
        "options": [
         {
          "labelKey": "Plus rapide (+1)",
@@ -992,6 +1009,23 @@
        "valueType": "integer"
       },
       {
+       "defaultValue": 1,
+       "id": "sens",
+       "labelKey": "Rôle dans la poursuite",
+       "options": [
+        {
+         "labelKey": "Fuyard : sur sa propre jauge",
+         "value": 1
+        },
+        {
+         "labelKey": "Poursuivant : sur la jauge de sa cible",
+         "value": -1
+        }
+       ],
+       "required": false,
+       "valueType": "integer"
+      },
+      {
        "id": "de",
        "labelKey": "d20 lancé sur la table (vide : dés de Foundry)",
        "required": false,
@@ -1004,7 +1038,8 @@
      "outcomeMappings": [
       {
        "actionRefs": [
-        "s-essouffler"
+        "s-essouffler",
+        "epuisement"
        ],
        "effectRefs": [
         "avancer-poursuite"
@@ -1013,7 +1048,8 @@
       },
       {
        "actionRefs": [
-        "s-essouffler"
+        "s-essouffler",
+        "epuisement"
        ],
        "effectRefs": [
         "avancer-poursuite"
@@ -1022,7 +1058,8 @@
       },
       {
        "actionRefs": [
-        "s-essouffler"
+        "s-essouffler",
+        "epuisement"
        ],
        "effectRefs": [
         "avancer-poursuite"
@@ -1031,7 +1068,8 @@
       },
       {
        "actionRefs": [
-        "s-essouffler"
+        "s-essouffler",
+        "epuisement"
        ],
        "effectRefs": [
         "avancer-poursuite"
@@ -1048,7 +1086,7 @@
      "acquisitions": [],
      "conditionRefs": [],
      "costEffectRefs": [],
-     "descriptionKey": "Test de poursuite avec ce véhicule (DD 13). À +3 on rattrape ou on s'échappe, à −3 on perd la cible ou on est rattrapé.",
+     "descriptionKey": "Test de poursuite avec ce véhicule (DD 13). Un fuyard creuse son écart, un poursuivant réduit celui de sa cible ; à −3 le fuyard est rattrapé, à +3 il a semé ses poursuivants.",
      "effectRefs": [
       "avancer-poursuite"
      ],
@@ -1059,7 +1097,7 @@
       {
        "defaultValue": 0,
        "id": "vitesse",
-       "labelKey": "Vitesse face à la cible de référence",
+       "labelKey": "Vitesse face au camp d'en face",
        "options": [
         {
          "labelKey": "Plus rapide (+1)",
@@ -1075,6 +1113,23 @@
         }
        ],
        "required": true,
+       "valueType": "integer"
+      },
+      {
+       "defaultValue": 1,
+       "id": "sens",
+       "labelKey": "Rôle dans la poursuite",
+       "options": [
+        {
+         "labelKey": "Fuyard : sur sa propre jauge",
+         "value": 1
+        },
+        {
+         "labelKey": "Poursuivant : sur la jauge de sa cible",
+         "value": -1
+        }
+       ],
+       "required": false,
        "valueType": "integer"
       },
       {
@@ -1101,7 +1156,7 @@
      "costEffectRefs": [
       "effort-poursuite"
      ],
-     "descriptionKey": "Test de poursuite en courant (DD 13). Impossible à Endurance 0. À +3 on rattrape ou on s'échappe, à −3 on perd la cible ou on est rattrapé.",
+     "descriptionKey": "Test de poursuite en courant (DD 13). Impossible à Endurance 0. Un fuyard creuse son écart, un poursuivant réduit celui de sa cible ; à −3 le fuyard est rattrapé, à +3 il a semé ses poursuivants.",
      "effectRefs": [],
      "enabled": true,
      "eventTypeRefs": [],
@@ -1110,7 +1165,7 @@
       {
        "defaultValue": 0,
        "id": "vitesse",
-       "labelKey": "Vitesse face à la cible de référence",
+       "labelKey": "Vitesse face au camp d'en face",
        "options": [
         {
          "labelKey": "Plus rapide (+1)",
@@ -1129,6 +1184,23 @@
        "valueType": "integer"
       },
       {
+       "defaultValue": 1,
+       "id": "sens",
+       "labelKey": "Rôle dans la poursuite",
+       "options": [
+        {
+         "labelKey": "Fuyard : sur sa propre jauge",
+         "value": 1
+        },
+        {
+         "labelKey": "Poursuivant : sur la jauge de sa cible",
+         "value": -1
+        }
+       ],
+       "required": false,
+       "valueType": "integer"
+      },
+      {
        "id": "de",
        "labelKey": "d20 lancé sur la table (vide : dés de Foundry)",
        "required": false,
@@ -1141,7 +1213,8 @@
      "outcomeMappings": [
       {
        "actionRefs": [
-        "s-essouffler"
+        "s-essouffler",
+        "epuisement"
        ],
        "effectRefs": [
         "avancer-poursuite"
@@ -1150,7 +1223,8 @@
       },
       {
        "actionRefs": [
-        "s-essouffler"
+        "s-essouffler",
+        "epuisement"
        ],
        "effectRefs": [
         "avancer-poursuite"
@@ -1159,7 +1233,8 @@
       },
       {
        "actionRefs": [
-        "s-essouffler"
+        "s-essouffler",
+        "epuisement"
        ],
        "effectRefs": [
         "avancer-poursuite"
@@ -1168,7 +1243,8 @@
       },
       {
        "actionRefs": [
-        "s-essouffler"
+        "s-essouffler",
+        "epuisement"
        ],
        "effectRefs": [
         "avancer-poursuite"
@@ -1185,7 +1261,7 @@
      "acquisitions": [],
      "conditionRefs": [],
      "costEffectRefs": [],
-     "descriptionKey": "Test de poursuite avec ce véhicule (DD 13). À +3 on rattrape ou on s'échappe, à −3 on perd la cible ou on est rattrapé.",
+     "descriptionKey": "Test de poursuite avec ce véhicule (DD 13). Un fuyard creuse son écart, un poursuivant réduit celui de sa cible ; à −3 le fuyard est rattrapé, à +3 il a semé ses poursuivants.",
      "effectRefs": [
       "avancer-poursuite"
      ],
@@ -1196,7 +1272,7 @@
       {
        "defaultValue": 0,
        "id": "vitesse",
-       "labelKey": "Vitesse face à la cible de référence",
+       "labelKey": "Vitesse face au camp d'en face",
        "options": [
         {
          "labelKey": "Plus rapide (+1)",
@@ -1212,6 +1288,23 @@
         }
        ],
        "required": true,
+       "valueType": "integer"
+      },
+      {
+       "defaultValue": 1,
+       "id": "sens",
+       "labelKey": "Rôle dans la poursuite",
+       "options": [
+        {
+         "labelKey": "Fuyard : sur sa propre jauge",
+         "value": 1
+        },
+        {
+         "labelKey": "Poursuivant : sur la jauge de sa cible",
+         "value": -1
+        }
+       ],
+       "required": false,
        "valueType": "integer"
       },
       {
@@ -1238,7 +1331,7 @@
      "costEffectRefs": [
       "effort-poursuite"
      ],
-     "descriptionKey": "Test de poursuite en courant (DD 13). Impossible à Endurance 0. À +3 on rattrape ou on s'échappe, à −3 on perd la cible ou on est rattrapé.",
+     "descriptionKey": "Test de poursuite en courant (DD 13). Impossible à Endurance 0. Un fuyard creuse son écart, un poursuivant réduit celui de sa cible ; à −3 le fuyard est rattrapé, à +3 il a semé ses poursuivants.",
      "effectRefs": [],
      "enabled": true,
      "eventTypeRefs": [],
@@ -1247,7 +1340,7 @@
       {
        "defaultValue": 0,
        "id": "vitesse",
-       "labelKey": "Vitesse face à la cible de référence",
+       "labelKey": "Vitesse face au camp d'en face",
        "options": [
         {
          "labelKey": "Plus rapide (+1)",
@@ -1266,6 +1359,23 @@
        "valueType": "integer"
       },
       {
+       "defaultValue": 1,
+       "id": "sens",
+       "labelKey": "Rôle dans la poursuite",
+       "options": [
+        {
+         "labelKey": "Fuyard : sur sa propre jauge",
+         "value": 1
+        },
+        {
+         "labelKey": "Poursuivant : sur la jauge de sa cible",
+         "value": -1
+        }
+       ],
+       "required": false,
+       "valueType": "integer"
+      },
+      {
        "id": "de",
        "labelKey": "d20 lancé sur la table (vide : dés de Foundry)",
        "required": false,
@@ -1278,7 +1388,8 @@
      "outcomeMappings": [
       {
        "actionRefs": [
-        "s-essouffler"
+        "s-essouffler",
+        "epuisement"
        ],
        "effectRefs": [
         "avancer-poursuite"
@@ -1287,7 +1398,8 @@
       },
       {
        "actionRefs": [
-        "s-essouffler"
+        "s-essouffler",
+        "epuisement"
        ],
        "effectRefs": [
         "avancer-poursuite"
@@ -1296,7 +1408,8 @@
       },
       {
        "actionRefs": [
-        "s-essouffler"
+        "s-essouffler",
+        "epuisement"
        ],
        "effectRefs": [
         "avancer-poursuite"
@@ -1305,7 +1418,8 @@
       },
       {
        "actionRefs": [
-        "s-essouffler"
+        "s-essouffler",
+        "epuisement"
        ],
        "effectRefs": [
         "avancer-poursuite"
@@ -1322,13 +1436,32 @@
      "acquisitions": [],
      "conditionRefs": [],
      "costEffectRefs": [],
-     "descriptionKey": "La jauge de poursuite perd 1.",
+     "descriptionKey": "Celui qui s'arrête perd 1 : l'écart du fuyard baisse, ou celui de la cible du poursuivant monte.",
      "effectRefs": [
       "arret-poursuite"
      ],
      "enabled": true,
      "eventTypeRefs": [],
      "id": "poursuite-arret",
+     "inputs": [
+      {
+       "defaultValue": 1,
+       "id": "sens",
+       "labelKey": "Rôle dans la poursuite",
+       "options": [
+        {
+         "labelKey": "Fuyard : sur sa propre jauge",
+         "value": 1
+        },
+        {
+         "labelKey": "Poursuivant : sur la jauge de sa cible",
+         "value": -1
+        }
+       ],
+       "required": false,
+       "valueType": "integer"
+      }
+     ],
      "modifierApplications": [],
      "nameKey": "Poursuite : s'arrêter",
      "order": 340,
@@ -1404,6 +1537,36 @@
     {
      "acquisitions": [],
      "conditionRefs": [
+      "endurance-epuisee"
+     ],
+     "costEffectRefs": [],
+     "descriptionKey": "Endurance à 0 : le personnage est en incapacité physique jusqu'à un long repos.",
+     "effectRefs": [],
+     "enabled": true,
+     "eventTypeRefs": [],
+     "id": "epuisement",
+     "modifierApplications": [],
+     "nameKey": "À bout de souffle",
+     "order": 380,
+     "outcomeMappings": [],
+     "stateApplications": [
+      {
+       "definitionId": "incapacite-physique",
+       "durationRef": "jusqu-au-retrait",
+       "modifierRefs": [],
+       "severity": null,
+       "stacking": "ignore",
+       "stacks": 1,
+       "targetRole": "self"
+      }
+     ],
+     "stateRemovals": [],
+     "tags": [],
+     "testRef": null
+    },
+    {
+     "acquisitions": [],
+     "conditionRefs": [
       "est-en-combat",
       "aucune-attaque-ce-round",
       "aucun-effort-ce-round"
@@ -1420,7 +1583,7 @@
      "id": "reprendre-son-souffle",
      "modifierApplications": [],
      "nameKey": "Reprendre son souffle",
-     "order": 380,
+     "order": 390,
      "outcomeMappings": [],
      "stateApplications": [],
      "stateRemovals": [],
@@ -1470,7 +1633,7 @@
      ],
      "modifierApplications": [],
      "nameKey": "Tirer une rafale",
-     "order": 390,
+     "order": 400,
      "outcomeMappings": [
       {
        "actionRefs": [
@@ -1548,7 +1711,7 @@
      ],
      "modifierApplications": [],
      "nameKey": "Tirer en full-auto",
-     "order": 400,
+     "order": 410,
      "outcomeMappings": [
       {
        "actionRefs": [
@@ -1605,7 +1768,7 @@
      "id": "recharger",
      "modifierApplications": [],
      "nameKey": "Recharger",
-     "order": 410,
+     "order": 420,
      "outcomeMappings": [],
      "stateApplications": [],
      "stateRemovals": [],
@@ -2245,6 +2408,31 @@
      "expression": {
       "left": {
        "reference": {
+        "capabilityId": "pool",
+        "objectId": "endurance",
+        "objectKind": "definition",
+        "outputId": "pool.current",
+        "slotId": "points"
+       },
+       "type": "reference"
+      },
+      "right": {
+       "type": "literal",
+       "value": 0
+      },
+      "type": "lte"
+     },
+     "id": "endurance-epuisee",
+     "nameKey": "Endurance à 0",
+     "order": 230,
+     "tags": []
+    },
+    {
+     "descriptionKey": "",
+     "enabled": true,
+     "expression": {
+      "left": {
+       "reference": {
         "capabilityId": "value",
         "objectId": "attaques-utilisees",
         "objectKind": "definition",
@@ -2260,7 +2448,7 @@
      },
      "id": "aucune-attaque-ce-round",
      "nameKey": "Aucune attaque ce round",
-     "order": 230,
+     "order": 240,
      "tags": []
     },
     {
@@ -2284,7 +2472,7 @@
      },
      "id": "aucun-effort-ce-round",
      "nameKey": "Aucun effort ce round",
-     "order": 240,
+     "order": 250,
      "tags": []
     },
     {
@@ -2307,7 +2495,7 @@
      },
      "id": "munitions-pour-un-tir",
      "nameKey": "Munitions chargées",
-     "order": 250,
+     "order": 260,
      "tags": []
     },
     {
@@ -2330,7 +2518,7 @@
      },
      "id": "arme-automatique",
      "nameKey": "Arme automatique",
-     "order": 260,
+     "order": 270,
      "tags": []
     },
     {
@@ -2353,7 +2541,7 @@
      },
      "id": "munitions-pour-une-rafale",
      "nameKey": "Munitions pour une rafale",
-     "order": 270,
+     "order": 280,
      "tags": []
     },
     {
@@ -2380,7 +2568,7 @@
      },
      "id": "chargeur-incomplet",
      "nameKey": "Chargeur incomplet",
-     "order": 280,
+     "order": 290,
      "tags": []
     },
     {
@@ -2403,7 +2591,7 @@
      },
      "id": "reserve-disponible",
      "nameKey": "Réserve disponible",
-     "order": 290,
+     "order": 300,
      "tags": []
     },
     {
@@ -2422,7 +2610,7 @@
      },
      "id": "option-age-compatible",
      "nameKey": "Accessible à cet âge",
-     "order": 300,
+     "order": 310,
      "tags": []
     },
     {
@@ -2441,7 +2629,7 @@
      },
      "id": "permis-accessible",
      "nameKey": "19 ans ou plus",
-     "order": 310,
+     "order": 320,
      "tags": []
     }
    ],
@@ -70620,7 +70808,7 @@
      ],
      "data": {},
      "definitionTypeId": "poursuite",
-     "descriptionKey": "De −3 à +3. Continuer, prendre un risque ou un raccourci la fait avancer selon le résultat (+2 critique, +1 réussite, −1 échec, −2 complication) et l'avantage de vitesse ; s'arrêter retire 1.",
+     "descriptionKey": "Écart d'un fuyard avec ceux qui le poursuivent, de −3 (rattrapé) à +3 (semé). Les manœuvres du fuyard le creusent, celles de ses poursuivants le réduisent, selon le résultat (2 critique, 1 réussite, −1 échec, −2 complication) et l'avantage de vitesse ; s'arrêter fait perdre 1 à celui qui s'arrête.",
      "enabled": true,
      "id": "progression-poursuite",
      "key": "progression-poursuite",
@@ -71416,7 +71604,7 @@
      "targetRole": "self"
     },
     {
-     "descriptionKey": "",
+     "descriptionKey": "Sur la jauge du fuyard : la sienne, ou celle de la cible d'un poursuivant.",
      "enabled": true,
      "id": "avancer-poursuite",
      "nameKey": "Avancée dans la poursuite",
@@ -71433,16 +71621,16 @@
       "objectKind": "definition",
       "outputId": "value.base"
      },
-     "targetRole": "self"
+     "targetRole": "target"
     },
     {
-     "descriptionKey": "",
+     "descriptionKey": "Celui qui s'arrête perd 1 : le fuyard voit son écart réduit, le poursuivant laisse sa cible gagner 1.",
      "enabled": true,
      "id": "arret-poursuite",
      "nameKey": "S'arrêter",
      "operand": {
-      "kind": "literal",
-      "value": 1
+      "id": "sens-de-poursuite",
+      "kind": "formula"
      },
      "operation": "subtract",
      "order": 160,
@@ -71453,7 +71641,7 @@
       "objectKind": "definition",
       "outputId": "value.base"
      },
-     "targetRole": "self"
+     "targetRole": "target"
     },
     {
      "descriptionKey": "",
@@ -73428,44 +73616,84 @@
      "tags": []
     },
     {
-     "descriptionKey": "Avantage de vitesse + 2 critique, +1 réussite, −1 échec, −2 complication.",
+     "descriptionKey": "1 pour un fuyard (il creuse l'écart), −1 pour un poursuivant (il réduit l'écart de sa cible).",
+     "enabled": true,
+     "expression": {
+      "condition": {
+       "left": {
+        "path": "variables.input.sens",
+        "type": "context"
+       },
+       "right": {
+        "type": "literal",
+        "value": -1
+       },
+       "type": "eq"
+      },
+      "else": {
+       "type": "literal",
+       "value": 1
+      },
+      "then": {
+       "type": "literal",
+       "value": -1
+      },
+      "type": "if"
+     },
+     "id": "sens-de-poursuite",
+     "nameKey": "Sens de la poursuite",
+     "order": 450,
+     "resultType": "number",
+     "tags": []
+    },
+    {
+     "descriptionKey": "Avantage de vitesse + 2 critique, +1 réussite, −1 échec, −2 complication ; vers +3 pour un fuyard, vers −3 sur la jauge de sa cible pour un poursuivant.",
      "enabled": true,
      "expression": {
       "args": [
        {
-        "path": "variables.input.vitesse",
-        "type": "context"
-       },
-       {
-        "ranges": [
+        "args": [
          {
-          "max": 0,
-          "value": -2
+          "path": "variables.input.vitesse",
+          "type": "context"
          },
          {
-          "max": 1,
-          "value": -1
-         },
-         {
-          "max": 2,
-          "value": 1
-         },
-         {
-          "value": 2
+          "ranges": [
+           {
+            "max": 0,
+            "value": -2
+           },
+           {
+            "max": 1,
+            "value": -1
+           },
+           {
+            "max": 2,
+            "value": 1
+           },
+           {
+            "value": 2
+           }
+          ],
+          "type": "rangeLookup",
+          "value": {
+           "id": "rang-resultat",
+           "type": "formula"
+          }
          }
         ],
-        "type": "rangeLookup",
-        "value": {
-         "id": "rang-resultat",
-         "type": "formula"
-        }
+        "type": "add"
+       },
+       {
+        "id": "sens-de-poursuite",
+        "type": "formula"
        }
       ],
-      "type": "add"
+      "type": "multiply"
      },
      "id": "delta-poursuite",
      "nameKey": "Avancée dans la poursuite",
-     "order": 450,
+     "order": 460,
      "resultType": "number",
      "tags": []
     },
@@ -73532,7 +73760,7 @@
      },
      "id": "rang-resultat",
      "nameKey": "Rang du résultat",
-     "order": 460,
+     "order": 470,
      "resultType": "number",
      "tags": []
     },
@@ -73580,7 +73808,7 @@
      },
      "id": "bonus-poursuite-vehicule-continuer",
      "nameKey": "Poursuite en véhicule : Continuer",
-     "order": 470,
+     "order": 480,
      "resultType": "number",
      "tags": []
     },
@@ -73629,7 +73857,7 @@
      },
      "id": "bonus-poursuite-a-pied-continuer",
      "nameKey": "Poursuite à pied : Continuer",
-     "order": 480,
+     "order": 490,
      "resultType": "number",
      "tags": []
     },
@@ -73677,7 +73905,7 @@
      },
      "id": "bonus-poursuite-vehicule-raccourci",
      "nameKey": "Poursuite en véhicule : Raccourci",
-     "order": 490,
+     "order": 500,
      "resultType": "number",
      "tags": []
     },
@@ -73726,7 +73954,7 @@
      },
      "id": "bonus-poursuite-a-pied-raccourci",
      "nameKey": "Poursuite à pied : Raccourci",
-     "order": 500,
+     "order": 510,
      "resultType": "number",
      "tags": []
     },
@@ -73783,7 +74011,7 @@
      },
      "id": "bonus-poursuite-vehicule-risque",
      "nameKey": "Poursuite en véhicule : Prise de risque",
-     "order": 510,
+     "order": 520,
      "resultType": "number",
      "tags": []
     },
@@ -73841,7 +74069,7 @@
      },
      "id": "bonus-poursuite-a-pied-risque",
      "nameKey": "Poursuite à pied : Prise de risque",
-     "order": 520,
+     "order": 530,
      "resultType": "number",
      "tags": []
     },
@@ -73854,7 +74082,7 @@
      },
      "id": "dd-de-poursuite",
      "nameKey": "DD de poursuite",
-     "order": 530,
+     "order": 540,
      "resultType": "number",
      "tags": []
     },
@@ -73867,7 +74095,7 @@
      },
      "id": "passe-du-tour",
      "nameKey": "Passe du tour",
-     "order": 540,
+     "order": 550,
      "resultType": "number",
      "tags": []
     },
@@ -73916,7 +74144,7 @@
      },
      "id": "effort-de-l-arme",
      "nameKey": "Effort de l'attaque",
-     "order": 550,
+     "order": 560,
      "resultType": "number",
      "tags": []
     },
@@ -73929,7 +74157,7 @@
      },
      "id": "round-annonce",
      "nameKey": "Round annoncé",
-     "order": 560,
+     "order": 570,
      "resultType": "number",
      "tags": []
     },
@@ -73960,7 +74188,7 @@
      },
      "id": "quart-endurance",
      "nameKey": "Quart de l'Endurance maximale",
-     "order": 570,
+     "order": 580,
      "resultType": "number",
      "tags": []
     },
@@ -73995,7 +74223,7 @@
      },
      "id": "munitions-par-tir",
      "nameKey": "Munitions d'un tir",
-     "order": 580,
+     "order": 590,
      "resultType": "number",
      "tags": []
     },
@@ -74087,7 +74315,7 @@
      },
      "id": "munitions-full-auto",
      "nameKey": "Munitions d'une rafale full-auto",
-     "order": 590,
+     "order": 600,
      "resultType": "number",
      "tags": []
     },
@@ -74130,7 +74358,7 @@
      },
      "id": "munitions-a-charger",
      "nameKey": "Munitions à charger",
-     "order": 600,
+     "order": 610,
      "resultType": "number",
      "tags": []
     },
@@ -74143,7 +74371,7 @@
      },
      "id": "munitions-chargees",
      "nameKey": "Munitions prises dans la réserve",
-     "order": 610,
+     "order": 620,
      "resultType": "number",
      "tags": []
     },
@@ -74165,7 +74393,7 @@
      },
      "id": "bonus-attaque-rafale",
      "nameKey": "Bonus d'une rafale",
-     "order": 620,
+     "order": 630,
      "resultType": "number",
      "tags": []
     },
@@ -74189,7 +74417,7 @@
      },
      "id": "multiplicateur-apprentissage",
      "nameKey": "Multiplicateur d'apprentissage",
-     "order": 630,
+     "order": 640,
      "resultType": "number",
      "tags": []
     },
@@ -74295,7 +74523,7 @@
      },
      "id": "cout-pratique",
      "nameKey": "Pratique pour le niveau suivant",
-     "order": 640,
+     "order": 650,
      "resultType": "number",
      "tags": []
     },
@@ -74308,7 +74536,7 @@
      },
      "id": "creation-backgrounds",
      "nameKey": "Backgrounds de la tranche d'âge",
-     "order": 650,
+     "order": 660,
      "resultType": "number",
      "tags": []
     },
@@ -74321,7 +74549,7 @@
      },
      "id": "creation-evenements-minimum",
      "nameKey": "Événements minimum de la tranche d'âge",
-     "order": 660,
+     "order": 670,
      "resultType": "number",
      "tags": []
     },
@@ -74334,7 +74562,7 @@
      },
      "id": "creation-evenements-maximum",
      "nameKey": "Événements maximum de la tranche d'âge",
-     "order": 670,
+     "order": 680,
      "resultType": "number",
      "tags": []
     },
@@ -74347,7 +74575,7 @@
      },
      "id": "creation-points-caracteristiques",
      "nameKey": "Points de caractéristiques de la tranche d'âge",
-     "order": 680,
+     "order": 690,
      "resultType": "number",
      "tags": []
     },
@@ -74360,7 +74588,7 @@
      },
      "id": "creation-points-competences",
      "nameKey": "Points de compétences de la tranche d'âge",
-     "order": 690,
+     "order": 700,
      "resultType": "number",
      "tags": []
     },
@@ -74382,7 +74610,7 @@
      },
      "id": "creation-plafond-caracteristique",
      "nameKey": "Points par caractéristique",
-     "order": 700,
+     "order": 710,
      "resultType": "number",
      "tags": []
     }
@@ -74789,7 +75017,7 @@
      "valueType": "integer"
     },
     {
-     "descriptionKey": "À +3 le poursuivant rattrape (ou le fuyard s'échappe) ; à −3 il perd la cible (ou le fuyard est rattrapé).",
+     "descriptionKey": "La jauge d'écart d'un fuyard va de −borne (rattrapé) à +borne (il a semé ses poursuivants).",
      "enabled": true,
      "id": "poursuite-borne",
      "nameKey": "Borne de la jauge de poursuite",
@@ -79027,7 +79255,8 @@
     {
      "actionRefs": [
       "bilan-effort",
-      "s-essouffler"
+      "s-essouffler",
+      "epuisement"
      ],
      "conditionRefs": [
       "round-pas-encore-compte"
@@ -79086,11 +79315,11 @@
      "tags": []
     }
    ],
-   "version": "2.4.0"
+   "version": "2.5.0"
   },
   "rulesetId": "rwf",
   "status": "ready",
-  "version": "2.4.0",
+  "version": "2.5.0",
   "versionId": "rwf-2-4-0",
   "workingDraft": {
    "actions": [
@@ -79997,7 +80226,7 @@
      "acquisitions": [],
      "conditionRefs": [],
      "costEffectRefs": [],
-     "descriptionKey": "Test de poursuite avec ce véhicule (DD 13). À +3 on rattrape ou on s'échappe, à −3 on perd la cible ou on est rattrapé.",
+     "descriptionKey": "Test de poursuite avec ce véhicule (DD 13). Un fuyard creuse son écart, un poursuivant réduit celui de sa cible ; à −3 le fuyard est rattrapé, à +3 il a semé ses poursuivants.",
      "effectRefs": [
       "avancer-poursuite"
      ],
@@ -80008,7 +80237,7 @@
       {
        "defaultValue": 0,
        "id": "vitesse",
-       "labelKey": "Vitesse face à la cible de référence",
+       "labelKey": "Vitesse face au camp d'en face",
        "options": [
         {
          "labelKey": "Plus rapide (+1)",
@@ -80024,6 +80253,23 @@
         }
        ],
        "required": true,
+       "valueType": "integer"
+      },
+      {
+       "defaultValue": 1,
+       "id": "sens",
+       "labelKey": "Rôle dans la poursuite",
+       "options": [
+        {
+         "labelKey": "Fuyard : sur sa propre jauge",
+         "value": 1
+        },
+        {
+         "labelKey": "Poursuivant : sur la jauge de sa cible",
+         "value": -1
+        }
+       ],
+       "required": false,
        "valueType": "integer"
       },
       {
@@ -80050,7 +80296,7 @@
      "costEffectRefs": [
       "effort-poursuite"
      ],
-     "descriptionKey": "Test de poursuite en courant (DD 13). Impossible à Endurance 0. À +3 on rattrape ou on s'échappe, à −3 on perd la cible ou on est rattrapé.",
+     "descriptionKey": "Test de poursuite en courant (DD 13). Impossible à Endurance 0. Un fuyard creuse son écart, un poursuivant réduit celui de sa cible ; à −3 le fuyard est rattrapé, à +3 il a semé ses poursuivants.",
      "effectRefs": [],
      "enabled": true,
      "eventTypeRefs": [],
@@ -80059,7 +80305,7 @@
       {
        "defaultValue": 0,
        "id": "vitesse",
-       "labelKey": "Vitesse face à la cible de référence",
+       "labelKey": "Vitesse face au camp d'en face",
        "options": [
         {
          "labelKey": "Plus rapide (+1)",
@@ -80078,6 +80324,23 @@
        "valueType": "integer"
       },
       {
+       "defaultValue": 1,
+       "id": "sens",
+       "labelKey": "Rôle dans la poursuite",
+       "options": [
+        {
+         "labelKey": "Fuyard : sur sa propre jauge",
+         "value": 1
+        },
+        {
+         "labelKey": "Poursuivant : sur la jauge de sa cible",
+         "value": -1
+        }
+       ],
+       "required": false,
+       "valueType": "integer"
+      },
+      {
        "id": "de",
        "labelKey": "d20 lancé sur la table (vide : dés de Foundry)",
        "required": false,
@@ -80090,7 +80353,8 @@
      "outcomeMappings": [
       {
        "actionRefs": [
-        "s-essouffler"
+        "s-essouffler",
+        "epuisement"
        ],
        "effectRefs": [
         "avancer-poursuite"
@@ -80099,7 +80363,8 @@
       },
       {
        "actionRefs": [
-        "s-essouffler"
+        "s-essouffler",
+        "epuisement"
        ],
        "effectRefs": [
         "avancer-poursuite"
@@ -80108,7 +80373,8 @@
       },
       {
        "actionRefs": [
-        "s-essouffler"
+        "s-essouffler",
+        "epuisement"
        ],
        "effectRefs": [
         "avancer-poursuite"
@@ -80117,7 +80383,8 @@
       },
       {
        "actionRefs": [
-        "s-essouffler"
+        "s-essouffler",
+        "epuisement"
        ],
        "effectRefs": [
         "avancer-poursuite"
@@ -80134,7 +80401,7 @@
      "acquisitions": [],
      "conditionRefs": [],
      "costEffectRefs": [],
-     "descriptionKey": "Test de poursuite avec ce véhicule (DD 13). À +3 on rattrape ou on s'échappe, à −3 on perd la cible ou on est rattrapé.",
+     "descriptionKey": "Test de poursuite avec ce véhicule (DD 13). Un fuyard creuse son écart, un poursuivant réduit celui de sa cible ; à −3 le fuyard est rattrapé, à +3 il a semé ses poursuivants.",
      "effectRefs": [
       "avancer-poursuite"
      ],
@@ -80145,7 +80412,7 @@
       {
        "defaultValue": 0,
        "id": "vitesse",
-       "labelKey": "Vitesse face à la cible de référence",
+       "labelKey": "Vitesse face au camp d'en face",
        "options": [
         {
          "labelKey": "Plus rapide (+1)",
@@ -80161,6 +80428,23 @@
         }
        ],
        "required": true,
+       "valueType": "integer"
+      },
+      {
+       "defaultValue": 1,
+       "id": "sens",
+       "labelKey": "Rôle dans la poursuite",
+       "options": [
+        {
+         "labelKey": "Fuyard : sur sa propre jauge",
+         "value": 1
+        },
+        {
+         "labelKey": "Poursuivant : sur la jauge de sa cible",
+         "value": -1
+        }
+       ],
+       "required": false,
        "valueType": "integer"
       },
       {
@@ -80187,7 +80471,7 @@
      "costEffectRefs": [
       "effort-poursuite"
      ],
-     "descriptionKey": "Test de poursuite en courant (DD 13). Impossible à Endurance 0. À +3 on rattrape ou on s'échappe, à −3 on perd la cible ou on est rattrapé.",
+     "descriptionKey": "Test de poursuite en courant (DD 13). Impossible à Endurance 0. Un fuyard creuse son écart, un poursuivant réduit celui de sa cible ; à −3 le fuyard est rattrapé, à +3 il a semé ses poursuivants.",
      "effectRefs": [],
      "enabled": true,
      "eventTypeRefs": [],
@@ -80196,7 +80480,7 @@
       {
        "defaultValue": 0,
        "id": "vitesse",
-       "labelKey": "Vitesse face à la cible de référence",
+       "labelKey": "Vitesse face au camp d'en face",
        "options": [
         {
          "labelKey": "Plus rapide (+1)",
@@ -80215,6 +80499,23 @@
        "valueType": "integer"
       },
       {
+       "defaultValue": 1,
+       "id": "sens",
+       "labelKey": "Rôle dans la poursuite",
+       "options": [
+        {
+         "labelKey": "Fuyard : sur sa propre jauge",
+         "value": 1
+        },
+        {
+         "labelKey": "Poursuivant : sur la jauge de sa cible",
+         "value": -1
+        }
+       ],
+       "required": false,
+       "valueType": "integer"
+      },
+      {
        "id": "de",
        "labelKey": "d20 lancé sur la table (vide : dés de Foundry)",
        "required": false,
@@ -80227,7 +80528,8 @@
      "outcomeMappings": [
       {
        "actionRefs": [
-        "s-essouffler"
+        "s-essouffler",
+        "epuisement"
        ],
        "effectRefs": [
         "avancer-poursuite"
@@ -80236,7 +80538,8 @@
       },
       {
        "actionRefs": [
-        "s-essouffler"
+        "s-essouffler",
+        "epuisement"
        ],
        "effectRefs": [
         "avancer-poursuite"
@@ -80245,7 +80548,8 @@
       },
       {
        "actionRefs": [
-        "s-essouffler"
+        "s-essouffler",
+        "epuisement"
        ],
        "effectRefs": [
         "avancer-poursuite"
@@ -80254,7 +80558,8 @@
       },
       {
        "actionRefs": [
-        "s-essouffler"
+        "s-essouffler",
+        "epuisement"
        ],
        "effectRefs": [
         "avancer-poursuite"
@@ -80271,7 +80576,7 @@
      "acquisitions": [],
      "conditionRefs": [],
      "costEffectRefs": [],
-     "descriptionKey": "Test de poursuite avec ce véhicule (DD 13). À +3 on rattrape ou on s'échappe, à −3 on perd la cible ou on est rattrapé.",
+     "descriptionKey": "Test de poursuite avec ce véhicule (DD 13). Un fuyard creuse son écart, un poursuivant réduit celui de sa cible ; à −3 le fuyard est rattrapé, à +3 il a semé ses poursuivants.",
      "effectRefs": [
       "avancer-poursuite"
      ],
@@ -80282,7 +80587,7 @@
       {
        "defaultValue": 0,
        "id": "vitesse",
-       "labelKey": "Vitesse face à la cible de référence",
+       "labelKey": "Vitesse face au camp d'en face",
        "options": [
         {
          "labelKey": "Plus rapide (+1)",
@@ -80298,6 +80603,23 @@
         }
        ],
        "required": true,
+       "valueType": "integer"
+      },
+      {
+       "defaultValue": 1,
+       "id": "sens",
+       "labelKey": "Rôle dans la poursuite",
+       "options": [
+        {
+         "labelKey": "Fuyard : sur sa propre jauge",
+         "value": 1
+        },
+        {
+         "labelKey": "Poursuivant : sur la jauge de sa cible",
+         "value": -1
+        }
+       ],
+       "required": false,
        "valueType": "integer"
       },
       {
@@ -80324,7 +80646,7 @@
      "costEffectRefs": [
       "effort-poursuite"
      ],
-     "descriptionKey": "Test de poursuite en courant (DD 13). Impossible à Endurance 0. À +3 on rattrape ou on s'échappe, à −3 on perd la cible ou on est rattrapé.",
+     "descriptionKey": "Test de poursuite en courant (DD 13). Impossible à Endurance 0. Un fuyard creuse son écart, un poursuivant réduit celui de sa cible ; à −3 le fuyard est rattrapé, à +3 il a semé ses poursuivants.",
      "effectRefs": [],
      "enabled": true,
      "eventTypeRefs": [],
@@ -80333,7 +80655,7 @@
       {
        "defaultValue": 0,
        "id": "vitesse",
-       "labelKey": "Vitesse face à la cible de référence",
+       "labelKey": "Vitesse face au camp d'en face",
        "options": [
         {
          "labelKey": "Plus rapide (+1)",
@@ -80352,6 +80674,23 @@
        "valueType": "integer"
       },
       {
+       "defaultValue": 1,
+       "id": "sens",
+       "labelKey": "Rôle dans la poursuite",
+       "options": [
+        {
+         "labelKey": "Fuyard : sur sa propre jauge",
+         "value": 1
+        },
+        {
+         "labelKey": "Poursuivant : sur la jauge de sa cible",
+         "value": -1
+        }
+       ],
+       "required": false,
+       "valueType": "integer"
+      },
+      {
        "id": "de",
        "labelKey": "d20 lancé sur la table (vide : dés de Foundry)",
        "required": false,
@@ -80364,7 +80703,8 @@
      "outcomeMappings": [
       {
        "actionRefs": [
-        "s-essouffler"
+        "s-essouffler",
+        "epuisement"
        ],
        "effectRefs": [
         "avancer-poursuite"
@@ -80373,7 +80713,8 @@
       },
       {
        "actionRefs": [
-        "s-essouffler"
+        "s-essouffler",
+        "epuisement"
        ],
        "effectRefs": [
         "avancer-poursuite"
@@ -80382,7 +80723,8 @@
       },
       {
        "actionRefs": [
-        "s-essouffler"
+        "s-essouffler",
+        "epuisement"
        ],
        "effectRefs": [
         "avancer-poursuite"
@@ -80391,7 +80733,8 @@
       },
       {
        "actionRefs": [
-        "s-essouffler"
+        "s-essouffler",
+        "epuisement"
        ],
        "effectRefs": [
         "avancer-poursuite"
@@ -80408,13 +80751,32 @@
      "acquisitions": [],
      "conditionRefs": [],
      "costEffectRefs": [],
-     "descriptionKey": "La jauge de poursuite perd 1.",
+     "descriptionKey": "Celui qui s'arrête perd 1 : l'écart du fuyard baisse, ou celui de la cible du poursuivant monte.",
      "effectRefs": [
       "arret-poursuite"
      ],
      "enabled": true,
      "eventTypeRefs": [],
      "id": "poursuite-arret",
+     "inputs": [
+      {
+       "defaultValue": 1,
+       "id": "sens",
+       "labelKey": "Rôle dans la poursuite",
+       "options": [
+        {
+         "labelKey": "Fuyard : sur sa propre jauge",
+         "value": 1
+        },
+        {
+         "labelKey": "Poursuivant : sur la jauge de sa cible",
+         "value": -1
+        }
+       ],
+       "required": false,
+       "valueType": "integer"
+      }
+     ],
      "modifierApplications": [],
      "nameKey": "Poursuite : s'arrêter",
      "order": 340,
@@ -80490,6 +80852,36 @@
     {
      "acquisitions": [],
      "conditionRefs": [
+      "endurance-epuisee"
+     ],
+     "costEffectRefs": [],
+     "descriptionKey": "Endurance à 0 : le personnage est en incapacité physique jusqu'à un long repos.",
+     "effectRefs": [],
+     "enabled": true,
+     "eventTypeRefs": [],
+     "id": "epuisement",
+     "modifierApplications": [],
+     "nameKey": "À bout de souffle",
+     "order": 380,
+     "outcomeMappings": [],
+     "stateApplications": [
+      {
+       "definitionId": "incapacite-physique",
+       "durationRef": "jusqu-au-retrait",
+       "modifierRefs": [],
+       "severity": null,
+       "stacking": "ignore",
+       "stacks": 1,
+       "targetRole": "self"
+      }
+     ],
+     "stateRemovals": [],
+     "tags": [],
+     "testRef": null
+    },
+    {
+     "acquisitions": [],
+     "conditionRefs": [
       "est-en-combat",
       "aucune-attaque-ce-round",
       "aucun-effort-ce-round"
@@ -80506,7 +80898,7 @@
      "id": "reprendre-son-souffle",
      "modifierApplications": [],
      "nameKey": "Reprendre son souffle",
-     "order": 380,
+     "order": 390,
      "outcomeMappings": [],
      "stateApplications": [],
      "stateRemovals": [],
@@ -80556,7 +80948,7 @@
      ],
      "modifierApplications": [],
      "nameKey": "Tirer une rafale",
-     "order": 390,
+     "order": 400,
      "outcomeMappings": [
       {
        "actionRefs": [
@@ -80634,7 +81026,7 @@
      ],
      "modifierApplications": [],
      "nameKey": "Tirer en full-auto",
-     "order": 400,
+     "order": 410,
      "outcomeMappings": [
       {
        "actionRefs": [
@@ -80691,7 +81083,7 @@
      "id": "recharger",
      "modifierApplications": [],
      "nameKey": "Recharger",
-     "order": 410,
+     "order": 420,
      "outcomeMappings": [],
      "stateApplications": [],
      "stateRemovals": [],
@@ -81331,6 +81723,31 @@
      "expression": {
       "left": {
        "reference": {
+        "capabilityId": "pool",
+        "objectId": "endurance",
+        "objectKind": "definition",
+        "outputId": "pool.current",
+        "slotId": "points"
+       },
+       "type": "reference"
+      },
+      "right": {
+       "type": "literal",
+       "value": 0
+      },
+      "type": "lte"
+     },
+     "id": "endurance-epuisee",
+     "nameKey": "Endurance à 0",
+     "order": 230,
+     "tags": []
+    },
+    {
+     "descriptionKey": "",
+     "enabled": true,
+     "expression": {
+      "left": {
+       "reference": {
         "capabilityId": "value",
         "objectId": "attaques-utilisees",
         "objectKind": "definition",
@@ -81346,7 +81763,7 @@
      },
      "id": "aucune-attaque-ce-round",
      "nameKey": "Aucune attaque ce round",
-     "order": 230,
+     "order": 240,
      "tags": []
     },
     {
@@ -81370,7 +81787,7 @@
      },
      "id": "aucun-effort-ce-round",
      "nameKey": "Aucun effort ce round",
-     "order": 240,
+     "order": 250,
      "tags": []
     },
     {
@@ -81393,7 +81810,7 @@
      },
      "id": "munitions-pour-un-tir",
      "nameKey": "Munitions chargées",
-     "order": 250,
+     "order": 260,
      "tags": []
     },
     {
@@ -81416,7 +81833,7 @@
      },
      "id": "arme-automatique",
      "nameKey": "Arme automatique",
-     "order": 260,
+     "order": 270,
      "tags": []
     },
     {
@@ -81439,7 +81856,7 @@
      },
      "id": "munitions-pour-une-rafale",
      "nameKey": "Munitions pour une rafale",
-     "order": 270,
+     "order": 280,
      "tags": []
     },
     {
@@ -81466,7 +81883,7 @@
      },
      "id": "chargeur-incomplet",
      "nameKey": "Chargeur incomplet",
-     "order": 280,
+     "order": 290,
      "tags": []
     },
     {
@@ -81489,7 +81906,7 @@
      },
      "id": "reserve-disponible",
      "nameKey": "Réserve disponible",
-     "order": 290,
+     "order": 300,
      "tags": []
     },
     {
@@ -81508,7 +81925,7 @@
      },
      "id": "option-age-compatible",
      "nameKey": "Accessible à cet âge",
-     "order": 300,
+     "order": 310,
      "tags": []
     },
     {
@@ -81527,7 +81944,7 @@
      },
      "id": "permis-accessible",
      "nameKey": "19 ans ou plus",
-     "order": 310,
+     "order": 320,
      "tags": []
     }
    ],
@@ -149706,7 +150123,7 @@
      ],
      "data": {},
      "definitionTypeId": "poursuite",
-     "descriptionKey": "De −3 à +3. Continuer, prendre un risque ou un raccourci la fait avancer selon le résultat (+2 critique, +1 réussite, −1 échec, −2 complication) et l'avantage de vitesse ; s'arrêter retire 1.",
+     "descriptionKey": "Écart d'un fuyard avec ceux qui le poursuivent, de −3 (rattrapé) à +3 (semé). Les manœuvres du fuyard le creusent, celles de ses poursuivants le réduisent, selon le résultat (2 critique, 1 réussite, −1 échec, −2 complication) et l'avantage de vitesse ; s'arrêter fait perdre 1 à celui qui s'arrête.",
      "enabled": true,
      "id": "progression-poursuite",
      "key": "progression-poursuite",
@@ -150502,7 +150919,7 @@
      "targetRole": "self"
     },
     {
-     "descriptionKey": "",
+     "descriptionKey": "Sur la jauge du fuyard : la sienne, ou celle de la cible d'un poursuivant.",
      "enabled": true,
      "id": "avancer-poursuite",
      "nameKey": "Avancée dans la poursuite",
@@ -150519,16 +150936,16 @@
       "objectKind": "definition",
       "outputId": "value.base"
      },
-     "targetRole": "self"
+     "targetRole": "target"
     },
     {
-     "descriptionKey": "",
+     "descriptionKey": "Celui qui s'arrête perd 1 : le fuyard voit son écart réduit, le poursuivant laisse sa cible gagner 1.",
      "enabled": true,
      "id": "arret-poursuite",
      "nameKey": "S'arrêter",
      "operand": {
-      "kind": "literal",
-      "value": 1
+      "id": "sens-de-poursuite",
+      "kind": "formula"
      },
      "operation": "subtract",
      "order": 160,
@@ -150539,7 +150956,7 @@
       "objectKind": "definition",
       "outputId": "value.base"
      },
-     "targetRole": "self"
+     "targetRole": "target"
     },
     {
      "descriptionKey": "",
@@ -152514,44 +152931,84 @@
      "tags": []
     },
     {
-     "descriptionKey": "Avantage de vitesse + 2 critique, +1 réussite, −1 échec, −2 complication.",
+     "descriptionKey": "1 pour un fuyard (il creuse l'écart), −1 pour un poursuivant (il réduit l'écart de sa cible).",
+     "enabled": true,
+     "expression": {
+      "condition": {
+       "left": {
+        "path": "variables.input.sens",
+        "type": "context"
+       },
+       "right": {
+        "type": "literal",
+        "value": -1
+       },
+       "type": "eq"
+      },
+      "else": {
+       "type": "literal",
+       "value": 1
+      },
+      "then": {
+       "type": "literal",
+       "value": -1
+      },
+      "type": "if"
+     },
+     "id": "sens-de-poursuite",
+     "nameKey": "Sens de la poursuite",
+     "order": 450,
+     "resultType": "number",
+     "tags": []
+    },
+    {
+     "descriptionKey": "Avantage de vitesse + 2 critique, +1 réussite, −1 échec, −2 complication ; vers +3 pour un fuyard, vers −3 sur la jauge de sa cible pour un poursuivant.",
      "enabled": true,
      "expression": {
       "args": [
        {
-        "path": "variables.input.vitesse",
-        "type": "context"
-       },
-       {
-        "ranges": [
+        "args": [
          {
-          "max": 0,
-          "value": -2
+          "path": "variables.input.vitesse",
+          "type": "context"
          },
          {
-          "max": 1,
-          "value": -1
-         },
-         {
-          "max": 2,
-          "value": 1
-         },
-         {
-          "value": 2
+          "ranges": [
+           {
+            "max": 0,
+            "value": -2
+           },
+           {
+            "max": 1,
+            "value": -1
+           },
+           {
+            "max": 2,
+            "value": 1
+           },
+           {
+            "value": 2
+           }
+          ],
+          "type": "rangeLookup",
+          "value": {
+           "id": "rang-resultat",
+           "type": "formula"
+          }
          }
         ],
-        "type": "rangeLookup",
-        "value": {
-         "id": "rang-resultat",
-         "type": "formula"
-        }
+        "type": "add"
+       },
+       {
+        "id": "sens-de-poursuite",
+        "type": "formula"
        }
       ],
-      "type": "add"
+      "type": "multiply"
      },
      "id": "delta-poursuite",
      "nameKey": "Avancée dans la poursuite",
-     "order": 450,
+     "order": 460,
      "resultType": "number",
      "tags": []
     },
@@ -152618,7 +153075,7 @@
      },
      "id": "rang-resultat",
      "nameKey": "Rang du résultat",
-     "order": 460,
+     "order": 470,
      "resultType": "number",
      "tags": []
     },
@@ -152666,7 +153123,7 @@
      },
      "id": "bonus-poursuite-vehicule-continuer",
      "nameKey": "Poursuite en véhicule : Continuer",
-     "order": 470,
+     "order": 480,
      "resultType": "number",
      "tags": []
     },
@@ -152715,7 +153172,7 @@
      },
      "id": "bonus-poursuite-a-pied-continuer",
      "nameKey": "Poursuite à pied : Continuer",
-     "order": 480,
+     "order": 490,
      "resultType": "number",
      "tags": []
     },
@@ -152763,7 +153220,7 @@
      },
      "id": "bonus-poursuite-vehicule-raccourci",
      "nameKey": "Poursuite en véhicule : Raccourci",
-     "order": 490,
+     "order": 500,
      "resultType": "number",
      "tags": []
     },
@@ -152812,7 +153269,7 @@
      },
      "id": "bonus-poursuite-a-pied-raccourci",
      "nameKey": "Poursuite à pied : Raccourci",
-     "order": 500,
+     "order": 510,
      "resultType": "number",
      "tags": []
     },
@@ -152869,7 +153326,7 @@
      },
      "id": "bonus-poursuite-vehicule-risque",
      "nameKey": "Poursuite en véhicule : Prise de risque",
-     "order": 510,
+     "order": 520,
      "resultType": "number",
      "tags": []
     },
@@ -152927,7 +153384,7 @@
      },
      "id": "bonus-poursuite-a-pied-risque",
      "nameKey": "Poursuite à pied : Prise de risque",
-     "order": 520,
+     "order": 530,
      "resultType": "number",
      "tags": []
     },
@@ -152940,7 +153397,7 @@
      },
      "id": "dd-de-poursuite",
      "nameKey": "DD de poursuite",
-     "order": 530,
+     "order": 540,
      "resultType": "number",
      "tags": []
     },
@@ -152953,7 +153410,7 @@
      },
      "id": "passe-du-tour",
      "nameKey": "Passe du tour",
-     "order": 540,
+     "order": 550,
      "resultType": "number",
      "tags": []
     },
@@ -153002,7 +153459,7 @@
      },
      "id": "effort-de-l-arme",
      "nameKey": "Effort de l'attaque",
-     "order": 550,
+     "order": 560,
      "resultType": "number",
      "tags": []
     },
@@ -153015,7 +153472,7 @@
      },
      "id": "round-annonce",
      "nameKey": "Round annoncé",
-     "order": 560,
+     "order": 570,
      "resultType": "number",
      "tags": []
     },
@@ -153046,7 +153503,7 @@
      },
      "id": "quart-endurance",
      "nameKey": "Quart de l'Endurance maximale",
-     "order": 570,
+     "order": 580,
      "resultType": "number",
      "tags": []
     },
@@ -153081,7 +153538,7 @@
      },
      "id": "munitions-par-tir",
      "nameKey": "Munitions d'un tir",
-     "order": 580,
+     "order": 590,
      "resultType": "number",
      "tags": []
     },
@@ -153173,7 +153630,7 @@
      },
      "id": "munitions-full-auto",
      "nameKey": "Munitions d'une rafale full-auto",
-     "order": 590,
+     "order": 600,
      "resultType": "number",
      "tags": []
     },
@@ -153216,7 +153673,7 @@
      },
      "id": "munitions-a-charger",
      "nameKey": "Munitions à charger",
-     "order": 600,
+     "order": 610,
      "resultType": "number",
      "tags": []
     },
@@ -153229,7 +153686,7 @@
      },
      "id": "munitions-chargees",
      "nameKey": "Munitions prises dans la réserve",
-     "order": 610,
+     "order": 620,
      "resultType": "number",
      "tags": []
     },
@@ -153251,7 +153708,7 @@
      },
      "id": "bonus-attaque-rafale",
      "nameKey": "Bonus d'une rafale",
-     "order": 620,
+     "order": 630,
      "resultType": "number",
      "tags": []
     },
@@ -153275,7 +153732,7 @@
      },
      "id": "multiplicateur-apprentissage",
      "nameKey": "Multiplicateur d'apprentissage",
-     "order": 630,
+     "order": 640,
      "resultType": "number",
      "tags": []
     },
@@ -153381,7 +153838,7 @@
      },
      "id": "cout-pratique",
      "nameKey": "Pratique pour le niveau suivant",
-     "order": 640,
+     "order": 650,
      "resultType": "number",
      "tags": []
     },
@@ -153394,7 +153851,7 @@
      },
      "id": "creation-backgrounds",
      "nameKey": "Backgrounds de la tranche d'âge",
-     "order": 650,
+     "order": 660,
      "resultType": "number",
      "tags": []
     },
@@ -153407,7 +153864,7 @@
      },
      "id": "creation-evenements-minimum",
      "nameKey": "Événements minimum de la tranche d'âge",
-     "order": 660,
+     "order": 670,
      "resultType": "number",
      "tags": []
     },
@@ -153420,7 +153877,7 @@
      },
      "id": "creation-evenements-maximum",
      "nameKey": "Événements maximum de la tranche d'âge",
-     "order": 670,
+     "order": 680,
      "resultType": "number",
      "tags": []
     },
@@ -153433,7 +153890,7 @@
      },
      "id": "creation-points-caracteristiques",
      "nameKey": "Points de caractéristiques de la tranche d'âge",
-     "order": 680,
+     "order": 690,
      "resultType": "number",
      "tags": []
     },
@@ -153446,7 +153903,7 @@
      },
      "id": "creation-points-competences",
      "nameKey": "Points de compétences de la tranche d'âge",
-     "order": 690,
+     "order": 700,
      "resultType": "number",
      "tags": []
     },
@@ -153468,7 +153925,7 @@
      },
      "id": "creation-plafond-caracteristique",
      "nameKey": "Points par caractéristique",
-     "order": 700,
+     "order": 710,
      "resultType": "number",
      "tags": []
     }
@@ -153875,7 +154332,7 @@
      "valueType": "integer"
     },
     {
-     "descriptionKey": "À +3 le poursuivant rattrape (ou le fuyard s'échappe) ; à −3 il perd la cible (ou le fuyard est rattrapé).",
+     "descriptionKey": "La jauge d'écart d'un fuyard va de −borne (rattrapé) à +borne (il a semé ses poursuivants).",
      "enabled": true,
      "id": "poursuite-borne",
      "nameKey": "Borne de la jauge de poursuite",
@@ -158113,7 +158570,8 @@
     {
      "actionRefs": [
       "bilan-effort",
-      "s-essouffler"
+      "s-essouffler",
+      "epuisement"
      ],
      "conditionRefs": [
       "round-pas-encore-compte"
@@ -158172,7 +158630,7 @@
      "tags": []
     }
    ],
-   "version": "2.4.0"
+   "version": "2.5.0"
   }
  }
 }

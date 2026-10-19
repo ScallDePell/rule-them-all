@@ -48,7 +48,7 @@ The documentation is in French for now:
 
 Ready-made Rulesets, kept out of the module zip. Download the `.json` file and import it from the Configurator with **Import**.
 
-- [Real World Fantasy 2.4.0](Rulesets/rwf/) ([rwf-ruleset-2.4.0.json](Rulesets/rwf/rwf-ruleset-2.4.0.json)): contemporary fantasy, d20 + characteristic + skill. Character creation, combat, practice-based progression, pursuits, powers and 461 contents. Notes in French.
+- [Real World Fantasy 2.4.0](Rulesets/rwf/) ([rwf-ruleset-2.5.0.json](Rulesets/rwf/rwf-ruleset-2.5.0.json)): contemporary fantasy, d20 + characteristic + skill. Character creation, combat, practice-based progression, pursuits, powers and 461 contents. Notes in French.
 - [SRD 5.2 1.0.0](Rulesets/srd-5.2/) ([srd-5.2-ruleset-1.0.0.json](Rulesets/srd-5.2/srd-5.2-ruleset-1.0.0.json)): the 5th edition 2024 rules of the System Reference Document 5.2 (CC-BY-4.0). Abilities, d20 tests, conditions, combat, death saves, spellcasting and 339 spells, 12 classes to level 20 with multiclassing, species, backgrounds, feats, equipment, magic items and 341 monsters. No character sheet. Texts and notes in French.
 
 ## Development

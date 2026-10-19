@@ -13,7 +13,7 @@ const {RWF_DEFAULT_AGE_GROUPS, RWF_DEFAULT_BACKGROUNDS} = await imp(`${sysDir}/m
 const {RWF_BASE_PROFESSIONS} = await imp(`${sysDir}/module/professions.mjs`);
 const pack = name => JSON.parse(readFileSync(`${packDir}/${name}`, "utf8"));
 
-const R = {id: "rwf", nameKey: "Real World Fantasy", descriptionKey: "Jeu de rôle contemporain fantastique : notre monde, plus les Fantaisies que le MJ rend vraies. Règles extraites du système RWF v0.1.475, contenus du RWF Super Pack v0.4.1.", version: "2.4.0", color: "#2f6f8f",
+const R = {id: "rwf", nameKey: "Real World Fantasy", descriptionKey: "Jeu de rôle contemporain fantastique : notre monde, plus les Fantaisies que le MJ rend vraies. Règles extraites du système RWF v0.1.475, contenus du RWF Super Pack v0.4.1.", version: "2.5.0", color: "#2f6f8f",
   // COMBAT-01: 1d20 + Agilité + Esprit, rerolled every round; ties go to Agilité, then Esprit.
   // COMBAT-02: the round is played in passes 1, 2, 3; a combatant acts in as many passes as its best mastery gives attacks.
   // At 0 Vitality a character is out of the fight: defeated in Foundry's combat tracker (2.4.0).
@@ -65,7 +65,7 @@ P("protection-maximum", "Protection maximale", 10);
 P("pj-caracteristique-minimum", "Caractéristique minimale d'un PJ", 1); P("pj-caracteristique-maximum", "Caractéristique maximale d'un PJ", 5); P("pj-competence-maximum", "Compétence ou maîtrise maximale d'un PJ", 5);
 P("seuil-pratique-1", "Pratique : 0 vers 1", 5); P("seuil-pratique-2", "Pratique : 1 vers 2", 10); P("seuil-pratique-3", "Pratique : 2 vers 3", 20); P("seuil-pratique-4", "Pratique : 3 vers 4", 40); P("seuil-pratique-5", "Pratique : 4 vers 5", 80);
 P("pratique-reussite", "Pratique gagnée sur une réussite", 1); P("pratique-critique", "Pratique gagnée sur un critique", 2);
-P("poursuite-borne", "Borne de la jauge de poursuite", 3, "À +3 le poursuivant rattrape (ou le fuyard s'échappe) ; à −3 il perd la cible (ou le fuyard est rattrapé).");
+P("poursuite-borne", "Borne de la jauge de poursuite", 3, "La jauge d'écart d'un fuyard va de −borne (rattrapé) à +borne (il a semé ses poursuivants).");
 P("dd-poursuite", "DD d'un test de poursuite", 13); P("bonus-raccourci", "Bonus d'un raccourci", 2); P("malus-risque", "Malus d'une prise de risque", 2);
 P("maniabilite-a-pied", "Maniabilité de la course à pied", 2, "Profil natif Course à pied (OBJ-05).");
 // E09 (2.2.0): running on the vehicles' speed scale (−2 to 5), so that a pursuit compares a runner with a vehicle; a bike is 0.
@@ -142,7 +142,7 @@ D("derniere-passe-attaque", "compteur", "Dernière passe utilisée", {}, {descri
 D("round-en-cours", "compteur", "Round compté", {}, {descriptionKey: "Le round du combat dont le personnage a déjà fait le bilan (attaques remises à zéro, effort compté) ; 0 hors combat. Un même round n'est jamais compté deux fois."});
 D("effort-physique", "compteur", "Effort physique ce round", {}, {descriptionKey: "1 quand le personnage a attaqué au contact ou sprinté ce round."});
 D("efforts-physiques", "compteur", "Efforts physiques comptés", {}, {descriptionKey: "Rounds physiques en combat et actions de poursuite à pied ; au troisième, 1 Endurance est perdue (END-03)."});
-D("progression-poursuite", "poursuite", "Progression de poursuite", {}, {descriptionKey: "De −3 à +3. Continuer, prendre un risque ou un raccourci la fait avancer selon le résultat (+2 critique, +1 réussite, −1 échec, −2 complication) et l'avantage de vitesse ; s'arrêter retire 1."});
+D("progression-poursuite", "poursuite", "Progression de poursuite", {}, {descriptionKey: "Écart d'un fuyard avec ceux qui le poursuivent, de −3 (rattrapé) à +3 (semé). Les manœuvres du fuyard le creusent, celles de ses poursuivants le réduisent, selon le résultat (2 critique, 1 réussite, −1 échec, −2 complication) et l'avantage de vitesse ; s'arrêter fait perdre 1 à celui qui s'arrête."});
 // PROG-01: every skill and mastery has its own practice; Course à pied gives its practice to Athlétisme (PROG-03).
 const PRACTISED = [...SKILLS.map(([, id]) => id), ...COMBAT.map(([, id]) => id), ...MOVES.map(([, id]) => id).filter(id => id !== "course-a-pied")];
 for (const id of PRACTISED) {
@@ -362,7 +362,10 @@ Object.assign(C.actions.find(a => a.id === "attaquer-mains-nues"), {inputs: [COV
 
 // POUR-02/03: pursuit tests at DD 13 with the means' attribute and mastery, its handling and the move's bonus;
 // the gauge moves by the outcome and the speed advantage the GM announces.
-F("delta-poursuite", "Avancée dans la poursuite", sum(ctx("variables.input.vitesse"), {type: "rangeLookup", value: {type: "formula", id: "rang-resultat"}, ranges: [{max: 0, value: -2}, {max: 1, value: -1}, {max: 2, value: 1}, {value: 2}]}), "integer", "Avantage de vitesse + 2 critique, +1 réussite, −1 échec, −2 complication.");
+// 2.5.0: one gauge per fugitive, the gap with its pursuers. A fugitive's move widens its own gap, a pursuer's move
+// narrows its target's: the input "sens" is 1 for a fugitive (the default), −1 for a pursuer.
+F("sens-de-poursuite", "Sens de la poursuite", iff(cmp("eq", ctx("variables.input.sens"), lit(-1)), lit(-1), lit(1)), "integer", "1 pour un fuyard (il creuse l'écart), −1 pour un poursuivant (il réduit l'écart de sa cible).");
+F("delta-poursuite", "Avancée dans la poursuite", {type: "multiply", args: [sum(ctx("variables.input.vitesse"), {type: "rangeLookup", value: {type: "formula", id: "rang-resultat"}, ranges: [{max: 0, value: -2}, {max: 1, value: -1}, {max: 2, value: 1}, {value: 2}]}), {type: "formula", id: "sens-de-poursuite"}]}, "integer", "Avantage de vitesse + 2 critique, +1 réussite, −1 échec, −2 complication ; vers +3 pour un fuyard, vers −3 sur la jauge de sa cible pour un poursuivant.");
 F("rang-resultat", "Rang du résultat", iff(cmp("eq", ctx("variables.test.outcome.resultKey"), lit("complication")), lit(0), iff(cmp("eq", ctx("variables.test.outcome.resultKey"), lit("echec")), lit(1), iff(cmp("eq", ctx("variables.test.outcome.resultKey"), lit("reussite")), lit(2), lit(3)))), "integer", "0 complication, 1 échec, 2 réussite, 3 critique.");
 const moveBonus = {continuer: lit(0), raccourci: par("bonus-raccourci"), risque: {type: "subtract", args: [lit(0), par("malus-risque")]}};
 const MOVES_LABEL = {continuer: "Continuer", risque: "Prise de risque", raccourci: "Raccourci"};
@@ -373,15 +376,16 @@ for (const [move, bonus] of Object.entries(moveBonus)) {
   for (const means of ["vehicule", "a-pied"]) add("tests", generic({id: `poursuite-${means}-${move}`, nameKey: `Poursuite ${means === "a-pied" ? "à pied" : "en véhicule"} : ${MOVES_LABEL[move]}`, rollRef: "d20", inputBindings: [], bonusFormulaRef: `bonus-poursuite-${means}-${move}`, totalFormulaRef: null, targetFormulaRef: "dd-de-poursuite", targetValue: null, marginFormulaRef: null, ...OUTCOMES}));
 }
 F("dd-de-poursuite", "DD de poursuite", par("dd-poursuite"), "integer");
-E("avancer-poursuite", "Avancée dans la poursuite", base("progression-poursuite"), "add", {kind: "formula", id: "delta-poursuite"}, "self");
-E("arret-poursuite", "S'arrêter", base("progression-poursuite"), "subtract", {kind: "literal", value: 1}, "self");
+E("avancer-poursuite", "Avancée dans la poursuite", base("progression-poursuite"), "add", {kind: "formula", id: "delta-poursuite"}, "target", "Sur la jauge du fuyard : la sienne, ou celle de la cible d'un poursuivant.");
+E("arret-poursuite", "S'arrêter", base("progression-poursuite"), "subtract", {kind: "formula", id: "sens-de-poursuite"}, "target", "Celui qui s'arrête perd 1 : le fuyard voit son écart réduit, le poursuivant laisse sa cible gagner 1.");
 E("remise-poursuite", "Nouvelle poursuite", base("progression-poursuite"), "set", {kind: "literal", value: 0}, "self");
-const SPEED_ASKED = {id: "vitesse", labelKey: "Vitesse face à la cible de référence", valueType: "integer", required: true, defaultValue: 0, options: [{value: 1, labelKey: "Plus rapide (+1)"}, {value: 0, labelKey: "Aussi rapide (0)"}, {value: -1, labelKey: "Moins rapide (−1)"}]};
+const SENS_ASKED = {id: "sens", labelKey: "Rôle dans la poursuite", valueType: "integer", required: false, defaultValue: 1, options: [{value: 1, labelKey: "Fuyard : sur sa propre jauge"}, {value: -1, labelKey: "Poursuivant : sur la jauge de sa cible"}]};
+const SPEED_ASKED = {id: "vitesse", labelKey: "Vitesse face au camp d'en face", valueType: "integer", required: true, defaultValue: 0, options: [{value: 1, labelKey: "Plus rapide (+1)"}, {value: 0, labelKey: "Aussi rapide (0)"}, {value: -1, labelKey: "Moins rapide (−1)"}]};
 for (const move of Object.keys(moveBonus)) {
-  A(`poursuite-vehicule-${move}`, `Poursuite : ${MOVES_LABEL[move]}`, {descriptionKey: "Test de poursuite avec ce véhicule (DD 13). À +3 on rattrape ou on s'échappe, à −3 on perd la cible ou on est rattrapé.", inputs: [SPEED_ASKED], testRef: `poursuite-vehicule-${move}`, effectRefs: ["avancer-poursuite"]});
-  A(`poursuite-a-pied-${move}`, `Poursuite à pied : ${MOVES_LABEL[move]}`, {descriptionKey: "Test de poursuite en courant (DD 13). Impossible à Endurance 0. À +3 on rattrape ou on s'échappe, à −3 on perd la cible ou on est rattrapé.", inputs: [SPEED_ASKED], conditionRefs: ["endurance-disponible"], testRef: `poursuite-a-pied-${move}`, effectRefs: ["avancer-poursuite"]});
+  A(`poursuite-vehicule-${move}`, `Poursuite : ${MOVES_LABEL[move]}`, {descriptionKey: "Test de poursuite avec ce véhicule (DD 13). Un fuyard creuse son écart, un poursuivant réduit celui de sa cible ; à −3 le fuyard est rattrapé, à +3 il a semé ses poursuivants.", inputs: [SPEED_ASKED, SENS_ASKED], testRef: `poursuite-vehicule-${move}`, effectRefs: ["avancer-poursuite"]});
+  A(`poursuite-a-pied-${move}`, `Poursuite à pied : ${MOVES_LABEL[move]}`, {descriptionKey: "Test de poursuite en courant (DD 13). Impossible à Endurance 0. Un fuyard creuse son écart, un poursuivant réduit celui de sa cible ; à −3 le fuyard est rattrapé, à +3 il a semé ses poursuivants.", inputs: [SPEED_ASKED, SENS_ASKED], conditionRefs: ["endurance-disponible"], testRef: `poursuite-a-pied-${move}`, effectRefs: ["avancer-poursuite"]});
 }
-A("poursuite-arret", "Poursuite : s'arrêter", {descriptionKey: "La jauge de poursuite perd 1.", effectRefs: ["arret-poursuite"]});
+A("poursuite-arret", "Poursuite : s'arrêter", {descriptionKey: "Celui qui s'arrête perd 1 : l'écart du fuyard baisse, ou celui de la cible du poursuivant monte.", inputs: [SENS_ASKED], effectRefs: ["arret-poursuite"]});
 A("poursuite-nouvelle", "Nouvelle poursuite", {descriptionKey: "Remet la jauge de poursuite à 0.", effectRefs: ["remise-poursuite"]});
 
 /* ---------- Combat and pursuit HUD rules (RWF 2.2.0) ---------- */
@@ -432,7 +436,12 @@ action("attaquer-mains-nues").conditionRefs.push("attaque-de-la-passe-disponible
 // POUR-04: each move of a pursuit on foot is a physical effort.
 E("effort-poursuite", "Effort de la poursuite à pied", base("efforts-physiques"), "add", {kind: "literal", value: 1}, "self");
 const ALL_OUTCOMES = ["reussite-critique", "complication", "reussite", "echec"];
-for (const move of Object.keys(moveBonus)) Object.assign(action(`poursuite-a-pied-${move}`), {costEffectRefs: ["effort-poursuite"], effectRefs: [], outcomeMappings: ALL_OUTCOMES.map(outcomeId => ({outcomeId, effectRefs: ["avancer-poursuite"], actionRefs: ["s-essouffler"]}))});
+for (const move of Object.keys(moveBonus)) Object.assign(action(`poursuite-a-pied-${move}`), {costEffectRefs: ["effort-poursuite"], effectRefs: [], outcomeMappings: ALL_OUTCOMES.map(outcomeId => ({outcomeId, effectRefs: ["avancer-poursuite"], actionRefs: ["s-essouffler", "epuisement"]}))});
+// 2.5.0: at 0 Endurance a character is exhausted: Incapacité physique, until a long rest (it can no longer run, sprint
+// nor fight physically). Applied again it changes nothing (stacking "ignore").
+K("endurance-epuisee", "Endurance à 0", {type: "lte", left: ref(pool("endurance")), right: lit(0)});
+A("epuisement", "À bout de souffle", {descriptionKey: "Endurance à 0 : le personnage est en incapacité physique jusqu'à un long repos.", conditionRefs: ["endurance-epuisee"], stateApplications: [stateApply("incapacite-physique", "self")]});
+C.triggers.find(t => t.id === "fin-de-round-physique").actionRefs.push("epuisement");
 // END-04: a round without action nor movement gives back a quarter of the maximum Endurance.
 F("quart-endurance", "Quart de l'Endurance maximale", {type: "ceil", value: {type: "divide", args: [ref(pool("endurance", "pool.maximum")), lit(4)]}}, "integer");
 E("souffle-repris", "Souffle repris", pool("endurance"), "add", {kind: "formula", id: "quart-endurance"}, "self", "+¼ de l'Endurance maximale (arrondi au supérieur).");
@@ -703,7 +712,7 @@ const list = (id, typeId, children, columns = 1) => ({id: `liste-${id}`, kind: "
 const gauge = (id, label, style, write = {operation: "adjust"}) => ({id: `jauge-${id}`, kind: "value", labelKey: label, source: {kind: "output", reference: pool(id)}, display: "gauge", write, style: {label: "top", ...style}});
 const gmActions = ["mettre-hors-de-combat", "etat-stabilise", "etat-coma", "etat-mort", "infliger-blessure", "infliger-blessure-grave"];
 // Actions run by the rules themselves (rounds, practice) or from a Content (a vehicle's pursuit) are not sheet buttons.
-const ruleOnly = ["test-demande", "nouveau-round", "debut-de-tour", "bilan-effort", "tirer-rafale", "tirer-full-auto", "recharger", "entrer-en-combat", "sortir-du-combat", "pratique-test", "pratique-arme", "pratique-mains-nues", "s-essouffler", "recuperer", ...Object.keys(moveBonus).map(move => `poursuite-vehicule-${move}`)];
+const ruleOnly = ["test-demande", "epuisement", "nouveau-round", "debut-de-tour", "bilan-effort", "tirer-rafale", "tirer-full-auto", "recharger", "entrer-en-combat", "sortir-du-combat", "pratique-test", "pratique-arme", "pratique-mains-nues", "s-essouffler", "recuperer", ...Object.keys(moveBonus).map(move => `poursuite-vehicule-${move}`)];
 const actionIds = C.actions.map(a => a.id).filter(id => !ruleOnly.includes(id));
 add("sheetDefinitions", generic({id: "feuille-pj", nameKey: "Feuille de PJ", descriptionKey: "Personnage, compétences, équipement et actions. La Vitalité exacte n'est visible que du joueur et du MJ ; les observateurs lisent l'état de santé.", target: "actor", contentTypeIds: [], root: {id: "root", kind: "grid", columns: 1, children: [{id: "onglets", kind: "tabs", children: [
   {id: "onglet-personnage", kind: "tab", labelKey: "Personnage", children: [
@@ -753,7 +762,7 @@ if (!draft.valid) { console.error(draft.errors.map(e=>`${e.code} ${e.path}: ${e.
 await api.publishRuleset(versionId);
 const exported = api.exportRuleset(versionId);
 mkdirSync(outDir, {recursive: true});
-writeFileSync(`${outDir}/rwf-ruleset-2.4.0.json`, JSON.stringify(exported, null, 1));
+writeFileSync(`${outDir}/rwf-ruleset-2.5.0.json`, JSON.stringify(exported, null, 1));
 const counts = Object.fromEntries(Object.entries(C).map(([k, v]) => [k, v.length]).filter(([, n]) => n));
 writeFileSync(`${outDir}/build-report.json`, JSON.stringify({counts, warnings: draft.warnings?.length ?? 0, fixes: report.fixes}, null, 1));
 console.log(JSON.stringify({counts, warnings: draft.warnings?.slice?.(0, 10)}, null, 1));

@@ -277,22 +277,32 @@ assert.equal(await runtime.evaluateCondition(v, "est-en-combat", self), false);
 log("combat : initiative relancée chaque round, 1 / 2 / 3 attaques selon la maîtrise, pratique et blessure au critique");
 
 // 9. Pursuit: DD 13, gauge from −3 to +3.
+// A fugitive acts on its own gauge: it is its own target (as a sheet or the HUD gives it).
+const runner = {roles: {self: actor.uuid, target: actor.uuid}};
 const gauge = async () => (await runtime.getContainerState(actor.uuid)).definitionStates["progression-poursuite"].capabilityStates.value.base;
 await runtime.executeAction(v, "poursuite-nouvelle", self);
-nextNatural = 10; used = await runtime.executeAction(v, "poursuite-a-pied-continuer", {...self, variables: {input: {vitesse: 1}}});
+nextNatural = 10; used = await runtime.executeAction(v, "poursuite-a-pied-continuer", {...runner, variables: {input: {vitesse: 1}}});
 assert.equal(used.testResult.bonus, 3 + 1 + 2 - 0, "Agilité + Course à pied + maniabilité 2");
 assert.equal(await gauge(), 2, "réussite +1, plus rapide +1");
-nextNatural = 20; await runtime.executeAction(v, "poursuite-a-pied-raccourci", {...self, variables: {input: {vitesse: 1}}});
+nextNatural = 20; await runtime.executeAction(v, "poursuite-a-pied-raccourci", {...runner, variables: {input: {vitesse: 1}}});
 assert.equal(await gauge(), 3, "bornée à +3");
-nextNatural = 1; await runtime.executeAction(v, "poursuite-a-pied-risque", {...self, variables: {input: {vitesse: 0}}});
+nextNatural = 1; await runtime.executeAction(v, "poursuite-a-pied-risque", {...runner, variables: {input: {vitesse: 0}}});
 assert.equal(await gauge(), 1);
-await runtime.executeAction(v, "poursuite-arret", self);
+await runtime.executeAction(v, "poursuite-arret", runner);
 assert.equal(await gauge(), 0);
+// 2.5.0: a pursuer's move works on its target's gauge, the other way.
+const chaser = {roles: {self: foe.uuid, target: actor.uuid}};
+nextNatural = 10; used = await runtime.executeAction(v, "poursuite-a-pied-continuer", {...chaser, variables: {input: {vitesse: 1, sens: -1}}});
+assert.notEqual(used.allowed, false);
+assert.equal(await gauge(), -2, "le poursuivant réduit l'écart de sa cible : réussite 1, plus rapide 1");
+await runtime.executeAction(v, "poursuite-arret", {...chaser, variables: {input: {sens: -1}}});
+assert.equal(await gauge(), -1, "le poursuivant qui s'arrête laisse 1 à sa cible");
+await runtime.executeAction(v, "poursuite-nouvelle", self);
 await bridge.acquireTemplate(v, actor.uuid, "vehicule-citadine", {sourceItemId: "auto"});
-nextNatural = 10; used = await bridge.executeAcquiredAction(v, actor.uuid, "poursuite-vehicule-raccourci", {...self, variables: {input: {vitesse: -1}}}, {contentKey: "auto"});
+nextNatural = 10; used = await bridge.executeAcquiredAction(v, actor.uuid, "poursuite-vehicule-raccourci", {...runner, variables: {input: {vitesse: -1}}}, {contentKey: "auto"});
 const car = api.getRuleset(v).contentTemplates.find(t => t.id === "vehicule-citadine").data;
 assert.equal(used.testResult.bonus, 3 + 1 + car.maniabilite + 2, "Agilité + Véhicules légers + maniabilité + raccourci");
-log(`poursuite : DD 13, jauge −3 à +3, raccourci +2, risque −2, véhicule (bonus ${used.testResult.bonus})`);
+log(`poursuite : DD 13, jauge d'écart −3 à +3 du fuyard, réduite par son poursuivant, raccourci +2, risque −2, véhicule (bonus ${used.testResult.bonus})`);
 
 // 11. Combat and pursuit HUD rules (2.2.0): passes, ammunition, bursts, reload, dice from the table, physical effort.
 assert.deepEqual(api.getRuleset(v).initiative.passes, {countFormulaRef: "attaques-meilleure"});
@@ -379,11 +389,20 @@ log("round de repos : +¼ de l'Endurance maximale, plus d'attaque ce round");
 
 // Each move of a pursuit on foot is a physical effort.
 await runtime.executeAction(v, "long-repos", self);
-for (const n of [1, 2, 3]) { nextNatural = 10; await runtime.executeAction(v, "poursuite-a-pied-continuer", {...self, variables: {input: {vitesse: 0}}}); }
+for (const n of [1, 2, 3]) { nextNatural = 10; await runtime.executeAction(v, "poursuite-a-pied-continuer", {...runner, variables: {input: {vitesse: 0}}}); }
 assert.deepEqual([await endurance(), await valueOf("efforts-physiques")], [9, 0]);
-nextNatural = 10; await bridge.executeAcquiredAction(v, actor.uuid, "poursuite-vehicule-continuer", {...self, variables: {input: {vitesse: 0}}}, {contentKey: "auto"});
+nextNatural = 10; await bridge.executeAcquiredAction(v, actor.uuid, "poursuite-vehicule-continuer", {...runner, variables: {input: {vitesse: 0}}}, {contentKey: "auto"});
 assert.equal(await valueOf("efforts-physiques"), 0, "en véhicule, pas d'effort");
-log("poursuite à pied : la troisième action essouffle (−1 Endurance), pas en véhicule");
+// 2.5.0: at 0 Endurance, Incapacité physique: no more running, until a long rest.
+const incapable = async () => Boolean((await runtime.getContainerState(actor.uuid)).stateInstances?.some(i => i.definitionId === "incapacite-physique" && i.active !== false));
+await runtime.setDefinitionState(v, actor.uuid, "endurance", {pools: {points: 1}});
+await runtime.setDefinitionState(v, actor.uuid, "efforts-physiques", {base: 2});
+nextNatural = 10; await runtime.executeAction(v, "poursuite-a-pied-continuer", {...runner, variables: {input: {vitesse: 0}}});
+assert.deepEqual([await endurance(), await incapable()], [0, true], "à bout de souffle");
+nextNatural = 10; assert.equal((await runtime.executeAction(v, "poursuite-a-pied-continuer", {...runner, variables: {input: {vitesse: 0}}})).allowed, false, "plus de course à Endurance 0");
+await runtime.executeAction(v, "long-repos", self);
+assert.equal(await incapable(), false, "le long repos y met fin");
+log("poursuite à pied : la troisième action essouffle (−1 Endurance), pas en véhicule ; à 0 d'Endurance, incapacité physique");
 
 
 // 12. Observable states (2.3.0): one description Scale per characteristic, skill, mastery and resource, shown on the sheet.
