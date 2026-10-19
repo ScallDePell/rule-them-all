@@ -2,6 +2,7 @@
 
 ## Unreleased
 
+- RWF Ruleset 2.6.0: in a pursuit each character keeps its own share of the gap; a pursuer's gap with its target is the sum of both shares (−3 caught, +3 the pursuer lost it). A pursuer's move changes only its own gap; a fugitive's move moves it away from all its pursuers.
 - RWF Ruleset 2.5.0: a pursuit gauge is the gap of a fugitive with its pursuers (−3 caught, +3 got away); a pursuer's move (input "sens" −1) narrows its target's gauge. At 0 Endurance a character is exhausted: Incapacité physique, applied automatically, until a long rest.
 
 ## 1.0.20

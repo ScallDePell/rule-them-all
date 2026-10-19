@@ -6,7 +6,7 @@ import {COLLECTION_FIELDS, copyJSON, createRulesetData} from "../src/configurato
 import {assertValidRuleset} from "../src/configurator/configurator-validation.mjs";
 import {DependencyIndex} from "../src/configurator/dependency-index.mjs";
 
-const rwf = JSON.parse(fs.readFileSync(new URL("../Rulesets/rwf/rwf-ruleset-2.5.0.json", import.meta.url))).versionRecord.workingDraft;
+const rwf = JSON.parse(fs.readFileSync(new URL("../Rulesets/rwf/rwf-ruleset-2.6.0.json", import.meta.url))).versionRecord.workingDraft;
 const empty = () => createRulesetData({id: "autre", nameKey: "Autre", version: "1.0.0"});
 const ids = part => Object.values(part.entries).flat().map(entry => entry.id);
 const pcSheet = rwf.sheetDefinitions[0];

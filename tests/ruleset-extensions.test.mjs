@@ -6,7 +6,7 @@ import {exportRulesetPart, readRulesetPart} from "../src/configurator/ruleset-pa
 import {copyJSON} from "../src/configurator/configurator-schema.mjs";
 import {assertValidRuleset} from "../src/configurator/configurator-validation.mjs";
 
-const rwf = JSON.parse(fs.readFileSync(new URL("../Rulesets/rwf/rwf-ruleset-2.5.0.json", import.meta.url))).versionRecord.workingDraft;
+const rwf = JSON.parse(fs.readFileSync(new URL("../Rulesets/rwf/rwf-ruleset-2.6.0.json", import.meta.url))).versionRecord.workingDraft;
 const formula = (id, name, value) => ({...copyJSON(rwf.formulas.find(entry => entry.expression?.type === "literal") ?? rwf.formulas[0]), id, nameKey: name, expression: {type: "literal", value}, tags: []});
 // An author's draft: RWF plus a "Fantaisies" extension made of two new Formulas and a changed one of RWF's.
 const changed = copyJSON(rwf.formulas[0]);
@@ -98,7 +98,7 @@ test("the configurator API installs, updates and removes an extension, and the r
   const {emptyStorageSnapshot} = await import("../src/configurator/configurator-storage.mjs");
   class Storage { value = emptyStorageSnapshot(); async load() { return structuredClone(this.value); } async save(v) { this.value = structuredClone(v); } }
   const api = await createConfiguratorAPI(new Storage());
-  const record = JSON.parse(fs.readFileSync(new URL("../Rulesets/rwf/rwf-ruleset-2.5.0.json", import.meta.url)));
+  const record = JSON.parse(fs.readFileSync(new URL("../Rulesets/rwf/rwf-ruleset-2.6.0.json", import.meta.url)));
   const {versionId: v} = await api.importRuleset(record, "NEW");
   assert.equal(api.planExtensionInstall(v, v1).action, "install");
   await api.installExtension(v, v1, {});

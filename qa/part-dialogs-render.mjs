@@ -15,7 +15,7 @@ const {groupPartRefs, partImportView, PART_FAMILY_KEYS} = await load('src/config
 const {renderPartExportContent, renderPartImportContent} = await load('src/ui/dialog-markup.mjs');
 const {copyJSON} = await load('src/configurator/configurator-schema.mjs');
 
-const ruleset = JSON.parse(readFileSync(join(root, 'Rulesets/rwf/rwf-ruleset-2.5.0.json'), 'utf8')).versionRecord.workingDraft;
+const ruleset = JSON.parse(readFileSync(join(root, 'Rulesets/rwf/rwf-ruleset-2.6.0.json'), 'utf8')).versionRecord.workingDraft;
 const french = JSON.parse(readFileSync(join(root, 'lang/fr.json'), 'utf8'));
 const t = (key, data = {}) => String(key?.split('.').reduce((node, part) => node?.[part], french) ?? key).replace(/\{(\w+)\}/g, (_, name) => data[name] ?? '');
 const nameOf = (collection, id) => (ruleset[collection] ?? []).find(entry => entry.id === id)?.nameKey ?? id;

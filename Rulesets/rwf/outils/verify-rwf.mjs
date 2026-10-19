@@ -285,24 +285,29 @@ nextNatural = 10; used = await runtime.executeAction(v, "poursuite-a-pied-contin
 assert.equal(used.testResult.bonus, 3 + 1 + 2 - 0, "Agilité + Course à pied + maniabilité 2");
 assert.equal(await gauge(), 2, "réussite +1, plus rapide +1");
 nextNatural = 20; await runtime.executeAction(v, "poursuite-a-pied-raccourci", {...runner, variables: {input: {vitesse: 1}}});
-assert.equal(await gauge(), 3, "bornée à +3");
+assert.equal(await gauge(), 5, "critique 2, plus rapide 1");
+nextNatural = 20; await runtime.executeAction(v, "poursuite-a-pied-raccourci", {...runner, variables: {input: {vitesse: 1}}});
+assert.equal(await gauge(), 6, "bornée à deux fois la borne");
 nextNatural = 1; await runtime.executeAction(v, "poursuite-a-pied-risque", {...runner, variables: {input: {vitesse: 0}}});
-assert.equal(await gauge(), 1);
+assert.equal(await gauge(), 4);
 await runtime.executeAction(v, "poursuite-arret", runner);
-assert.equal(await gauge(), 0);
-// 2.5.0: a pursuer's move works on its target's gauge, the other way.
+assert.equal(await gauge(), 3);
+await runtime.executeAction(v, "poursuite-nouvelle", self);
+// 2.6.0: a pursuer's move works on its own part of the gap, the other way; its target's part does not move.
 const chaser = {roles: {self: foe.uuid, target: actor.uuid}};
+const foeGauge = async () => (await runtime.getContainerState(foe.uuid)).definitionStates["progression-poursuite"].capabilityStates.value.base;
+await runtime.executeAction(v, "poursuite-nouvelle", {roles: {self: foe.uuid}});
 nextNatural = 10; used = await runtime.executeAction(v, "poursuite-a-pied-continuer", {...chaser, variables: {input: {vitesse: 1, sens: -1}}});
 assert.notEqual(used.allowed, false);
-assert.equal(await gauge(), -2, "le poursuivant réduit l'écart de sa cible : réussite 1, plus rapide 1");
+assert.deepEqual([await foeGauge(), await gauge()], [-2, 0], "le poursuivant se rapproche : réussite 1, plus rapide 1, sur sa propre part");
 await runtime.executeAction(v, "poursuite-arret", {...chaser, variables: {input: {sens: -1}}});
-assert.equal(await gauge(), -1, "le poursuivant qui s'arrête laisse 1 à sa cible");
+assert.equal(await foeGauge(), -1, "le poursuivant qui s'arrête laisse 1 à sa cible");
 await runtime.executeAction(v, "poursuite-nouvelle", self);
 await bridge.acquireTemplate(v, actor.uuid, "vehicule-citadine", {sourceItemId: "auto"});
 nextNatural = 10; used = await bridge.executeAcquiredAction(v, actor.uuid, "poursuite-vehicule-raccourci", {...runner, variables: {input: {vitesse: -1}}}, {contentKey: "auto"});
 const car = api.getRuleset(v).contentTemplates.find(t => t.id === "vehicule-citadine").data;
 assert.equal(used.testResult.bonus, 3 + 1 + car.maniabilite + 2, "Agilité + Véhicules légers + maniabilité + raccourci");
-log(`poursuite : DD 13, jauge d'écart −3 à +3 du fuyard, réduite par son poursuivant, raccourci +2, risque −2, véhicule (bonus ${used.testResult.bonus})`);
+log(`poursuite : DD 13, écart = part du fuyard + part de son poursuivant (−3 à +3), raccourci +2, risque −2, véhicule (bonus ${used.testResult.bonus})`);
 
 // 11. Combat and pursuit HUD rules (2.2.0): passes, ammunition, bursts, reload, dice from the table, physical effort.
 assert.deepEqual(api.getRuleset(v).initiative.passes, {countFormulaRef: "attaques-meilleure"});

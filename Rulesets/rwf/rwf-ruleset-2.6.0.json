@@ -3,8 +3,8 @@
  "format": "rta-ruleset",
  "formatVersion": 3,
  "rulesetId": "rwf",
- "version": "2.5.0",
- "versionId": "rwf-2-5-0",
+ "version": "2.6.0",
+ "versionId": "rwf-2-6-0",
  "versionRecord": {
   "publishedSnapshot": {
    "actions": [
@@ -911,7 +911,7 @@
      "acquisitions": [],
      "conditionRefs": [],
      "costEffectRefs": [],
-     "descriptionKey": "Test de poursuite avec ce véhicule (DD 13). Un fuyard creuse son écart, un poursuivant réduit celui de sa cible ; à −3 le fuyard est rattrapé, à +3 il a semé ses poursuivants.",
+     "descriptionKey": "Test de poursuite avec ce véhicule (DD 13). Un fuyard s'éloigne de tous ses poursuivants, un poursuivant se rapproche de sa cible ; à −3 d'écart la cible est rattrapée, à +3 le poursuivant est semé.",
      "effectRefs": [
       "avancer-poursuite"
      ],
@@ -946,11 +946,11 @@
        "labelKey": "Rôle dans la poursuite",
        "options": [
         {
-         "labelKey": "Fuyard : sur sa propre jauge",
+         "labelKey": "Fuyard : creuse l'écart",
          "value": 1
         },
         {
-         "labelKey": "Poursuivant : sur la jauge de sa cible",
+         "labelKey": "Poursuivant : réduit l'écart",
          "value": -1
         }
        ],
@@ -981,7 +981,7 @@
      "costEffectRefs": [
       "effort-poursuite"
      ],
-     "descriptionKey": "Test de poursuite en courant (DD 13). Impossible à Endurance 0. Un fuyard creuse son écart, un poursuivant réduit celui de sa cible ; à −3 le fuyard est rattrapé, à +3 il a semé ses poursuivants.",
+     "descriptionKey": "Test de poursuite en courant (DD 13). Impossible à Endurance 0. Un fuyard s'éloigne de tous ses poursuivants, un poursuivant se rapproche de sa cible ; à −3 d'écart la cible est rattrapée, à +3 le poursuivant est semé.",
      "effectRefs": [],
      "enabled": true,
      "eventTypeRefs": [],
@@ -1014,11 +1014,11 @@
        "labelKey": "Rôle dans la poursuite",
        "options": [
         {
-         "labelKey": "Fuyard : sur sa propre jauge",
+         "labelKey": "Fuyard : creuse l'écart",
          "value": 1
         },
         {
-         "labelKey": "Poursuivant : sur la jauge de sa cible",
+         "labelKey": "Poursuivant : réduit l'écart",
          "value": -1
         }
        ],
@@ -1086,7 +1086,7 @@
      "acquisitions": [],
      "conditionRefs": [],
      "costEffectRefs": [],
-     "descriptionKey": "Test de poursuite avec ce véhicule (DD 13). Un fuyard creuse son écart, un poursuivant réduit celui de sa cible ; à −3 le fuyard est rattrapé, à +3 il a semé ses poursuivants.",
+     "descriptionKey": "Test de poursuite avec ce véhicule (DD 13). Un fuyard s'éloigne de tous ses poursuivants, un poursuivant se rapproche de sa cible ; à −3 d'écart la cible est rattrapée, à +3 le poursuivant est semé.",
      "effectRefs": [
       "avancer-poursuite"
      ],
@@ -1121,11 +1121,11 @@
        "labelKey": "Rôle dans la poursuite",
        "options": [
         {
-         "labelKey": "Fuyard : sur sa propre jauge",
+         "labelKey": "Fuyard : creuse l'écart",
          "value": 1
         },
         {
-         "labelKey": "Poursuivant : sur la jauge de sa cible",
+         "labelKey": "Poursuivant : réduit l'écart",
          "value": -1
         }
        ],
@@ -1156,7 +1156,7 @@
      "costEffectRefs": [
       "effort-poursuite"
      ],
-     "descriptionKey": "Test de poursuite en courant (DD 13). Impossible à Endurance 0. Un fuyard creuse son écart, un poursuivant réduit celui de sa cible ; à −3 le fuyard est rattrapé, à +3 il a semé ses poursuivants.",
+     "descriptionKey": "Test de poursuite en courant (DD 13). Impossible à Endurance 0. Un fuyard s'éloigne de tous ses poursuivants, un poursuivant se rapproche de sa cible ; à −3 d'écart la cible est rattrapée, à +3 le poursuivant est semé.",
      "effectRefs": [],
      "enabled": true,
      "eventTypeRefs": [],
@@ -1189,11 +1189,11 @@
        "labelKey": "Rôle dans la poursuite",
        "options": [
         {
-         "labelKey": "Fuyard : sur sa propre jauge",
+         "labelKey": "Fuyard : creuse l'écart",
          "value": 1
         },
         {
-         "labelKey": "Poursuivant : sur la jauge de sa cible",
+         "labelKey": "Poursuivant : réduit l'écart",
          "value": -1
         }
        ],
@@ -1261,7 +1261,7 @@
      "acquisitions": [],
      "conditionRefs": [],
      "costEffectRefs": [],
-     "descriptionKey": "Test de poursuite avec ce véhicule (DD 13). Un fuyard creuse son écart, un poursuivant réduit celui de sa cible ; à −3 le fuyard est rattrapé, à +3 il a semé ses poursuivants.",
+     "descriptionKey": "Test de poursuite avec ce véhicule (DD 13). Un fuyard s'éloigne de tous ses poursuivants, un poursuivant se rapproche de sa cible ; à −3 d'écart la cible est rattrapée, à +3 le poursuivant est semé.",
      "effectRefs": [
       "avancer-poursuite"
      ],
@@ -1296,11 +1296,11 @@
        "labelKey": "Rôle dans la poursuite",
        "options": [
         {
-         "labelKey": "Fuyard : sur sa propre jauge",
+         "labelKey": "Fuyard : creuse l'écart",
          "value": 1
         },
         {
-         "labelKey": "Poursuivant : sur la jauge de sa cible",
+         "labelKey": "Poursuivant : réduit l'écart",
          "value": -1
         }
        ],
@@ -1331,7 +1331,7 @@
      "costEffectRefs": [
       "effort-poursuite"
      ],
-     "descriptionKey": "Test de poursuite en courant (DD 13). Impossible à Endurance 0. Un fuyard creuse son écart, un poursuivant réduit celui de sa cible ; à −3 le fuyard est rattrapé, à +3 il a semé ses poursuivants.",
+     "descriptionKey": "Test de poursuite en courant (DD 13). Impossible à Endurance 0. Un fuyard s'éloigne de tous ses poursuivants, un poursuivant se rapproche de sa cible ; à −3 d'écart la cible est rattrapée, à +3 le poursuivant est semé.",
      "effectRefs": [],
      "enabled": true,
      "eventTypeRefs": [],
@@ -1364,11 +1364,11 @@
        "labelKey": "Rôle dans la poursuite",
        "options": [
         {
-         "labelKey": "Fuyard : sur sa propre jauge",
+         "labelKey": "Fuyard : creuse l'écart",
          "value": 1
         },
         {
-         "labelKey": "Poursuivant : sur la jauge de sa cible",
+         "labelKey": "Poursuivant : réduit l'écart",
          "value": -1
         }
        ],
@@ -1436,7 +1436,7 @@
      "acquisitions": [],
      "conditionRefs": [],
      "costEffectRefs": [],
-     "descriptionKey": "Celui qui s'arrête perd 1 : l'écart du fuyard baisse, ou celui de la cible du poursuivant monte.",
+     "descriptionKey": "Celui qui s'arrête perd 1 : un fuyard laisse ses poursuivants se rapprocher, un poursuivant laisse sa cible s'éloigner.",
      "effectRefs": [
       "arret-poursuite"
      ],
@@ -1450,11 +1450,11 @@
        "labelKey": "Rôle dans la poursuite",
        "options": [
         {
-         "labelKey": "Fuyard : sur sa propre jauge",
+         "labelKey": "Fuyard : creuse l'écart",
          "value": 1
         },
         {
-         "labelKey": "Poursuivant : sur la jauge de sa cible",
+         "labelKey": "Poursuivant : réduit l'écart",
          "value": -1
         }
        ],
@@ -69575,7 +69575,7 @@
      "defaultCapabilities": [
       "value"
      ],
-     "descriptionKey": "Jauge individuelle d'une poursuite, de −3 à +3.",
+     "descriptionKey": "Part d'un personnage dans les écarts d'une poursuite.",
      "fields": {},
      "id": "poursuite",
      "key": "poursuite",
@@ -70808,7 +70808,7 @@
      ],
      "data": {},
      "definitionTypeId": "poursuite",
-     "descriptionKey": "Écart d'un fuyard avec ceux qui le poursuivent, de −3 (rattrapé) à +3 (semé). Les manœuvres du fuyard le creusent, celles de ses poursuivants le réduisent, selon le résultat (2 critique, 1 réussite, −1 échec, −2 complication) et l'avantage de vitesse ; s'arrêter fait perdre 1 à celui qui s'arrête.",
+     "descriptionKey": "Ce que les manœuvres de ce personnage ont fait à l'écart, selon le résultat (2 critique, 1 réussite, −1 échec, −2 complication) et l'avantage de vitesse. Un fuyard l'éloigne de tous ses poursuivants, un poursuivant se rapproche de sa cible. L'écart entre un poursuivant et sa cible est la somme des deux : −3 rattrapée, +3 semé. S'arrêter fait perdre 1 à celui qui s'arrête.",
      "enabled": true,
      "id": "progression-poursuite",
      "key": "progression-poursuite",
@@ -71604,7 +71604,7 @@
      "targetRole": "self"
     },
     {
-     "descriptionKey": "Sur la jauge du fuyard : la sienne, ou celle de la cible d'un poursuivant.",
+     "descriptionKey": "Sur sa propre part de l'écart.",
      "enabled": true,
      "id": "avancer-poursuite",
      "nameKey": "Avancée dans la poursuite",
@@ -71621,10 +71621,10 @@
       "objectKind": "definition",
       "outputId": "value.base"
      },
-     "targetRole": "target"
+     "targetRole": "self"
     },
     {
-     "descriptionKey": "Celui qui s'arrête perd 1 : le fuyard voit son écart réduit, le poursuivant laisse sa cible gagner 1.",
+     "descriptionKey": "Celui qui s'arrête perd 1 : le fuyard laisse ses poursuivants gagner 1, le poursuivant laisse sa cible gagner 1.",
      "enabled": true,
      "id": "arret-poursuite",
      "nameKey": "S'arrêter",
@@ -71641,7 +71641,7 @@
       "objectKind": "definition",
       "outputId": "value.base"
      },
-     "targetRole": "target"
+     "targetRole": "self"
     },
     {
      "descriptionKey": "",
@@ -73414,20 +73414,20 @@
      "tags": []
     },
     {
-     "descriptionKey": "",
+     "descriptionKey": "Deux fois la borne : la part de chacun dans un écart qui va de −borne à +borne.",
      "enabled": true,
      "expression": {
       "args": [
        {
-        "type": "literal",
-        "value": 0
-       },
-       {
         "id": "poursuite-borne",
         "type": "parameter"
+       },
+       {
+        "type": "literal",
+        "value": -2
        }
       ],
-      "type": "subtract"
+      "type": "multiply"
      },
      "id": "poursuite-minimum",
      "nameKey": "Minimum de la jauge de poursuite",
@@ -73436,11 +73436,20 @@
      "tags": []
     },
     {
-     "descriptionKey": "",
+     "descriptionKey": "Deux fois la borne : la part de chacun dans un écart qui va de −borne à +borne.",
      "enabled": true,
      "expression": {
-      "id": "poursuite-borne",
-      "type": "parameter"
+      "args": [
+       {
+        "id": "poursuite-borne",
+        "type": "parameter"
+       },
+       {
+        "type": "literal",
+        "value": 2
+       }
+      ],
+      "type": "multiply"
      },
      "id": "poursuite-maximum",
      "nameKey": "Maximum de la jauge de poursuite",
@@ -73616,7 +73625,7 @@
      "tags": []
     },
     {
-     "descriptionKey": "1 pour un fuyard (il creuse l'écart), −1 pour un poursuivant (il réduit l'écart de sa cible).",
+     "descriptionKey": "1 pour un fuyard (il creuse l'écart), −1 pour un poursuivant (il le réduit).",
      "enabled": true,
      "expression": {
       "condition": {
@@ -73647,7 +73656,7 @@
      "tags": []
     },
     {
-     "descriptionKey": "Avantage de vitesse + 2 critique, +1 réussite, −1 échec, −2 complication ; vers +3 pour un fuyard, vers −3 sur la jauge de sa cible pour un poursuivant.",
+     "descriptionKey": "Avantage de vitesse + 2 critique, +1 réussite, −1 échec, −2 complication ; vers + pour un fuyard, vers − pour un poursuivant.",
      "enabled": true,
      "expression": {
       "args": [
@@ -75017,7 +75026,7 @@
      "valueType": "integer"
     },
     {
-     "descriptionKey": "La jauge d'écart d'un fuyard va de −borne (rattrapé) à +borne (il a semé ses poursuivants).",
+     "descriptionKey": "L'écart entre un poursuivant et sa cible va de −borne (rattrapée) à +borne (il est semé).",
      "enabled": true,
      "id": "poursuite-borne",
      "nameKey": "Borne de la jauge de poursuite",
@@ -78119,7 +78128,7 @@
              {
               "id": "progression-poursuite",
               "kind": "value",
-              "labelKey": "Progression de poursuite (−3 à +3)",
+              "labelKey": "Progression de poursuite",
               "source": {
                "kind": "output",
                "reference": {
@@ -79315,12 +79324,12 @@
      "tags": []
     }
    ],
-   "version": "2.5.0"
+   "version": "2.6.0"
   },
   "rulesetId": "rwf",
   "status": "ready",
-  "version": "2.5.0",
-  "versionId": "rwf-2-5-0",
+  "version": "2.6.0",
+  "versionId": "rwf-2-6-0",
   "workingDraft": {
    "actions": [
     {
@@ -80226,7 +80235,7 @@
      "acquisitions": [],
      "conditionRefs": [],
      "costEffectRefs": [],
-     "descriptionKey": "Test de poursuite avec ce véhicule (DD 13). Un fuyard creuse son écart, un poursuivant réduit celui de sa cible ; à −3 le fuyard est rattrapé, à +3 il a semé ses poursuivants.",
+     "descriptionKey": "Test de poursuite avec ce véhicule (DD 13). Un fuyard s'éloigne de tous ses poursuivants, un poursuivant se rapproche de sa cible ; à −3 d'écart la cible est rattrapée, à +3 le poursuivant est semé.",
      "effectRefs": [
       "avancer-poursuite"
      ],
@@ -80261,11 +80270,11 @@
        "labelKey": "Rôle dans la poursuite",
        "options": [
         {
-         "labelKey": "Fuyard : sur sa propre jauge",
+         "labelKey": "Fuyard : creuse l'écart",
          "value": 1
         },
         {
-         "labelKey": "Poursuivant : sur la jauge de sa cible",
+         "labelKey": "Poursuivant : réduit l'écart",
          "value": -1
         }
        ],
@@ -80296,7 +80305,7 @@
      "costEffectRefs": [
       "effort-poursuite"
      ],
-     "descriptionKey": "Test de poursuite en courant (DD 13). Impossible à Endurance 0. Un fuyard creuse son écart, un poursuivant réduit celui de sa cible ; à −3 le fuyard est rattrapé, à +3 il a semé ses poursuivants.",
+     "descriptionKey": "Test de poursuite en courant (DD 13). Impossible à Endurance 0. Un fuyard s'éloigne de tous ses poursuivants, un poursuivant se rapproche de sa cible ; à −3 d'écart la cible est rattrapée, à +3 le poursuivant est semé.",
      "effectRefs": [],
      "enabled": true,
      "eventTypeRefs": [],
@@ -80329,11 +80338,11 @@
        "labelKey": "Rôle dans la poursuite",
        "options": [
         {
-         "labelKey": "Fuyard : sur sa propre jauge",
+         "labelKey": "Fuyard : creuse l'écart",
          "value": 1
         },
         {
-         "labelKey": "Poursuivant : sur la jauge de sa cible",
+         "labelKey": "Poursuivant : réduit l'écart",
          "value": -1
         }
        ],
@@ -80401,7 +80410,7 @@
      "acquisitions": [],
      "conditionRefs": [],
      "costEffectRefs": [],
-     "descriptionKey": "Test de poursuite avec ce véhicule (DD 13). Un fuyard creuse son écart, un poursuivant réduit celui de sa cible ; à −3 le fuyard est rattrapé, à +3 il a semé ses poursuivants.",
+     "descriptionKey": "Test de poursuite avec ce véhicule (DD 13). Un fuyard s'éloigne de tous ses poursuivants, un poursuivant se rapproche de sa cible ; à −3 d'écart la cible est rattrapée, à +3 le poursuivant est semé.",
      "effectRefs": [
       "avancer-poursuite"
      ],
@@ -80436,11 +80445,11 @@
        "labelKey": "Rôle dans la poursuite",
        "options": [
         {
-         "labelKey": "Fuyard : sur sa propre jauge",
+         "labelKey": "Fuyard : creuse l'écart",
          "value": 1
         },
         {
-         "labelKey": "Poursuivant : sur la jauge de sa cible",
+         "labelKey": "Poursuivant : réduit l'écart",
          "value": -1
         }
        ],
@@ -80471,7 +80480,7 @@
      "costEffectRefs": [
       "effort-poursuite"
      ],
-     "descriptionKey": "Test de poursuite en courant (DD 13). Impossible à Endurance 0. Un fuyard creuse son écart, un poursuivant réduit celui de sa cible ; à −3 le fuyard est rattrapé, à +3 il a semé ses poursuivants.",
+     "descriptionKey": "Test de poursuite en courant (DD 13). Impossible à Endurance 0. Un fuyard s'éloigne de tous ses poursuivants, un poursuivant se rapproche de sa cible ; à −3 d'écart la cible est rattrapée, à +3 le poursuivant est semé.",
      "effectRefs": [],
      "enabled": true,
      "eventTypeRefs": [],
@@ -80504,11 +80513,11 @@
        "labelKey": "Rôle dans la poursuite",
        "options": [
         {
-         "labelKey": "Fuyard : sur sa propre jauge",
+         "labelKey": "Fuyard : creuse l'écart",
          "value": 1
         },
         {
-         "labelKey": "Poursuivant : sur la jauge de sa cible",
+         "labelKey": "Poursuivant : réduit l'écart",
          "value": -1
         }
        ],
@@ -80576,7 +80585,7 @@
      "acquisitions": [],
      "conditionRefs": [],
      "costEffectRefs": [],
-     "descriptionKey": "Test de poursuite avec ce véhicule (DD 13). Un fuyard creuse son écart, un poursuivant réduit celui de sa cible ; à −3 le fuyard est rattrapé, à +3 il a semé ses poursuivants.",
+     "descriptionKey": "Test de poursuite avec ce véhicule (DD 13). Un fuyard s'éloigne de tous ses poursuivants, un poursuivant se rapproche de sa cible ; à −3 d'écart la cible est rattrapée, à +3 le poursuivant est semé.",
      "effectRefs": [
       "avancer-poursuite"
      ],
@@ -80611,11 +80620,11 @@
        "labelKey": "Rôle dans la poursuite",
        "options": [
         {
-         "labelKey": "Fuyard : sur sa propre jauge",
+         "labelKey": "Fuyard : creuse l'écart",
          "value": 1
         },
         {
-         "labelKey": "Poursuivant : sur la jauge de sa cible",
+         "labelKey": "Poursuivant : réduit l'écart",
          "value": -1
         }
        ],
@@ -80646,7 +80655,7 @@
      "costEffectRefs": [
       "effort-poursuite"
      ],
-     "descriptionKey": "Test de poursuite en courant (DD 13). Impossible à Endurance 0. Un fuyard creuse son écart, un poursuivant réduit celui de sa cible ; à −3 le fuyard est rattrapé, à +3 il a semé ses poursuivants.",
+     "descriptionKey": "Test de poursuite en courant (DD 13). Impossible à Endurance 0. Un fuyard s'éloigne de tous ses poursuivants, un poursuivant se rapproche de sa cible ; à −3 d'écart la cible est rattrapée, à +3 le poursuivant est semé.",
      "effectRefs": [],
      "enabled": true,
      "eventTypeRefs": [],
@@ -80679,11 +80688,11 @@
        "labelKey": "Rôle dans la poursuite",
        "options": [
         {
-         "labelKey": "Fuyard : sur sa propre jauge",
+         "labelKey": "Fuyard : creuse l'écart",
          "value": 1
         },
         {
-         "labelKey": "Poursuivant : sur la jauge de sa cible",
+         "labelKey": "Poursuivant : réduit l'écart",
          "value": -1
         }
        ],
@@ -80751,7 +80760,7 @@
      "acquisitions": [],
      "conditionRefs": [],
      "costEffectRefs": [],
-     "descriptionKey": "Celui qui s'arrête perd 1 : l'écart du fuyard baisse, ou celui de la cible du poursuivant monte.",
+     "descriptionKey": "Celui qui s'arrête perd 1 : un fuyard laisse ses poursuivants se rapprocher, un poursuivant laisse sa cible s'éloigner.",
      "effectRefs": [
       "arret-poursuite"
      ],
@@ -80765,11 +80774,11 @@
        "labelKey": "Rôle dans la poursuite",
        "options": [
         {
-         "labelKey": "Fuyard : sur sa propre jauge",
+         "labelKey": "Fuyard : creuse l'écart",
          "value": 1
         },
         {
-         "labelKey": "Poursuivant : sur la jauge de sa cible",
+         "labelKey": "Poursuivant : réduit l'écart",
          "value": -1
         }
        ],
@@ -148890,7 +148899,7 @@
      "defaultCapabilities": [
       "value"
      ],
-     "descriptionKey": "Jauge individuelle d'une poursuite, de −3 à +3.",
+     "descriptionKey": "Part d'un personnage dans les écarts d'une poursuite.",
      "fields": {},
      "id": "poursuite",
      "key": "poursuite",
@@ -150123,7 +150132,7 @@
      ],
      "data": {},
      "definitionTypeId": "poursuite",
-     "descriptionKey": "Écart d'un fuyard avec ceux qui le poursuivent, de −3 (rattrapé) à +3 (semé). Les manœuvres du fuyard le creusent, celles de ses poursuivants le réduisent, selon le résultat (2 critique, 1 réussite, −1 échec, −2 complication) et l'avantage de vitesse ; s'arrêter fait perdre 1 à celui qui s'arrête.",
+     "descriptionKey": "Ce que les manœuvres de ce personnage ont fait à l'écart, selon le résultat (2 critique, 1 réussite, −1 échec, −2 complication) et l'avantage de vitesse. Un fuyard l'éloigne de tous ses poursuivants, un poursuivant se rapproche de sa cible. L'écart entre un poursuivant et sa cible est la somme des deux : −3 rattrapée, +3 semé. S'arrêter fait perdre 1 à celui qui s'arrête.",
      "enabled": true,
      "id": "progression-poursuite",
      "key": "progression-poursuite",
@@ -150919,7 +150928,7 @@
      "targetRole": "self"
     },
     {
-     "descriptionKey": "Sur la jauge du fuyard : la sienne, ou celle de la cible d'un poursuivant.",
+     "descriptionKey": "Sur sa propre part de l'écart.",
      "enabled": true,
      "id": "avancer-poursuite",
      "nameKey": "Avancée dans la poursuite",
@@ -150936,10 +150945,10 @@
       "objectKind": "definition",
       "outputId": "value.base"
      },
-     "targetRole": "target"
+     "targetRole": "self"
     },
     {
-     "descriptionKey": "Celui qui s'arrête perd 1 : le fuyard voit son écart réduit, le poursuivant laisse sa cible gagner 1.",
+     "descriptionKey": "Celui qui s'arrête perd 1 : le fuyard laisse ses poursuivants gagner 1, le poursuivant laisse sa cible gagner 1.",
      "enabled": true,
      "id": "arret-poursuite",
      "nameKey": "S'arrêter",
@@ -150956,7 +150965,7 @@
       "objectKind": "definition",
       "outputId": "value.base"
      },
-     "targetRole": "target"
+     "targetRole": "self"
     },
     {
      "descriptionKey": "",
@@ -152729,20 +152738,20 @@
      "tags": []
     },
     {
-     "descriptionKey": "",
+     "descriptionKey": "Deux fois la borne : la part de chacun dans un écart qui va de −borne à +borne.",
      "enabled": true,
      "expression": {
       "args": [
        {
-        "type": "literal",
-        "value": 0
-       },
-       {
         "id": "poursuite-borne",
         "type": "parameter"
+       },
+       {
+        "type": "literal",
+        "value": -2
        }
       ],
-      "type": "subtract"
+      "type": "multiply"
      },
      "id": "poursuite-minimum",
      "nameKey": "Minimum de la jauge de poursuite",
@@ -152751,11 +152760,20 @@
      "tags": []
     },
     {
-     "descriptionKey": "",
+     "descriptionKey": "Deux fois la borne : la part de chacun dans un écart qui va de −borne à +borne.",
      "enabled": true,
      "expression": {
-      "id": "poursuite-borne",
-      "type": "parameter"
+      "args": [
+       {
+        "id": "poursuite-borne",
+        "type": "parameter"
+       },
+       {
+        "type": "literal",
+        "value": 2
+       }
+      ],
+      "type": "multiply"
      },
      "id": "poursuite-maximum",
      "nameKey": "Maximum de la jauge de poursuite",
@@ -152931,7 +152949,7 @@
      "tags": []
     },
     {
-     "descriptionKey": "1 pour un fuyard (il creuse l'écart), −1 pour un poursuivant (il réduit l'écart de sa cible).",
+     "descriptionKey": "1 pour un fuyard (il creuse l'écart), −1 pour un poursuivant (il le réduit).",
      "enabled": true,
      "expression": {
       "condition": {
@@ -152962,7 +152980,7 @@
      "tags": []
     },
     {
-     "descriptionKey": "Avantage de vitesse + 2 critique, +1 réussite, −1 échec, −2 complication ; vers +3 pour un fuyard, vers −3 sur la jauge de sa cible pour un poursuivant.",
+     "descriptionKey": "Avantage de vitesse + 2 critique, +1 réussite, −1 échec, −2 complication ; vers + pour un fuyard, vers − pour un poursuivant.",
      "enabled": true,
      "expression": {
       "args": [
@@ -154332,7 +154350,7 @@
      "valueType": "integer"
     },
     {
-     "descriptionKey": "La jauge d'écart d'un fuyard va de −borne (rattrapé) à +borne (il a semé ses poursuivants).",
+     "descriptionKey": "L'écart entre un poursuivant et sa cible va de −borne (rattrapée) à +borne (il est semé).",
      "enabled": true,
      "id": "poursuite-borne",
      "nameKey": "Borne de la jauge de poursuite",
@@ -157434,7 +157452,7 @@
              {
               "id": "progression-poursuite",
               "kind": "value",
-              "labelKey": "Progression de poursuite (−3 à +3)",
+              "labelKey": "Progression de poursuite",
               "source": {
                "kind": "output",
                "reference": {
@@ -158630,7 +158648,7 @@
      "tags": []
     }
    ],
-   "version": "2.5.0"
+   "version": "2.6.0"
   }
  }
 }
