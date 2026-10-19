@@ -4,7 +4,7 @@
  "formatVersion": 3,
  "rulesetId": "rwf",
  "version": "2.5.0",
- "versionId": "rwf-2-4-0",
+ "versionId": "rwf-2-5-0",
  "versionRecord": {
   "publishedSnapshot": {
    "actions": [
@@ -79320,7 +79320,7 @@
   "rulesetId": "rwf",
   "status": "ready",
   "version": "2.5.0",
-  "versionId": "rwf-2-4-0",
+  "versionId": "rwf-2-5-0",
   "workingDraft": {
    "actions": [
     {

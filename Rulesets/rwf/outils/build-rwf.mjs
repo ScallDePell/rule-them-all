@@ -756,7 +756,7 @@ add("sheetDefinitions", generic({id: "feuille-pj", nameKey: "Feuille de PJ", des
 /* ---------- Build, validate, publish, export ---------- */
 class Storage { constructor() { this.data = emptyStorageSnapshot(); } async load() { return structuredClone(this.data); } async save(d) { this.data = structuredClone(d); } }
 const api = await createConfiguratorAPI(new Storage(), {onError: e => { throw e; }});
-const {versionId} = await api.createRuleset({...R, ...C, versionId: "rwf-2-4-0"});
+const {versionId} = await api.createRuleset({...R, ...C, versionId: `rwf-${R.version.replaceAll(".", "-")}`});
 const draft = api.validateRuleset(api.getRuleset(versionId), {scope: "publish"});
 if (!draft.valid) { console.error(draft.errors.map(e=>`${e.code} ${e.path}: ${e.message}`).join("\n")); process.exit(1); }
 await api.publishRuleset(versionId);
