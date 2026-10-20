@@ -1,11 +1,11 @@
 # Rule Them'All: configuration examples
 
-This document goes with the [GM guide](gm-guide.md). For each family in the Configurator, it gives three examples taken from different roleplaying games, with step-by-step settings. Field names match what the editor shows.
+This document goes with the [GM guide](gm-guide.md). For each family in the Configurator, it gives three examples taken from different roleplaying games, with step-by-step settings. Field and button names match what the editor shows in English (module 1.0.20).
 
 The examples don't copy the rulebooks. They show how to turn a rule into settings. Take the exact values (tables, costs, labels) from your own books. The examples were checked against the module's code but haven't been played in Foundry yet.
 
 Contents:
-- [Definitions](#definitions-section) and [Content](#contents-section)
+- [Definitions](#definitions-section) and [Content](#content-section)
 - [Rules (calculations and rolls)](#rules-calculations-and-rolls)
 - [Rules (effects, actions, dice)](#rules-effects-actions-dice)
 - [Orchestration](#orchestration)
@@ -24,7 +24,7 @@ In Call of Cthulhu 7th edition, STR, CON, DEX, APP, POW, SIZ, INT and EDU are pe
 3. Under Capabilities, set Value to Required and leave Pool, Collection and State on Unavailable.
 4. In Lowest value, choose Number and type 0. In Highest value, choose Number and type 99.
 5. Under Fields, click Add field: Name "Abbreviation", Value type Text, Cardinality one, Required checked.
-6. Click Save & Quit. A new "Characteristic" subsection appears under Definition Types.
+6. Click Save & Quit. A new "Characteristic" subsection appears in the Definitions section, below Definition Types.
 
 You don't set the Hard (half) and Extreme (one fifth) values here. They are two Formulas, in the Formulas family of the Rules section.
 
@@ -32,14 +32,14 @@ You don't set the Hard (half) and Extreme (one fifth) values here. They are two 
 
 In Fate, a skill at +3 is called "Good" and one at +4 is "Great". The sheet shows the adjective instead of the number.
 
-1. First, build the ladder in the Description scales family (Rules section), with one step per adjective. For example: From 0 To 0 with the Description "Mediocre", From 1 To 1 "Average", From 2 To 2 "Fair", From 3 To 3 "Good", From 4 To 4 "Great", From 5 To 5 "Superb".
+1. First, build the ladder in the Description scales family (Rules section). Leave Ranges compare on "the value", then click Add a band once per adjective: From 0 To 0 with the Description "Mediocre", From 1 To 1 "Average", From 2 To 2 "Fair", From 3 To 3 "Good", From 4 To 4 "Great", From 5 To 5 "Superb".
 2. Go back to Definitions, open the Definition Types subsection and click Create. In Name, type "Skill".
 3. In Description scale, choose the scale you just created.
 4. Under Capabilities, set Value to Required.
 5. In Lowest value, choose Number and type 0. A skill the character doesn't have counts as Mediocre.
 6. Click Save & Quit.
 
-Every skill of this type inherits the scale. A skill can pick a different one in its own Description scale field, which otherwise shows "That of its type".
+Every skill of this type inherits the scale. A skill can pick a different one in its own Description scale field, which otherwise shows "That of its type". To show the adjective on the sheet, set the skill's value to display As a description in the sheet editor.
 
 #### D&D 5e conditions (Blinded, Prone, Grappled…)
 
@@ -47,7 +47,7 @@ In D&D 5e, a condition is either there or not. It has no number, and its effects
 
 1. In Definition Types, click Create and type "State" in Name.
 2. Under Capabilities, set State to Required. Leave Value, Pool and Collection on Unavailable.
-3. If you want to spot states at a glance in the Configurator, check Customize next to Subsection color and pick a color.
+3. If you want to spot states at a glance in the Configurator, check Customize next to Subsection color and pick a color. The checkbox only shows when Allow custom subsection colors is on, under Appearance in the General section.
 4. Click Save & Quit. Then, in the new "State" subsection, create one Definition per condition: Blinded, Prone, Grappled, Restrained, and so on.
 
 A state is applied by an Action (States applied field, Actions family of the Rules section). Its numeric effects, such as a penalty to attacks, are Modifiers (Modifiers family) that the Action attaches to the state.
@@ -74,7 +74,7 @@ The Rouse check, which raises Hunger, is an Action that changes the current valu
 
 In Mörk Borg, you can carry Strength + 8 items without trouble, and never more than twice that.
 
-1. First, in the Formulas family (Rules section), create a "Maximum load" Formula that computes 2 × (Strength + 8).
+1. First, in the Formulas family (Rules section), create a "Maximum load" Formula that computes 2 × (Strength + 8): Operation Multiply, Operand 1 the Literal 2, Operand 2 a Calculation that Adds the Reference "Strength · value · value.final" and the Literal 8.
 2. You also need an "Equipment" content type (Content section) and a definition type where Collection is Required, for example "Inventory".
 3. In the "Inventory" subsection, click Create and type "Backpack" in Name.
 4. In the Collections area, click Add collection. Type "items" in Slot ID and choose Owned content in Entry mode.
@@ -82,7 +82,7 @@ In Mörk Borg, you can carry Strength + 8 items without trouble, and never more 
 6. In Capacity Formula, choose "Maximum load". Leave Maximum entries empty: the Formula is enough to set the limit.
 7. Click Save & Quit.
 
-Being encumbered past Strength + 8 is a Condition (Conditions family). It compares the number of items in the collection (its Number output) with Strength + 8.
+Being encumbered past Strength + 8 is a Condition (Conditions family). It checks that the Reference "Backpack · collection items · collection.count" (the number of items) is Greater than Strength + 8.
 
 #### Martial Arts in Cyberpunk RED (DEX, double cost)
 
@@ -96,7 +96,7 @@ In Cyberpunk RED, each skill adds to a Stat, and a few skills, such as Martial A
 
 The skill roll Formula (Stat + skill + 1d10) and the advancement cost both read these fields. You set them up in the Formulas and Tests families, and in an advancement System.
 
-## Contents section
+## Content section
 
 ### Content Types
 
@@ -108,18 +108,20 @@ In Pathfinder 2, you often own several copies of the same consumable, such as th
 2. In Foundry storage, choose Item, then pick the subtype you want in Foundry Item subtype if there is more than one.
 3. In Default runtime mode, choose Stackable. A character can then acquire the same consumable several times.
 4. Under Fields, use Add field to add "Level" (Whole number), "Price in gp" (Number), "Bulk" (Text) and "Traits" (Text, Cardinality many).
-5. Click Save & Quit. A "Consumable" subsection appears under Content Types.
+5. Click Save & Quit. A "Consumable" subsection appears in the Content section, below Content Types.
 
 #### Traveller starships (stored as Actors)
 
 In Traveller, a starship has its own sheet and its own token on the map, just like a character.
 
-1. In Content Types, click Create and type "Starship" in Name. Add a Picture if you like, with Choose / Replace.
+1. In Content Types, click Create and type "Starship" in Name. Add an Image if you like, with Choose / Replace.
 2. In Foundry storage, choose Actor.
 3. In Foundry Actor subtype, choose the actor subtype provided by the Foundry system you use (required if there is more than one).
 4. Leave Default runtime mode on Unique.
 5. Under Fields, add "Tonnage", "Jump rating", "Manoeuvre rating", "Hull" and "Armour", all as Whole number.
 6. Click Save & Quit.
+
+Each ship you then create in the "Starship" subsection works as a template. An Actor made from it, for example dragged from its compendium, takes on its values, its Actions and the Item Contents it grants, which become Items of that Actor.
 
 #### Shadowrun spells (Awakened characters only)
 
@@ -144,10 +146,12 @@ In Pathfinder 2, a minor healing potion (level 1, 4 gp) restores 1d8 Hit Points 
 3. In Name, type "Minor healing potion", and add a Description if you like.
 4. Leave Runtime mode on "Same as its type (Stackable)".
 5. Fill in the type's fields: Level 1, Price in gp 4, Bulk "L", Traits "consumable", "healing", "potion" (one value per line).
-6. Under Relations, click Add relation, choose the Operation Grant on acquisition and the Related object "Drink a healing potion".
+6. Open Relations, click Add relation, then choose the Operation Grant on acquisition and the Related object "Drink a healing potion".
 7. Click Save & Quit.
 
 To make buying it cost gold, choose a "Buy" Action that takes away the 4 gp in Acquisition Action. Otherwise, leave it on "No Action: grant directly".
+
+A Content can also grant other Contents. For a "Healer's kit" that comes with three potions, add a relation Grant on acquisition with the Related object "Minor healing potion", and type `{"count": 3}` in its Advanced parameters (JSON). Acquiring the kit then gives the character three potions, created as Items.
 
 #### The D&D 5e Battle Master archetype (three maneuvers to choose from)
 
@@ -156,7 +160,7 @@ In D&D 5e, the Battle Master fighter gets superiority dice and picks three maneu
 1. The maneuvers (Riposte, Menacing Attack, Disarming Attack, Feinting Attack, Parry…) are Actions, and the superiority dice are a Definition with a Pool.
 2. In the subsection for the "Archetype" content type, click Create and type "Battle Master" in Name.
 3. Under Relations, add a relation with the Operation Grant on acquisition and the Related object "Superiority dice".
-4. Under Acquisition choice, click Add choice. Type "Maneuvers" in Name, 3 in Minimum and 3 in Maximum.
+4. Under Acquisition choices, click Add choice. Type "Maneuvers" in Name, 3 in Minimum and 3 in Maximum.
 5. In Operation, choose Grant on acquisition. In Related object, check all the maneuvers on offer (the search field helps you find them).
 6. Click Save & Quit.
 
@@ -178,9 +182,9 @@ In an Acquisition choice, you enter this bonus without JSON. When the Operation 
 
 ## Rules (calculations and rolls)
 
-Every family in this section works the same way: open the family under Rules, click **Create**, fill in the editor, then click **Save**. Each element has a **Name** and an **Enabled** checkbox, which is ticked by default.
+Every family in this section works the same way: open the family under Rules, click **Create**, fill in the editor, then click **Save & Quit** (**Apply** saves and keeps the editor open). In the Rules menu, Parameters, Formulas, Derived Outputs and Conditions sit under the **Computing** heading, and Rolls, Outcomes and Tests under **Rolls**. Each element has a **Name** and an **Enabled** checkbox, which is ticked by default. Its **Description** and **Tags** are in the folded **Notes and tags** section.
 
-You build Formulas and Conditions in a visual editor. For each operand, you pick its kind from a list: **Literal**, **Parameter**, **Formula**, **Reference**, **Context value**, **Dice of the roll**, **Distance** or **Actors nearby**. A Reference is shown as "Name · capability · output", for example "Stealth · value · value.final". By default it is read on the Actor being evaluated. The **Read on** list lets you read it on the **Target**, the **Source**, the **Owner**, the **Subject (reaction)**, the **Group leader**, the **World** or the **Combat in progress** instead. For a **Context value**, the field suggests the paths the engine fills in, each with a short explanation: `variables.test.natural`, `variables.input.<id>`, `variables.creation.<step id>.total`, `event.payload.<field>`, and so on.
+You build Formulas and Conditions in a visual editor. For each operand, you pick its kind from a list: **Literal**, **Parameter**, **Formula**, **Reference**, **Context value**, **Dice of the roll**, **Distance** or **Actors nearby**. A Reference is shown as "Name · capability · output", for example "Stealth · value · value.final". By default it is read on the Actor being evaluated. The **Read on** list (**Evaluated Actor** by default) lets you read it on **Self**, the **Target**, the **Source**, the **Owner**, the **Subject (reaction)**, the **Group leader**, the **World** or the **Combat in progress** instead. The World and the Combat in progress hold the values shared by the whole table rather than by one character. For a **Context value**, the field suggests the paths the engine fills in, each with a short explanation: `variables.test.natural`, `variables.input.<id>`, `variables.creation.<step id>.total`, `event.payload.<field>`, and so on.
 
 An operand can itself be a **Calculation**. It picks its own operation, and its operands open below it, indented. You can nest as many levels as you need, for example to round the result of a division. The **Technical** section shows the expression's JSON as read-only text, updated with every change.
 
@@ -196,7 +200,7 @@ In D&D 5e, a passive score (such as passive Perception) equals 10 plus the skill
 2. **Name**: "Passive score base".
 3. **Value type**: Whole number.
 4. **Value**: `10`.
-5. Save. The passive Perception Formula will read this Parameter (see the D&D 5e example in Derived Outputs).
+5. Click **Save & Quit**. The passive Perception Formula will read this Parameter (see the D&D 5e example in Derived Outputs).
 
 #### The success divisors in Call of Cthulhu
 
@@ -214,11 +218,11 @@ In Savage Worlds, a roll succeeds on 4 or more, and every full 4 points above th
 2. **Name**: "Savage Worlds threshold".
 3. **Value type**: Whole number.
 4. **Value**: `4`.
-5. Save. This one Parameter is used twice: as the Test's target, through a **Single value** Formula that reads it, and in the raise Condition (see the Savage Worlds example in Outcomes).
+5. Click **Save & Quit**. This one Parameter is used twice: as the Test's target, through a **Single value** Formula that reads it, and in the raise Condition (see the Savage Worlds example in Outcomes).
 
 ### Formulas
 
-A Formula calculates a value. You choose an **Operation**: Single value, Add, Subtract, Multiply, Divide, Remainder of a division, Minimum, Maximum, Sum, Average, Round down, Round up, Round to nearest, Keep between two values, If… then… else, Table of ranges or Table of values. Arithmetic operations take as many operands as you need (**Add operand**). A rounding operation takes one **Value**. If… then… else takes a condition (**If**), then the **Then** and **Else** values. A Table of ranges sorts a **Value** into **From** / **To** / **Outcome** rows (**Add range**), with an optional **Else** value.
+A Formula calculates a value. You choose an **Operation**: Single value, Add, Subtract, Multiply, Divide, Remainder of a division, Minimum, Maximum, Sum, Average, Round down, Round up, Round to nearest, Keep between two values, If… then… else, Table of ranges or Table of values. Add, Subtract, Multiply, Divide, Minimum, Maximum, Sum and Average take as many operands as you need (**Add operand**). Remainder of a division takes a **Value** and a **Divisor**. A rounding operation takes one **Value**. Keep between two values takes a **Value**, a **Minimum** and a **Maximum**. If… then… else takes a condition (**If**), then the **Then** and **Else** values. A Table of ranges sorts a **Value** into **From** / **To** / **Result** rows (**Add range**), with an optional **Otherwise** value. A Table of values does the same with a **Key** and **Key** / **Result** rows (**Add value**).
 
 #### The target value of a Warhammer Fantasy 4e test
 
@@ -229,7 +233,7 @@ In Warhammer Fantasy 4e, you roll 1d100 under the skill, raised or lowered by th
 3. **Operation**: **Add**.
 4. Operand 1: **Reference**, then "Melee · value · value.final".
 5. Click **Add operand**. Operand 2: **Context value**, path `variables.input.difficulte`.
-6. Save. The difficulty is an input the player picks when they act, so you declare it on the Action (Actions family). The Formula then serves as the **Target** in the Test.
+6. Click **Save & Quit**. The difficulty is a choice the player makes when they act, so you declare it on the Action, in its **Choices when used** (Actions family). The Formula then serves as the **Target** in the Test.
 
 #### The hard and extreme thresholds in Call of Cthulhu
 
@@ -240,7 +244,7 @@ The extreme threshold is the skill divided by 5, and the hard threshold is the s
 3. **Operation**: **Divide**.
 4. Operand 1: **Context value**, path `variables.test.target` (the target of the current Test, which is the skill being tested).
 5. Operand 2: **Parameter**, "Extreme divisor".
-6. Save, then do the same for "Hard threshold" with the "Hard divisor" Parameter.
+6. Click **Save & Quit**, then do the same for "Hard threshold" with the "Hard divisor" Parameter.
 7. The division can give a decimal number (63 / 5 = 12.6). That is fine: a die roll is a whole number, so "roll less than or equal to 12.6" is the same as "roll less than or equal to 12".
 
 #### The ability modifier in D&D 5e
@@ -253,7 +257,7 @@ In D&D 5e, an ability modifier equals (score − 10) / 2, rounded down: 15 gives
 4. **Value**: **Calculation**, then the **Divide** operation. Its two operands open below it.
 5. Operand 1 of the division: **Calculation**, **Subtract** operation, with operand 1 set to the **Reference** "Strength · value · value.final" and operand 2 set to the **Literal** `10`.
 6. Operand 2 of the division: **Literal** `2`.
-7. Save. Create the other five modifiers the same way, or duplicate this one by right-clicking its card and changing the Reference. For a target's saving throw, the same Reference with **Read on** set to **Target** gives the target's own modifier.
+7. Click **Save & Quit**. Create the other five modifiers the same way, or right-click this one's card, choose **Duplicate** and change the Reference. For a target's saving throw, the same Reference with **Read on** set to **Target** gives the target's own modifier.
 
 #### The dice pool in Shadowrun
 
@@ -264,7 +268,7 @@ In Shadowrun, you roll as many d6 as your attribute plus your skill.
 3. **Operation**: **Add**.
 4. Operand 1: **Reference**, "Agility · value · value.final".
 5. Operand 2: **Reference**, "Firearms · value · value.final".
-6. Save. Create "Defense pool" (Reaction + Intuition) the same way. The Test will read these Formulas through an input, and the Roll will use it as its number of dice (see the Shadowrun example in Tests).
+6. Click **Save & Quit**. Create "Defense pool" (Reaction + Intuition) the same way. The Test will read these Formulas through an input, and the Roll will use it as its number of dice (see the Shadowrun example in Tests).
 
 ### Derived Outputs
 
@@ -279,7 +283,7 @@ Passive Perception equals 10 plus the Perception bonus. Here, the "Perception" D
 3. In **Derived Outputs**, click **Create**. **Name**: "Calculated passive Perception".
 4. **Formula**: "Passive Perception calculation".
 5. **Target output**: "Passive Perception · value · value.final".
-6. Save. The sheet now shows passive Perception without anyone having to type it in.
+6. Click **Save & Quit**. The sheet now shows passive Perception without anyone having to type it in.
 
 #### Parry in Savage Worlds
 
@@ -289,7 +293,7 @@ Parry equals 2 plus half the Fighting die (a d8 gives 2 + 4 = 6). Trait dice go 
 2. Operand 2: **Calculation**, **Divide** operation, with operand 1 set to the **Reference** "Fighting · value · value.final" and operand 2 set to the **Literal** `2`.
 3. In **Derived Outputs**, click **Create**. **Name**: "Calculated Parry".
 4. **Formula**: "Parry calculation". **Target output**: "Parry · value · value.final".
-5. Save. Toughness works the same way, using Vigor and armor.
+5. Click **Save & Quit**. Toughness works the same way, using Vigor and armor.
 
 #### Armor Class in Pathfinder 2
 
@@ -300,7 +304,7 @@ In Pathfinder 2, AC equals 10 plus the Dexterity modifier, the armor proficiency
 3. Operand 3: **Reference** "Armor proficiency · value · value.final". Operand 4: **Reference** "Armor bonus · value · value.final".
 4. In **Derived Outputs**, click **Create**. **Name**: "Calculated AC".
 5. **Formula**: "AC calculation". **Target output**: "Armor Class · value · value.final".
-6. Save. A Shield spell still works: it is a Modifier (Modifiers family) that adds to the derived final value.
+6. Click **Save & Quit**. A Shield spell still works: it is a Modifier (Modifiers family) that adds to the derived final value.
 
 ### Conditions
 
@@ -314,7 +318,7 @@ In D&D 5e, a 20 on the d20 is a critical success, whatever the total.
 2. **Operation**: **Equals**.
 3. Operand 1: **Context value**, path `variables.test.natural`.
 4. Operand 2: **Literal** `20`.
-5. Save. Create "Natural 1" the same way. The Test's Outcomes use these Conditions.
+5. Click **Save & Quit**. Create "Natural 1" the same way. The Test's Outcomes use these Conditions.
 
 #### The extreme success in Call of Cthulhu
 
@@ -324,7 +328,7 @@ An extreme success needs a roll less than or equal to a fifth of the skill.
 2. **Operation**: **Less or equal**.
 3. Operand 1: **Context value**, path `variables.test.total`.
 4. Operand 2: **Formula**, "Extreme threshold" (see the Call of Cthulhu example in Formulas).
-5. Save, then create "Roll under hard threshold" with the "Hard threshold" Formula. The Formula is calculated inside the current Test, so it reads the skill being tested.
+5. Click **Save & Quit**, then create "Roll under hard threshold" with the "Hard threshold" Formula. The Formula is calculated inside the current Test, so it reads the skill being tested.
 
 #### The fumble in Call of Cthulhu
 
@@ -335,7 +339,7 @@ A fumble is a roll of 100, or a roll of 96 to 100 when the skill is below 50.
 3. **If**: **Calculation**, **Less than** operation, with operand 1 set to the **Context value** `variables.test.target` (the skill being tested) and operand 2 set to the **Literal** `50`.
 4. **Then**: **Calculation**, **Greater or equal** operation, with `variables.test.natural` and the **Literal** `96`.
 5. **Else**: **Calculation**, **Equals** operation, with `variables.test.natural` and the **Literal** `100`.
-6. Save. The skill Test uses it for its "Fumble" Outcome (see the Call of Cthulhu example in Tests).
+6. Click **Save & Quit**. The skill Test uses it for its "Fumble" Outcome (see the Call of Cthulhu example in Tests).
 
 #### The critical in Vampire: The Masquerade V5
 
@@ -343,9 +347,9 @@ In V5, two or more 10s among the dice rolled make a critical.
 
 1. In **Conditions**, click **Create**. **Name**: "Pair of 10s".
 2. **Operation**: **Greater or equal**.
-3. Operand 1: **Dice of the roll**. In the lists that appear, choose **Number of dice**, leave the group empty (**Any group**), then pick **Equal to** and a **Face value** of `10`.
+3. Operand 1: **Dice of the roll**. In the controls that appear, choose **Number of dice**, leave the group field empty (it shows **Every group**), then pick **Equal to** and type `10` in **Face value**.
 4. Operand 2: **Literal** `2`.
-5. Save. If the Roll tags the Hunger dice as a group (for example `[faim]` in the dice formula), typing `faim` in the group field counts only those dice: that gives you a messy critical.
+5. Click **Save & Quit**. If the Roll tags the Hunger dice as a group (for example `[faim]` in the dice formula), typing `faim` in the group field counts only those dice: that gives you a messy critical.
 
 ### Rolls
 
@@ -357,18 +361,18 @@ In V5, you roll a pool of d10s, and each 6 or higher counts as a success.
 
 1. In **Rolls**, click **Create**. **Name**: "V5 pool".
 2. **Dice formula**: `(@test.reserve)d10cs>=6`.
-3. Save. The roll's total is then the number of successes.
+3. Click **Save & Quit**. The roll's total is then the number of successes.
 4. The `reserve` value comes from an input of the Test that uses this Roll (the Test's **Inputs** section, with an **Input ID** of `reserve`). The Shadowrun example in Tests works the same way.
 
 #### Advantage and disadvantage in D&D 5e
 
 With advantage, you roll two d20s and keep the higher one. With disadvantage, you keep the lower one. If you have both, they cancel out.
 
-1. Create two Conditions: "Advantage" (**Context value** `variables.input.avantage` **Equals** `1`) and "Disadvantage" (same path, **Equals** `-1`). The `avantage` value is an Action input that equals 1, -1 or 0 (Actions family): the player picks 0 when both apply.
+1. Create two Conditions: "Advantage" (**Context value** `variables.input.avantage` **Equals** `1`) and "Disadvantage" (same path, **Equals** `-1`). The `avantage` value is one of the Action's **Choices when used** (Actions family), with the allowed values 1, -1 and 0: the player picks 0 when both apply.
 2. In **Rolls**, click **Create**. **Name**: "d20". **Dice formula**: `1d20`.
 3. In **Variants**, click **Add a variant**. **Condition**: "Advantage". **Dice formula**: `2d20kh1`.
 4. Add a second variant. **Condition**: "Disadvantage". **Dice formula**: `2d20kl1`.
-5. Save. The natural die that "Natural 20" reads is the die you kept.
+5. Click **Save & Quit**. The natural die that "Natural 20" reads is the die you kept.
 
 #### Action dice in Blades in the Dark
 
@@ -377,7 +381,7 @@ In Blades in the Dark, you roll as many d6 as your action rating and keep the hi
 1. Create the "No dice" Condition: **Context value** `variables.test.inputs.des` **Equals** **Literal** `0`.
 2. In **Rolls**, click **Create**. **Name**: "Action dice". **Dice formula**: `(@test.des)d6kh1`.
 3. In **Variants**, click **Add a variant**. **Condition**: "No dice". **Dice formula**: `2d6kl1`.
-4. Save. In the Test, add the `des` input with its **Source** set to **Reference**, reading the rating of the action being rolled (for example "Finesse · value · value.final").
+4. Click **Save & Quit**. In the Test, add the `des` input with its **Source** set to **Reference**, reading the rating of the action being rolled (for example "Finesse · value · value.final").
 
 ### Outcomes
 
@@ -390,7 +394,7 @@ A 6 is a full success, a 4 or 5 is a partial success, and 1 to 3 is a failure.
 1. Create two Conditions on `variables.test.total`: "At least 6" (**Greater or equal** `6`) and "At least 4" (**Greater or equal** `4`).
 2. In **Outcomes**, click **Create**. **Name**: "Full success", **Result key**: `totale`, **Condition**: "At least 6".
 3. Create "Partial success", **Result key**: `partielle`, **Condition**: "At least 4".
-4. Create "Failure", **Result key**: `echec`, with no Condition (the first option in the list).
+4. Create "Failure", **Result key**: `echec`, **Condition**: **Always (fallback result)**.
 5. In the Test, put "Full success" before "Partial success" and set "Failure" as the **Fallback outcome**. A 6 also matches "At least 4", so the order is what makes the difference.
 
 #### Automatic successes and failures in Warhammer Fantasy 4e
@@ -400,7 +404,7 @@ In Warhammer Fantasy 4e, a roll of 01 to 05 always succeeds and a roll of 96 to 
 1. Create the Conditions "05 or less" (`variables.test.natural` **Less or equal** `5`), "96 or more" (`variables.test.natural` **Greater or equal** `96`) and "Under the target" (`variables.test.margin` **Less or equal** `0`).
 2. In **Outcomes**, create "Automatic success", **Result key**: `reussite`, **Condition**: "05 or less".
 3. Create "Automatic failure", **Result key**: `echec`, **Condition**: "96 or more".
-4. Create "Success", **Result key**: `reussite`, **Condition**: "Under the target". Create "Failure", **Result key**: `echec`, with no Condition.
+4. Create "Success", **Result key**: `reussite`, **Condition**: "Under the target". Create "Failure", **Result key**: `echec`, **Condition**: **Always (fallback result)**.
 5. In the Test, the order is: Automatic success, Automatic failure, Success, with Failure as the **Fallback outcome**. Both successes share the same key, so to Actions they are the same result.
 
 #### The raise in Savage Worlds
@@ -410,12 +414,12 @@ A roll that beats the threshold by 4 or more points gives a raise, which boosts 
 1. Create the "Raise" Condition: **Context value** `variables.test.margin` **Greater or equal** **Parameter** "Savage Worlds threshold".
 2. Create the "Success" Condition: `variables.test.margin` **Greater or equal** **Literal** `0`.
 3. In **Outcomes**, create "Raise" (**Result key** `prouesse`, **Condition** "Raise") and "Success" (**Result key** `reussite`, **Condition** "Success").
-4. Create "Failure" (**Result key** `echec`), with no Condition.
+4. Create "Failure" (**Result key** `echec`, **Condition** **Always (fallback result)**).
 5. In the Test (**Target**: the Formula that reads the "Savage Worlds threshold" Parameter), the order is Raise then Success, with Failure as the **Fallback outcome**. An Action can then read the `prouesse` key to add 1d6 to the damage.
 
 ### Tests
 
-A Test brings everything together: the **Inputs** it reads first, the **Roll**, the **Target**, the **Calculation** (Bonus Formula, Total Formula, Margin Formula) and the **Outcomes** in order. Without a Margin Formula, the margin is the total minus the target.
+A Test brings everything together: the **Roll**, the **Target**, the **Inputs** it reads first, the **Extra rolls**, the **Calculation** (Bonus Formula, Total Formula, Margin Formula), the **Outcomes** in order and the **Fallback outcome**. Without a Margin Formula, the margin is the total minus the target.
 
 #### A skill test in Call of Cthulhu
 
@@ -424,9 +428,9 @@ You roll 1d100 under the skill. A 01 is a critical, a 100 is a fumble (96 and up
 1. Create the "d100" Roll (**Dice formula** `1d100`), and the "Stealth" Formula (**Single value**, **Reference** "Stealth · value · value.final").
 2. In **Tests**, click **Create**. **Name**: "Stealth test". **Roll**: "d100".
 3. **Target**: the "Stealth" Formula.
-4. In **Outcomes**, use **Add an outcome** in this order: Critical (`variables.test.natural` equal to 1), Fumble (the "Fumble" Condition), Extreme ("Roll under extreme threshold"), Hard ("Roll under hard threshold"), Regular (`variables.test.margin` less than or equal to 0). Drag the rows to fix the order.
+4. In **Outcomes**, pick them from the **Add an outcome** list in this order: Critical (`variables.test.natural` equal to 1), Fumble (the "Fumble" Condition), Extreme ("Roll under extreme threshold"), Hard ("Roll under hard threshold"), Regular (`variables.test.margin` less than or equal to 0). Drag the rows to fix the order.
 5. **Fallback outcome**: Failure.
-6. Save. For another skill, right-click the Test's card and choose **Duplicate**: you only need to change the target Formula.
+6. Click **Save & Quit**. For another skill, right-click the Test's card and choose **Duplicate**: you only need to change the target Formula.
 
 #### Opposed ranged attacks in Shadowrun
 
@@ -448,34 +452,35 @@ In Cyberpunk RED, you roll 1d10 + stat + skill. A natural 10 lets you roll one m
 3. In **Tests**, click **Create**. **Name**: "Handgun shot". **Roll**: "d10".
 4. In **Extra rolls**, click **Add an extra roll**: **Condition** "Natural 10", **Roll** "Critical d10", **Effect on the total** **Adds**.
 5. Add a second one: **Condition** "Natural 1", **Roll** "Critical d10", **Effect on the total** **Takes away**.
-6. In **Calculation**, **Bonus Formula**: "Reflexes + Handgun". **Target**: **Fixed value**, then **Value** `15` (a difficult task).
+6. Open **Calculation** and set **Bonus Formula** to "Reflexes + Handgun". Set **Target** to **Fixed value**, then **Value** to `15` (a difficult task).
 7. Add the "Success" Outcome (`variables.test.margin` **Greater than** `0`, since you have to beat the difficulty), with "Failure" as the **Fallback outcome**.
 
 ## Rules (effects, actions, dice)
 
 ### Effects
 
-An Effect changes a single editable value of a Definition: it sets it, adds to it, subtracts from it, multiplies it or toggles it. In the **Target** list, each value appears as "Name · capability · output", for example "Hit points · pool · pool.current". An Effect does nothing on its own: an Action runs it, either as an effect or as a cost.
+An Effect changes a single editable value: it sets it, adds to it, subtracts from it, multiplies it or toggles it. In the **Target** list, each value of a Definition appears as "Name · capability · output". A pool also shows its slot, for example "Hit points · pool hp · pool.current". At the end of the list, "Field of the Content used: …" entries write a number field of the Item the Action was used from. An Effect does nothing on its own: an Action runs it, either as an effect or as a cost. The Effects that come after it in the same Action can read what it did at `variables.effects.<Effect id>` (`before`, `after` and `operand`).
 
 #### Weapon damage in D&D 5e (critical hits and resistance)
 
 A longsword deals 1d8 + Strength. On a critical hit you roll twice as many dice, and a resistant creature only takes half.
 
 1. Open **Rules > Effects**, create an Effect and name it "Longsword damage".
-2. **Target**: "Hit points · pool · pool.current". **Applies to**: Target.
+2. **Target**: "Hit points · pool hp · pool.current". **Applies to**: Target.
 3. **Operation**: Subtract. **Value source**: Dice roll.
 4. **Roll**: the "1d8" Roll (Rolls family).
 5. **Dice multiplier**: a Formula that equals 2 when the Test outcome is a critical, and 1 otherwise (Formulas family: **If… then… else**, where **If** is an **Equals** Calculation between `variables.test.outcome.resultKey` and the critical's key). Only the dice are doubled, not the bonus.
 6. **Roll bonus**: the "Strength modifier" Formula.
 7. **Factor after the roll**: a Formula that equals 0.5 if the target resists slashing damage, and 1 otherwise (**If… then… else**, with a Reference **Read on** **Target**). The result is rounded down.
 8. **Lowest result**: 0, so that a big penalty never turns damage into healing.
+9. The chat card shows the dice, the bonus, the factor and the amount applied, for example "1d8 : 5 + 3 = 8".
 
 #### Refreshing Fate points in Fate
 
 At the start of a session, each character's Fate points go back up to their Refresh value.
 
 1. Create an Effect called "Refresh Fate points".
-2. **Target**: "Fate points · pool · pool.current". **Applies to**: Self.
+2. **Target**: "Fate points · pool fate · pool.current". **Applies to**: Self.
 3. **Operation**: Set.
 4. **Value source**: Reference, then **Reference**: "Refresh · value · value.final". The Effect reads the final value, bonuses included.
 5. Leave **Definition chosen by** on "The target above".
@@ -485,16 +490,27 @@ At the start of a session, each character's Fate points go back up to their Refr
 
 A loud score adds 2 Heat, a gauge that belongs to the crew rather than to a single character.
 
-1. In the Ruleset editor, under **Shared resources**, tick the "Heat" Definition under **World resources**. It then exists only once for the whole table.
+1. In **General**, click **Edit Ruleset** and open **Combat and shared resources**. Under **Shared resources**, tick the "Heat" Definition in **World resources**. It then exists only once for the whole table.
 2. Create an Effect called "Loud score: +2 Heat".
-3. **Target**: "Heat · pool · pool.current". **Applies to**: World.
-4. **Operation**: Add. **Value source**: Literal, **Value**: 2.
+3. **Target**: "Heat · pool heat · pool.current". **Applies to**: World.
+4. **Operation**: Add. **Value source**: Literal value, **Value**: 2.
 5. If Heat is a pool bounded from 0 to 9, any excess is brought back down to 9. This is the pool's default **Above maximum** setting, "Clamp to the bound".
 6. Tick the Effect in the "Pay off the score" Action (Actions family).
+7. In play, everyone sees Heat from the **Shared resources** button of the combat tracker, and the GM can change it there.
+
+#### Ammunition in Cyberpunk RED
+
+Each gun counts its own rounds. A shot spends one, and a reload refills the magazine from the character's ammo reserve.
+
+1. In the Content section, give the "Weapon" Content Type a Whole number field called "Magazine".
+2. Create the "Spend a round" Effect. **Target**: "Field of the Content used: Magazine". **Operation**: Subtract. **Value source**: Literal value, **Value**: 1.
+3. Tick it in the **Cost Effects** of the "Shoot" Action that each weapon grants. The Effect writes on the weapon the Action was used from, so two pistols keep separate counts.
+4. For the reload, a "Fill the magazine" Effect uses the same **Target** with **Operation** Set and the magazine size as **Value**, for example 12.
+5. A second Effect of the reload, "Take from the reserve", subtracts from the character's "Ammo" pool a Formula that reads the **Context value** `variables.effects.<id>.after` minus `variables.effects.<id>.before`, where `<id>` is the identifier of "Fill the magazine". Only the rounds actually loaded leave the reserve.
 
 ### Actions
 
-An Action is what you trigger from a sheet. It checks its **Conditions**, pays its **Cost Effects**, makes its **Test (optional)**, then applies its **Effects**. If any Condition is false, nothing is written.
+An Action is what you trigger from a sheet. It checks its **Conditions**, pays its **Cost Effects**, makes its **Test (optional)**, then applies its **Effects**. If any Condition is false, nothing is written. Its result is posted as a card in the chat, and **Chat card buttons** can add buttons under that card to run a follow-up Action.
 
 #### Fireball in D&D 5e
 
@@ -514,7 +530,7 @@ By spending one point of Edge, the player rerolls every die in their pool that i
 1. Create the "Second Chance" Action. **Conditions**: "Some Edge is left". **Cost Effects**: "Spend 1 Edge".
 2. Open the **Reroll** section and tick **Rerolls another Action**.
 3. Leave **Keep the same dice** unticked: you want fresh dice.
-4. **Dice thrown again**: "Only some dice". **Dice group**: empty (all groups).
+4. **Dice thrown again**: "Only some dice". **Dice group**: "Any group".
 5. **Dice showing**: "below", **Value**: 5. **Instead, set them to**: "Throw them again".
 6. Under **Actions it can reroll**, tick the skill test Actions. Hits already rolled stay on the table.
 7. To forbid a second reroll, add a Condition that reads `variables.reroll.count` (1 for the first reroll).
@@ -527,7 +543,17 @@ Every member of the team rolls, you keep the best result, and the leader takes 1
 2. **Group Test**: the "Action roll" Test (Tests family), with its success, partial success and failure Outcomes.
 3. Tick **The acting Actor takes part**. **Members**: "Chosen when the Action is used".
 4. **Test (optional)**: a "Group result" Test with no Roll, whose total Formula reads `variables.group.best`, the best total among the members.
-5. **Effects**: "Leader's stress", an Effect that adds to the Stress pool (**Applies to**: Self) a Formula reading `variables.group.outcomes.echec`, the number of members who failed.
+5. **Effects**: "Leader's stress", an Effect that adds to the Stress pool (**Applies to**: Self) a Formula reading `variables.group.outcomes.failure`, the number of members who failed. The last part is the **Result key** of the failure Outcome.
+
+#### Attack, then damage, in D&D 5e (chat card buttons)
+
+The attack roll goes to the chat first. If it hits, the player clicks a button on the card to roll damage.
+
+1. Open the "Attack" Action and its **Chat card buttons** section, then click **Add a button**.
+2. **Action**: "Weapon damage". **Who uses it**: "The character's player". The button takes the name of that Action.
+3. "Weapon damage" reads the attack's result in `variables.previous`: `total`, `margin`, `target`, `outcome` (the Outcome's result key), `roll` and `natural`.
+4. Give "Weapon damage" a Condition that `variables.previous.outcome` equals "hit" (or "critical"), so a miss deals nothing. Its **Dice multiplier** can read the same value to double the dice on a critical.
+5. Choose "Each target, for itself" instead for a saving throw that each target makes from the card, or "The GM" for something only the GM decides.
 
 ### Modifiers
 
@@ -539,7 +565,7 @@ Shield gives +5 to Armor Class until the start of the caster's next turn.
 
 1. Open **Rules > Modifiers** and create "Shield: +5 AC".
 2. **Target**: "Armor Class · value · value.final".
-3. **Operation**: Add. **Value source**: Literal, **Value**: 5.
+3. **Operation**: Add. **Value source**: Literal value, **Value**: 5.
 4. **Stacking**: "Always applies".
 5. In the "Cast Shield" Action (Actions family), tick this Modifier under **Modifiers applied** and choose the "One round" Duration in **State duration** (Durations family).
 6. The Modifier goes on the Action's target. With no token targeted, that's the caster.
@@ -561,7 +587,7 @@ A character who carries more than their encumbrance limit loses 1 point of Movem
 
 1. Create the "Overloaded" Condition (Conditions family): the carried load is above the calculated limit.
 2. Create the "Overload" Modifier. **Target**: "Movement · value · value.final".
-3. **Operation**: Subtract. **Value source**: Literal, **Value**: 1.
+3. **Operation**: Subtract. **Value source**: Literal value, **Value**: 1.
 4. Under **Conditions**, tick "Overloaded".
 5. Don't put it in any Action. It applies by itself as soon as the Condition is true, and goes away when the character puts their pack down.
 6. To keep a floor, add a second Modifier with the "At least" operation and a higher **Application order**. It stops Movement from dropping below the minimum.
@@ -577,7 +603,7 @@ The +5 from Shield wears off on the next round.
 1. Open **Rules > Durations** and create "One round".
 2. **Mode**: "Fixed length".
 3. **Amount**: 1. **Unit**: Rounds.
-4. A round is one round in the Foundry world: the Duration expires when the combat tracker moves forward one round.
+4. A round is counted in world time: Foundry's round length, 6 seconds by default. Each new round in the combat tracker moves the world clock forward that much, so the Duration expires one round later.
 5. Choose this Duration in the **State duration** field of the "Cast Shield" Action (Actions family).
 
 #### Invisibility in Chroniques Oubliées
@@ -638,15 +664,15 @@ The d616 is played with three d6, and the middle one is special: its 1 is the Ma
 
 ### Tables
 
-A Table turns a roll into a result. You choose its **Roll** and an optional **Bonus Formula**, then describe its **Lines**. Each line covers a range (**From** and **To**, left empty for an open range), carries an **Outcome** and runs its **Actions run**. An Action rolls on the Table through its **Then roll on Table** field, after its Effects.
+A Table turns a roll into a result. You choose its **Roll** and an optional **Bonus Formula**, then describe its **Rows**. Each row covers a range (**From** and **To**, left empty for an open range), gives a **Result** in words and runs the Actions ticked in **Actions run**. An Action rolls on the Table through its **Then roll on Table** field, after its Effects.
 
 #### Critical wounds in Warhammer Fantasy 4e
 
-A critical hit to the head is resolved on a d100 table, where some lines make the target bleed or knock them out.
+A critical hit to the head is resolved on a d100 table, where some rows make the target bleed or knock them out.
 
 1. Open **Rules > Tables** and create "Critical wounds: head". **Roll**: "1d100" (Rolls family). **Bonus Formula**: "No bonus".
-2. Add one line per range from the book, for example **From** 1 **To** 10 with its **Outcome**, and so on up to 100.
-3. On each line, tick what it causes under **Actions run**, for example an Action that applies the "Bleeding" state to the target.
+2. Click **Add a row** for each range from the book, for example **From** 1 **To** 10 with its **Result**, and so on up to 100.
+3. On each row, tick what it causes under **Actions run**, for example an Action that applies the "Bleeding" state to the target.
 4. Create the "Head critical" Action with **Then roll on Table** set to this Table.
 5. In the attack Action, under **On each outcome**, have the "Critical" outcome tick "Head critical" in **Then run these Actions**.
 6. Ranges must not overlap. You need to type in the book's text yourself.
@@ -656,8 +682,8 @@ A critical hit to the head is resolved on a d100 table, where some lines make th
 When an investigator snaps, a d10 decides what form their temporary insanity takes.
 
 1. Create the "Bout of madness" Table. **Roll**: "1d10".
-2. Add ten single-value lines (**From** 1 **To** 1, **From** 2 **To** 2…), each with its **Outcome**: amnesia, paranoia, flight…
-3. For lines with a numeric effect, tick an Action under **Actions run**, for example an Action that applies the "Phobia" state.
+2. Add ten single-value rows (**From** 1 **To** 1, **From** 2 **To** 2…), each with its **Result**: amnesia, paranoia, flight…
+3. For rows with a game effect, tick an Action under **Actions run**, for example an Action that applies the "Phobia" state.
 4. Create the "Temporary insanity" Action, with **Then roll on Table** set to "Bout of madness".
 5. To roll on the Table automatically, a Trigger (Orchestration section) can run "Temporary insanity" when the "Sanity loss" event happens.
 
@@ -665,15 +691,15 @@ When an investigator snaps, a d10 decides what form their temporary insanity tak
 
 Every round, each character is dealt a card, and a Joker gives a bonus.
 
-1. Create the "Initiative deck" Table. **Roll**: "1d54" (the field is required, but initiative draws a line directly).
-2. Add 54 lines, one per card, each with a unique value that follows the card order, suit included: from the 2 of clubs (**From** 1 **To** 1) to the Ace of spades (52), then the two Jokers (53 and 54).
-3. On the Joker lines, tick the "Joker" Action under **Actions run**.
-4. In the Ruleset editor, under **Combat initiative**, choose this Table in **Initiative roll** and tick **Reroll each round**.
-5. A drawn card doesn't come back in the same round, just like a real deck. The initiative equals its line's bound.
+1. Create the "Initiative deck" Table. **Roll**: "1d54" (the field is required, but initiative draws a row directly).
+2. Add 54 rows, one per card, each with a unique value that follows the card order, suit included: from the 2 of clubs (**From** 1 **To** 1) to the Ace of spades (52), then the two Jokers (53 and 54).
+3. On the Joker rows, tick the "Joker" Action under **Actions run**. It runs when the Joker is drawn.
+4. In **General**, click **Edit Ruleset**, open **Combat and shared resources**, then under **Combat initiative** choose this Table in **Initiative roll** and tick **Reroll each round**.
+5. A drawn card doesn't come back in the same round, just like a real deck. The initiative equals the row's **To** value (or **From** if **To** is empty).
 
 ### Description scales
 
-A Description scale replaces a number with words on a sheet. You choose what its ranges compare (**Ranges compare**: "the value" or "the % of the maximum"), then describe its **Milestones** (**From**, **To**, **Description**). You then link it to a Definition type or to a Definition (the **Description scale** field), and on the sheet you set the value block's **Display mode** to "As a description".
+A Description scale replaces a number with words on a sheet. You choose what its ranges compare (**Ranges compare**: "the value" or "the % of the maximum"), then click **Add a band** for each range (**From**, **To**, **Description**). You then link it to a Definition type or to a Definition (the **Description scale** field). On the sheet, set a value block's **Shown as** to "As a description". In the sheet editor's **Add** tab, "Description (descriptive scale)" adds such a block directly, and each Definition family with scales is also offered as a list of its words.
 
 #### Health status in Real World Fantasy
 
@@ -681,28 +707,28 @@ Other players don't see a character's Vitalité, only how they look.
 
 1. Open **Rules > Description scales** and create "Health status".
 2. **Ranges compare**: "the % of the maximum".
-3. **Milestones**: 100 and above "Looks in perfect shape", 75 to 99.99 "Slightly hurt", 50 to 74.99 "Hurt", 25 to 49.99 "In bad shape", 0.01 to 24.99 "Critical condition", up to 0 "Coma, dead or stabilized".
+3. **Bands**: 100 and above "Looks in perfect shape", 75 to 99.99 "Slightly hurt", 50 to 74.99 "Hurt", 25 to 49.99 "In bad shape", 0.01 to 24.99 "Critical condition", up to 0 "Coma, dead or stabilized".
 4. In the "Vitalité" Definition, set the **Description scale** field to "Health status".
-5. On the sheet, add a second Vitalité block with **Display mode** "As a description", **Seen by** observers: they read the words, never the number.
+5. On the sheet, add a second Vitalité block with **Shown as** "As a description", seen only by observers (**Seen by**): they read the words, never the number.
 
 #### The Fate adjective ladder
 
 Fate gives every level a name: +4 is Great, 0 is Mediocre, −1 is Poor.
 
 1. Create the "Fate ladder" scale. **Ranges compare**: "the value".
-2. Add one milestone per level, with the same value in **From** and **To**: 8 "Legendary", 7 "Epic", 6 "Fantastic", 5 "Superb", 4 "Great", 3 "Good", 2 "Fair", 1 "Average", 0 "Mediocre", −1 "Poor", −2 "Terrible".
+2. Add one band per level, with the same value in **From** and **To**: 8 "Legendary", 7 "Epic", 6 "Fantastic", 5 "Superb", 4 "Great", 3 "Good", 2 "Fair", 1 "Average", 0 "Mediocre", −1 "Poor", −2 "Terrible".
 3. Leave **To** empty on Legendary and **From** empty on Terrible to cover the extreme values.
 4. Link the scale to the "Skill" Definition type, so every skill uses it. A single Definition can keep "That of its type" or pick a different one.
-5. On the sheet, each skill block with **Display mode** "As a description" shows "Good" instead of "3".
+5. On the sheet, each skill block with **Shown as** "As a description" shows "Good" instead of "3". The "Skill · descriptions" item of the **Add** tab lists every skill with its word.
 
 #### Characteristics in Call of Cthulhu
 
 For an NPC, the GM describes Strength or Intelligence in words rather than as a percentage.
 
 1. Create the "Characteristic level" scale. **Ranges compare**: "the value".
-2. **Milestones**, for example: up to 15 "Very weak", 16 to 40 "Weak", 41 to 60 "Average", 61 to 80 "High", 81 to 95 "Remarkable", 96 and above "Exceptional".
+2. **Bands**, for example: up to 15 "Very weak", 16 to 40 "Weak", 41 to 60 "Average", 61 to 80 "High", 81 to 95 "Remarkable", 96 and above "Exceptional".
 3. Link it to the "Characteristic" Definition type.
-4. On the NPC sheet, show the characteristics with **Display mode** "As a description" for the players (**Seen by**) and as numbers for the GM only.
+4. On the NPC sheet, show the characteristics with **Shown as** "As a description" for the players (**Seen by**) and as numbers for the GM only.
 5. For the state of a gauge such as Sanity, use "the % of the maximum" instead: the words then follow each character's own maximum.
 
 ## Orchestration
@@ -789,7 +815,7 @@ An investigator who loses 5 or more Sanity points in a single roll falls into te
 In Real World Fantasy, each combatant loses 1 Endurance every three rounds, and each day that passes restores 1 Vitalité.
 
 1. There is nothing to create in Event Types: the module provides "Combat starts", "New round", "Turn starts", "Combat ends" and "Time elapsed". They appear directly in a Trigger's **Event Type** field.
-2. "New round" carries the Combat and Round fields. "Turn starts" adds Turn, and only concerns the combatant whose turn it is.
+2. "New round" carries the Combat and Round fields. "Turn starts" adds Turn and Pass, and only concerns the combatant whose turn it is. Pass is the initiative pass being played (1 when the Ruleset has no passes), so a Condition can read event.payload.pass to act only on the first pass.
 3. "Time elapsed" carries Seconds (the time that passed), Days (the number of midnights crossed) and World time.
 4. For Endurance, the "Every three rounds" Condition reads event.payload.round and checks that the remainder of its division by 3 is 0. The "Winded in combat" Trigger listens to "New round" with this Condition.
 5. For Vitalité, the "Daily recovery" Trigger listens to "Time elapsed" and runs the "Recover" Action.
@@ -820,16 +846,17 @@ A bleeding character loses 1 Wound every round.
 4. In **Conditions**, tick "Is bleeding". In **Actions**, tick "Bleed".
 5. When the round changes, the module emits the event for each combatant. Only those who are bleeding lose a point, and nobody has to click anything.
 6. For an effect that only hits the active combatant, choose "Turn starts" instead.
+7. To mark a character at 0 Wounds as defeated, pick an "Out of action" Condition in **Defeated when** (**General** > **Edit Ruleset** > **Combat and shared resources**; the field appears once an **Initiative roll** is chosen). The combat tracker and the token show the mark while the Condition holds, and it goes away after healing.
 
 #### The Mörk Borg calendar: a countdown kept by the world
 
 In Mörk Borg, the world is racing toward its end: the GM secretly counts down the days until the next Misery.
 
-1. In the Ruleset entry, in the **Shared resources** section, tick the "Days until the Misery" Definition in **World resources**. It exists only once for the whole table, outside the characters.
+1. In **General**, click **Edit Ruleset**, open **Combat and shared resources**, and under **Shared resources** tick the "Days until the Misery" Definition in **World resources**. It exists only once for the whole table, outside the characters.
 2. In the Formulas family, create "Days elapsed", which reads the **Context value** event.payload.days.
 3. In the Effects family, create an Effect that **Applies to** "World", on "Days until the Misery", with the "Subtract" operation and the "Days elapsed" Formula. The "Time passes" Action applies it.
 4. Create the "Calendar of Nechrubel" Trigger: **Event Type** "Time elapsed", **Heard by** "The world, once", **When it happens** "Automatically", **Actions** "Time passes".
-5. Each time the GM moves Foundry's world clock forward, the counter drops by the number of midnights crossed. It happens once, not once per character.
+5. Each time the GM moves Foundry's world clock forward, the counter drops by the number of midnights crossed. It happens once, not once per character. The GM follows it from the **Shared resources** button of the combat tracker. To keep it secret, give "Days until the Misery" a Permission with **Default effect** "Allow" and one rule that denies "Read" to the "Player" and "Trusted player" roles: players no longer see it there.
 6. For a resource that belongs to each combat, tick it in **Resources of each combat**, make the Effect apply to "Combat in progress", and choose **Heard by** "The combat, once" with "Combat starts" or "New round".
 
 ## Systems
@@ -858,6 +885,7 @@ The species is rolled on a table (90% humans, then halflings, dwarfs and elves),
 4. Set "Random draw" to "Drawn, can be changed" and type `chance` in "Chance from the data field". The player clicks "Draw at random" and can still change their mind. The step does not calculate the XP bonus that Warhammer gives to players who keep their roll: you handle that separately.
 5. "Characteristics" step: "Kind" Point allocation, "Ruleset source" Definitions, then tick the ten characteristics in "Allowed Definitions".
 6. Set "Random draw" to "Drawn, final" and "Roll for each Definition" to the 2d10 Roll. Each characteristic gets its own roll, which is added to the base set by the species. The player can't change it any more, and the "Minimum" and "Maximum" limits don't apply to rolled points.
+7. Each species also lets the player pick some skills. Set these up under "Acquisition choices" on each species, then add a "Choices of the Contents" step and tick "Species" in "Choices of the steps". The player picks the species skills on their own screen. The step is skipped when the chosen species has no choice.
 
 #### Career-based creation in Traveller
 
@@ -905,19 +933,21 @@ At 300 XP, the fighter reaches level 2 and gains Action Surge. At level 4, they 
 2. In the progression system, click "Add a milestone".
 3. "Label": Level 2. "Reached when": "300 XP or more". In "Grants", tick the "Action Surge" Definition.
 4. Add a "Level 4" milestone, with "Reached when" set to the 2,700 XP Condition. In "Then runs", choose an "Improvement or feat" Action. Its choices, set up in the Actions family, let the player decide.
-5. Each milestone applies only once per character. On the sheet, the system's block lists the milestones already applied, the ones waiting to be applied, and the next one. The "Apply the milestones reached" button applies, in one go, every milestone whose Condition has become true, after asking the player for the choices of their Actions (the level 4 feat). The Runtime Lab gives the GM the same button.
+5. Each milestone applies only once per character. On the sheet, the system's block lists the milestones already applied, the ones waiting to be applied, and the next one. The "Apply the milestones reached" button applies, in one go, every milestone whose Condition has become true, after asking the player for the choices of their Actions (the level 4 feat). "Try the rules" (Tools section) gives the GM the same button.
 
 ### Sheets
+
+The sheet editor shows the sheet in the middle and a side panel with three tabs: **Block** (the settings of the selected block, in Content, Display and Access groups), **Add** (what you can put on the sheet) and **Theme** (the sheet's look). The "Sheet" section at the top holds its name, what it is used for and whether it is enabled.
 
 #### Attribute dots in Vampire: The Masquerade V5
 
 The nine attributes are shown as dots from 1 to 5, and the player clicks a dot to set the level.
 
 1. In Sheets, create the sheet: "Name", "Used for" Actors, then tick "Enabled".
-2. In "Layout", open "Add" and click the Attributes family, under "Definition families". A "List of Definitions" block appears in the selection.
+2. In the **Add** tab, click the Attributes family under "Definition families". A "List of Definitions" block appears in the selected block.
 3. Click the list and set "Columns" to 3 to get the three columns: Physical, Social and Mental.
 4. Click the row's value: "Shows" The listed Definition's, "Which one" its value.
-5. "Display mode": Dots. If the Attribute type has a maximum of 5, the dots stop at 5 on their own. Otherwise, set "Dots (without a maximum)" to 5.
+5. "Shown as": Dots. If the Attribute type has a maximum of 5, the dots stop at 5 on their own. Otherwise, set "Dots (without a maximum)" to 5.
 6. "Dot color": Danger, for a blood red. In "On the sheet", tick "Typed in": clicking a dot sets the level.
 7. On the section that holds the list, set a "Title" and an "Icon", for example `fa-solid fa-droplet`, with "Label shows" Icon and text.
 
@@ -925,34 +955,44 @@ The nine attributes are shown as dots from 1 to 5, and the player clicks a dot t
 
 The player and the GM see the exact hit point gauge, while other players only see words like "Bloodied".
 
-1. In the Description scales family (Rules section), create a scale where "Ranges compare" the % of the maximum. Add tiers with "From", "To" and "Description": "Unhurt" from 100, "Wounded" from 50 to 99.99, "Bloodied" from 0.01 to 49.99, "Down" up to 0. Choose it in the "Description scale" field of the Hit points Definition.
-2. On the sheet, add a value: "Shows" A Definition output, "Which one" the current hit point pool.
-3. "Display mode": Gauge. "Gauge color": Danger, "Gradient to": Success.
+1. In the Description scales family (Rules section), create a scale where "Ranges compare" the % of the maximum. Add bands with "From", "To" and "Description": "Unhurt" from 100, "Wounded" from 50 to 99.99, "Bloodied" from 0.01 to 49.99, "Down" up to 0. Choose it in the "Description scale" field of the Hit points Definition.
+2. On the sheet, add a "Gauge" from the "Fields" group of the **Add** tab. In **Block**, set "Shows" A Definition output and "Which one" the current hit point pool.
+3. "Gauge color": Danger, "Gradient to": Success.
 4. "On the sheet": tick "Can be raised" and "Can be lowered". The sheet then shows − and + around the gauge.
 5. "Seen by": keep "Players (owners)" and "The GM", and untick "Observers".
-6. Add a second value on the same pool, with "Display mode" As a description and "Seen by" limited to "Observers". The number is never sent to them.
+6. Add "Description (descriptive scale)" from the same group. It starts on a Definition that has a scale: pick the hit points in "Which one", then leave only "Observers" in "Seen by". The number is never sent to them.
 7. In the toolbar, "View as" An observer lets you check what they will see.
+8. To show hit points on the token too, open the token's configuration and pick "Hit points" in the "Rule Them'All" group of a bar's attribute. The bar follows the pool but can't be changed from the token.
 
 #### The crew sheet in Blades in the Dark
 
 The crew has its own sheet, separate from the scoundrels' sheets, and the GM keeps track of its Heat.
 
 1. Create two Actor sheets: "Scoundrel sheet" and "Crew sheet".
-2. On the crew sheet, add a value for Heat (a pool with a maximum of 9), with "Display mode" Dots.
+2. On the crew sheet, add a value for Heat (a pool with a maximum of 9), with "Shown as" Dots, or Clock for a progress clock.
 3. "On the sheet": tick "Can be raised" and "Can be lowered". "Changed by": tick "The GM only". Players can see the Heat, but only the GM gets the − and + buttons.
 4. Add an "Action button" pointing to an "Acquire an asset" Action (Actions family), with the "Icon" `fa-solid fa-coins`.
 5. In Foundry, open the crew's Actor, then the sheet configuration in its header. Choose "Crew sheet": every enabled sheet is listed there by name.
 6. The generic "Rule Them'All sheet" entry picks the first enabled sheet that fits. For the crew, choose the sheet by its name instead.
 
+#### A gothic look for Mörk Borg (sheet themes)
+
+Every character sheet should look like a page torn from the same grim book.
+
+1. Open the character sheet and its **Theme** tab. In "Theme", choose "Gothic" (the others are Parchment, Science fiction and Plain).
+2. Adjust the colors ("Page", "Sections", "Text", "Titles and highlights", "Frames", "Fields") and the "Text font" and "Title font". "Section frame (picture)" can put an image frame around each section.
+3. Click "Save as theme" and name it "Mörk Borg". Every sheet of this Ruleset can now take it from the same "Theme" list.
+4. To change it later, adjust the look and save it again under the same name: every sheet that uses it follows. A sheet can still change a color for itself on top of the saved theme. "Export as a file" and "Import a theme…" carry a theme to another Ruleset.
+
 ## Tags
 
-Tags sort and filter the cards in the Configurator. You can put them on almost every object in the Ruleset, except Definition Types, Content Types and tags themselves. Right-click a card, then "Tags…", to tick or untick its tags, or to create a new one by typing its name.
+Tags sort and filter the cards in the Configurator. You create and edit them under **Tools > Tags**. You can put them on almost every object in the Ruleset, except Definition Types, Permissions and tags themselves. Right-click a card, then "Tags…", to tick or untick its tags, or to create a new one by typing its name in "New tag".
 
 #### Schools of magic in D&D 5e
 
 Each spell belongs to a school (Abjuration, Evocation, Necromancy…), which lets you quickly find the spells of a specialist wizard.
 
-1. In Tags, create one tag per school, or do it as you go: right-click a spell, choose "Tags…", then type the school in "New tag".
+1. In **Tools > Tags**, create one tag per school, or do it as you go: right-click a spell, choose "Tags…", then type the school in "New tag".
 2. On each spell, which is a content template (Content section), tick its school in "Tags".
 3. In the list of spells, the "Filter" area shows one chip per school, with the number of spells. Click "Evocation" to keep only those spells, then "Clear filters" to see everything again.
 4. A tag is only for sorting: no Formula or Condition reads it.
@@ -978,7 +1018,7 @@ The cyberware catalog is sorted by location: Cyberlimbs, Neuralware, Cyberoptics
 
 Some spells require concentration, others can be cast as rituals, and the GM wants to spot them at a glance.
 
-1. In Tags, create "Concentration" and "Ritual". Give each one a "Color" by ticking "Customize" (otherwise the tag takes the color of the Organization section).
+1. In **Tools > Tags**, create "Concentration" and "Ritual". Give each one a "Color" by ticking "Customize" (otherwise the tag takes the color of the Tools section).
 2. Open each spell concerned and tick the tag in "Tags". Find it with "Search tags…".
 3. In the list of spells, each card shows its tags in color. The "Filter" chips let you keep only the concentration spells.
 4. A tag doesn't change the rules. To make a concentration spell end when you cast another one, you need an actual rule, with Triggers and Durations.
@@ -989,7 +1029,7 @@ Shadowrun mixes magic, the Matrix and riggers, and a single domain touches Defin
 
 1. Create the tags "Magic", "Matrix" and "Rigging", each with its own color.
 2. On a Formula, a Condition or a Test, open "Notes and tags" and tick the tag in "Tags". Content templates have their "Tags" list directly in the editor.
-3. In Dependencies (Tools section), setting "Filter by tags" to "Matrix" keeps only the objects from that domain, which helps you gauge the scope of a rework.
+3. In **Tools > Dependencies**, click the "Matrix" chip under "Filter by tags" to keep only the objects from that domain. This helps you gauge the scope of a rework.
 
 #### Third-party content in Mörk Borg
 
@@ -997,6 +1037,5 @@ Mörk Borg has a huge third-party supplement scene, and the GM wants to see at a
 
 1. Create a brightly colored "Third-party content" tag, and a "To review" tag for work in progress.
 2. Tick "Third-party content" on every class, weapon or spell that comes from a supplement.
-3. Before a "core book only" session, filter the list on "Third-party content" and disable those objects one by one (the "Enabled" checkbox).
-4. The "To review" tag works as a to-do list. The Real World Fantasy Ruleset does the same with an "Image needed" tag on content that has no illustration yet.
-
+3. To share a supplement with another table, filter on its tag, Ctrl+click each card to select it, then click "Export the selection". The dialog lists what the selection needs: untick what the other Ruleset already has.
+4. Tick "Export as an extension" and set its "Extension version". The other GM installs it with "Import a part…", updates it with the next version, and can remove it from "Installed extensions" in General.
