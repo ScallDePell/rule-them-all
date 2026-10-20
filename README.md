@@ -40,8 +40,8 @@ Enable the module in your world. Then open **Game Settings → Configure Setting
 
 The documentation is in French for now:
 
-- [GM guide](docs/guide-mj.md): installing, building a Ruleset, publishing it, sheets, character creation and play.
-- [Configuration examples](docs/exemples-configuration.md), drawn from well-known games.
+- [GM guide](docs/gm-guide.md): installing, building a Ruleset, publishing it, sheets, character creation and play.
+- [Configuration examples](docs/configuration-examples.md), drawn from well-known games.
 - [Architecture](docs/architecture.md), for contributors.
 
 ## Exemples de rulesets

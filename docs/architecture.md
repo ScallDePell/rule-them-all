@@ -1,50 +1,50 @@
-# Rule Them'All : architecture
+# Rule Them'All: architecture
 
-Ce document décrit le module dans sa version actuelle. Le guide d'utilisation est dans [guide-mj.md](guide-mj.md), les exemples dans [exemples-configuration.md](exemples-configuration.md).
+This document describes the module as it stands today. For how to use it, see [gm-guide.md](gm-guide.md). For examples, see [configuration-examples.md](configuration-examples.md).
 
-## 1. Mission
+## 1. Purpose
 
-- Rule Them'All est un **module Foundry v14** qui tourne par-dessus **n'importe quel système de jeu**. Il ne contient aucune règle : caractéristiques, dés, seuils, ressources, états, couleurs et feuilles viennent des **Rulesets** que le MJ configure.
-- Les sous-types Actor/Item sont ceux du système actif (`src/core/system-document-types.mjs`) ; un système qui en propose plusieurs demande un choix explicite sur le Type de contenu.
-- Tous les libellés de l'interface existent en français et en anglais (`lang/fr.json`, `lang/en.json`, mêmes clés). Les textes d'un Ruleset passent par ses propres traductions.
+- Rule Them'All is a **Foundry v14 module** that runs on top of **any game system**. It contains no rules of its own: attributes, dice, thresholds, resources, states, colors and sheets all come from the **Rulesets** the GM sets up.
+- The Actor and Item subtypes are the ones the active system provides (`src/core/system-document-types.mjs`). If the system offers more than one, you have to pick one explicitly on the Content Type.
+- Every interface label exists in both French and English (`lang/fr.json`, `lang/en.json`, with the same keys). A Ruleset's own text goes through that Ruleset's translations.
 
-## 2. Couches
+## 2. Layers
 
-| Couche | Fichiers | Rôle |
+| Layer | Files | Role |
 | --- | --- | --- |
-| Identité | `src/core/module-contract.mjs` | ID du module, format d'export, hooks publics |
-| Configurateur (domaine) | `src/configurator/configurator-api.mjs`, `-schema`, `-validation`, `-graph`, `rule-contracts.mjs`, `dependency-index.mjs` | Collections d'un Ruleset, préparation des entrées, validation, versions, dépendances |
-| Stockage | `configurator-storage.mjs`, `world-setting-storage.mjs` | Un réglage de monde d'index plus un réglage par version de Ruleset |
-| Fenêtres du configurateur | `configurator-app.mjs`, `configurator-entry-editor.mjs`, `sheet-layout-controller.mjs` | Orchestration Foundry et DOM ; la collecte et la sérialisation sont dans des modules testés à part (`entry-data-collector.mjs`, `creation-step-serialization.mjs`, `entry-expression-serialization.mjs`) |
-| Présentation | `src/ui/*.mjs`, `templates/**/*.hbs`, `styles/*.css` | Tout le markup ; ni règle de jeu ni écriture |
-| Runtime | `src/runtime/runtime-engine.mjs`, `runtime-evaluator.mjs`, `runtime-transaction.mjs`, `runtime-states.mjs` | Exécution générique : tests, actions, effets, états, durées, progression, réactions |
-| Pont Foundry | `src/runtime/foundry-*.mjs`, `rule-them-all.mjs` | Adaptateur de données, feuilles jouées, création de personnage, initiative, ressources partagées, horloge du monde |
+| Identity | `src/core/module-contract.mjs` | Module ID, export format, public hooks |
+| Configurator (domain) | `src/configurator/configurator-api.mjs`, `-schema`, `-validation`, `-graph`, `rule-contracts.mjs`, `dependency-index.mjs` | Ruleset collections, entry preparation, validation, versions, dependencies |
+| Storage | `configurator-storage.mjs`, `world-setting-storage.mjs` | One world setting for the index, plus one setting per Ruleset version |
+| Configurator windows | `configurator-app.mjs`, `configurator-entry-editor.mjs`, `sheet-layout-controller.mjs` | Foundry and DOM orchestration. Data collection and serialization live in separately tested modules (`entry-data-collector.mjs`, `creation-step-serialization.mjs`, `entry-expression-serialization.mjs`) |
+| Presentation | `src/ui/*.mjs`, `templates/**/*.hbs`, `styles/*.css` | All the markup; no game rules and no writes |
+| Runtime | `src/runtime/runtime-engine.mjs`, `runtime-evaluator.mjs`, `runtime-transaction.mjs`, `runtime-states.mjs` | Generic execution: tests, actions, effects, states, durations, progression, reactions |
+| Foundry bridge | `src/runtime/foundry-*.mjs`, `rule-them-all.mjs` | Data adapter, playable sheets, character creation, initiative, shared resources, world clock |
 
-Frontière : le domaine ne produit pas de HTML, la présentation ne décide ni de mécanique ni de persistance (contrôlé par `qa/architecture-audit.mjs` et `qa/release-readiness.mjs`).
+The boundary: the domain never produces HTML, and the presentation layer never decides mechanics or persistence. `qa/architecture-audit.mjs` and `qa/release-readiness.mjs` enforce this.
 
-## 3. Données
+## 3. Data
 
-- Stockage du monde : index `configuratorStorage` (`storageVersion: 4`, découpé) ; le configurateur voit un instantané `storageVersion: 3`. Aucune lecture d'un format plus ancien.
-- Export/import : enveloppe `rta-ruleset`, seul format lu et écrit.
-- Parties de Ruleset : enveloppe `rule-them-all-part` (`src/configurator/ruleset-parts.mjs`) : des entrées avec leurs dépendances, tirées de `DependencyIndex`, et les entrées attendues chez le destinataire. À l'import, une entrée renommée est suivie par les références de la partie via les chemins des arêtes de l'index ; une référence que l'index ne voit pas ne suivrait pas.
-- Extensions : une partie avec un en-tête `extension` (`ruleset-extensions.mjs`). Le Ruleset garde `extensions` (entrées apportées, entrées remplacées avec leur contenu d'avant, identifiants renommés) pour mettre à jour ou retirer l'extension.
-- Quand un format stocké disparaît, `src/configurator/stored-data-repair.mjs` le convertit : le MJ le lance depuis Paramètres du jeu → Rule Them'All → Réparer les données (`repair-data-menu.mjs`), qui montre les changements, télécharge une sauvegarde puis écrit. Le reste du module ne lit que le format courant.
-- Toute écriture de jeu persistante passe par `engine.transaction` (journal, annulation). Les adaptateurs exposent `load`, `loadLedger`, `write`, `canWrite`, `subject`, `worldTime`, `listContainers`.
-- Les feuilles écrivent dans le runtime (`writeSheetValue`), jamais dans les données du système hôte.
+- World storage: the `configuratorStorage` index (`storageVersion: 4`, split into parts). The Configurator sees a `storageVersion: 3` snapshot. Older formats are never read.
+- Export/import: the `rta-ruleset` envelope is the only format read and written.
+- Ruleset parts: the `rule-them-all-part` envelope (`src/configurator/ruleset-parts.mjs`) holds entries with their dependencies, taken from `DependencyIndex`, plus the entries the recipient is expected to have. On import, when an entry is renamed, the part's references follow the rename through the edge paths in the index. A reference the index can't see would not follow.
+- Extensions: an extension is a part with an `extension` header (`ruleset-extensions.mjs`). The Ruleset keeps an `extensions` record (entries added, entries replaced along with their previous content, renamed IDs) so the extension can be updated or removed later.
+- When a stored format is retired, `src/configurator/stored-data-repair.mjs` converts it. The GM runs it from Game Settings → Rule Them'All → **Repair the data** (`repair-data-menu.mjs`), which shows the changes, downloads a backup, then writes. The rest of the module only reads the current format.
+- Every persistent game write goes through `engine.transaction` (ledger, undo). Adapters expose `load`, `loadLedger`, `write`, `canWrite`, `subject`, `worldTime` and `listContainers`.
+- Sheets write to the runtime (`writeSheetValue`), never to the host system's data.
 
-## 4. Points d'extension
+## 4. Extension points
 
-- `game.ruleThemAll` : API du configurateur et du runtime ; `game.ruleThemAll.chat.postActionCard(result, versionId, {speaker})` poste la carte de chat d'une Action qu'un autre module a lancée avec `runtime.executeAction`.
-- Hooks : `ruleThemAllTestResolved`, `ruleThemAllEvent`, `ruleThemAllActionExecuted`, `ruleThemAllLedgerEntry`, `ruleThemAllReactionOffered`, `ruleThemAllChoiceOffered`.
-- `ruleThemAllRegisterTypes` (au `setup`) : un autre module y ajoute des types de valeur, des nœuds de formule et des opérations d'effet.
+- `game.ruleThemAll`: the Configurator and runtime API. `game.ruleThemAll.chat.postActionCard(result, versionId, {speaker})` posts the chat card for an Action that another module ran with `runtime.executeAction`.
+- Hooks: `ruleThemAllTestResolved`, `ruleThemAllEvent`, `ruleThemAllActionExecuted`, `ruleThemAllLedgerEntry`, `ruleThemAllReactionOffered`, `ruleThemAllChoiceOffered`.
+- `ruleThemAllRegisterTypes` (during `setup`): other modules use it to add value types, formula nodes and effect operations.
 
 ## 5. Interface
 
-- **RTA Select** est le seul sélecteur simple/multiple. En simple, un choix peut être décoché et cliquer une autre option la remplace.
-- Couleurs : celle du Type de définition ou de contenu, celle de la famille sinon ; un Tag a toujours sa propre couleur. Sans couleur, rail neutre.
-- CSS (vérifié par les tests) : une feuille par composant, couleurs seulement dans `tokens.css`, pas de `!important` (une exception pour le select natif), `@container` plutôt que `@media`, espacements 4/8/12 px via `--rta-gap-*`.
+- **RTA Select** is the only single/multiple selector. In single mode, you can uncheck a choice, and clicking another option replaces it.
+- Colors: an element uses its Definition Type or Content Type color, or its family's color otherwise. A Tag always has its own color. With no color, the rail stays neutral.
+- CSS (checked by the tests): one stylesheet per component, colors only in `tokens.css`, no `!important` (one exception for the native select), `@container` rather than `@media`, and 4/8/12 px spacing through `--rta-gap-*`.
 
-## 6. Vérifications
+## 6. Checks
 
 ```
 node --test tests/*.test.mjs
@@ -52,10 +52,10 @@ node qa/architecture-audit.mjs --strict
 node qa/release-readiness.mjs
 ```
 
-Rendus Chromium (variable `RTA_CHROMIUM`, CSS de Foundry via `RTA_FOUNDRY_CSS`) : `qa/configurator-render.mjs` d'abord, puis `dynamic-markup-audit.mjs`, `layout-audit.mjs`, `sheet-editor-flow.mjs`, `sheet-render.mjs`, `creation-render.mjs`, `shared-resources-render.mjs`, `part-dialogs-render.mjs`.
+Chromium renders (set `RTA_CHROMIUM`, and `RTA_FOUNDRY_CSS` for Foundry's CSS): run `qa/configurator-render.mjs` first, then `dynamic-markup-audit.mjs`, `layout-audit.mjs`, `sheet-editor-flow.mjs`, `sheet-render.mjs`, `creation-render.mjs`, `shared-resources-render.mjs` and `part-dialogs-render.mjs`.
 
-## 7. Limites et dettes identifiées
+## 7. Known limits and technical debt
 
-- Les tests Node et Chromium ne remplacent pas une recette dans Foundry v14 ; elle se note dans [recette-foundry-v14.md](recette-foundry-v14.md).
-- `runtime-engine.mjs` dépasse 1000 lignes ; à découper si on y ajoute encore des mécaniques.
-- Trois vérifications de largeur d'aperçu de `qa/sheet-editor-flow.mjs` échouent dans Chromium (déjà le cas avant la 1.0.1).
+- The Node and Chromium tests don't replace hands-on testing in Foundry v14.
+- `runtime-engine.mjs` is over 1,000 lines long. Split it up if more mechanics get added to it.
+- Three preview-width checks in `qa/sheet-editor-flow.mjs` fail in Chromium (this was already the case before 1.0.1).

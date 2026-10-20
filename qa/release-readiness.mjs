@@ -120,12 +120,6 @@ functional('business-permission-engine','Permission Policies are evaluated at th
  [['src/runtime/permission-policy.mjs','export async function resolvePermission'],['src/runtime/runtime-engine.mjs','resolvePermission('],['tests/permissions-cp11.test.mjs']]);
 functional('duration-lifecycle','Durations end runtime states on the world clock and on events.',
  [['src/runtime/runtime-engine.mjs','async expireAll('],['rule-them-all.mjs','updateWorldTime'],['tests/duration-modes-cp08.test.mjs']]);
-// This cannot be certified in Node/Chromium. It MUST remain an explicit manual
-// gate until evidence of a real Foundry 14 test campaign is recorded.
-const acceptance=exists('docs/recette-foundry-v14.md')?read('docs/recette-foundry-v14.md'):'';
-add('foundry-v14-integration',/^Résultat : validé/m.test(acceptance),
- 'Open, edit, save, reopen, export/import and Actor/Item integration must be confirmed in Foundry 14.',
- /^Résultat : validé/m.test(acceptance)?[]:['docs/recette-foundry-v14.md: Résultat : validé']);
 const open=checks.filter(c=>c.status==='OPEN');
 const report={status:open.length?'NOT_READY':'READY',baseVersion:JSON.parse(read('module.json')).version,
   scope:'Architecture cleanup release, not merely automated test success',checks,

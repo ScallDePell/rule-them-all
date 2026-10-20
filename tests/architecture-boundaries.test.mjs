@@ -123,7 +123,7 @@ test("architecture gate: no system-owned Actor type localizations, no game-speci
 test("canonical architecture file is checked in and architecture gate passes",async()=>{
  const {spawnSync}=await import("node:child_process");
  const doc=read("docs/architecture.md");
- for(const required of ["Foundry v14","rta-ruleset","storageVersion: 3","RTA Select","Limites et dettes identifiées"])
+ for(const required of ["Foundry v14","rta-ruleset","storageVersion: 3","RTA Select","Known limits and technical debt"])
   assert.ok(doc.includes(required),`Missing architecture contract: ${required}`);
  const proc=spawnSync(process.execPath,["qa/architecture-audit.mjs","--strict","--json"],{cwd:base,encoding:"utf8"});
  assert.equal(proc.status,0,proc.stderr||proc.stdout);
