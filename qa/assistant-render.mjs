@@ -19,6 +19,8 @@ const {AssistantApp} = await imp('src/configurator/assistant-app.mjs');
 class Storage {snapshot = emptyStorageSnapshot(); async load() { return structuredClone(this.snapshot); } async save(d) { this.snapshot = structuredClone(d); }}
 const api = await createConfiguratorAPI(new Storage());
 const v = (await api.createRuleset({id: 'qa', nameKey: 'Ruleset QA', version: '1.0.0'})).versionId;
+// Section colors, so the path cards show their section's hue as in a real Ruleset.
+await api.updateRuleset(v, {sectionColors: {general: '#7a7a7a', definitions: '#4f8fd6', content: '#d9822b', rules: '#c9a227', orchestration: '#3aa776', systems: '#9b6ad6', tools: '#7a7a7a'}});
 const texts = Object.fromEntries(api.assistantTextKeys().map(key => [key, lookup(key)]));
 await api.applyAssistant(v, 'characteristics', {items: [{name: 'Force'}, {name: 'Agilité'}]}, {texts});
 await api.applyAssistant(v, 'resource', {name: 'Vitalité', maxValue: 12}, {texts});

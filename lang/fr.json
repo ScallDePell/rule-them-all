@@ -3795,6 +3795,7 @@
       },
       "ReadOnly": "Cette version est validée : l'assistant peut la montrer mais pas la compléter. Créez une nouvelle version pour la modifier.",
       "Preview": "Ce que l'assistant va faire",
+      "Questions": "Vos réponses",
       "Apply": "Appliquer",
       "Applied": "Assistant : {count} entrée(s) créée(s).",
       "AppliedIntro": "C'est écrit. Ouvrez une entrée pour l'ajuster, ou essayez la règle tout de suite.",

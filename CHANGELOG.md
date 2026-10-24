@@ -2,6 +2,11 @@
 
 ## Unreleased
 
+## 1.0.29
+
+- The Assistant opens from an **Assistant** button at the top of the Ruleset, next to **Import a part…**, instead of the Tools menu.
+- The assistant window is easier to read: each path card has its icon and the color of the section it fills, the groups have icons, the questions and the preview sit in their own panels with more space, and both columns scroll.
+
 ## 1.0.28
 
 - Configurator > Tools > **Assistant** replaces the recipes. It builds a Ruleset by answering questions, in 36 paths in three groups: core rules (characteristics, skills, resources, a test, an attack, a state...), systems (creation, progression, initiative) and single bricks (a Formula, an Effect, an Action, a Trigger...). A question that needs an entry lets you pick an existing one or create a new one in place. A preview lists what will be created, reused and completed, with errors on their question, before **Apply** writes everything at once. The assistant only adds: it never changes or removes an existing value. Game-neutral: no die or difficulty is imposed.

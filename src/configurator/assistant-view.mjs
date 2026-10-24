@@ -11,6 +11,18 @@ export const ASSISTANT_ENTRY_KINDS = Object.freeze({definitionTypes: "definition
   conditions: "condition", rolls: "roll", outcomes: "outcome", tests: "test", effects: "effect", actions: "action", permissionPolicies: "permissionPolicy", eventTypes: "eventType",
   triggers: "trigger", contentTypes: "contentType", modifiers: "modifier", durations: "duration", dice: "die", tables: "table", scales: "scale", creationSystems: "creationSystem",
   progressionSystems: "progressionSystem"});
+/** Font Awesome icons of the path list: each group, and each path. */
+export const ASSISTANT_GROUP_ICONS = Object.freeze({core: "fa-cubes", systems: "fa-gears", bricks: "fa-puzzle-piece"});
+export const ASSISTANT_PATH_ICONS = Object.freeze({
+  characteristics: "fa-dumbbell", skills: "fa-graduation-cap", derivedValue: "fa-calculator", resource: "fa-heart-pulse", test: "fa-dice-d20",
+  attack: "fa-crosshairs", state: "fa-face-dizzy", cost: "fa-coins", consumable: "fa-flask", level: "fa-stairs", encumbrance: "fa-weight-hanging",
+  advantage: "fa-scale-unbalanced", damageTypes: "fa-fire", power: "fa-hat-wizard", threshold: "fa-skull", rest: "fa-bed", initiative: "fa-list-ol",
+  creation: "fa-user-plus", progression: "fa-arrow-trend-up", scale: "fa-ruler", contentType: "fa-box-open", permission: "fa-lock",
+  definitionType: "fa-shapes", value: "fa-hashtag", parameter: "fa-sliders", formula: "fa-square-root-variable", condition: "fa-code-branch",
+  roll: "fa-dice", outcome: "fa-flag-checkered", duration: "fa-hourglass-half", effect: "fa-bolt", action: "fa-hand-pointer", trigger: "fa-bell",
+  table: "fa-table", die: "fa-dice-six", counter: "fa-list-check"});
+/** The collection whose section color a path card takes: what it produces, else Systems (initiative). */
+export const pathCollection = path => path?.produces?.collection ?? "creationSystems";
 const NAV_KEYS = {permissionPolicies: "Permissions", eventTypes: "Events"};
 /** The navigation title of a collection (RTA.Nav.*). */
 export const collectionTitleKey = collection => `RTA.Nav.${NAV_KEYS[collection] ?? collection.charAt(0).toUpperCase() + collection.slice(1)}`;

@@ -3795,6 +3795,7 @@
       },
       "ReadOnly": "This version is validated: the assistant can show it but not complete it. Create a new version to change it.",
       "Preview": "What the assistant will do",
+      "Questions": "Your answers",
       "Apply": "Apply",
       "Applied": "Assistant: {count} entry(ies) created.",
       "AppliedIntro": "Done. Open an entry to adjust it, or try the rule right away.",

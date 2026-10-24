@@ -47,16 +47,16 @@ function fieldHTML(field, words, expressionHTML) {
 /** The controls of a list of fields. expressionHTML(field) gives the Formula or Condition builder of a field. */
 export const fieldsHTML = (fields, words, expressionHTML) => fields.map(field => fieldHTML(field, words, expressionHTML)).join("");
 
-const list = (title, items, line) => items.length ? `<section class="rta-assistant__preview-group"><h4>${escape(title)} (${items.length})</h4><ul>${items.map(item => `<li>${line(item)}</li>`).join("")}</ul></section>` : "";
+const list = (title, items, line, icon) => items.length ? `<section class="rta-assistant__preview-group" data-preview-group="${icon}"><h4><i class="fa-solid ${icon}" aria-hidden="true"></i> ${escape(title)} (${items.length})</h4><ul>${items.map(item => `<li>${line(item)}</li>`).join("")}</ul></section>` : "";
 const typed = item => `<strong>${escape(item.name)}</strong>${item.type ? ` <small>${escape(item.type)}</small>` : ""}`;
 /** The preview of a plan; with open, each created entry is a link to its editor. */
 export function previewHTML(preview, words, {open = false} = {}) {
   const created = item => open && item.kind ? `<button type="button" class="rta-assistant__link" data-action="openEntry" data-kind="${escape(item.kind)}" data-entry-id="${escape(item.id)}">${typed(item)} <i class="fa-solid fa-arrow-up-right-from-square" aria-hidden="true"></i></button>` : typed(item);
-  const body = list(words.errors, preview.errors ?? [], item => `${item.label ? `<strong>${escape(item.label)}</strong> ` : ""}${escape(item.message)}`)
-    + list(words.created, preview.created, created)
-    + list(words.reused, preview.reused, typed)
-    + list(words.added, preview.added, item => `<strong>${escape(item.name)}</strong> · ${escape(item.field)} +${escape(item.count)}`)
-    + list(words.filled, preview.filled, item => `${item.name ? `<strong>${escape(item.name)}</strong> · ` : ""}${escape(item.field)}`)
-    + list(words.warnings, preview.warnings, item => escape(item));
+  const body = list(words.errors, preview.errors ?? [], item => `${item.label ? `<strong>${escape(item.label)}</strong> ` : ""}${escape(item.message)}`, "fa-triangle-exclamation")
+    + list(words.created, preview.created, created, "fa-plus")
+    + list(words.reused, preview.reused, typed, "fa-link")
+    + list(words.added, preview.added, item => `<strong>${escape(item.name)}</strong> · ${escape(item.field)} +${escape(item.count)}`, "fa-list-ul")
+    + list(words.filled, preview.filled, item => `${item.name ? `<strong>${escape(item.name)}</strong> · ` : ""}${escape(item.field)}`, "fa-pen")
+    + list(words.warnings, preview.warnings, item => escape(item), "fa-circle-exclamation");
   return body || `<p class="hint">${escape(words.nothing)}</p>`;
 }

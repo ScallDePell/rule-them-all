@@ -4,7 +4,8 @@ import {ConfiguratorWindow} from "./configurator-window.mjs";
 import {MODULE_ID} from "../core/module-contract.mjs";
 import {moduleLanguage} from "../core/module-language.mjs";
 import {ASSISTANT_GROUPS, ASSISTANT_PATHS} from "./assistant-paths.mjs";
-import {assistantFormModel, assistantPreviewModel, formShape, setAnswer, answerAt} from "./assistant-view.mjs";
+import {assistantFormModel, assistantPreviewModel, formShape, setAnswer, answerAt, ASSISTANT_GROUP_ICONS, ASSISTANT_PATH_ICONS, pathCollection} from "./assistant-view.mjs";
+import {collectionColor} from "./ruleset-colors.mjs";
 import {fieldsHTML, previewHTML} from "../ui/assistant-markup.mjs";
 import {ExpressionBuilderController, expressionSources} from "./expression-builder-controller.mjs";
 import {expressionBuilderModel} from "./entry-expression-model.mjs";
@@ -56,9 +57,10 @@ export class AssistantApp extends ConfiguratorWindow {
 
   async _prepareContext(options) {
     const context = await super._prepareContext(options), record = this.#api.getRulesetVersion(this.#versionId), readOnly = record?.status === "validated";
-    const cards = ASSISTANT_PATHS.map(path => ({id: path.id, group: path.group, title: this.#t(`RTA.Assistant.Path.${path.id}.Title`), summary: this.#t(`RTA.Assistant.Path.${path.id}.Summary`), active: path.id === this.#pathId,
+    const ruleset = this.#ruleset(), colorOf = path => collectionColor(ruleset, pathCollection(path));
+    const cards = ASSISTANT_PATHS.map(path => ({id: path.id, group: path.group, icon: ASSISTANT_PATH_ICONS[path.id], color: colorOf(path), title: this.#t(`RTA.Assistant.Path.${path.id}.Title`), summary: this.#t(`RTA.Assistant.Path.${path.id}.Summary`), active: path.id === this.#pathId,
       search: [this.#t(`RTA.Assistant.Path.${path.id}.Title`), this.#t(`RTA.Assistant.Path.${path.id}.Summary`), ...(path.keywords ?? [])].join(" ").toLowerCase()}));
-    const groups = ASSISTANT_GROUPS.map(group => ({id: group, title: this.#t(`RTA.Assistant.Group.${group}`), cards: cards.filter(card => card.group === group)}));
+    const groups = ASSISTANT_GROUPS.map(group => ({id: group, icon: ASSISTANT_GROUP_ICONS[group], title: this.#t(`RTA.Assistant.Group.${group}`), cards: cards.filter(card => card.group === group)}));
     const out = {...context, groups, readOnly, error: this.#error, rulesetName: this.#entryName(record?.workingDraft?.nameKey ?? record?.publishedSnapshot?.nameKey ?? "")};
     const words = this.#words();
     if (this.#applied) out.applied = {html: previewHTML(this.#applied, words, {open: true}), title: this.#t(`RTA.Assistant.Path.${this.#applied.pathId}.Title`)};
@@ -67,7 +69,8 @@ export class AssistantApp extends ConfiguratorWindow {
     this.#answers = form.answers; this.#shape = formShape(form.fields); this.#labels = form.labels; this.#plan = plan;
     const sources = this.#sources();
     const expressionHTML = field => renderExpressionBuilderHTML(expressionBuilderModel(field.expression, field.kind, sources), sources);
-    return {...out, path: {id: this.#pathId, title: this.#t(form.path.titleKey), summary: this.#t(form.path.summaryKey), limits: this.#t(form.path.limitsKey)},
+    const current = ASSISTANT_PATHS.find(path => path.id === this.#pathId);
+    return {...out, path: {id: this.#pathId, icon: ASSISTANT_PATH_ICONS[this.#pathId], color: colorOf(current), title: this.#t(form.path.titleKey), summary: this.#t(form.path.summaryKey), limits: this.#t(form.path.limitsKey)},
       formHTML: fieldsHTML(form.fields, words, expressionHTML), previewHTML: previewHTML(preview, words), canApply: plan.valid && !readOnly};
   }
 

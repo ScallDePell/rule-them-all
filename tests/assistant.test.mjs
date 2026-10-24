@@ -385,3 +385,15 @@ test('Assistant window: the form shows what the plan is made of, and a type it c
   const forced=api.planAssistant(v,'state',{name:'Béni',type:{create:{name:'X',capability:'value'}}},{texts:texts(api)});
   assert.equal(forced.valid,true,JSON.stringify(forced.errors));
 });
+
+test('Every path and group of the assistant has a Font Awesome icon and a section color source', async()=>{
+  const {ASSISTANT_PATH_ICONS, ASSISTANT_GROUP_ICONS, pathCollection} = await import('../src/configurator/assistant-view.mjs');
+  const {ASSISTANT_GROUPS} = await import('../src/configurator/assistant-paths.mjs');
+  const {sectionForCollection} = await import('../src/configurator/ruleset-colors.mjs');
+  for (const path of ASSISTANT_PATHS) {
+    assert.match(ASSISTANT_PATH_ICONS[path.id] ?? '', /^fa-[a-z0-9-]+$/, `icon of ${path.id}`);
+    assert.ok(sectionForCollection(pathCollection(path)), `section of ${path.id}`);
+  }
+  assert.deepEqual(Object.keys(ASSISTANT_PATH_ICONS).sort(), ASSISTANT_PATHS.map(path => path.id).sort());
+  for (const group of ASSISTANT_GROUPS) assert.match(ASSISTANT_GROUP_ICONS[group] ?? '', /^fa-/);
+});

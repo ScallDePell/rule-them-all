@@ -365,6 +365,8 @@
   .rta-general__card,
   .rta-general__storage,
   .rta-dependencies__row,
+  .rta-assistant__card,
+  .rta-assistant__header,
   .rta-explorer__group.is-active,
   .rta-explorer__flyout-list .rta-explorer__item
 ) {
