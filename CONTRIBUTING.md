@@ -78,6 +78,16 @@ A reference is a field of one entry that names another (`Action.tableRef`, `Test
 6. **Its words** in both languages, and the GM guide (`docs/gm-guide.md`) if the GM sees it.
 7. **Tests**: a reference test (see `tests/references-cp24.test.mjs` and `tests/change-impact-cp31.test.mjs`) that deletes the target, exports a part and renames on import; then the checks above. `tests/contract-completeness.test.mjs` scans the shipped Rulesets: once a shipped Ruleset uses the field, a missing edge fails there too.
 
+## Recipe: add an assistant path
+
+An assistant path (Configurator > Tools > Assistant) asks a few questions and builds the entries of one rule.
+
+1. **Declare it** in `src/configurator/assistant-paths.mjs` and add it to `ASSISTANT_PATHS`: `id`, `group` (`core`, `systems` or `bricks`), `keywords` (the search words), `produces`, `questions` and `build(ctx)`. Question kinds are listed in `QUESTION_KINDS` (`src/configurator/assistant-engine.mjs`); an `entry` question with `create: "<path>"` lets the GM create that entry inline, `fixed` imposes some of its answers, `visible(values)` shows a question only after the answers before it, and `withId` lets the GM give a name's id when other rules read it (an input read by Formulas).
+2. **Build only by adding**: `ctx.add(collection, entry)` creates, `ctx.append(collection, id, field, items)` adds to a list of an existing entry, `ctx.fill(...)` sets a field still empty. Nothing existing is changed or removed. Use `formulaOf`/`conditionOf` for expressions (an identical one is used again; a Formula node is that Formula) and `operandOf` for operands. No game rule and no default dice or difficulty in the code: names come from `ctx.t(key)` (`Text.<key>`, listed in `texts`) and `ctx.shared(key)`.
+3. **Its words**: `RTA.Assistant.Path.<id>.Title`, `.Summary`, `.Limits`, `.Q.<question>.Label`, `.Option.<value>`, list fields under `.Field.<field>`, and `.Text.<key>`, in both languages. `assistantPathTextKeys` lists them; `tests/assistant.test.mjs` fails on a missing one.
+4. **Tests**: a test in `tests/assistant.test.mjs` that applies the path and plays what it built in the engine; for the window, `qa/assistant-flow.mjs` (browser) and `qa/assistant-render.mjs`.
+5. **Acceptance**: `Rulesets/rwf/outils/rebuild-with-assistant.mjs` rebuilds every rule of the RWF Ruleset with the paths only and compares each entry; a new field of a rule contract that the paths cannot set shows there.
+
 ## Releases
 
 See docs/architecture.md §9: bump `module.json` and `CHANGELOG.md`, push `main`, then run the `Release` workflow. The release zip is built from an explicit list of files (no `.git`, no tests, no Rulesets).

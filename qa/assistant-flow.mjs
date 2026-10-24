@@ -93,6 +93,16 @@ const result = await page.evaluate(async ({fr, urls, template}) => {
   const effect = ruleset().effects.find(e => action?.outcomeMappings?.[0]?.effectRefs?.includes(e.id));
   check('its damage bonus is the Formula typed', ruleset().formulas.some(f => f.id === effect?.operand?.bonusFormulaRef && f.expression.value === 2));
 
+  // An Action input whose id Formulas read: the GM gives that id next to its name.
+  await click('[data-action="choosePath"][data-path-id="action"]');
+  await set('[data-answer="name"]', 'Viser');
+  await click('[data-action="addRow"][data-list="inputs"]');
+  check('an input row asks for its id too', Boolean(el('[data-answer="inputs.0.name"][data-answer-kind="nameId"]')));
+  await set('[data-answer="inputs.0.name"][data-answer-kind="name"]', 'Bonus de visée');
+  await set('[data-answer="inputs.0.name"][data-answer-kind="nameId"]', 'vise');
+  await click('[data-action="apply"]'); await wait(60);
+  check('the input keeps the id given', ruleset().actions.find(a => a.id === 'viser')?.inputs?.[0]?.id === 'vise');
+
   // A wrong answer is shown on its question, and nothing is written.
   await click('[data-action="choosePath"][data-path-id="test"]');
   const before = JSON.stringify(ruleset());

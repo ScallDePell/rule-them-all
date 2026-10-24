@@ -62,7 +62,6 @@ Working with cards:
   - **Combat and shared resources**: the initiative and shared resources used in play (see [section 6](#6-in-play));
   - **Main section colors**: one color per section. Tick **Allow custom subsection colors** to give each family its own color.
 - **Installed extensions** lists the extensions in this version (see [Extensions](#extensions)).
-- **Recipes** add ready-made examples to a draft (**Add to this draft**): a weapon with ammunition, a consumable, experience progression and encumbrance. Each one shows how the pieces fit together.
 
 ### Definitions
 - **Definition Types**: the game's families (attributes, skills, resources, conditions…). A type sets what its Definitions can do (hold a value, a pool, a state…), and can carry **value bounds** (a lowest and highest value, either fixed or computed by a Formula).
@@ -97,7 +96,7 @@ The Rules menu is split under three headings.
 
 ### Orchestration
 - **Permissions**: who may **Read**, **Write**, **Execute** or **Configure** what, by Foundry role (Player, Trusted player, Assistant GM, Game master) and by ownership of the Actor (Limited, Observer, Owner). The policy with the most specific scope decides.
-- **Event Types** and **Triggers**: react to what happens in play (combat starts, a new round, a turn, time passes, an Action's result). A Trigger runs automatically or is offered as a reaction to the player concerned.
+- **Event Types** and **Triggers**: react to what happens in play (combat starts, a new round, a turn, time passes, an Action's result). A Trigger runs automatically or is offered as a reaction to the player concerned. Triggers of the same event run in the order of their cards: drag a card to change it.
 
 ### Systems
 - **Creation Systems**: character creation, step by step (choice, content, choices of the contents, point allocation, roll, review). See [section 5](#5-creating-a-character).
@@ -105,6 +104,12 @@ The Rules menu is split under three headings.
 - **Sheets**: character and item sheets. See [section 4](#4-sheets).
 
 ### Tools
+- **Assistant**: builds a rule for you from a few questions, in the draft. Choose a path on the left (search by word):
+  - **Basics**: characteristics, skills, a computed value, a resource (hit points, mana), a test, an attack, a state, a cost, a consumable, levels, encumbrance;
+  - **Game systems**: advantage, damage types, powers, a threshold (unconscious at 0), rest, initiative, character creation, progression, a description scale, a Content Type, permissions;
+  - **Building blocks**: one entry at a time (a Definition Type, a value, a Parameter, a Formula, a Condition, a Roll, a test result, a Duration, an Effect, an Action, a counter, a Trigger, a table, a die), with every field the editors have.
+
+  Answer the questions on one page. A question that needs an entry lets you pick an existing one or **create a new one** right there, with its own questions. The **preview** lists what will be created, reused, completed and filled, with any error on its question and what the new entries still lack before publishing. **Apply** writes everything at once. The assistant never changes or removes what already exists: it only adds entries, adds items to an existing entry's lists (a cost to an Action, a step to a creation) and fills fields still empty. The id of a new entry comes from its name; Action and Test inputs, fields and creation steps also show an id box, for an id that formulas refer to. Then open what was created, or **Try the rules** on it.
 - **Tags**: to sort and filter cards. Create them here, with a color. Right-click a card, then **Tags…**, to tick its tags or create a new one.
 - **Try the rules**: a GM sandbox that plays the current draft (not the published version) without touching the game. Pick or create a **Source / Self** and a **Target** test Actor, initialize them, set their values, then run a **Test**, an **Action** (**Preview** first, then **Execute**), a **Progression** purchase, or use the **Diagnostics**: evaluate a **Formula** or a **Condition**, emit an **Event**, or roll **Dice only**. **Reset runtime data** starts the test Actors over from the current draft.
 - **Dependencies**: a graph of what uses what. Handy before you delete something.

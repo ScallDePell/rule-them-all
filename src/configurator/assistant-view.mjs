@@ -59,7 +59,10 @@ export function assistantFormModel(pathId, answers, {describe, paths, t, entryNa
     labels[at] = label;
     const value = empty(answer) ? startingAnswer(question) : answer;
     switch (question.kind) {
-      case "name": model.value = isRecord(value) ? (value.name ?? (value.nameKey ? t(value.nameKey) : "")) : value ?? ""; break;
+      case "name":
+        model.value = isRecord(value) ? (value.name ?? (value.nameKey ? t(value.nameKey) : "")) : value ?? "";
+        if (question.withId) model.id = isRecord(value) ? value.id ?? "" : "";
+        break;
       case "text": case "dice": model.value = value ?? ""; break;
       case "number": case "integer": model.value = value ?? ""; model.min = question.min; model.max = question.max; model.step = question.kind === "integer" ? "1" : "any"; break;
       case "boolean": model.checked = value === true; break;
@@ -113,7 +116,8 @@ export function answersOf(fields) {
     const key = field.path.split(".").at(-1);
     let value;
     switch (field.kind) {
-      case "name": case "text": case "dice": case "number": case "integer": value = field.value === "" ? undefined : field.value; break;
+      case "name": value = field.value === "" ? undefined : field.id ? {name: field.value, id: field.id} : field.value; break;
+      case "text": case "dice": case "number": case "integer": value = field.value === "" ? undefined : field.value; break;
       case "boolean": value = field.checked; break;
       case "choice": case "event": value = field.options.find(option => option.selected)?.value; break;
       case "entries": value = field.options.filter(option => option.selected).map(option => ({use: option.value})); break;

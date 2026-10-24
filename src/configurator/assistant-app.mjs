@@ -12,7 +12,7 @@ import {renderExpressionBuilderHTML} from "../ui/expression-builder-markup.mjs";
 import {collectExpression} from "./entry-expression-serialization.mjs";
 import {createSelectColorResolver} from "../ui/select-option-presentation.mjs";
 
-const WORDS = ["choose", "none", "add", "remove", "existing", "enable", "errors", "created", "reused", "added", "filled", "warnings", "nothing"];
+const WORDS = ["choose", "none", "add", "remove", "existing", "enable", "id", "errors", "created", "reused", "added", "filled", "warnings", "nothing"];
 
 export class AssistantApp extends ConfiguratorWindow {
   static DEFAULT_OPTIONS = {id: "rta-assistant", window: {title: "RTA.Assistant.Title", resizable: true}, position: {width: 1080, height: 820}};
@@ -109,6 +109,7 @@ export class AssistantApp extends ConfiguratorWindow {
       const value = String(control.value ?? "");
       if (value === "") continue;
       if (kind === "entry") { setAnswer(answers, path, value === "create" ? {create: answerAt(answers, `${path}.create`) ?? {}} : {use: value.slice(4)}); continue; }
+      if (kind === "nameId") { const name = answerAt(answers, path); setAnswer(answers, path, {name: typeof name === "string" ? name : "", id: value}); continue; }
       setAnswer(answers, path, value);
     }
     // An optional Formula switched on starts as a builder; switched off, it is left out.

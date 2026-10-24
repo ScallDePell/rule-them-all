@@ -37,6 +37,7 @@ const swapRoles=context=>{const self=roleRef(context,"self"),target=roleRef(cont
 /** A context as it can be kept and replayed later: no event, cause or dice. */
 const plainContext=context=>clone(Object.fromEntries(Object.entries(context).filter(([key])=>key!=="event"&&key!=="cause")));
 const enabled=(entry)=>entry&&entry.enabled!==false;
+const byOrder=(entries)=>[...(entries??[])].sort((a,b)=>(a.order??0)-(b.order??0));
 /** A value base moved from current to next within its bounds; a base already past a bound may move back but not further.
  * current null: a new base, held within both bounds. */
 const boundValue=(current,next,{minimum,maximum})=>{
@@ -532,7 +533,8 @@ export class RuntimeEngine{
     const depth=Number(options.depth??0);if(depth>20)throw new Error("Rule Them'All event chain depth exceeded.");
     const event={id:globalThis.crypto?.randomUUID?.()??`evt-${Date.now()}-${Math.random().toString(36).slice(2)}`,eventTypeId,rulesetVersionId:versionId,occurredAt:Date.now(),payload:clone(payload),chainId:options.chainId??null,parentEventId:options.parentEventId??null,depth};event.chainId??=event.id;
     const eventContext={...this.#shared(context),event};const triggered=[],holder=holderOf(roleRef(context,"self"));
-    for(const trigger of ruleset.triggers??[]){if(!enabled(trigger)||trigger.eventTypeId!==eventTypeId||(trigger.holder??"actor")!==holder)continue;if(!this.#eventFilterMatches(trigger.eventFilter,event,eventContext))continue;await this.#runTrigger(versionId,ruleset,trigger,eventContext,depth,triggered);}
+    // Triggers of one event run in the order the configurator shows (drag to reorder), not in storage order.
+    for(const trigger of byOrder(ruleset.triggers)){if(!enabled(trigger)||trigger.eventTypeId!==eventTypeId||(trigger.holder??"actor")!==holder)continue;if(!this.#eventFilterMatches(trigger.eventFilter,event,eventContext))continue;await this.#runTrigger(versionId,ruleset,trigger,eventContext,depth,triggered);}
     // untilEvent Durations end on the containers the event concerns.
     const expired=[];for(const ref of new Map(Object.values(context.roles??{}).filter(Boolean).map(ref=>{const n=normalizeRuntimeContainerRef(ref);return [this.#refKey(n),n];})).values()){const state=await this.adapter.load(ref);if(state.rulesetVersionId===versionId&&hasDurations(state)){const result=await this.expireStates(versionId,ref,{eventTypeId});if(result.stateInstanceIds.length||result.modifierStateIds.length)expired.push({ref,...result});}}
     this.hooks?.callAll?.(RUNTIME_HOOKS.event,event,clone(triggered));return {event,triggered,expired};

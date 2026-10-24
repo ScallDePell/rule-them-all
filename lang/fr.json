@@ -2135,6 +2135,9 @@
             },
             "expression": {
               "Label": "Calcul"
+            },
+            "binding": {
+              "Label": "Nom du lien de calcul (facultatif)"
             }
           },
           "Text": {
@@ -2177,6 +2180,12 @@
             },
             "integer": {
               "Label": "Nombres entiers seulement"
+            },
+            "scale": {
+              "Label": "Échelle de description (facultative)"
+            },
+            "description": {
+              "Label": "Description (facultative)"
             }
           },
           "Text": {
@@ -2191,6 +2200,9 @@
           "Q": {
             "name": {
               "Label": "Nom"
+            },
+            "roll": {
+              "Label": "Jet existant (sinon des dés)"
             },
             "dice": {
               "Label": "Dés lancés"
@@ -2219,6 +2231,53 @@
             },
             "opposed": {
               "Label": "Jet opposé"
+            },
+            "inputs": {
+              "Label": "Valeurs lues avant le jet",
+              "Field": {
+                "name": {
+                  "Label": "Nom"
+                },
+                "valueType": {
+                  "Label": "Sorte de valeur",
+                  "Option": {
+                    "number": "Nombre",
+                    "integer": "Nombre entier",
+                    "boolean": "Oui ou non",
+                    "string": "Texte",
+                    "reference": "Une Définition"
+                  }
+                },
+                "from": {
+                  "Label": "Prise de",
+                  "Option": {
+                    "formula": "Un calcul",
+                    "definition": "Une Définition",
+                    "value": "Une valeur fixe"
+                  }
+                },
+                "formula": {
+                  "Label": "Calcul"
+                },
+                "definition": {
+                  "Label": "Définition"
+                },
+                "value": {
+                  "Label": "Valeur"
+                },
+                "default": {
+                  "Label": "Valeur proposée (facultative)"
+                },
+                "required": {
+                  "Label": "Obligatoire"
+                }
+              }
+            },
+            "outcomes": {
+              "Label": "Résultats existants, dans l'ordre (sinon créés ici)"
+            },
+            "fallback": {
+              "Label": "Résultat quand aucun ne s'applique"
             },
             "success": {
               "Label": "Réussi quand le total est",
@@ -2251,6 +2310,9 @@
             },
             "action": {
               "Label": "Ajouter un bouton pour lancer ce jet"
+            },
+            "description": {
+              "Label": "Description (facultative)"
             }
           }
         },
@@ -2364,6 +2426,9 @@
             },
             "removeAction": {
               "Label": "Ajouter un bouton pour le retirer"
+            },
+            "description": {
+              "Label": "Description (facultative)"
             }
           },
           "Text": {
@@ -2832,17 +2897,38 @@
                 "max": {
                   "Label": "Au plus"
                 },
-                "points": {
-                  "Label": "Points à répartir"
+                "minFormula": {
+                  "Label": "Minimum calculé (facultatif)"
+                },
+                "maxFormula": {
+                  "Label": "Maximum calculé (facultatif)"
                 },
                 "perTargetMax": {
                   "Label": "Au plus par valeur"
+                },
+                "perTargetMaxFormula": {
+                  "Label": "Maximum par valeur, calculé (facultatif)"
+                },
+                "optionCondition": {
+                  "Label": "Options proposées seulement si (facultatif)"
+                },
+                "choicesLater": {
+                  "Label": "Les choix de ces Contenus se font à une étape suivante"
+                },
+                "required": {
+                  "Label": "Obligatoire"
                 }
               }
+            },
+            "description": {
+              "Label": "Description (facultative)"
             }
           },
           "Text": {
-            "Creation": "Création de personnage"
+            "Creation": "Création de personnage",
+            "Min": "Minimum : {name}",
+            "Max": "Maximum : {name}",
+            "PerTarget": "Maximum par valeur : {name}"
           }
         },
         "progression": {
@@ -2877,6 +2963,13 @@
             "currency": {
               "Label": "Payée avec"
             },
+            "cost": {
+              "Label": "Coût d'un rang",
+              "Option": {
+                "table": "Un tableau par rang",
+                "formula": "Un calcul"
+              }
+            },
             "costs": {
               "Label": "Coût de chaque rang",
               "Field": {
@@ -2888,8 +2981,11 @@
                 }
               }
             },
+            "costFormula": {
+              "Label": "Calcul du coût (lit le rang visé)"
+            },
             "maximum": {
-              "Label": "Rang maximum"
+              "Label": "Rang maximum (facultatif)"
             },
             "level": {
               "Label": "Niveau"
@@ -2907,12 +3003,16 @@
                   "Label": "Lance l'Action"
                 }
               }
+            },
+            "description": {
+              "Label": "Description (facultative)"
             }
           },
           "Text": {
             "Progression": "Progression",
             "Cost": "Coût de progression",
-            "Maximum": "Rang maximum {value}",
+            "Maximum": "Rang maximum de progression",
+            "Advance": "Progresser : {name}",
             "Reached": "Niveau {level}"
           }
         },
@@ -2942,6 +3042,9 @@
                 },
                 "words": {
                   "Label": "Mots"
+                },
+                "id": {
+                  "Label": "Identifiant (facultatif)"
                 }
               }
             },
@@ -2950,6 +3053,9 @@
             },
             "types": {
               "Label": "Types décrits"
+            },
+            "description": {
+              "Label": "Description (facultative)"
             }
           }
         },
@@ -2983,16 +3089,35 @@
                     "number": "Nombre",
                     "integer": "Nombre entier",
                     "boolean": "Oui ou non",
-                    "string": "Texte"
+                    "string": "Texte",
+                    "reference": "Une Définition"
                   }
+                },
+                "referenceType": {
+                  "Label": "Définitions de ce type"
+                },
+                "many": {
+                  "Label": "Plusieurs valeurs"
+                },
+                "required": {
+                  "Label": "Obligatoire"
+                },
+                "nullable": {
+                  "Label": "Peut rester vide"
                 }
               }
+            },
+            "availability": {
+              "Label": "Utilisable seulement si (facultatif)"
+            },
+            "description": {
+              "Label": "Description (facultative)"
             }
           }
         },
         "permission": {
           "Title": "Permissions",
-          "Summary": "Réserver des Actions ou la modification de valeurs au MJ ou à des rôles de confiance.",
+          "Summary": "Réserver des Actions, la modification de valeurs ou l'attribution de Contenus au MJ ou à des rôles de confiance.",
           "Limits": "Une permission par entrée ; les règles plus fines se règlent dans l'éditeur des Permissions.",
           "Q": {
             "kind": {
@@ -3000,7 +3125,8 @@
               "Option": {
                 "action": "Utiliser des Actions",
                 "definition": "Modifier des valeurs",
-                "definitionType": "Modifier les valeurs d'un type"
+                "definitionType": "Modifier les valeurs d'un type",
+                "contentType": "Donner des Contenus d'un type"
               }
             },
             "actions": {
@@ -3012,6 +3138,9 @@
             "types": {
               "Label": "Types"
             },
+            "contentTypes": {
+              "Label": "Types de Contenus"
+            },
             "who": {
               "Label": "Réservé à",
               "Option": {
@@ -3019,10 +3148,21 @@
                 "assistant": "Le MJ et ses assistants",
                 "trusted": "Les joueurs de confiance aussi"
               }
+            },
+            "name": {
+              "Label": "Nom (facultatif, pour une seule entrée)"
+            },
+            "description": {
+              "Label": "Description (facultative)"
             }
           },
           "Text": {
-            "Policy": "Permission : {name}"
+            "Policy": "Permission : {name}",
+            "RuleAllowed": "MJ",
+            "RuleRead": "Lecture",
+            "RuleWrite": "Écriture MJ",
+            "RuleUse": "Usage",
+            "RuleAssign": "Attribution MJ"
           }
         },
         "definitionType": {
@@ -3046,7 +3186,44 @@
             },
             "maximum": {
               "Label": "Valeur maximum"
+            },
+            "fields": {
+              "Label": "Champs",
+              "Field": {
+                "name": {
+                  "Label": "Nom"
+                },
+                "valueType": {
+                  "Label": "Sorte de valeur",
+                  "Option": {
+                    "number": "Nombre",
+                    "integer": "Nombre entier",
+                    "boolean": "Oui ou non",
+                    "string": "Texte",
+                    "reference": "Une Définition"
+                  }
+                },
+                "referenceType": {
+                  "Label": "Définitions de ce type"
+                },
+                "many": {
+                  "Label": "Plusieurs valeurs"
+                },
+                "required": {
+                  "Label": "Obligatoire"
+                },
+                "nullable": {
+                  "Label": "Peut rester vide"
+                }
+              }
+            },
+            "description": {
+              "Label": "Description (facultative)"
             }
+          },
+          "Text": {
+            "Minimum": "Minimum : {name}",
+            "Maximum": "Maximum : {name}"
           }
         },
         "value": {
@@ -3059,10 +3236,61 @@
             },
             "type": {
               "Label": "Type"
+            },
+            "scale": {
+              "Label": "Échelle de description (facultative)"
+            },
+            "data": {
+              "Label": "Valeurs des champs du type",
+              "Field": {
+                "field": {
+                  "Label": "Champ (identifiant)"
+                },
+                "entry": {
+                  "Label": "Définition"
+                },
+                "value": {
+                  "Label": "Valeur"
+                }
+              }
+            },
+            "description": {
+              "Label": "Description (facultative)"
             }
           },
           "Text": {
             "Type": "Valeur"
+          }
+        },
+        "parameter": {
+          "Title": "Paramètre",
+          "Summary": "Un nombre ou un réglage du Ruleset, nommé une fois et lu par les calculs (une difficulté, une base).",
+          "Limits": "Le même pour tous les personnages ; une valeur propre à chacun est une Valeur.",
+          "Q": {
+            "name": {
+              "Label": "Nom"
+            },
+            "valueType": {
+              "Label": "Sorte de valeur",
+              "Option": {
+                "number": "Nombre",
+                "integer": "Nombre entier",
+                "boolean": "Oui ou non",
+                "string": "Texte"
+              }
+            },
+            "number": {
+              "Label": "Valeur"
+            },
+            "flag": {
+              "Label": "Valeur"
+            },
+            "text": {
+              "Label": "Valeur"
+            },
+            "description": {
+              "Label": "Description (facultative)"
+            }
           }
         },
         "formula": {
@@ -3079,11 +3307,15 @@
                 "number": "Nombre",
                 "integer": "Nombre entier",
                 "boolean": "Oui ou non",
-                "string": "Texte"
+                "string": "Texte",
+                "reference": "Une Définition"
               }
             },
             "expression": {
               "Label": "Calcul"
+            },
+            "description": {
+              "Label": "Description (facultative)"
             }
           }
         },
@@ -3097,19 +3329,112 @@
             },
             "expression": {
               "Label": "Vraie quand"
+            },
+            "description": {
+              "Label": "Description (facultative)"
+            }
+          }
+        },
+        "roll": {
+          "Title": "Jet",
+          "Summary": "Des dés à lancer, et d'autres dés quand une Condition est vraie (des dés annoncés, un avantage).",
+          "Limits": "Les dés peuvent lire le Contenu utilisé (@content.champ) et les entrées de l'Action (@input.id).",
+          "Q": {
+            "name": {
+              "Label": "Nom (facultatif)"
+            },
+            "formula": {
+              "Label": "Dés"
+            },
+            "variants": {
+              "Label": "Autres dés selon une Condition",
+              "Field": {
+                "condition": {
+                  "Label": "Quand"
+                },
+                "formula": {
+                  "Label": "Dés"
+                }
+              }
+            },
+            "description": {
+              "Label": "Description (facultative)"
+            }
+          }
+        },
+        "outcome": {
+          "Title": "Résultat de test",
+          "Summary": "Un résultat (réussite, critique…) qu'un Test reconnaît par sa Condition ; plusieurs Tests peuvent le partager.",
+          "Limits": "L'ordre des résultats se règle sur chaque Test.",
+          "Q": {
+            "name": {
+              "Label": "Nom"
+            },
+            "resultKey": {
+              "Label": "Clé du résultat (lue par les calculs)"
+            },
+            "condition": {
+              "Label": "Obtenu quand"
+            },
+            "description": {
+              "Label": "Description (facultative)"
+            }
+          }
+        },
+        "duration": {
+          "Title": "Durée",
+          "Summary": "Combien de temps dure un état appliqué : des rounds, des jours, jusqu'à un évènement ou jusqu'au retrait.",
+          "Limits": "Une Durée sert à toutes les Actions qui la choisissent.",
+          "Q": {
+            "name": {
+              "Label": "Nom"
+            },
+            "duration": {
+              "Label": "Dure",
+              "Option": {
+                "untilRemoved": "Jusqu'à ce qu'on le retire",
+                "round": "Des rounds",
+                "turn": "Des tours",
+                "minute": "Des minutes",
+                "hour": "Des heures",
+                "day": "Des jours",
+                "untilEvent": "Jusqu'à un évènement"
+              }
+            },
+            "amount": {
+              "Label": "Combien"
+            },
+            "event": {
+              "Label": "Évènement"
+            },
+            "description": {
+              "Label": "Description (facultative)"
             }
           }
         },
         "effect": {
           "Title": "Effet",
-          "Summary": "Un changement sur une valeur ou une jauge : retirer, ajouter, fixer, multiplier, d'un nombre, d'un calcul ou de dés.",
+          "Summary": "Un changement sur une valeur, une jauge ou un champ du Contenu utilisé : retirer, ajouter, fixer, multiplier, d'un nombre, d'un calcul ou de dés.",
           "Limits": "Un Effet agit quand une Action le lance.",
           "Q": {
             "name": {
               "Label": "Nom"
             },
+            "writes": {
+              "Label": "Ce qui change",
+              "Option": {
+                "definition": "Une Définition",
+                "contentField": "Un champ du Contenu utilisé"
+              }
+            },
             "target": {
               "Label": "Valeur changée"
+            },
+            "chosenBy": {
+              "Label": "Définition choisie par un calcul (facultatif)"
+            },
+            "field": {
+              "Label": "Champ (identifiant)"
             },
             "role": {
               "Label": "Qui est visé",
@@ -3132,7 +3457,8 @@
               "Option": {
                 "number": "Un nombre",
                 "formula": "Un calcul",
-                "dice": "Des dés"
+                "dice": "Des dés",
+                "roll": "Un jet existant"
               }
             },
             "amount": {
@@ -3144,9 +3470,30 @@
             "dice": {
               "Label": "Dés"
             },
+            "roll": {
+              "Label": "Jet"
+            },
+            "bonus": {
+              "Label": "Bonus ajouté (facultatif)"
+            },
+            "multiplier": {
+              "Label": "Multiplicateur des dés (facultatif)"
+            },
+            "factor": {
+              "Label": "Facteur appliqué au total (facultatif)"
+            },
             "minimum": {
               "Label": "Au moins"
+            },
+            "description": {
+              "Label": "Description (facultative)"
             }
+          },
+          "Text": {
+            "Bonus": "Bonus : {name}",
+            "Multiplier": "Multiplicateur : {name}",
+            "Factor": "Facteur : {name}",
+            "Target": "Cible : {name}"
           }
         },
         "action": {
@@ -3169,11 +3516,29 @@
                     "number": "Nombre",
                     "integer": "Nombre entier",
                     "boolean": "Oui ou non",
-                    "string": "Texte"
+                    "string": "Texte",
+                    "reference": "Une Définition"
                   }
+                },
+                "definitionType": {
+                  "Label": "Définitions de ce type"
                 },
                 "default": {
                   "Label": "Réponse par défaut"
+                },
+                "required": {
+                  "Label": "Obligatoire"
+                },
+                "options": {
+                  "Label": "Choix proposés (facultatifs)",
+                  "Field": {
+                    "label": {
+                      "Label": "Libellé"
+                    },
+                    "value": {
+                      "Label": "Valeur"
+                    }
+                  }
                 }
               }
             },
@@ -3190,7 +3555,24 @@
               "Label": "Effets"
             },
             "applyStates": {
-              "Label": "États infligés"
+              "Label": "États infligés",
+              "Field": {
+                "state": {
+                  "Label": "État"
+                },
+                "duration": {
+                  "Label": "Durée (facultative)"
+                },
+                "stacking": {
+                  "Label": "S'il est déjà là",
+                  "Option": {
+                    "refresh": "Relancer sa durée",
+                    "stack": "Ajouter une pile",
+                    "separate": "En ajouter un autre",
+                    "ignore": "Ne rien faire"
+                  }
+                }
+              }
             },
             "removeStates": {
               "Label": "États retirés"
@@ -3205,8 +3587,14 @@
             "results": {
               "Label": "Selon le résultat du jet",
               "Field": {
+                "outcome": {
+                  "Label": "Résultat"
+                },
                 "resultKey": {
                   "Label": "Résultat"
+                },
+                "replace": {
+                  "Label": "Remplace les Effets de l'Action"
                 },
                 "effects": {
                   "Label": "Effets"
@@ -3223,6 +3611,9 @@
                 "each": "Un jet par cible",
                 "shared": "Un jet pour toutes"
               }
+            },
+            "description": {
+              "Label": "Description (facultative)"
             }
           }
         },
@@ -3291,6 +3682,9 @@
                 "self": "Celui qui porte le déclencheur",
                 "target": "La cible de l'évènement"
               }
+            },
+            "description": {
+              "Label": "Description (facultative)"
             }
           }
         },
@@ -3416,6 +3810,7 @@
         "Remove": "Retirer la ligne",
         "Existing": "Existant",
         "Enable": "Utiliser",
+        "Id": "Identifiant (facultatif)",
         "Errors": "À corriger",
         "Created": "Créé",
         "Reused": "Réutilisé",

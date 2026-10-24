@@ -1,7 +1,7 @@
 import {escapeHTML as escape} from "./html-utils.mjs";
 /** Pure HTML of the assistant's form and preview, from the models of src/configurator/assistant-view.mjs.
  * Every control carries data-answer="<path>" and data-answer-kind: the window reads the answers back from them.
- * words: {choose, none, add, remove, existing, enable, errors, created, reused, added, filled, warnings, nothing, open}. */
+ * words: {choose, none, add, remove, existing, enable, id, errors, created, reused, added, filled, warnings, nothing, open}. */
 
 const attr = (name, value) => value === undefined || value === null || value === "" ? "" : ` ${name}="${escape(value)}"`;
 const option = o => `<option value="${escape(o.value)}"${o.selected ? " selected" : ""}>${escape(o.label)}</option>`;
@@ -11,7 +11,12 @@ const row = (field, control, extra = "") => `<div class="form-group rta-assistan
 function fieldHTML(field, words, expressionHTML) {
   const data = `data-answer="${escape(field.path)}" data-answer-kind="${escape(field.kind)}"`;
   switch (field.kind) {
-    case "name": case "text": case "dice":
+    case "name": {
+      // A name whose id other rules read also asks for that id (left empty, it comes from the name).
+      const id = field.id === undefined ? "" : `<input type="text" class="rta-assistant__id" data-answer="${escape(field.path)}" data-answer-kind="nameId" value="${escape(field.id)}" placeholder="${escape(words.id)}" title="${escape(words.id)}" autocomplete="off">`;
+      return row(field, `<input type="text" ${data} value="${escape(field.value)}" autocomplete="off">${id}`);
+    }
+    case "text": case "dice":
       return row(field, `<input type="text" ${data} value="${escape(field.value)}" autocomplete="off">`);
     case "number": case "integer":
       return row(field, `<input type="number" ${data} value="${escape(field.value)}" step="${field.step}"${attr("min", field.min)}${attr("max", field.max)}>`);

@@ -125,9 +125,10 @@ class AnswerReader {
       if (!entry) return fail("NOT_FOUND", item.use);
       if (!acceptsEntry(question.accept, entry)) return fail("NOT_ACCEPTED", item.use);
       const slotId = nonempty(item.slotId) ? item.slotId : null;
-      const slots = question.accept.capability ? entry.slots?.[question.accept.capability] : null;
+      // A slot of the capability asked for, or of any capability when the question takes any Definition.
+      const slots = question.accept.capability ? entry.slots?.[question.accept.capability] : Object.values(entry.slots ?? {}).flat();
       if (slotId && !(slots ?? []).some(slot => slot.id === slotId)) return fail("NOT_FOUND", `${item.use}/${slotId}`);
-      return {use: item.use, slotId: slotId ?? slots?.[0]?.id ?? null};
+      return {use: item.use, slotId: slotId ?? (question.accept.capability ? slots?.[0]?.id : null) ?? null};
     }
     if (isRecord(item.create)) {
       const sub = this.path(question.create);
@@ -148,11 +149,10 @@ class PlanBuilder {
     this.created = []; this.additions = []; this.fills = []; this.reused = []; this.errors = [];
     this.taken = new Set(COLLECTION_FIELDS.flatMap(collection => (ruleset?.[collection] ?? []).map(entry => entry?.id)));
   }
+  /** A new id: the one an answer gives (unique in its collection, checked when the entry is added), else one made from
+   * the name and free in every collection. */
   newId(name, explicit = null) {
-    if (explicit) {
-      if (this.taken.has(explicit)) { this.errors.push({path: "", code: "ID_TAKEN", detail: explicit}); return freeId(explicit, this.taken); }
-      this.taken.add(explicit); return explicit;
-    }
+    if (explicit) { this.taken.add(explicit); return explicit; }
     const id = freeId(readableId(name) || "entry", this.taken);
     this.taken.add(id); return id;
   }
@@ -185,8 +185,11 @@ class PlanBuilder {
       /** Create an entry; meta fields are defaulted. Returns its id. */
       add(collection, entry) {
         if (!COLLECTION_FIELDS.includes(collection)) throw new Error(`Unknown collection: ${collection}.`);
-        const order = nextOrder([...(builder.ruleset?.[collection] ?? []), ...builder.created.filter(item => item.collection === collection).map(item => item.entry)]);
-        const meta = collection === "definitionTypes" ? {descriptionKey: "", color: null, order, fields: {}, constraints: []} : collection === "tags" ? {descriptionKey: "", order} : {descriptionKey: "", enabled: true, order, tags: []};
+        const siblings = [...(builder.ruleset?.[collection] ?? []), ...builder.created.filter(item => item.collection === collection).map(item => item.entry)];
+        if (siblings.some(sibling => sibling?.id === entry.id)) { builder.errors.push({path: path.id, code: "ID_TAKEN", detail: entry.id}); return entry.id; }
+        const order = nextOrder(siblings);
+        const meta = collection === "definitionTypes" ? {descriptionKey: "", color: null, order, fields: {}, constraints: []} : collection === "tags" ? {descriptionKey: "", order}
+          : collection === "permissionPolicies" ? {descriptionKey: "", enabled: true, order} : {descriptionKey: "", enabled: true, order, tags: []};
         builder.created.push({collection, entry: {...meta, ...copyJSON(entry)}, path: path.id});
         return entry.id;
       },
@@ -315,6 +318,8 @@ export function describeAssistantPath(ruleset, pathId, answers = {}, {paths, tex
   };
   const describe = (question, keyAt, values, answer) => {
     const view = {id: question.id, kind: question.kind, labelKey: labelOf(path.id, keyAt, question), required: question.required !== false};
+    // A name whose id other rules read (an input read by Formulas): the GM may give that id.
+    if (question.withId) view.withId = true;
     if (question.kind === "choice") view.options = question.options.map(option => ({value: optionValue(option), labelKey: optionLabelOf(path.id, keyAt, option)}));
     if (question.kind === "entry" || question.kind === "entries") { view.accept = copyJSON(question.accept); view.choices = entryChoices(ruleset, question.accept); view.create = question.create ?? null; view.fixed = [...(question.fixed ?? [])]; }
     if (question.kind === "event") view.choices = eventChoices(ruleset);

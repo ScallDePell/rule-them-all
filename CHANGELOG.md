@@ -2,6 +2,12 @@
 
 ## Unreleased
 
+## 1.0.28
+
+- Configurator > Tools > **Assistant** replaces the recipes. It builds a Ruleset by answering questions, in 36 paths in three groups: core rules (characteristics, skills, resources, a test, an attack, a state...), systems (creation, progression, initiative) and single bricks (a Formula, an Effect, an Action, a Trigger...). A question that needs an entry lets you pick an existing one or create a new one in place. A preview lists what will be created, reused and completed, with errors on their question, before **Apply** writes everything at once. The assistant only adds: it never changes or removes an existing value. Game-neutral: no die or difficulty is imposed.
+- Acceptance: the rules of the RWF 2.6.0 example Ruleset (418 entries) were rebuilt with the assistant alone and are identical to the original; the rebuilt package passes the RWF play checks (`Rulesets/rwf/outils/rebuild-with-assistant.mjs`).
+- Triggers of the same event now run in the order of their cards in the configurator (drag to reorder), instead of the order they were created in.
+
 ## 1.0.27
 
 - Module events (combat start, round, turn, end, elapsed time): a Trigger whose Action its own Conditions refuse no longer makes the whole event fail for that Actor ("Expected plain JSON data."). Events emitted at the same moment by several callers (the combat hooks and another module) now run one after the other, instead of the second being refused ("Runtime container changed since it was read").

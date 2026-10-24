@@ -106,3 +106,24 @@ test('A Trigger whose Action its Conditions refuse does not fail the event', asy
   assert.deepEqual(both.map(([result])=>result.error),[undefined,undefined]);
   assert.equal((await runtime.getContainerState('Actor.a')).definitionStates.stamina.capabilityStates.pool.points.current,7);
 });
+
+test('Triggers of one event run in the card order of the configurator, not in storage order', async()=>{
+  const api=await createConfiguratorAPI(new Storage());
+  const v=(await api.createRuleset({id:'order',nameKey:'Order',version:'1.0.0'})).versionId;
+  await api.registerDefinitionType(v,{id:'stat',key:'stat',nameKey:'Stat',allowedCapabilities:['pool'],defaultCapabilities:['pool'],requiredCapabilities:[],fields:{}});
+  await api.createDefinition(v,{id:'stamina',key:'stamina',nameKey:'Stamina',definitionTypeId:'stat',capabilities:['pool'],slots:{pool:[{id:'points',minimum:{literal:0},maximum:{literal:10}}]},data:{}});
+  // "Refill" sets stamina to 10, "Tire" takes 1: the order decides whether the round ends at 9 or 10.
+  const target=ref('stamina','pool','pool.current','points');
+  await api.createEffect(v,{id:'refill',nameKey:'Refill',targetRef:target,targetRole:'self',operation:'set',operand:{kind:'literal',value:10}});
+  await api.createEffect(v,{id:'winded',nameKey:'Winded',targetRef:target,targetRole:'self',operation:'subtract',operand:{kind:'literal',value:1}});
+  await api.createAction(v,{id:'refill',nameKey:'Refill',effectRefs:['refill']});
+  await api.createAction(v,{id:'tire',nameKey:'Tire',effectRefs:['winded']});
+  await api.createTrigger(v,{id:'refill-each-round',nameKey:'Refill each round',eventTypeId:'rta.combat.round',actionRefs:['refill']});
+  await api.createTrigger(v,{id:'tire-each-round',nameKey:'Tire each round',eventTypeId:'rta.combat.round',actionRefs:['tire']});
+  await api.reorderEntries(v,'trigger',['tire-each-round','refill-each-round']);
+  await api.publishRuleset(v);
+  const runtime=createRuntimeAPI(api,{adapter:new Adapter(),hooks:null});
+  await runtime.initializeContainer(v,'Actor.a');
+  await runtime.emitSystemEvent('rta.combat.round',{combatId:'c',round:1},['Actor.a']);
+  assert.equal((await runtime.getContainerState('Actor.a')).definitionStates.stamina.capabilityStates.pool.points.current,10,'tire first, then refill');
+});

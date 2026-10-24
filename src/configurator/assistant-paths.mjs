@@ -4,6 +4,7 @@
    RTA.Assistant.Path.<path>.Q.<question>.Label, .Option.<value>, list fields under .Field.<field>, and
    RTA.Assistant.Path.<path>.Text.<key> for the names a path gives its own entries. No game rule is written here. */
 import {pathKey} from "./assistant-engine.mjs";
+import {readableId} from "./identity.mjs";
 
 export const ASSISTANT_GROUPS = Object.freeze(["core", "systems", "bricks"]);
 /** Names every path may give its entries: RTA.Assistant.Text.<key>. */
@@ -25,25 +26,69 @@ const valueOut = (ctx, answer, {write = false} = {}) => {
   if ((definition?.capabilities ?? []).includes("state")) return out(answer.id, "state", "state.active");
   return out(answer.id, "value", write ? "value.base" : "value.final");
 };
-/** A Formula of the expression when it is more than a number: {kind, value|id} to use as an operand. */
+/** The simplest operand of an expression: a number, a Parameter, a Reference or a Formula as they are, else a new Formula. */
 function operandOf(ctx, expression, name) {
   if (expression?.type === "literal" && typeof expression.value === "number") return {kind: "literal", value: expression.value};
+  if (expression?.type === "parameter") return {kind: "parameter", id: expression.id};
+  if (expression?.type === "reference" && !expression.container) return {kind: "reference", reference: expression.reference};
   return {kind: "formula", id: formulaOf(ctx, expression, name)};
 }
+/** A bound of a value or a pool: a number as it is, else a Formula. */
+const boundOf = (ctx, expression, name) => expression?.type === "literal" && typeof expression.value === "number" ? {literal: expression.value} : {formulaRef: formulaOf(ctx, expression, name)};
 /** A roll operand throwing new dice named after the entry they serve. */
-function rollOperand(ctx, dice, name, {minimum, bonusFormulaRef, multiplierFormulaRef, factorFormulaRef} = {}) {
+function rollOperand(ctx, dice, name, extras = {}) {
   const rollRef = ctx.add("rolls", {id: ctx.newId(ctx.shared("Dice", {name})), nameKey: ctx.shared("Dice", {name}), formula: dice});
-  return {kind: "roll", rollRef, ...(bonusFormulaRef ? {bonusFormulaRef} : {}), ...(multiplierFormulaRef ? {multiplierFormulaRef} : {}), ...(factorFormulaRef ? {factorFormulaRef} : {}), ...(minimum !== undefined ? {minimum} : {})};
+  return rollExtras({kind: "roll", rollRef}, extras);
 }
-/** A Formula or Condition of this expression: one already in the Ruleset (or this plan) is used again, not doubled. */
-const formulaOf = (ctx, expression, name, resultType = "number") => ctx.findWhere("formulas", entry => entry.resultType === resultType && ctx.same(entry.expression, expression))?.id
+const rollExtras = (operand, {minimum, bonusFormulaRef, multiplierFormulaRef, factorFormulaRef} = {}) => ({...operand, ...(bonusFormulaRef ? {bonusFormulaRef} : {}), ...(multiplierFormulaRef ? {multiplierFormulaRef} : {}),
+  ...(factorFormulaRef ? {factorFormulaRef} : {}), ...(minimum !== undefined ? {minimum} : {})});
+/** A Formula or Condition of this expression: a Formula node is that Formula; one already in the Ruleset (or this plan)
+ * with the same expression is used again, not doubled. */
+const formulaOf = (ctx, expression, name, resultType = "number") => expression?.type === "formula" && typeof expression.id === "string" ? expression.id
+  : ctx.findWhere("formulas", entry => entry.resultType === resultType && ctx.same(entry.expression, expression))?.id
   ?? ctx.add("formulas", {id: ctx.newId(name), nameKey: name, resultType, expression});
 const conditionOf = (ctx, expression, name) => ctx.findWhere("conditions", entry => ctx.same(entry.expression, expression))?.id
   ?? ctx.add("conditions", {id: ctx.newId(name), nameKey: name, expression});
 const typeQuestion = (pathId, capability, textKey) => ({id: "type", kind: "entry", accept: {collection: "definitionTypes", capability}, create: "definitionType", fixed: ["capability"], default: {create: {name: proposed(pathId, textKey), capability}}});
 const nameQuestion = (pathId, textKey) => ({id: "name", kind: "name", ...(textKey ? {default: proposed(pathId, textKey)} : {})});
+/** The description of the entry a path creates, shown under its name. */
+const descriptionQuestion = {id: "description", kind: "text", required: false};
+const described = v => v.description ? {descriptionKey: v.description} : {};
 const ROLES = ["target", "self"];
 const DURATIONS = ["untilRemoved", "round", "turn", "minute", "hour", "day", "untilEvent"];
+const VALUE_TYPES = ["number", "integer", "boolean", "string"];
+const FIELD_TYPES = [...VALUE_TYPES, "reference"];
+/** A typed value from the text a GM typed: a number, true or false, or the text. */
+function typedValue(valueType, text) {
+  if (valueType === "boolean") return text === true || text === "true";
+  if (["number", "integer"].includes(valueType)) { const n = Number(text); if (!Number.isFinite(n)) throw new Error(`${text} is not a number.`); return n; }
+  return String(text);
+}
+/** An Action input id from its name: letters, digits and _. */
+function inputId(name) {
+  const id = String(name).normalize("NFKD").replace(/[̀-ͯ]/g, "").replace(/[^A-Za-z0-9]+/g, "_").replace(/^_+|_+$/g, "").toLowerCase();
+  return /^[a-z]/.test(id) ? id : `v_${id || "input"}`;
+}
+/** A field id from its name: camelCase letters and digits. */
+const fieldId = name => inputId(name).replace(/_([a-z0-9])/g, (all, letter) => letter.toUpperCase());
+
+/** The fields of a Definition Type or a Content Type: typed, a reference naming the type it points at. */
+const FIELD_QUESTIONS = [
+  {id: "name", kind: "name", withId: true}, {id: "valueType", kind: "choice", options: FIELD_TYPES, default: "number"},
+  {id: "referenceType", kind: "entry", required: false, accept: {collection: "definitionTypes"}, visible: row => row.valueType === "reference"},
+  {id: "many", kind: "boolean", default: false}, {id: "required", kind: "boolean", default: false}, {id: "nullable", kind: "boolean", default: false}
+];
+function fieldMap(ctx, rows) {
+  const fields = {};
+  for (const row of rows ?? []) {
+    const name = ctx.name(row.name), base = row.name.id ?? fieldId(name);
+    let id = base, n = 2;
+    while (fields[id]) id = `${base}${n++}`;
+    fields[id] = {id, name, valueType: row.valueType, cardinality: row.many ? "many" : "one", required: row.required, nullable: row.nullable, constraints: [],
+      ...(row.valueType === "reference" ? {referenceTarget: {objectKind: "definition", ...(row.referenceType ? {definitionTypeId: ctx.entry(row.referenceType).id} : {})}} : {})};
+  }
+  return fields;
+}
 
 /* ---------------------------------------------------------------- bricks */
 
@@ -52,59 +97,169 @@ const definitionType = {
   questions: [
     nameQuestion("definitionType"),
     {id: "capability", kind: "choice", options: ["value", "pool", "state"], default: "value"},
-    {id: "minimum", kind: "number", required: false, visible: v => v.capability === "value"},
-    {id: "maximum", kind: "number", required: false, visible: v => v.capability === "value"}
+    {id: "minimum", kind: "formula", required: false, visible: v => v.capability === "value"},
+    {id: "maximum", kind: "formula", required: false, visible: v => v.capability === "value"},
+    {id: "fields", kind: "list", required: false, fields: FIELD_QUESTIONS},
+    descriptionQuestion
   ],
+  texts: ["Minimum", "Maximum"],
   build(ctx) {
-    const {name, capability, minimum, maximum} = ctx.values;
-    const bounds = {...(minimum !== undefined ? {minimum: {literal: minimum}} : {}), ...(maximum !== undefined ? {maximum: {literal: maximum}} : {})};
-    const id = ctx.add("definitionTypes", {id: ctx.id(name), nameKey: ctx.name(name), allowedCapabilities: [capability], defaultCapabilities: [capability], requiredCapabilities: [capability], ...(Object.keys(bounds).length ? {valueBounds: bounds} : {})});
+    const v = ctx.values, name = ctx.name(v.name), {capability} = v;
+    const bounds = {...(v.minimum ? {minimum: boundOf(ctx, v.minimum, ctx.t("Minimum", {name}))} : {}), ...(v.maximum ? {maximum: boundOf(ctx, v.maximum, ctx.t("Maximum", {name}))} : {})};
+    const id = ctx.add("definitionTypes", {id: ctx.id(v.name), nameKey: name, allowedCapabilities: [capability], defaultCapabilities: [capability], requiredCapabilities: [capability],
+      fields: fieldMap(ctx, v.fields), ...(Object.keys(bounds).length ? {valueBounds: bounds} : {}), ...described(v)});
     return {collection: "definitionTypes", id};
   }
 };
 
 const value = {
   id: "value", group: "bricks", keywords: ["value", "counter"], produces: {collection: "definitions", capability: "value"},
-  questions: [nameQuestion("value"), typeQuestion("value", "value", "Type")],
+  questions: [
+    nameQuestion("value"), typeQuestion("value", "value", "Type"),
+    {id: "scale", kind: "entry", required: false, accept: {collection: "scales"}},
+    {id: "data", kind: "list", required: false, fields: [
+      {id: "field", kind: "text"}, {id: "entry", kind: "entry", required: false, accept: {collection: "definitions"}},
+      {id: "value", kind: "text", required: false, visible: row => !row.entry}
+    ]},
+    descriptionQuestion
+  ],
   texts: ["Type"],
   build(ctx) {
-    const type = ctx.entry(ctx.values.type);
-    const id = ctx.add("definitions", {id: ctx.id(ctx.values.name), definitionTypeId: type.id, nameKey: ctx.name(ctx.values.name), capabilities: ["value"]});
+    const v = ctx.values, type = ctx.entry(v.type), fields = ctx.find("definitionTypes", type.id)?.fields ?? {}, data = {};
+    // A field of the type takes a Definition (a reference) or a typed value.
+    for (const row of v.data ?? []) {
+      if (row.entry) { data[row.field] = {objectKind: "definition", objectId: ctx.entry(row.entry).id}; continue; }
+      if (row.value !== undefined) data[row.field] = typedValue(fields[row.field]?.valueType ?? "string", row.value);
+    }
+    const id = ctx.add("definitions", {id: ctx.id(v.name), definitionTypeId: type.id, nameKey: ctx.name(v.name), capabilities: ["value"], data,
+      ...(v.scale ? {scaleRef: ctx.entry(v.scale).id} : {}), ...described(v)});
     return {collection: "definitions", id};
+  }
+};
+
+const parameterBrick = {
+  id: "parameter", group: "bricks", keywords: ["parameter", "constant", "setting", "difficulty"], produces: {collection: "parameters"},
+  questions: [
+    nameQuestion("parameter"),
+    {id: "valueType", kind: "choice", options: VALUE_TYPES, default: "integer"},
+    {id: "number", kind: "number", visible: v => ["number", "integer"].includes(v.valueType)},
+    {id: "flag", kind: "boolean", default: false, visible: v => v.valueType === "boolean"},
+    {id: "text", kind: "text", visible: v => v.valueType === "string"},
+    descriptionQuestion
+  ],
+  build(ctx) {
+    const v = ctx.values, given = v.valueType === "boolean" ? v.flag : v.valueType === "string" ? v.text : v.number;
+    return {collection: "parameters", id: ctx.add("parameters", {id: ctx.id(v.name), nameKey: ctx.name(v.name), valueType: v.valueType, value: given, scope: "ruleset", ...described(v)})};
   }
 };
 
 const formulaBrick = {
   id: "formula", group: "bricks", keywords: ["formula", "calculation"], produces: {collection: "formulas"},
-  questions: [nameQuestion("formula"), {id: "resultType", kind: "choice", options: ["number", "integer", "boolean", "string"], default: "number"}, {id: "expression", kind: "formula"}],
-  build(ctx) { return {collection: "formulas", id: formulaOf(ctx, ctx.values.expression, ctx.name(ctx.values.name), ctx.values.resultType)}; }
+  questions: [nameQuestion("formula"), {id: "resultType", kind: "choice", options: FIELD_TYPES, default: "number"}, {id: "expression", kind: "formula"}, descriptionQuestion],
+  build(ctx) {
+    // A Formula named with its own id, or described, is always a new one; otherwise the same calculation is used again.
+    const v = ctx.values, name = ctx.name(v.name);
+    if (v.name.id || v.description) return {collection: "formulas", id: ctx.add("formulas", {id: ctx.id(v.name), nameKey: name, resultType: v.resultType, expression: v.expression, ...described(v)})};
+    return {collection: "formulas", id: formulaOf(ctx, v.expression, name, v.resultType)};
+  }
 };
 
 const conditionBrick = {
   id: "condition", group: "bricks", keywords: ["condition", "requirement"], produces: {collection: "conditions"},
-  questions: [nameQuestion("condition"), {id: "expression", kind: "condition"}],
-  build(ctx) { return {collection: "conditions", id: conditionOf(ctx, ctx.values.expression, ctx.name(ctx.values.name))}; }
+  questions: [nameQuestion("condition"), {id: "expression", kind: "condition"}, descriptionQuestion],
+  build(ctx) {
+    const v = ctx.values, name = ctx.name(v.name);
+    if (v.name.id || v.description) return {collection: "conditions", id: ctx.add("conditions", {id: ctx.id(v.name), nameKey: name, expression: v.expression, ...described(v)})};
+    return {collection: "conditions", id: conditionOf(ctx, v.expression, name)};
+  }
+};
+
+const rollBrick = {
+  id: "roll", group: "bricks", keywords: ["roll", "dice", "variant"], produces: {collection: "rolls"},
+  questions: [
+    {id: "name", kind: "name", required: false},
+    {id: "formula", kind: "dice"},
+    {id: "variants", kind: "list", required: false, fields: [
+      {id: "condition", kind: "entry", accept: {collection: "conditions"}, create: "condition"}, {id: "formula", kind: "dice"}
+    ]},
+    descriptionQuestion
+  ],
+  build(ctx) {
+    // Unnamed plain dice: a Roll of the same dice is used again.
+    const v = ctx.values, variants = (v.variants ?? []).map(row => ({conditionRef: ctx.entry(row.condition).id, formula: row.formula}));
+    if (!v.name && !variants.length && !v.description) {
+      const same = ctx.findWhere("rolls", roll => roll.formula === v.formula && !(roll.variants ?? []).length);
+      if (same) return {collection: "rolls", id: same.id};
+    }
+    const name = v.name ? ctx.name(v.name) : v.formula;
+    return {collection: "rolls", id: ctx.add("rolls", {id: v.name ? ctx.id(v.name) : ctx.newId(name), nameKey: name, formula: v.formula, variants, ...described(v)})};
+  }
+};
+
+const outcomeBrick = {
+  id: "outcome", group: "bricks", keywords: ["outcome", "result", "success", "critical"], produces: {collection: "outcomes"},
+  questions: [
+    nameQuestion("outcome"),
+    {id: "resultKey", kind: "text"},
+    {id: "condition", kind: "entry", required: false, accept: {collection: "conditions"}, create: "condition"},
+    descriptionQuestion
+  ],
+  build(ctx) {
+    const v = ctx.values, name = ctx.name(v.name);
+    return {collection: "outcomes", id: ctx.add("outcomes", {id: ctx.id(v.name), nameKey: name, labelKey: name, resultKey: v.resultKey, conditionRef: v.condition ? ctx.entry(v.condition).id : null, ...described(v)})};
+  }
+};
+
+const durationBrick = {
+  id: "duration", group: "bricks", keywords: ["duration", "rounds", "until"], produces: {collection: "durations"},
+  questions: [
+    nameQuestion("duration"),
+    {id: "duration", kind: "choice", options: DURATIONS, default: "round"},
+    {id: "amount", kind: "integer", min: 1, default: 1, visible: v => !["untilRemoved", "untilEvent"].includes(v.duration)},
+    {id: "event", kind: "event", visible: v => v.duration === "untilEvent"},
+    descriptionQuestion
+  ],
+  build(ctx) {
+    const v = ctx.values;
+    return {collection: "durations", id: ctx.add("durations", {id: ctx.id(v.name), nameKey: ctx.name(v.name), ...durationRule(v), ...described(v)})};
+  }
 };
 
 const effectBrick = {
   id: "effect", group: "bricks", keywords: ["effect", "damage", "heal"], produces: {collection: "effects"},
   questions: [
     nameQuestion("effect"),
-    {id: "target", kind: "entry", accept: {collection: "definitions"}},
+    {id: "writes", kind: "choice", options: ["definition", "contentField"], default: "definition"},
+    {id: "target", kind: "entry", accept: {collection: "definitions"}, visible: v => v.writes === "definition"},
+    {id: "chosenBy", kind: "formula", required: false, visible: v => v.writes === "definition"},
+    {id: "field", kind: "text", visible: v => v.writes === "contentField"},
     {id: "role", kind: "choice", options: ROLES, default: "target"},
     {id: "operation", kind: "choice", options: ["subtract", "add", "set", "multiply"], default: "subtract"},
-    {id: "operand", kind: "choice", options: ["number", "formula", "dice"], default: "number"},
+    {id: "operand", kind: "choice", options: ["number", "formula", "dice", "roll"], default: "number"},
     {id: "amount", kind: "number", default: 1, visible: v => v.operand === "number"},
     {id: "expression", kind: "formula", visible: v => v.operand === "formula"},
     {id: "dice", kind: "dice", visible: v => v.operand === "dice"},
-    {id: "minimum", kind: "number", required: false, visible: v => v.operand === "dice"}
+    {id: "roll", kind: "entry", accept: {collection: "rolls"}, create: "roll", visible: v => v.operand === "roll"},
+    {id: "bonus", kind: "formula", required: false, visible: v => ["dice", "roll"].includes(v.operand)},
+    {id: "multiplier", kind: "formula", required: false, visible: v => ["dice", "roll"].includes(v.operand)},
+    {id: "factor", kind: "formula", required: false, visible: v => ["dice", "roll"].includes(v.operand)},
+    {id: "minimum", kind: "number", required: false, visible: v => ["dice", "roll"].includes(v.operand)},
+    descriptionQuestion
   ],
+  texts: ["Bonus", "Multiplier", "Factor", "Target"],
   build(ctx) {
-    const v = ctx.values, name = ctx.name(v.name), id = ctx.id(v.name), target = ctx.entry(v.target);
+    const v = ctx.values, name = ctx.name(v.name), id = ctx.id(v.name);
     let operandValue = {kind: "literal", value: v.amount};
     if (v.operand === "formula") operandValue = operandOf(ctx, v.expression, ctx.shared("Amount", {name}));
-    if (v.operand === "dice") operandValue = rollOperand(ctx, v.dice, name, {minimum: v.minimum});
-    return {collection: "effects", id: ctx.add("effects", {id, nameKey: name, targetRef: valueOut(ctx, target, {write: true}), targetRole: v.role, operation: v.operation, operand: operandValue})};
+    if (["dice", "roll"].includes(v.operand)) {
+      const extras = {minimum: v.minimum, bonusFormulaRef: v.bonus ? formulaOf(ctx, v.bonus, ctx.t("Bonus", {name})) : null,
+        multiplierFormulaRef: v.multiplier ? formulaOf(ctx, v.multiplier, ctx.t("Multiplier", {name})) : null, factorFormulaRef: v.factor ? formulaOf(ctx, v.factor, ctx.t("Factor", {name})) : null};
+      operandValue = v.operand === "dice" ? rollOperand(ctx, v.dice, name, extras) : rollExtras({kind: "roll", rollRef: ctx.entry(v.roll).id}, extras);
+    }
+    // A Content field (a weapon's ammunition), or a Definition: the one named, or the one a Formula chooses (the skill tested).
+    const target = v.writes === "contentField" ? {targetRef: null, targetContentField: v.field} : {targetRef: valueOut(ctx, ctx.entry(v.target), {write: true}),
+      ...(v.chosenBy ? {targetDefinitionFormulaRef: formulaOf(ctx, v.chosenBy, ctx.t("Target", {name}), "reference")} : {})};
+    return {collection: "effects", id: ctx.add("effects", {id, nameKey: name, ...target, targetRole: v.role, operation: v.operation, operand: operandValue, ...described(v)})};
   }
 };
 
@@ -113,44 +268,54 @@ const actionBrick = {
   questions: [
     nameQuestion("action"),
     {id: "inputs", kind: "list", required: false, fields: [
-      {id: "name", kind: "name"}, {id: "valueType", kind: "choice", options: ["number", "integer", "boolean", "string"], default: "number"},
-      {id: "default", kind: "text", required: false}
+      {id: "name", kind: "name", withId: true}, {id: "valueType", kind: "choice", options: FIELD_TYPES, default: "number"},
+      {id: "definitionType", kind: "entry", accept: {collection: "definitionTypes"}, visible: row => row.valueType === "reference"},
+      {id: "default", kind: "text", required: false, visible: row => row.valueType !== "reference"},
+      {id: "required", kind: "boolean", default: true},
+      {id: "options", kind: "list", required: false, visible: row => row.valueType !== "reference", fields: [{id: "label", kind: "text"}, {id: "value", kind: "text"}]}
     ]},
     {id: "conditions", kind: "entries", required: false, accept: {collection: "conditions"}},
     {id: "costs", kind: "entries", required: false, accept: {collection: "effects"}},
     {id: "test", kind: "entry", required: false, accept: {collection: "tests"}},
     {id: "effects", kind: "entries", required: false, accept: {collection: "effects"}},
-    {id: "applyStates", kind: "entries", required: false, accept: {collection: "definitions", capability: "state"}},
+    {id: "applyStates", kind: "list", required: false, fields: [
+      {id: "state", kind: "entry", accept: {collection: "definitions", capability: "state"}},
+      {id: "duration", kind: "entry", required: false, accept: {collection: "durations"}, create: "duration"},
+      {id: "stacking", kind: "choice", options: ["refresh", "stack", "separate", "ignore"], default: "refresh"}
+    ]},
     {id: "removeStates", kind: "entries", required: false, accept: {collection: "definitions", capability: "state"}},
     {id: "role", kind: "choice", options: ROLES, default: "target"},
     {id: "results", kind: "list", required: false, visible: v => Boolean(v.test), fields: [
-      {id: "resultKey", kind: "text"}, {id: "effects", kind: "entries", required: false, accept: {collection: "effects"}},
+      {id: "outcome", kind: "entry", required: false, accept: {collection: "outcomes"}},
+      {id: "resultKey", kind: "text", visible: row => !row.outcome},
+      {id: "replace", kind: "boolean", default: true},
+      {id: "effects", kind: "entries", required: false, accept: {collection: "effects"}, visible: row => row.replace},
       {id: "actions", kind: "entries", required: false, accept: {collection: "actions"}}
     ]},
-    {id: "targeting", kind: "choice", options: ["one", "each", "shared"], default: "one"}
+    {id: "targeting", kind: "choice", options: ["one", "each", "shared"], default: "one"},
+    descriptionQuestion
   ],
   build(ctx) {
     const v = ctx.values, ids = list => (list ?? []).map(answer => ctx.entry(answer).id);
     const inputs = (v.inputs ?? []).map(row => {
-      const id = inputId(ctx.name(row.name));
-      const typed = row.default === undefined || row.default === "" ? undefined : row.valueType === "boolean" ? row.default === "true" : ["number", "integer"].includes(row.valueType) ? Number(row.default) : row.default;
-      return {id, labelKey: ctx.name(row.name), valueType: row.valueType, required: typed === undefined, ...(typed !== undefined && !Number.isNaN(typed) ? {defaultValue: typed} : {})};
+      const label = ctx.name(row.name), typed = text => typedValue(row.valueType, text);
+      const input = {id: row.name.id ?? inputId(label), labelKey: label, valueType: row.valueType, required: row.required};
+      if (row.valueType === "reference") input.definitionTypeId = ctx.entry(row.definitionType).id;
+      if (row.default !== undefined) input.defaultValue = typed(row.default);
+      if (row.options?.length) input.options = row.options.map(option => ({value: typed(option.value), labelKey: option.label}));
+      return input;
     });
     const action = {id: ctx.id(v.name), nameKey: ctx.name(v.name), inputs, conditionRefs: ids(v.conditions), costEffectRefs: ids(v.costs), effectRefs: ids(v.effects),
       testRef: v.test ? ctx.entry(v.test).id : null, targeting: v.targeting,
-      stateApplications: ids(v.applyStates).map(definitionId => ({definitionId, targetRole: v.role})),
-      stateRemovals: ids(v.removeStates).map(definitionId => ({definitionId, targetRole: v.role}))};
-    // Per result of the Test (by its result key): the Effects instead of the Action's own, then other Actions.
-    action.outcomeMappings = (v.results ?? []).map(row => ({resultKey: row.resultKey, effectRefs: ids(row.effects), actionRefs: ids(row.actions)}));
+      stateApplications: (v.applyStates ?? []).map(row => ({definitionId: ctx.entry(row.state).id, targetRole: v.role, durationRef: row.duration ? ctx.entry(row.duration).id : null, stacking: row.stacking})),
+      stateRemovals: ids(v.removeStates).map(definitionId => ({definitionId, targetRole: v.role})), ...described(v)};
+    // Per result of the Test (an Outcome, or a result key): the Effects instead of the Action's own (none listed: no Effect),
+    // or the Action's own when they are not replaced; then other Actions.
+    action.outcomeMappings = (v.results ?? []).map(row => ({...(row.outcome ? {outcomeId: ctx.entry(row.outcome).id} : {resultKey: row.resultKey}),
+      ...(row.replace ? {effectRefs: ids(row.effects)} : {}), ...(row.actions?.length ? {actionRefs: ids(row.actions)} : {})}));
     return {collection: "actions", id: ctx.add("actions", action)};
   }
 };
-/** An Action input id from its name: letters, digits and _. */
-function inputId(name) {
-  const id = String(name).normalize("NFKD").replace(/[̀-ͯ]/g, "").replace(/[^A-Za-z0-9]+/g, "_").replace(/^_+|_+$/g, "").toLowerCase();
-  return /^[a-z]/.test(id) ? id : `v_${id || "input"}`;
-}
-
 
 const triggerBrick = {
   id: "trigger", group: "bricks", keywords: ["trigger", "event", "automatic", "round", "turn"], produces: {collection: "triggers"},
@@ -161,11 +326,13 @@ const triggerBrick = {
     {id: "actions", kind: "entries", min: 1, accept: {collection: "actions"}},
     {id: "holder", kind: "choice", options: ["actor", "combat", "world"], default: "actor"},
     {id: "mode", kind: "choice", options: ["automatic", "offer"], default: "automatic"},
-    {id: "actingRole", kind: "choice", options: ["self", "target"], default: "self"}
+    {id: "actingRole", kind: "choice", options: ["self", "target"], default: "self"},
+    descriptionQuestion
   ],
   build(ctx) {
     const v = ctx.values, ids = list => (list ?? []).map(answer => ctx.entry(answer).id);
-    return {collection: "triggers", id: ctx.add("triggers", {id: ctx.id(v.name), nameKey: ctx.name(v.name), eventTypeId: v.event, conditionRefs: ids(v.conditions), actionRefs: ids(v.actions), holder: v.holder, mode: v.mode, actingRole: v.actingRole})};
+    return {collection: "triggers", id: ctx.add("triggers", {id: ctx.id(v.name), nameKey: ctx.name(v.name), eventTypeId: v.event, conditionRefs: ids(v.conditions), actionRefs: ids(v.actions),
+      holder: v.holder, mode: v.mode, actingRole: v.actingRole, ...described(v)})};
   }
 };
 
@@ -294,7 +461,8 @@ const derivedValue = {
     {id: "type", kind: "entry", accept: {collection: "definitionTypes", capability: "value"}, create: "definitionType", fixed: ["capability"], visible: v => v.target === "new",
       default: {create: {name: proposed("derivedValue", "Type"), capability: "value"}}},
     {id: "existing", kind: "entry", accept: {collection: "definitions", capability: "value"}, visible: v => v.target === "existing"},
-    {id: "expression", kind: "formula"}
+    {id: "expression", kind: "formula"},
+    {id: "binding", kind: "name", required: false}
   ],
   texts: ["Type"],
   build(ctx) {
@@ -302,7 +470,8 @@ const derivedValue = {
     const id = v.target === "new" ? ctx.add("definitions", {id: ctx.id(v.name), definitionTypeId: ctx.entry(v.type).id, nameKey: ctx.name(v.name), capabilities: ["value"]}) : ctx.entry(v.existing).id;
     const name = ctx.find("definitions", id)?.nameKey ?? id;
     const formulaRef = formulaOf(ctx, v.expression, name);
-    ctx.add("formulaBindings", {id: ctx.newId(name), nameKey: name, formulaRef, targetRef: out(id, "value", "value.final")});
+    // The link computing the value, named after it unless the GM names it.
+    ctx.add("formulaBindings", {id: v.binding ? ctx.id(v.binding) : ctx.newId(name), nameKey: v.binding ? ctx.name(v.binding) : name, formulaRef, targetRef: out(id, "value", "value.final")});
     return {collection: "definitions", id};
   }
 };
@@ -316,14 +485,17 @@ const resource = {
     {id: "maxFormula", kind: "formula", visible: v => v.maximum === "formula"},
     {id: "minimum", kind: "number", default: 0},
     {id: "initial", kind: "choice", options: ["maximum", "minimum"], default: "maximum"},
-    {id: "integer", kind: "boolean", default: true}
+    {id: "integer", kind: "boolean", default: true},
+    {id: "scale", kind: "entry", required: false, accept: {collection: "scales"}},
+    descriptionQuestion
   ],
   texts: ["Type", "Maximum"],
   build(ctx) {
     const v = ctx.values, name = ctx.name(v.name), id = ctx.id(v.name);
     const maximum = v.maximum === "fixed" ? {literal: v.maxValue} : {formulaRef: formulaOf(ctx, v.maxFormula, ctx.t("Maximum", {name}))};
-    const slot = {id: "points", name, valueType: v.integer ? "integer" : "number", minimum: {literal: v.minimum}, maximum, initial: v.initial === "maximum" ? maximum : {literal: v.minimum}};
-    ctx.add("definitions", {id, definitionTypeId: ctx.entry(v.type).id, nameKey: name, capabilities: ["pool"], slots: {pool: [slot]}});
+    // A pool starts full unless it starts at its minimum.
+    const slot = {id: "points", name, valueType: v.integer ? "integer" : "number", minimum: {literal: v.minimum}, maximum, ...(v.initial === "minimum" ? {initial: {literal: v.minimum}} : {})};
+    ctx.add("definitions", {id, definitionTypeId: ctx.entry(v.type).id, nameKey: name, capabilities: ["pool"], slots: {pool: [slot]}, ...(v.scale ? {scaleRef: ctx.entry(v.scale).id} : {}), ...described(v)});
     return {collection: "definitions", id, slotId: "points"};
   }
 };
@@ -333,25 +505,45 @@ const testPath = {
   id: "test", group: "core", keywords: ["test", "check", "roll", "saving throw", "difficulty", "opposed"], produces: {collection: "tests"},
   questions: [
     nameQuestion("test"),
-    {id: "dice", kind: "dice"},
+    {id: "roll", kind: "entry", required: false, accept: {collection: "rolls"}},
+    {id: "dice", kind: "dice", visible: v => !v.roll},
     {id: "bonus", kind: "formula", required: false},
     {id: "target", kind: "choice", options: ["asked", "fixed", "formula", "opposed", "none"], default: "asked"},
     {id: "targetValue", kind: "number", visible: v => v.target === "fixed"},
     {id: "askedDefault", kind: "number", required: false, visible: v => v.target === "asked"},
     {id: "targetFormula", kind: "formula", visible: v => v.target === "formula"},
     {id: "opposed", kind: "entry", accept: {collection: "tests"}, visible: v => v.target === "opposed"},
-    {id: "success", kind: "choice", options: ["atLeast", "above", "atMost", "below"], default: "atLeast", visible: v => v.target !== "none"},
-    {id: "critical", kind: "integer", required: false},
+    {id: "inputs", kind: "list", required: false, fields: [
+      {id: "name", kind: "name", withId: true}, {id: "valueType", kind: "choice", options: FIELD_TYPES, default: "number"},
+      {id: "from", kind: "choice", options: ["formula", "definition", "value"], default: "formula"},
+      {id: "formula", kind: "formula", visible: row => row.from === "formula"},
+      {id: "definition", kind: "entry", accept: {collection: "definitions"}, visible: row => row.from === "definition"},
+      {id: "value", kind: "text", visible: row => row.from === "value"},
+      {id: "default", kind: "text", required: false, visible: row => row.valueType !== "reference"},
+      {id: "required", kind: "boolean", default: true}
+    ]},
+    {id: "outcomes", kind: "entries", required: false, accept: {collection: "outcomes"}},
+    {id: "fallback", kind: "entry", required: false, accept: {collection: "outcomes"}, visible: v => Boolean(v.outcomes?.length)},
+    {id: "success", kind: "choice", options: ["atLeast", "above", "atMost", "below"], default: "atLeast", visible: v => v.target !== "none" && !v.outcomes?.length},
+    {id: "critical", kind: "integer", required: false, visible: v => !v.outcomes?.length},
     {id: "criticalCompare", kind: "choice", options: ["atLeast", "atMost"], default: "atLeast", visible: v => v.critical !== undefined},
-    {id: "fumble", kind: "integer", required: false},
+    {id: "fumble", kind: "integer", required: false, visible: v => !v.outcomes?.length},
     {id: "fumbleCompare", kind: "choice", options: ["atMost", "atLeast"], default: "atMost", visible: v => v.fumble !== undefined},
-    {id: "action", kind: "boolean", default: true}
+    {id: "action", kind: "boolean", default: true},
+    descriptionQuestion
   ],
   build(ctx) {
     const v = ctx.values, name = ctx.name(v.name), id = ctx.id(v.name);
-    const rollRef = ctx.findWhere("rolls", roll => roll.formula === v.dice && !(roll.variants ?? []).length)?.id ?? ctx.add("rolls", {id: ctx.newId(v.dice), nameKey: v.dice, formula: v.dice});
-    const test = {id, nameKey: name, rollRef, bonusFormulaRef: v.bonus ? formulaOf(ctx, v.bonus, ctx.shared("Bonus", {name})) : null, outcomeRefs: [], fallbackOutcomeRef: null, inputBindings: []};
+    const rollRef = v.roll ? ctx.entry(v.roll).id : ctx.findWhere("rolls", roll => roll.formula === v.dice && !(roll.variants ?? []).length)?.id ?? ctx.add("rolls", {id: ctx.newId(v.dice), nameKey: v.dice, formula: v.dice});
+    const test = {id, nameKey: name, rollRef, bonusFormulaRef: v.bonus ? formulaOf(ctx, v.bonus, ctx.shared("Bonus", {name})) : null, outcomeRefs: [], fallbackOutcomeRef: null, inputBindings: [], ...described(v)};
     const inputs = [];
+    // Values the Test reads before rolling (test.inputs.<id>): from a Formula, a Definition or a fixed value.
+    for (const row of v.inputs ?? []) {
+      const source = row.from === "formula" ? {formulaRef: formulaOf(ctx, row.formula, ctx.name(row.name), row.valueType)}
+        : {literal: row.from === "definition" ? {objectKind: "definition", objectId: ctx.entry(row.definition).id} : typedValue(row.valueType, row.value)};
+      test.inputBindings.push({id: row.name.id ?? inputId(ctx.name(row.name)), valueType: row.valueType, required: row.required, source,
+        ...(row.default !== undefined ? {defaultValue: typedValue(row.valueType, row.default)} : {})});
+    }
     if (v.target === "fixed") test.targetValue = v.targetValue;
     if (v.target === "formula") test.targetFormulaRef = formulaOf(ctx, v.targetFormula, ctx.shared("Difficulty", {name}));
     if (v.target === "opposed") test.opposedTestRef = ctx.entry(v.opposed).id;
@@ -369,9 +561,14 @@ const testPath = {
       return ctx.add("outcomes", {id: ctx.newId(outcomeName), nameKey: outcomeName, labelKey: ctx.shared(`Result.${key}`), resultKey: key, conditionRef});
     };
     const natural = (compare, value) => ({type: COMPARE[compare], left: ctxNode("variables.test.natural"), right: lit(value)});
+    if (v.outcomes?.length) {
+      // Outcomes of the Ruleset, tried in order, then the one given when none holds.
+      test.outcomeRefs = v.outcomes.map(answer => ctx.entry(answer).id);
+      test.fallbackOutcomeRef = v.fallback ? ctx.entry(v.fallback).id : null;
+    }
     if (v.critical !== undefined) test.outcomeRefs.push(outcome("critical", natural(v.criticalCompare, v.critical)));
     if (v.fumble !== undefined) test.outcomeRefs.push(outcome("fumble", natural(v.fumbleCompare, v.fumble)));
-    if (v.target !== "none") {
+    if (v.target !== "none" && !v.outcomes?.length) {
       test.outcomeRefs.push(outcome("success", {type: COMPARE[v.success], left: ctxNode("variables.test.margin"), right: lit(0)}));
       test.fallbackOutcomeRef = outcome("failure", null);
     }
@@ -425,20 +622,20 @@ const state = {
     ]},
     {id: "role", kind: "choice", options: ROLES, default: "target"},
     {id: "applyAction", kind: "boolean", default: true},
-    {id: "removeAction", kind: "boolean", default: true}
+    {id: "removeAction", kind: "boolean", default: true},
+    descriptionQuestion
   ],
   texts: ["Type", "Active", "Apply", "Remove", "Modifier"],
   build(ctx) {
     const v = ctx.values, name = ctx.name(v.name), id = ctx.id(v.name);
-    ctx.add("definitions", {id, definitionTypeId: ctx.entry(v.type).id, nameKey: name, capabilities: ["state"]});
+    ctx.add("definitions", {id, definitionTypeId: ctx.entry(v.type).id, nameKey: name, capabilities: ["state"], ...described(v)});
     if (v.modifiers?.length) {
       // While the state is active, however it was applied, its Modifiers change the values they name.
       const active = conditionOf(ctx, ref(out(id, "state", "state.active")), ctx.t("Active", {name}));
       for (const row of v.modifiers) {
         const target = ctx.entry(row.target), modifierName = ctx.t("Modifier", {name, value: ctx.find("definitions", target.id)?.nameKey ?? target.id});
-        const amount = operandOf(ctx, row.amount, modifierName);
         ctx.add("modifiers", {id: ctx.newId(modifierName), nameKey: modifierName, targetRef: out(target.id, "value", "value.final"), operation: row.operation,
-          valueSource: amount.kind === "formula" ? {kind: "formula", id: amount.id} : {kind: "literal", value: amount.value}, conditionRefs: [active], stacking: {mode: "stack", group: ""}, priority: 0});
+          valueSource: operandOf(ctx, row.amount, modifierName), conditionRefs: [active], stacking: {mode: "stack", group: ""}, priority: 0});
       }
     }
     if (v.applyAction) {
@@ -449,9 +646,12 @@ const state = {
     return {collection: "definitions", id};
   }
 };
+/** The rule of a Duration answer: until removed, until an event, or a number of rounds, turns, minutes… */
+const durationRule = v => v.duration === "untilRemoved" ? {mode: "untilRemoved", amount: null, unit: null, eventTypeRef: null}
+  : v.duration === "untilEvent" ? {mode: "untilEvent", amount: null, unit: null, eventTypeRef: v.event} : {mode: "fixed", amount: v.amount, unit: v.duration, eventTypeRef: null};
 /** The Duration of a state's answers: one with the same rule is used again. */
 function durationOf(ctx, v) {
-  const rule = v.duration === "untilRemoved" ? {mode: "untilRemoved", amount: null, unit: null, eventTypeRef: null} : v.duration === "untilEvent" ? {mode: "untilEvent", amount: null, unit: null, eventTypeRef: v.event} : {mode: "fixed", amount: v.amount, unit: v.duration, eventTypeRef: null};
+  const rule = durationRule(v);
   const found = ctx.findWhere("durations", entry => entry.mode === rule.mode && (entry.amount ?? null) === rule.amount && (entry.unit ?? null) === rule.unit && (entry.eventTypeRef ?? null) === rule.eventTypeRef);
   if (found) return found.id;
   const name = ctx.shared(`Duration.${v.duration}`, {amount: v.amount});
@@ -749,6 +949,7 @@ const initiative = {
   }
 };
 
+const BOUNDED = ["content", "choice", "allocation"];
 const creation = {
   id: "creation", group: "systems", keywords: ["character creation", "creation", "point buy", "background", "class"], produces: {collection: "creationSystems"},
   questions: [
@@ -757,32 +958,47 @@ const creation = {
     {id: "system", kind: "entry", accept: {collection: "creationSystems"}, visible: v => v.mode === "existing"},
     {id: "steps", kind: "list", min: 1, fields: [
       {id: "kind", kind: "choice", options: ["content", "contentChoices", "allocation", "choice", "review"], default: "content"},
-      {id: "name", kind: "name"},
+      {id: "name", kind: "name", withId: true},
       {id: "templates", kind: "entries", min: 1, accept: {collection: "contentTemplates"}, visible: row => row.kind === "content"},
       {id: "definitions", kind: "entries", min: 1, accept: {collection: "definitions"}, visible: row => ["allocation", "choice"].includes(row.kind)},
-      {id: "min", kind: "integer", min: 0, default: 1, visible: row => ["content", "choice"].includes(row.kind)},
-      {id: "max", kind: "integer", min: 0, default: 1, visible: row => ["content", "choice"].includes(row.kind)},
-      {id: "points", kind: "integer", min: 0, visible: row => row.kind === "allocation"},
-      {id: "perTargetMax", kind: "integer", min: 0, required: false, visible: row => row.kind === "allocation"}
-    ]}
+      {id: "min", kind: "integer", min: 0, default: 1, visible: row => BOUNDED.includes(row.kind)},
+      {id: "max", kind: "integer", min: 0, default: 1, visible: row => BOUNDED.includes(row.kind)},
+      {id: "minFormula", kind: "formula", required: false, visible: row => BOUNDED.includes(row.kind)},
+      {id: "maxFormula", kind: "formula", required: false, visible: row => BOUNDED.includes(row.kind)},
+      {id: "perTargetMax", kind: "integer", min: 0, required: false, visible: row => row.kind === "allocation"},
+      {id: "perTargetMaxFormula", kind: "formula", required: false, visible: row => row.kind === "allocation"},
+      {id: "optionCondition", kind: "entry", required: false, accept: {collection: "conditions"}, visible: row => ["content", "choice"].includes(row.kind)},
+      {id: "choicesLater", kind: "boolean", default: true, visible: row => row.kind === "content"},
+      {id: "required", kind: "boolean", default: true, visible: row => BOUNDED.includes(row.kind)}
+    ]},
+    descriptionQuestion
   ],
-  texts: ["Creation"],
+  texts: ["Creation", "Min", "Max", "PerTarget"],
   build(ctx) {
     const v = ctx.values, existing = v.mode === "existing" ? ctx.find("creationSystems", ctx.entry(v.system).id) : null;
-    const taken = new Set((existing?.steps ?? []).map(step => step.id)), uncovered = [];
-    const stepId = name => { let base = String(name).normalize("NFKD").replace(/[̀-ͯ]/g, "").toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/^-|-$/g, "") || "step", id = base, n = 2; while (taken.has(id)) id = `${base}-${n++}`; taken.add(id); return id; };
-    for (const step of existing?.steps ?? []) if (step.kind === "content") uncovered.push(step.id); else if (step.kind === "contentChoices") for (const id of step.source.stepIds) uncovered.splice(uncovered.indexOf(id), 1);
+    const taken = new Set((existing?.steps ?? []).map(step => step.id)), later = [];
+    const stepId = (name, explicit) => { let base = explicit ?? (String(name).normalize("NFKD").replace(/[̀-ͯ]/g, "").toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/^-|-$/g, "") || "step"), id = base, n = 2; while (taken.has(id)) id = `${base}-${n++}`; taken.add(id); return id; };
+    // The content steps whose Contents' choices a later "choices of the Contents" step asks, not yet asked.
+    for (const step of existing?.steps ?? []) if (step.kind === "content") later.push(step.id); else if (step.kind === "contentChoices") for (const id of step.source.stepIds) later.splice(later.indexOf(id), 1);
     const steps = v.steps.map(row => {
-      const step = {id: stepId(ctx.name(row.name)), kind: row.kind, name: ctx.name(row.name), required: row.kind !== "review", options: [], min: 0, max: 0};
-      if (row.kind === "content") { Object.assign(step, {min: row.min, max: row.max, source: {collection: "contentTemplates", objectIds: row.templates.map(answer => ctx.entry(answer).id)}}); uncovered.push(step.id); }
-      if (row.kind === "choice") Object.assign(step, {min: row.min, max: row.max, source: {collection: "definitions", objectIds: row.definitions.map(answer => ctx.entry(answer).id)}});
-      if (row.kind === "allocation") Object.assign(step, {min: row.points, max: row.points, source: {collection: "definitions", objectIds: row.definitions.map(answer => ctx.entry(answer).id)}, ...(row.perTargetMax !== undefined ? {perTargetMax: row.perTargetMax} : {})});
-      // The choices of the Contents picked in the content steps before it, not yet asked.
-      if (row.kind === "contentChoices") step.source = {stepIds: uncovered.splice(0)};
+      const name = ctx.name(row.name), step = {id: stepId(name, row.name.id), kind: row.kind, name, required: BOUNDED.includes(row.kind) ? row.required : false, options: [], min: 0, max: 0};
+      if (BOUNDED.includes(row.kind)) {
+        Object.assign(step, {min: row.min, max: row.max});
+        if (row.minFormula) step.minFormulaRef = formulaOf(ctx, row.minFormula, ctx.t("Min", {name}));
+        if (row.maxFormula) step.maxFormulaRef = formulaOf(ctx, row.maxFormula, ctx.t("Max", {name}));
+      }
+      if (row.optionCondition) step.optionConditionRef = ctx.entry(row.optionCondition).id;
+      if (row.kind === "content") { step.source = {collection: "contentTemplates", objectIds: row.templates.map(answer => ctx.entry(answer).id)}; if (row.choicesLater) later.push(step.id); }
+      if (["choice", "allocation"].includes(row.kind)) step.source = {collection: "definitions", objectIds: row.definitions.map(answer => ctx.entry(answer).id)};
+      if (row.kind === "allocation") {
+        if (row.perTargetMax !== undefined) step.perTargetMax = row.perTargetMax;
+        if (row.perTargetMaxFormula) step.perTargetMaxFormulaRef = formulaOf(ctx, row.perTargetMaxFormula, ctx.t("PerTarget", {name}));
+      }
+      if (row.kind === "contentChoices") step.source = {stepIds: later.splice(0)};
       return step;
     });
     if (existing) { ctx.append("creationSystems", existing.id, "steps", steps); return {collection: "creationSystems", id: existing.id}; }
-    return {collection: "creationSystems", id: ctx.add("creationSystems", {id: ctx.id(v.name), nameKey: ctx.name(v.name), steps})};
+    return {collection: "creationSystems", id: ctx.add("creationSystems", {id: ctx.id(v.name), nameKey: ctx.name(v.name), steps, ...described(v)})};
   }
 };
 
@@ -797,26 +1013,30 @@ const progression = {
       {id: "currency", kind: "entry", required: false, accept: {collection: "definitions"}}
     ]},
     {id: "currency", kind: "entry", required: false, accept: {collection: "definitions"}, visible: v => v.mode === "advance"},
-    {id: "costs", kind: "list", min: 1, visible: v => v.mode === "advance", fields: [{id: "level", kind: "integer"}, {id: "cost", kind: "number", min: 0}]},
-    {id: "maximum", kind: "integer", required: false, visible: v => v.mode === "advance"},
+    {id: "cost", kind: "choice", options: ["table", "formula"], default: "table", visible: v => v.mode === "advance"},
+    {id: "costs", kind: "list", min: 1, visible: v => v.mode === "advance" && v.cost === "table", fields: [{id: "level", kind: "integer"}, {id: "cost", kind: "number", min: 0}]},
+    {id: "costFormula", kind: "formula", visible: v => v.mode === "advance" && v.cost === "formula"},
+    {id: "maximum", kind: "formula", required: false, visible: v => v.mode === "advance"},
     {id: "level", kind: "entry", accept: {collection: "definitions", capability: "value"}, create: "level", visible: v => v.mode === "milestones"},
     {id: "milestones", kind: "list", min: 1, visible: v => v.mode === "milestones", fields: [
       {id: "level", kind: "integer"}, {id: "grants", kind: "entries", required: false, accept: {collection: "definitions"}},
       {id: "action", kind: "entry", required: false, accept: {collection: "actions"}}
-    ]}
+    ]},
+    descriptionQuestion
   ],
-  texts: ["Progression", "Cost", "Maximum", "Reached"],
+  texts: ["Progression", "Cost", "Maximum", "Advance", "Reached"],
   build(ctx) {
     const v = ctx.values, system = {advancements: [], milestones: []};
     if (v.mode === "advance") {
-      // The cost of the next level, from the table; a level the table does not list cannot be bought.
-      const cost = formulaOf(ctx, {type: "lookup", key: ctxNode("variables.advance.next"), table: v.costs.map(row => ({key: row.level, value: row.cost})), default: lit(Number.MAX_SAFE_INTEGER)}, ctx.t("Cost"));
-      const maximumFormulaRef = v.maximum !== undefined ? formulaOf(ctx, lit(v.maximum), ctx.t("Maximum", {value: v.maximum})) : null;
+      // The cost of the next level, from the table (a level the table does not list cannot be bought) or a Formula.
+      const cost = v.cost === "formula" ? formulaOf(ctx, v.costFormula, ctx.t("Cost"))
+        : formulaOf(ctx, {type: "lookup", key: ctxNode("variables.advance.next"), table: v.costs.map(row => ({key: row.level, value: row.cost})), default: lit(Number.MAX_SAFE_INTEGER)}, ctx.t("Cost"));
+      const maximumFormulaRef = v.maximum ? formulaOf(ctx, v.maximum, ctx.t("Maximum")) : null;
       for (const row of v.values) {
         const valueId = ctx.entry(row.value).id, currencyAnswer = row.currency ? ctx.entry(row.currency) : v.currency ? ctx.entry(v.currency) : null;
         if (!currencyAnswer) throw new Error(`No currency pays for ${valueId}.`);
-        const currency = valueOut(ctx, currencyAnswer, {write: true});
-        system.advancements.push({id: `advance-${valueId}`, labelKey: ctx.find("definitions", valueId)?.nameKey ?? valueId, definitionIds: [valueId], currencyRef: currency, costFormulaRef: cost, step: 1, maximumFormulaRef});
+        const label = ctx.find("definitions", valueId)?.nameKey ?? valueId;
+        system.advancements.push({id: readableId(ctx.t("Advance", {name: valueId})) || `advance-${valueId}`, labelKey: label, definitionIds: [valueId], currencyRef: valueOut(ctx, currencyAnswer, {write: true}), costFormulaRef: cost, step: 1, maximumFormulaRef});
       }
     } else {
       const levelId = ctx.entry(v.level).id;
@@ -832,7 +1052,7 @@ const progression = {
       if (system.milestones.length) ctx.append("progressionSystems", id, "milestones", fresh(system.milestones));
       return {collection: "progressionSystems", id};
     }
-    return {collection: "progressionSystems", id: ctx.add("progressionSystems", {id: ctx.id(v.name), nameKey: ctx.name(v.name), ...system})};
+    return {collection: "progressionSystems", id: ctx.add("progressionSystems", {id: ctx.id(v.name), nameKey: ctx.name(v.name), ...system, ...described(v)})};
   }
 };
 
@@ -841,13 +1061,14 @@ const scale = {
   questions: [
     nameQuestion("scale"),
     {id: "basis", kind: "choice", options: ["value", "percent"], default: "value"},
-    {id: "rows", kind: "list", min: 1, fields: [{id: "min", kind: "number", required: false}, {id: "max", kind: "number", required: false}, {id: "words", kind: "text"}]},
+    {id: "rows", kind: "list", min: 1, fields: [{id: "min", kind: "number", required: false}, {id: "max", kind: "number", required: false}, {id: "words", kind: "text"}, {id: "id", kind: "text", required: false}]},
     {id: "definitions", kind: "entries", required: false, accept: {collection: "definitions"}},
-    {id: "types", kind: "entries", required: false, accept: {collection: "definitionTypes"}}
+    {id: "types", kind: "entries", required: false, accept: {collection: "definitionTypes"}},
+    descriptionQuestion
   ],
   build(ctx) {
     const v = ctx.values, id = ctx.id(v.name);
-    ctx.add("scales", {id, nameKey: ctx.name(v.name), basis: v.basis, rows: v.rows.map((row, i) => ({id: `row-${i + 1}`, labelKey: row.words, min: row.min ?? null, max: row.max ?? null}))});
+    ctx.add("scales", {id, nameKey: ctx.name(v.name), basis: v.basis, rows: v.rows.map((row, i) => ({id: row.id || `row-${i + 1}`, labelKey: row.words, min: row.min ?? null, max: row.max ?? null})), ...described(v)});
     for (const answer of v.definitions ?? []) ctx.fill("definitions", ctx.entry(answer).id, "scaleRef", id);
     for (const answer of v.types ?? []) ctx.fill("definitionTypes", ctx.entry(answer).id, "scaleRef", id);
     return {collection: "scales", id};
@@ -860,40 +1081,45 @@ const contentType = {
     nameQuestion("contentType"),
     {id: "storage", kind: "choice", options: ["item", "actor"], default: "item"},
     {id: "stackable", kind: "boolean", default: false},
-    {id: "fields", kind: "list", required: false, fields: [{id: "name", kind: "name"}, {id: "valueType", kind: "choice", options: ["number", "integer", "boolean", "string"], default: "number"}]}
+    {id: "fields", kind: "list", required: false, fields: FIELD_QUESTIONS},
+    {id: "availability", kind: "entry", required: false, accept: {collection: "conditions"}},
+    descriptionQuestion
   ],
   build(ctx) {
-    const v = ctx.values, fields = {};
-    for (const row of v.fields ?? []) {
-      let id = inputId(ctx.name(row.name)).replace(/_([a-z0-9])/g, (all, letter) => letter.toUpperCase()), base = id, n = 2;
-      while (fields[id]) id = `${base}${n++}`;
-      fields[id] = {id, name: ctx.name(row.name), valueType: row.valueType, cardinality: "one", required: false, nullable: false, constraints: []};
-    }
-    return {collection: "contentTypes", id: ctx.add("contentTypes", {id: ctx.id(v.name), nameKey: ctx.name(v.name), storageKind: v.storage, runtimeMode: v.stackable ? "stackable" : "unique", fields})};
+    const v = ctx.values;
+    return {collection: "contentTypes", id: ctx.add("contentTypes", {id: ctx.id(v.name), nameKey: ctx.name(v.name), storageKind: v.storage, runtimeMode: v.stackable ? "stackable" : "unique",
+      fields: fieldMap(ctx, v.fields), ...(v.availability ? {availabilityConditionRef: ctx.entry(v.availability).id} : {}), ...described(v)})};
   }
 };
 
 const ROLE_LADDER = {gamemaster: ["gamemaster"], assistant: ["assistant", "gamemaster"], trusted: ["trusted", "assistant", "gamemaster"]};
+const PERMISSION_KINDS = {action: "actions", definition: "definitions", definitionType: "definitionTypes", contentType: "contentTypes"};
 const permission = {
   id: "permission", group: "systems", keywords: ["permission", "gm only", "rights", "lock"], produces: {collection: "permissionPolicies"},
   questions: [
-    {id: "kind", kind: "choice", options: ["action", "definition", "definitionType"], default: "action"},
+    {id: "kind", kind: "choice", options: Object.keys(PERMISSION_KINDS), default: "action"},
     {id: "actions", kind: "entries", min: 1, accept: {collection: "actions"}, visible: v => v.kind === "action"},
     {id: "definitions", kind: "entries", min: 1, accept: {collection: "definitions"}, visible: v => v.kind === "definition"},
     {id: "types", kind: "entries", min: 1, accept: {collection: "definitionTypes"}, visible: v => v.kind === "definitionType"},
-    {id: "who", kind: "choice", options: ["gamemaster", "assistant", "trusted"], default: "assistant"}
+    {id: "contentTypes", kind: "entries", min: 1, accept: {collection: "contentTypes"}, visible: v => v.kind === "contentType"},
+    {id: "who", kind: "choice", options: ["gamemaster", "assistant", "trusted"], default: "assistant"},
+    {id: "name", kind: "name", required: false},
+    descriptionQuestion
   ],
-  texts: ["Policy"],
+  texts: ["Policy", "RuleAllowed", "RuleRead", "RuleWrite", "RuleUse", "RuleAssign"],
   build(ctx) {
-    const v = ctx.values, list = v.kind === "action" ? v.actions : v.kind === "definition" ? v.definitions : v.types;
-    const collection = {action: "actions", definition: "definitions", definitionType: "definitionTypes"}[v.kind];
+    const v = ctx.values, list = {action: v.actions, definition: v.definitions, definitionType: v.types, contentType: v.contentTypes}[v.kind], collection = PERMISSION_KINDS[v.kind];
+    const rule = (key, fields) => ({id: readableId(ctx.t(key)) || key.toLowerCase(), effect: "ALLOW", ...fields});
     let first = null;
     for (const answer of list) {
-      const id = ctx.entry(answer).id, entryName = ctx.find(collection, id)?.nameKey ?? id, name = ctx.t("Policy", {name: entryName});
+      const id = ctx.entry(answer).id, entryName = ctx.find(collection, id)?.nameKey ?? id, named = v.name && list.length === 1;
+      const name = named ? ctx.name(v.name) : ctx.t("Policy", {name: entryName});
       // An Action: only these roles may use it. A value: everyone reads it, only these roles change it.
-      const rules = v.kind === "action" ? [{id: "allowed", effect: "ALLOW", operations: ["read", "execute"], priority: 10, roles: ROLE_LADDER[v.who]}]
-        : [{id: "read", effect: "ALLOW", operations: ["read", "execute"], priority: 0}, {id: "write", effect: "ALLOW", operations: ["write", "configure"], priority: 10, roles: ROLE_LADDER[v.who]}];
-      const policy = ctx.add("permissionPolicies", {id: ctx.newId(name), nameKey: name, scope: {objectKind: v.kind, objectId: id}, defaultEffect: "DENY", rules});
+      // A Content Type: its owner uses a Content, only these roles give or change one.
+      const rules = v.kind === "action" ? [rule("RuleAllowed", {operations: ["read", "execute"], priority: 10, roles: ROLE_LADDER[v.who]})]
+        : v.kind === "contentType" ? [rule("RuleUse", {operations: ["read", "execute"], priority: 0, minimumOwnership: "owner"}), rule("RuleAssign", {operations: ["read", "write", "execute", "configure"], priority: 10, roles: ROLE_LADDER[v.who]})]
+        : [rule("RuleRead", {operations: ["read", "execute"], priority: 0}), rule("RuleWrite", {operations: ["write", "configure"], priority: 10, roles: ROLE_LADDER[v.who]})];
+      const policy = ctx.add("permissionPolicies", {id: named ? ctx.id(v.name) : ctx.newId(name), nameKey: name, scope: {objectKind: v.kind, objectId: id}, defaultEffect: "DENY", rules, ...described(v)});
       first ??= policy;
     }
     return {collection: "permissionPolicies", id: first};
@@ -903,6 +1129,6 @@ const permission = {
 export const ASSISTANT_PATHS = Object.freeze([
   characteristics, skills, derivedValue, resource, testPath, attack, state, cost, consumable, level, encumbrance,
   advantage, damageTypes, power, threshold, rest, initiative, creation, progression, scale, contentType, permission,
-  definitionType, value, formulaBrick, conditionBrick, effectBrick, actionBrick, counterBrick, triggerBrick, tableBrick, dieBrick
+  definitionType, value, parameterBrick, formulaBrick, conditionBrick, rollBrick, outcomeBrick, durationBrick, effectBrick, actionBrick, counterBrick, triggerBrick, tableBrick, dieBrick
 ]);
 export const getAssistantPath = pathId => ASSISTANT_PATHS.find(path => path.id === pathId) ?? null;

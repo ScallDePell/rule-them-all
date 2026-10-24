@@ -295,8 +295,9 @@ test('Assistant: character creation steps, with the choices of the content steps
   await apply('contentType',{name:'Origine'});
   await api.createContentTemplate(v,{id:'noble',nameKey:'Noble',contentTypeId:'origine'});
   await api.createContentTemplate(v,{id:'paysan',nameKey:'Paysan',contentTypeId:'origine'});
-  const result=await apply('creation',{steps:[{kind:'content',name:'Origine',templates:[{use:'noble'},{use:'paysan'}]},{kind:'contentChoices',name:'Choix de l\'origine'},{kind:'allocation',name:'Points',definitions:[{use:'force'},{use:'esprit'}],points:4,perTargetMax:3},{kind:'review',name:'Fin'}]});
+  const result=await apply('creation',{steps:[{kind:'content',name:'Origine',templates:[{use:'noble'},{use:'paysan'}]},{kind:'contentChoices',name:'Choix de l\'origine'},{kind:'allocation',name:'Points',definitions:[{use:'force'},{use:'esprit'}],min:4,max:4,perTargetMax:3},{kind:'review',name:'Fin'}]});
   const system=api.getRuleset(v).creationSystems.find(s=>s.id===result.main.id);
+  assert.deepEqual([system.steps[2].min,system.steps[2].max,system.steps[2].perTargetMax],[4,4,3]);
   assert.deepEqual(system.steps.map(s=>s.kind),['content','contentChoices','allocation','review']);
   assert.deepEqual(system.steps[1].source.stepIds,['origine']);
   await apply('creation',{mode:'existing',system:{use:system.id},steps:[{kind:'content',name:'Origine',templates:[{use:'noble'}]}]});
@@ -364,7 +365,7 @@ test('Assistant: describing a path shows the questions its answers make visible,
   assert.equal(target.create,'resource');
   assert.equal(attack.questions.find(q=>q.id==='test').default.create.target,'formula');
   const list=api.describeAssistantPath(v,'creation',{steps:[{kind:'allocation'},{kind:'content'}]}).questions.find(q=>q.id==='steps');
-  assert.ok(list.rows[0].includes('points')&&!list.rows[0].includes('templates'));
+  assert.ok(list.rows[0].includes('perTargetMax')&&!list.rows[0].includes('templates'));
   assert.ok(list.rows[1].includes('templates'));
 });
 
@@ -376,7 +377,7 @@ test('Assistant window: the form shows what the plan is made of, and a type it c
   const type=form.fields.find(field=>field.path==='type');
   assert.equal(type.create.selected,true,'no state type yet: one is created');
   assert.ok(!type.sub.some(field=>field.path==='type.create.capability'),'its capability is not asked');
-  assert.deepEqual(form.answers.type.create,{name:'État',capability:'state'});
+  assert.deepEqual(form.answers.type.create,{name:'État',fields:[],capability:'state'});
   assert.deepEqual(answersOf(form.fields),form.answers);
   const plan=api.planAssistant(v,'state',form.answers,{texts:texts(api)});
   assert.equal(plan.valid,true,JSON.stringify(plan.errors));
