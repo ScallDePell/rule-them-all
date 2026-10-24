@@ -74,8 +74,20 @@ export class AssistantApp extends ConfiguratorWindow {
       formHTML: fieldsHTML(form.fields, words, expressionHTML), previewHTML: previewHTML(preview, words), canApply: plan.valid && !readOnly};
   }
 
+  /** Foundry may keep the stylesheet list it read at start-up after the module is updated, so a sheet added by an
+   * update is missing until it restarts: the window links its own sheet when the page has none. */
+  static ensureStylesheet(doc = globalThis.document) {
+    const path = `modules/${MODULE_ID}/styles/assistant.css`;
+    if (!doc?.head || [...doc.querySelectorAll("link[rel=stylesheet]")].some(link => link.getAttribute("href")?.includes(path))) return false;
+    const link = doc.createElement("link");
+    link.rel = "stylesheet"; link.href = globalThis.foundry?.utils?.getRoute?.(path) ?? path;
+    doc.head.append(link);
+    return true;
+  }
+
   async _onRender(context, options) {
     await super._onRender(context, options);
+    if (options?.isFirstRender) AssistantApp.ensureStylesheet();
     const root = this.element?.querySelector("[data-assistant]");
     if (!root) return;
     root.addEventListener("click", event => { const button = event.target.closest?.("[data-action]"); if (button && root.contains(button)) this.#action(button, event); });

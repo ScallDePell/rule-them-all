@@ -2,6 +2,10 @@
 
 ## Unreleased
 
+## 1.0.30
+
+- The assistant window links its own stylesheet when Foundry has not loaded it. Foundry can keep the stylesheet list it read at start-up after a module update, so the window showed without its layout, could not scroll, and a chosen path opened out of sight.
+
 ## 1.0.29
 
 - The Assistant opens from an **Assistant** button at the top of the Ruleset, next to **Import a part…**, instead of the Tools menu.
