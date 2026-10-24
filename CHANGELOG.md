@@ -2,6 +2,11 @@
 
 ## Unreleased
 
+## 1.0.27
+
+- Module events (combat start, round, turn, end, elapsed time): a Trigger whose Action its own Conditions refuse no longer makes the whole event fail for that Actor ("Expected plain JSON data."). Events emitted at the same moment by several callers (the combat hooks and another module) now run one after the other, instead of the second being refused ("Runtime container changed since it was read").
+- The GM relay removes its requests and answers with Foundry v14's `ForcedDeletion` instead of the deprecated `-=key` syntax.
+
 ## 1.0.26
 
 - Synchronizing Contents with the Compendiums, and the Ruleset image picker, no longer log Foundry's v13 deprecation warnings: `CompendiumCollection` and `FilePicker` are read under the `foundry` namespace first. A test keeps the moved globals out of the code.

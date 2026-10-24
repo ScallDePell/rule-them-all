@@ -175,5 +175,6 @@ test('multi-client: a forged answer does not reach the player who asked', async 
   const forgeries=await alice.run(async()=>globalThis.forgeries);
   assert.ok(forgeries.length&&forgeries.every(entry=>/lacks permission/.test(entry)),'Foundry\'s server refuses Alice\'s answer in Bob\'s document');
   assert.equal(await points(gm,'ana','hp'),10);
+  assert.deepEqual(world.deprecations,[],'no "-=key" deletion, deprecated in Foundry v14');
   assert.deepEqual(errorsOf(clients),[]);
 });

@@ -19,6 +19,11 @@ import {LAYOUT_NOTE_LENGTH as NOTE_LENGTH} from "../configurator/layout-contract
 import {SLOT_CAPABILITIES,requireSlot,poolSlotState,collectionSlotState,boundPoolValue,initialSlotStates,prepareCollectionEntry,assertCollectionRoom,assertCollectionMinimum} from "./capability-slot-runtime.mjs";
 
 const clone=v=>copyJSON(v);
+/** A use that is only previewed or refused: its result without the staged states and the live context (an
+ * undefined value is no JSON, so it could not be copied into the event of a Trigger that ran it). */
+/** adapter -> the module event in progress on its containers, which the next one waits for. */
+const systemEvents=new WeakMap();
+const withoutStaging=({staged:_staged,context:_context,...result})=>result;
 const roleRef=(context,role)=>context?.roles?.[role]??null;
 /** The dice of one Action use, carried by its context under a symbol (never cloned nor stored):
  * {log: [{formula, roll}], keep: Map formula -> [roll]}. A replay that keeps the dice takes back a logged roll of the same formula. */
@@ -550,8 +555,15 @@ export class RuntimeEngine{
     triggered.push({triggerId:trigger.id,actions});
   }
   /** A module event (combat, world clock) on each container concerned, under its own Ruleset; containers whose Ruleset has no Trigger for it are skipped. */
-  async emitSystemEvent(eventTypeId,payload,refs){
-    if(!systemEventType(eventTypeId))throw new Error(`Not a module event: ${eventTypeId}.`);
+  emitSystemEvent(eventTypeId,payload,refs){
+    if(!systemEventType(eventTypeId))return Promise.reject(new Error(`Not a module event: ${eventTypeId}.`));
+    // Module events run one after the other, whoever emits them (the combat hooks, another module): two at once
+    // would read the same container and the second write would be refused as a conflict.
+    const run=(systemEvents.get(this.adapter)??Promise.resolve()).then(()=>this.#emitSystemEventNow(eventTypeId,payload,refs));
+    systemEvents.set(this.adapter,run.catch(()=>{}));
+    return run;
+  }
+  async #emitSystemEventNow(eventTypeId,payload,refs){
     const results=[];
     for(const ref of refs){
       const state=await this.adapter.load(ref),versionId=state.rulesetVersionId;
@@ -889,7 +901,7 @@ export class RuntimeEngine{
     context=this.#shared(context);
     if(!triggered)await this.#require(versionId,"execute",{objectKind:"action",objectId:actionId},roleRef(context,"self")??roleRef(context,context.defaultRole??"self"),context);
     context={...context,[DICE]:{log:[],keep:null}};
-    const plan=await this.previewAction(versionId,actionId,context,{acquisitions,content});if(preview||!plan.allowed)return {...plan,staged:undefined,context:undefined};
+    const plan=await this.previewAction(versionId,actionId,context,{acquisitions,content});if(preview||!plan.allowed)return withoutStaging(plan);
     const dice=context[DICE].log;context=plan.context;
     // Staged states were read once by the preview: the commit expects their revision unchanged.
     const tx=this.transaction(versionId,"action",{transactionId,actor:roleRef(context,"self")??roleRef(context,context.defaultRole??"self"),summary:{actionId,outcomeKey:plan.testResult?.outcome?.resultKey??null}});
@@ -974,7 +986,7 @@ export class RuntimeEngine{
     const snapshot=()=>new Map([...staged].map(([key,state])=>[key,clone(state)])),undone=snapshot();
     const rerollContext={...context,variables:{...(context.variables??{}),reroll:{count,actionId}}};
     const paid=await this.previewAction(versionId,rerollActionId,rerollContext,{staged});
-    if(!paid.allowed)return {...paid,staged:undefined,context:undefined};
+    if(!paid.allowed)return withoutStaging(paid);
     const afterCost=snapshot();
     // keepDice: the replay takes back the dice of the use it replaces (a reaction that changes the target, not the roll).
     // dice: the replay takes back the same rolls with only the matching dice thrown again, or set to a Formula's value.
@@ -984,7 +996,7 @@ export class RuntimeEngine{
     // The replay sees the reroll Action's own inputs (the Luck points spent) under variables.reroll.input.
     const replayContext={...originalContext,variables:{...(originalContext.variables??{}),reroll:{count,actionId,rerollActionId,input:clone(paid.context?.variables?.input??{})}},[DICE]:{log:[],keep,...(partial?{some:{filter:{group:partial.group,compare:partial.compare,value:partial.value},replaceWith}}:{})}};
     const plan=await this.previewAction(versionId,actionId,replayContext,{staged});
-    if(!plan.allowed)return {...plan,staged:undefined,context:undefined};
+    if(!plan.allowed)return withoutStaging(plan);
     for(const change of [...paid.changes,...plan.changes])if(change.containerRef)refs.set(this.#refKey(change.containerRef),normalizeRuntimeContainerRef(change.containerRef));
     const tx=this.transaction(versionId,"reroll",{transactionId,corrects:originalId,actor:roleRef(originalContext,"self"),summary:{actionId,rerollActionId,rerollOf:originalId,rerollCount:count,outcomeKey:plan.testResult?.outcome?.resultKey??null}});
     // One ledger entry per part: the undone use, the reroll's costs, the replay (the part a later reroll undoes).

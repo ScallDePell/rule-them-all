@@ -5,10 +5,21 @@ export const OWNERSHIP = Object.freeze({NONE: 0, LIMITED: 1, OBSERVER: 2, OWNER:
 export const ROLES = Object.freeze({NONE: 0, PLAYER: 1, TRUSTED: 2, ASSISTANT: 3, GAMEMASTER: 4});
 /** ForcedReplacement.create(value) in the simulation: the value replaces the stored one instead of merging into it. */
 export const FORCED = "__simForcedReplacement";
+/** new ForcedDeletion() in the simulation: the key is removed (Foundry v14; the "-=key" syntax is deprecated there). */
+export const DELETED = "__simForcedDeletion";
 
 export const clone = value => value === undefined ? undefined : structuredClone(value);
 const isObject = value => value !== null && typeof value === "object" && !Array.isArray(value);
 const isForced = value => isObject(value) && FORCED in value;
+const isDeleted = value => isObject(value) && DELETED in value;
+/** The keys of an update written with the "-=key" syntax Foundry v14 deprecates. */
+export function deprecatedDeletions(changes, prefix = "") {
+  return Object.entries(changes ?? {}).flatMap(([key, value]) => {
+    const path = prefix ? `${prefix}.${key}` : key;
+    if (key.split(".").some(part => part.startsWith("-="))) return [path];
+    return isObject(value) && !isForced(value) && !isDeleted(value) ? deprecatedDeletions(value, path) : [];
+  });
+}
 
 /** {"flags.x.y": 1} -> {flags: {x: {y: 1}}}, as Foundry expands an update. */
 export function expand(changes) {
@@ -18,11 +29,12 @@ export function expand(changes) {
     let node = out;
     for (const part of parts.slice(0, -1)) node = isObject(node[part]) && !isForced(node[part]) ? node[part] : (node[part] = {});
     const last = parts.at(-1);
+    if (isDeleted(value)) { node[`-=${last}`] = null; continue; }
     node[last] = isObject(value) && !isForced(value) && isObject(node[last]) ? merge(node[last], expand(value)) : isObject(value) && !isForced(value) ? expand(value) : value;
   }
   return out;
 }
-const merge = (a, b) => { for (const [k, v] of Object.entries(b)) a[k] = isObject(v) && isObject(a[k]) && !isForced(v) ? merge(a[k], v) : v; return a; };
+const merge = (a, b) => { for (const [k, v] of Object.entries(b)) if (isDeleted(v)) a[`-=${k}`] = null; else a[k] = isObject(v) && isObject(a[k]) && !isForced(v) ? merge(a[k], v) : v; return a; };
 
 /** Apply an expanded change to a document's data in place; returns the change as hooks receive it (no markers). */
 export function applyChanges(target, changes) {

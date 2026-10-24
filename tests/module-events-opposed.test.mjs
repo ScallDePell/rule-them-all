@@ -84,3 +84,25 @@ test('An opposed Test refuses a fixed target and its own id; Rulesets cannot use
   await assert.rejects(api.createTest(v,{id:'t',nameKey:'T',rollRef:'d20',opposedTestRef:'u',targetValue:10}),/opposed Test only/);
   await assert.rejects(api.createEventType(v,{id:'rta.combat.start',nameKey:'Start'}),/kept for the module/);
 });
+
+test('A Trigger whose Action its Conditions refuse does not fail the event', async()=>{
+  const {api}=await system();
+  const draft=(await api.createRuleset({id:'calm',nameKey:'Calm',version:'1.0.0'})).versionId;
+  await api.registerDefinitionType(draft,{id:'stat',key:'stat',nameKey:'Stat',allowedCapabilities:['pool'],defaultCapabilities:['pool'],requiredCapabilities:[],fields:{}});
+  await api.createDefinition(draft,{id:'stamina',key:'stamina',nameKey:'Stamina',definitionTypeId:'stat',capabilities:['pool'],slots:{pool:[{id:'points',minimum:{literal:0},maximum:{literal:10}}]},data:{}});
+  await api.createCondition(draft,{id:'third-round',nameKey:'Third round',expression:{type:'eq',left:{type:'mod',args:[payload('round'),{type:'literal',value:3}]},right:{type:'literal',value:0}}});
+  await api.createEffect(draft,{id:'winded',nameKey:'Winded',targetRef:ref('stamina','pool','pool.current','points'),targetRole:'self',operation:'subtract',operand:{kind:'literal',value:1}});
+  // The Condition is the Action's own: the Trigger runs it each round, and it is refused two rounds out of three.
+  await api.createAction(draft,{id:'tire',nameKey:'Tire',effectRefs:['winded'],conditionRefs:['third-round']});
+  await api.createTrigger(draft,{id:'each-round',nameKey:'Each round',eventTypeId:'rta.combat.round',actionRefs:['tire']});
+  await api.publishRuleset(draft);
+  const events=[],runtime=createRuntimeAPI(api,{adapter:new Adapter(),hooks:{callAll:(name,...args)=>events.push(name),on(){}}});
+  await runtime.initializeContainer(draft,'Actor.a');
+  for(const round of [1,2,3]){const [result]=await runtime.emitSystemEvent('rta.combat.round',{combatId:'c1',round},['Actor.a']);assert.equal(result.error,undefined,`round ${round}`);}
+  assert.equal((await runtime.getContainerState('Actor.a')).definitionStates.stamina.capabilityStates.pool.points.current,9);
+  assert.ok(events.length>0);
+  // Two emitters at once (the combat hooks and another module) on the same Actor: both events count.
+  const both=await Promise.all([3,6].map(round=>runtime.emitSystemEvent('rta.combat.round',{combatId:'c1',round},['Actor.a'])));
+  assert.deepEqual(both.map(([result])=>result.error),[undefined,undefined]);
+  assert.equal((await runtime.getContainerState('Actor.a')).definitionStates.stamina.capabilityStates.pool.points.current,7);
+});

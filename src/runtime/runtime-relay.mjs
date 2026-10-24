@@ -26,7 +26,12 @@ const REQUEST_ID=/^[A-Za-z0-9_-]{1,80}$/;
 /** Requests and answers are stored as JSON text: Foundry expands dotted keys inside an update, which would change a
  * value whose keys hold dots (Document uuids). */
 const parsed=text=>{try{const value=typeof text==="string"?JSON.parse(text):null;return value&&typeof value==="object"?value:null;}catch{return null;}};
-const entriesOf=(changed,key)=>Object.entries(changed?.flags?.[MODULE_ID]?.[key]??{}).filter(([id])=>!id.startsWith("-=")&&REQUEST_ID.test(id));
+const entriesOf=(changed,key)=>Object.entries(changed?.flags?.[MODULE_ID]?.[key]??{}).filter(([id,text])=>typeof text==="string"&&REQUEST_ID.test(id));
+/** An update that removes flags.rule-them-all.<key>.<id>: ForcedDeletion since Foundry v14 (the "-=id" syntax is deprecated there). */
+function removal(key,id){
+  const ForcedDeletion=globalThis.foundry?.data?.operators?.ForcedDeletion;
+  return ForcedDeletion?[`flags.${MODULE_ID}.${key}.${id}`,new ForcedDeletion()]:[`flags.${MODULE_ID}.${key}.-=${id}`,null];
+}
 
 /** Transport between a player's client and the active GM's, through the requester's User document only.
  *
@@ -55,7 +60,7 @@ export class FoundryUserRelay{
   async #serve(serve,user,authorId,id,text){
     const request=parsed(text);
     // Only the user themself writes a request, and a GM never needs one: anything else is removed, unserved.
-    if(!request||authorId!==user.id||user.isGM||!user.active)return Promise.resolve(user.update({[`flags.${MODULE_ID}.${REQUESTS}.-=${id}`]:null})).catch(()=>{});
+    if(!request||authorId!==user.id||user.isGM||!user.active)return Promise.resolve(user.update(Object.fromEntries([removal(REQUESTS,id)]))).catch(()=>{});
     let answer;
     try{answer={ok:true,result:await serve({method:request.method,args:request.args,userId:user.id})};}
     catch(error){answer={ok:false,error:errorPayload(error)};}
@@ -65,7 +70,7 @@ export class FoundryUserRelay{
     const user=this.user();
     if(!this.users?.activeGM)return Promise.reject(new RuntimeTransactionError(RELAY_ERRORS.noGM,"This change needs a connected GM.",{method}));
     const id=globalThis.crypto?.randomUUID?.()??`${Date.now()}-${Math.random().toString(36).slice(2)}`;
-    const forget=()=>Promise.resolve(user.update({[`flags.${MODULE_ID}.${REQUESTS}.-=${id}`]:null,[`flags.${MODULE_ID}.${ANSWERS}.-=${id}`]:null})).catch(()=>{});
+    const forget=()=>Promise.resolve(user.update(Object.fromEntries([removal(REQUESTS,id),removal(ANSWERS,id)]))).catch(()=>{});
     return new Promise((resolve,reject)=>{
       const timer=setTimeout(()=>{this.#pending.delete(id);reject(new RuntimeTransactionError(RELAY_ERRORS.timeout,"The GM client did not answer.",{method}));},this.timeout);
       this.#pending.set(id,{resolve,reject,timer});

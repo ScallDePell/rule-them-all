@@ -11,7 +11,7 @@
    await world.close(); */
 import {Worker} from "node:worker_threads";
 import {fileURLToPath} from "node:url";
-import {applyChanges, clone, diffChanges, expand, OWNERSHIP, ROLES, userLevel} from "./documents.mjs";
+import {applyChanges, clone, deprecatedDeletions, diffChanges, expand, OWNERSHIP, ROLES, userLevel} from "./documents.mjs";
 
 const CLIENT = fileURLToPath(new URL("./client.mjs", import.meta.url));
 const COLLECTIONS = {Actor: "actors", Combat: "combats", ChatMessage: "messages", User: "users"};
@@ -60,6 +60,8 @@ export function startWorld({users = [], actors = [], settings = {}, options = {}
       const target = documentData(documentName, id, parentId);
       if (!target) throw new Error(`${documentName} [${id}] does not exist`);
       if (!canModify(user, documentName, target, parentId)) throw denied(user, "update", documentName, id);
+      // Foundry v14 logs a deprecation warning for the "-=key" syntax: the world keeps them for the tests to check.
+      for (const key of deprecatedDeletions(changes)) world.deprecations.push(`${documentName} ${key}`);
       if (documentName === "User" && user.role < ROLES.ASSISTANT && "role" in expand(changes)) throw denied(user, "update", documentName, id);
       const expanded = diffChanges(target, expand(changes));
       if (!Object.keys(expanded).length) return null;
@@ -125,6 +127,7 @@ export function startWorld({users = [], actors = [], settings = {}, options = {}
   let calls = 0;
   const world = {
     data,
+    deprecations: [],
     /** Start a client for a user; resolves once its module ran init, setup and ready and its configurator loaded. */
     async connect(userId) {
       if (!data.users[userId]) throw new Error(`Unknown user ${userId}`);

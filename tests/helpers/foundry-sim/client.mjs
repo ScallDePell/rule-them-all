@@ -3,7 +3,7 @@
    with Foundry's own rules where they matter to several clients: who may write what, which client runs a hook,
    in which order a combat signals its changes. */
 import {parentPort, workerData} from "node:worker_threads";
-import {applyChanges, clone, FORCED, getProperty, OWNERSHIP, ROLES, seededRandom, userLevel} from "./documents.mjs";
+import {applyChanges, clone, DELETED, FORCED, getProperty, OWNERSHIP, ROLES, seededRandom, userLevel} from "./documents.mjs";
 
 const {userId, snapshot, options = {}} = workerData;
 const ROOT = new URL("../../../", import.meta.url);
@@ -96,7 +96,7 @@ class Document {
   toJSON() { return this.toObject(); }
   getFlag(scope, key) { return clone(getProperty(this._source.flags?.[scope], key)); }
   setFlag(scope, key, value) { return this.update({[`flags.${scope}.${key}`]: value}); }
-  unsetFlag(scope, key) { const parts = String(key).split("."); parts[parts.length - 1] = `-=${parts.at(-1)}`; return this.update({[`flags.${scope}.${parts.join(".")}`]: null}); }
+  unsetFlag(scope, key) { return this.update({[`flags.${scope}.${key}`]: new foundry.data.operators.ForcedDeletion()}); }
   async update(changes, updateOptions = {}) { await request("update", {documentName: this.documentName, id: this.id, parentId: this.parent?.id ?? null, changes, options: updateOptions}); return this; }
   async delete(deleteOptions = {}) { await request("delete", {documentName: this.documentName, id: this.id, parentId: this.parent?.id ?? null, options: deleteOptions}); return this; }
   ownerData() { return this.parent && this.documentName !== "Combatant" ? this.parent._source : this._source; }
@@ -335,7 +335,7 @@ Object.assign(globalThis, {
       elements: {}
     },
     utils: {deepClone: clone, getProperty, randomID: () => Math.random().toString(36).slice(2, 18), saveDataToFile: () => {}, isEmpty: value => !value || !Object.keys(value).length},
-    data: {operators: {ForcedReplacement: {create: value => ({[FORCED]: clone(value)})}}},
+    data: {operators: {ForcedReplacement: {create: value => ({[FORCED]: clone(value)})}, ForcedDeletion: class ForcedDeletion { constructor() { this[DELETED] = true; } }}},
     dice: {Roll, terms: {Die, DiceTerm}}
   },
   ui: {notifications: Object.fromEntries(["info", "warn", "error"].map(level => [level, message => log(level === "info" ? "notify" : `notify-${level}`, [message])])), actors: {render: () => {}}},
