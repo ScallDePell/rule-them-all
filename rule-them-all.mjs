@@ -1,4 +1,4 @@
-import {MODULE_ID, REGISTER_TYPES_HOOK} from "./src/core/module-contract.mjs";
+import {API_VERSION, MODULE_ID, REGISTER_TYPES_HOOK} from "./src/core/module-contract.mjs";
 import {createRepairDataMenu} from "./src/configurator/repair-data-menu.mjs";
 import {engineRegistries} from "./src/configurator/operation-registries.mjs";
 import {createConfiguratorAPI} from "./src/configurator/configurator-api.mjs";
@@ -38,6 +38,8 @@ let moduleTranslations = null;
 
 Hooks.once("init", () => {
   game.ruleThemAll ??= {};
+  // Other modules check it before relying on the stable API (STABLE_API, docs/architecture.md §6).
+  game.ruleThemAll.apiVersion = API_VERSION;
   // Foundry's convention for a module's API; game.ruleThemAll is the same object.
   const module = game.modules.get(MODULE_ID);
   if (module) module.api = game.ruleThemAll;

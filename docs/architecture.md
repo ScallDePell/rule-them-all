@@ -88,23 +88,32 @@ Every value read from Foundry passes through `foundryJSON` (`foundry-data.mjs`) 
 
 ## 6. Public API and extension points
 
-`game.ruleThemAll` (the same object as `game.modules.get('rule-them-all').api`):
+`game.ruleThemAll` (the same object as `game.modules.get('rule-them-all').api`). API version **1.0.0** (`game.ruleThemAll.apiVersion`, `API_VERSION` in `module-contract.mjs`).
 
-| Member | Content |
-| --- | --- |
-| `configurator` | The configurator API (`configurator-api.mjs`): Rulesets, versions, publish, export/import, entries (`create*`, `update*`, `delete*`), parts (`listPartDependencies`, `exportRulesetPart`, `planRulesetPartImport`, `importRulesetPart`), extensions (`planExtensionInstall`, `installExtension`, `removeExtension`), `subscribe`. |
-| `configuratorReady` | Promise resolved with `configurator` once storage is loaded. |
-| `runtime` | The runtime API (`runtime-api.mjs`) on published Rulesets: `executeAction`, `executeTest`, `roll`, `projectSheet`, `writeSheetValue`, `advance`, `acquire`, `rollInitiative`, `describeShared`, `tokenBarValue`, `getLedger`, `compensate` and more. |
-| `runtimeLab` | The same API on working drafts, for the GM sandbox only. |
-| `chat.postActionCard(result, versionId, {speaker})` | Posts the chat card of an Action that another module ran with `runtime.executeAction`, as the sheet would. |
-| `content`, `creation` | The Content bridge and the character creation sessions. |
-| `registries`, `language` | The open registries, and the chosen interface language if any. |
+| Member | Stability | Content |
+| --- | --- | --- |
+| `apiVersion` | stable | The version of this API (below). |
+| `configurator` | stable | The configurator API (`configurator-api.mjs`). Stable: `listRulesetFamilies`, `listRulesetVersions`, `getRulesetVersion`, `getRuleset`, `getPublishedRuleset`, `getActiveVersionId`, `setActiveVersionId`, `createRuleset`, `publishRuleset`, `validateRuleset`, `diagnoseRuleset`, `analyzeChangeImpact`, `exportRuleset`, `importRuleset`, parts (`listPartDependencies`, `exportRulesetPart`, `planRulesetPartImport`, `importRulesetPart`), extensions (`planExtensionInstall`, `installExtension`, `removeExtension`), `subscribe`; and for each entry collection `get<Kind>`, `list<Collection>`, `create<Kind>` (`registerDefinitionType` for Definition Types), `update<Kind>`, `delete<Kind>`. |
+| `configuratorReady` | stable | Promise resolved with `configurator` once storage is loaded. |
+| `runtime` | stable | The runtime API (`runtime-api.mjs`) on published Rulesets. Stable: `getContainerState`, `describeContainer`, `initializeContainer`, `setDefinitionState`, `writeSheetValue`, `projectSheet`, `evaluateFormula`, `evaluateCondition`, `roll`, `executeTest`, `previewAction`, `describeActionInputs`, `executeAction`, `emitEvent`, `rollInitiative`, `describeShared`, `setSharedValue`, `tokenBarValue`, `advance`, `acquire`, `getLedger`, `compensate`. Its other methods are internal. |
+| `chat.postActionCard(result, versionId, {speaker})` | stable | Posts the chat card of an Action that another module ran with `runtime.executeAction`, as the sheet would. |
+| `registries` | stable | The open registries `valueTypes`, `formulaNodes`, `effectOperations`; register on `ruleThemAllRegisterTypes`. |
+| `runtimeLab` | internal | The runtime API on working drafts, for the GM sandbox only. |
+| `content`, `creation`, `language` | internal | The Content bridge, the character creation sessions, and the chosen interface language if any. |
 
-Hooks:
+Hooks, all stable:
 
 - Lifecycle: `ruleThemAllInit` (end of `init`), `ruleThemAllRegisterTypes` (during `setup`, with `{valueTypes, formulaNodes, effectOperations}`: other modules add value types, formula nodes and effect operations there), `ruleThemAllReady` (after the APIs are ready).
 - Runtime (`RUNTIME_HOOKS` in `module-contract.mjs`): `ruleThemAllTestResolved`, `ruleThemAllEvent`, `ruleThemAllActionExecuted`, `ruleThemAllLedgerEntry`, `ruleThemAllReactionOffered`, `ruleThemAllChoiceOffered`.
 - Contents: `ruleThemAllCreationCompleted`, `ruleThemAllContentAcquired`, `ruleThemAllContentReleased`, `ruleThemAllContentLibrariesSynchronized`.
+
+### Stability and versioning
+
+- **Stable** members, methods and hooks are listed in `STABLE_API` (`module-contract.mjs`); `tests/public-api-contract.test.mjs` checks that the module provides each of them, that each hook is fired, and that this section names them. A stable method keeps its name, its arguments and the shape of its result; a hook keeps its name and its arguments. Fields may be added to arguments objects, results and hook payloads at any time.
+- **Internal**: everything else, including the members marked internal above, the module's source files (importing them from another module is unsupported), its flags and world settings (read and write runtime data through `runtime`, never the flags), its CSS classes and its templates. They may change in any release.
+- `apiVersion` follows semantic versioning, separately from the module's version. Adding a stable member, method or hook raises the minor version. Removing one or changing it incompatibly raises the major version, and the CHANGELOG entry of that release starts with **Breaking:** and says what to change. There are no deprecated aliases: the old name goes in the same release.
+- Another module checks the major version once, for example `Number(game.ruleThemAll?.apiVersion?.split(".")[0]) === 1`, and stops with a clear message otherwise.
+- Ruleset files (`rta-ruleset` packages, `rule-them-all-part` parts and extensions) have their own format versions (`RULESET_PACKAGE_FORMAT_VERSION`, `RULESET_PART_FORMAT_VERSION`) and the `engineContractVersion` of the Rulesets they carry.
 
 ## 7. Interface
 
