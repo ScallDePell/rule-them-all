@@ -137,21 +137,43 @@ test('multi-client: a player cannot act in the name of another player or of the 
   await world.settle();
   assert.equal(hp(),10,'a socket message names any user it likes: it is not a request');
   // A request written in Bob's User document: Foundry's server refuses it to Alice.
-  const forged=await failure(alice.run(async({v})=>game.users.get('bob').update({'flags.rule-them-all.relay.forged':{method:'setDefinitionState',args:[v,'Actor.bea','hp',{pools:{points:1}}]}}),{v}));
+  const forged=await failure(alice.run(async({v})=>game.users.get('bob').update({'flags.rule-them-all.relay.forged':JSON.stringify({method:'setDefinitionState',args:[v,'Actor.bea','hp',{pools:{points:1}}]})}),{v}));
   assert.match(forged?.message??'',/lacks permission/);
   // In her own User document, the request is Alice's: the rules are checked for her.
   const own=await failure(alice.run(async({v})=>game.ruleThemAll.runtime.setDefinitionState(v,'Actor.bea','hp',{pools:{points:1}}),{v}));
   assert.equal(own?.code,'RUNTIME_FORBIDDEN');
   await world.settle();
   assert.equal(hp(),10);
-  // A request a GM writes in a player's document is not that player's: refused.
-  await gm.run(async({v})=>game.users.get('bob').update({'flags.rule-them-all.relay.gm-made':{method:'setDefinitionState',args:[v,'Actor.bea','hp',{pools:{points:1}}]}}),{v});
+  // A request a GM writes in a player's document is not that player's: removed unserved.
+  await gm.run(async({v})=>game.users.get('bob').update({'flags.rule-them-all.relay.gm-made':JSON.stringify({method:'setDefinitionState',args:[v,'Actor.bea','hp',{pools:{points:1}}]})}),{v});
   await world.settle();
   assert.equal(hp(),10,'served neither as Bob nor as the GM');
   // Bob's own relayed request still works, and leaves nothing behind in his User document.
   assert.deepEqual(await strike(bob,v,'bea','ogre'),{committed:true});
   await world.settle();
   assert.equal(await points(gm,'ogre','hp'),7);
-  assert.deepEqual(Object.keys(world.data.users.bob.flags['rule-them-all']?.relay??{}),['gm-made'],'Bob\'s own request was removed once answered');
+  assert.deepEqual(world.data.users.bob.flags['rule-them-all'],{relay:{},relayAnswer:{}},'nothing is left in Bob\'s User document');
+  assert.deepEqual(errorsOf(clients),[]);
+});
+
+test('multi-client: a forged answer does not reach the player who asked', async t=>{
+  const {world,gm,alice,bob,v,clients}=await session(t);
+  // Alice sees Bob's request in his User document and answers it first, "done", on the socket and in his document.
+  await alice.run(async()=>{
+    globalThis.forgeries=[];
+    Hooks.on('updateUser',(user,changed)=>{
+      for(const id of Object.keys(changed?.flags?.['rule-them-all']?.relay??{}).filter(id=>!id.startsWith('-='))){
+        game.socket.emit('module.rule-them-all',{type:'response',id,to:user.id,ok:true,result:{committed:true}});
+        user.update({[`flags.rule-them-all.relayAnswer.${id}`]:JSON.stringify({ok:true,result:{committed:true}})}).then(()=>forgeries.push('written'),error=>forgeries.push(error.message));
+      }
+    });
+  });
+  // Bob may not write Ana's hit points: the GM refuses, and Bob hears the GM, not Alice.
+  const relayed=await failure(bob.run(async({v})=>game.ruleThemAll.runtime.setDefinitionState(v,'Actor.ana','hp',{pools:{points:1}}),{v}));
+  assert.equal(relayed?.code,'RUNTIME_FORBIDDEN');
+  await world.settle();
+  const forgeries=await alice.run(async()=>globalThis.forgeries);
+  assert.ok(forgeries.length&&forgeries.every(entry=>/lacks permission/.test(entry)),'Foundry\'s server refuses Alice\'s answer in Bob\'s document');
+  assert.equal(await points(gm,'ana','hp'),10);
   assert.deepEqual(errorsOf(clients),[]);
 });

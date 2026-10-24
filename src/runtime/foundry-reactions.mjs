@@ -1,6 +1,8 @@
 /* Reactions in play: a Trigger in "offer" mode (hook ruleThemAllReactionOffered) asks the player of the reacting
    Actor, on their own client, whether to use one of its Actions. The offer is raised where the event happened
-   (often the GM client); it travels on the module socket to the user who answers it. */
+   (often the GM client); it travels on the module socket to the user who answers it. A socket message does not say
+   who sent it, so a forged offer is possible, but it only opens a dialog: the Action picked runs on the player's own
+   client with their own permissions, as if they had used it from their sheet. */
 import {postActionCard} from "./foundry-chat.mjs";
 import {MODULE_ID, RUNTIME_HOOKS} from "../core/module-contract.mjs";
 import {escapeHTML} from "../ui/html-utils.mjs";

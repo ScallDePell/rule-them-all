@@ -2,6 +2,10 @@
 
 ## Unreleased
 
+## 1.0.23
+
+- Security: the GM's answer to a relayed request no longer travels on the module socket, where any client could send a forged one (a player could make another believe their change was done, or refused). The GM writes it in the requester's User document, and the requester takes it only when Foundry names a GM as its author. A request written by anyone but its user is removed unserved instead of being left in the User document. Requests and answers are stored as JSON text, so values whose keys hold dots (Document uuids) keep their shape. A multi-client test has a player forge the answer.
+
 ## 1.0.22
 
 - Security: a player could make the GM client write in the name of another player, or of the GM, by sending a forged request on the module socket (Foundry does not say who sent a socket message). A request to the GM is now written in the requester's own User document, which only they can write, and the GM serves it only for that author, never for a GM. Multi-client tests try the forgeries.

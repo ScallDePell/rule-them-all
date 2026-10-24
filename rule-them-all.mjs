@@ -5,7 +5,7 @@ import {createConfiguratorAPI} from "./src/configurator/configurator-api.mjs";
 import {ConfiguratorApp} from "./src/configurator/configurator-app.mjs";
 import {WorldSettingStorage} from "./src/configurator/world-setting-storage.mjs";
 import {createRuntimeAPI} from "./src/runtime/runtime-api.mjs";
-import {FoundrySocketRelay} from "./src/runtime/runtime-relay.mjs";
+import {FoundryUserRelay} from "./src/runtime/runtime-relay.mjs";
 import {CreationSessions, FoundryCreationSessionStore} from "./src/runtime/creation-sessions.mjs";
 import {FoundryContentBridge} from "./src/runtime/foundry-content-bridge.mjs";
 import {isOwningContentHook,guardOwnedContentCreation} from "./src/runtime/foundry-content-hooks.mjs";
@@ -101,7 +101,7 @@ Hooks.once("ready", () => {
   game.ruleThemAll.configuratorReady = createConfiguratorAPI(storage).then(api => {
     game.ruleThemAll.configurator = api;
     // Writes on Documents a player does not own are relayed to the active GM client (CP-11).
-    const relay = new FoundrySocketRelay();
+    const relay = new FoundryUserRelay();
     game.ruleThemAll.runtime = createRuntimeAPI(api, {relay});
     relay.listen(message => game.ruleThemAll.runtime.serveRelay(message));
     // Reactions offered by Triggers are asked of the reacting Actor's player, on their own client.
