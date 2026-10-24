@@ -64,6 +64,12 @@ class User {
   get isGM() { return this.role >= ROLES.ASSISTANT; }
   get isSelf() { return this.id === userId; }
   get character() { return this._source.character ? game.actors.get(this._source.character) ?? null : null; }
+  get flags() { return this._source.flags ?? {}; }
+  get uuid() { return `User.${this.id}`; }
+  get documentName() { return "User"; }
+  getFlag(scope, key) { return clone(getProperty(this._source.flags?.[scope], key)); }
+  async update(changes, updateOptions = {}) { await request("update", {documentName: "User", id: this.id, changes, options: updateOptions}); return this; }
+  setFlag(scope, key, value) { return this.update({[`flags.${scope}.${key}`]: value}); }
   can() { return this.isGM; }
 }
 class Users extends Collection {
@@ -176,7 +182,7 @@ class ChatMessage extends Document {
   get author() { return game.users.get(this._source.author) ?? null; }
 }
 const CLASSES = {Actor, Item, ActiveEffect, Combat, Combatant, ChatMessage};
-const COLLECTION = name => ({Actor: game.actors, Combat: game.combats, ChatMessage: game.messages, Item: game.items})[name];
+const COLLECTION = name => ({Actor: game.actors, Combat: game.combats, ChatMessage: game.messages, Item: game.items, User: game.users})[name];
 function find(documentName, id, parentId = null) {
   if (!parentId) return COLLECTION(documentName)?.get(id) ?? null;
   if (documentName === "Combatant") return game.combats.get(parentId)?.combatants.get(id) ?? null;

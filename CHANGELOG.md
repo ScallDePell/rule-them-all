@@ -2,6 +2,8 @@
 
 ## Unreleased
 
+- Security: a player could make the GM client write in the name of another player, or of the GM, by sending a forged request on the module socket (Foundry does not say who sent a socket message). A request to the GM is now written in the requester's own User document, which only they can write, and the GM serves it only for that author, never for a GM. Multi-client tests try the forgeries.
+
 ## 1.0.21
 
 - CONTRIBUTING.md: recipes for adding a Formula node, an Effect operation, a sheet block option and a reference between entries, with the files to change and the checks to run. The sheet editor offers the value displays of the layout contract (`LAYOUT_VALUE_DISPLAYS`) instead of its own list.

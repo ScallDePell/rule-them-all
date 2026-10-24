@@ -128,3 +128,30 @@ for(const turnHooks of ['updateFirst','turnChangeFirst']){
     assert.deepEqual(errorsOf(clients),[]);
   });
 }
+
+test('multi-client: a player cannot act in the name of another player or of the GM', async t=>{
+  const {world,gm,alice,bob,v,clients}=await session(t);
+  const hp=()=>world.data.actors.bea.flags['rule-them-all'].runtimeState.definitionStates.hp.capabilityStates.pool.points.current;
+  // A forged request on the module socket, claiming Bob, then the GM: the GM no longer takes requests from the socket.
+  for(const claimed of ['bob','gm'])await alice.run(async({v,claimed})=>game.socket.emit('module.rule-them-all',{type:'request',id:`forged-${claimed}`,userId:claimed,method:'setDefinitionState',args:[v,'Actor.bea','hp',{pools:{points:1}}]}),{v,claimed});
+  await world.settle();
+  assert.equal(hp(),10,'a socket message names any user it likes: it is not a request');
+  // A request written in Bob's User document: Foundry's server refuses it to Alice.
+  const forged=await failure(alice.run(async({v})=>game.users.get('bob').update({'flags.rule-them-all.relay.forged':{method:'setDefinitionState',args:[v,'Actor.bea','hp',{pools:{points:1}}]}}),{v}));
+  assert.match(forged?.message??'',/lacks permission/);
+  // In her own User document, the request is Alice's: the rules are checked for her.
+  const own=await failure(alice.run(async({v})=>game.ruleThemAll.runtime.setDefinitionState(v,'Actor.bea','hp',{pools:{points:1}}),{v}));
+  assert.equal(own?.code,'RUNTIME_FORBIDDEN');
+  await world.settle();
+  assert.equal(hp(),10);
+  // A request a GM writes in a player's document is not that player's: refused.
+  await gm.run(async({v})=>game.users.get('bob').update({'flags.rule-them-all.relay.gm-made':{method:'setDefinitionState',args:[v,'Actor.bea','hp',{pools:{points:1}}]}}),{v});
+  await world.settle();
+  assert.equal(hp(),10,'served neither as Bob nor as the GM');
+  // Bob's own relayed request still works, and leaves nothing behind in his User document.
+  assert.deepEqual(await strike(bob,v,'bea','ogre'),{committed:true});
+  await world.settle();
+  assert.equal(await points(gm,'ogre','hp'),7);
+  assert.deepEqual(Object.keys(world.data.users.bob.flags['rule-them-all']?.relay??{}),['gm-made'],'Bob\'s own request was removed once answered');
+  assert.deepEqual(errorsOf(clients),[]);
+});

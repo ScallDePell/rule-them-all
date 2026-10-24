@@ -137,15 +137,28 @@ test('CP-11: executing an Action needs the execute permission', async () => {
   assert.equal((await engine.authorize(v,'execute',{objectKind:'action',objectId:'strike'},{kind:'actor',id:'b'})).allowed,false);
 });
 
-test('CP-11: the socket relay answers only from the active GM, and only to the requester', async () => {
-  const listeners=[];
-  const bus={on:(channel,fn)=>listeners.push({channel,fn}),emit:(channel,message,from)=>{for(const l of listeners)if(l.channel===channel&&l.owner!==from)l.fn(structuredClone(message));}};
-  const client=(id,isGM)=>{const socket={on:(channel,fn)=>{bus.on(channel,fn);listeners.at(-1).owner=id;},emit:(channel,message)=>bus.emit(channel,message,id)};return new FoundrySocketRelay({socket,user:()=>({id}),users:{activeGM:{isSelf:isGM}},timeout:200});};
+test('CP-11: the relay serves a request written by its own user, from the active GM only, and answers the requester only', async () => {
+  // One world: the socket broadcasts to the other clients; a User update reaches every client with its author.
+  const sockets=[],updates=[];
+  const users=new Map([['g',{id:'g',isGM:true,active:true}],['o',{id:'o',isGM:false,active:true}],['p',{id:'p',isGM:false,active:true}]]);
+  const client=(id,isGM)=>{
+    const socket={on:(channel,fn)=>sockets.push({id,fn}),emit:(channel,message)=>{for(const l of sockets)if(l.id!==id)l.fn(structuredClone(message));}};
+    const hooks={on:(name,fn)=>updates.push({id,fn})};
+    const user=()=>({...users.get(id),update:async changes=>{const flags={};for(const [key,value] of Object.entries(changes)){const [, , , ...rest]=key.split('.');flags[rest.join('.')]=value;}
+      for(const l of updates)l.fn(users.get(id),{flags:{'rule-them-all':{relay:flags}}},{},id);}});
+    return new FoundrySocketRelay({socket,hooks,user,users:{activeGM:{isSelf:isGM},get:key=>users.get(key)},timeout:200});
+  };
   const gm=client('g',true),other=client('o',false),player=client('p',false);
   gm.listen(async message=>({served:message.method,for:message.userId}));
   other.listen(async()=>{throw new Error('not the GM');});player.listen(async()=>null);
   assert.deepEqual(await player.request('executeAction',[]),{served:'executeAction',for:'p'});
-  const noGM=new FoundrySocketRelay({socket:{on(){},emit(){}},user:()=>({id:'p'}),users:{activeGM:null}});
+  // A request a user did not write in their own document, or a GM's, is refused.
+  const answers=[];sockets.push({id:'spy',fn:message=>answers.push(message)});
+  for(const l of updates.filter(l=>l.id==='g'))l.fn(users.get('p'),{flags:{'rule-them-all':{relay:{forged:{method:'executeAction',args:[]}}}}},{},'o');
+  for(const l of updates.filter(l=>l.id==='g'))l.fn(users.get('g'),{flags:{'rule-them-all':{relay:{mine:{method:'executeAction',args:[]}}}}},{},'g');
+  await new Promise(resolve=>setTimeout(resolve,10));
+  assert.deepEqual(answers.filter(a=>['forged','mine'].includes(a.id)).map(a=>[a.id,a.ok,a.error?.code]),[['forged',false,'RUNTIME_RELAY_SENDER'],['mine',false,'RUNTIME_RELAY_SENDER']]);
+  const noGM=new FoundrySocketRelay({socket:{on(){},emit(){}},hooks:{on(){}},user:()=>({id:'p'}),users:{activeGM:null}});
   await assert.rejects(()=>noGM.request('executeAction',[]),error=>error.code==='RUNTIME_GM_UNAVAILABLE');
 });
 

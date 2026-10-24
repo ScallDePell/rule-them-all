@@ -14,7 +14,7 @@ import {fileURLToPath} from "node:url";
 import {applyChanges, clone, diffChanges, expand, OWNERSHIP, ROLES, userLevel} from "./documents.mjs";
 
 const CLIENT = fileURLToPath(new URL("./client.mjs", import.meta.url));
-const COLLECTIONS = {Actor: "actors", Combat: "combats", ChatMessage: "messages"};
+const COLLECTIONS = {Actor: "actors", Combat: "combats", ChatMessage: "messages", User: "users"};
 const EMBEDDED = {Combatant: "combatants", Item: "items", ActiveEffect: "effects"};
 let ids = 0;
 const randomId = () => `sim${String(++ids).padStart(13, "0")}`;
@@ -23,7 +23,7 @@ const randomId = () => `sim${String(++ids).padStart(13, "0")}`;
  * options.turnHooks: "updateFirst" (updateCombat, then combatTurnChange) or "turnChangeFirst"; options.seed: dice. */
 export function startWorld({users = [], actors = [], settings = {}, options = {}} = {}) {
   const data = {
-    users: Object.fromEntries(users.map(user => [user._id, {name: user._id, role: ROLES.PLAYER, character: null, ...clone(user), active: false}])),
+    users: Object.fromEntries(users.map(user => [user._id, {name: user._id, role: ROLES.PLAYER, character: null, flags: {}, ...clone(user), active: false}])),
     actors: Object.fromEntries(actors.map(actor => [actor._id, {type: "character", ownership: {default: OWNERSHIP.NONE}, flags: {}, system: {}, items: [], effects: [], statuses: [], ...clone(actor)}])),
     combats: {}, messages: {}, settings: clone(settings), worldTime: 0
   };
@@ -48,6 +48,8 @@ export function startWorld({users = [], actors = [], settings = {}, options = {}
     if (documentName === "Combat") return false;
     if (documentName === "Combatant") return userLevel(data.actors[target?.actorId], user) >= OWNERSHIP.OWNER;
     if (documentName === "ChatMessage") return target?.author === user._id;
+    // A player writes their own User document (its flags, not its role).
+    if (documentName === "User") return target?._id === user._id;
     const owner = parentId ? data.actors[parentId] : target;
     return userLevel(owner, user) >= OWNERSHIP.OWNER;
   }
@@ -58,6 +60,7 @@ export function startWorld({users = [], actors = [], settings = {}, options = {}
       const target = documentData(documentName, id, parentId);
       if (!target) throw new Error(`${documentName} [${id}] does not exist`);
       if (!canModify(user, documentName, target, parentId)) throw denied(user, "update", documentName, id);
+      if (documentName === "User" && user.role < ROLES.ASSISTANT && "role" in expand(changes)) throw denied(user, "update", documentName, id);
       const expanded = diffChanges(target, expand(changes));
       if (!Object.keys(expanded).length) return null;
       applyChanges(target, expanded);
