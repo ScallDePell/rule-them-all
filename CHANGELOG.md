@@ -2,6 +2,10 @@
 
 ## Unreleased
 
+## 1.0.24
+
+- A Game System that declares no Actor or Item subtype no longer stops character creation ("The active Game System exposes no Actor document type"): Rule Them'All then creates Actors and Items of Foundry's own `base` type.
+
 ## 1.0.23
 
 - Security: the GM's answer to a relayed request no longer travels on the module socket, where any client could send a forged one (a player could make another believe their change was done, or refused). The GM writes it in the requester's User document, and the requester takes it only when Foundry names a GM as its author. A request written by anyone but its user is removed unserved instead of being left in the User document. Requests and answers are stored as JSON text, so values whose keys hold dots (Document uuids) keep their shape. A multi-client test has a player forge the answer.

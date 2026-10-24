@@ -28,6 +28,12 @@ test("the active Game System, not RTA, owns document subtypes",()=>{
  assert.equal(resolveDocumentType("Actor",{system:systemA,requestedType:"pilot"}),"pilot");
  assert.equal(resolveDocumentType("Actor",{system:systemB,requestedType:"creature"}),"creature");
  assert.throws(()=>resolveDocumentType("Item",{system:systemB}),/Select a subtype for Item documents/);
+ // A Game System without subtypes: Foundry's "base" type, which Foundry lists in game.documentTypes.
+ const bare={documentTypes:{}},foundryTypes={Actor:["base"],Item:["base"]};
+ assert.deepEqual(availableDocumentTypes("Actor",{system:bare,config:{},documentTypes:foundryTypes}),["base"]);
+ assert.equal(resolveDocumentType("Item",{system:{},config:{},documentTypes:foundryTypes}),"base");
+ assert.deepEqual(availableDocumentTypes("Actor",{system:systemA,documentTypes:{Actor:["base","pilot","mech"]}}),["pilot","mech"]);
+ assert.throws(()=>resolveDocumentType("Actor",{system:bare,config:{},documentTypes:{}}),/exposes no Actor document type/);
  assert.equal(resolveDocumentType("Item",{system:{documentTypes:{Item:["single"]}}}),"single");
  assert.throws(()=>resolveDocumentType("Actor",{system:systemA,requestedType:"npc"}),/Unsupported Actor document type/);
  assert.throws(()=>resolveDocumentType("Actor",{system:{documentTypes:{Actor:[]}}}),/no Actor document type/);

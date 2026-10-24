@@ -1,13 +1,17 @@
 /** Resolve Foundry document subtypes from the ACTIVE Game System.
  * No game-specific identifiers (character/npc/content/etc.) are inferred by RTA.
  * A unique advertised subtype may be inferred. Ambiguous choices require an explicit mapping.
+ * A Game System that declares no subtype for a Document leaves Foundry's own "base" type (game.documentTypes).
  */
-export function availableDocumentTypes(documentName,{system=globalThis.game?.system,config=globalThis.CONFIG}={}) {
+export const BASE_DOCUMENT_TYPE="base";
+export function availableDocumentTypes(documentName,{system=globalThis.game?.system,config=globalThis.CONFIG,documentTypes=globalThis.game?.documentTypes}={}) {
   const declared=system?.documentTypes?.[documentName];
   const types=Array.isArray(declared)?declared
-    :declared&&typeof declared==="object"?Object.keys(declared)
+    :declared&&typeof declared==="object"&&Object.keys(declared).length?Object.keys(declared)
     :Object.keys(config?.[documentName]?.dataModels??{});
-  return [...new Set(types.filter(type=>typeof type==="string"&&type.trim().length))];
+  const own=[...new Set(types.filter(type=>typeof type==="string"&&type.trim().length&&type!==BASE_DOCUMENT_TYPE))];
+  if(own.length)return own;
+  return (documentTypes?.[documentName]??[]).includes(BASE_DOCUMENT_TYPE)?[BASE_DOCUMENT_TYPE]:[];
 }
 
 /** The Game System's own word for a subtype (CONFIG.<Document>.typeLabels), or the subtype itself. */
@@ -16,8 +20,8 @@ export function documentTypeLabel(documentName,type,{config=globalThis.CONFIG,i1
   return key?(i18n?.localize?.(key)??key):type;
 }
 
-export function resolveDocumentType(documentName,{requestedType=null,system=globalThis.game?.system,config=globalThis.CONFIG}={}) {
-  const types=availableDocumentTypes(documentName,{system,config});
+export function resolveDocumentType(documentName,{requestedType=null,system=globalThis.game?.system,config=globalThis.CONFIG,documentTypes=globalThis.game?.documentTypes}={}) {
+  const types=availableDocumentTypes(documentName,{system,config,documentTypes});
   if(requestedType!==null&&requestedType!==undefined&&requestedType!=="") {
     if(!types.includes(requestedType))throw new Error(`Unsupported ${documentName} document type: ${requestedType}. Available: ${types.join(", ")||"none"}.`);
     return requestedType;
