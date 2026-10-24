@@ -2,6 +2,10 @@
 
 ## Unreleased
 
+## 1.0.31
+
+- The assistant's questions and preview use the entry editor's own frames and rows: label on the left, control on the right, a framed block for an entry created in place, lists as cards with their remove button. The assistant keeps only its window layout, path cards, path header and error lines as its own styles.
+
 ## 1.0.30
 
 - The assistant window links its own stylesheet when Foundry has not loaded it. Foundry can keep the stylesheet list it read at start-up after a module update, so the window showed without its layout, could not scroll, and a chosen path opened out of sight.

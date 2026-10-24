@@ -147,7 +147,7 @@ export class AssistantApp extends ConfiguratorWindow {
     const preview = this.element.querySelector("[data-assistant-preview]");
     if (preview) preview.innerHTML = previewHTML(model.preview, this.#words());
     const errors = Object.fromEntries(model.preview.errors.map(error => [error.path, error.message]));
-    for (const line of this.element.querySelectorAll("[data-answer-error]")) { const message = errors[line.dataset.answerError] ?? ""; line.textContent = message; line.hidden = !message; line.closest("[data-answer-field]")?.classList.toggle("is-invalid", Boolean(message)); }
+    for (const line of this.element.querySelectorAll("[data-answer-error]")) { const message = errors[line.dataset.answerError] ?? ""; line.textContent = message; line.hidden = !message; this.element.querySelector(`[data-answer-field="${CSS.escape(line.dataset.answerError)}"]`)?.classList.toggle("is-invalid", Boolean(message)); }
     const apply = this.element.querySelector('[data-action="apply"]'), record = this.#api.getRulesetVersion(this.#versionId);
     if (apply) apply.disabled = !model.plan.valid || record?.status === "validated";
   }

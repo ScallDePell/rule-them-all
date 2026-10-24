@@ -9,31 +9,28 @@
       </section>
     {{/each}}
   </aside>
-  <main class="rta-assistant__main" data-assistant-main>
+  <main class="rta-config-entry rta-assistant__main">
+  <div class="rta-config-entry__scroll" data-assistant-main>
     {{#if error}}<p class="rta-configurator__error" role="alert">{{error}}</p>{{/if}}
     {{#if readOnly}}<p class="hint">{{localize "RTA.Assistant.ReadOnly"}}</p>{{/if}}
     {{#if applied}}
-      <section class="rta-assistant__applied" role="status">
-        <h2><i class="fa-solid fa-circle-check" aria-hidden="true"></i> {{applied.title}}</h2>
+      <fieldset role="status"><legend><i class="fa-solid fa-circle-check" aria-hidden="true"></i> {{applied.title}}</legend>
         <p>{{localize "RTA.Assistant.AppliedIntro"}}</p>
         {{{applied.html}}}
         <div class="rta-config-actions"><button type="button" data-action="tryLab"><i class="fa-solid fa-flask" aria-hidden="true"></i> {{localize "RTA.Assistant.TryLab"}}</button><button type="button" data-action="again"><i class="fa-solid fa-plus" aria-hidden="true"></i> {{localize "RTA.Assistant.Again"}}</button></div>
-      </section>
+      </fieldset>
     {{/if}}
     {{#if path}}
       <header class="rta-assistant__header" style="--rta-card-accent: {{path.color}}"><h2><i class="rta-assistant__card-icon fa-solid {{path.icon}}" aria-hidden="true"></i> {{path.title}}</h2><p>{{path.summary}}</p><p class="hint"><i class="fa-solid fa-circle-info" aria-hidden="true"></i> {{path.limits}}</p></header>
-      <section class="rta-assistant__panel">
-        <h3><i class="fa-solid fa-list-check" aria-hidden="true"></i> {{localize "RTA.Assistant.Questions"}}</h3>
-        <div class="rta-assistant__form" data-assistant-form>{{{formHTML}}}</div>
-      </section>
-      <section class="rta-assistant__panel rta-assistant__preview" aria-live="polite">
-        <h3><i class="fa-solid fa-eye" aria-hidden="true"></i> {{localize "RTA.Assistant.Preview"}}</h3>
-        <div data-assistant-preview>{{{previewHTML}}}</div>
+      <fieldset data-assistant-form><legend>{{localize "RTA.Assistant.Questions"}}</legend>{{{formHTML}}}</fieldset>
+      <fieldset aria-live="polite"><legend>{{localize "RTA.Assistant.Preview"}}</legend>
+        <div class="rta-config-entry__full-width" data-assistant-preview>{{{previewHTML}}}</div>
         <div class="rta-config-actions"><button type="button" data-action="apply" {{#unless canApply}}disabled{{/unless}}><i class="fa-solid fa-check" aria-hidden="true"></i> {{localize "RTA.Assistant.Apply"}}</button></div>
-      </section>
+      </fieldset>
     {{else}}
-      {{#unless applied}}<section class="rta-assistant__intro"><h2><i class="fa-solid fa-wand-magic-sparkles" aria-hidden="true"></i> {{localize "RTA.Assistant.Title"}}</h2><p>{{localize "RTA.Assistant.Intro"}}</p></section>{{/unless}}
+      {{#unless applied}}<fieldset><legend><i class="fa-solid fa-wand-magic-sparkles" aria-hidden="true"></i> {{localize "RTA.Assistant.Title"}}</legend><p>{{localize "RTA.Assistant.Intro"}}</p></fieldset>{{/unless}}
     {{/if}}
+  </div>
   </main>
 </div>
 </section>
