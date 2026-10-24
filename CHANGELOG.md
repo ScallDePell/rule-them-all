@@ -2,6 +2,8 @@
 
 ## Unreleased
 
+- Dependencies: an Action's per-result Effects and the Outcome each result answers, and the Definition Type a reference field is limited to, are now dependencies (they could be deleted while in use, and a part exported without them). Deleting a Die can be analysed again ("Unknown object kind: die"), and a Die a Roll throws counts as used there too.
+- Contract tests: `tests/contract-completeness.test.mjs` checks that every reference of the shipped Rulesets is a dependency, that every object kind resolves to its collection the same way everywhere, that Formula nodes are in the visual editor (or listed as API-only), that operations, operand kinds, value types and capabilities have their words in both languages, and that export/import and the repair keep current data unchanged.
 - Two players acting on the same GM Actor at the same moment (both striking the ogre) both count: the GM client serves relayed writes one after the other, and a client's commits no longer interleave (the second writer of a container used to overwrite the first, both reported as done).
 - Combat: the first combatant of a combat or a round hears its turn once, after the start and round events (its turn Triggers ran twice when Foundry signalled the update before the turn change).
 - Multi-client tests: `tests/multiclient-foundry.test.mjs` runs a GM and two players, each loading the real module, over a simulated Foundry server (`tests/helpers/foundry-sim`). The `Checks` workflow runs the tests and both audits on every push and pull request.

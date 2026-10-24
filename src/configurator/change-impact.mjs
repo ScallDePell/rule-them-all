@@ -5,9 +5,10 @@ import {COLLECTION_FIELDS, copyJSON, isRecord} from "./configurator-schema.mjs";
 import {DependencyIndex} from "./dependency-index.mjs";
 import {validateRuleset} from "./configurator-validation.mjs";
 
-/** objectKind -> collection ("tags" -> "tag", "permissionPolicies" -> "permissionPolicy"). */
-export const kindOfCollection = collection => collection.replace(/ies$/, "y").replace(/s$/, "");
-const COLLECTION_OF_KIND = new Map(COLLECTION_FIELDS.map(collection => [kindOfCollection(collection), collection]));
+/** collection -> objectKind ("tags" -> "tag", "permissionPolicies" -> "permissionPolicy", "dice" -> "die"). */
+export const kindOfCollection = collection => collection === "dice" ? "die" : collection.replace(/ies$/, "y").replace(/s$/, "");
+// Tags name their holders by the collection less its "s", which leaves "dice": read as "die".
+const COLLECTION_OF_KIND = new Map([...COLLECTION_FIELDS.map(collection => [kindOfCollection(collection), collection]), ["dice", "dice"]]);
 export const collectionOfKind = kind => COLLECTION_OF_KIND.get(kind) ?? null;
 
 const list = value => Array.isArray(value) ? value : [];

@@ -78,6 +78,11 @@ export class DependencyIndex{
       for(const [j,input] of (a.inputs??[]).entries())if(input?.definitionTypeId)pushRef(this.#edges,{objectKind:'action',objectId:a.id},{objectKind:'definitionType',objectId:input.definitionTypeId},'actionInput',`actions[${i}].inputs[${j}].definitionTypeId`);
       for(const [j,id] of (a.conditionRefs??[]).entries())pushRef(this.#edges,{objectKind:'action',objectId:a.id},{objectKind:'condition',objectId:id},'actionCondition',`actions[${i}].conditionRefs[${j}]`);
       for(const k of ['costEffectRefs','effectRefs'])for(const [j,id] of (a[k]??[]).entries())pushRef(this.#edges,{objectKind:'action',objectId:a.id},{objectKind:'effect',objectId:id},k,`actions[${i}].${k}[${j}]`);
+      // A test result's own Effects replace the Action's; the mapping names the Outcome it answers.
+      for(const [j,mapping] of (a.outcomeMappings??[]).entries()){
+        for(const [k,id] of (mapping?.effectRefs??[]).entries())pushRef(this.#edges,{objectKind:'action',objectId:a.id},{objectKind:'effect',objectId:id},'outcomeEffect',`actions[${i}].outcomeMappings[${j}].effectRefs[${k}]`);
+        if(mapping?.outcomeId)pushRef(this.#edges,{objectKind:'action',objectId:a.id},{objectKind:'outcome',objectId:mapping.outcomeId},'outcomeMapping',`actions[${i}].outcomeMappings[${j}].outcomeId`);
+      }
       for(const [j,id] of (a.eventTypeRefs??[]).entries())pushRef(this.#edges,{objectKind:'action',objectId:a.id},{objectKind:'eventType',objectId:id},'actionEvent',`actions[${i}].eventTypeRefs[${j}]`);
       for(const [eventTypeId,values] of Object.entries(a.eventPayloads??{}))for(const [fieldId,source] of Object.entries(values??{}))if(source?.formulaRef)pushRef(this.#edges,{objectKind:'action',objectId:a.id},{objectKind:'formula',objectId:source.formulaRef},'actionEventValue',`actions[${i}].eventPayloads.${eventTypeId}.${fieldId}.formulaRef`);
       for(const [j,application] of (a.stateApplications??[]).entries()){
@@ -194,6 +199,9 @@ export class DependencyIndex{
         if(slot?.entryMode!=='value')for(const [k,kind] of (slot?.allowedKinds??[]).entries())pushRef(this.#edges,consumer,{objectKind:'contentType',objectId:kind},'collectionKind',`definitions[${i}].slots.collection[${j}].allowedKinds[${k}]`);
       }
     }
+    // A reference field limited to one Definition Type (a skill's characteristic) needs that type; its own type does not count.
+    for(const [collection,kind] of [['definitionTypes','definitionType'],['contentTypes','contentType']])for(const [i,type] of (ruleset[collection]??[]).entries())
+      for(const [fieldId,field] of Object.entries(type?.fields??{})){const target=field?.referenceTarget?.definitionTypeId;if(target&&!(kind==='definitionType'&&target===type.id))pushRef(this.#edges,{objectKind:kind,objectId:type.id},{objectKind:'definitionType',objectId:target},'fieldReferenceTarget',`${collection}[${i}].fields.${fieldId}.referenceTarget.definitionTypeId`);}
     const contentTypesById=new Map((ruleset.contentTypes??[]).map(type=>[type.id,type]));
     for(const [i,t] of (ruleset.contentTemplates??[]).entries()){
       if(t.contentTypeId)pushRef(this.#edges,{objectKind:'contentTemplate',objectId:t.id},{objectKind:'contentType',objectId:t.contentTypeId},'templateContentType',`contentTemplates[${i}].contentTypeId`);
