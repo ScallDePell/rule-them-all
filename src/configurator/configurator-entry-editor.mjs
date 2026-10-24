@@ -762,7 +762,7 @@ export class ConfiguratorEntryEditor extends ConfiguratorWindow {
     }
     if(action==="chooseImage"){
       const input=this.element.querySelector('[name="image"]'),current=String(input?.value??"");
-      const Picker=globalThis.FilePicker?.implementation??globalThis.FilePicker;if(!Picker)throw new Error("Foundry FilePicker is unavailable.");
+      const Picker=globalThis.foundry?.applications?.apps?.FilePicker?.implementation??globalThis.FilePicker?.implementation??globalThis.FilePicker;if(!Picker)throw new Error("Foundry FilePicker is unavailable.");
       const picker=new Picker({type:"image",current,callback:path=>{if(input){input.value=path;this.#dirty=true;this.#syncFooter();const preview=this.element.querySelector("[data-image-preview]");if(preview)preview.src=path||"icons/svg/mystery-man.svg";}}});
       return picker.browse?.();
     }

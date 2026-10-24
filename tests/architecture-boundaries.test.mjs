@@ -143,3 +143,10 @@ test("no legacy RWF hooks, formats or CSS classes remain",()=>{
  const files=[...walk(path.join(base,"src")),...walk(path.join(base,"templates")),...walk(path.join(base,"styles"))].filter(f=>/\.(?:mjs|hbs|css)$/.test(f));
  for(const file of files)assert.doesNotMatch(readFileSync(file,"utf8"),/rwf-/i,file);
 });
+
+test("Foundry classes moved under the foundry namespace in v13 are read there first (the old globals warn)",()=>{
+ const moved=["CompendiumCollection","FilePicker","TextEditor"];
+ const offenders=walk(path.join(base,"src")).concat(path.join(base,"rule-them-all.mjs")).filter(file=>file.endsWith(".mjs")).flatMap(file=>
+  read(path.relative(base,file)).split("\n").flatMap((line,index)=>[...line.matchAll(new RegExp(`(\\?\\?\\s*)?globalThis\\.(${moved.join("|")})\\b`,"g"))].filter(match=>!match[1]).map(()=>`${path.relative(base,file)}:${index+1}`)));
+ assert.deepEqual(offenders,[]);
+});

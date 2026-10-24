@@ -55,7 +55,7 @@ export class FoundryContentBridge{
     if(contentType.storageKind==="actor")return {documentName:"Actor",type:this.documentTypeResolver("Actor",{requestedType:contentType.documentSubtype??null}),klass:globalThis.Actor};
     return {documentName:"Item",type:this.documentTypeResolver("Item",{requestedType:contentType.documentSubtype??null}),klass:globalThis.Item};
   }
-  #compendiumClass(){return globalThis.CompendiumCollection??globalThis.foundry?.documents?.collections?.CompendiumCollection;}
+  #compendiumClass(){return globalThis.foundry?.documents?.collections?.CompendiumCollection??globalThis.CompendiumCollection;}
   async ensurePack(versionId,contentType){
     if(!globalThis.game?.user?.isGM)throw new Error("Only a GM can create or synchronize Rule Them'All Compendiums.");
     const spec=this.#documentSpec(contentType),name=packNameFor(versionId,contentType),id=`world.${name}`;

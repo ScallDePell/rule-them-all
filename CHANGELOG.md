@@ -2,6 +2,10 @@
 
 ## Unreleased
 
+## 1.0.26
+
+- Synchronizing Contents with the Compendiums, and the Ruleset image picker, no longer log Foundry's v13 deprecation warnings: `CompendiumCollection` and `FilePicker` are read under the `foundry` namespace first. A test keeps the moved globals out of the code.
+
 ## 1.0.25
 
 - Character creation: a step or a choice that allows a given number of options (choose 2 skills) no longer lets the player tick more. Once that many are ticked, the other options are disabled until one is unticked. The number is the step's or the choice's maximum in the Ruleset.
