@@ -121,7 +121,7 @@ node qa/architecture-audit.mjs --strict
 node qa/release-readiness.mjs --strict
 ```
 
-The tests use only Node's built-in runner (Node 22 in CI); there is no `package.json`. `tests/architecture-boundaries.test.mjs` also runs the architecture audit and checks a few key strings in this document.
+The `Checks` workflow (`.github/workflows/ci.yml`) runs these three commands on every push to `main` and on every pull request; the `Release` workflow runs them again before building. The tests use only Node's built-in runner (Node 22 in CI); there is no `package.json`. `tests/architecture-boundaries.test.mjs` also runs the architecture audit and checks a few key strings in this document.
 
 Chromium renders need `npm i --no-save handlebars playwright-core` and `RTA_CHROMIUM` (path to Chromium); set `RTA_FOUNDRY_CSS` to include Foundry's CSS and `RTA_SHOTS` to save screenshots. Run `node qa/configurator-render.mjs <repo> <dir>` first, then `dynamic-markup-audit.mjs`, `layout-audit.mjs` and `sheet-editor-flow.mjs` on that directory. `sheet-render.mjs`, `creation-render.mjs`, `shared-resources-render.mjs` and `part-dialogs-render.mjs` render on their own (`<repo> <outDir>`). `configurator-shoot.mjs` and `style-diff.mjs` compare computed styles and screenshots before and after a CSS change.
 

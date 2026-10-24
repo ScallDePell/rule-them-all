@@ -19,6 +19,10 @@ jobs:
           node-version: 22
       - name: Tests
         run: node --test tests/*.test.mjs
+      - name: Audits
+        run: |
+          node qa/architecture-audit.mjs --strict
+          node qa/release-readiness.mjs --strict
       - name: Version
         id: version
         run: echo "tag=v$(node -p "require('./module.json').version")" >> "$GITHUB_OUTPUT"
