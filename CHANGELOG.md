@@ -2,6 +2,8 @@
 
 ## Unreleased
 
+## 1.0.22
+
 - Security: a player could make the GM client write in the name of another player, or of the GM, by sending a forged request on the module socket (Foundry does not say who sent a socket message). A request to the GM is now written in the requester's own User document, which only they can write, and the GM serves it only for that author, never for a GM. Multi-client tests try the forgeries.
 
 ## 1.0.21
