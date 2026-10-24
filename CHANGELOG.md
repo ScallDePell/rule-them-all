@@ -2,6 +2,10 @@
 
 ## Unreleased
 
+## 1.0.32
+
+- Ruleset cards: the badges take all the room the action buttons leave, so the "active" badge of an enabled Ruleset shows in full next to its three buttons.
+
 ## 1.0.31
 
 - The assistant's questions and preview use the entry editor's own frames and rows: label on the left, control on the right, a framed block for an entry created in place, lists as cards with their remove button. The assistant keeps only its window layout, path cards, path header and error lines as its own styles.

@@ -167,34 +167,39 @@
   position: relative;
 }
 
+/* One footer row: the badges take the room the actions leave (two or three buttons). */
 .rta-configurator .rta-ruleset-tile__bottom {
-  position: static;
-  display: contents;
+  position: absolute;
+  left: .7rem;
+  right: .7rem;
+  bottom: .5rem;
+  width: auto;
+  display: flex;
+  align-items: center;
+  gap: var(--rta-gap-tight);
 }
 
 .rta-configurator .rta-ruleset-tile__badges {
-  position: absolute;
-  left: .7rem;
-  bottom: .5rem;
+  position: static;
   display: flex;
+  flex: 0 1 auto;
   flex-wrap: nowrap;
   align-items: center;
   width: auto;
-  max-width: calc(100% - 155px);
+  min-width: 0;
   margin: 0;
   overflow: hidden;
 }
 
 .rta-configurator .rta-ruleset-tile__actions {
-  position: absolute;
-  right: .7rem;
-  bottom: .5rem;
+  position: static;
+  flex: none;
+  margin-inline-start: auto;
   display: flex;
   flex-wrap: nowrap;
   align-items: center;
   justify-content: flex-end;
   width: auto;
-  margin: 0;
   gap: var(--rta-gap-tight);
 }
 
