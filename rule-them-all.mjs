@@ -174,7 +174,8 @@ Hooks.once("ready", () => {
   // The combatant acting can change without a turn change (initiative rolled or rerolled, a pass flag, a combatant
   // removed): it still hears its turn, from the combat as it now stands.
   const announceTurn = combat => { if (game.users.activeGM?.isSelf && combat?.started) emitModuleEvents(() => [combatTurnEvent(combat)]); };
-  Hooks.on("updateCombat", combat => announceTurn(combat));
+  // A round or turn change is combatTurnChange's: announced here as well, the first combatant would hear its turn twice.
+  Hooks.on("updateCombat", (combat, changed) => { if (!("round" in (changed ?? {})) && !("turn" in (changed ?? {}))) announceTurn(combat); });
   for (const hook of ["updateCombatant", "deleteCombatant"]) Hooks.on(hook, combatant => announceTurn(combatant.parent ?? combatant.combat));
   Hooks.on("deleteCombat", combat => {
     moduleEvents.forget(combat.id);

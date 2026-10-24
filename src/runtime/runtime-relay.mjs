@@ -6,11 +6,17 @@ import {RuntimeTransactionError} from "./runtime-transaction.mjs";
 export const RELAYED_METHODS=Object.freeze(["runChatAction","writeSheetValue","instantiateDefinition","removeDefinitionState","setDefinitionState","addCollectionEntry","removeCollectionEntry","transferCollectionEntry","initializeContainer","rebindContainer","executeAction","rerollAction","chooseActions","advance","applyMilestones","compensate","acquire","setContentField","releaseContent","removeStateInstance","expireStates"]);
 export const RELAY_ERRORS=Object.freeze({noGM:"RUNTIME_GM_UNAVAILABLE",timeout:"RUNTIME_RELAY_TIMEOUT",method:"RUNTIME_RELAY_METHOD"});
 
-/** GM side: replay the call with the rules checked for the requesting user, never for the GM. */
-export async function serveRuntimeRelay(engine,{method,args,userId}){
-  if(!RELAYED_METHODS.includes(method))throw new RuntimeTransactionError(RELAY_ERRORS.method,`Runtime method cannot be relayed: ${method}.`,{method});
-  if(typeof userId!=="string"||!userId)throw new Error("Runtime relay request requires the requesting user id.");
-  return engine.forUser(userId)[method](...(Array.isArray(args)?args:[]));
+/** engine -> the last relayed call it served, which the next one waits for. */
+const served=new WeakMap();
+
+/** GM side: replay the call with the rules checked for the requesting user, never for the GM. Calls from several
+ * players are served one after the other, so two players striking the same Actor both count. */
+export function serveRuntimeRelay(engine,{method,args,userId}){
+  if(!RELAYED_METHODS.includes(method))return Promise.reject(new RuntimeTransactionError(RELAY_ERRORS.method,`Runtime method cannot be relayed: ${method}.`,{method}));
+  if(typeof userId!=="string"||!userId)return Promise.reject(new Error("Runtime relay request requires the requesting user id."));
+  const run=(served.get(engine)??Promise.resolve()).then(()=>engine.forUser(userId)[method](...(Array.isArray(args)?args:[])));
+  served.set(engine,run.catch(()=>{}));
+  return run;
 }
 
 const errorPayload=error=>({message:error?.message??String(error),code:error?.code??null});

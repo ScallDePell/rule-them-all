@@ -2,6 +2,9 @@
 
 ## Unreleased
 
+- Two players acting on the same GM Actor at the same moment (both striking the ogre) both count: the GM client serves relayed writes one after the other, and a client's commits no longer interleave (the second writer of a container used to overwrite the first, both reported as done).
+- Combat: the first combatant of a combat or a round hears its turn once, after the start and round events (its turn Triggers ran twice when Foundry signalled the update before the turn change).
+- Multi-client tests: `tests/multiclient-foundry.test.mjs` runs a GM and two players, each loading the real module, over a simulated Foundry server (`tests/helpers/foundry-sim`). The `Checks` workflow runs the tests and both audits on every push and pull request.
 - Documentation in English, reviewed against the current code (guide, examples and architecture brought up to date): docs/gm-guide.md (was guide-mj.md), docs/configuration-examples.md (was exemples-configuration.md) and docs/architecture.md. docs/recette-foundry-v14.md is removed, and with it the manual Foundry gate of qa/release-readiness.mjs.
 - RWF Ruleset 2.6.0: in a pursuit each character keeps its own share of the gap; a pursuer's gap with its target is the sum of both shares (−3 caught, +3 the pursuer lost it). A pursuer's move changes only its own gap; a fugitive's move moves it away from all its pursuers.
 - RWF Ruleset 2.5.0: a pursuit gauge is the gap of a fugitive with its pursuers (−3 caught, +3 got away); a pursuer's move (input "sens" −1) narrows its target's gauge. At 0 Endurance a character is exhausted: Incapacité physique, applied automatically, until a long rest.

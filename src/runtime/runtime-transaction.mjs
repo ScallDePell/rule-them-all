@@ -54,6 +54,9 @@ export function applyLedgerChanges(state,changes,side="before"){
 /** CP-08 transaction: PREPARE (load/stage) -> VALIDATE (revisions, permissions) -> COMMIT -> ledger.
  * Foundry has no multi-document ACID: each container is written in one Document update
  * (state + ledger), and a failed write compensates the containers already written. */
+/** adapter -> its last commit, which the next one waits for. */
+const commits=new WeakMap();
+
 export class RuntimeTransaction{
   #adapter;#authorize;#prepare;#staged=new Map();
   /** authorize(ref, changes) throws when the business permission (CP-11) refuses a change. */
@@ -75,7 +78,14 @@ export class RuntimeTransaction{
     const ref=normalizeRuntimeContainerRef(containerRef);this.#staged.set(containerKey(ref),{ref,state,expected:expectedRevision,steps,part});return state;
   }
   get containers(){return [...this.#staged.values()].map(entry=>copyJSON(entry.ref));}
-  async commit(){
+  /** Commits on one adapter run one after the other: the revision check and the write of one cannot interleave with
+   * another's, so a second writer of the same container conflicts instead of overwriting the first. */
+  commit(){
+    const adapter=this.#adapter,run=(commits.get(adapter)??Promise.resolve()).then(()=>this.#commitNow());
+    commits.set(adapter,run.catch(()=>{}));
+    return run;
+  }
+  async #commitNow(){
     const adapter=this.#adapter,writes=[];
     for(const {ref,state,expected,steps=[],part=null} of this.#staged.values()){
       const current=await adapter.load(ref,{rulesetVersionId:this.rulesetVersionId}),ledger=await adapter.loadLedger(ref);
