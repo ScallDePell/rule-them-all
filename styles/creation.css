@@ -125,6 +125,11 @@
   min-inline-size: 0;
 }
 
+/* An option the player cannot tick: as many are ticked as the step allows. */
+.rta-creation__option:has(> input:disabled) {
+  opacity: .5;
+}
+
 .rta-creation__option > span {
   min-inline-size: 0;
   overflow: hidden;

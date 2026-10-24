@@ -3,7 +3,7 @@ import assert from 'node:assert/strict';
 import {createConfiguratorAPI} from '../src/configurator/configurator-api.mjs';
 import {emptyStorageSnapshot} from '../src/configurator/configurator-storage.mjs';
 import {CreationSessions, MemoryCreationSessionStore} from '../src/runtime/creation-sessions.mjs';
-import {creationView, renderCreationHTML, renderCreationStartHTML, readCreationAnswer, refreshSteppers, stepPoints} from '../src/ui/creation-markup.mjs';
+import {creationView, renderCreationHTML, renderCreationStartHTML, readCreationAnswer, refreshChoiceLimits, refreshSteppers, stepPoints} from '../src/ui/creation-markup.mjs';
 import {startableSystems, neighbourStep, createCreationWindow} from '../src/runtime/foundry-creation.mjs';
 class Storage{data=emptyStorageSnapshot();async load(){return structuredClone(this.data)}async save(data){this.data=structuredClone(data)}}
 const grant=(id,objectId)=>({id,operation:'grant',targetRef:{objectKind:'definition',objectId},config:{add:{'value.base':1}}});
@@ -40,7 +40,16 @@ test('From the first step to the review, as a player clicks through', async()=>{
   assert.deepEqual(view.step.options,[{id:'navy',label:'Navy brat',checked:false},{id:'colony',label:'Colonist',checked:false}]);
   assert.equal(view.step.boundsText,'Choose 1.');assert.deepEqual(view.step.errors,[],'no error before an answer');
   let html=renderCreationHTML(view,{t});
-  assert.match(html,/data-creation-single/);assert.match(html,/aria-current="step"/);assert.match(html,/data-creation-command="previous" disabled/);
+  assert.match(html,/data-creation-single/);assert.match(html,/aria-current="step"/);
+  // Two choices allowed: with two ticked, the others are disabled, and enabled again once one is unticked.
+  const two=renderCreationHTML({...view,step:{...view.step,bounds:{min:2,max:2},options:[{id:'a',label:'A',checked:true},{id:'b',label:'B',checked:true},{id:'c',label:'C',checked:false}]}},{t});
+  assert.match(two,/data-creation-max="2"/);assert.match(two,/value="c" disabled/);assert.doesNotMatch(two,/value="a"[^>]*disabled/);
+  const boxes=['a','b','c'].map((value,i)=>({value,checked:i<2,disabled:false}));
+  const list={dataset:{creationMax:'2'},querySelectorAll:()=>boxes};
+  refreshChoiceLimits({querySelectorAll:()=>[list]});
+  assert.deepEqual(boxes.map(box=>box.disabled),[false,false,true]);
+  boxes[0].checked=false;refreshChoiceLimits({querySelectorAll:()=>[list]});
+  assert.deepEqual(boxes.map(box=>box.disabled),[false,false,false]);assert.match(html,/data-creation-command="previous" disabled/);
   // Navy brat chosen: its own pick shows, and the answer read from the page carries it.
   await sessions.answer(id,'origin',{selectedIds:['navy']});await sessions.goTo(id,'origin');
   view=creationView(await sessions.context(id),ruleset(),t);

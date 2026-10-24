@@ -2,6 +2,10 @@
 
 ## Unreleased
 
+## 1.0.25
+
+- Character creation: a step or a choice that allows a given number of options (choose 2 skills) no longer lets the player tick more. Once that many are ticked, the other options are disabled until one is unticked. The number is the step's or the choice's maximum in the Ruleset.
+
 ## 1.0.24
 
 - A Game System that declares no Actor or Item subtype no longer stops character creation ("The active Game System exposes no Actor document type"): Rule Them'All then creates Actors and Items of Foundry's own `base` type.

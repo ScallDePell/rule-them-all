@@ -102,8 +102,20 @@ function summaryOf(step, ruleset, t) {
 
 const button = (command, label, {primary = false, disabled = false} = {}) => `<button type="button" data-creation-command="${command}"${primary ? ' class="rta-creation__primary"' : ""}${disabled ? " disabled" : ""}>${escape(label)}</button>`;
 
-function optionList(options, {name, extra = "", single}) {
-  return `<div class="rta-creation__options"${single ? " data-creation-single" : ""}>${options.map(option => `<label class="rta-creation__option"><input type="checkbox" ${name} value="${escape(option.id)}"${extra}${option.checked ? " checked" : ""}> <span>${escape(option.label)}</span></label>`).join("")}</div>`;
+/** max 1: ticking another option replaces the first. A greater max: once that many are ticked, the others are
+ * disabled until one is unticked (refreshChoiceLimits keeps it so as the player clicks). */
+function optionList(options, {name, extra = "", max}) {
+  const single = max === 1, limited = Number.isFinite(max) && max > 1, full = limited && options.filter(option => option.checked).length >= max;
+  const attributes = single ? " data-creation-single" : limited ? ` data-creation-max="${max}"` : "";
+  return `<div class="rta-creation__options"${attributes}>${options.map(option => `<label class="rta-creation__option"><input type="checkbox" ${name} value="${escape(option.id)}"${extra}${option.checked ? " checked" : full ? " disabled" : ""}> <span>${escape(option.label)}</span></label>`).join("")}</div>`;
+}
+
+/** Lists that allow a given number of options: the unticked ones are disabled once that many are ticked. */
+export function refreshChoiceLimits(root) {
+  for (const list of root.querySelectorAll("[data-creation-max]")) {
+    const boxes = [...list.querySelectorAll("input[type=checkbox]")], full = boxes.filter(box => box.checked).length >= Number(list.dataset.creationMax);
+    for (const box of boxes) box.disabled = full && !box.checked;
+  }
 }
 
 function panelHTML(step, t, {name = "", actorTypes = [], actorType = ""} = {}) {
@@ -111,10 +123,10 @@ function panelHTML(step, t, {name = "", actorTypes = [], actorType = ""} = {}) {
   if (step.skipped) parts.push(`<p class="rta-creation__hint">${escape(t("RTA.Creation.Skipped"))}</p>`);
   else if (step.options) {
     parts.push(`<p class="rta-creation__hint">${escape(step.boundsText)}</p>`);
-    parts.push(step.options.length ? optionList(step.options, {name: "data-creation-option", single: step.bounds.max === 1}) : `<p class="rta-creation__hint">${escape(t("RTA.Creation.NoOption"))}</p>`);
-    for (const group of step.groups) parts.push(`<fieldset class="rta-creation__group"><legend>${escape(group.label)}</legend><p class="rta-creation__hint">${escape(group.boundsText)}</p>${optionList(group.options, {name: "data-creation-choice", extra: ` data-template="${escape(group.templateId)}" data-group="${escape(group.id)}"`, single: group.max === 1})}</fieldset>`);
+    parts.push(step.options.length ? optionList(step.options, {name: "data-creation-option", max: step.bounds.max}) : `<p class="rta-creation__hint">${escape(t("RTA.Creation.NoOption"))}</p>`);
+    for (const group of step.groups) parts.push(`<fieldset class="rta-creation__group"><legend>${escape(group.label)}</legend><p class="rta-creation__hint">${escape(group.boundsText)}</p>${optionList(group.options, {name: "data-creation-choice", extra: ` data-template="${escape(group.templateId)}" data-group="${escape(group.id)}"`, max: group.max})}</fieldset>`);
   } else if (step.kind === "contentChoices") {
-    for (const group of step.groups) parts.push(`<fieldset class="rta-creation__group"><legend>${escape(group.label)}</legend><p class="rta-creation__hint">${escape(group.boundsText)}</p>${optionList(group.options, {name: "data-creation-choice", extra: ` data-template="${escape(group.templateId)}" data-group="${escape(group.id)}"`, single: group.max === 1})}</fieldset>`);
+    for (const group of step.groups) parts.push(`<fieldset class="rta-creation__group"><legend>${escape(group.label)}</legend><p class="rta-creation__hint">${escape(group.boundsText)}</p>${optionList(group.options, {name: "data-creation-choice", extra: ` data-template="${escape(group.templateId)}" data-group="${escape(group.id)}"`, max: group.max})}</fieldset>`);
   } else if (step.rows) {
     parts.push(`<p class="rta-creation__hint">${escape(step.boundsText)}${step.costed ? "" : ` <span data-creation-spent>${escape(format(t, "RTA.Creation.Spent", {count: step.spent}))}</span>`}</p>`);
     const stepper = (row, delta, label) => `<button type="button" class="rta-creation__stepper" data-creation-step="${delta}" aria-label="${escape(`${label} ${row.label}`)}">${delta < 0 ? "−" : "+"}</button>`;
