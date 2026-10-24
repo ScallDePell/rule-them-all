@@ -5,7 +5,7 @@
    duplicate, style brush, remove, undo, redo), the Layers tree, the selected block's settings and the palette; keyboard
    shortcuts do the same while the focus is not in a field. The tree is kept in a hidden field the entry collector reads
    ([data-sheet-layout-value]); every change fires an input event so the editor knows it is dirty. */
-import {LAYOUT_CLICKABLE, LAYOUT_COUNTED_DISPLAYS, LAYOUT_MAX_ROW_SPAN, LAYOUT_OVERLAYS, LAYOUT_SEPARATOR_LOOKS, LAYOUT_WIDTHS, TEXT_PLACEHOLDER, iconClasses, prepareLayout} from "./layout-contract.mjs";
+import {LAYOUT_CLICKABLE, LAYOUT_COUNTED_DISPLAYS, LAYOUT_MAX_ROW_SPAN, LAYOUT_VALUE_DISPLAYS, LAYOUT_OVERLAYS, LAYOUT_SEPARATOR_LOOKS, LAYOUT_WIDTHS, TEXT_PLACEHOLDER, iconClasses, prepareLayout} from "./layout-contract.mjs";
 import {copyToClipboard, pasteBlock, readClipboard, styleFor} from "./sheet-layout-clipboard.mjs";
 import {EACH_OUTPUTS, itemContentTypes, offeredInSheets, canMoveInto, canPlace, paletteGroups, paletteNode, childKinds, columnsOf, contentFields, defaultValueLabel, insertNode, isContainer, locate, maxColumns, moveInto, moveNode, newNode, outputLabelKey, previewView, removeNode, repeaterOf, updateNode, writableSource} from "./sheet-layout-model.mjs";
 import {refToken, parseRefToken} from "./reference-token.mjs";
@@ -941,7 +941,7 @@ export class SheetLayoutController {
       sourceToken: source => this.#sourceToken(source),
       defaultLabel: n => n.kind === "action" ? r.actions?.find(a => a.id === n.actionRef)?.nameKey ?? "" : label.label || i18n(label.labelKey ?? ""),
       writable: node.kind === "value" && writableSource(node.source),
-      displays: ["field", "gauge", "dots", "boxes", "clock", ...(this.#describable(node) ? ["description"] : [])].map(value => ({value, label: i18n(`RTA.SheetEditor.Display.${value}`), colors: neutral})),
+      displays: LAYOUT_VALUE_DISPLAYS.filter(value => value !== "description" || this.#describable(node)).map(value => ({value, label: i18n(`RTA.SheetEditor.Display.${value}`), colors: neutral})),
       dotCounts: Array.from({length: 10}, (_, i) => ({value: String(i + 1), label: String(i + 1), colors: neutral})),
       numeric: node.kind === "value" && this.#numeric(node.source),
       labelPlaces: SHEET_LABELS.map(label => ({value: label, label: i18n(`RTA.SheetEditor.LabelPlace.${label}`), colors: neutral})),

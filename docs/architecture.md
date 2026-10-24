@@ -124,6 +124,8 @@ Hooks, all stable:
 
 ## 8. Checks
 
+The recipes for common changes, with the files each one touches, are in [CONTRIBUTING.md](../CONTRIBUTING.md).
+
 ```
 node --test tests/*.test.mjs
 node qa/architecture-audit.mjs --strict

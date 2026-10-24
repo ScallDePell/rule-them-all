@@ -42,7 +42,8 @@ The documentation is in French for now:
 
 - [GM guide](docs/gm-guide.md): installing, building a Ruleset, publishing it, sheets, character creation and play.
 - [Configuration examples](docs/configuration-examples.md), drawn from well-known games.
-- [Architecture](docs/architecture.md), for contributors.
+- [Architecture](docs/architecture.md), for contributors, with the public API other modules may rely on.
+- [Contributing](CONTRIBUTING.md): how to make the common changes (a Formula node, an Effect operation, a sheet block, a reference) and which checks to run.
 
 ## Exemples de rulesets
 
@@ -56,8 +57,10 @@ Ready-made Rulesets, kept out of the module zip. Download the `.json` file and i
 ```
 node --test tests/*.test.mjs
 node qa/architecture-audit.mjs --strict
-node qa/release-readiness.mjs
+node qa/release-readiness.mjs --strict
 ```
+
+The same checks run on every push and pull request (`.github/workflows/ci.yml`). See [CONTRIBUTING.md](CONTRIBUTING.md).
 
 Pushing a `v*` tag builds the release zip and its `module.json` (see `.github/workflows/release.yml`).
 

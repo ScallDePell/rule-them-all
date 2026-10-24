@@ -2,6 +2,7 @@
 
 ## Unreleased
 
+- CONTRIBUTING.md: recipes for adding a Formula node, an Effect operation, a sheet block option and a reference between entries, with the files to change and the checks to run. The sheet editor offers the value displays of the layout contract (`LAYOUT_VALUE_DISPLAYS`) instead of its own list.
 - Public API contract: `game.ruleThemAll.apiVersion` (1.0.0) and `STABLE_API` in `module-contract.mjs` say what other modules may rely on; docs/architecture.md §6 marks each member stable or internal and gives the versioning rule (a breaking change raises the API major, with a "Breaking:" line here). `tests/public-api-contract.test.mjs` checks the module still provides every stable member, method and hook.
 - Dependencies: an Action's per-result Effects and the Outcome each result answers, and the Definition Type a reference field is limited to, are now dependencies (they could be deleted while in use, and a part exported without them). Deleting a Die can be analysed again ("Unknown object kind: die"), and a Die a Roll throws counts as used there too.
 - Contract tests: `tests/contract-completeness.test.mjs` checks that every reference of the shipped Rulesets is a dependency, that every object kind resolves to its collection the same way everywhere, that Formula nodes are in the visual editor (or listed as API-only), that operations, operand kinds, value types and capabilities have their words in both languages, and that export/import and the repair keep current data unchanged.
