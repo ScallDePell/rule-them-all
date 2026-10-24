@@ -3389,6 +3389,72 @@
           "day": "{amount} jour(s)",
           "untilEvent": "Jusqu'à un évènement"
         }
+      },
+      "Title": "Assistant",
+      "Intro": "Choisissez à gauche la règle à construire. L'assistant pose quelques questions, montre ce qu'il va créer, réutiliser ou compléter, puis écrit tout d'un coup quand vous appliquez. Il ne modifie ni ne supprime jamais ce qui existe déjà.",
+      "Paths": "Parcours",
+      "Search": "Rechercher une règle…",
+      "Group": {
+        "core": "Bases",
+        "systems": "Systèmes de jeu",
+        "bricks": "Briques"
+      },
+      "ReadOnly": "Cette version est validée : l'assistant peut la montrer mais pas la compléter. Créez une nouvelle version pour la modifier.",
+      "Preview": "Ce que l'assistant va faire",
+      "Apply": "Appliquer",
+      "Applied": "Assistant : {count} entrée(s) créée(s).",
+      "AppliedIntro": "C'est écrit. Ouvrez une entrée pour l'ajuster, ou essayez la règle tout de suite.",
+      "TryLab": "Essayer les règles",
+      "Again": "Construire une autre règle",
+      "Stale": "Le Ruleset a changé depuis ce plan (une autre fenêtre ou un autre MJ). Vérifiez le plan à nouveau puis appliquez.",
+      "Invalid": "Le plan a encore des erreurs : corrigez les réponses signalées.",
+      "CreateNew": "Créer : {path}",
+      "Word": {
+        "Choose": "Choisir…",
+        "None": "Aucun",
+        "Add": "Ajouter une ligne",
+        "Remove": "Retirer la ligne",
+        "Existing": "Existant",
+        "Enable": "Utiliser",
+        "Errors": "À corriger",
+        "Created": "Créé",
+        "Reused": "Réutilisé",
+        "Added": "Complété",
+        "Filled": "Renseigné",
+        "Warnings": "À compléter avant de publier",
+        "Nothing": "Rien à faire pour l'instant : répondez aux questions."
+      },
+      "Error": {
+        "MISSING": "Réponse requise",
+        "TYPE": "Réponse invalide",
+        "RANGE": "Hors des limites",
+        "OPTION": "Choix inconnu",
+        "DICE": "Formule de dés invalide",
+        "FORMULA": "Calcul invalide",
+        "NOT_FOUND": "Entrée introuvable",
+        "NOT_ACCEPTED": "Cette entrée ne convient pas ici",
+        "TOO_MANY": "Trop de lignes",
+        "DEPTH": "Trop de niveaux imbriqués",
+        "ID_TAKEN": "Identifiant déjà pris",
+        "BUILD": "Construction impossible",
+        "ADD_TARGET": "Impossible de compléter cette entrée",
+        "FILL_TARGET": "Impossible de renseigner ce champ",
+        "ALREADY_SET": "Déjà renseigné : l'assistant ne remplace rien",
+        "INVALID": "Le résultat ne serait pas valide"
+      },
+      "Field": {
+        "costEffectRefs": "Coûts",
+        "conditionRefs": "Conditions",
+        "effectRefs": "Effets",
+        "stateRemovals": "États retirés",
+        "variants": "Autres dés selon une condition",
+        "extraRolls": "Dés ou bonus en plus",
+        "steps": "Étapes",
+        "advancements": "Progressions",
+        "milestones": "Paliers",
+        "scaleRef": "Échelle descriptive",
+        "initiative": "Initiative",
+        "initiative_defeatedConditionRef": "Initiative : hors de combat"
       }
     }
   }

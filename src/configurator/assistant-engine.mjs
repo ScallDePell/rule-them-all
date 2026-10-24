@@ -133,7 +133,9 @@ class AnswerReader {
       const sub = this.path(question.create);
       if (!sub) return fail("NOT_ACCEPTED", "this question only uses existing entries");
       if (depth >= ASSISTANT_LIMITS.depth) return fail("DEPTH");
-      return {create: this.read(sub, item.create, `${where}.create`, depth + 1), path: sub.id};
+      // Answers the question imposes on what it creates (a type of the capability it needs) win over the GM's.
+      const imposed = Object.fromEntries((question.fixed ?? []).map(key => [key, question.default?.create?.[key]]));
+      return {create: this.read(sub, {...item.create, ...imposed}, `${where}.create`, depth + 1), path: sub.id};
     }
     return fail("TYPE", "{use} or {create}");
   }
@@ -314,7 +316,7 @@ export function describeAssistantPath(ruleset, pathId, answers = {}, {paths, tex
   const describe = (question, keyAt, values, answer) => {
     const view = {id: question.id, kind: question.kind, labelKey: labelOf(path.id, keyAt, question), required: question.required !== false};
     if (question.kind === "choice") view.options = question.options.map(option => ({value: optionValue(option), labelKey: optionLabelOf(path.id, keyAt, option)}));
-    if (question.kind === "entry" || question.kind === "entries") { view.accept = copyJSON(question.accept); view.choices = entryChoices(ruleset, question.accept); view.create = question.create ?? null; }
+    if (question.kind === "entry" || question.kind === "entries") { view.accept = copyJSON(question.accept); view.choices = entryChoices(ruleset, question.accept); view.create = question.create ?? null; view.fixed = [...(question.fixed ?? [])]; }
     if (question.kind === "event") view.choices = eventChoices(ruleset);
     if (question.kind === "list") {
       view.fields = question.fields.map(field => describe(field, `${keyAt}.Field.${field.id}`, {}, undefined));

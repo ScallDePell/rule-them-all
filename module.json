@@ -41,6 +41,7 @@
     "styles/editor.css",
     "styles/choices.css",
     "styles/rule-builder.css",
+    "styles/assistant.css",
     "styles/select.css"
   ],
   "languages": [

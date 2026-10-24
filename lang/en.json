@@ -3389,6 +3389,72 @@
           "day": "{amount} day(s)",
           "untilEvent": "Until an event"
         }
+      },
+      "Title": "Assistant",
+      "Intro": "Choose on the left the rule to build. The assistant asks a few questions, shows what it will create, reuse or complete, then writes it all at once when you apply. It never changes or removes what already exists.",
+      "Paths": "Paths",
+      "Search": "Search for a rule…",
+      "Group": {
+        "core": "Basics",
+        "systems": "Game systems",
+        "bricks": "Building blocks"
+      },
+      "ReadOnly": "This version is validated: the assistant can show it but not complete it. Create a new version to change it.",
+      "Preview": "What the assistant will do",
+      "Apply": "Apply",
+      "Applied": "Assistant: {count} entry(ies) created.",
+      "AppliedIntro": "Done. Open an entry to adjust it, or try the rule right away.",
+      "TryLab": "Try the rules",
+      "Again": "Build another rule",
+      "Stale": "The Ruleset changed since this plan (another window or GM). Check the plan again, then apply.",
+      "Invalid": "The plan still has errors: fix the answers shown.",
+      "CreateNew": "Create: {path}",
+      "Word": {
+        "Choose": "Choose…",
+        "None": "None",
+        "Add": "Add a row",
+        "Remove": "Remove the row",
+        "Existing": "Existing",
+        "Enable": "Use",
+        "Errors": "To fix",
+        "Created": "Created",
+        "Reused": "Reused",
+        "Added": "Completed",
+        "Filled": "Filled in",
+        "Warnings": "To complete before publishing",
+        "Nothing": "Nothing to do yet: answer the questions."
+      },
+      "Error": {
+        "MISSING": "Answer required",
+        "TYPE": "Invalid answer",
+        "RANGE": "Out of range",
+        "OPTION": "Unknown choice",
+        "DICE": "Invalid dice formula",
+        "FORMULA": "Invalid calculation",
+        "NOT_FOUND": "Entry not found",
+        "NOT_ACCEPTED": "This entry does not fit here",
+        "TOO_MANY": "Too many rows",
+        "DEPTH": "Too many nested levels",
+        "ID_TAKEN": "Id already taken",
+        "BUILD": "Cannot build",
+        "ADD_TARGET": "Cannot complete this entry",
+        "FILL_TARGET": "Cannot fill this field",
+        "ALREADY_SET": "Already set: the assistant replaces nothing",
+        "INVALID": "The result would not be valid"
+      },
+      "Field": {
+        "costEffectRefs": "Costs",
+        "conditionRefs": "Conditions",
+        "effectRefs": "Effects",
+        "stateRemovals": "Conditions removed",
+        "variants": "Other dice under a condition",
+        "extraRolls": "Extra dice or bonus",
+        "steps": "Steps",
+        "advancements": "Advancements",
+        "milestones": "Milestones",
+        "scaleRef": "Descriptive scale",
+        "initiative": "Initiative",
+        "initiative_defeatedConditionRef": "Initiative: defeated"
       }
     }
   }

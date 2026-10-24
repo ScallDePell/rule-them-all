@@ -16,6 +16,7 @@ import {openContextMenu} from "../ui/context-menu.mjs";
 import {entryDeletionView,deleteRulesetEntry} from "./entry-deletion.mjs";
 import {ConfiguratorWindow} from "./configurator-window.mjs";
 import {ConfiguratorEntryEditor} from "./configurator-entry-editor.mjs";
+import {AssistantApp} from "./assistant-app.mjs";
 import {buildRuntimeLabDemoProfile} from "../runtime/runtime-demo-profile.mjs";
 import {applyRuntimeChoice,describeRuntimeResult,progressionLabRows} from "./runtime-lab-view.mjs";
 import {diagnosticEditor,pathInObject} from "./diagnostic-focus.mjs";
@@ -176,7 +177,7 @@ export class ConfiguratorApp extends ConfiguratorWindow {
         {view:'contentTypes',title:label('RTA.Nav.ContentTypes'),active:this.#view==='contentTypes'},
         ...contentTypes.map(type=>({view:`content:${type.id}`,title:type.name,active:type.active,color:type.color}))
       ];
-      else if(section.id==='tools')items=[...TOP_LEVEL.filter(item=>item.collection==='tags').map(item=>({...item,title:label(item.titleKey),active:this.#view===item.view})),{view:'runtimeLab',title:label('RTA.Nav.RuntimeLab'),active:this.#view==='runtimeLab'},{view:'dependencies',title:label('RTA.Nav.Dependencies'),active:this.#view==='dependencies'}];
+      else if(section.id==='tools')items=[{view:'assistant',title:label('RTA.Assistant.Title'),active:false},...TOP_LEVEL.filter(item=>item.collection==='tags').map(item=>({...item,title:label(item.titleKey),active:this.#view===item.view})),{view:'runtimeLab',title:label('RTA.Nav.RuntimeLab'),active:this.#view==='runtimeLab'},{view:'dependencies',title:label('RTA.Nav.Dependencies'),active:this.#view==='dependencies'}];
       else if(section.groups)items=section.groups.flatMap(group=>TOP_LEVEL.filter(item=>group.collections.includes(item.collection))
           .sort((a,b)=>group.collections.indexOf(a.collection)-group.collections.indexOf(b.collection))
           .map((item,index)=>({...item,title:label(item.titleKey),active:this.#view===item.view,groupTitle:index===0?label(group.titleKey):""})));
@@ -506,6 +507,16 @@ export class ConfiguratorApp extends ConfiguratorWindow {
     if (area) this.#scroll.set(this.#view,{top:area.scrollTop,left:area.scrollLeft});
   }
 
+  /** The assistant of the open Ruleset, in its own window; what it writes shows here at once. */
+  async #openAssistant() {
+    const api=await this.#api(),versionId=this.#selected;
+    if(this.assistant?.rendered&&this.assistant.versionId===versionId)return this.assistant.bringToFront?.();
+    this.assistant?.close?.();
+    this.assistant=new AssistantApp({api,versionId,onApplied:()=>this.render(false),onOpenEntry:(kind,id)=>this.#openEditor(kind,id),
+      onTryLab:()=>{this.#view="runtimeLab";this.bringToFront?.();return this.render(false);}});
+    return this.assistant.render(true);
+  }
+
   async #openEditor(kind,id=null,extra={}) {
     this.entryEditor?.close?.();this.#editorTarget=`${kind}|${id}`;
     this.entryEditor = new ConfiguratorEntryEditor({api:await this.#api(),versionId:this.#selected,kind,id,...extra,onSaved:async result=>{
@@ -713,6 +724,7 @@ export class ConfiguratorApp extends ConfiguratorWindow {
       if (action==="openWorkspace") { this.#partSelection.clear(); this.#selected=button.dataset.versionId; this.#view="general"; await game.settings?.set(MODULE_ID,"configuratorSelectedRuleset",this.#selected); return this.render(false); }
       if (action==="backToRulesets") { this.#partSelection.clear(); this.#selected=""; this.#view="general"; await game.settings?.set(MODULE_ID,"configuratorSelectedRuleset",""); return this.render(false); }
       if (action==="navGroup") { const panel=this.element?.querySelector("[data-nav-panel]"); if(panel&&!panel.hidden&&button.getAttribute("aria-expanded")==="true")this._rtaNav?.dismiss();else this._rtaNav?.open(button.dataset.group); return; }
+      if (action==="navigate"&&button.dataset.view==="assistant") return this.#openAssistant();
       if (action==="navigate") { this.#rememberScroll(); this.#view=button.dataset.view; this.#restoreScroll=true; return this.render(false); }
       if (action==="closeConfigurator") return this.close();
       if (action==="addRuleset") return this.#openEditor("ruleset");

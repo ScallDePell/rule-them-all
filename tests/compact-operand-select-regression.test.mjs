@@ -6,7 +6,7 @@ const file=name=>readFileSync(new URL('../'+name,import.meta.url),'utf8');
 const js=file('src/ui/rta-select.mjs');
 const css=readCssBundle();
 const hbs=file('templates/configurator/entry-editor.hbs');
-const editor=file('src/configurator/configurator-entry-editor.mjs');
+const editor=file('src/configurator/expression-builder-controller.mjs');
 const markup=file('src/ui/expression-builder-markup.mjs');
 
 test('Formula and Condition keep the ONE RTA Select without adding a nested grid',()=>{

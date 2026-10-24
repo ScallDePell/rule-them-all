@@ -40,7 +40,7 @@ const formulaOf = (ctx, expression, name, resultType = "number") => ctx.findWher
   ?? ctx.add("formulas", {id: ctx.newId(name), nameKey: name, resultType, expression});
 const conditionOf = (ctx, expression, name) => ctx.findWhere("conditions", entry => ctx.same(entry.expression, expression))?.id
   ?? ctx.add("conditions", {id: ctx.newId(name), nameKey: name, expression});
-const typeQuestion = (pathId, capability, textKey) => ({id: "type", kind: "entry", accept: {collection: "definitionTypes", capability}, create: "definitionType", default: {create: {name: proposed(pathId, textKey), capability}}});
+const typeQuestion = (pathId, capability, textKey) => ({id: "type", kind: "entry", accept: {collection: "definitionTypes", capability}, create: "definitionType", fixed: ["capability"], default: {create: {name: proposed(pathId, textKey), capability}}});
 const nameQuestion = (pathId, textKey) => ({id: "name", kind: "name", ...(textKey ? {default: proposed(pathId, textKey)} : {})});
 const ROLES = ["target", "self"];
 const DURATIONS = ["untilRemoved", "round", "turn", "minute", "hour", "day", "untilEvent"];
@@ -173,7 +173,7 @@ const tableBrick = {
   id: "table", group: "bricks", keywords: ["table", "random", "critical", "location"], produces: {collection: "tables"},
   questions: [
     nameQuestion("table"),
-    {id: "dice", kind: "dice", default: "1d100"},
+    {id: "dice", kind: "dice"},
     {id: "bonus", kind: "formula", required: false},
     {id: "rows", kind: "list", min: 1, fields: [
       {id: "label", kind: "text"}, {id: "min", kind: "integer", required: false}, {id: "max", kind: "integer", required: false},
@@ -245,7 +245,7 @@ const characteristics = {
     typeQuestion("characteristics", "value", "Type"),
     {id: "items", kind: "list", min: 1, fields: [{id: "name", kind: "name"}]},
     {id: "modifier", kind: "choice", options: ["none", "halfMinusTen"], default: "none"},
-    {id: "modifierType", kind: "entry", accept: {collection: "definitionTypes", capability: "value"}, create: "definitionType", visible: v => v.modifier !== "none",
+    {id: "modifierType", kind: "entry", accept: {collection: "definitionTypes", capability: "value"}, create: "definitionType", fixed: ["capability"], visible: v => v.modifier !== "none",
       default: {create: {name: proposed("characteristics", "ModifierType"), capability: "value"}}}
   ],
   texts: ["Type", "ModifierType", "Modifier"],
@@ -291,7 +291,7 @@ const derivedValue = {
   questions: [
     {id: "target", kind: "choice", options: ["new", "existing"], default: "new"},
     {id: "name", kind: "name", visible: v => v.target === "new"},
-    {id: "type", kind: "entry", accept: {collection: "definitionTypes", capability: "value"}, create: "definitionType", visible: v => v.target === "new",
+    {id: "type", kind: "entry", accept: {collection: "definitionTypes", capability: "value"}, create: "definitionType", fixed: ["capability"], visible: v => v.target === "new",
       default: {create: {name: proposed("derivedValue", "Type"), capability: "value"}}},
     {id: "existing", kind: "entry", accept: {collection: "definitions", capability: "value"}, visible: v => v.target === "existing"},
     {id: "expression", kind: "formula"}
@@ -312,7 +312,7 @@ const resource = {
   questions: [
     nameQuestion("resource"), typeQuestion("resource", "pool", "Type"),
     {id: "maximum", kind: "choice", options: ["fixed", "formula"], default: "fixed"},
-    {id: "maxValue", kind: "number", default: 10, visible: v => v.maximum === "fixed"},
+    {id: "maxValue", kind: "number", visible: v => v.maximum === "fixed"},
     {id: "maxFormula", kind: "formula", visible: v => v.maximum === "formula"},
     {id: "minimum", kind: "number", default: 0},
     {id: "initial", kind: "choice", options: ["maximum", "minimum"], default: "maximum"},
@@ -333,11 +333,11 @@ const testPath = {
   id: "test", group: "core", keywords: ["test", "check", "roll", "saving throw", "difficulty", "opposed"], produces: {collection: "tests"},
   questions: [
     nameQuestion("test"),
-    {id: "dice", kind: "dice", default: "1d20"},
+    {id: "dice", kind: "dice"},
     {id: "bonus", kind: "formula", required: false},
     {id: "target", kind: "choice", options: ["asked", "fixed", "formula", "opposed", "none"], default: "asked"},
-    {id: "targetValue", kind: "number", default: 10, visible: v => v.target === "fixed"},
-    {id: "askedDefault", kind: "number", default: 10, visible: v => v.target === "asked"},
+    {id: "targetValue", kind: "number", visible: v => v.target === "fixed"},
+    {id: "askedDefault", kind: "number", required: false, visible: v => v.target === "asked"},
     {id: "targetFormula", kind: "formula", visible: v => v.target === "formula"},
     {id: "opposed", kind: "entry", accept: {collection: "tests"}, visible: v => v.target === "opposed"},
     {id: "success", kind: "choice", options: ["atLeast", "above", "atMost", "below"], default: "atLeast", visible: v => v.target !== "none"},
@@ -358,9 +358,10 @@ const testPath = {
     if (v.target === "asked") {
       // The difficulty is asked when the Action is used, and passed to the Test as its input.
       const asked = formulaOf(ctx, ctxNode("variables.input.difficulty"), ctx.shared("AskedDifficulty"));
-      test.inputBindings.push({id: "difficulty", valueType: "number", required: true, source: {formulaRef: asked}, defaultValue: v.askedDefault});
+      const proposed = v.askedDefault !== undefined ? {defaultValue: v.askedDefault} : {};
+      test.inputBindings.push({id: "difficulty", valueType: "number", required: true, source: {formulaRef: asked}, ...proposed});
       test.targetFormulaRef = formulaOf(ctx, ctxNode("variables.test.inputs.difficulty"), ctx.shared("TestDifficulty"));
-      inputs.push({id: "difficulty", labelKey: ctx.shared("DifficultyInput"), valueType: "number", required: true, defaultValue: v.askedDefault});
+      inputs.push({id: "difficulty", labelKey: ctx.shared("DifficultyInput"), valueType: "number", required: true, ...proposed});
     }
     const outcome = (key, expression) => {
       const outcomeName = `${name} : ${ctx.shared(`Result.${key}`)}`;
@@ -389,7 +390,7 @@ const attack = {
     nameQuestion("attack"),
     {id: "test", kind: "entry", accept: {collection: "tests"}, create: "test", default: {create: {name: proposed("attack", "Test"), target: "formula", action: false}}},
     {id: "hits", kind: "entries", required: false, accept: {collection: "outcomes"}, visible: v => Boolean(v.test?.use)},
-    {id: "damage", kind: "dice", default: "1d6"},
+    {id: "damage", kind: "dice"},
     {id: "damageBonus", kind: "formula", required: false},
     {id: "damageTarget", kind: "entry", accept: {collection: "definitions", capability: "pool"}, create: "resource"},
     {id: "criticalDouble", kind: "boolean", default: true},
@@ -480,10 +481,10 @@ const consumable = {
   id: "consumable", group: "core", keywords: ["consumable", "potion", "charges", "doses"], produces: {collection: "actions"},
   questions: [
     nameQuestion("consumable"), typeQuestion("consumable", "pool", "Type"),
-    {id: "doses", kind: "integer", min: 1, default: 3},
+    {id: "doses", kind: "integer", min: 1},
     {id: "effectTarget", kind: "entry", accept: {collection: "definitions"}, create: "resource"},
     {id: "operation", kind: "choice", options: ["add", "subtract", "set"], default: "add"},
-    {id: "amount", kind: "formula", default: 4}
+    {id: "amount", kind: "formula"}
   ],
   texts: ["Type", "Doses", "HasDose", "UseDose", "Effect", "Use"],
   build(ctx) {
@@ -504,7 +505,7 @@ const level = {
     nameQuestion("level", "Level"), typeQuestion("level", "value", "Type"),
     {id: "experience", kind: "entry", accept: {collection: "definitions", capability: "value"}, create: "value", default: {create: {name: proposed("level", "Experience")}}},
     {id: "rule", kind: "choice", options: ["perLevel", "table"], default: "perLevel"},
-    {id: "perLevel", kind: "number", min: 1, default: 1000, visible: v => v.rule === "perLevel"},
+    {id: "perLevel", kind: "number", min: 1, visible: v => v.rule === "perLevel"},
     {id: "thresholds", kind: "list", min: 1, visible: v => v.rule === "table", fields: [{id: "level", kind: "integer"}, {id: "experience", kind: "number"}]},
     {id: "award", kind: "boolean", default: true}
   ],
@@ -550,9 +551,9 @@ const advantage = {
     {id: "tests", kind: "entries", min: 1, accept: {collection: "tests"}},
     {id: "when", kind: "entry", accept: {collection: "conditions"}, create: "condition"},
     {id: "effect", kind: "choice", options: ["advantage", "disadvantage", "extraDie", "bonus", "malus"], default: "advantage"},
-    {id: "dice", kind: "dice", visible: v => ["advantage", "disadvantage"].includes(v.effect), default: v => v.effect === "disadvantage" ? "2d20kl" : "2d20kh"},
-    {id: "extraDice", kind: "dice", default: "1d4", visible: v => v.effect === "extraDie"},
-    {id: "amount", kind: "integer", min: 1, default: 2, visible: v => ["bonus", "malus"].includes(v.effect)}
+    {id: "dice", kind: "dice", visible: v => ["advantage", "disadvantage"].includes(v.effect)},
+    {id: "extraDice", kind: "dice", visible: v => v.effect === "extraDie"},
+    {id: "amount", kind: "integer", min: 1, visible: v => ["bonus", "malus"].includes(v.effect)}
   ],
   build(ctx) {
     const v = ctx.values, when = ctx.entry(v.when).id, tests = v.tests.map(answer => ctx.entry(answer).id);
@@ -603,7 +604,7 @@ const power = {
     {id: "resolution", kind: "choice", options: ["attack", "save", "automatic", "heal", "state", "utility"], default: "attack"},
     {id: "test", kind: "entry", accept: {collection: "tests"}, create: "test", visible: v => ["attack", "save"].includes(v.resolution)},
     {id: "hits", kind: "entries", required: false, accept: {collection: "outcomes"}, visible: v => ["attack", "save"].includes(v.resolution) && Boolean(v.test?.use)},
-    {id: "dice", kind: "dice", default: "1d6", visible: v => ["attack", "save", "automatic", "heal"].includes(v.resolution)},
+    {id: "dice", kind: "dice", visible: v => ["attack", "save", "automatic", "heal"].includes(v.resolution)},
     {id: "target", kind: "entry", accept: {collection: "definitions", capability: "pool"}, create: "resource", visible: v => ["attack", "save", "automatic", "heal"].includes(v.resolution)},
     {id: "halfOnMiss", kind: "boolean", default: true, visible: v => v.resolution === "save"},
     {id: "state", kind: "entry", accept: {collection: "definitions", capability: "state"}, create: "state", visible: v => v.resolution === "state"},
@@ -613,7 +614,7 @@ const power = {
     {id: "role", kind: "choice", options: ROLES, default: "target"},
     {id: "levels", kind: "boolean", default: false},
     {id: "levelMin", kind: "integer", default: 1, visible: v => v.levels},
-    {id: "levelMax", kind: "integer", default: 9, visible: v => v.levels},
+    {id: "levelMax", kind: "integer", visible: v => v.levels},
     {id: "cost", kind: "entry", required: false, accept: {collection: "definitions", capability: "pool"}, create: "resource"},
     {id: "costAmount", kind: "number", min: 0, default: 1, visible: v => Boolean(v.cost)}
   ],
@@ -761,7 +762,7 @@ const creation = {
       {id: "definitions", kind: "entries", min: 1, accept: {collection: "definitions"}, visible: row => ["allocation", "choice"].includes(row.kind)},
       {id: "min", kind: "integer", min: 0, default: 1, visible: row => ["content", "choice"].includes(row.kind)},
       {id: "max", kind: "integer", min: 0, default: 1, visible: row => ["content", "choice"].includes(row.kind)},
-      {id: "points", kind: "integer", min: 0, default: 10, visible: row => row.kind === "allocation"},
+      {id: "points", kind: "integer", min: 0, visible: row => row.kind === "allocation"},
       {id: "perTargetMax", kind: "integer", min: 0, required: false, visible: row => row.kind === "allocation"}
     ]}
   ],

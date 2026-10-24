@@ -51,7 +51,7 @@ test('Assistant: a skeleton built only with paths publishes and plays an attack'
   await apply('derivedValue',{name:'Défense',expression:{type:'add',args:[{type:'literal',value:10},{type:'reference',reference:{objectKind:'definition',objectId:'agilite',capabilityId:'value',outputId:'value.final'}}]}});
   await apply('resource',{name:'Vitalité',maxValue:12});
   const attack=await apply('attack',{name:'Coup d\'épée',
-    test:{create:{name:'Attaque de mêlée',bonus:{type:'formula',id:'bonus-melee'},target:'formula',targetFormula:{type:'reference',container:'target',reference:{objectKind:'definition',objectId:'defense',capabilityId:'value',outputId:'value.final'}},critical:20}},
+    test:{create:{name:'Attaque de mêlée',dice:'1d20',bonus:{type:'formula',id:'bonus-melee'},target:'formula',targetFormula:{type:'reference',container:'target',reference:{objectKind:'definition',objectId:'defense',capabilityId:'value',outputId:'value.final'}},critical:20}},
     damage:'1d8',damageBonus:2,damageTarget:{use:'vitalite'}});
   assert.equal(attack.main.collection,'actions');
   assert.deepEqual(attack.reused.map(x=>x.id),['vitalite']);
@@ -93,7 +93,7 @@ test('Assistant: a skill linked to an existing characteristic does not create it
 
 test('Assistant: answers to questions the GM no longer sees are left out', async()=>{
   const {api,v,apply}=await setup();
-  const result=await apply('test',{name:'Perception',target:'fixed',targetValue:12,askedDefault:15,targetFormula:{type:'literal',value:99}});
+  const result=await apply('test',{name:'Perception',dice:'1d20',target:'fixed',targetValue:12,askedDefault:15,targetFormula:{type:'literal',value:99}});
   const created=api.getRuleset(v).tests.find(t=>t.id===result.main.id);
   assert.equal(created.targetValue,12);
   assert.equal(created.targetFormulaRef,null);
@@ -104,7 +104,7 @@ test('Assistant: answers to questions the GM no longer sees are left out', async
 
 test('Assistant: invalid answers are refused with their path, and nothing is written', async()=>{
   const {api,v,apply,storage}=await setup();
-  await apply('resource',{name:'Vitalité'});
+  await apply('resource',{name:'Vitalité',maxValue:10});
   const saves=storage.saves;
   const plan=api.planAssistant(v,'attack',{name:'Coup',test:{use:'absent'},damage:'1d6+',damageTarget:{use:'vitalite',slotId:'nope'}});
   assert.equal(plan.valid,false);
@@ -139,8 +139,8 @@ test('Assistant: a validated version cannot be changed', async()=>{
 
 test('Assistant: applying a path twice keeps ids unique', async()=>{
   const {api,v,apply}=await setup();
-  await apply('consumable',{name:'Potion',effectTarget:{create:{name:'Vitalité',maxValue:12}}});
-  await apply('consumable',{name:'Potion',effectTarget:{use:'vitalite'}});
+  await apply('consumable',{name:'Potion',doses:3,amount:4,effectTarget:{create:{name:'Vitalité',maxValue:12}}});
+  await apply('consumable',{name:'Potion',doses:3,amount:4,effectTarget:{use:'vitalite'}});
   const ids=api.getRuleset(v).actions.map(a=>a.id);
   assert.equal(new Set(ids).size,ids.length);
   assert.equal(api.getRuleset(v).definitions.filter(d=>d.nameKey==='Potion').length,2);
@@ -204,12 +204,12 @@ test('Assistant: encumbrance compares the load with a capacity Formula', async()
 
 test('Assistant: advantage, a bonus die and a flat malus are added to existing Tests', async()=>{
   const {api,v,apply}=await setup();
-  const t=await apply('test',{name:'Discrétion',target:'fixed',targetValue:15});
+  const t=await apply('test',{name:'Discrétion',dice:'1d20',target:'fixed',targetValue:15});
   await apply('state',{name:'Invisible',applyAction:false,removeAction:false});
   await apply('state',{name:'Béni',applyAction:false,removeAction:false});
   const invisible=await apply('condition',{name:'Est invisible',expression:{type:'reference',reference:{objectKind:'definition',objectId:'invisible',capabilityId:'state',outputId:'state.active'}}});
   const blessed=await apply('condition',{name:'Est béni',expression:{type:'reference',reference:{objectKind:'definition',objectId:'beni',capabilityId:'state',outputId:'state.active'}}});
-  const added=await apply('advantage',{tests:[{use:t.main.id}],when:{use:invisible.main.id}});
+  const added=await apply('advantage',{tests:[{use:t.main.id}],when:{use:invisible.main.id},dice:'2d20kh'});
   assert.equal(added.added[0].field,'variants');
   await apply('advantage',{tests:[{use:t.main.id}],when:{use:blessed.main.id},effect:'extraDie',extraDice:'1d4'});
   const {engine,dice,hero}=await play(api,v),self={roles:{self:hero,target:hero}};
@@ -229,7 +229,7 @@ test('Assistant: damage types give a factor that halves damage on a resistant ta
   const result=await apply('power',{name:'Trait de feu',resolution:'automatic',dice:'2d6',target:{use:'vitalite'}});
   const effect=api.getRuleset(v).effects.find(e=>api.getRuleset(v).actions.find(a=>a.id===result.main.id).effectRefs.includes(e.id));
   assert.ok(factor&&effect);
-  const resisted=await apply('attack',{name:'Torche',test:{create:{name:'Coup de torche',target:'fixed',targetValue:0}},damage:'2d6',damageTarget:{use:'vitalite'},factor:{use:factor.id},criticalDouble:false});
+  const resisted=await apply('attack',{name:'Torche',test:{create:{name:'Coup de torche',dice:'1d20',target:'fixed',targetValue:0}},damage:'2d6',damageTarget:{use:'vitalite'},factor:{use:factor.id},criticalDouble:false});
   const {engine,foe,context}=await play(api,v);
   await engine.setDefinitionState(v,foe,named(api,v,'definitions','Résistance : Feu').id,{active:true});
   await engine.executeAction(v,resisted.main.id,context);
@@ -239,7 +239,7 @@ test('Assistant: damage types give a factor that halves damage on a resistant ta
 test('Assistant: a save-based power deals half on a failed attempt, and a power can cost a resource', async()=>{
   const {api,v,apply}=await setup();
   await apply('resource',{name:'Vitalité',maxValue:20});
-  const result=await apply('power',{name:'Boule de feu',resolution:'save',test:{create:{name:'Jet de sort',target:'fixed',targetValue:15}},dice:'4d6',target:{use:'vitalite'},
+  const result=await apply('power',{name:'Boule de feu',resolution:'save',test:{create:{name:'Jet de sort',dice:'1d20',target:'fixed',targetValue:15}},dice:'4d6',target:{use:'vitalite'},
     cost:{create:{name:'Mana',maxValue:3}},costAmount:2});
   const {engine,dice,hero,foe,context}=await play(api,v);
   dice.d20=16;await engine.executeAction(v,result.main.id,context);
@@ -254,7 +254,7 @@ test('Assistant: a save-based power deals half on a failed attempt, and a power 
 test('Assistant: a threshold applies and removes a state on its event, and can mark the defeated', async()=>{
   const {api,v,apply}=await setup();
   await apply('resource',{name:'Vitalité',maxValue:10});
-  await apply('initiative',{test:{create:{name:'Initiative',target:'none'}}});
+  await apply('initiative',{test:{create:{name:'Initiative',dice:'1d20',target:'none'}}});
   const result=await apply('threshold',{name:'Vitalité à zéro',watched:{use:'vitalite'},state:{create:{name:'Hors de combat',applyAction:false,removeAction:false}},event:'rta.combat.turn',defeated:true});
   assert.equal(api.getRuleset(v).initiative.defeatedConditionRef,result.main.id);
   const {engine,hero}=await play(api,v),self={roles:{self:hero,target:hero}};
@@ -317,7 +317,7 @@ test('Assistant: progression by spending a currency, and by level milestones', a
   assert.deepEqual([state.athletisme.capabilityStates.value.base,state.pratique.capabilityStates.value.base],[1,7]);
   const {api:api2,v:w,apply:apply2}=await setup();
   await apply2('state',{name:'Attaque supplémentaire',applyAction:false,removeAction:false});
-  const milestones=await apply2('progression',{mode:'milestones',level:{create:{}},milestones:[{level:5,grants:[{use:'attaque-supplementaire'}]}]});
+  const milestones=await apply2('progression',{mode:'milestones',level:{create:{perLevel:1000}},milestones:[{level:5,grants:[{use:'attaque-supplementaire'}]}]});
   assert.equal(api2.getRuleset(w).progressionSystems[0].milestones[0].definitionIds[0],'attaque-supplementaire');
   assert.equal(milestones.main.collection,'progressionSystems');
   assert.equal(api2.diagnoseRuleset(w,{scope:'publish'}).errors.length,0);
@@ -354,7 +354,7 @@ test('Assistant: every brick and system path publishes cleanly on its own', asyn
 
 test('Assistant: describing a path shows the questions its answers make visible, with their choices', async()=>{
   const {api,v,apply}=await setup();
-  await apply('resource',{name:'Vitalité'});
+  await apply('resource',{name:'Vitalité',maxValue:10});
   const ids=answers=>api.describeAssistantPath(v,'test',answers).questions.map(q=>q.id);
   assert.ok(ids({}).includes('askedDefault')&&!ids({}).includes('targetValue'));
   assert.ok(ids({target:'fixed'}).includes('targetValue'));
@@ -366,4 +366,21 @@ test('Assistant: describing a path shows the questions its answers make visible,
   const list=api.describeAssistantPath(v,'creation',{steps:[{kind:'allocation'},{kind:'content'}]}).questions.find(q=>q.id==='steps');
   assert.ok(list.rows[0].includes('points')&&!list.rows[0].includes('templates'));
   assert.ok(list.rows[1].includes('templates'));
+});
+
+test('Assistant window: the form shows what the plan is made of, and a type it creates keeps the capability it needs', async()=>{
+  const {api,v}=await setup();
+  const {assistantFormModel,answersOf}=await import('../src/configurator/assistant-view.mjs');
+  const t=key=>lookup(fr,key)??key,describe=(pathId,answers)=>api.describeAssistantPath(v,pathId,answers,{texts:texts(api)});
+  const form=assistantFormModel('state',{name:'Béni'},{describe,paths:ASSISTANT_PATHS,t,entryName:key=>key});
+  const type=form.fields.find(field=>field.path==='type');
+  assert.equal(type.create.selected,true,'no state type yet: one is created');
+  assert.ok(!type.sub.some(field=>field.path==='type.create.capability'),'its capability is not asked');
+  assert.deepEqual(form.answers.type.create,{name:'État',capability:'state'});
+  assert.deepEqual(answersOf(form.fields),form.answers);
+  const plan=api.planAssistant(v,'state',form.answers,{texts:texts(api)});
+  assert.equal(plan.valid,true,JSON.stringify(plan.errors));
+  // A GM's other capability is not taken: the question imposes it.
+  const forced=api.planAssistant(v,'state',{name:'Béni',type:{create:{name:'X',capability:'value'}}},{texts:texts(api)});
+  assert.equal(forced.valid,true,JSON.stringify(forced.errors));
 });

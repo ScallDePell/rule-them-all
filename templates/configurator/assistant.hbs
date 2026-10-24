@@ -1,0 +1,36 @@
+<section class="rta-configurator" data-assistant>
+<div class="rta-assistant">
+  <aside class="rta-assistant__paths" data-assistant-paths aria-label="{{localize 'RTA.Assistant.Paths'}}">
+    <label class="rta-assistant__search"><i class="fa-solid fa-magnifying-glass" aria-hidden="true"></i><input type="search" data-assistant-search placeholder="{{localize 'RTA.Assistant.Search'}}" aria-label="{{localize 'RTA.Assistant.Search'}}"></label>
+    {{#each groups}}
+      <section class="rta-assistant__group" data-path-group="{{id}}">
+        <h3>{{title}}</h3>
+        {{#each cards}}<button type="button" class="rta-assistant__card{{#if active}} is-active{{/if}}" data-action="choosePath" data-path-id="{{id}}" data-path-card data-search="{{search}}" {{#if active}}aria-current="true"{{/if}}><strong>{{title}}</strong><span>{{summary}}</span></button>{{/each}}
+      </section>
+    {{/each}}
+  </aside>
+  <main class="rta-assistant__main" data-assistant-main>
+    {{#if error}}<p class="rta-configurator__error" role="alert">{{error}}</p>{{/if}}
+    {{#if readOnly}}<p class="hint">{{localize "RTA.Assistant.ReadOnly"}}</p>{{/if}}
+    {{#if applied}}
+      <section class="rta-assistant__applied" role="status">
+        <h2><i class="fa-solid fa-circle-check" aria-hidden="true"></i> {{applied.title}}</h2>
+        <p>{{localize "RTA.Assistant.AppliedIntro"}}</p>
+        {{{applied.html}}}
+        <div class="rta-config-actions"><button type="button" data-action="tryLab"><i class="fa-solid fa-flask" aria-hidden="true"></i> {{localize "RTA.Assistant.TryLab"}}</button><button type="button" data-action="again"><i class="fa-solid fa-plus" aria-hidden="true"></i> {{localize "RTA.Assistant.Again"}}</button></div>
+      </section>
+    {{/if}}
+    {{#if path}}
+      <header class="rta-assistant__header"><h2>{{path.title}}</h2><p>{{path.summary}}</p><p class="hint"><i class="fa-solid fa-circle-info" aria-hidden="true"></i> {{path.limits}}</p></header>
+      <div class="rta-assistant__form" data-assistant-form>{{{formHTML}}}</div>
+      <section class="rta-assistant__preview" aria-live="polite">
+        <h3>{{localize "RTA.Assistant.Preview"}}</h3>
+        <div data-assistant-preview>{{{previewHTML}}}</div>
+        <div class="rta-config-actions"><button type="button" data-action="apply" {{#unless canApply}}disabled{{/unless}}><i class="fa-solid fa-check" aria-hidden="true"></i> {{localize "RTA.Assistant.Apply"}}</button></div>
+      </section>
+    {{else}}
+      {{#unless applied}}<section class="rta-assistant__intro"><h2>{{localize "RTA.Assistant.Title"}}</h2><p>{{localize "RTA.Assistant.Intro"}}</p></section>{{/unless}}
+    {{/if}}
+  </main>
+</div>
+</section>
