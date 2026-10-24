@@ -7,7 +7,9 @@ import {applyFieldContract} from "./field-output-contracts.mjs";
 import {assertValidRuleset} from "./configurator-validation.mjs";
 import {PREPARERS} from "./rule-contracts.mjs";
 import {prepareDefinitionSlots, prepareValueBounds} from "./capability-slots.mjs";
-import {planRecipe, RECIPES} from "./recipes.mjs";
+import {planAssistant, describeAssistantPath, assistantPathTextKeys} from "./assistant-engine.mjs";
+import {ASSISTANT_PATHS, ASSISTANT_SHARED_TEXTS} from "./assistant-paths.mjs";
+import {storageFingerprint} from "./configurator-storage.mjs";
 import {analyzeChangeImpact, rulesetWithout, collectionOfKind} from "./change-impact.mjs";
 
 /** Draft writes accept incomplete entries; validation reports what publish still needs. */
@@ -167,12 +169,30 @@ export function createGraphAPI(registry) {
     listDependencies: v => new DependencyIndex(definitions.ruleset(v)).list(),
     analyzeChangeImpact: analyzeImpact,
     reorderEntries,
-    listRecipes: () => RECIPES.map(recipe => ({id: recipe.id, steps: [...recipe.steps]})),
-    /** Add a recipe's objects to a draft in one validated write; names maps text keys to localized names. */
-    applyRecipe: (rulesetId, recipeId, names = {}) => {
-      const {patch, created} = planRecipe(definitions.ruleset(rulesetId), recipeId, key => names[key] ?? key);
+    /** The assistant's paths (assistant-paths.mjs): cards to choose one, the questions it shows now, its plan, and applying it. */
+    listAssistantPaths: () => ASSISTANT_PATHS.map(path => ({id: path.id, group: path.group, keywords: [...(path.keywords ?? [])], produces: copyJSON(path.produces ?? null),
+      titleKey: `RTA.Assistant.Path.${path.id}.Title`, summaryKey: `RTA.Assistant.Path.${path.id}.Summary`, limitsKey: `RTA.Assistant.Path.${path.id}.Limits`})),
+    /** Every text key of the assistant, so the interface can pass their words (texts: key -> words) to plan and apply. */
+    assistantTextKeys: () => [...new Set([...ASSISTANT_PATHS.flatMap(assistantPathTextKeys), ...ASSISTANT_SHARED_TEXTS.map(key => `RTA.Assistant.Text.${key}`)])],
+    describeAssistantPath: (rulesetId, pathId, answers = {}, {texts = {}} = {}) => describeAssistantPath(definitions.ruleset(rulesetId), pathId, answers, {paths: ASSISTANT_PATHS, text: key => texts[key] ?? key}),
+    /** What a path would write, without writing it: created, added, filled and reused entries, errors and warnings. */
+    planAssistant: (rulesetId, pathId, answers = {}, {texts = {}} = {}) => {
+      const {patch, ...plan} = planAssistant(definitions.ruleset(rulesetId), pathId, answers, {paths: ASSISTANT_PATHS, text: key => texts[key] ?? key});
+      return plan;
+    },
+    /** Apply a path in one validated write. baseFingerprint (from planAssistant) refuses a draft changed since that plan. */
+    applyAssistant: (rulesetId, pathId, answers = {}, {texts = {}, baseFingerprint = null} = {}) => {
+      const ruleset = definitions.ruleset(rulesetId);
+      if (baseFingerprint !== null && storageFingerprint(ruleset) !== baseFingerprint) {
+        const error = new Error("The Ruleset changed since this plan was made: review the plan again."); error.code = "ASSISTANT_STALE"; throw error;
+      }
+      const {patch, ...plan} = planAssistant(ruleset, pathId, answers, {paths: ASSISTANT_PATHS, text: key => texts[key] ?? key});
+      if (!plan.valid) {
+        const error = new Error(`The assistant cannot apply this plan: ${plan.errors.map(entry => `${entry.path || pathId}: ${entry.code}${entry.detail ? ` (${entry.detail})` : ""}`).join("; ")}`);
+        error.code = "ASSISTANT_INVALID"; error.plan = copyJSON(plan); throw error;
+      }
       registry.update(rulesetId, patch);
-      return created;
+      return {main: plan.main, created: plan.created, added: plan.added, filled: plan.filled, reused: plan.reused, warnings: plan.warnings};
     },
     getDeletionStatus:(v,id,kind="definition")=>{ const used=consumers(v,id,kind), blocking=used.filter(edge=>edge.strength!=="optional"), optional=used.filter(edge=>edge.strength==="optional"); return {canDelete:blocking.length===0,kind,id,code:blocking.length?"REFERENTIAL_INTEGRITY":optional.length?"OPTIONAL_REFERENCES":null,consumers:copyJSON(used),optionalReferences:copyJSON(optional)}; }
   };

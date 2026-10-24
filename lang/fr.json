@@ -837,99 +837,6 @@
       "multiply": "Multiplier",
       "toggle": "Inverser"
     },
-    "Recipe": {
-      "Title": "Recettes",
-      "Intro": "Chaque recette ajoute à ce brouillon des objets prêts à l'emploi et montre comment les primitives s'assemblent.",
-      "Apply": "Ajouter à ce brouillon",
-      "Steps": "Étapes",
-      "Applied": "Recette ajoutée : {count} objets créés.",
-      "Confirm": "Ajouter la recette « {title} » à ce brouillon ?",
-      "ReadOnly": "Créez une nouvelle version pour ajouter une recette.",
-      "weaponAmmo": {
-        "Title": "Arme avec munitions",
-        "Summary": "Un arc dont chaque tir consomme une flèche, impossible quand le carquois est vide.",
-        "Steps": {
-          "Type": "Un type de Definition « Arme » avec la capacité réserve (pool).",
-          "Weapon": "La Definition « Arc » porte une réserve « munitions » de 0 à 20.",
-          "Condition": "La Condition « A des munitions » vérifie que la réserve est au-dessus de 0.",
-          "Cost": "L'Effect « Dépenser une munition » retire 1 à la réserve.",
-          "Action": "L'Action « Tirer » exige la Condition et paie l'Effect comme coût."
-        },
-        "Objects": {
-          "Weapon": {
-            "Type": "Arme",
-            "Bow": "Arc",
-            "HasAmmo": "A des munitions",
-            "SpendAmmo": "Dépenser une munition",
-            "Shoot": "Tirer"
-          }
-        }
-      },
-      "consumable": {
-        "Title": "Consommable",
-        "Summary": "Une potion à trois doses : boire coûte une dose et rend 4 points de vitalité, sans dépasser le maximum.",
-        "Steps": {
-          "Type": "Un type de Definition « Ressource » avec la capacité réserve.",
-          "Doses": "La « Potion de soin » porte une réserve « doses » de 0 à 3.",
-          "Vitality": "La « Vitalité » porte une réserve « points de vie » de 0 à 12, qui commence à 6.",
-          "CostAndEffect": "Un Effect retire une dose (le coût), un autre ajoute 4 points de vie (l'effet). La réserve borne le résultat.",
-          "Action": "L'Action « Boire » exige qu'il reste une dose."
-        },
-        "Objects": {
-          "Consumable": {
-            "Type": "Ressource",
-            "Potion": "Potion de soin",
-            "Vitality": "Vitalité",
-            "HasDose": "Reste une dose",
-            "UseDose": "Utiliser une dose",
-            "Heal": "Soigner",
-            "Drink": "Boire"
-          }
-        }
-      },
-      "xpProgression": {
-        "Title": "Progression par l'expérience",
-        "Summary": "Des points d'expérience accumulés et un niveau calculé : un niveau tous les 1000 points.",
-        "Steps": {
-          "Type": "Un type de Definition « Progression » avec la capacité valeur.",
-          "Experience": "La Definition « Expérience » stocke les points gagnés.",
-          "Level": "Le Parameter « Points par niveau » (1000) et la Formula « Niveau » = arrondi inférieur(expérience ÷ points par niveau) + 1.",
-          "Gain": "L'Effect « Gagner de l'expérience » ajoute 250 points.",
-          "Action": "L'Action « Accorder de l'expérience » applique l'Effect."
-        },
-        "Objects": {
-          "Xp": {
-            "Type": "Progression",
-            "Experience": "Expérience",
-            "PerLevel": "Points par niveau",
-            "Level": "Niveau",
-            "Gain": "Gagner de l'expérience",
-            "Award": "Accorder de l'expérience"
-          }
-        }
-      },
-      "encumbrance": {
-        "Title": "Encombrement",
-        "Summary": "Une capacité de charge calculée depuis la Force, et une Condition « Surchargé » quand la charge la dépasse.",
-        "Steps": {
-          "Type": "Un type de Definition « Attribut » avec la capacité valeur.",
-          "Strength": "La Definition « Force ».",
-          "Load": "La Definition « Charge portée ».",
-          "Capacity": "Le Parameter « Capacité par point de Force » (10) et la Formula « Capacité de charge » = Force × ce paramètre.",
-          "Overloaded": "La Condition « Surchargé » est vraie quand la charge dépasse la capacité. Utilisez-la dans une règle de Permission ou un Modifier."
-        },
-        "Objects": {
-          "Encumbrance": {
-            "Type": "Attribut",
-            "Strength": "Force",
-            "Load": "Charge portée",
-            "PerStrength": "Capacité par point de Force",
-            "Capacity": "Capacité de charge",
-            "Overloaded": "Surchargé"
-          }
-        }
-      }
-    },
     "Help": {
       "Title": "Aide",
       "TypeHelp": "À propos de ce type",
@@ -2133,6 +2040,1356 @@
       "ConfirmRemove": "Retirer l'extension « {name} » ? Ce qu'elle a ajouté est supprimé, ce qu'elle a remplacé revient.",
       "InUse": "Impossible de retirer « {name} » : vos éléments utilisent encore ce qu'elle a ajouté ({list}). Retirez d'abord ces usages.",
       "RemovedDone": "Extension « {name} » retirée."
+    },
+    "Assistant": {
+      "Path": {
+        "characteristics": {
+          "Title": "Caractéristiques",
+          "Summary": "Une liste de scores (Force, Agilité…) d'un même type, avec un modificateur calculé si besoin.",
+          "Limits": "Les bornes des scores se règlent sur le type. Un autre calcul de modificateur passe par « Valeur calculée ».",
+          "Q": {
+            "type": {
+              "Label": "Type des caractéristiques"
+            },
+            "items": {
+              "Label": "Caractéristiques",
+              "Field": {
+                "name": {
+                  "Label": "Nom"
+                }
+              }
+            },
+            "modifier": {
+              "Label": "Modificateur",
+              "Option": {
+                "none": "Aucun",
+                "halfMinusTen": "(score − 10) ÷ 2, arrondi en dessous"
+              }
+            },
+            "modifierType": {
+              "Label": "Type des modificateurs"
+            }
+          },
+          "Text": {
+            "Type": "Caractéristique",
+            "ModifierType": "Modificateur",
+            "Modifier": "Modificateur : {name}"
+          }
+        },
+        "skills": {
+          "Title": "Compétences",
+          "Summary": "Une liste de compétences, chacune liée ou non à une caractéristique, avec son bonus de jet.",
+          "Limits": "Le bonus est une Formule par compétence ; un jet l'utilise en le choisissant comme bonus.",
+          "Q": {
+            "type": {
+              "Label": "Type des compétences"
+            },
+            "items": {
+              "Label": "Compétences",
+              "Field": {
+                "name": {
+                  "Label": "Nom"
+                },
+                "linked": {
+                  "Label": "Caractéristique liée"
+                }
+              }
+            },
+            "bonus": {
+              "Label": "Bonus du jet",
+              "Option": {
+                "sum": "Caractéristique + rang",
+                "rankTimes": "Caractéristique + rang × facteur",
+                "rankOnly": "Rang seul"
+              }
+            },
+            "factor": {
+              "Label": "Facteur du rang"
+            }
+          },
+          "Text": {
+            "Type": "Compétence",
+            "Bonus": "Bonus : {name}"
+          }
+        },
+        "derivedValue": {
+          "Title": "Valeur calculée",
+          "Summary": "Une valeur qui se calcule toute seule à partir d'autres (Défense, Vitesse, Initiative…).",
+          "Limits": "Le calcul remplace la valeur finale ; une valeur déjà calculée garde son premier calcul.",
+          "Q": {
+            "target": {
+              "Label": "Valeur",
+              "Option": {
+                "new": "Une nouvelle valeur",
+                "existing": "Une valeur existante"
+              }
+            },
+            "name": {
+              "Label": "Nom"
+            },
+            "type": {
+              "Label": "Type de la valeur"
+            },
+            "existing": {
+              "Label": "Valeur existante"
+            },
+            "expression": {
+              "Label": "Calcul"
+            }
+          },
+          "Text": {
+            "Type": "Valeur calculée"
+          }
+        },
+        "resource": {
+          "Title": "Ressource",
+          "Summary": "Une jauge qui monte et descend entre un minimum et un maximum (points de vie, mana, munitions…).",
+          "Limits": "Une seule jauge par ressource ; d'autres jauges s'ajoutent dans l'éditeur de la Définition.",
+          "Q": {
+            "name": {
+              "Label": "Nom"
+            },
+            "type": {
+              "Label": "Type de la ressource"
+            },
+            "maximum": {
+              "Label": "Maximum",
+              "Option": {
+                "fixed": "Un nombre",
+                "formula": "Un calcul"
+              }
+            },
+            "maxValue": {
+              "Label": "Maximum"
+            },
+            "maxFormula": {
+              "Label": "Calcul du maximum"
+            },
+            "minimum": {
+              "Label": "Minimum"
+            },
+            "initial": {
+              "Label": "Au départ",
+              "Option": {
+                "maximum": "Pleine",
+                "minimum": "Vide"
+              }
+            },
+            "integer": {
+              "Label": "Nombres entiers seulement"
+            }
+          },
+          "Text": {
+            "Type": "Ressource",
+            "Maximum": "Maximum : {name}"
+          }
+        },
+        "test": {
+          "Title": "Jet ou test",
+          "Summary": "Un jet de dés comparé à une difficulté, avec ses résultats : réussite, échec, critique, échec critique.",
+          "Limits": "Les degrés de réussite plus fins s'ajoutent ensuite dans l'éditeur du Test.",
+          "Q": {
+            "name": {
+              "Label": "Nom"
+            },
+            "dice": {
+              "Label": "Dés lancés"
+            },
+            "bonus": {
+              "Label": "Bonus ajouté au jet"
+            },
+            "target": {
+              "Label": "Difficulté",
+              "Option": {
+                "asked": "Demandée à chaque jet",
+                "fixed": "Un nombre fixe",
+                "formula": "Un calcul (la défense de la cible…)",
+                "opposed": "Le jet opposé de la cible",
+                "none": "Aucune (le total compte seul)"
+              }
+            },
+            "targetValue": {
+              "Label": "Difficulté"
+            },
+            "askedDefault": {
+              "Label": "Difficulté proposée"
+            },
+            "targetFormula": {
+              "Label": "Calcul de la difficulté"
+            },
+            "opposed": {
+              "Label": "Jet opposé"
+            },
+            "success": {
+              "Label": "Réussi quand le total est",
+              "Option": {
+                "atLeast": "Égal ou supérieur à la difficulté",
+                "above": "Supérieur à la difficulté",
+                "atMost": "Égal ou inférieur à la difficulté",
+                "below": "Inférieur à la difficulté"
+              }
+            },
+            "critical": {
+              "Label": "Critique sur un dé naturel de"
+            },
+            "criticalCompare": {
+              "Label": "Critique quand le dé fait",
+              "Option": {
+                "atLeast": "Ce nombre ou plus",
+                "atMost": "Ce nombre ou moins"
+              }
+            },
+            "fumble": {
+              "Label": "Échec critique sur un dé naturel de"
+            },
+            "fumbleCompare": {
+              "Label": "Échec critique quand le dé fait",
+              "Option": {
+                "atMost": "Ce nombre ou moins",
+                "atLeast": "Ce nombre ou plus"
+              }
+            },
+            "action": {
+              "Label": "Ajouter un bouton pour lancer ce jet"
+            }
+          }
+        },
+        "attack": {
+          "Title": "Attaque",
+          "Summary": "Un jet pour toucher puis des dégâts retirés à une ressource de la cible, doublés sur un critique.",
+          "Limits": "Plusieurs attaques par round, portée et munitions se règlent avec « Coût » et les Actions.",
+          "Q": {
+            "name": {
+              "Label": "Nom"
+            },
+            "test": {
+              "Label": "Jet pour toucher"
+            },
+            "hits": {
+              "Label": "Résultats qui touchent"
+            },
+            "damage": {
+              "Label": "Dés de dégâts"
+            },
+            "damageBonus": {
+              "Label": "Bonus aux dégâts"
+            },
+            "damageTarget": {
+              "Label": "Ressource qui perd les dégâts"
+            },
+            "criticalDouble": {
+              "Label": "Doubler les dés sur un critique"
+            },
+            "factor": {
+              "Label": "Facteur de dégâts (résistance…)"
+            },
+            "minimum": {
+              "Label": "Dégâts minimum"
+            }
+          },
+          "Text": {
+            "Test": "Attaque",
+            "Damage": "Dégâts : {name}"
+          }
+        },
+        "state": {
+          "Title": "État",
+          "Summary": "Un état qu'on inflige et qu'on retire (Empoisonné, Étourdi, Béni…), avec une durée et ses malus.",
+          "Limits": "Les malus valent tant que l'état est actif ; des effets à chaque tour passent par « Déclencheur ».",
+          "Q": {
+            "name": {
+              "Label": "Nom"
+            },
+            "type": {
+              "Label": "Type de l'état"
+            },
+            "duration": {
+              "Label": "Durée",
+              "Option": {
+                "untilRemoved": "Jusqu'à ce qu'on le retire",
+                "round": "Des rounds",
+                "turn": "Des tours",
+                "minute": "Des minutes",
+                "hour": "Des heures",
+                "day": "Des jours",
+                "untilEvent": "Jusqu'à un évènement"
+              }
+            },
+            "amount": {
+              "Label": "Combien"
+            },
+            "event": {
+              "Label": "Évènement qui le retire"
+            },
+            "stacking": {
+              "Label": "S'il est déjà présent",
+              "Option": {
+                "refresh": "Repartir pour toute la durée",
+                "stack": "Cumuler",
+                "separate": "Ajouter une copie à part",
+                "ignore": "Ne rien faire"
+              }
+            },
+            "modifiers": {
+              "Label": "Effets sur des valeurs tant qu'il dure",
+              "Field": {
+                "target": {
+                  "Label": "Valeur"
+                },
+                "operation": {
+                  "Label": "Changement",
+                  "Option": {
+                    "subtract": "Retirer",
+                    "add": "Ajouter",
+                    "multiply": "Multiplier par",
+                    "set": "Fixer à",
+                    "min": "Plafonner à",
+                    "max": "Au moins"
+                  }
+                },
+                "amount": {
+                  "Label": "De combien"
+                }
+              }
+            },
+            "role": {
+              "Label": "Qui est visé",
+              "Option": {
+                "target": "La cible",
+                "self": "Soi-même"
+              }
+            },
+            "applyAction": {
+              "Label": "Ajouter un bouton pour l'infliger"
+            },
+            "removeAction": {
+              "Label": "Ajouter un bouton pour le retirer"
+            }
+          },
+          "Text": {
+            "Type": "État",
+            "Active": "{name} actif",
+            "Apply": "Infliger : {name}",
+            "Remove": "Retirer : {name}",
+            "Modifier": "{name} : {value}"
+          }
+        },
+        "cost": {
+          "Title": "Coût",
+          "Summary": "Une Action dépense une ressource (munitions, mana…) et peut être refusée s'il n'en reste pas assez.",
+          "Limits": "Le coût s'ajoute à l'Action sans changer ce qu'elle fait déjà.",
+          "Q": {
+            "action": {
+              "Label": "Action qui coûte"
+            },
+            "resource": {
+              "Label": "Ressource dépensée"
+            },
+            "amount": {
+              "Label": "Combien"
+            },
+            "required": {
+              "Label": "Refuser l'Action s'il n'en reste pas assez"
+            }
+          },
+          "Text": {
+            "Enough": "Assez de {name} ({amount})",
+            "Spend": "Dépenser {amount} : {name}"
+          }
+        },
+        "consumable": {
+          "Title": "Consommable",
+          "Summary": "Un objet à doses (potion, charges…) : chaque usage retire une dose et produit son effet.",
+          "Limits": "Les doses vivent sur la Définition ; un objet de l'inventaire passe par un Type de contenu.",
+          "Q": {
+            "name": {
+              "Label": "Nom"
+            },
+            "type": {
+              "Label": "Type du consommable"
+            },
+            "doses": {
+              "Label": "Doses"
+            },
+            "effectTarget": {
+              "Label": "Valeur changée par l'usage"
+            },
+            "operation": {
+              "Label": "Changement",
+              "Option": {
+                "add": "Ajouter",
+                "subtract": "Retirer",
+                "set": "Fixer à"
+              }
+            },
+            "amount": {
+              "Label": "De combien"
+            }
+          },
+          "Text": {
+            "Type": "Consommable",
+            "Doses": "Doses",
+            "HasDose": "Reste une dose : {name}",
+            "UseDose": "Une dose : {name}",
+            "Effect": "Effet : {name}",
+            "Use": "Utiliser : {name}"
+          }
+        },
+        "level": {
+          "Title": "Niveau et expérience",
+          "Summary": "Un niveau qui découle de l'expérience, par palier fixe ou par table, et un bouton pour donner de l'expérience.",
+          "Limits": "Ce que chaque niveau apporte se règle avec « Progression » (paliers).",
+          "Q": {
+            "name": {
+              "Label": "Nom"
+            },
+            "type": {
+              "Label": "Type du niveau"
+            },
+            "experience": {
+              "Label": "Expérience"
+            },
+            "rule": {
+              "Label": "Règle",
+              "Option": {
+                "perLevel": "Un niveau tous les N points",
+                "table": "Une table de seuils"
+              }
+            },
+            "perLevel": {
+              "Label": "Points par niveau"
+            },
+            "thresholds": {
+              "Label": "Seuils",
+              "Field": {
+                "level": {
+                  "Label": "Niveau"
+                },
+                "experience": {
+                  "Label": "Expérience requise"
+                }
+              }
+            },
+            "award": {
+              "Label": "Ajouter un bouton pour donner de l'expérience"
+            }
+          },
+          "Text": {
+            "Level": "Niveau",
+            "Type": "Progression",
+            "Experience": "Expérience",
+            "Award": "Gagner : {name}"
+          }
+        },
+        "encumbrance": {
+          "Title": "Encombrement",
+          "Summary": "Une Condition « surchargé » vraie quand la charge dépasse une capacité calculée.",
+          "Limits": "Les malus de la surcharge s'ajoutent avec un État ou des Modificateurs qui utilisent cette Condition.",
+          "Q": {
+            "name": {
+              "Label": "Nom"
+            },
+            "load": {
+              "Label": "Charge portée"
+            },
+            "capacity": {
+              "Label": "Calcul de la capacité"
+            }
+          },
+          "Text": {
+            "Overloaded": "Surchargé",
+            "Load": "Charge",
+            "Capacity": "Capacité de charge"
+          }
+        },
+        "advantage": {
+          "Title": "Avantage et bonus de situation",
+          "Summary": "Quand une Condition est vraie, des jets existants gagnent un avantage, un désavantage, un dé en plus, un bonus ou un malus.",
+          "Limits": "S'ajoute aux jets choisis sans changer leurs dés de base.",
+          "Q": {
+            "tests": {
+              "Label": "Jets concernés"
+            },
+            "when": {
+              "Label": "Quand"
+            },
+            "effect": {
+              "Label": "Effet",
+              "Option": {
+                "advantage": "Avantage (autres dés)",
+                "disadvantage": "Désavantage (autres dés)",
+                "extraDie": "Un dé en plus",
+                "bonus": "Un bonus fixe",
+                "malus": "Un malus fixe"
+              }
+            },
+            "dice": {
+              "Label": "Dés lancés à la place"
+            },
+            "extraDice": {
+              "Label": "Dé ajouté"
+            },
+            "amount": {
+              "Label": "Valeur"
+            }
+          }
+        },
+        "damageTypes": {
+          "Title": "Types de dégâts",
+          "Summary": "Des types de dégâts (Feu, Froid…) avec immunité, résistance et vulnérabilité, et un facteur par type pour les attaques.",
+          "Limits": "Une attaque applique le facteur en le choisissant comme « Facteur de dégâts ».",
+          "Q": {
+            "type": {
+              "Label": "Type des résistances"
+            },
+            "types": {
+              "Label": "Types de dégâts",
+              "Field": {
+                "name": {
+                  "Label": "Nom"
+                }
+              }
+            },
+            "immunity": {
+              "Label": "Immunité (aucun dégât)"
+            },
+            "resistance": {
+              "Label": "Résistance (moitié)"
+            },
+            "vulnerability": {
+              "Label": "Vulnérabilité (double)"
+            }
+          },
+          "Text": {
+            "Type": "Résistance aux dégâts",
+            "Immunity": "Immunité : {name}",
+            "Resistance": "Résistance : {name}",
+            "Vulnerability": "Vulnérabilité : {name}",
+            "Factor": "Facteur de dégâts : {name}"
+          }
+        },
+        "power": {
+          "Title": "Pouvoir ou sort",
+          "Summary": "Un pouvoir : attaque, jet de sauvegarde, effet automatique, soin ou état infligé, avec un coût et des niveaux au choix.",
+          "Limits": "Zone, portée et composantes restent des descriptions ; plusieurs effets s'ajoutent dans l'éditeur de l'Action.",
+          "Q": {
+            "name": {
+              "Label": "Nom"
+            },
+            "resolution": {
+              "Label": "Comment il agit",
+              "Option": {
+                "attack": "Jet d'attaque",
+                "save": "Jet de sauvegarde de la cible",
+                "automatic": "Dégâts automatiques",
+                "heal": "Soin",
+                "state": "Inflige un état",
+                "utility": "Autre (sans effet chiffré)"
+              }
+            },
+            "test": {
+              "Label": "Jet"
+            },
+            "hits": {
+              "Label": "Résultats qui touchent"
+            },
+            "dice": {
+              "Label": "Dés de l'effet"
+            },
+            "target": {
+              "Label": "Ressource touchée"
+            },
+            "halfOnMiss": {
+              "Label": "Moitié des dégâts sur un échec"
+            },
+            "state": {
+              "Label": "État infligé"
+            },
+            "duration": {
+              "Label": "Durée",
+              "Option": {
+                "untilRemoved": "Jusqu'à ce qu'on le retire",
+                "round": "Des rounds",
+                "turn": "Des tours",
+                "minute": "Des minutes",
+                "hour": "Des heures",
+                "day": "Des jours",
+                "untilEvent": "Jusqu'à un évènement"
+              }
+            },
+            "amount": {
+              "Label": "Combien"
+            },
+            "event": {
+              "Label": "Évènement qui le retire"
+            },
+            "role": {
+              "Label": "Qui est visé",
+              "Option": {
+                "target": "La cible",
+                "self": "Soi-même"
+              }
+            },
+            "levels": {
+              "Label": "Lancé à un niveau choisi"
+            },
+            "levelMin": {
+              "Label": "Niveau le plus bas"
+            },
+            "levelMax": {
+              "Label": "Niveau le plus haut"
+            },
+            "cost": {
+              "Label": "Ressource dépensée"
+            },
+            "costAmount": {
+              "Label": "Coût"
+            }
+          },
+          "Text": {
+            "Effect": "Effet : {name}",
+            "Half": "Moitié : {name}",
+            "Enough": "Assez de {name} ({amount})",
+            "Spend": "Dépenser {amount} : {name}",
+            "Level": "Niveau"
+          }
+        },
+        "threshold": {
+          "Title": "Seuil automatique",
+          "Summary": "Quand une valeur franchit un seuil (vitalité à 0…), un état est infligé, puis retiré quand elle repasse.",
+          "Limits": "Vérifié à l'évènement choisi ; la Condition peut aussi marquer les combattants hors de combat.",
+          "Q": {
+            "name": {
+              "Label": "Nom"
+            },
+            "watched": {
+              "Label": "Valeur surveillée"
+            },
+            "compare": {
+              "Label": "Quand elle est",
+              "Option": {
+                "atMost": "Au plus",
+                "below": "Moins de",
+                "atLeast": "Au moins",
+                "above": "Plus de",
+                "equal": "Égal à"
+              }
+            },
+            "limit": {
+              "Label": "Seuil"
+            },
+            "state": {
+              "Label": "État infligé"
+            },
+            "event": {
+              "Label": "Vérifier à"
+            },
+            "remove": {
+              "Label": "Retirer l'état quand le seuil n'est plus atteint"
+            },
+            "defeated": {
+              "Label": "Compter comme hors de combat pour l'initiative"
+            }
+          },
+          "Text": {
+            "Apply": "Infliger : {name}",
+            "Remove": "Retirer : {name}",
+            "Check": "Vérifier : {name}",
+            "Over": "Fin : {name}"
+          }
+        },
+        "rest": {
+          "Title": "Repos et récupération",
+          "Summary": "Un repos qui rend des ressources, efface des états, et peut se faire seul chaque jour de jeu.",
+          "Limits": "Un repos existant est complété, jamais modifié.",
+          "Q": {
+            "mode": {
+              "Label": "Repos",
+              "Option": {
+                "new": "Un nouveau repos",
+                "existing": "Compléter un repos existant"
+              }
+            },
+            "name": {
+              "Label": "Nom"
+            },
+            "action": {
+              "Label": "Repos existant"
+            },
+            "resources": {
+              "Label": "Ce qui est récupéré",
+              "Field": {
+                "resource": {
+                  "Label": "Ressource"
+                },
+                "recovery": {
+                  "Label": "Récupération",
+                  "Option": {
+                    "full": "Tout",
+                    "amount": "Un nombre",
+                    "formula": "Un calcul",
+                    "reset": "Remettre à"
+                  }
+                },
+                "amount": {
+                  "Label": "Combien"
+                },
+                "expression": {
+                  "Label": "Calcul"
+                },
+                "resetTo": {
+                  "Label": "Valeur"
+                }
+              }
+            },
+            "clearStates": {
+              "Label": "États effacés"
+            },
+            "daily": {
+              "Label": "Aussi chaque jour de jeu, tout seul"
+            }
+          },
+          "Text": {
+            "Rest": "Repos",
+            "Recover": "Récupérer : {name}",
+            "Daily": "Chaque jour : {name}",
+            "DayPassed": "Un jour est passé"
+          }
+        },
+        "initiative": {
+          "Title": "Initiative",
+          "Summary": "L'ordre de jeu en combat : le jet d'initiative, une relance à chaque round, un départage, plusieurs passes.",
+          "Limits": "Une seule initiative par Ruleset : si elle existe déjà, elle se modifie dans le formulaire du Ruleset.",
+          "Q": {
+            "test": {
+              "Label": "Jet d'initiative"
+            },
+            "eachRound": {
+              "Label": "Relancer à chaque round"
+            },
+            "tieBreak": {
+              "Label": "Départage des égalités"
+            },
+            "passes": {
+              "Label": "Nombre de passes par round"
+            },
+            "defeated": {
+              "Label": "Hors de combat quand"
+            },
+            "bySide": {
+              "Label": "Jouer par camp"
+            }
+          },
+          "Text": {
+            "Test": "Initiative",
+            "TieBreak": "Départage d'initiative",
+            "Passes": "Passes d'initiative"
+          }
+        },
+        "creation": {
+          "Title": "Création de personnage",
+          "Summary": "Les étapes de création : choix de contenus, leurs propres choix, répartition de points, choix de valeurs, vérification.",
+          "Limits": "Une création existante reçoit de nouvelles étapes à la fin, sans toucher aux autres.",
+          "Q": {
+            "mode": {
+              "Label": "Création",
+              "Option": {
+                "new": "Une nouvelle création",
+                "existing": "Ajouter des étapes à une création"
+              }
+            },
+            "name": {
+              "Label": "Nom"
+            },
+            "system": {
+              "Label": "Création existante"
+            },
+            "steps": {
+              "Label": "Étapes",
+              "Field": {
+                "kind": {
+                  "Label": "Sorte d'étape",
+                  "Option": {
+                    "content": "Choisir des contenus",
+                    "contentChoices": "Choix des contenus pris avant",
+                    "allocation": "Répartir des points",
+                    "choice": "Choisir des valeurs",
+                    "review": "Vérification finale"
+                  }
+                },
+                "name": {
+                  "Label": "Nom"
+                },
+                "templates": {
+                  "Label": "Contenus proposés"
+                },
+                "definitions": {
+                  "Label": "Valeurs"
+                },
+                "min": {
+                  "Label": "Au moins"
+                },
+                "max": {
+                  "Label": "Au plus"
+                },
+                "points": {
+                  "Label": "Points à répartir"
+                },
+                "perTargetMax": {
+                  "Label": "Au plus par valeur"
+                }
+              }
+            }
+          },
+          "Text": {
+            "Creation": "Création de personnage"
+          }
+        },
+        "progression": {
+          "Title": "Progression",
+          "Summary": "Faire progresser des valeurs en dépensant une monnaie (XP, pratique…), ou gagner des choses à des paliers de niveau.",
+          "Limits": "Une progression existante reçoit de nouvelles entrées, sans toucher aux autres.",
+          "Q": {
+            "system": {
+              "Label": "Compléter une progression existante"
+            },
+            "name": {
+              "Label": "Nom"
+            },
+            "mode": {
+              "Label": "Sorte de progression",
+              "Option": {
+                "advance": "Acheter des rangs",
+                "milestones": "Paliers de niveau"
+              }
+            },
+            "values": {
+              "Label": "Valeurs qui progressent",
+              "Field": {
+                "value": {
+                  "Label": "Valeur"
+                },
+                "currency": {
+                  "Label": "Payée avec (si autre)"
+                }
+              }
+            },
+            "currency": {
+              "Label": "Payée avec"
+            },
+            "costs": {
+              "Label": "Coût de chaque rang",
+              "Field": {
+                "level": {
+                  "Label": "Rang"
+                },
+                "cost": {
+                  "Label": "Coût"
+                }
+              }
+            },
+            "maximum": {
+              "Label": "Rang maximum"
+            },
+            "level": {
+              "Label": "Niveau"
+            },
+            "milestones": {
+              "Label": "Paliers",
+              "Field": {
+                "level": {
+                  "Label": "Niveau"
+                },
+                "grants": {
+                  "Label": "Donne"
+                },
+                "action": {
+                  "Label": "Lance l'Action"
+                }
+              }
+            }
+          },
+          "Text": {
+            "Progression": "Progression",
+            "Cost": "Coût de progression",
+            "Maximum": "Rang maximum {value}",
+            "Reached": "Niveau {level}"
+          }
+        },
+        "scale": {
+          "Title": "Échelle descriptive",
+          "Summary": "Des mots pour des plages de valeurs (Frêle, Solide…), affichés à la place du nombre pour ceux qui ne le voient pas.",
+          "Limits": "Liée seulement aux valeurs et types qui n'ont pas encore d'échelle.",
+          "Q": {
+            "name": {
+              "Label": "Nom"
+            },
+            "basis": {
+              "Label": "Plages en",
+              "Option": {
+                "value": "Valeur",
+                "percent": "Pourcentage du maximum"
+              }
+            },
+            "rows": {
+              "Label": "Paliers",
+              "Field": {
+                "min": {
+                  "Label": "De"
+                },
+                "max": {
+                  "Label": "À"
+                },
+                "words": {
+                  "Label": "Mots"
+                }
+              }
+            },
+            "definitions": {
+              "Label": "Valeurs décrites"
+            },
+            "types": {
+              "Label": "Types décrits"
+            }
+          }
+        },
+        "contentType": {
+          "Title": "Type de contenu",
+          "Summary": "Une sorte de contenu (arme, sort, origine…) avec ses champs, pour les objets et les choix de création.",
+          "Limits": "Les contenus eux-mêmes se créent dans le configurateur ou par import.",
+          "Q": {
+            "name": {
+              "Label": "Nom"
+            },
+            "storage": {
+              "Label": "Dans Foundry",
+              "Option": {
+                "item": "Un objet",
+                "actor": "Un acteur"
+              }
+            },
+            "stackable": {
+              "Label": "Empilable (quantité)"
+            },
+            "fields": {
+              "Label": "Champs",
+              "Field": {
+                "name": {
+                  "Label": "Nom"
+                },
+                "valueType": {
+                  "Label": "Sorte de valeur",
+                  "Option": {
+                    "number": "Nombre",
+                    "integer": "Nombre entier",
+                    "boolean": "Oui ou non",
+                    "string": "Texte"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "permission": {
+          "Title": "Permissions",
+          "Summary": "Réserver des Actions ou la modification de valeurs au MJ ou à des rôles de confiance.",
+          "Limits": "Une permission par entrée ; les règles plus fines se règlent dans l'éditeur des Permissions.",
+          "Q": {
+            "kind": {
+              "Label": "Ce qui est réservé",
+              "Option": {
+                "action": "Utiliser des Actions",
+                "definition": "Modifier des valeurs",
+                "definitionType": "Modifier les valeurs d'un type"
+              }
+            },
+            "actions": {
+              "Label": "Actions"
+            },
+            "definitions": {
+              "Label": "Valeurs"
+            },
+            "types": {
+              "Label": "Types"
+            },
+            "who": {
+              "Label": "Réservé à",
+              "Option": {
+                "gamemaster": "Le MJ",
+                "assistant": "Le MJ et ses assistants",
+                "trusted": "Les joueurs de confiance aussi"
+              }
+            }
+          },
+          "Text": {
+            "Policy": "Permission : {name}"
+          }
+        },
+        "definitionType": {
+          "Title": "Type de définition",
+          "Summary": "Une famille de valeurs (caractéristique, compétence, ressource, état…) et ce qu'elle sait faire.",
+          "Limits": "Une seule capacité ; d'autres s'ajoutent dans l'éditeur du type.",
+          "Q": {
+            "name": {
+              "Label": "Nom"
+            },
+            "capability": {
+              "Label": "Ce que ses valeurs sont",
+              "Option": {
+                "value": "Un nombre",
+                "pool": "Une jauge",
+                "state": "Un état actif ou non"
+              }
+            },
+            "minimum": {
+              "Label": "Valeur minimum"
+            },
+            "maximum": {
+              "Label": "Valeur maximum"
+            }
+          }
+        },
+        "value": {
+          "Title": "Valeur",
+          "Summary": "Une valeur chiffrée simple (Chance, Expérience, Charge…).",
+          "Limits": "Pour un calcul automatique, voir « Valeur calculée ».",
+          "Q": {
+            "name": {
+              "Label": "Nom"
+            },
+            "type": {
+              "Label": "Type"
+            }
+          },
+          "Text": {
+            "Type": "Valeur"
+          }
+        },
+        "formula": {
+          "Title": "Formule",
+          "Summary": "Un calcul nommé, réutilisable par les jets, effets et valeurs.",
+          "Limits": "Un calcul identique déjà présent est réutilisé.",
+          "Q": {
+            "name": {
+              "Label": "Nom"
+            },
+            "resultType": {
+              "Label": "Résultat",
+              "Option": {
+                "number": "Nombre",
+                "integer": "Nombre entier",
+                "boolean": "Oui ou non",
+                "string": "Texte"
+              }
+            },
+            "expression": {
+              "Label": "Calcul"
+            }
+          }
+        },
+        "condition": {
+          "Title": "Condition",
+          "Summary": "Un test vrai ou faux (a assez de mana, est invisible…), réutilisable par les Actions et les déclencheurs.",
+          "Limits": "Une condition identique déjà présente est réutilisée.",
+          "Q": {
+            "name": {
+              "Label": "Nom"
+            },
+            "expression": {
+              "Label": "Vraie quand"
+            }
+          }
+        },
+        "effect": {
+          "Title": "Effet",
+          "Summary": "Un changement sur une valeur ou une jauge : retirer, ajouter, fixer, multiplier, d'un nombre, d'un calcul ou de dés.",
+          "Limits": "Un Effet agit quand une Action le lance.",
+          "Q": {
+            "name": {
+              "Label": "Nom"
+            },
+            "target": {
+              "Label": "Valeur changée"
+            },
+            "role": {
+              "Label": "Qui est visé",
+              "Option": {
+                "target": "La cible",
+                "self": "Soi-même"
+              }
+            },
+            "operation": {
+              "Label": "Changement",
+              "Option": {
+                "subtract": "Retirer",
+                "add": "Ajouter",
+                "set": "Fixer à",
+                "multiply": "Multiplier par"
+              }
+            },
+            "operand": {
+              "Label": "De combien",
+              "Option": {
+                "number": "Un nombre",
+                "formula": "Un calcul",
+                "dice": "Des dés"
+              }
+            },
+            "amount": {
+              "Label": "Montant"
+            },
+            "expression": {
+              "Label": "Calcul"
+            },
+            "dice": {
+              "Label": "Dés"
+            },
+            "minimum": {
+              "Label": "Au moins"
+            }
+          }
+        },
+        "action": {
+          "Title": "Action",
+          "Summary": "Un bouton de jeu : ses questions, conditions, coûts, jet, effets, états, et ce que fait chaque résultat.",
+          "Limits": "Les entrées choisies doivent exister ; créez-les d'abord avec leur parcours.",
+          "Q": {
+            "name": {
+              "Label": "Nom"
+            },
+            "inputs": {
+              "Label": "Questions posées à l'usage",
+              "Field": {
+                "name": {
+                  "Label": "Question"
+                },
+                "valueType": {
+                  "Label": "Réponse",
+                  "Option": {
+                    "number": "Nombre",
+                    "integer": "Nombre entier",
+                    "boolean": "Oui ou non",
+                    "string": "Texte"
+                  }
+                },
+                "default": {
+                  "Label": "Réponse par défaut"
+                }
+              }
+            },
+            "conditions": {
+              "Label": "Possible seulement si"
+            },
+            "costs": {
+              "Label": "Coûts"
+            },
+            "test": {
+              "Label": "Jet"
+            },
+            "effects": {
+              "Label": "Effets"
+            },
+            "applyStates": {
+              "Label": "États infligés"
+            },
+            "removeStates": {
+              "Label": "États retirés"
+            },
+            "role": {
+              "Label": "Qui est visé",
+              "Option": {
+                "target": "La cible",
+                "self": "Soi-même"
+              }
+            },
+            "results": {
+              "Label": "Selon le résultat du jet",
+              "Field": {
+                "resultKey": {
+                  "Label": "Résultat"
+                },
+                "effects": {
+                  "Label": "Effets"
+                },
+                "actions": {
+                  "Label": "Actions enchaînées"
+                }
+              }
+            },
+            "targeting": {
+              "Label": "Plusieurs cibles",
+              "Option": {
+                "one": "Une seule cible",
+                "each": "Un jet par cible",
+                "shared": "Un jet pour toutes"
+              }
+            }
+          }
+        },
+        "counter": {
+          "Title": "Compteur",
+          "Summary": "Une valeur qu'on augmente d'un clic et qui revient à zéro à un évènement (attaques du round…).",
+          "Limits": "Pour limiter une Action avec, ajoutez une Condition sur le compteur.",
+          "Q": {
+            "name": {
+              "Label": "Nom"
+            },
+            "type": {
+              "Label": "Type du compteur"
+            },
+            "increment": {
+              "Label": "Ajouter un bouton +1"
+            },
+            "resetOn": {
+              "Label": "Remettre à zéro à"
+            },
+            "resetTo": {
+              "Label": "Valeur de départ"
+            }
+          },
+          "Text": {
+            "Type": "Compteur",
+            "Increment": "+1 : {name}",
+            "Reset": "Remise à zéro : {name}"
+          }
+        },
+        "trigger": {
+          "Title": "Déclencheur",
+          "Summary": "Lancer des Actions toutes seules à un évènement (début de round, tour, temps qui passe…).",
+          "Limits": "Les Actions lancées doivent exister.",
+          "Q": {
+            "name": {
+              "Label": "Nom"
+            },
+            "event": {
+              "Label": "Quand"
+            },
+            "conditions": {
+              "Label": "Seulement si"
+            },
+            "actions": {
+              "Label": "Actions lancées"
+            },
+            "holder": {
+              "Label": "Pour qui",
+              "Option": {
+                "actor": "Chaque acteur concerné",
+                "combat": "Le combat",
+                "world": "Le monde"
+              }
+            },
+            "mode": {
+              "Label": "Comment",
+              "Option": {
+                "automatic": "Tout seul",
+                "offer": "Proposé au joueur"
+              }
+            },
+            "actingRole": {
+              "Label": "Qui agit",
+              "Option": {
+                "self": "Celui qui porte le déclencheur",
+                "target": "La cible de l'évènement"
+              }
+            }
+          }
+        },
+        "table": {
+          "Title": "Table aléatoire",
+          "Summary": "Une table tirée aux dés (critiques, localisations, rencontres…), chaque ligne pouvant lancer des Actions.",
+          "Limits": "Les lignes sans « De » ni « À » ne sortent jamais au hasard.",
+          "Q": {
+            "name": {
+              "Label": "Nom"
+            },
+            "dice": {
+              "Label": "Dés"
+            },
+            "bonus": {
+              "Label": "Bonus au tirage"
+            },
+            "rows": {
+              "Label": "Lignes",
+              "Field": {
+                "label": {
+                  "Label": "Texte"
+                },
+                "min": {
+                  "Label": "De"
+                },
+                "max": {
+                  "Label": "À"
+                },
+                "actions": {
+                  "Label": "Actions lancées"
+                }
+              }
+            },
+            "action": {
+              "Label": "Ajouter un bouton pour tirer"
+            }
+          }
+        },
+        "die": {
+          "Title": "Dé spécial",
+          "Summary": "Un dé à faces personnalisées (symboles, succès, avantages…) qui comptent dans des compteurs.",
+          "Limits": "Les faces sont lancées par une formule de dés avec la lettre du dé.",
+          "Q": {
+            "name": {
+              "Label": "Nom"
+            },
+            "letter": {
+              "Label": "Lettre dans les formules"
+            },
+            "faces": {
+              "Label": "Faces",
+              "Field": {
+                "label": {
+                  "Label": "Face"
+                },
+                "value": {
+                  "Label": "Valeur"
+                },
+                "counter": {
+                  "Label": "Compte comme"
+                },
+                "count": {
+                  "Label": "Combien"
+                }
+              }
+            }
+          }
+        }
+      },
+      "Text": {
+        "Dice": "Dés : {name}",
+        "Amount": "Montant : {name}",
+        "Bonus": "Bonus : {name}",
+        "Roll": "Lancer : {name}",
+        "Difficulty": "Difficulté : {name}",
+        "AskedDifficulty": "Difficulté demandée",
+        "TestDifficulty": "Difficulté du jet",
+        "DifficultyInput": "Difficulté",
+        "Result": {
+          "critical": "Critique",
+          "fumble": "Échec critique",
+          "success": "Réussite",
+          "failure": "Échec"
+        },
+        "CriticalMultiplier": "Multiplicateur de critique",
+        "Half": "Moitié",
+        "InputAmount": "Montant saisi",
+        "AmountInput": "Montant",
+        "Duration": {
+          "untilRemoved": "Jusqu'au retrait",
+          "round": "{amount} round(s)",
+          "turn": "{amount} tour(s)",
+          "minute": "{amount} minute(s)",
+          "hour": "{amount} heure(s)",
+          "day": "{amount} jour(s)",
+          "untilEvent": "Jusqu'à un évènement"
+        }
+      }
     }
   }
 }

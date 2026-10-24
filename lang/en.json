@@ -837,99 +837,6 @@
       "multiply": "Multiply",
       "toggle": "Toggle"
     },
-    "Recipe": {
-      "Title": "Recipes",
-      "Intro": "Each recipe adds ready-made objects to this draft and shows how the primitives fit together.",
-      "Apply": "Add to this draft",
-      "Steps": "Steps",
-      "Applied": "Recipe added: {count} objects created.",
-      "Confirm": "Add the recipe “{title}” to this draft?",
-      "ReadOnly": "Create a new version to add a recipe.",
-      "weaponAmmo": {
-        "Title": "Weapon with ammunition",
-        "Summary": "A bow whose every shot spends an arrow, impossible once the quiver is empty.",
-        "Steps": {
-          "Type": "A “Weapon” Definition type with the pool capability.",
-          "Weapon": "The “Bow” Definition holds an “ammo” pool from 0 to 20.",
-          "Condition": "The “Has ammunition” Condition checks the pool is above 0.",
-          "Cost": "The “Spend ammunition” Effect removes 1 from the pool.",
-          "Action": "The “Shoot” Action requires the Condition and pays the Effect as its cost."
-        },
-        "Objects": {
-          "Weapon": {
-            "Type": "Weapon",
-            "Bow": "Bow",
-            "HasAmmo": "Has ammunition",
-            "SpendAmmo": "Spend ammunition",
-            "Shoot": "Shoot"
-          }
-        }
-      },
-      "consumable": {
-        "Title": "Consumable",
-        "Summary": "A three-dose potion: drinking costs a dose and restores 4 vitality, never above the maximum.",
-        "Steps": {
-          "Type": "A “Resource” Definition type with the pool capability.",
-          "Doses": "The “Healing potion” holds a “doses” pool from 0 to 3.",
-          "Vitality": "“Vitality” holds an “hit points” pool from 0 to 12, starting at 6.",
-          "CostAndEffect": "One Effect removes a dose (the cost), another adds 4 hit points (the effect). The pool bounds the result.",
-          "Action": "The “Drink” Action requires a dose left."
-        },
-        "Objects": {
-          "Consumable": {
-            "Type": "Resource",
-            "Potion": "Healing potion",
-            "Vitality": "Vitality",
-            "HasDose": "Dose left",
-            "UseDose": "Use a dose",
-            "Heal": "Heal",
-            "Drink": "Drink"
-          }
-        }
-      },
-      "xpProgression": {
-        "Title": "Experience progression",
-        "Summary": "Accumulated experience points and a computed level: one level every 1000 points.",
-        "Steps": {
-          "Type": "A “Progression” Definition type with the value capability.",
-          "Experience": "The “Experience” Definition stores the points earned.",
-          "Level": "The “Points per level” Parameter (1000) and the “Level” Formula = floor(experience ÷ points per level) + 1.",
-          "Gain": "The “Gain experience” Effect adds 250 points.",
-          "Action": "The “Award experience” Action applies the Effect."
-        },
-        "Objects": {
-          "Xp": {
-            "Type": "Progression",
-            "Experience": "Experience",
-            "PerLevel": "Points per level",
-            "Level": "Level",
-            "Gain": "Gain experience",
-            "Award": "Award experience"
-          }
-        }
-      },
-      "encumbrance": {
-        "Title": "Encumbrance",
-        "Summary": "A carrying capacity computed from Strength, and an “Overloaded” Condition when the load exceeds it.",
-        "Steps": {
-          "Type": "An “Attribute” Definition type with the value capability.",
-          "Strength": "The “Strength” Definition.",
-          "Load": "The “Carried load” Definition.",
-          "Capacity": "The “Capacity per Strength point” Parameter (10) and the “Carrying capacity” Formula = Strength × that parameter.",
-          "Overloaded": "The “Overloaded” Condition is true when the load exceeds the capacity. Use it in a Permission rule or a Modifier."
-        },
-        "Objects": {
-          "Encumbrance": {
-            "Type": "Attribute",
-            "Strength": "Strength",
-            "Load": "Carried load",
-            "PerStrength": "Capacity per Strength point",
-            "Capacity": "Carrying capacity",
-            "Overloaded": "Overloaded"
-          }
-        }
-      }
-    },
     "Help": {
       "Title": "Help",
       "TypeHelp": "About this type",
@@ -2133,6 +2040,1356 @@
       "ConfirmRemove": "Remove the “{name}” extension? What it added is deleted, what it replaced comes back.",
       "InUse": "Cannot remove “{name}”: your entries still use what it added ({list}). Remove those uses first.",
       "RemovedDone": "Extension “{name}” removed."
+    },
+    "Assistant": {
+      "Path": {
+        "characteristics": {
+          "Title": "Characteristics",
+          "Summary": "A list of scores (Strength, Agility…) of one type, with a computed modifier if needed.",
+          "Limits": "Score bounds are set on the type. Another modifier rule goes through \"Computed value\".",
+          "Q": {
+            "type": {
+              "Label": "Type of the characteristics"
+            },
+            "items": {
+              "Label": "Characteristics",
+              "Field": {
+                "name": {
+                  "Label": "Name"
+                }
+              }
+            },
+            "modifier": {
+              "Label": "Modifier",
+              "Option": {
+                "none": "None",
+                "halfMinusTen": "(score − 10) ÷ 2, rounded down"
+              }
+            },
+            "modifierType": {
+              "Label": "Type of the modifiers"
+            }
+          },
+          "Text": {
+            "Type": "Characteristic",
+            "ModifierType": "Modifier",
+            "Modifier": "Modifier: {name}"
+          }
+        },
+        "skills": {
+          "Title": "Skills",
+          "Summary": "A list of skills, each linked or not to a characteristic, with its roll bonus.",
+          "Limits": "The bonus is one Formula per skill; a test uses it by choosing it as its bonus.",
+          "Q": {
+            "type": {
+              "Label": "Type of the skills"
+            },
+            "items": {
+              "Label": "Skills",
+              "Field": {
+                "name": {
+                  "Label": "Name"
+                },
+                "linked": {
+                  "Label": "Linked characteristic"
+                }
+              }
+            },
+            "bonus": {
+              "Label": "Roll bonus",
+              "Option": {
+                "sum": "Characteristic + rank",
+                "rankTimes": "Characteristic + rank × factor",
+                "rankOnly": "Rank only"
+              }
+            },
+            "factor": {
+              "Label": "Rank factor"
+            }
+          },
+          "Text": {
+            "Type": "Skill",
+            "Bonus": "Bonus: {name}"
+          }
+        },
+        "derivedValue": {
+          "Title": "Computed value",
+          "Summary": "A value computed from others (Defense, Speed, Initiative…).",
+          "Limits": "The calculation replaces the final value; a value already computed keeps its first calculation.",
+          "Q": {
+            "target": {
+              "Label": "Value",
+              "Option": {
+                "new": "A new value",
+                "existing": "An existing value"
+              }
+            },
+            "name": {
+              "Label": "Name"
+            },
+            "type": {
+              "Label": "Type of the value"
+            },
+            "existing": {
+              "Label": "Existing value"
+            },
+            "expression": {
+              "Label": "Calculation"
+            }
+          },
+          "Text": {
+            "Type": "Computed value"
+          }
+        },
+        "resource": {
+          "Title": "Resource",
+          "Summary": "A gauge that goes up and down between a minimum and a maximum (hit points, mana, ammunition…).",
+          "Limits": "One gauge per resource; other gauges are added in the Definition editor.",
+          "Q": {
+            "name": {
+              "Label": "Name"
+            },
+            "type": {
+              "Label": "Type of the resource"
+            },
+            "maximum": {
+              "Label": "Maximum",
+              "Option": {
+                "fixed": "A number",
+                "formula": "A calculation"
+              }
+            },
+            "maxValue": {
+              "Label": "Maximum"
+            },
+            "maxFormula": {
+              "Label": "Maximum calculation"
+            },
+            "minimum": {
+              "Label": "Minimum"
+            },
+            "initial": {
+              "Label": "At the start",
+              "Option": {
+                "maximum": "Full",
+                "minimum": "Empty"
+              }
+            },
+            "integer": {
+              "Label": "Whole numbers only"
+            }
+          },
+          "Text": {
+            "Type": "Resource",
+            "Maximum": "Maximum: {name}"
+          }
+        },
+        "test": {
+          "Title": "Roll or test",
+          "Summary": "A dice roll compared with a difficulty, with its results: success, failure, critical, fumble.",
+          "Limits": "Finer degrees of success are added afterwards in the Test editor.",
+          "Q": {
+            "name": {
+              "Label": "Name"
+            },
+            "dice": {
+              "Label": "Dice rolled"
+            },
+            "bonus": {
+              "Label": "Bonus added to the roll"
+            },
+            "target": {
+              "Label": "Difficulty",
+              "Option": {
+                "asked": "Asked on each roll",
+                "fixed": "A fixed number",
+                "formula": "A calculation (the target's defense…)",
+                "opposed": "The target's opposed roll",
+                "none": "None (only the total matters)"
+              }
+            },
+            "targetValue": {
+              "Label": "Difficulty"
+            },
+            "askedDefault": {
+              "Label": "Suggested difficulty"
+            },
+            "targetFormula": {
+              "Label": "Difficulty calculation"
+            },
+            "opposed": {
+              "Label": "Opposed roll"
+            },
+            "success": {
+              "Label": "Succeeds when the total is",
+              "Option": {
+                "atLeast": "Equal to or above the difficulty",
+                "above": "Above the difficulty",
+                "atMost": "Equal to or below the difficulty",
+                "below": "Below the difficulty"
+              }
+            },
+            "critical": {
+              "Label": "Critical on a natural roll of"
+            },
+            "criticalCompare": {
+              "Label": "Critical when the die shows",
+              "Option": {
+                "atLeast": "This number or more",
+                "atMost": "This number or less"
+              }
+            },
+            "fumble": {
+              "Label": "Fumble on a natural roll of"
+            },
+            "fumbleCompare": {
+              "Label": "Fumble when the die shows",
+              "Option": {
+                "atMost": "This number or less",
+                "atLeast": "This number or more"
+              }
+            },
+            "action": {
+              "Label": "Add a button to make this roll"
+            }
+          }
+        },
+        "attack": {
+          "Title": "Attack",
+          "Summary": "A roll to hit, then damage taken from a resource of the target, doubled on a critical.",
+          "Limits": "Several attacks per round, range and ammunition are set with \"Cost\" and Actions.",
+          "Q": {
+            "name": {
+              "Label": "Name"
+            },
+            "test": {
+              "Label": "Roll to hit"
+            },
+            "hits": {
+              "Label": "Results that hit"
+            },
+            "damage": {
+              "Label": "Damage dice"
+            },
+            "damageBonus": {
+              "Label": "Damage bonus"
+            },
+            "damageTarget": {
+              "Label": "Resource that takes the damage"
+            },
+            "criticalDouble": {
+              "Label": "Double the dice on a critical"
+            },
+            "factor": {
+              "Label": "Damage factor (resistance…)"
+            },
+            "minimum": {
+              "Label": "Minimum damage"
+            }
+          },
+          "Text": {
+            "Test": "Attack",
+            "Damage": "Damage: {name}"
+          }
+        },
+        "state": {
+          "Title": "Condition",
+          "Summary": "A condition that is applied and removed (Poisoned, Stunned, Blessed…), with a duration and its penalties.",
+          "Limits": "Penalties apply while the condition is active; effects on each turn go through \"Trigger\".",
+          "Q": {
+            "name": {
+              "Label": "Name"
+            },
+            "type": {
+              "Label": "Type of the condition"
+            },
+            "duration": {
+              "Label": "Duration",
+              "Option": {
+                "untilRemoved": "Until removed",
+                "round": "Rounds",
+                "turn": "Turns",
+                "minute": "Minutes",
+                "hour": "Hours",
+                "day": "Days",
+                "untilEvent": "Until an event"
+              }
+            },
+            "amount": {
+              "Label": "How many"
+            },
+            "event": {
+              "Label": "Event that removes it"
+            },
+            "stacking": {
+              "Label": "If already present",
+              "Option": {
+                "refresh": "Restart its duration",
+                "stack": "Stack",
+                "separate": "Add a separate copy",
+                "ignore": "Do nothing"
+              }
+            },
+            "modifiers": {
+              "Label": "Effects on values while it lasts",
+              "Field": {
+                "target": {
+                  "Label": "Value"
+                },
+                "operation": {
+                  "Label": "Change",
+                  "Option": {
+                    "subtract": "Subtract",
+                    "add": "Add",
+                    "multiply": "Multiply by",
+                    "set": "Set to",
+                    "min": "Cap at",
+                    "max": "At least"
+                  }
+                },
+                "amount": {
+                  "Label": "By how much"
+                }
+              }
+            },
+            "role": {
+              "Label": "Who it affects",
+              "Option": {
+                "target": "The target",
+                "self": "Oneself"
+              }
+            },
+            "applyAction": {
+              "Label": "Add a button to apply it"
+            },
+            "removeAction": {
+              "Label": "Add a button to remove it"
+            }
+          },
+          "Text": {
+            "Type": "Condition",
+            "Active": "{name} active",
+            "Apply": "Apply: {name}",
+            "Remove": "Remove: {name}",
+            "Modifier": "{name}: {value}"
+          }
+        },
+        "cost": {
+          "Title": "Cost",
+          "Summary": "An Action spends a resource (ammunition, mana…) and can be refused when not enough is left.",
+          "Limits": "The cost is added to the Action without changing what it already does.",
+          "Q": {
+            "action": {
+              "Label": "Action that costs"
+            },
+            "resource": {
+              "Label": "Resource spent"
+            },
+            "amount": {
+              "Label": "How much"
+            },
+            "required": {
+              "Label": "Refuse the Action when not enough is left"
+            }
+          },
+          "Text": {
+            "Enough": "Enough {name} ({amount})",
+            "Spend": "Spend {amount}: {name}"
+          }
+        },
+        "consumable": {
+          "Title": "Consumable",
+          "Summary": "An item with doses (potion, charges…): each use spends a dose and has its effect.",
+          "Limits": "Doses live on the Definition; an inventory item goes through a Content type.",
+          "Q": {
+            "name": {
+              "Label": "Name"
+            },
+            "type": {
+              "Label": "Type of the consumable"
+            },
+            "doses": {
+              "Label": "Doses"
+            },
+            "effectTarget": {
+              "Label": "Value changed by a use"
+            },
+            "operation": {
+              "Label": "Change",
+              "Option": {
+                "add": "Add",
+                "subtract": "Subtract",
+                "set": "Set to"
+              }
+            },
+            "amount": {
+              "Label": "By how much"
+            }
+          },
+          "Text": {
+            "Type": "Consumable",
+            "Doses": "Doses",
+            "HasDose": "Dose left: {name}",
+            "UseDose": "One dose: {name}",
+            "Effect": "Effect: {name}",
+            "Use": "Use: {name}"
+          }
+        },
+        "level": {
+          "Title": "Level and experience",
+          "Summary": "A level that follows experience, by a fixed step or a table, and a button to award experience.",
+          "Limits": "What each level grants is set with \"Progression\" (milestones).",
+          "Q": {
+            "name": {
+              "Label": "Name"
+            },
+            "type": {
+              "Label": "Type of the level"
+            },
+            "experience": {
+              "Label": "Experience"
+            },
+            "rule": {
+              "Label": "Rule",
+              "Option": {
+                "perLevel": "One level every N points",
+                "table": "A table of thresholds"
+              }
+            },
+            "perLevel": {
+              "Label": "Points per level"
+            },
+            "thresholds": {
+              "Label": "Thresholds",
+              "Field": {
+                "level": {
+                  "Label": "Level"
+                },
+                "experience": {
+                  "Label": "Experience needed"
+                }
+              }
+            },
+            "award": {
+              "Label": "Add a button to award experience"
+            }
+          },
+          "Text": {
+            "Level": "Level",
+            "Type": "Progress",
+            "Experience": "Experience",
+            "Award": "Gain: {name}"
+          }
+        },
+        "encumbrance": {
+          "Title": "Encumbrance",
+          "Summary": "An \"overloaded\" Condition, true when the load exceeds a computed capacity.",
+          "Limits": "Penalties for overload are added with a Condition or Modifiers that use this Condition.",
+          "Q": {
+            "name": {
+              "Label": "Name"
+            },
+            "load": {
+              "Label": "Load carried"
+            },
+            "capacity": {
+              "Label": "Capacity calculation"
+            }
+          },
+          "Text": {
+            "Overloaded": "Overloaded",
+            "Load": "Load",
+            "Capacity": "Carrying capacity"
+          }
+        },
+        "advantage": {
+          "Title": "Advantage and situational bonus",
+          "Summary": "When a Condition holds, existing tests get advantage, disadvantage, an extra die, a bonus or a penalty.",
+          "Limits": "Added to the chosen tests without changing their base dice.",
+          "Q": {
+            "tests": {
+              "Label": "Tests affected"
+            },
+            "when": {
+              "Label": "When"
+            },
+            "effect": {
+              "Label": "Effect",
+              "Option": {
+                "advantage": "Advantage (other dice)",
+                "disadvantage": "Disadvantage (other dice)",
+                "extraDie": "An extra die",
+                "bonus": "A flat bonus",
+                "malus": "A flat penalty"
+              }
+            },
+            "dice": {
+              "Label": "Dice rolled instead"
+            },
+            "extraDice": {
+              "Label": "Die added"
+            },
+            "amount": {
+              "Label": "Value"
+            }
+          }
+        },
+        "damageTypes": {
+          "Title": "Damage types",
+          "Summary": "Damage types (Fire, Cold…) with immunity, resistance and vulnerability, and a factor per type for attacks.",
+          "Limits": "An attack applies the factor by choosing it as its \"Damage factor\".",
+          "Q": {
+            "type": {
+              "Label": "Type of the resistances"
+            },
+            "types": {
+              "Label": "Damage types",
+              "Field": {
+                "name": {
+                  "Label": "Name"
+                }
+              }
+            },
+            "immunity": {
+              "Label": "Immunity (no damage)"
+            },
+            "resistance": {
+              "Label": "Resistance (half)"
+            },
+            "vulnerability": {
+              "Label": "Vulnerability (double)"
+            }
+          },
+          "Text": {
+            "Type": "Damage resistance",
+            "Immunity": "Immunity: {name}",
+            "Resistance": "Resistance: {name}",
+            "Vulnerability": "Vulnerability: {name}",
+            "Factor": "Damage factor: {name}"
+          }
+        },
+        "power": {
+          "Title": "Power or spell",
+          "Summary": "A power: attack, saving throw, automatic effect, healing or a condition, with an optional cost and levels.",
+          "Limits": "Area, range and components stay descriptions; more effects are added in the Action editor.",
+          "Q": {
+            "name": {
+              "Label": "Name"
+            },
+            "resolution": {
+              "Label": "How it works",
+              "Option": {
+                "attack": "Attack roll",
+                "save": "Target's saving throw",
+                "automatic": "Automatic damage",
+                "heal": "Healing",
+                "state": "Applies a condition",
+                "utility": "Other (no numeric effect)"
+              }
+            },
+            "test": {
+              "Label": "Roll"
+            },
+            "hits": {
+              "Label": "Results that hit"
+            },
+            "dice": {
+              "Label": "Effect dice"
+            },
+            "target": {
+              "Label": "Resource affected"
+            },
+            "halfOnMiss": {
+              "Label": "Half damage on a failure"
+            },
+            "state": {
+              "Label": "Condition applied"
+            },
+            "duration": {
+              "Label": "Duration",
+              "Option": {
+                "untilRemoved": "Until removed",
+                "round": "Rounds",
+                "turn": "Turns",
+                "minute": "Minutes",
+                "hour": "Hours",
+                "day": "Days",
+                "untilEvent": "Until an event"
+              }
+            },
+            "amount": {
+              "Label": "How many"
+            },
+            "event": {
+              "Label": "Event that removes it"
+            },
+            "role": {
+              "Label": "Who it affects",
+              "Option": {
+                "target": "The target",
+                "self": "Oneself"
+              }
+            },
+            "levels": {
+              "Label": "Cast at a chosen level"
+            },
+            "levelMin": {
+              "Label": "Lowest level"
+            },
+            "levelMax": {
+              "Label": "Highest level"
+            },
+            "cost": {
+              "Label": "Resource spent"
+            },
+            "costAmount": {
+              "Label": "Cost"
+            }
+          },
+          "Text": {
+            "Effect": "Effect: {name}",
+            "Half": "Half: {name}",
+            "Enough": "Enough {name} ({amount})",
+            "Spend": "Spend {amount}: {name}",
+            "Level": "Level"
+          }
+        },
+        "threshold": {
+          "Title": "Automatic threshold",
+          "Summary": "When a value crosses a threshold (hit points at 0…), a condition is applied, then removed when it goes back.",
+          "Limits": "Checked on the chosen event; the Condition can also mark defeated combatants.",
+          "Q": {
+            "name": {
+              "Label": "Name"
+            },
+            "watched": {
+              "Label": "Value watched"
+            },
+            "compare": {
+              "Label": "When it is",
+              "Option": {
+                "atMost": "At most",
+                "below": "Below",
+                "atLeast": "At least",
+                "above": "Above",
+                "equal": "Equal to"
+              }
+            },
+            "limit": {
+              "Label": "Threshold"
+            },
+            "state": {
+              "Label": "Condition applied"
+            },
+            "event": {
+              "Label": "Check on"
+            },
+            "remove": {
+              "Label": "Remove the condition when the threshold is no longer met"
+            },
+            "defeated": {
+              "Label": "Count as defeated for initiative"
+            }
+          },
+          "Text": {
+            "Apply": "Apply: {name}",
+            "Remove": "Remove: {name}",
+            "Check": "Check: {name}",
+            "Over": "Over: {name}"
+          }
+        },
+        "rest": {
+          "Title": "Rest and recovery",
+          "Summary": "A rest that restores resources, clears conditions, and can happen by itself each game day.",
+          "Limits": "An existing rest is completed, never changed.",
+          "Q": {
+            "mode": {
+              "Label": "Rest",
+              "Option": {
+                "new": "A new rest",
+                "existing": "Complete an existing rest"
+              }
+            },
+            "name": {
+              "Label": "Name"
+            },
+            "action": {
+              "Label": "Existing rest"
+            },
+            "resources": {
+              "Label": "What is recovered",
+              "Field": {
+                "resource": {
+                  "Label": "Resource"
+                },
+                "recovery": {
+                  "Label": "Recovery",
+                  "Option": {
+                    "full": "All of it",
+                    "amount": "A number",
+                    "formula": "A calculation",
+                    "reset": "Reset to"
+                  }
+                },
+                "amount": {
+                  "Label": "How much"
+                },
+                "expression": {
+                  "Label": "Calculation"
+                },
+                "resetTo": {
+                  "Label": "Value"
+                }
+              }
+            },
+            "clearStates": {
+              "Label": "Conditions cleared"
+            },
+            "daily": {
+              "Label": "Also each game day, by itself"
+            }
+          },
+          "Text": {
+            "Rest": "Rest",
+            "Recover": "Recover: {name}",
+            "Daily": "Each day: {name}",
+            "DayPassed": "A day has passed"
+          }
+        },
+        "initiative": {
+          "Title": "Initiative",
+          "Summary": "Turn order in combat: the initiative roll, a reroll each round, a tie-break, several passes.",
+          "Limits": "One initiative per Ruleset: if it already exists, change it in the Ruleset form.",
+          "Q": {
+            "test": {
+              "Label": "Initiative roll"
+            },
+            "eachRound": {
+              "Label": "Reroll each round"
+            },
+            "tieBreak": {
+              "Label": "Tie-break"
+            },
+            "passes": {
+              "Label": "Passes per round"
+            },
+            "defeated": {
+              "Label": "Defeated when"
+            },
+            "bySide": {
+              "Label": "Play by side"
+            }
+          },
+          "Text": {
+            "Test": "Initiative",
+            "TieBreak": "Initiative tie-break",
+            "Passes": "Initiative passes"
+          }
+        },
+        "creation": {
+          "Title": "Character creation",
+          "Summary": "Creation steps: picking contents, their own choices, spending points, choosing values, a final review.",
+          "Limits": "An existing creation gets new steps at the end, without touching the others.",
+          "Q": {
+            "mode": {
+              "Label": "Creation",
+              "Option": {
+                "new": "A new creation",
+                "existing": "Add steps to a creation"
+              }
+            },
+            "name": {
+              "Label": "Name"
+            },
+            "system": {
+              "Label": "Existing creation"
+            },
+            "steps": {
+              "Label": "Steps",
+              "Field": {
+                "kind": {
+                  "Label": "Kind of step",
+                  "Option": {
+                    "content": "Pick contents",
+                    "contentChoices": "Choices of the contents picked before",
+                    "allocation": "Spend points",
+                    "choice": "Choose values",
+                    "review": "Final review"
+                  }
+                },
+                "name": {
+                  "Label": "Name"
+                },
+                "templates": {
+                  "Label": "Contents offered"
+                },
+                "definitions": {
+                  "Label": "Values"
+                },
+                "min": {
+                  "Label": "At least"
+                },
+                "max": {
+                  "Label": "At most"
+                },
+                "points": {
+                  "Label": "Points to spend"
+                },
+                "perTargetMax": {
+                  "Label": "At most per value"
+                }
+              }
+            }
+          },
+          "Text": {
+            "Creation": "Character creation"
+          }
+        },
+        "progression": {
+          "Title": "Progression",
+          "Summary": "Raise values by spending a currency (XP, practice…), or gain things at level milestones.",
+          "Limits": "An existing progression gets new entries, without touching the others.",
+          "Q": {
+            "system": {
+              "Label": "Complete an existing progression"
+            },
+            "name": {
+              "Label": "Name"
+            },
+            "mode": {
+              "Label": "Kind of progression",
+              "Option": {
+                "advance": "Buy ranks",
+                "milestones": "Level milestones"
+              }
+            },
+            "values": {
+              "Label": "Values that improve",
+              "Field": {
+                "value": {
+                  "Label": "Value"
+                },
+                "currency": {
+                  "Label": "Paid with (if different)"
+                }
+              }
+            },
+            "currency": {
+              "Label": "Paid with"
+            },
+            "costs": {
+              "Label": "Cost of each rank",
+              "Field": {
+                "level": {
+                  "Label": "Rank"
+                },
+                "cost": {
+                  "Label": "Cost"
+                }
+              }
+            },
+            "maximum": {
+              "Label": "Highest rank"
+            },
+            "level": {
+              "Label": "Level"
+            },
+            "milestones": {
+              "Label": "Milestones",
+              "Field": {
+                "level": {
+                  "Label": "Level"
+                },
+                "grants": {
+                  "Label": "Grants"
+                },
+                "action": {
+                  "Label": "Runs the Action"
+                }
+              }
+            }
+          },
+          "Text": {
+            "Progression": "Progression",
+            "Cost": "Advancement cost",
+            "Maximum": "Highest rank {value}",
+            "Reached": "Level {level}"
+          }
+        },
+        "scale": {
+          "Title": "Descriptive scale",
+          "Summary": "Words for ranges of values (Frail, Sturdy…), shown instead of the number to those who cannot see it.",
+          "Limits": "Linked only to values and types that have no scale yet.",
+          "Q": {
+            "name": {
+              "Label": "Name"
+            },
+            "basis": {
+              "Label": "Ranges in",
+              "Option": {
+                "value": "Value",
+                "percent": "Percent of the maximum"
+              }
+            },
+            "rows": {
+              "Label": "Steps",
+              "Field": {
+                "min": {
+                  "Label": "From"
+                },
+                "max": {
+                  "Label": "To"
+                },
+                "words": {
+                  "Label": "Words"
+                }
+              }
+            },
+            "definitions": {
+              "Label": "Values described"
+            },
+            "types": {
+              "Label": "Types described"
+            }
+          }
+        },
+        "contentType": {
+          "Title": "Content type",
+          "Summary": "A kind of content (weapon, spell, origin…) with its fields, for items and creation choices.",
+          "Limits": "The contents themselves are made in the configurator or by import.",
+          "Q": {
+            "name": {
+              "Label": "Name"
+            },
+            "storage": {
+              "Label": "In Foundry",
+              "Option": {
+                "item": "An item",
+                "actor": "An actor"
+              }
+            },
+            "stackable": {
+              "Label": "Stackable (quantity)"
+            },
+            "fields": {
+              "Label": "Fields",
+              "Field": {
+                "name": {
+                  "Label": "Name"
+                },
+                "valueType": {
+                  "Label": "Kind of value",
+                  "Option": {
+                    "number": "Number",
+                    "integer": "Whole number",
+                    "boolean": "Yes or no",
+                    "string": "Text"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "permission": {
+          "Title": "Permissions",
+          "Summary": "Keep Actions, or changing values, for the GM or trusted roles.",
+          "Limits": "One permission per entry; finer rules are set in the Permissions editor.",
+          "Q": {
+            "kind": {
+              "Label": "What is restricted",
+              "Option": {
+                "action": "Using Actions",
+                "definition": "Changing values",
+                "definitionType": "Changing the values of a type"
+              }
+            },
+            "actions": {
+              "Label": "Actions"
+            },
+            "definitions": {
+              "Label": "Values"
+            },
+            "types": {
+              "Label": "Types"
+            },
+            "who": {
+              "Label": "Restricted to",
+              "Option": {
+                "gamemaster": "The GM",
+                "assistant": "The GM and assistants",
+                "trusted": "Trusted players too"
+              }
+            }
+          },
+          "Text": {
+            "Policy": "Permission: {name}"
+          }
+        },
+        "definitionType": {
+          "Title": "Definition type",
+          "Summary": "A family of values (characteristic, skill, resource, condition…) and what it can do.",
+          "Limits": "One capability; others are added in the type editor.",
+          "Q": {
+            "name": {
+              "Label": "Name"
+            },
+            "capability": {
+              "Label": "What its values are",
+              "Option": {
+                "value": "A number",
+                "pool": "A gauge",
+                "state": "A condition, on or off"
+              }
+            },
+            "minimum": {
+              "Label": "Lowest value"
+            },
+            "maximum": {
+              "Label": "Highest value"
+            }
+          }
+        },
+        "value": {
+          "Title": "Value",
+          "Summary": "A simple number (Luck, Experience, Load…).",
+          "Limits": "For an automatic calculation, see \"Computed value\".",
+          "Q": {
+            "name": {
+              "Label": "Name"
+            },
+            "type": {
+              "Label": "Type"
+            }
+          },
+          "Text": {
+            "Type": "Value"
+          }
+        },
+        "formula": {
+          "Title": "Formula",
+          "Summary": "A named calculation, reused by tests, effects and values.",
+          "Limits": "An identical calculation already present is reused.",
+          "Q": {
+            "name": {
+              "Label": "Name"
+            },
+            "resultType": {
+              "Label": "Result",
+              "Option": {
+                "number": "Number",
+                "integer": "Whole number",
+                "boolean": "Yes or no",
+                "string": "Text"
+              }
+            },
+            "expression": {
+              "Label": "Calculation"
+            }
+          }
+        },
+        "condition": {
+          "Title": "Condition rule",
+          "Summary": "A true-or-false check (has enough mana, is invisible…), reused by Actions and triggers.",
+          "Limits": "An identical condition already present is reused.",
+          "Q": {
+            "name": {
+              "Label": "Name"
+            },
+            "expression": {
+              "Label": "True when"
+            }
+          }
+        },
+        "effect": {
+          "Title": "Effect",
+          "Summary": "A change to a value or gauge: subtract, add, set, multiply, by a number, a calculation or dice.",
+          "Limits": "An Effect works when an Action runs it.",
+          "Q": {
+            "name": {
+              "Label": "Name"
+            },
+            "target": {
+              "Label": "Value changed"
+            },
+            "role": {
+              "Label": "Who it affects",
+              "Option": {
+                "target": "The target",
+                "self": "Oneself"
+              }
+            },
+            "operation": {
+              "Label": "Change",
+              "Option": {
+                "subtract": "Subtract",
+                "add": "Add",
+                "set": "Set to",
+                "multiply": "Multiply by"
+              }
+            },
+            "operand": {
+              "Label": "By how much",
+              "Option": {
+                "number": "A number",
+                "formula": "A calculation",
+                "dice": "Dice"
+              }
+            },
+            "amount": {
+              "Label": "Amount"
+            },
+            "expression": {
+              "Label": "Calculation"
+            },
+            "dice": {
+              "Label": "Dice"
+            },
+            "minimum": {
+              "Label": "At least"
+            }
+          }
+        },
+        "action": {
+          "Title": "Action",
+          "Summary": "A play button: its questions, conditions, costs, roll, effects, conditions applied, and what each result does.",
+          "Limits": "The chosen entries must exist; make them first with their path.",
+          "Q": {
+            "name": {
+              "Label": "Name"
+            },
+            "inputs": {
+              "Label": "Questions asked on use",
+              "Field": {
+                "name": {
+                  "Label": "Question"
+                },
+                "valueType": {
+                  "Label": "Answer",
+                  "Option": {
+                    "number": "Number",
+                    "integer": "Whole number",
+                    "boolean": "Yes or no",
+                    "string": "Text"
+                  }
+                },
+                "default": {
+                  "Label": "Default answer"
+                }
+              }
+            },
+            "conditions": {
+              "Label": "Only possible if"
+            },
+            "costs": {
+              "Label": "Costs"
+            },
+            "test": {
+              "Label": "Roll"
+            },
+            "effects": {
+              "Label": "Effects"
+            },
+            "applyStates": {
+              "Label": "Conditions applied"
+            },
+            "removeStates": {
+              "Label": "Conditions removed"
+            },
+            "role": {
+              "Label": "Who it affects",
+              "Option": {
+                "target": "The target",
+                "self": "Oneself"
+              }
+            },
+            "results": {
+              "Label": "Depending on the roll's result",
+              "Field": {
+                "resultKey": {
+                  "Label": "Result"
+                },
+                "effects": {
+                  "Label": "Effects"
+                },
+                "actions": {
+                  "Label": "Actions chained"
+                }
+              }
+            },
+            "targeting": {
+              "Label": "Several targets",
+              "Option": {
+                "one": "One target",
+                "each": "One roll per target",
+                "shared": "One roll for all"
+              }
+            }
+          }
+        },
+        "counter": {
+          "Title": "Counter",
+          "Summary": "A value raised with a click and reset on an event (attacks this round…).",
+          "Limits": "To limit an Action with it, add a Condition on the counter.",
+          "Q": {
+            "name": {
+              "Label": "Name"
+            },
+            "type": {
+              "Label": "Type of the counter"
+            },
+            "increment": {
+              "Label": "Add a +1 button"
+            },
+            "resetOn": {
+              "Label": "Reset on"
+            },
+            "resetTo": {
+              "Label": "Reset value"
+            }
+          },
+          "Text": {
+            "Type": "Counter",
+            "Increment": "+1: {name}",
+            "Reset": "Reset: {name}"
+          }
+        },
+        "trigger": {
+          "Title": "Trigger",
+          "Summary": "Run Actions by themselves on an event (start of round, turn, time passing…).",
+          "Limits": "The Actions run must exist.",
+          "Q": {
+            "name": {
+              "Label": "Name"
+            },
+            "event": {
+              "Label": "When"
+            },
+            "conditions": {
+              "Label": "Only if"
+            },
+            "actions": {
+              "Label": "Actions run"
+            },
+            "holder": {
+              "Label": "For whom",
+              "Option": {
+                "actor": "Each actor concerned",
+                "combat": "The combat",
+                "world": "The world"
+              }
+            },
+            "mode": {
+              "Label": "How",
+              "Option": {
+                "automatic": "By itself",
+                "offer": "Offered to the player"
+              }
+            },
+            "actingRole": {
+              "Label": "Who acts",
+              "Option": {
+                "self": "The holder",
+                "target": "The event's target"
+              }
+            }
+          }
+        },
+        "table": {
+          "Title": "Random table",
+          "Summary": "A table rolled with dice (criticals, hit locations, encounters…), each row able to run Actions.",
+          "Limits": "Rows with neither \"From\" nor \"To\" never come up at random.",
+          "Q": {
+            "name": {
+              "Label": "Name"
+            },
+            "dice": {
+              "Label": "Dice"
+            },
+            "bonus": {
+              "Label": "Bonus to the roll"
+            },
+            "rows": {
+              "Label": "Rows",
+              "Field": {
+                "label": {
+                  "Label": "Text"
+                },
+                "min": {
+                  "Label": "From"
+                },
+                "max": {
+                  "Label": "To"
+                },
+                "actions": {
+                  "Label": "Actions run"
+                }
+              }
+            },
+            "action": {
+              "Label": "Add a button to roll"
+            }
+          }
+        },
+        "die": {
+          "Title": "Special die",
+          "Summary": "A die with custom faces (symbols, successes, advantages…) that add to counters.",
+          "Limits": "Faces are rolled by a dice formula using the die's letter.",
+          "Q": {
+            "name": {
+              "Label": "Name"
+            },
+            "letter": {
+              "Label": "Letter in formulas"
+            },
+            "faces": {
+              "Label": "Faces",
+              "Field": {
+                "label": {
+                  "Label": "Face"
+                },
+                "value": {
+                  "Label": "Value"
+                },
+                "counter": {
+                  "Label": "Counts as"
+                },
+                "count": {
+                  "Label": "How many"
+                }
+              }
+            }
+          }
+        }
+      },
+      "Text": {
+        "Dice": "Dice: {name}",
+        "Amount": "Amount: {name}",
+        "Bonus": "Bonus: {name}",
+        "Roll": "Roll: {name}",
+        "Difficulty": "Difficulty: {name}",
+        "AskedDifficulty": "Asked difficulty",
+        "TestDifficulty": "Test difficulty",
+        "DifficultyInput": "Difficulty",
+        "Result": {
+          "critical": "Critical",
+          "fumble": "Fumble",
+          "success": "Success",
+          "failure": "Failure"
+        },
+        "CriticalMultiplier": "Critical multiplier",
+        "Half": "Half",
+        "InputAmount": "Entered amount",
+        "AmountInput": "Amount",
+        "Duration": {
+          "untilRemoved": "Until removed",
+          "round": "{amount} round(s)",
+          "turn": "{amount} turn(s)",
+          "minute": "{amount} minute(s)",
+          "hour": "{amount} hour(s)",
+          "day": "{amount} day(s)",
+          "untilEvent": "Until an event"
+        }
+      }
     }
   }
 }

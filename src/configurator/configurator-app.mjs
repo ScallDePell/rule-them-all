@@ -19,7 +19,6 @@ import {ConfiguratorEntryEditor} from "./configurator-entry-editor.mjs";
 import {buildRuntimeLabDemoProfile} from "../runtime/runtime-demo-profile.mjs";
 import {applyRuntimeChoice,describeRuntimeResult,progressionLabRows} from "./runtime-lab-view.mjs";
 import {diagnosticEditor,pathInObject} from "./diagnostic-focus.mjs";
-import {recipeCards,recipeTextKeys} from "./recipes.mjs";
 import {moduleLanguage} from "../core/module-language.mjs";
 
 
@@ -360,7 +359,6 @@ export class ConfiguratorApp extends ConfiguratorWindow {
       isGeneral:!!ruleset&&this.#view==="general",isCollection:!!ruleset&&Boolean(currentKind),isContentFamily:currentKind==="contentTemplate",isDependencies:!!ruleset&&this.#view==="dependencies",isRuntimeLab:!!ruleset&&this.#view==="runtimeLab",isContentTypes,isContentTemplates,isContentLibraries,
       currentTitle,currentKind,currentType,canReorder:Boolean(record&&record.status!=="validated"&&currentKind),cards:filteredCards,availableTags,hasFacets:availableTags.length>0,hasActiveFilters:activeTagIds.size>0,dependencyGroups:dependencyVisibleGroups,dependencySelected,dependencyGraph,dependencyStats,dependencyAvailableTags,dependencyActiveTagCount:dependencyActiveTags.size,dependencyUnresolvedOnly,actors,runtimeActions,runtimeFormulas,runtimeConditions,runtimeTests,runtimeEvents,runtimeDefinitionChoices,runtimeContentChoices,runtimeInputRows,runtimeRerolls,runtimeProgressions,runtimeProgression,runtimeLastUseName,runtimeResult:this.#runtimeResult,runtimeStateCards,runtimeSelection:this.#runtimeSelection,runtimeHasActorSubtypes:availableDocumentTypes("Actor").length>1,runtimeActorTypeOptions:availableDocumentTypes("Actor").map(id=>({id,label:documentTypeLabel("Actor",id),sourceSelected:id===this.#runtimeSelection.sourceType,targetSelected:id===this.#runtimeSelection.targetType})),runtimeTool,runtimeModes,runtimeGuide,runtimeReady,runtimeStateError,runtimeActorNames,
       publishReadiness:this.#view==='general'&&record?.status==='draft'?this.#publishReadiness(api,ruleset):null,
-      recipes:this.#view==='general'&&record?recipeCards():null,
       lifecycle:record?{isValidated:record.status==="validated",isReady:record.status==="ready",isDraft:record.status==="draft",canMutate:record.status!=="validated",canCreateVersion:record.status==="validated",canActivate:Boolean(record.publishedSnapshot),isActive:record.versionId===activeId,statusLabel:statusLabel(record.status)}:null,
       extensions:(ruleset?.extensions??[]).map(extension=>({id:extension.id,name:extension.name,version:extension.version,count:game.i18n?.format?.("RTA.Extension.Count",{count:extension.entries.length+extension.replaced.length})??""})),
       partSelection:{count:this.#partSelection.size,label:game.i18n?.format?.("RTA.Part.SelectionCount",{count:this.#partSelection.size})??String(this.#partSelection.size)},
@@ -732,12 +730,6 @@ export class ConfiguratorApp extends ConfiguratorWindow {
       if (action==="openDiagnostic") return this.#openEditor(button.dataset.kind,button.dataset.entryId,{focusPath:button.dataset.path??""});
       if (action==="publish") { await api.publishRuleset(button.dataset.versionId??this.#selected); return this.render(false); }
       if (action==="validate") { await api.validateRulesetVersion(button.dataset.versionId??this.#selected); return this.render(false); }
-      if (action==="applyRecipe") {
-        const recipeId=button.dataset.recipeId,i18n=game.i18n;
-        if(!await confirmRTA("RTA.Recipe.Confirm",{title:i18n.localize(`RTA.Recipe.${recipeId}.Title`)}))return;
-        const created=await api.applyRecipe(this.#selected,recipeId,Object.fromEntries(recipeTextKeys(recipeId).map(key=>[key,i18n.localize(key)])));
-        ui.notifications?.info?.(i18n.format("RTA.Recipe.Applied",{count:created.length}));this.#error="";return this.render(false);
-      }
       if (action==="createNewVersion") {
         const source=button.dataset.versionId??this.#selected;
         const record=api.getRulesetVersion(source);
