@@ -3,9 +3,13 @@
    Each enabled SheetDefinition of the active Ruleset is also offered there under its own name.
    Every value changed here goes to the runtime (writeSheetValue), never to the Document's data. */
 import {MODULE_ID} from "../core/module-contract.mjs";
-import {sheetFor} from "../configurator/sheet-auto-layout.mjs";
+import {chosenSheet} from "../configurator/sheet-auto-layout.mjs";
+export {chosenSheet};
 import {resolveRuntimeRuleset} from "./runtime-contracts.mjs";
-import {formatSheetValue, renderActionChatHTML, renderSheetHTML} from "../ui/sheet-markup.mjs";
+import {formatSheetValue, renderActionChatHTML, renderFieldActionButtons, renderSheetHTML} from "../ui/sheet-markup.mjs";
+import {openContextMenu} from "../ui/context-menu.mjs";
+import {integrations} from "../integrations/integrations.mjs";
+import {describeField} from "../integrations/sheet-fields.mjs";
 import {escapeHTML} from "../ui/html-utils.mjs";
 import {renderActionChoiceContent, renderActionInputsContent} from "../ui/dialog-markup.mjs";
 import {openCreationWindow, startableSystems} from "./foundry-creation.mjs";
@@ -19,6 +23,10 @@ const rta = () => globalThis.game?.ruleThemAll;
 const i18n = key => globalThis.game?.i18n?.localize?.(key) ?? key;
 const versionName = record => record ? `${record.workingDraft?.nameKey ?? record.publishedSnapshot?.nameKey ?? ""} ${record.version ?? ""}`.trim() : "";
 const notifyError = error => { console.error("Rule Them'All | Sheet", error); globalThis.ui?.notifications?.error?.(error?.message ?? String(error)); };
+// Buttons another module adds on fields or takes away show at once on the open sheets.
+integrations.internal.onChange(() => {
+  for (const app of globalThis.foundry?.applications?.instances?.values?.() ?? []) if (app.rendered && app.options?.classes?.includes?.("rta-sheet-app")) app.render();
+}, "fieldActions");
 
 /** Tags and attributes rich notes keep; the rest is dropped (scripts, frames, forms, event handlers, javascript: links). */
 const RICH_TAGS = new Set(["p", "br", "strong", "b", "em", "i", "u", "s", "del", "span", "div", "section", "h1", "h2", "h3", "h4", "h5", "h6", "ul", "ol", "li", "blockquote",
@@ -141,13 +149,6 @@ export async function setTokenImage(actor, path, {placed = false, scenes = globa
   }
 }
 
-/** The sheet a window shows: the SheetDefinition it was chosen for (Foundry's sheet choice) when this Ruleset still
-   has it for this target, otherwise the first that fits (or AUTO). */
-export function chosenSheet(ruleset, sheetId, {target, contentTypeId = null}) {
-  const sheet = sheetId ? (ruleset.sheetDefinitions ?? []).find(entry => entry.id === sheetId && entry.enabled !== false && entry.target === target
-    && (target !== "item" || !(entry.contentTypeIds ?? []).length || (entry.contentTypeIds ?? []).includes(contentTypeId))) : null;
-  return sheet ?? sheetFor(ruleset, {target, contentTypeId});
-}
 
 /** The sheet classes, built on Foundry's ActorSheetV2 / ItemSheetV2. */
 export function createRulesetSheets({ActorSheetV2, ItemSheetV2}) {
@@ -168,7 +169,7 @@ export function createRulesetSheets({ActorSheetV2, ItemSheetV2}) {
     async _renderHTML() {
       const state = this.#state ?? {}, t = state.versionId ? translator(state.versionId) : i18n;
       return renderSheetHTML(state.view, {t, name: this.document.name, img: this.document.img, token: tokenImage(this.document), editable: this.isEditable, unlocked: this.rtaUnlocked,
-        notice: state.notice ?? "", noticeActions: state.noticeActions ?? [], headerActions: state.headerActions ?? []});
+        notice: state.notice ?? "", noticeActions: state.noticeActions ?? [], headerActions: state.headerActions ?? [], fieldActions: integrations.internal.fieldActions().length > 0});
     }
 
     /* The lock, as on Foundry's own sheets: locked (the default), the sheet is played and the name and images stay as they
@@ -251,10 +252,37 @@ export function createRulesetSheets({ActorSheetV2, ItemSheetV2}) {
         button.addEventListener("click", event => { const toggle = event.currentTarget, fold = toggle.getAttribute("aria-expanded") === "true"; this.#fold(toggle, fold); rememberCollapsed(this.#state?.sheet?.id, toggle.dataset.sheetCollapse, fold); });
       }
       this.#richNotes(root).catch(notifyError);
+      this.#fieldActions(root);
       for (const button of root.querySelectorAll("[data-sheet-item-open]")) button.addEventListener("click", event => this.#ownedItem(event.currentTarget.dataset.sheetItemOpen)?.sheet?.render(true));
       for (const button of root.querySelectorAll("[data-sheet-item-remove]")) button.addEventListener("click", event => this.#removeItem(event.currentTarget.dataset.sheetItemRemove));
       const tab = this.#tab && root.querySelector(`[data-sheet-tab="${CSS.escape(this.#tab)}"]`);
       if (tab) this.#showTab(tab);
+    }
+    /** Other modules' buttons on the fields (integrations.registerSheetFieldAction): those whose matches and isVisible
+       accept the field; several modules on one field share one button that lists them. A field this user does not get
+       is not drawn, so it gets none. What a button does is the module's own; its failure is shown, the sheet stays. */
+    #fieldActions(root) {
+      const state = this.#state, registered = integrations.internal.fieldActions();
+      if (!registered.length || !state?.ruleset || !state.sheet) return;
+      const target = this.document.documentName === "Actor" ? "actor" : "item", user = globalThis.game?.user;
+      for (const slot of root.querySelectorAll("[data-sheet-field-actions]")) {
+        const [kind, id] = slot.dataset.sheetFieldActions.split(/:(.*)/s);
+        const fieldRef = {rulesetId: state.ruleset.id, sheetId: state.sheet.id, target, ...(state.contentTypeId ? {contentTypeId: state.contentTypeId} : {}), ...(kind === "slot" ? {slot: id} : {nodeId: id})};
+        const field = describeField(state.ruleset, fieldRef);
+        if (field.status !== "ok") continue;
+        const context = {document: this.document, documentUuid: this.document.uuid, documentName: this.document.documentName, rulesetId: state.ruleset.id, versionId: state.versionId,
+          sheetId: state.sheet.id, fieldRef, field, unlocked: this.rtaUnlocked, editable: this.isEditable, user: {id: user?.id ?? null, isGM: Boolean(user?.isGM)}};
+        const actions = registered.filter(action => {
+          try { return action.matches(field, context) && (!action.isVisible || action.isVisible(context) !== false); } catch (error) { integrations.internal.report(action.id, error); return false; }
+        });
+        if (!actions.length) continue;
+        const run = action => Promise.resolve().then(() => action.execute(context)).catch(error => { integrations.internal.report(action.id, error); globalThis.ui?.notifications?.error?.(globalThis.game?.i18n?.format?.("RTA.Integration.ActionFailed", {error: error?.message ?? String(error)}) ?? String(error)); });
+        const shown = actions.map(action => ({id: action.id, icon: action.icon, label: i18n(action.label)}));
+        const grouped = new Set(actions.map(action => action.ownerModule ?? action.id)).size > 1;
+        slot.innerHTML = renderFieldActionButtons(shown, {grouped, menuLabel: i18n("RTA.Integration.FieldActions")});
+        for (const button of slot.querySelectorAll("[data-sheet-field-action]")) button.addEventListener("click", event => { event.preventDefault(); event.stopPropagation(); run(actions.find(action => action.id === button.dataset.sheetFieldAction)); });
+        slot.querySelector("[data-sheet-field-menu]")?.addEventListener("click", event => { event.stopPropagation(); openContextMenu(event, actions.map((action, i) => ({label: shown[i].label, icon: action.icon, run: () => run(action)}))); });
+      }
     }
     /** Items dropped on the sheet (from a compendium, the Items directory, another Actor). The listeners sit on the
        window, which lasts across renders; Foundry's own drop handling, when the base sheet has one, ends here too. */

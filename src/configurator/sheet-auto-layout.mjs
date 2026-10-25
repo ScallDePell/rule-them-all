@@ -98,3 +98,11 @@ export function sheetFor(ruleset, {target = "actor", contentTypeId = null} = {})
   const contentTypeIds = target === "item" && contentTypeId ? [contentTypeId] : [];
   return {id: "auto", nameKey: "", target, contentTypeIds, root: autoLayout(ruleset, {target, contentTypeIds})};
 }
+
+/** The sheet a window shows: the SheetDefinition it was chosen for (Foundry's sheet choice) when this Ruleset still
+   has it for this target, otherwise the first that fits (or AUTO). */
+export function chosenSheet(ruleset, sheetId, {target, contentTypeId = null}) {
+  const sheet = sheetId ? (ruleset.sheetDefinitions ?? []).find(entry => entry.id === sheetId && entry.enabled !== false && entry.target === target
+    && (target !== "item" || !(entry.contentTypeIds ?? []).length || (entry.contentTypeIds ?? []).includes(contentTypeId))) : null;
+  return sheet ?? sheetFor(ruleset, {target, contentTypeId});
+}

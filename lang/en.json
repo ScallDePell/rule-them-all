@@ -3855,6 +3855,14 @@
         "initiative": "Initiative",
         "initiative_defeatedConditionRef": "Initiative: defeated"
       }
+    },
+    "Integration": {
+      "SectionFailed": "This section of another module could not list its cards (see the console).",
+      "Open": "Open",
+      "Enable": "Turn on",
+      "Disable": "Turn off",
+      "FieldActions": "Actions on this field",
+      "ActionFailed": "This action of another module failed: {error}"
     }
   }
 }

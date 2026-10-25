@@ -62,6 +62,16 @@
   --rta-tag-color: var(--rta-color-neutral);
 }
 
+/* A card of another module whose target is gone. */
+.rta-config-card__tag--invalid {
+  --rta-tag-color: var(--rta-color-danger);
+}
+
+.rta-config-card.rta-config-card--invalid {
+  outline: 2px solid var(--rta-color-danger);
+  outline-offset: 2px;
+}
+
 .rta-config-card__tag--capability {
   --rta-tag-color: var(--rta-color-accent-warm);
 }

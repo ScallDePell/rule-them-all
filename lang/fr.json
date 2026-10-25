@@ -3855,6 +3855,14 @@
         "initiative": "Initiative",
         "initiative_defeatedConditionRef": "Initiative : hors de combat"
       }
+    },
+    "Integration": {
+      "SectionFailed": "Cette section d'un autre module n'a pas pu lister ses cartes (voir la console).",
+      "Open": "Ouvrir",
+      "Enable": "Activer",
+      "Disable": "Désactiver",
+      "FieldActions": "Actions sur ce champ",
+      "ActionFailed": "Cette action d'un autre module a échoué : {error}"
     }
   }
 }

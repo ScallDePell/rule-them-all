@@ -73,6 +73,10 @@ export class ConfiguratorRegistry {
     const family = this.#families.get(rulesetId);
     return family ? Array.from(family.versions.values(), value => copyJSON(value)) : [];
   }
+  /** Every version's identity and status, without copying its Rulesets. */
+  versionSummaries() {
+    return Array.from(this.#families.values()).flatMap(family => Array.from(family.versions.values(), record => ({versionId: record.versionId, rulesetId: record.rulesetId, version: record.version, status: record.status})));
+  }
   list() { return this.listFamilies().flatMap(f => f.versions.map(v => copyJSON(v.workingDraft))); }
   getRecord(versionId) {
     const familyId = this.#versionFamily.get(versionId);

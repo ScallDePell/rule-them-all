@@ -40,7 +40,8 @@ test('stable API: every stable hook is fired by the module', ()=>{
   const fired=hook=>source.includes(`callAll("${hook}"`)||source.includes(`callAll?.("${hook}"`)
     ||(constantOf(hook)&&new RegExp(`callAll\\??\\.?\\(\\s*RUNTIME_HOOKS\\.${constantOf(hook)}\\b`).test(source))
     ||(hook==='ruleThemAllRegisterTypes'&&/callAll\(REGISTER_TYPES_HOOK/.test(source))
-    ||(hook==='ruleThemAllRegisterIntegrations'&&/callAll\(REGISTER_INTEGRATIONS_HOOK/.test(source));
+    ||(hook==='ruleThemAllRegisterIntegrations'&&/callAll\(REGISTER_INTEGRATIONS_HOOK/.test(source))
+    ||(hook==='ruleThemAllRulesetChanged'&&/callAll\(RULESET_CHANGED_HOOK/.test(source));
   assert.deepEqual(STABLE_API.hooks.filter(hook=>!fired(hook)),[]);
 });
 

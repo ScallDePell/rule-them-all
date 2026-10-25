@@ -18,6 +18,10 @@
    - [data-sheet-name] is the Document's name, a field only while the sheet is unlocked;
    - [data-sheet-edit-image=img|token] (the camera button on a portrait, only while unlocked) opens Foundry's file picker
      for the Document's image or its prototype token's, [data-sheet-update-placed] also for the tokens already placed.
+   - [data-sheet-node=nodeId] is a field other modules may act on (a portrait, a token, a name, notes, a text field of a
+     Content, a picture), [data-sheet-slot=header.img|header.name] the standard header's image and name; each holds (the
+     name: is followed by) an empty [data-sheet-field-actions="node:<id>"|"slot:<slot>"] the controller fills with their
+     buttons. Only on a played sheet drawn with fieldActions (another module offers some), never in a list row, a card or the editor.
    doc: {name, img, token, editable, unlocked}: the Document a played sheet shows (token: its prototype token's image),
    whether the user may change it and whether its lock is open. */
 import {escapeHTML as escape} from "./html-utils.mjs";
@@ -240,7 +244,22 @@ function renderSeparator(node, t, {edit, m}) {
   return `<div ${attrs(node, `rta-sheet-separator${node.look === "ornament" ? " rta-sheet-separator--ornament" : ""}`)} role="separator"${m}>${node.look === "ornament" ? `<i class="fa-solid fa-diamond" aria-hidden="true"></i>` : ""}</div>`;
 }
 
-function renderNode(node, t, {row = null, solo = false, edit = false, editable = false, doc = {}, card = false} = {}) {
+/** Where other modules' buttons go on a field (integrations.registerSheetFieldAction): see the data contract above. */
+const FIELD_KINDS = new Set(["portrait", "token", "name", "notes"]);
+const isField = node => FIELD_KINDS.has(node.kind) || (node.kind === "image" && node.src && !node.click) || (node.kind === "separator" && node.src)
+  || (node.kind === "value" && Boolean(node.target?.fieldId) && node.valueType === "string");
+const actionSlot = at => `<span class="rta-sheet-field-actions" data-sheet-field-actions="${escape(at)}"></span>`;
+function withFieldSlot(html, node) {
+  const open = html.indexOf(">"), close = html.lastIndexOf("</");
+  if (open < 0 || close < open) return html;
+  return `${html.slice(0, open)} data-sheet-node="${escape(node.id)}"${html.slice(open, close)}${actionSlot(`node:${node.id}`)}${html.slice(close)}`;
+}
+function renderNode(node, t, options = {}) {
+  const html = renderBlock(node, t, options);
+  return html && node && options.doc?.fields && !options.edit && !options.card && !options.row && isField(node) ? withFieldSlot(html, node) : html;
+}
+
+function renderBlock(node, t, {row = null, solo = false, edit = false, editable = false, doc = {}, card = false} = {}) {
   if (!node) return "";
   const m = (card ? "" : mark(node, edit)) + (node.kind === "value" && node.error ? "" : tooltip(node, t));
   if (node.kind === "name") return renderName(node, t, {edit: edit && !card, doc, m});
@@ -324,14 +343,17 @@ function renderList(node, t, edit) {
 
 /** The standard header: the portrait (with Foundry's camera button while unlocked) and the name, then the sheet commands.
     In the editor (edit) a sample stands for the Document. */
-function standardHeader(t, {doc = {}, edit = false, commands = ""} = {}) {
+function standardHeader(t, {doc = {}, edit = false, commands = "", fields = false} = {}) {
   const image = edit ? `<span class="rta-sheet__image rta-sheet__image--sample"><i class="fa-solid fa-user" aria-hidden="true"></i></span>`
     : doc.img ? `<img class="rta-sheet__image" src="${escape(doc.img)}" alt="">` : "";
   const camera = !edit && doc.editable && doc.unlocked ? cameraButton("img", t) : "";
+  // fields: the image and the name take other modules' buttons (data contract above).
+  const slot = name => fields ? ` data-sheet-slot="${name}"` : "";
   const name = edit ? `<h2 class="rta-sheet__name">${escape(t("RTA.SheetEditor.SampleName"))}</h2>`
-    : doc.editable && doc.unlocked ? `<input class="rta-sheet__name" type="text" data-sheet-name value="${escape(doc.name ?? "")}" aria-label="${escape(t("RTA.Template.Name"))}">`
-      : `<h2 class="rta-sheet__name">${escape(doc.name ?? "")}</h2>`;
-  return `<header class="rta-sheet__header">${image || camera ? `<div class="rta-sheet__portrait">${image}${camera}</div>` : ""}${name}${commands}</header>`;
+    : doc.editable && doc.unlocked ? `<input class="rta-sheet__name" type="text" data-sheet-name${slot("header.name")} value="${escape(doc.name ?? "")}" aria-label="${escape(t("RTA.Template.Name"))}">`
+      : `<h2 class="rta-sheet__name"${slot("header.name")}>${escape(doc.name ?? "")}</h2>`;
+  const portrait = image || camera ? `<div class="rta-sheet__portrait"${slot("header.img")}>${image}${camera}${fields ? actionSlot("slot:header.img") : ""}</div>` : "";
+  return `<header class="rta-sheet__header">${portrait}${name}${fields ? actionSlot("slot:header.name") : ""}${commands}</header>`;
 }
 
 /** class and style of the sheet's element: its theme's class and overrides (configurator/sheet-themes.mjs). */
@@ -348,12 +370,13 @@ export function renderLayoutPreviewHTML(view, {t = key => key, selectedId = null
 }
 
 /** The whole sheet: header (image and name, unless the sheet places them itself), then the layout. notice: a message shown instead of the layout.
+    fieldActions: the fields hold the places other modules' buttons go (data contract above).
     editable: the user may change the Document; unlocked: its lock is open (name and images can be changed). token: its prototype token's image. */
-export function renderSheetHTML(view, {t = key => key, name = "", img = "", token = "", editable = false, unlocked = false, notice = "", noticeActions = [], headerActions = []} = {}) {
-  const doc = {name, img, token, editable, unlocked};
+export function renderSheetHTML(view, {t = key => key, name = "", img = "", token = "", editable = false, unlocked = false, notice = "", noticeActions = [], headerActions = [], fieldActions = false} = {}) {
+  const doc = {name, img, token, editable, unlocked, fields: fieldActions && !notice};
   const commands = headerActions.map(action => `<button type="button" class="rta-sheet__command" data-sheet-command="${escape(action.command)}"><i class="fa-solid ${escape(action.icon ?? "fa-wand-magic-sparkles")}"></i> ${escape(action.label)}</button>`).join("");
   // Without the standard header, the commands keep a row of their own.
-  const header = notice || view?.header !== "none" ? standardHeader(t, {doc, commands}) : commands ? `<header class="rta-sheet__header rta-sheet__header--commands">${commands}</header>` : "";
+  const header = notice || view?.header !== "none" ? standardHeader(t, {doc, commands, fields: doc.fields}) : commands ? `<header class="rta-sheet__header rta-sheet__header--commands">${commands}</header>` : "";
   const body = notice
     ? `<div class="rta-sheet-notice"><p>${escape(notice)}</p>${noticeActions.length ? `<div class="rta-sheet-notice__actions">${noticeActions.map((action, i) => `<button type="button"${i ? "" : ' class="rta-sheet-notice__primary"'} data-sheet-command="${escape(action.command)}">${escape(action.label)}</button>`).join("")}</div>` : ""}</div>`
     : renderNode(view?.root, t, {editable, doc});
@@ -363,4 +386,13 @@ export function renderSheetHTML(view, {t = key => key, name = "", img = "", toke
 /** The chat card of an Action used from a sheet. summary: {title, actor, lines: [{label, value}], outcome}. */
 export function renderActionChatHTML({title, actor = "", lines = [], outcome = "", buttons = []}) {
   return `<div class="rta-chat-card"><header class="rta-chat-card__title"><strong>${escape(title)}</strong>${actor ? `<span>${escape(actor)}</span>` : ""}</header>${lines.length ? `<dl class="rta-chat-card__lines">${lines.map(line => `<dt>${escape(line.label)}</dt><dd>${escape(line.value)}</dd>`).join("")}</dl>` : ""}${outcome ? `<p class="rta-chat-card__outcome">${escape(outcome)}</p>` : ""}${buttons.length ? `<footer class="rta-chat-card__buttons">${buttons.map(button => `<button type="button" data-rta-chat-action="${escape(button.index)}" data-who="${escape(button.who)}">${escape(button.label)}</button>`).join("")}</footer>` : ""}</div>`;
+}
+
+/** The buttons other modules put on a field: one per action, or, when several modules offer some, one that opens their
+    list (data-sheet-field-menu). actions: [{id, icon, label}] with label already translated. */
+export function renderFieldActionButtons(actions, {menuLabel = "", grouped = false} = {}) {
+  if (!actions.length) return "";
+  const button = (data, icon, label) => `<button type="button" class="rta-sheet-field-action" ${data} title="${escape(label)}" aria-label="${escape(label)}"><i class="${escape(icon)}" aria-hidden="true"></i></button>`;
+  if (grouped) return button("data-sheet-field-menu", "fa-solid fa-ellipsis-vertical", menuLabel);
+  return actions.map(action => button(`data-sheet-field-action="${escape(action.id)}"`, action.icon, action.label)).join("");
 }

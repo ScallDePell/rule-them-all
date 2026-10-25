@@ -53,6 +53,10 @@ await api.createSheetDefinition(v,{id:'sh1',nameKey:'Character sheet',target:'ac
   {id:'stats',kind:'section',labelKey:'Stats',columns:1,children:[{id:'stat-list',kind:'repeater',query:{definitionTypeId:'stat'},columns:1,children:[{id:'stat-value',kind:'value',source:{kind:'each',capabilityId:'value',outputId:'value.final'},write:{operation:'set'}}]}]},
   {id:'derived',kind:'section',labelKey:'Derived',columns:1,children:[{id:'total',kind:'value',source:{kind:'formula',formulaRef:'f1'}},{id:'strike',kind:'action',actionRef:'a1'}]}]}]},
   {id:'skills-tab',kind:'tab',labelKey:'Skills',children:[{id:'skill-list',kind:'repeater',query:{definitionTypeId:'skill'},columns:2,children:[]}]}]}});
+// Another module's section after Sheets, with cards of each look (badges, a tag, off, a lost target).
+const {integrations}=await imp('src/integrations/integrations.mjs');
+integrations.registry.registerConfiguratorSection({id:'qa.generation',ownerModule:'qa',parentGroup:'systems',after:'sheetDefinitions',title:'Generation',icon:'fa-solid fa-robot',
+  cards:{list:async()=>[{id:'c1',name:'Portrait',badges:[{icon:'fa-solid fa-image',label:'Image'}],tags:[{id:'art',name:'Art',color:'#3a7bd5'}]},{id:'c2',name:'Background',enabled:false,badges:[{label:'Text'}]},{id:'c3',name:'Lost target',invalid:{message:'The block is gone.'}}],create:async()=>{},open:async()=>{},remove:async()=>{}}});
 // Harness-only copy exposing the private view state.
 const src=readFileSync(join(root,'src/configurator/configurator-app.mjs'),'utf8')
   .replace('#view = "general";','#view = globalThis.__qa.view;').replace('#displayMode = "tiles";','#displayMode = globalThis.__qa.mode;').replace('#selected = "";','#selected = globalThis.__qa.selected;');
@@ -63,7 +67,7 @@ const tpl=Handlebars.compile(readFileSync(join(root,'templates/configurator/conf
 const foundryCss=process.env.RTA_FOUNDRY_CSS?readFileSync(process.env.RTA_FOUNDRY_CSS,'utf8')+'\n':'';
 const css=foundryCss+JSON.parse(readFileSync(join(root,'module.json'),'utf8')).styles.map(p=>readFileSync(join(root,p),'utf8')).join('\n');
 const views=[['rulesets','',''],['general',v,'general'],['definitionTypes',v,'definitionTypes'],['definitions-tiles',v,'definitions:stat'],['definitions-lines',v,'definitions:stat','lines'],
- ['contentTypes',v,'contentTypes'],['content',v,'content:gear'],['formulas',v,'formulas'],['actions',v,'actions'],['tags',v,'tags'],['dependencies',v,'dependencies'],['runtimeLab',v,'runtimeLab'],['sheets',v,'sheetDefinitions']];
+ ['contentTypes',v,'contentTypes'],['content',v,'content:gear'],['formulas',v,'formulas'],['actions',v,'actions'],['tags',v,'tags'],['dependencies',v,'dependencies'],['runtimeLab',v,'runtimeLab'],['sheets',v,'sheetDefinitions'],['extension',v,'extension:qa.generation']];
 for(const [name,selected,view,mode='tiles'] of views){
   globalThis.__qa={selected,view:view||'general',mode};
   const app=new ConfiguratorApp();const ctx=await app._prepareContext({});

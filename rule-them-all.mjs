@@ -1,5 +1,8 @@
-import {API_VERSION, MODULE_ID, REGISTER_TYPES_HOOK, REGISTER_INTEGRATIONS_HOOK} from "./src/core/module-contract.mjs";
+import {API_VERSION, MODULE_ID, REGISTER_TYPES_HOOK, REGISTER_INTEGRATIONS_HOOK, RULESET_CHANGED_HOOK} from "./src/core/module-contract.mjs";
 import {integrations} from "./src/integrations/integrations.mjs";
+import {createFieldServices} from "./src/integrations/field-services.mjs";
+import {createRulesetChangeWatcher} from "./src/integrations/ruleset-changes.mjs";
+import {foundryDocuments} from "./src/runtime/foundry-integrations.mjs";
 import {createRepairDataMenu} from "./src/configurator/repair-data-menu.mjs";
 import {engineRegistries} from "./src/configurator/operation-registries.mjs";
 import {createConfiguratorAPI} from "./src/configurator/configurator-api.mjs";
@@ -120,6 +123,12 @@ Hooks.once("ready", () => {
     // Players create their character with the active Ruleset's Creation System, from the Actors directory.
     installCreationButton();
     installSharedResources();
+    // Other modules read and fill sheet fields through these, and hear when the sheets they point at change.
+    integrations.internal.bindServices(createFieldServices({configurator: () => api, runtime: () => game.ruleThemAll.runtime, documents: foundryDocuments(),
+      user: () => ({id: game.user?.id ?? null, isGM: Boolean(game.user?.isGM)}), translate: (versionId, key) => translator(versionId)(key)}));
+    const rulesetChanges = createRulesetChangeWatcher(api, change => { integrations.internal.emitRulesetChange(change); Hooks.callAll(RULESET_CHANGED_HOOK, change); });
+    rulesetChanges.scan();
+    api.subscribe(() => rulesetChanges.scan());
     ui.actors?.render?.();
     // GM sandbox only: previews the working draft. Gameplay never uses it.
     game.ruleThemAll.runtimeLab = createRuntimeAPI(api, {rulesetSource: "draft"});

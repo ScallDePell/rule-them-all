@@ -21,6 +21,8 @@ import {buildRuntimeLabDemoProfile} from "../runtime/runtime-demo-profile.mjs";
 import {applyRuntimeChoice,describeRuntimeResult,progressionLabRows} from "./runtime-lab-view.mjs";
 import {diagnosticEditor,pathInObject} from "./diagnostic-focus.mjs";
 import {moduleLanguage} from "../core/module-language.mjs";
+import {integrations} from "../integrations/integrations.mjs";
+import {extensionCards, extensionIdOf, withExtensionItems} from "../integrations/configurator-sections.mjs";
 
 
 const neutral = RTA_NEUTRAL_COLOR;
@@ -79,6 +81,8 @@ export class ConfiguratorApp extends ConfiguratorWindow {
   static MINIMUM = {width:620,height:380};
   static #open = new Set();
   static refreshOpen() { for (const app of this.#open) Promise.resolve(app.render(false)).catch(()=>{}); }
+  // Another module's section registered, removed or with new cards shows at once.
+  static #sectionsChanged = integrations.internal.onChange(() => ConfiguratorApp.refreshOpen(), "sections");
 
   #selected = "";
   #displayMode = "tiles";
@@ -147,6 +151,11 @@ export class ConfiguratorApp extends ConfiguratorWindow {
     const record = this.#selected ? api.getRulesetVersion(this.#selected) : null;
     const ruleset = record?.workingDraft;
     const activeId = api.getActiveVersionId();
+    // Other modules' views (integrations.registerConfiguratorSection); a view whose section is gone falls back to General.
+    const extensionContext = ruleset ? {rulesetId:record.rulesetId,versionId:this.#selected,ruleset,record,user:{id:game.user?.id??null,isGM:Boolean(game.user?.isGM)}} : null;
+    const extensions = ruleset ? integrations.internal.configuratorSections(extensionContext) : [];
+    const extensionId = extensionIdOf(this.#view);
+    if (extensionId && !extensions.some(section=>section.id===extensionId)) this.#view="general";
 
     const rulesets = records.map(record => ({
       versionId:record.versionId, rulesetId:record.rulesetId, version:record.version, status:record.status,
@@ -185,6 +194,7 @@ export class ConfiguratorApp extends ConfiguratorWindow {
         items=TOP_LEVEL.filter(item=>section.collections.includes(item.collection)&&!item.hidden&&!['contentTypes'].includes(item.collection))
           .map(item=>({...item,title:label(item.titleKey),active:this.#view===item.view}));
       }
+      items=withExtensionItems(items,extensions.filter(extension=>extension.parentGroup===section.id),{activeView:this.#view,title:label});
       return {group:section.id,titleKey:section.titleKey,items};
     }) : [];
 
@@ -202,8 +212,13 @@ export class ConfiguratorApp extends ConfiguratorWindow {
     if (activeGroup) this.#navGroup=activeGroup;
     if (!navGroups.some(group=>group.id===this.#navGroup)) this.#navGroup="general";
     const currentNavGroup=navGroups.find(group=>group.id===this.#navGroup) ?? navGroups[0];
-    let cards = [], currentTitle = "", currentKind = "", currentType = null;
-    if (ruleset && this.#view === "definitionTypes") {
+    let cards = [], currentTitle = "", currentKind = "", currentType = null, extension = null, extensionError = "";
+    if (ruleset && extensionIdOf(this.#view)) {
+      extension=extensions.find(section=>section.id===extensionIdOf(this.#view));
+      currentTitle=label(extension.title); currentKind="extension";
+      try { cards=extensionCards(await extension.cards.list(extensionContext),{color:sectionColor(ruleset,extension.parentGroup)}); }
+      catch(error) { integrations.internal.report(extension.id,error); extensionError=label("RTA.Integration.SectionFailed"); }
+    } else if (ruleset && this.#view === "definitionTypes") {
       currentTitle=label("RTA.Nav.DefinitionTypes"); currentKind="definitionType";
       cards = definitionTypes.map(row=>({...row,cardColor:row.color,image:row.image||""}));
     } else if (ruleset && this.#view === "contentTypes") {
@@ -246,7 +261,7 @@ export class ConfiguratorApp extends ConfiguratorWindow {
     // Resolve only persisted tag references, preserving the tag's own color.
     const tagIndex = new Map((ruleset?.tags ?? []).map(tag => [tag.id, tag]));
     const owners = extensionOwners(ruleset);
-    cards = cards.map(card => ({
+    cards = cards.map(card => card.isExtension ? card : ({
       ...card,partSelected:this.#partSelection.has(`${currentKind}:${card.id}`),extensionName:owners.get(`${currentKind}:${card.id}`)?.name??"",
       displayTags: (Array.isArray(card.tags) ? card.tags : []).map(id => {
         const tag = tagIndex.get(id);
@@ -256,7 +271,9 @@ export class ConfiguratorApp extends ConfiguratorWindow {
     }));
 
     const activeTagIds = this.#tagFilters.get(this.#view) ?? new Set();
+    const extensionTags = new Map(cards.filter(card=>card.isExtension).flatMap(card=>card.displayTags).map(tag=>[tag.id,tag]));
     const availableTags = buildFacet(cards, card => card.displayTags.map(tag => tag.id), id => {
+      if(extensionTags.has(id))return {name:extensionTags.get(id).name,color:extensionTags.get(id).color||null};
       const tag=tagIndex.get(id);
       return {name:localize(api,this.#selected,tag?.nameKey??tag?.key??id),color:objectColor(ruleset,"tags",tag)};
     }, activeTagIds);
@@ -358,7 +375,8 @@ export class ConfiguratorApp extends ConfiguratorWindow {
       error:this.#error,displayLines:this.#displayMode==="lines",displayTiles:this.#displayMode==="tiles",isWorkspace:!!ruleset,isRulesets:!ruleset,view:this.#view,rulesets,navigation,navGroups,currentNavGroup,definitionTypes,contentTypes,
       selectedRuleset:ruleset,selectedRecord:record,rulesetAccent:rulesetColor(ruleset),canOverrideCollection,currentCollection,collectionAccent,collectionCustomAccent,canEditRuleset:record?.status!=="validated",selectedRulesetName:ruleset?localize(api,this.#selected,ruleset.nameKey):"",
       isGeneral:!!ruleset&&this.#view==="general",isCollection:!!ruleset&&Boolean(currentKind),isContentFamily:currentKind==="contentTemplate",isDependencies:!!ruleset&&this.#view==="dependencies",isRuntimeLab:!!ruleset&&this.#view==="runtimeLab",isContentTypes,isContentTemplates,isContentLibraries,
-      currentTitle,currentKind,currentType,canReorder:Boolean(record&&record.status!=="validated"&&currentKind),cards:filteredCards,availableTags,hasFacets:availableTags.length>0,hasActiveFilters:activeTagIds.size>0,dependencyGroups:dependencyVisibleGroups,dependencySelected,dependencyGraph,dependencyStats,dependencyAvailableTags,dependencyActiveTagCount:dependencyActiveTags.size,dependencyUnresolvedOnly,actors,runtimeActions,runtimeFormulas,runtimeConditions,runtimeTests,runtimeEvents,runtimeDefinitionChoices,runtimeContentChoices,runtimeInputRows,runtimeRerolls,runtimeProgressions,runtimeProgression,runtimeLastUseName,runtimeResult:this.#runtimeResult,runtimeStateCards,runtimeSelection:this.#runtimeSelection,runtimeHasActorSubtypes:availableDocumentTypes("Actor").length>1,runtimeActorTypeOptions:availableDocumentTypes("Actor").map(id=>({id,label:documentTypeLabel("Actor",id),sourceSelected:id===this.#runtimeSelection.sourceType,targetSelected:id===this.#runtimeSelection.targetType})),runtimeTool,runtimeModes,runtimeGuide,runtimeReady,runtimeStateError,runtimeActorNames,
+      currentTitle,currentKind,currentType,canReorder:extension?Boolean(extension.cards.reorder)&&this.#extensionMay(extension,extensionContext):Boolean(record&&record.status!=="validated"&&currentKind),
+      isExtension:Boolean(extension),extensionId:extension?.id??"",extensionError,extensionCanCreate:Boolean(extension?.cards.create)&&this.#extensionMay(extension,extensionContext),cards:filteredCards,availableTags,hasFacets:availableTags.length>0,hasActiveFilters:activeTagIds.size>0,dependencyGroups:dependencyVisibleGroups,dependencySelected,dependencyGraph,dependencyStats,dependencyAvailableTags,dependencyActiveTagCount:dependencyActiveTags.size,dependencyUnresolvedOnly,actors,runtimeActions,runtimeFormulas,runtimeConditions,runtimeTests,runtimeEvents,runtimeDefinitionChoices,runtimeContentChoices,runtimeInputRows,runtimeRerolls,runtimeProgressions,runtimeProgression,runtimeLastUseName,runtimeResult:this.#runtimeResult,runtimeStateCards,runtimeSelection:this.#runtimeSelection,runtimeHasActorSubtypes:availableDocumentTypes("Actor").length>1,runtimeActorTypeOptions:availableDocumentTypes("Actor").map(id=>({id,label:documentTypeLabel("Actor",id),sourceSelected:id===this.#runtimeSelection.sourceType,targetSelected:id===this.#runtimeSelection.targetType})),runtimeTool,runtimeModes,runtimeGuide,runtimeReady,runtimeStateError,runtimeActorNames,
       publishReadiness:this.#view==='general'&&record?.status==='draft'?this.#publishReadiness(api,ruleset):null,
       lifecycle:record?{isValidated:record.status==="validated",isReady:record.status==="ready",isDraft:record.status==="draft",canMutate:record.status!=="validated",canCreateVersion:record.status==="validated",canActivate:Boolean(record.publishedSnapshot),isActive:record.versionId===activeId,statusLabel:statusLabel(record.status)}:null,
       extensions:(ruleset?.extensions??[]).map(extension=>({id:extension.id,name:extension.name,version:extension.version,count:game.i18n?.format?.("RTA.Extension.Count",{count:extension.entries.length+extension.replaced.length})??""})),
@@ -419,6 +437,7 @@ export class ConfiguratorApp extends ConfiguratorWindow {
   #bind() {
     for (const element of this.element?.querySelectorAll?.("[data-action]") ?? []) element.addEventListener("click", event => this.#action(event));
     for (const card of this.element?.querySelectorAll?.(".rta-config-card[data-entry-id]") ?? []) {
+      if(card.dataset.kind==="extension"){card.addEventListener("contextmenu", event => this.#extensionMenu(event, card));continue;}
       card.addEventListener("contextmenu", event => this.#entryMenu(event, card));
       // Ctrl+click (Cmd+click) chooses an entry for a part export instead of opening it.
       card.addEventListener("click", event => {if(!(event.ctrlKey||event.metaKey))return;event.preventDefault();event.stopPropagation();this.#togglePartSelection(card.dataset.kind,card.dataset.entryId);}, true);
@@ -492,6 +511,8 @@ export class ConfiguratorApp extends ConfiguratorWindow {
 
   async #persistCardOrder(grid){
     try{
+      const ids=[...grid.querySelectorAll("[data-orderable-card]")].map(card=>card.dataset.entryId);
+      if(extensionIdOf(this.#view))return this.#extensionCall("reorder",ids);
       const api=await this.#api(),kind=this.#currentCardKind();
       if(!kind)return;
       // One atomic write for the whole new sequence (orders 10, 20, 30...).
@@ -530,6 +551,37 @@ export class ConfiguratorApp extends ConfiguratorWindow {
     await this.entryEditor.render(true);
   }
 
+  /** Whether another module's section lets this user change its cards now. */
+  #extensionMay(extension,context) {
+    if(!extension.cards.canMutate)return true;
+    try{return extension.cards.canMutate(context)!==false;}catch(error){integrations.internal.report(extension.id,error);return false;}
+  }
+  /** Call a card callback of the open section; its error shows here and the configurator is drawn again. */
+  async #extensionCall(name,...args) {
+    const extension=integrations.internal.configuratorSection(extensionIdOf(this.#view));
+    if(!extension?.cards[name])return;
+    const api=await this.#api(),record=api.getRulesetVersion(this.#selected);
+    const context={rulesetId:record?.rulesetId??null,versionId:this.#selected,ruleset:record?.workingDraft??null,record,user:{id:game.user?.id??null,isGM:Boolean(game.user?.isGM)}};
+    this.#error="";
+    try{await extension.cards[name](...args,context);}
+    catch(error){integrations.internal.report(extension.id,error);this.#error=error?.message??String(error);}
+    this.#rememberScroll();this.#restoreScroll=true;
+    return this.render(false);
+  }
+  /** Right click on a card of another module: only the actions it offers. */
+  #extensionMenu(event,card) {
+    event.preventDefault();
+    const extension=integrations.internal.configuratorSection(extensionIdOf(this.#view));
+    if(!extension)return;
+    const id=card.dataset.entryId,name=card.querySelector(".rta-config-card__title")?.textContent?.trim()??id,enabled=!card.classList.contains("rta-config-card--disabled"),i18n=game.i18n,cards=extension.cards;
+    const items=[];
+    if(cards.open)items.push({label:i18n.localize("RTA.Integration.Open"),icon:"fa-solid fa-pen-to-square",run:()=>this.#extensionCall("open",id)});
+    if(cards.duplicate)items.push({label:i18n.localize("RTA.UI.DuplicateEntry"),icon:"fa-solid fa-copy",run:()=>this.#extensionCall("duplicate",id)});
+    if(cards.setEnabled)items.push({label:i18n.localize(enabled?"RTA.Integration.Disable":"RTA.Integration.Enable"),icon:enabled?"fa-solid fa-toggle-off":"fa-solid fa-toggle-on",run:()=>this.#extensionCall("setEnabled",id,!enabled)});
+    if(cards.remove)items.push({label:i18n.localize("RTA.Template.Delete"),icon:"fa-solid fa-trash",run:async()=>{if(await confirmRTA("RTA.UI.DeleteNamedEntry",{name}))return this.#extensionCall("remove",id);}});
+    if(items.length)openContextMenu(event,items);
+  }
+
   /** Right click on an entry: open it, or duplicate it under a name asked first. */
   #editorTarget="";
   async #entryMenu(event,card) {
@@ -559,6 +611,7 @@ export class ConfiguratorApp extends ConfiguratorWindow {
   }
   /** Right click on a section or a family of the menu: export everything it lists. */
   async #navMenu(event,{section,view,name}) {
+    if(extensionIdOf(view))return;
     const api=await this.#api(),ruleset=api.getRulesetVersion(this.#selected)?.workingDraft;
     if(!ruleset)return;
     const collection=view?(TOP_LEVEL.find(item=>item.view===view)?.collection??view):null;
@@ -738,7 +791,9 @@ export class ConfiguratorApp extends ConfiguratorWindow {
         await api.updateRuleset(this.#selected,{familyColors});return this.render(false);
       }
       if (action==="addEntry") return this.#openEditor(button.dataset.kind,null,{definitionTypeId:button.dataset.definitionTypeId??null,contentTypeId:button.dataset.contentTypeId??null});
+      if (action==="openEntry"&&button.dataset.kind==="extension") return this.#extensionCall("open",button.dataset.entryId);
       if (action==="openEntry") return this.#openEditor(button.dataset.kind,button.dataset.entryId);
+      if (action==="extensionCreate") return this.#extensionCall("create");
       if (action==="openDiagnostic") return this.#openEditor(button.dataset.kind,button.dataset.entryId,{focusPath:button.dataset.path??""});
       if (action==="publish") { await api.publishRuleset(button.dataset.versionId??this.#selected); return this.render(false); }
       if (action==="validate") { await api.validateRulesetVersion(button.dataset.versionId??this.#selected); return this.render(false); }

@@ -2,6 +2,16 @@
 
 ## Unreleased
 
+## 1.2.0
+
+API version 1.2.0 (additions only). `game.ruleThemAll.integrations.capabilities` lists what this version offers.
+
+- **Configurator sections**: another module adds its own item to the Configurator's left menu (`registerConfiguratorSection`). Rule Them'All draws its cards, Create button, right-click menu (open, duplicate, enable, delete) and drag order, and calls the module's own functions; `refreshConfigurator` redraws it.
+- **Sheet fields**: `listSheetDefinitions`, `listBindableFields` and `describeField` describe the fields of a sheet a module may read or change (portrait, token, name, notes, Content fields, Ruleset images), with who sees them and whether they sit in a list.
+- **Sources and targets**: `listSourceCandidates` and `resolveSource` read a field as the user's sheet shows it (Permissions, who sees the block, conditions). `validateTarget` and `updateTarget` check and write a field with the same rules as the sheet, with a clear code when refused (`FORBIDDEN`, `GM_ONLY`, `NOT_ON_SHEET`, `DEFINITION_VALIDATED`, `CONFLICT`...). A Ruleset image is changed only by a GM, on a draft; a player is never relayed through the GM.
+- **Field buttons**: `registerSheetFieldAction` puts a small button next to matching fields of a played sheet, shown on hover.
+- **Ruleset change signal**: `onRulesetChange` and the hook `ruleThemAllRulesetChanged` say which sheets, blocks, Content types and templates changed or were removed in a Ruleset version.
+
 ## 1.1.0
 
 API version 1.1.0 (additions only).

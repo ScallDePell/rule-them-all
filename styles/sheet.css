@@ -874,6 +874,45 @@ span.rta-sheet-progression__button {
   font-size: var(--rta-type-sm);
 }
 
+/* Buttons other modules add on a field (integrations.registerSheetFieldAction): in the block's top corner, after the
+   header's name; shown on hover and on keyboard focus. */
+.rta-sheet-field-actions {
+  display: inline-flex;
+  gap: var(--rta-gap-tight);
+  opacity: 0;
+  transition: opacity 120ms ease;
+}
+
+.rta-sheet-field-actions:empty {
+  display: none;
+}
+
+:is([data-sheet-node], .rta-sheet__portrait, .rta-sheet__header):is(:hover, :focus-within) > .rta-sheet-field-actions {
+  opacity: 1;
+}
+
+[data-sheet-node] {
+  position: relative;
+}
+
+:is([data-sheet-node], .rta-sheet__portrait) > .rta-sheet-field-actions {
+  position: absolute;
+  inset-block-start: 0;
+  inset-inline-end: 0;
+  z-index: 1;
+}
+
+.rta-sheet-field-action {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  inline-size: 1.5rem;
+  block-size: 1.5rem;
+  min-block-size: 0;
+  padding: 0;
+  font-size: var(--rta-type-sm);
+}
+
 /* The Document's name, placed in the layout: a title, a field once the sheet is unlocked; it takes the block's style. */
 .rta-sheet-name {
   min-inline-size: 0;

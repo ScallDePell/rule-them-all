@@ -256,7 +256,8 @@ The API is available at `game.modules.get("rule-them-all").api` (and `game.ruleT
 - `chat.postActionCard(result, versionId, {speaker})`: post the same chat card as the sheet for an Action you ran with `runtime.executeAction`;
 - `content`: give and remove Contents, and sync the compendiums;
 - `creation`: character creations in progress.
+- `integrations`: what a companion module adds to Rule Them'All: a panel in the assistant, its own section in the Configurator's left menu (its entries show as cards, with its own buttons), and small buttons next to sheet fields (shown when you hover a field). Every change it makes goes through the same checks as the sheet: a player only changes what their sheet lets them change, and a picture of the Ruleset only on a draft, by a GM.
 
-The `ruleThemAllInit` hook fires at init, `ruleThemAllRegisterTypes` lets you register your own value types and operations, and `ruleThemAllReady` signals that everything is ready. See [architecture.md](architecture.md) for the details.
+The `ruleThemAllInit` hook fires at init, `ruleThemAllRegisterTypes` lets you register your own value types and operations, `ruleThemAllRegisterIntegrations` lets you add panels, sections and field buttons, `ruleThemAllRulesetChanged` tells you which sheets, blocks and Content types changed or were removed, and `ruleThemAllReady` signals that everything is ready. See [architecture.md](architecture.md) for the details.
 
 A Foundry combat with the `rule-them-all.singlePass` flag (`combat.setFlag("rule-them-all", "singlePass", true)`) has only one pass per round, whatever the Ruleset's passes: useful for a chase or any scene that reuses the combat tracker.

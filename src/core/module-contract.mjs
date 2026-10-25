@@ -11,11 +11,13 @@ export const RUNTIME_HOOKS = Object.freeze({testResolved:"ruleThemAllTestResolve
 export const REGISTER_TYPES_HOOK = "ruleThemAllRegisterTypes";
 /** Fired once on Foundry "setup" with game.ruleThemAll.integrations; other modules add their panels there (or later). */
 export const REGISTER_INTEGRATIONS_HOOK = "ruleThemAllRegisterIntegrations";
+/** Fired after a Ruleset version's sheets, Content Types or Content Templates change (integrations.onRulesetChange payload). */
+export const RULESET_CHANGED_HOOK = "ruleThemAllRulesetChanged";
 
 /** Version of the public API (game.ruleThemAll, docs/architecture.md §6), semantic: the major goes up when a stable
  * member is removed or changes incompatibly (a CHANGELOG "Breaking" line says how to adapt), the minor when one is
  * added. It is independent of the module's version. */
-export const API_VERSION = "1.1.0";
+export const API_VERSION = "1.2.0";
 /** What other modules may rely on until the next API major. Anything else (other members of game.ruleThemAll, the
  * module's files, its flags and settings, its CSS) is internal and may change in any release.
  * configurator also offers, for each entry collection, get<Kind>, list<Collection>, create<Kind> (registerDefinitionType
@@ -27,6 +29,8 @@ export const STABLE_API = Object.freeze({
   runtime: Object.freeze(["getContainerState", "describeContainer", "initializeContainer", "setDefinitionState", "writeSheetValue", "projectSheet", "evaluateFormula", "evaluateCondition", "roll", "executeTest", "previewAction", "describeActionInputs", "executeAction", "emitEvent", "rollInitiative", "describeShared", "setSharedValue", "tokenBarValue", "advance", "acquire", "getLedger", "compensate"]),
   chat: Object.freeze(["postActionCard"]),
   registries: Object.freeze(["valueTypes", "formulaNodes", "effectOperations"]),
-  integrations: Object.freeze(["capabilities", "registerAssistantPanel", "unregisterAssistantPanel", "listAssistantPanels"]),
-  hooks: Object.freeze(["ruleThemAllInit", REGISTER_TYPES_HOOK, REGISTER_INTEGRATIONS_HOOK, "ruleThemAllReady", ...Object.values(RUNTIME_HOOKS), "ruleThemAllCreationCompleted", "ruleThemAllContentAcquired", "ruleThemAllContentReleased", "ruleThemAllContentLibrariesSynchronized"])
+  integrations: Object.freeze(["capabilities", "registerAssistantPanel", "unregisterAssistantPanel", "listAssistantPanels", "registerConfiguratorSection", "unregisterConfiguratorSection",
+    "listConfiguratorSections", "refreshConfigurator", "listSheetDefinitions", "listBindableFields", "describeField", "listSourceCandidates", "resolveSource", "validateTarget", "updateTarget",
+    "registerSheetFieldAction", "unregisterSheetFieldAction", "listSheetFieldActions", "onRulesetChange"]),
+  hooks: Object.freeze(["ruleThemAllInit", REGISTER_TYPES_HOOK, REGISTER_INTEGRATIONS_HOOK, RULESET_CHANGED_HOOK, "ruleThemAllReady", ...Object.values(RUNTIME_HOOKS), "ruleThemAllCreationCompleted", "ruleThemAllContentAcquired", "ruleThemAllContentReleased", "ruleThemAllContentLibrariesSynchronized"])
 });
