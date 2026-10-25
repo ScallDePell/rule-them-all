@@ -1264,6 +1264,7 @@
         "formula": "Formule",
         "reference": "Référence",
         "context": "Valeur du contexte",
+        "contentField": "Champ du Contenu",
         "dice": "Dés du jet",
         "distance": "Distance",
         "nearby": "Acteurs à proximité",
@@ -1301,6 +1302,7 @@
       "AllGroups": "Tous les groupes",
       "FaceValue": "Valeur de face",
       "Within": "Dans un rayon de",
+      "FieldFallback": "Si le Contenu ne l'a pas",
       "ReadOn": "Lue sur",
       "ReferenceRole": {
         "default": "Acteur évalué",

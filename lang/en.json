@@ -1264,6 +1264,7 @@
         "formula": "Formula",
         "reference": "Reference",
         "context": "Context value",
+        "contentField": "Content field",
         "dice": "Dice of the roll",
         "distance": "Distance",
         "nearby": "Actors nearby",
@@ -1301,6 +1302,7 @@
       "AllGroups": "Every group",
       "FaceValue": "Face value",
       "Within": "Within distance",
+      "FieldFallback": "If the Content has none",
       "ReadOn": "Read on",
       "ReferenceRole": {
         "default": "Evaluated Actor",

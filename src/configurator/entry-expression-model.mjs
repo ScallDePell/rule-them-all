@@ -5,13 +5,14 @@
  * builder only takes an expression that comes back unchanged (buildable). */
 import {refToken,parseRefToken} from "./reference-token.mjs";
 /* Operand kinds of the visual builder: a value, a Parameter, a Formula, a Reference, a context path
-   (variables.test.total), the dice of the roll, a distance between two roles, or Actors nearby. */
-export const OPERAND_KINDS=Object.freeze(["literal","parameter","formula","reference","context","dice","distance","nearby"]);
+   (variables.test.total), a field of the Content the Action is used from (a weapon's ammunition), the dice of the
+   roll, a distance between two roles, or Actors nearby. */
+export const OPERAND_KINDS=Object.freeze(["literal","parameter","formula","reference","context","contentField","dice","distance","nearby"]);
 export const OPERAND_ROLES=Object.freeze(["self","target","source"]);
 /* Roles a Reference may be read on (runtime resolveContainer). "-" (never a role name) leaves the container out: the Reference
    is then read on the role the expression is evaluated for. */
 export const REFERENCE_ROLES=Object.freeze(["self","target","source","owner","subject","leader","world","combat"]);
-const KIND_LABELS={literal:"Value",parameter:"Parameter",formula:"Formula",reference:"Reference",context:"Context value",dice:"Dice of the roll",distance:"Distance",nearby:"Actors nearby",expression:"Calculation",none:"None"};
+const KIND_LABELS={literal:"Value",parameter:"Parameter",formula:"Formula",reference:"Reference",context:"Context value",contentField:"Content field",dice:"Dice of the roll",distance:"Distance",nearby:"Actors nearby",expression:"Calculation",none:"None"};
 const DICE_READ_LABELS={count:"Number of dice",sum:"Sum of the dice",highest:"Highest die",lowest:"Lowest die",size:"Dice thrown",matches:"Largest set of equal dice",counter:"Counter of the faces"};
 const COMPARE_LABELS={any:"Of any value",eq:"Equal to",neq:"Other than",gt:"Above",gte:"At least",lt:"Below",lte:"At most"};
 const SIDE_LABELS={any:"Anyone",ally:"Allies",enemy:"Enemies"};
@@ -53,6 +54,8 @@ export function formOf(node){
   if(t==="parameter"||t==="formula")return {kind:t,id:text(node.id)};
   if(t==="reference")return isRecord(node.reference)?{kind:"reference",token:refToken(node.reference),container:text(node.container)}:null;
   if(t==="context")return {kind:"context",path:text(node.path)};
+  // Its value when the Content has no such field: a plain value only.
+  if(t==="contentField")return node.default===undefined?{kind:"contentField",field:text(node.field),fallback:""}:node.default?.type==="literal"&&!isRecord(node.default.value)&&!Array.isArray(node.default.value)?{kind:"contentField",field:text(node.field),fallback:text(node.default.value)}:null;
   if(t==="dice")return {kind:"dice",read:text(node.read),group:text(node.group),compare:text(node.compare),face:node.compare?text(node.value?.value):"",counter:text(node.counter)};
   if(t==="distance")return {kind:"distance",from:text(node.from),to:text(node.to)};
   if(t==="nearby")return {kind:"nearby",of:text(node.of),within:text(node.within?.value),side:text(node.side)};
@@ -77,6 +80,7 @@ export function nodeOf(form){
   if(k==="parameter"||k==="formula")return {type:k,id:form.id};
   if(k==="reference"){const ref=parseRefToken(form.token);return form.container&&form.container!=="-"?{type:"reference",reference:ref,container:form.container}:{type:"reference",reference:ref};}
   if(k==="context")return {type:"context",path:form.path.trim()};
+  if(k==="contentField"){const fallback=String(form.fallback??"").trim();return {type:"contentField",field:String(form.field??"").trim(),...(fallback===""?{}:{default:lit(parseLiteral(fallback))})};}
   if(k==="distance")return {type:"distance",from:form.from||"self",to:form.to||"target"};
   if(k==="nearby")return {type:"nearby",of:form.of||"self",within:lit(number(form.within,"The distance of nearby Actors")),side:form.side||"any"};
   if(k==="dice"){
@@ -130,7 +134,7 @@ const pick=(labels,selected,prefix,colors)=>Object.entries(labels).map(([id,fall
 // resolver used by the rest of the editor (never close over a local variable).
 /** View of one slot: its kind and the controls of each kind, from its form state. */
 export function slotView(form,{label,path="",optional=false,removable=false,editor="formula"},sources={}){
-  const {parameters=[],formulas=[],references=[],counters=[],roles=[],neutral="",withColors=()=>({colors:""})}=sources;
+  const {parameters=[],formulas=[],references=[],contentFields=[],counters=[],roles=[],neutral="",withColors=()=>({colors:""})}=sources;
   const kind=form?.kind??"literal",f={kind,...form},kinds=[...OPERAND_KINDS,"expression",...(optional?["none"]:[])];
   // A nested block is drawn only for a calculation; choosing Calculation later draws a fresh one.
   const block=kind==="expression"?blockView(f,{path,editor},sources):null;
@@ -138,6 +142,9 @@ export function slotView(form,{label,path="",optional=false,removable=false,edit
     kindChoices:kinds.map(id=>({id,labelKey:`RTA.Operand.Kind.${id}`,fallback:KIND_LABELS[id],colors:neutral,selected:id===kind})),
     show:Object.fromEntries(kinds.map(id=>[id,id===kind])),
     literalValue:kind==="literal"?f.value??"":"0",contextPath:kind==="context"?f.path:"",
+    // Fields of the Ruleset's Content Types; a field no type has any more stays shown, as it is written.
+    contentFieldChoices:[...contentFields,...(kind==="contentField"&&f.field&&!contentFields.some(x=>x.id===f.field)?[{id:f.field,label:f.field}]:[])]
+      .map(x=>({id:x.id,label:x.label||x.id,colors:neutral,selected:kind==="contentField"&&x.id===f.field})),contentFieldFallback:kind==="contentField"?f.fallback??"":"",
     // Dice of the roll: what is read, in which group, which faces (a comparison) or which counter.
     diceReadChoices:pick(DICE_READ_LABELS,f.read||"count","RTA.Operand.DiceRead",neutral),diceGroup:kind==="dice"?f.group:"",diceIsCounter:kind==="dice"&&f.read==="counter",
     diceCompareChoices:pick(COMPARE_LABELS,f.compare||"any","RTA.Operand.Compare",neutral),diceValue:kind==="dice"?f.face:"",

@@ -17,7 +17,10 @@ export function expressionSources(ruleset, {optionColors, findCapability, langua
   const withColors = (kind, entry) => ({colors: selectColorsAttribute(optionColors(kind, entry))});
   const counters = new Map();
   for (const die of ruleset.dice ?? []) for (const counter of die.counters ?? []) if (!counters.has(counter.id)) counters.set(counter.id, {id: counter.id, label: counter.labelKey || counter.id});
-  return {parameters: ruleset.parameters ?? [], formulas: ruleset.formulas ?? [], withColors,
+  // Fields of every Content Type, once each by id: a Formula may serve Contents of several types.
+  const fields = new Map();
+  for (const type of ruleset.contentTypes ?? []) for (const [id, field] of Object.entries(type.fields ?? {})) if (!fields.has(id)) fields.set(id, {id, label: `${field?.name || id} (${type.nameKey || type.id})`});
+  return {parameters: ruleset.parameters ?? [], formulas: ruleset.formulas ?? [], withColors, contentFields: [...fields.values()],
     references: buildRuleReferenceChoices({definitions: ruleset.definitions ?? [], parameters: ruleset.parameters ?? [], formulas: ruleset.formulas ?? [], findCapability, optionColors, language}),
     counters: [...counters.values()], neutral: selectColorsAttribute([RTA_NEUTRAL_COLOR]),
     roles: [...new Set((ruleset.actions ?? []).flatMap(action => (action.roleLinks ?? []).map(link => link.role)))],

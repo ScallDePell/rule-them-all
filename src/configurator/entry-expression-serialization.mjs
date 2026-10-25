@@ -9,6 +9,7 @@ export function readSlotForm(row,kind=value(row?.querySelector(':scope > .rta-ru
   if(kind==='parameter'||kind==='formula')return {kind,id:part('id')};
   if(kind==='reference')return {kind,token:part('token'),container:part('container')};
   if(kind==='context')return {kind,path:part('path')};
+  if(kind==='contentField')return {kind,field:part('field'),fallback:part('fallback')};
   if(kind==='dice')return {kind,read:part('read'),group:part('group'),compare:part('compare'),face:part('value'),counter:part('counter')};
   if(kind==='distance')return {kind,from:part('from'),to:part('to')};
   if(kind==='nearby')return {kind,of:part('of'),within:part('within'),side:part('side')};

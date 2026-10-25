@@ -2,6 +2,10 @@
 
 ## Unreleased
 
+## 1.0.33
+
+- Formulas and Conditions, in the entry editor and in the assistant, can read a **Content field**: a field of the Content the Action is used from, such as a weapon's ammunition, with an optional value when the Content has no such field. A burst can now be refused when the weapon holds fewer rounds than the burst chosen fires.
+
 ## 1.0.32
 
 - Ruleset cards: the badges take all the room the action buttons leave, so the "active" badge of an enabled Ruleset shows in full next to its three buttons.

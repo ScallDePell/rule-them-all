@@ -16,7 +16,9 @@ test('The builder shows every expression node the engine evaluates, nested, and 
     [{type:'lookup',key:{type:'context',path:'variables.input.size'},table:[{key:'small',value:1},{key:'large',value:2}]},'formula'],
     [{type:'clamp',value:{type:'mod',args:[{type:'formula',id:'f'},lit(3)]},min:lit(0),max:{type:'round',value:lit(2.5)}},'formula'],
     [{type:'and',args:[{type:'not',value:{type:'gt',left:{type:'dice',read:'count',group:'hunger',compare:'eq',value:lit(10)},right:lit(0)}},{type:'or',args:[lit(true),{type:'lte',left:{type:'distance',from:'self',to:'target'},right:{type:'nearby',of:'self',within:lit(2),side:'enemy'}}]}]},'condition'],
-    [{type:'ceil',value:{type:'average',args:[lit(1),lit(2)]}},'formula'],[lit(true),'condition'],[lit(false),'condition'],[lit(3),'formula'],[{type:'parameter',id:'p'},'condition']];
+    [{type:'ceil',value:{type:'average',args:[lit(1),lit(2)]}},'formula'],
+    [{type:'gte',left:{type:'contentField',field:'munitions',default:lit(0)},right:{type:'multiply',args:[{type:'parameter',id:'p'},{type:'context',path:'variables.input.sequences'}]}},'condition'],
+    [{type:'add',args:[{type:'contentField',field:'bonus'},lit(1)]},'formula'],[lit(true),'condition'],[lit(false),'condition'],[lit(3),'formula'],[{type:'parameter',id:'p'},'condition']];
   for(const [expression,editor] of cases){
     assert.ok(buildable(expression,editor),JSON.stringify(expression));
     assert.deepEqual(blockNodeOf(rootFormOf(expression,editor)),expression);
@@ -25,7 +27,8 @@ test('The builder shows every expression node the engine evaluates, nested, and 
 
 test('An expression the builder would change keeps the technical view', ()=>{
   for(const expression of [{type:'definitionValue',definition:lit('x'),capabilityId:'value',outputId:'value.final'},{type:'add',args:[lit(1)],note:'x'},
-    lit('12'),lit(null),{type:'floor',arg:lit(2)},{type:'rangeLookup',value:lit(1),ranges:[{min:null,value:1}]},{type:'nearby',of:'self',within:{type:'formula',id:'reach'}}])
+    lit('12'),lit(null),{type:'floor',arg:lit(2)},{type:'rangeLookup',value:lit(1),ranges:[{min:null,value:1}]},{type:'nearby',of:'self',within:{type:'formula',id:'reach'}},
+    {type:'contentField',field:'bonus',default:{type:'parameter',id:'p'}}])
     assert.equal(expressionBuilderModel(expression,'formula',{}).supported,false,JSON.stringify(expression));
 });
 
@@ -62,4 +65,18 @@ test('The markup draws nested blocks, table rows and the context paths of the Ru
   assert.match(table,/list="paths"/);
   const slot=renderExpressionSlotHTML(slotView({kind:'literal',value:'0'},{label:{key:'k',fallback:'Operand',number:3},removable:true}));
   for(const kind of ['dice','distance','nearby','context','expression'])assert.match(slot,new RegExp(`data-rule-operand-editor="${kind}" hidden`));
+});
+
+test('A field of the Content used is chosen among the fields of the Content Types, with an optional value when it is missing', ()=>{
+  assert.deepEqual(nodeOf({kind:'contentField',field:'munitions',fallback:''}),{type:'contentField',field:'munitions'});
+  assert.deepEqual(nodeOf({kind:'contentField',field:'munitions',fallback:'0'}),{type:'contentField',field:'munitions',default:lit(0)});
+  assert.deepEqual(formOf({type:'contentField',field:'automatique',default:lit(false)}),{kind:'contentField',field:'automatique',fallback:'false'});
+  const fields=[{id:'munitions',label:'Munitions (Arme)'},{id:'chargeur',label:'Chargeur (Arme)'}];
+  const view=slotView(formOf({type:'contentField',field:'munitions'}),{label:{}},{contentFields:fields});
+  assert.deepEqual(view.contentFieldChoices.map(choice=>[choice.id,choice.selected]),[['munitions',true],['chargeur',false]]);
+  // A field no Content Type has any more stays as written.
+  assert.deepEqual(slotView(formOf({type:'contentField',field:'portee'}),{label:{}},{contentFields:fields}).contentFieldChoices.map(choice=>choice.id),['munitions','chargeur','portee']);
+  const html=renderExpressionSlotHTML(view);
+  assert.match(html,/data-rule-operand-editor="contentField"><select data-operand-part="field"><option value="munitions"[^>]* selected>Munitions \(Arme\)<\/option>/);
+  assert.match(html,/data-operand-part="fallback" value=""/);
 });
