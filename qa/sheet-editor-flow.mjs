@@ -435,6 +435,18 @@ const result = await page.evaluate(async ({fixture, en, urls}) => {
     check('exporting the sheet brings its card template', file?.format === 'rule-them-all.sheet' && file.sheet?.theme?.id === 'parchment' && file.templates?.some(entry => entry.id === 'gear-card')); }
   element.querySelector('[data-entry-form]').requestSubmit(); await new Promise(r => setTimeout(r, 200));
   check('saving the theme', api.getSheetDefinition(fixture.versionId, 'sh1').theme?.id === 'parchment');
+  // An Item sheet started from its Content Type: the Gear section with its fields, replacing what was there (asked first), undone.
+  { const before = JSON.stringify(layout());
+    check('an Actor sheet does not offer it', element.querySelector('[data-sheet-from-content]')?.getClientRects().length === 0);
+    await set('[name="sheetTarget"]', 'item');
+    const box = element.querySelector('[name="sheetContentTypes"][value="gear"]'); box.checked = true; box.dispatchEvent(new Event('change', {bubbles: true})); await wait();
+    const button = element.querySelector('[data-sheet-from-content]');
+    check('an Item sheet offers "Start from the Content Type"', button?.getClientRects().length > 0);
+    await click('[data-sheet-from-content]'); await wait();
+    const filled = layout().children;
+    check('the sheet holds the Gear section with its fields, each edited', filled.length === 1 && filled[0].labelKey === 'Gear' && filled[0].children.map(c => c.source?.fieldId).join() === 'weight,price' && filled[0].children.every(c => c.write?.operation === 'set'));
+    await click('[data-layout-command="undo"]');
+    check('undo brings the earlier blocks back', JSON.stringify(layout()) === before); }
   // Leave a value selected for the screenshot.
   await click('[data-layout-canvas] [data-layout-node="stat-value"]');
   return steps;

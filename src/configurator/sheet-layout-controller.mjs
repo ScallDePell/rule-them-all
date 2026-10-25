@@ -19,6 +19,7 @@ import {LAYOUT_CONTAINERS, LAYOUT_LABELLED} from "./layout-contract.mjs";
 import {SHEET_THEMES, availableFonts, prepareSheetTheme, readThemeFile, resolveSheetTheme, sheetThemeFromLook, sheetThemeNamed, themeFile} from "./sheet-themes.mjs";
 import {cardTemplates, importedSheet, importedTemplate, insertTemplate, prunedSheet, prunedTemplate, readSheetFile, sheetFile, templateFile, templateFromBlock, templateNamed} from "./sheet-templates.mjs";
 import {confirmRTA, promptRTA} from "./foundry-dialogs.mjs";
+import {contentTypeSheetLayout} from "./sheet-auto-layout.mjs";
 import {installPanels} from "./sheet-editor-panels.mjs";
 import {openContextMenu} from "../ui/context-menu.mjs";
 import {renderSheetThemeHTML} from "../ui/sheet-template-markup.mjs";
@@ -88,6 +89,7 @@ export class SheetLayoutController {
     });
     // Export and import of the whole sheet (buttons of the sheet's settings).
     this.#form?.addEventListener("click", event => {
+      if (elementOf(event)?.closest("[data-sheet-from-content]")) { event.preventDefault(); if (!this.#readOnly) this.#fromContentTypes().catch(error => this.#warn(error.message)); return; }
       const file = elementOf(event)?.closest("[data-sheet-file]");
       if (!file) return;
       event.preventDefault();
@@ -438,6 +440,16 @@ export class SheetLayoutController {
     if (!node) return;
     if (!this.#brush) return this.select(id);
     this.#commit(updateNode(this.#root, id, {style: styleFor(node.kind, this.#brush.style)}), id);
+  }
+  /** The sheet filled from its Content Types (their fields, then the Actions their templates grant), after a
+      confirmation when it already holds blocks; undone like any other change. */
+  async #fromContentTypes() {
+    const ids = this.#contentTypeIds;
+    if (!ids.length) return this.#warn("RTA.SheetEditor.FromContent.NoType");
+    const next = contentTypeSheetLayout(this.#ruleset, ids, {actionsLabel: i18n("RTA.Sheet.Actions")});
+    if (!next.children.length) return this.#warn("RTA.SheetEditor.FromContent.Nothing");
+    if ((this.#root.children ?? []).length && !await confirmRTA("RTA.SheetEditor.FromContent.Replace")) return;
+    this.#commit(next, next.id);
   }
   #warn(key, data) { globalThis.ui?.notifications?.warn?.(data ? format(key, data, i18n(key)) : i18n(key)); }
   /** Paste the copied block, or duplicate the selected one (right after it). */

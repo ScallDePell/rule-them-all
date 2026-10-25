@@ -85,6 +85,26 @@ function itemLayout(ruleset, contentTypeIds) {
     {id: "actions", kind: "section", labelKey: "RTA.Sheet.Actions", columns: Math.min(4, actions.length), children: actions}]};
 }
 
+/** The starting layout of a sheet made for Items of these Content Types (the editor's "Start from the Content Type"):
+    one section per Content Type, titled with its name, holding its fields (each shown and edited as its value type
+    says; a field two types share is shown once), then the buttons of the Actions their Content Templates grant. The
+    standard header already shows the Item's picture and name; actionsLabel titles the Actions (the editor gives it in words). Empty when no Content Type of the Ruleset is given. */
+export function contentTypeSheetLayout(ruleset, contentTypeIds = [], {actionsLabel = "RTA.Sheet.Actions"} = {}) {
+  const types = (ruleset.contentTypes ?? []).filter(type => contentTypeIds.includes(type.id));
+  const seen = new Set(), sections = [];
+  for (const type of types) {
+    const fieldIds = Object.keys(type.fields ?? {}).filter(fieldId => !seen.has(fieldId));
+    fieldIds.forEach(fieldId => seen.add(fieldId));
+    if (!fieldIds.length) continue;
+    sections.push({id: nodeId("type", type.id), kind: "section", labelKey: type.nameKey || type.id, columns: fieldIds.length > 1 ? 2 : 1,
+      children: fieldIds.map(fieldId => ({id: nodeId("field", fieldId), kind: "value", source: {kind: "field", fieldId}, write: {operation: "set"}}))});
+  }
+  const actions = types.length ? [...contentGrantedActionIds(ruleset, types.map(type => type.id))].filter(id => (ruleset.actions ?? []).some(action => action.id === id && enabled(action)))
+    .map(id => ({id: nodeId("action", id), kind: "action", actionRef: id})) : [];
+  if (actions.length) sections.push({id: "actions", kind: "section", labelKey: actionsLabel, columns: Math.min(4, actions.length), children: actions});
+  return prepareLayout({id: "root", kind: "grid", columns: 1, children: sections});
+}
+
 /** The AUTO layout for an Actor or an Item sheet (contentTypeIds narrows an Item sheet; none means every Content Type). */
 export function autoLayout(ruleset, {target = "actor", contentTypeIds = []} = {}) {
   return prepareLayout(target === "item" ? itemLayout(ruleset, contentTypeIds) : actorLayout(ruleset));

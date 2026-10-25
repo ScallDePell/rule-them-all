@@ -73,7 +73,8 @@
       "EditTags": "Tags…",
       "TagsOf": "Tags de « {name} »",
       "NoTagsYet": "Ce Ruleset n'a pas encore de tag.",
-      "NewTag": "Nouveau tag"
+      "NewTag": "Nouveau tag",
+      "CreateContentSheet": "Créer sa feuille"
     },
     "Nav": {
       "RulesCompute": "Calculs",
@@ -1710,6 +1711,14 @@
         "bottom": "Bas",
         "left": "Gauche",
         "right": "Droite"
+      },
+      "FromContent": {
+        "Label": "Remplissage",
+        "Button": "Partir du type de contenu",
+        "Hint": "Remplit la feuille avec les champs des types de contenu choisis, puis les Actions que leurs modèles accordent.",
+        "NoType": "Choisissez d'abord au moins un type de contenu.",
+        "Nothing": "Ces types de contenu n'ont ni champ ni Action à placer sur la feuille.",
+        "Replace": "La feuille contient déjà des blocs. Les remplacer par ceux du type de contenu ? (Annuler revient en arrière.)"
       }
     },
     "Reaction": {

@@ -25,6 +25,7 @@ import {collectExpression} from "./entry-expression-serialization.mjs";
 import {renderExpressionBuilderHTML} from "../ui/expression-builder-markup.mjs";
 import {ExpressionBuilderController,expressionSources} from "./expression-builder-controller.mjs";
 import {buildFieldReferenceChoices} from "./field-reference-choices.mjs";
+import {contentTypeSheetLayout} from "./sheet-auto-layout.mjs";
 import {createEntrySeed} from "./entry-seed.mjs";
 import {ENTRY_OPERATIONS} from "./entry-operations.mjs";
 import {renderPickerOptions,renderChoiceListBody,renderCreationCheckboxPicker} from "../ui/picker-markup.mjs";
@@ -315,7 +316,8 @@ export class ConfiguratorEntryEditor extends ConfiguratorWindow {
     return createEntrySeed(this.#kind,{
       uid,definitionTypeId:this.#definitionTypeId,contentTypeId:this.#contentTypeId,
       getDefinitionType:id=>this.#api.getDefinitionType(this.#versionId,id),
-      listContentTypes:()=>this.#api.listContentTypes(this.#versionId)
+      listContentTypes:()=>this.#api.listContentTypes(this.#versionId),
+      contentSheetLayout:ids=>contentTypeSheetLayout(this.#api.getRulesetVersion(this.#versionId)?.workingDraft??this.#api.getRuleset(this.#versionId),ids,{actionsLabel:game.i18n.localize("RTA.Sheet.Actions")})
     });
   }
 

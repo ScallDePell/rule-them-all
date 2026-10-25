@@ -73,7 +73,8 @@
       "EditTags": "Tags…",
       "TagsOf": "Tags of “{name}”",
       "NoTagsYet": "This Ruleset has no tag yet.",
-      "NewTag": "New tag"
+      "NewTag": "New tag",
+      "CreateContentSheet": "Create its sheet"
     },
     "Nav": {
       "RulesCompute": "Computing",
@@ -1710,6 +1711,14 @@
         "bottom": "Bottom",
         "left": "Left",
         "right": "Right"
+      },
+      "FromContent": {
+        "Label": "Fill",
+        "Button": "Start from the Content Type",
+        "Hint": "Fills the sheet with the fields of the chosen Content Types, then the Actions their templates grant.",
+        "NoType": "Choose at least one Content Type first.",
+        "Nothing": "These Content Types have no field and no Action to place on the sheet.",
+        "Replace": "The sheet already holds blocks. Replace them with the Content Type's? (Undo goes back.)"
       }
     },
     "Reaction": {

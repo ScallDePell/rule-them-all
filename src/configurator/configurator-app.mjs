@@ -596,6 +596,8 @@ export class ConfiguratorApp extends ConfiguratorWindow {
     items.push({label:i18n.localize(chosen?"RTA.Part.Unselect":"RTA.Part.Select"),icon:chosen?"fa-regular fa-square-minus":"fa-regular fa-square-check",run:()=>this.#togglePartSelection(kind,id)});
     if(record?.status!=="validated"){
       items.push({label:i18n.localize("RTA.UI.DuplicateEntry"),icon:"fa-solid fa-copy",run:()=>this.#duplicate(kind,id,name)});
+      // A Content Type's sheet, already filled with its fields and Actions (opened unsaved, to be checked first).
+      if(kind==="contentType")items.push({label:i18n.localize("RTA.UI.CreateContentSheet"),icon:"fa-solid fa-file-lines",run:()=>this.#openEditor("sheetDefinition",null,{contentTypeId:id})});
       // Entries that carry tags: check them, or add a new one, from here.
       const api=await this.#api(),entry=ENTRY_OPERATIONS[kind]?api[ENTRY_OPERATIONS[kind].get]?.(this.#selected,id):null;
       if(Array.isArray(entry?.tags))items.push({label:i18n.localize("RTA.UI.EditTags"),icon:"fa-solid fa-tags",run:()=>this.#editTags(kind,id,name)});

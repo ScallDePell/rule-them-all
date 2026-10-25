@@ -2,7 +2,7 @@ import {emptyLayout} from "./layout-contract.mjs";
 /** Neutral defaults for RTA editor entries. All game-specific rules belong to Rulesets.
  * No Foundry/window access; dependencies are injected by the caller.
  */
-export function createEntrySeed(kind,{uid,definitionTypeId=null,contentTypeId=null,getDefinitionType=()=>null,listContentTypes=()=>[]}={}){
+export function createEntrySeed(kind,{uid,definitionTypeId=null,contentTypeId=null,getDefinitionType=()=>null,listContentTypes=()=>[],contentSheetLayout=null}={}){
   if(kind==="ruleset")return{id:"",nameKey:"",descriptionKey:"",version:"1.0.0",color:null,sectionColors:{},sectionColorOverrides:{},familyColors:{}};
   if(kind==="definitionType")return{id:uid("type"),key:"",nameKey:"",descriptionKey:"",color:null,allowedCapabilities:[],defaultCapabilities:[],requiredCapabilities:[],fields:{},constraints:[]};
   if(kind==="definition"){
@@ -32,6 +32,8 @@ export function createEntrySeed(kind,{uid,definitionTypeId=null,contentTypeId=nu
   if(kind==="scale")return{id:uid("scale"),nameKey:"",descriptionKey:"",enabled:true,tags:[],basis:"value",rows:[]};
   if(kind==="creationSystem")return{id:uid("creation"),nameKey:"",descriptionKey:"",enabled:true,tags:[],steps:[]};
   if(kind==="progressionSystem")return{id:uid("progression"),nameKey:"",descriptionKey:"",enabled:true,tags:[],advancements:[],milestones:[]};
+  // A sheet made from a Content Type (its right-click "Create its sheet"): for its Items, filled with its fields and Actions.
+  if(kind==="sheetDefinition"&&contentTypeId&&contentSheetLayout){const type=listContentTypes().find(x=>x.id===contentTypeId);if(type)return{id:uid("sheet"),nameKey:type.nameKey||type.id,descriptionKey:"",enabled:true,tags:[],target:"item",contentTypeIds:[type.id],header:"standard",root:contentSheetLayout([type.id])};}
   if(kind==="sheetDefinition")return{id:uid("sheet"),nameKey:"New Sheet",descriptionKey:"",enabled:true,tags:[],target:"actor",contentTypeIds:[],header:"standard",root:emptyLayout()};
   return{id:uid(kind),nameKey:"",descriptionKey:"",enabled:true,tags:[]};
   }

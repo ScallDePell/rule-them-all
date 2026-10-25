@@ -146,6 +146,8 @@ Cards that came from an extension show its name. An extension only adds or repla
 ## 4. Sheets
 
 ### Sheet editor
+**A sheet for one Content Type** (a weapon sheet, a power sheet…): right-click the Content Type and choose **Create its sheet**, or, on an Item sheet, tick its Content Types and click **Start from the Content Type**. The sheet is filled with one section per Content Type holding its fields, each with the block its value type calls for, then the buttons of the Actions its Content Templates grant (a weapon's attack). Rearrange and style it as you like; if the sheet already held blocks, you are asked first and **Undo** brings them back.
+
 In **Systems → Sheets**, create an Actor or Item sheet (for specific Content Types, or for all of them). The editor shows the sheet as it looks in play. Its window is split into **three areas separated by vertical lines**, running full height, each with its own scrolling; the buttons (Delete, Close or Cancel, Apply, Save & Quit) stay at the bottom:
 - **on the left, the tools**, in three tabs: **Block** (the selected block's settings), **Add** (the palette) and **Theme** (the sheet's theme);
 - **in the middle, the sheet**: the collapsible **Sheet** row (name, **Used for**, **Header**, **Window (px)**, description, **File**, **Enabled**; open when you create the sheet, collapsed after that), then a bar that stays at the top as the sheet scrolls (toolbar, **View as**, **Preview** and the **?** help button), then the sheet itself;

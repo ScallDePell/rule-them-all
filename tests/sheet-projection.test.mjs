@@ -5,7 +5,8 @@ import {emptyStorageSnapshot} from '../src/configurator/configurator-storage.mjs
 import {MemoryRuntimeAdapter} from '../src/runtime/memory-runtime-adapter.mjs';
 import {RuntimeEngine} from '../src/runtime/runtime-engine.mjs';
 import {projectSheet} from '../src/runtime/sheet-projection.mjs';
-import {autoLayout,sheetActionIds} from '../src/configurator/sheet-auto-layout.mjs';
+import {autoLayout,contentTypeSheetLayout,sheetActionIds} from '../src/configurator/sheet-auto-layout.mjs';
+import {createEntrySeed} from '../src/configurator/entry-seed.mjs';
 import {prepareLayout} from '../src/configurator/layout-contract.mjs';
 
 class Storage{value=emptyStorageSnapshot();async load(){return structuredClone(this.value)}async save(v){this.value=structuredClone(v)}}
@@ -97,6 +98,29 @@ test('an Item sheet shows the fields of its Content, owned or not', async()=>{
   await adapter.write(hero,{state,ledger:await adapter.loadLedger(hero)});
   const owned=await projectSheet(engine,v,sheet,{actor:hero,content:{key:'sword-1'}});
   assert.deepEqual(owned.root.children.map(c=>[c.value,c.write?.operation]),[['2d6','set'],[1,'set']]);
+});
+
+test('a sheet started from Content Types: a titled section of fields per type, then the Actions their templates grant', async()=>{
+  const {v,engine,api}=await setup();
+  const ruleset=engine.ruleset(v);
+  const root=contentTypeSheetLayout(ruleset,['weapon','charm'],{actionsLabel:'Actions'});
+  assert.deepEqual(root.children.map(n=>[n.labelKey,n.columns,n.children.map(c=>c.source.fieldId)]),[['Weapon',2,['damage','reach']],['Charm',1,['luck']]]);
+  assert.ok(root.children.every(n=>n.children.every(c=>c.write.operation==='set')),'each field is edited as its value type says');
+  assert.deepEqual(contentTypeSheetLayout(ruleset,[]).children,[],'no Content Type: nothing to place');
+  // The Actions a template of the type grants follow, as buttons.
+  const granted={...ruleset,actions:[{id:'strike',nameKey:'Strike'},{id:'off',nameKey:'Off',enabled:false}],
+    contentTemplates:[{id:'sword',contentTypeId:'weapon',relations:[{operation:'grant',targetRef:{objectKind:'action',objectId:'strike'}},{operation:'grant',targetRef:{objectKind:'action',objectId:'off'}}]}]};
+  const withActions=contentTypeSheetLayout(granted,['weapon'],{actionsLabel:'Actions'});
+  assert.deepEqual(withActions.children.map(n=>n.labelKey),['Weapon','Actions']);
+  assert.deepEqual(withActions.children[1].children.map(n=>n.actionRef),['strike']);
+  // It is a sheet the Ruleset takes, and it shows the Content's fields.
+  await api.createSheetDefinition(v,{id:'weapon-sheet',nameKey:'Weapon',target:'item',contentTypeIds:['weapon'],root:contentTypeSheetLayout(ruleset,['weapon'])});
+  const view=await projectSheet(engine,v,{id:'weapon-sheet',target:'item',root:contentTypeSheetLayout(ruleset,['weapon'])},{content:{templateId:'sword'}});
+  assert.deepEqual(view.root.children[0].children.map(c=>c.value),['1d8',1]);
+  // A Content Type's "Create its sheet" seeds an Item sheet of that type, already filled.
+  const seed=createEntrySeed('sheetDefinition',{uid:p=>`${p}-1`,contentTypeId:'weapon',listContentTypes:()=>ruleset.contentTypes,contentSheetLayout:ids=>contentTypeSheetLayout(ruleset,ids)});
+  assert.deepEqual([seed.nameKey,seed.target,seed.contentTypeIds,seed.root.children.length],['Weapon','item',['weapon'],1]);
+  assert.equal(createEntrySeed('sheetDefinition',{uid:p=>`${p}-1`}).target,'actor','a new sheet otherwise starts empty, for Actors');
 });
 
 test('AUTO lays out every Definition Type with what its capabilities give, and the Actions a player starts', async()=>{

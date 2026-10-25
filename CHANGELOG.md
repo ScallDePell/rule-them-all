@@ -2,6 +2,10 @@
 
 ## Unreleased
 
+## 1.2.3
+
+- **Sheets from a Content Type**: right-click a Content Type, **Create its sheet**, or click **Start from the Content Type** in an Item sheet's settings. The sheet starts with a section per Content Type holding its fields (each edited as its value type says), then the buttons of the Actions its templates grant (a weapon's attack). Replacing blocks already there asks first and can be undone.
+
 ## 1.2.2
 
 - `game.ruleThemAll.integrations.apiVersion` gives the API version (as `game.ruleThemAll.apiVersion`), so a companion module checks it where it finds the integrations.
