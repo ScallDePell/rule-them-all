@@ -2,6 +2,9 @@
 
 ## Unreleased
 
+## 1.2.2
+
+- `game.ruleThemAll.integrations.apiVersion` gives the API version (as `game.ruleThemAll.apiVersion`), so a companion module checks it where it finds the integrations.
 - A number field kept with no value (null) still holds null after saving the entry, instead of being removed.
 
 ## 1.2.1

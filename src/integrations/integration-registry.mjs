@@ -2,6 +2,7 @@
    A contribution is a descriptor with an id; registering the same id again replaces it, and register returns the
    function that removes it. Rule Them'All draws the places where contributions go; a contribution's own callbacks may
    throw without breaking the window (report). Pure: no Foundry access. */
+import {API_VERSION} from "../core/module-contract.mjs";
 
 /** What this version of the integrations offers; another module checks the ones it needs. */
 export const INTEGRATION_CAPABILITIES = Object.freeze(["assistantPanels", "configuratorSections", "cardHost", "sheetFields", "fieldSources", "fieldTargets", "sheetFieldActions", "rulesetChanges"]);
@@ -63,6 +64,7 @@ export function createIntegrationRegistry({report = (id, error) => globalThis.co
     try { return entry.isVisible(context) !== false; } catch (error) { report(entry.id, error); return false; }
   });
   const registry = {
+    apiVersion: API_VERSION,
     capabilities: INTEGRATION_CAPABILITIES,
     /** A panel in the Ruleset assistant window. render(element, assistant) fills the element once; Rule Them'All keeps
      * that element while the window is open. It may return a function, called when the window closes. */

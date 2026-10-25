@@ -29,7 +29,7 @@ export const STABLE_API = Object.freeze({
   runtime: Object.freeze(["getContainerState", "describeContainer", "initializeContainer", "setDefinitionState", "writeSheetValue", "projectSheet", "evaluateFormula", "evaluateCondition", "roll", "executeTest", "previewAction", "describeActionInputs", "executeAction", "emitEvent", "rollInitiative", "describeShared", "setSharedValue", "tokenBarValue", "advance", "acquire", "getLedger", "compensate"]),
   chat: Object.freeze(["postActionCard"]),
   registries: Object.freeze(["valueTypes", "formulaNodes", "effectOperations"]),
-  integrations: Object.freeze(["capabilities", "registerAssistantPanel", "unregisterAssistantPanel", "listAssistantPanels", "registerConfiguratorSection", "unregisterConfiguratorSection",
+  integrations: Object.freeze(["apiVersion", "capabilities", "registerAssistantPanel", "unregisterAssistantPanel", "listAssistantPanels", "registerConfiguratorSection", "unregisterConfiguratorSection",
     "listConfiguratorSections", "refreshConfigurator", "listSheetDefinitions", "listBindableFields", "describeField", "listSourceCandidates", "resolveSource", "validateTarget", "updateTarget",
     "registerSheetFieldAction", "unregisterSheetFieldAction", "listSheetFieldActions", "onRulesetChange"]),
   hooks: Object.freeze(["ruleThemAllInit", REGISTER_TYPES_HOOK, REGISTER_INTEGRATIONS_HOOK, RULESET_CHANGED_HOOK, "ruleThemAllReady", ...Object.values(RUNTIME_HOOKS), "ruleThemAllCreationCompleted", "ruleThemAllContentAcquired", "ruleThemAllContentReleased", "ruleThemAllContentLibrariesSynchronized"])

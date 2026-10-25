@@ -6,6 +6,7 @@ import {emptyStorageSnapshot} from '../src/configurator/configurator-storage.mjs
 import {ASSISTANT_PATHS} from '../src/configurator/assistant-paths.mjs';
 import {QUESTION_KINDS} from '../src/configurator/assistant-engine.mjs';
 import {createIntegrationRegistry, INTEGRATION_CAPABILITIES} from '../src/integrations/integration-registry.mjs';
+import {API_VERSION} from '../src/core/module-contract.mjs';
 
 /* The assistant as another module uses it (docs/architecture.md §6 "Ruleset assistant for other modules"): the
    catalog, a plan that writes nothing, an apply refused on a changed draft, and panels in the assistant window. */
@@ -76,6 +77,7 @@ test('Integrations: assistant panels are kept by id, removable, and their failur
   const reports=[],{registry,internal}=createIntegrationRegistry({report:(id,error)=>reports.push([id,error.message])});
   let changes=0;internal.onChange(()=>changes++);
   assert.deepEqual(registry.capabilities,INTEGRATION_CAPABILITIES);
+  assert.equal(registry.apiVersion,API_VERSION);
   assert.ok(Object.isFrozen(registry));
   const render=()=>{};
   const remove=registry.registerAssistantPanel({id:'other.designer',ownerModule:'other',title:'Other.Title',icon:'fa-solid fa-robot',render});
