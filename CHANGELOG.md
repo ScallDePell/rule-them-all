@@ -2,6 +2,10 @@
 
 ## Unreleased
 
+## 1.2.1
+
+- Opening an entry no longer logs "The specified value \"null\" cannot be parsed" in the console: an empty number field (for example a Content's maximum age) is drawn empty instead of with the text "null".
+
 ## 1.2.0
 
 API version 1.2.0 (additions only). `game.ruleThemAll.integrations.capabilities` lists what this version offers.

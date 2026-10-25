@@ -36,6 +36,9 @@ test('field view models preserve existing values, missing references and require
   assert.equal(created.valueText,'10');assert.equal(created.present,true);assert.equal(created.inputRequired,false);
   const existing=buildDefinitionFieldModel('hp',field,{hp:6},false,'type');
   assert.equal(existing.valueText,'6');assert.equal(existing.hasValue,true);
+  // A number input cannot show "null": the browser warns and the field shows empty anyway.
+  assert.equal(buildDefinitionFieldModel('hp',{...field,nullable:true},{hp:null},false,'type').valueText,'');
+  assert.equal(buildDefinitionFieldModel('tag',{id:'tag',valueType:'string',cardinality:'one',nullable:true},{tag:null},false,'type').valueText,'null');
   assert.equal(buildEventFieldRow('event',{valueType:'boolean',required:true},[{id:'boolean'}]).valueTypes[0].selected,true);
 });
 

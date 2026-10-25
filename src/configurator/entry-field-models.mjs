@@ -40,7 +40,7 @@ export function buildDefinitionFieldModel(id,field,data,creating,source="type",{
   const shown=hasValue?data[id]:(field.required&&hasDefault?field.defaultValue:undefined);
   return {
     id,label:field.name??id,source,...field,hasValue,hasDefault,optional:!field.required,
-    valueText:field.valueType==="reference"&&field.cardinality==="one"?refToken(shown??{}):field.valueType==="reference"&&field.cardinality==="many"?"":formatEditorValue(field.valueType,field.cardinality,shown),
+    valueText:field.valueType==="reference"&&field.cardinality==="one"?refToken(shown??{}):field.valueType==="reference"&&field.cardinality==="many"?"":shown===null&&["integer","number"].includes(field.valueType)&&field.cardinality==="one"?"":formatEditorValue(field.valueType,field.cardinality,shown),
     trueSelected:shown===true,falseSelected:shown===false,nullSelected:shown===null,referenceChoices,
     isBoolean:field.valueType==="boolean"&&field.cardinality==="one",isNumber:["integer","number"].includes(field.valueType)&&field.cardinality==="one",isText:field.valueType==="string"&&field.cardinality==="one",isReference:field.valueType==="reference"&&field.cardinality==="one",isReferenceMany:field.valueType==="reference"&&field.cardinality==="many",isMany:field.cardinality==="many"&&field.valueType!=="reference",
     numberMin:field.constraints?.find?.(c=>c?.kind==="min")?.value??null,numberMax:field.constraints?.find?.(c=>c?.kind==="max")?.value??null,numberStep:field.constraints?.find?.(c=>c?.kind==="step")?.value??(field.valueType==="integer"?1:"any"),present:field.required||hasValue,
