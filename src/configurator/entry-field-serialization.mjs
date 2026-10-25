@@ -54,6 +54,8 @@ export function collectDefinitionData(rows){
       continue;
     }
     const raw=String(input?.value??"");
+    // A number box cannot show null: a field kept null shows empty and stays null while left empty.
+    if(nullable&&raw.trim()===""&&input?.hasAttribute("data-field-null")){data[id]=null;continue;}
     const present=required||raw.trim()!=="";if(!present)continue;
     data[id]=valueType==="reference"&&cardinality==="one"?parseRefToken(raw):parseEditorValue(valueType,cardinality,nullable,raw);
   }

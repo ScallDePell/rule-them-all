@@ -2,6 +2,8 @@
 
 ## Unreleased
 
+- A number field kept with no value (null) still holds null after saving the entry, instead of being removed.
+
 ## 1.2.1
 
 - Opening an entry no longer logs "The specified value \"null\" cannot be parsed" in the console: an empty number field (for example a Content's maximum age) is drawn empty instead of with the text "null".

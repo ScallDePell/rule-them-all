@@ -171,3 +171,12 @@ test('Actor/Item mapping persists through save/reload and RTA export',async()=>{
   const record=readRulesetPayload(exported).record;
   assert.equal(record.workingDraft.contentTypes.find(t=>t.id==='pilot-gear').documentSubtype,'augment');
 });
+
+test('a number field kept null stays null when its empty box is saved',()=>{
+  const field={name:'Age max',valueType:'integer',cardinality:'one',nullable:true,required:false};
+  const model=buildDefinitionFieldModel('ageMaximum',field,{ageMaximum:null},false);
+  assert.equal(model.valueText,'');assert.equal(model.nullSelected,true);
+  const box=(attrs)=>({dataset:{definitionField:'ageMaximum',valueType:'integer',cardinality:'one',nullable:'true',required:'false'},querySelector:()=>({value:'',hasAttribute:name=>attrs.includes(name)})});
+  assert.deepEqual(collectDefinitionData([box(['data-field-null'])]),{ageMaximum:null});
+  assert.deepEqual(collectDefinitionData([box([])]),{});
+});
