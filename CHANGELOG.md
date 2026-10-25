@@ -2,6 +2,14 @@
 
 ## Unreleased
 
+## 1.1.0
+
+API version 1.1.0 (additions only).
+
+- The Ruleset assistant is part of the stable API for other modules: `listAssistantPaths`, `describeAssistantPath`, `assistantTextKeys`, `planAssistant` (validates without writing, errors name the answer at fault) and `applyAssistant` (refused with `ASSISTANT_STALE` when the draft changed since the plan's `fingerprint`).
+- New `describeAssistantCatalog`: every path and question, visible or not, with its words, options, accepted entries, defaults, when it shows (`visibility.dependsOn` / `shownWhen`) and how each kind of question is answered. A program that fills paths follows the assistant without changes when a path changes.
+- New stable member `game.ruleThemAll.integrations` and hook `ruleThemAllRegisterIntegrations`: another module adds a panel to the assistant window (`registerAssistantPanel`). The panel can open a path with answers already filled and read its plan; only the GM's Apply button writes.
+
 ## 1.0.33
 
 - Formulas and Conditions, in the entry editor and in the assistant, can read a **Content field**: a field of the Content the Action is used from, such as a weapon's ammunition, with an optional value when the Content has no such field. A burst can now be refused when the weapon holds fewer rounds than the burst chosen fires.

@@ -112,6 +112,8 @@ The **Assistant** button, at the top of the Ruleset next to **Import a part…**
 
 Answer the questions on one page. A question that needs an entry lets you pick an existing one or **create a new one** right there, with its own questions. The **preview** lists what will be created, reused, completed and filled, with any error on its question and what the new entries still lack before publishing. **Apply** writes everything at once. The assistant never changes or removes what already exists: it only adds entries, adds items to an existing entry's lists (a cost to an Action, a step to a creation) and fills fields still empty. The id of a new entry comes from its name; Action and Test inputs, fields and creation steps also show an id box, for an id that formulas refer to. Then open what was created, or **Try the rules** on it.
 
+A companion module may add its own panel at the top of the assistant (for example a helper that fills a path's answers for you). It only fills the form: you still read the preview and click **Apply**.
+
 ### Tools
 - **Tags**: to sort and filter cards. Create them here, with a color. Right-click a card, then **Tags…**, to tick its tags or create a new one.
 - **Try the rules**: a GM sandbox that plays the current draft (not the published version) without touching the game. Pick or create a **Source / Self** and a **Target** test Actor, initialize them, set their values, then run a **Test**, an **Action** (**Preview** first, then **Execute**), a **Progression** purchase, or use the **Diagnostics**: evaluate a **Formula** or a **Condition**, emit an **Event**, or roll **Dice only**. **Reset runtime data** starts the test Actors over from the current draft.

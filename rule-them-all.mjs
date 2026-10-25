@@ -1,4 +1,5 @@
-import {API_VERSION, MODULE_ID, REGISTER_TYPES_HOOK} from "./src/core/module-contract.mjs";
+import {API_VERSION, MODULE_ID, REGISTER_TYPES_HOOK, REGISTER_INTEGRATIONS_HOOK} from "./src/core/module-contract.mjs";
+import {integrations} from "./src/integrations/integrations.mjs";
 import {createRepairDataMenu} from "./src/configurator/repair-data-menu.mjs";
 import {engineRegistries} from "./src/configurator/operation-registries.mjs";
 import {createConfiguratorAPI} from "./src/configurator/configurator-api.mjs";
@@ -44,6 +45,8 @@ Hooks.once("init", () => {
   const module = game.modules.get(MODULE_ID);
   if (module) module.api = game.ruleThemAll;
   game.ruleThemAll.registries = engineRegistries();
+  // What other modules add to Rule Them'All's windows; they register on ruleThemAllRegisterIntegrations or later.
+  game.ruleThemAll.integrations = integrations.registry;
   registerLanguageSetting(game.settings);
   const language = chosenLanguage(game.settings);
   if (language) {
@@ -95,7 +98,10 @@ Hooks.once("i18nInit", () => {
 });
 
 // After every module's init, before any Ruleset is loaded or validated.
-Hooks.once("setup", () => Hooks.callAll(REGISTER_TYPES_HOOK, game.ruleThemAll.registries));
+Hooks.once("setup", () => {
+  Hooks.callAll(REGISTER_TYPES_HOOK, game.ruleThemAll.registries);
+  Hooks.callAll(REGISTER_INTEGRATIONS_HOOK, game.ruleThemAll.integrations);
+});
 
 Hooks.once("ready", () => {
   game.ruleThemAll.configuratorReady = createConfiguratorAPI(storage).then(api => {

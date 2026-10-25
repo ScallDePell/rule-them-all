@@ -15,7 +15,7 @@ const template = readFileSync(join(root, 'templates/configurator/assistant.hbs')
 const handlebars = createRequire(join(process.cwd(), 'index.js')).resolve('handlebars/dist/handlebars.min.js');
 const browser = await chromium.launch({executablePath: process.env.RTA_CHROMIUM, args: ['--no-sandbox', '--allow-file-access-from-files']});
 const page = await browser.newPage({viewport: {width: 1080, height: 820}});
-const errors = []; page.on('pageerror', error => errors.push(error.message));
+const errors = []; page.on('pageerror', error => errors.push(error.message)); page.on('console', message => { if (message.type() === 'error' && !message.text().includes('qa failure')) errors.push(message.text()); });
 await page.goto(pathToFileURL(join(root, 'README.md')).href);
 await page.setContent(`<!doctype html><html lang="fr"><meta charset="utf-8"><style>${css}\nbody{margin:0;font-family:sans-serif;font-size:14px}.application{height:820px;display:flex;flex-direction:column}.window-content{flex:1;min-height:0;display:flex;flex-direction:column;overflow:hidden}</style><body class="theme-dark"><div class="application theme-dark"><section class="window-content"></section></div></body></html>`);
 await page.addScriptTag({path: handlebars});
@@ -111,8 +111,36 @@ const result = await page.evaluate(async ({fr, urls, template}) => {
   check('a wrong dice formula is shown on its question', !el('[data-answer-error="dice"]').hidden);
   check('Apply stays off', el('[data-action="apply"]').disabled);
   check('nothing was written', JSON.stringify(ruleset()) === before);
+
+  // A panel of another module: drawn in its frame, kept across renders, opens a path with answers and reads the plan.
+  const {integrations} = await import(urls.integrations);
+  const states = [];
+  let handle = null, closed = 0;
+  integrations.registry.registerAssistantPanel({id: 'other.designer', ownerModule: 'other', title: 'Concepteur', icon: 'fa-solid fa-robot', render(element, assistant) {
+    handle = assistant; element.innerHTML = '<textarea data-qa-note></textarea>';
+    assistant.onChange(state => states.push(state));
+    return () => { closed++; };
+  }});
+  await wait(60);
+  check('a registered panel shows in the open window', Boolean(el('[data-assistant-panel="other.designer"] [data-qa-note]')));
+  check('its frame carries its title', el('[data-assistant-panel-host="other.designer"] legend')?.textContent.includes('Concepteur'));
+  el('[data-qa-note]').value = 'une note';
+  check('the catalog is offered to the panel', handle.catalog().paths.length > 30);
+  const opened = await handle.openPath('parameter', {name: 'Seuil', valueType: 'integer', number: 3});
+  check('the panel opens a path with its answers', el('[data-answer="name"]')?.value === 'Seuil');
+  check('what the panel typed is kept across renders', el('[data-qa-note]')?.value === 'une note');
+  check('the panel reads a valid plan, without its patch', opened.plan?.valid === true && opened.plan.patch === undefined && opened.plan.created.some(c => c.collection === 'parameters'));
+  check('the panel is told of changes', states.some(state => state.pathId === 'parameter'));
+  check('nothing is written before the GM applies', !ruleset().parameters.some(p => p.id === 'seuil'));
+  await click('[data-action="apply"]'); await wait(60);
+  check('the GM applies what the panel prepared', ruleset().parameters.some(p => p.id === 'seuil' && p.value === 3));
+  integrations.registry.unregisterAssistantPanel('other.designer'); await wait(60);
+  check('a removed panel leaves the window and is cleaned up', !el('[data-assistant-panel-host="other.designer"]') && closed === 1);
+  integrations.registry.registerAssistantPanel({id: 'other.broken', title: 'Cassé', render() { throw new Error('qa failure'); }}); await wait(60);
+  check('a panel that fails shows an error in its frame only', Boolean(el('[data-assistant-panel="other.broken"] [role="alert"]')) && Boolean(el('[data-path-card]')));
+  integrations.registry.unregisterAssistantPanel('other.broken'); await wait(60);
   return steps;
-}, {fr, template, urls: {api: url('src/configurator/configurator-api.mjs'), storage: url('src/configurator/configurator-storage.mjs'), app: url('src/configurator/assistant-app.mjs')}});
+}, {fr, template, urls: {api: url('src/configurator/configurator-api.mjs'), storage: url('src/configurator/configurator-storage.mjs'), app: url('src/configurator/assistant-app.mjs'), integrations: url('src/integrations/integrations.mjs')}});
 if (process.env.RTA_SHOTS) await page.screenshot({path: join(process.env.RTA_SHOTS, 'assistant-flow.png'), fullPage: false});
 await browser.close();
 for (const step of result) console.log(step);

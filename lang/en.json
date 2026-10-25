@@ -3804,6 +3804,7 @@
       "TryLab": "Try the rules",
       "Again": "Build another rule",
       "Stale": "The Ruleset changed since this plan (another window or GM). Check the plan again, then apply.",
+      "PanelFailed": "This panel from another module could not be shown (see the console).",
       "Invalid": "The plan still has errors: fix the answers shown.",
       "CreateNew": "Create: {path}",
       "Word": {

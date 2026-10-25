@@ -13,6 +13,7 @@
   <div class="rta-config-entry__scroll" data-assistant-main>
     {{#if error}}<p class="rta-configurator__error" role="alert">{{error}}</p>{{/if}}
     {{#if readOnly}}<p class="hint">{{localize "RTA.Assistant.ReadOnly"}}</p>{{/if}}
+    {{#each panels}}<fieldset data-assistant-panel-host="{{id}}"><legend><i class="{{icon}}" aria-hidden="true"></i> {{title}}</legend><div class="rta-config-entry__full-width" data-assistant-panel="{{id}}"></div></fieldset>{{/each}}
     {{#if applied}}
       <fieldset role="status"><legend><i class="fa-solid fa-circle-check" aria-hidden="true"></i> {{applied.title}}</legend>
         <p>{{localize "RTA.Assistant.AppliedIntro"}}</p>

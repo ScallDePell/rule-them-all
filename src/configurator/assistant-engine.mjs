@@ -317,7 +317,7 @@ export function describeAssistantPath(ruleset, pathId, answers = {}, {paths, tex
     return {shown, values};
   };
   const describe = (question, keyAt, values, answer) => {
-    const view = {id: question.id, kind: question.kind, labelKey: labelOf(path.id, keyAt, question), required: question.required !== false};
+    const view = {id: question.id, kind: question.kind, labelKey: labelOf(path.id, keyAt, question), label: text(labelOf(path.id, keyAt, question)), required: question.required !== false};
     // A name whose id other rules read (an input read by Formulas): the GM may give that id.
     if (question.withId) view.withId = true;
     if (question.kind === "choice") view.options = question.options.map(option => ({value: optionValue(option), labelKey: optionLabelOf(path.id, keyAt, option)}));
@@ -351,4 +351,78 @@ export function assistantPathTextKeys(path) {
   walk(path.questions, "");
   for (const key of path.texts ?? []) keys.add(pathKey(path.id, `Text.${key}`));
   return [...keys];
+}
+
+/** How each question kind is answered, for another program that fills a path (describeAssistantCatalog). */
+export const ANSWER_FORMATS = Object.freeze({
+  name: "A name as text, or {name, id?}: id (letters, digits, - and _) only where the question has withId.",
+  text: "Text.",
+  number: "A number, within min..max when given.",
+  integer: "A whole number, within min..max when given.",
+  boolean: "true or false.",
+  choice: "One of the option values.",
+  dice: "A dice formula such as \"1d20+2\" or \"3d6\".",
+  formula: "An expression tree of Formula nodes ({type: \"literal\", value}, {type: \"add\", args: [...]}, {type: \"reference\", reference}, {type: \"parameter\", id}, {type: \"formula\", id}...), or a number.",
+  condition: "An expression tree whose result is true or false, or a boolean.",
+  entry: "{use: \"<id of an entry the question accepts>\", slotId?} or, when the question has create, {create: {<answers of that path>}}.",
+  entries: "A list of entry answers.",
+  list: "A list of rows, each an object answering the fields.",
+  event: "The id of an event: a module event or an Event Type of the Ruleset."
+});
+
+/** What a conditional question depends on: the answers its visibility reads, and, when they are all choices or
+ * true/false, every combination of them that shows it. */
+function visibilityOf(question, siblings) {
+  if (!question.visible) return null;
+  const candidatesOf = id => { const source = siblings.find(item => item.id === id); return source?.kind === "choice" ? source.options.map(optionValue) : source?.kind === "boolean" ? [true, false] : null; };
+  const probe = values => {
+    const read = new Set(), proxy = new Proxy(values, {get: (target, key) => { if (typeof key === "string") read.add(key); return target[key]; }});
+    let shown = false;
+    try { shown = Boolean(question.visible(proxy)); } catch { shown = false; }
+    return {read, shown};
+  };
+  // Answers read with nothing answered, then with each choice of those, until no new answer is read.
+  const dependsOn = new Set(probe({}).read);
+  for (let changed = true; changed;) {
+    changed = false;
+    for (const id of [...dependsOn]) for (const value of candidatesOf(id) ?? []) for (const key of probe({[id]: value}).read) if (!dependsOn.has(key)) { dependsOn.add(key); changed = true; }
+  }
+  const keys = [...dependsOn], view = {dependsOn: keys};
+  const lists = keys.map(candidatesOf);
+  if (keys.length && lists.every(Boolean) && lists.reduce((n, list) => n * list.length, 1) <= 256) {
+    let combinations = [{}];
+    keys.forEach((key, i) => { combinations = combinations.flatMap(combination => lists[i].map(value => ({...combination, [key]: value}))); });
+    view.shownWhen = combinations.filter(combination => probe(combination).shown);
+  }
+  return view;
+}
+
+/**
+ * Every path and every question, visible or not, for a program that fills paths (another module, a script): words,
+ * kinds, options, accepted entries, the path that creates a new entry, defaults and when a question shows.
+ * The entries a question may use in a given Ruleset come from describeAssistantPath.
+ */
+export function describeAssistantCatalog({paths, groups = [], text = key => key}) {
+  const words = key => text(key) ?? key;
+  const question = (path, item, keyAt, siblings) => {
+    const view = {id: item.id, kind: item.kind, labelKey: labelOf(path.id, keyAt, item), label: words(labelOf(path.id, keyAt, item)), required: item.required !== false};
+    if (item.withId) view.withId = true;
+    if (item.kind === "choice") view.options = item.options.map(option => ({value: optionValue(option), labelKey: optionLabelOf(path.id, keyAt, option), label: words(optionLabelOf(path.id, keyAt, option))}));
+    if (item.kind === "entry" || item.kind === "entries") { view.accept = copyJSON(item.accept); view.create = item.create ?? null; view.fixed = [...(item.fixed ?? [])]; }
+    if (item.kind === "list") view.fields = item.fields.map(field => question(path, field, `${keyAt}.Field.${field.id}`, item.fields));
+    for (const key of ["min", "max"]) if (item[key] !== undefined) view[key] = item[key];
+    if (typeof item.default === "function") view.defaultDependsOnAnswers = true;
+    else if (item.default !== undefined) view.default = copyJSON(item.default);
+    const visibility = visibilityOf(item, siblings);
+    if (visibility) view.visibility = visibility;
+    return view;
+  };
+  return {
+    kinds: [...QUESTION_KINDS], answerFormats: {...ANSWER_FORMATS}, limits: {...ASSISTANT_LIMITS},
+    groups: groups.map(id => ({id, labelKey: `RTA.Assistant.Group.${id}`, label: words(`RTA.Assistant.Group.${id}`)})),
+    paths: paths.map(path => ({id: path.id, group: path.group, keywords: [...(path.keywords ?? [])], produces: copyJSON(path.produces ?? null),
+      titleKey: pathKey(path.id, "Title"), title: words(pathKey(path.id, "Title")), summaryKey: pathKey(path.id, "Summary"), summary: words(pathKey(path.id, "Summary")),
+      limitsKey: pathKey(path.id, "Limits"), limits: words(pathKey(path.id, "Limits")),
+      questions: path.questions.map(item => question(path, item, item.id, path.questions))}))
+  };
 }

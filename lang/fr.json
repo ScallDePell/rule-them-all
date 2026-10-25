@@ -3804,6 +3804,7 @@
       "TryLab": "Essayer les règles",
       "Again": "Construire une autre règle",
       "Stale": "Le Ruleset a changé depuis ce plan (une autre fenêtre ou un autre MJ). Vérifiez le plan à nouveau puis appliquez.",
+      "PanelFailed": "Ce panneau d'un autre module n'a pas pu s'afficher (voir la console).",
       "Invalid": "Le plan a encore des erreurs : corrigez les réponses signalées.",
       "CreateNew": "Créer : {path}",
       "Word": {

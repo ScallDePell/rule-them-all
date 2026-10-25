@@ -15,6 +15,7 @@ This document is for contributors. It describes the module as it stands today (1
 | --- | --- | --- |
 | Identity | `src/core/module-contract.mjs`, `module-language.mjs`, `system-document-types.mjs` | Module ID, export format, public hook names, interface language, host subtypes |
 | Configurator domain | `src/configurator/configurator-api.mjs`, `configurator-registry.mjs`, `configurator-schema.mjs`, `configurator-validation.mjs`, `configurator-graph.mjs`, `rule-contracts.mjs`, `dependency-index.mjs`, `configurator-serialization.mjs`, `ruleset-parts.mjs`, `ruleset-extensions.mjs`, `sheet-templates.mjs`, `sheet-themes.mjs`, `operation-registries.mjs` | Ruleset collections, entry preparation, validation, versions and publishing, dependencies, import/export, open registries |
+| Integrations | `src/integrations/integration-registry.mjs`, `integrations.mjs` | What other modules add to the module's windows (panels in the assistant); pure registries, drawn by the windows |
 | Ruleset assistant | `assistant-engine.mjs`, `assistant-paths.mjs`, `assistant-view.mjs`, `assistant-app.mjs`, `src/ui/assistant-markup.mjs` | Guided paths: questions read into answers, a plan of entries to create, lists to append to and empty fields to fill (never a change to what exists), validated on a candidate Ruleset and written in one save (`applyAssistant`); the window draws a path's questions and the plan |
 | Storage | `configurator-storage.mjs`, `world-setting-storage.mjs`, `stored-data-repair.mjs` | The snapshot format, its Foundry world settings, and the one-off repair of older data |
 | Configurator windows | `configurator-app.mjs`, `configurator-window.mjs`, `configurator-entry-editor.mjs`, `sheet-layout-controller.mjs`, `foundry-dialogs.mjs`, `repair-data-menu.mjs` | Foundry and DOM orchestration only. Form collection and serialization live in separately tested modules (`entry-data-collector.mjs`, `creation-step-serialization.mjs`, `entry-expression-serialization.mjs`) |
@@ -89,24 +90,36 @@ Every value read from Foundry passes through `foundryJSON` (`foundry-data.mjs`) 
 
 ## 6. Public API and extension points
 
-`game.ruleThemAll` (the same object as `game.modules.get('rule-them-all').api`). API version **1.0.0** (`game.ruleThemAll.apiVersion`, `API_VERSION` in `module-contract.mjs`).
+`game.ruleThemAll` (the same object as `game.modules.get('rule-them-all').api`). API version **1.1.0** (`game.ruleThemAll.apiVersion`, `API_VERSION` in `module-contract.mjs`).
 
 | Member | Stability | Content |
 | --- | --- | --- |
 | `apiVersion` | stable | The version of this API (below). |
-| `configurator` | stable | The configurator API (`configurator-api.mjs`). Stable: `listRulesetFamilies`, `listRulesetVersions`, `getRulesetVersion`, `getRuleset`, `getPublishedRuleset`, `getActiveVersionId`, `setActiveVersionId`, `createRuleset`, `publishRuleset`, `validateRuleset`, `diagnoseRuleset`, `analyzeChangeImpact`, `exportRuleset`, `importRuleset`, parts (`listPartDependencies`, `exportRulesetPart`, `planRulesetPartImport`, `importRulesetPart`), extensions (`planExtensionInstall`, `installExtension`, `removeExtension`), `subscribe`; and for each entry collection `get<Kind>`, `list<Collection>`, `create<Kind>` (`registerDefinitionType` for Definition Types), `update<Kind>`, `delete<Kind>`. |
+| `configurator` | stable | The configurator API (`configurator-api.mjs`). Stable: `listRulesetFamilies`, `listRulesetVersions`, `getRulesetVersion`, `getRuleset`, `getPublishedRuleset`, `getActiveVersionId`, `setActiveVersionId`, `createRuleset`, `publishRuleset`, `validateRuleset`, `diagnoseRuleset`, `analyzeChangeImpact`, `exportRuleset`, `importRuleset`, parts (`listPartDependencies`, `exportRulesetPart`, `planRulesetPartImport`, `importRulesetPart`), extensions (`planExtensionInstall`, `installExtension`, `removeExtension`), `subscribe`, the Ruleset assistant (`listAssistantPaths`, `describeAssistantPath`, `describeAssistantCatalog`, `assistantTextKeys`, `planAssistant`, `applyAssistant`, below); and for each entry collection `get<Kind>`, `list<Collection>`, `create<Kind>` (`registerDefinitionType` for Definition Types), `update<Kind>`, `delete<Kind>`. |
 | `configuratorReady` | stable | Promise resolved with `configurator` once storage is loaded. |
 | `runtime` | stable | The runtime API (`runtime-api.mjs`) on published Rulesets. Stable: `getContainerState`, `describeContainer`, `initializeContainer`, `setDefinitionState`, `writeSheetValue`, `projectSheet`, `evaluateFormula`, `evaluateCondition`, `roll`, `executeTest`, `previewAction`, `describeActionInputs`, `executeAction`, `emitEvent`, `rollInitiative`, `describeShared`, `setSharedValue`, `tokenBarValue`, `advance`, `acquire`, `getLedger`, `compensate`. Its other methods are internal. |
 | `chat.postActionCard(result, versionId, {speaker})` | stable | Posts the chat card of an Action that another module ran with `runtime.executeAction`, as the sheet would. |
 | `registries` | stable | The open registries `valueTypes`, `formulaNodes`, `effectOperations`; register on `ruleThemAllRegisterTypes`. |
+| `integrations` | stable | What other modules add to Rule Them'All's windows (`src/integrations/integration-registry.mjs`): `capabilities` (what this version offers, today `assistantPanels`), `registerAssistantPanel`, `unregisterAssistantPanel`, `listAssistantPanels`. Register on `ruleThemAllRegisterIntegrations` or at any later time. |
 | `runtimeLab` | internal | The runtime API on working drafts, for the GM sandbox only. |
 | `content`, `creation`, `language` | internal | The Content bridge, the character creation sessions, and the chosen interface language if any. |
 
 Hooks, all stable:
 
-- Lifecycle: `ruleThemAllInit` (end of `init`), `ruleThemAllRegisterTypes` (during `setup`, with `{valueTypes, formulaNodes, effectOperations}`: other modules add value types, formula nodes and effect operations there), `ruleThemAllReady` (after the APIs are ready).
+- Lifecycle: `ruleThemAllInit` (end of `init`), `ruleThemAllRegisterTypes` (during `setup`, with `{valueTypes, formulaNodes, effectOperations}`: other modules add value types, formula nodes and effect operations there), `ruleThemAllRegisterIntegrations` (during `setup`, with `integrations`), `ruleThemAllReady` (after the APIs are ready).
 - Runtime (`RUNTIME_HOOKS` in `module-contract.mjs`): `ruleThemAllTestResolved`, `ruleThemAllEvent`, `ruleThemAllActionExecuted`, `ruleThemAllLedgerEntry`, `ruleThemAllReactionOffered`, `ruleThemAllChoiceOffered`.
 - Contents: `ruleThemAllCreationCompleted`, `ruleThemAllContentAcquired`, `ruleThemAllContentReleased`, `ruleThemAllContentLibrariesSynchronized`.
+
+### Ruleset assistant for other modules
+
+The assistant (`assistant-engine.mjs`) turns answers to a path's questions into new entries of a draft. Another module (a rule designer, an import script) uses it the way the window does:
+
+- `describeAssistantCatalog({texts})`: every path and every question, visible or not, for a program that fills paths: words (`texts` maps the keys of `assistantTextKeys()` to words, else the keys stay), kind, options, accepted entries (`accept`), the path that creates a new entry (`create`), defaults, `visibility` (`dependsOn`, and `shownWhen`: the combinations of choice or true/false answers that show it), and `answerFormats`, how each question kind is answered.
+- `describeAssistantPath(versionId, pathId, answers, {texts})`: the questions shown now for these answers, with the entries of this Ruleset each entry question may use (`choices`).
+- `planAssistant(versionId, pathId, answers, {texts})`: validates without writing anything. `{valid, errors: [{path, code, detail}], warnings, created, added, filled, reused, main, fingerprint}`; `errors` name the answer at fault (`items[1].linked`) and are meant to be read by a program too.
+- `applyAssistant(versionId, pathId, answers, {texts, baseFingerprint})`: one validated write. With the `fingerprint` of the plan as `baseFingerprint`, it throws (`error.code` `ASSISTANT_STALE`) if the draft changed since that plan; an invalid plan throws `ASSISTANT_INVALID`.
+
+`integrations.registerAssistantPanel({id, ownerModule, title, icon, isVisible?(context), render(element, assistant)})` adds a panel at the top of the assistant window. Rule Them'All draws the panel's frame (title, icon) and gives `render` an empty element, filled once and kept while the window is open (the window may be drawn again around it); `render` may return a function called when the window closes. `assistant` offers `state()` (`{versionId, rulesetId, readOnly, pathId, answers, plan}`), `catalog()`, `describePath(pathId, answers)`, `plan(pathId, answers)`, `openPath(pathId, answers)` (shows that path with these answers in the form) and `onChange(listener)`. A panel never writes: the GM applies the plan with the window's Apply button. Registering the same `id` again replaces the panel; a panel that throws shows an error line in its frame and the window goes on.
 
 ### Stability and versioning
 

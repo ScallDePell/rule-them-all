@@ -39,7 +39,8 @@ test('stable API: every stable hook is fired by the module', ()=>{
   const constantOf=hook=>[...contract.matchAll(/(\w+):"(ruleThemAll\w+)"/g)].find(match=>match[2]===hook)?.[1];
   const fired=hook=>source.includes(`callAll("${hook}"`)||source.includes(`callAll?.("${hook}"`)
     ||(constantOf(hook)&&new RegExp(`callAll\\??\\.?\\(\\s*RUNTIME_HOOKS\\.${constantOf(hook)}\\b`).test(source))
-    ||(hook==='ruleThemAllRegisterTypes'&&/callAll\(REGISTER_TYPES_HOOK/.test(source));
+    ||(hook==='ruleThemAllRegisterTypes'&&/callAll\(REGISTER_TYPES_HOOK/.test(source))
+    ||(hook==='ruleThemAllRegisterIntegrations'&&/callAll\(REGISTER_INTEGRATIONS_HOOK/.test(source));
   assert.deepEqual(STABLE_API.hooks.filter(hook=>!fired(hook)),[]);
 });
 
@@ -47,7 +48,7 @@ test('stable API: the architecture document names the API version and every stab
   const doc=readFileSync(join(root,'docs/architecture.md'),'utf8');
   assert.match(API_VERSION,/^\d+\.\d+\.\d+$/);
   assert.ok(doc.includes(`API version **${API_VERSION}**`),'docs/architecture.md §6 states the current API_VERSION');
-  const names=[...STABLE_API.members,...STABLE_API.configurator,...STABLE_API.runtime,...STABLE_API.chat,...STABLE_API.registries,...STABLE_API.hooks];
+  const names=[...STABLE_API.members,...STABLE_API.configurator,...STABLE_API.runtime,...STABLE_API.chat,...STABLE_API.registries,...STABLE_API.integrations,...STABLE_API.hooks];
   assert.deepEqual(names.filter(name=>!new RegExp(`[\`.]${name}\\b`).test(doc)),[],'document these stable names in docs/architecture.md §6');
 });
 

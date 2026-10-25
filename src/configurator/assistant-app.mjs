@@ -1,5 +1,7 @@
 /** The assistant window: choose a path, answer its questions on one page, see what it will create, use and add,
- * then apply it in one write (configurator API planAssistant / applyAssistant). Nothing is written before Apply. */
+ * then apply it in one write (configurator API planAssistant / applyAssistant). Nothing is written before Apply.
+ * Other modules add panels to it (integrations.registerAssistantPanel): a panel may open a path with answers and read
+ * the plan, but only the GM's Apply writes. */
 import {ConfiguratorWindow} from "./configurator-window.mjs";
 import {MODULE_ID} from "../core/module-contract.mjs";
 import {moduleLanguage} from "../core/module-language.mjs";
@@ -12,6 +14,7 @@ import {expressionBuilderModel} from "./entry-expression-model.mjs";
 import {renderExpressionBuilderHTML} from "../ui/expression-builder-markup.mjs";
 import {collectExpression} from "./entry-expression-serialization.mjs";
 import {createSelectColorResolver} from "../ui/select-option-presentation.mjs";
+import {integrations as moduleIntegrations} from "../integrations/integrations.mjs";
 
 const WORDS = ["choose", "none", "add", "remove", "existing", "enable", "id", "errors", "created", "reused", "added", "filled", "warnings", "nothing"];
 
@@ -20,14 +23,17 @@ export class AssistantApp extends ConfiguratorWindow {
   static PARTS = {content: {template: `modules/${MODULE_ID}/templates/configurator/assistant.hbs`, scrollable: ["[data-assistant-paths]", "[data-assistant-main]"]}};
   static MINIMUM = {width: 560, height: 420};
 
-  #api; #versionId; #onApplied; #onOpenEntry; #onTryLab;
+  #api; #versionId; #onApplied; #onOpenEntry; #onTryLab; #integrations; #stopIntegrations = null;
+  /** Panels of other modules: id -> {element, cleanup}; an element is filled once and kept across renders. */
+  #panels = new Map(); #listeners = new Set();
   #pathId = null; #answers = {}; #applied = null; #error = ""; #shape = ""; #labels = {}; #plan = null; #texts = null; #timer = null;
   #expressions = new ExpressionBuilderController({sources: () => this.#sources(), editorOf: node => node.closest("[data-expr-editor]")?.dataset.exprEditor ?? "formula",
     bind: () => {}, changed: () => this.#refresh()});
 
   /** pathId and answers open it on a path already answered in part. */
-  constructor({api, versionId, pathId = null, answers = {}, onApplied = () => {}, onOpenEntry = () => {}, onTryLab = () => {}}, options = {}) {
+  constructor({api, versionId, pathId = null, answers = {}, onApplied = () => {}, onOpenEntry = () => {}, onTryLab = () => {}, integrations = moduleIntegrations}, options = {}) {
     super(options); this.#api = api; this.#versionId = versionId; this.#pathId = pathId; this.#answers = structuredClone(answers); this.#onApplied = onApplied; this.#onOpenEntry = onOpenEntry; this.#onTryLab = onTryLab;
+    this.#integrations = integrations;
   }
   get versionId() { return this.#versionId; }
 
@@ -61,7 +67,8 @@ export class AssistantApp extends ConfiguratorWindow {
     const cards = ASSISTANT_PATHS.map(path => ({id: path.id, group: path.group, icon: ASSISTANT_PATH_ICONS[path.id], color: colorOf(path), title: this.#t(`RTA.Assistant.Path.${path.id}.Title`), summary: this.#t(`RTA.Assistant.Path.${path.id}.Summary`), active: path.id === this.#pathId,
       search: [this.#t(`RTA.Assistant.Path.${path.id}.Title`), this.#t(`RTA.Assistant.Path.${path.id}.Summary`), ...(path.keywords ?? [])].join(" ").toLowerCase()}));
     const groups = ASSISTANT_GROUPS.map(group => ({id: group, icon: ASSISTANT_GROUP_ICONS[group], title: this.#t(`RTA.Assistant.Group.${group}`), cards: cards.filter(card => card.group === group)}));
-    const out = {...context, groups, readOnly, error: this.#error, rulesetName: this.#entryName(record?.workingDraft?.nameKey ?? record?.publishedSnapshot?.nameKey ?? "")};
+    const panels = this.#integrations.internal.assistantPanels(this.#panelContext()).map(panel => ({id: panel.id, icon: panel.icon, title: this.#t(panel.title)}));
+    const out = {...context, groups, panels, readOnly, error: this.#error, rulesetName: this.#entryName(record?.workingDraft?.nameKey ?? record?.publishedSnapshot?.nameKey ?? "")};
     const words = this.#words();
     if (this.#applied) out.applied = {html: previewHTML(this.#applied, words, {open: true}), title: this.#t(`RTA.Assistant.Path.${this.#applied.pathId}.Title`)};
     if (!this.#pathId) return out;
@@ -88,8 +95,11 @@ export class AssistantApp extends ConfiguratorWindow {
   async _onRender(context, options) {
     await super._onRender(context, options);
     if (options?.isFirstRender) AssistantApp.ensureStylesheet();
+    // A panel registered or removed while the window is open shows at once.
+    this.#stopIntegrations ??= this.#integrations.internal.onChange(() => this.render(false));
     const root = this.element?.querySelector("[data-assistant]");
     if (!root) return;
+    this.#placePanels(root);
     root.addEventListener("click", event => { const button = event.target.closest?.("[data-action]"); if (button && root.contains(button)) this.#action(button, event); });
     root.addEventListener("input", event => {
       if (event.target.matches?.("[data-assistant-search]")) return this.#filter(event.target.value);
@@ -100,6 +110,81 @@ export class AssistantApp extends ConfiguratorWindow {
       if (event.target.matches?.("[data-assistant-search]")) return;
       if (event.target.closest?.("[data-expr-root]")) this.#expressions.change(event.target);
       clearTimeout(this.#timer); this.#refresh();
+    });
+  }
+
+  async _onClose(options) {
+    this.#stopIntegrations?.(); this.#stopIntegrations = null;
+    for (const [id, panel] of this.#panels) { try { panel.cleanup?.(); } catch (error) { this.#integrations.internal.report(id, error); } }
+    this.#panels.clear(); this.#listeners.clear();
+    return super._onClose?.(options);
+  }
+
+  #panelContext() {
+    const record = this.#api.getRulesetVersion(this.#versionId);
+    return {versionId: this.#versionId, rulesetId: record?.rulesetId ?? null, ruleset: this.#ruleset(), readOnly: record?.status === "validated",
+      user: {id: game.user?.id ?? null, isGM: Boolean(game.user?.isGM)}};
+  }
+
+  /** Each shown panel's element in its place: filled by its module the first time, then only moved. */
+  #placePanels(root) {
+    const shown = this.#integrations.internal.assistantPanels(this.#panelContext());
+    for (const [id, panel] of this.#panels) if (!shown.some(item => item.id === id)) { try { panel.cleanup?.(); } catch (error) { this.#integrations.internal.report(id, error); } this.#panels.delete(id); }
+    for (const descriptor of shown) {
+      const slot = root.querySelector(`[data-assistant-panel="${CSS.escape(descriptor.id)}"]`);
+      if (!slot) continue;
+      let panel = this.#panels.get(descriptor.id);
+      if (!panel || panel.descriptor !== descriptor) {
+        try { panel?.cleanup?.(); } catch (error) { this.#integrations.internal.report(descriptor.id, error); }
+        const element = document.createElement("div");
+        panel = {descriptor, element, cleanup: null};
+        this.#panels.set(descriptor.id, panel);
+        try {
+          const cleanup = descriptor.render(element, this.#handle());
+          if (typeof cleanup === "function") panel.cleanup = cleanup;
+          else if (typeof cleanup?.then === "function") cleanup.then(done => { if (typeof done === "function") panel.cleanup = done; }, error => this.#panelFailed(panel, error));
+        } catch (error) { this.#panelFailed(panel, error); }
+      }
+      slot.replaceChildren(panel.element);
+    }
+    this.#notify();
+  }
+  #panelFailed(panel, error) {
+    this.#integrations.internal.report(panel.descriptor.id, error);
+    const line = document.createElement("p");
+    line.className = "rta-configurator__error"; line.setAttribute("role", "alert"); line.textContent = this.#t("RTA.Assistant.PanelFailed");
+    panel.element.replaceChildren(line);
+  }
+
+  /** The state a panel reads: the path open, its answers and its plan (the patch left out). */
+  #state() {
+    const record = this.#api.getRulesetVersion(this.#versionId);
+    const plan = this.#plan && this.#pathId ? structuredClone(this.#plan) : null;
+    if (plan) delete plan.patch;
+    return {versionId: this.#versionId, rulesetId: record?.rulesetId ?? null, readOnly: record?.status === "validated", pathId: this.#pathId, answers: structuredClone(this.#answers), plan};
+  }
+  #notify() {
+    const state = this.#state();
+    for (const listener of this.#listeners) { try { listener(state); } catch (error) { this.#integrations.internal.report("assistant listener", error); } }
+  }
+  /** What a panel works with. Nothing here writes to the Ruleset: the GM applies the plan with the window's button. */
+  #handle() {
+    const app = this, texts = () => this.#textMap();
+    return Object.freeze({
+      get versionId() { return app.#versionId; },
+      state: () => app.#state(),
+      catalog: () => app.#api.describeAssistantCatalog({texts: texts()}),
+      describePath: (pathId, answers = {}) => app.#api.describeAssistantPath(app.#versionId, pathId, answers, {texts: texts()}),
+      plan: (pathId, answers = {}) => app.#api.planAssistant(app.#versionId, pathId, answers, {texts: texts()}),
+      /** Show a path with these answers in the form; resolves with the state once drawn. */
+      openPath: async (pathId, answers = {}) => {
+        if (!ASSISTANT_PATHS.some(path => path.id === pathId)) throw new Error(`Unknown assistant path: ${pathId}.`);
+        app.#pathId = pathId; app.#answers = structuredClone(answers ?? {}); app.#applied = null; app.#error = "";
+        await app.render(false);
+        return app.#state();
+      },
+      /** listener(state) after each change of path, answers or plan; returns the unsubscribe. */
+      onChange: listener => { app.#listeners.add(listener); return () => app.#listeners.delete(listener); }
     });
   }
 
@@ -150,6 +235,7 @@ export class AssistantApp extends ConfiguratorWindow {
     for (const line of this.element.querySelectorAll("[data-answer-error]")) { const message = errors[line.dataset.answerError] ?? ""; line.textContent = message; line.hidden = !message; this.element.querySelector(`[data-answer-field="${CSS.escape(line.dataset.answerError)}"]`)?.classList.toggle("is-invalid", Boolean(message)); }
     const apply = this.element.querySelector('[data-action="apply"]'), record = this.#api.getRulesetVersion(this.#versionId);
     if (apply) apply.disabled = !model.plan.valid || record?.status === "validated";
+    this.#notify();
   }
 
   async #action(button, event) {

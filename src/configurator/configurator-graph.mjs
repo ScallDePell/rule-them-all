@@ -7,8 +7,8 @@ import {applyFieldContract} from "./field-output-contracts.mjs";
 import {assertValidRuleset} from "./configurator-validation.mjs";
 import {PREPARERS} from "./rule-contracts.mjs";
 import {prepareDefinitionSlots, prepareValueBounds} from "./capability-slots.mjs";
-import {planAssistant, describeAssistantPath, assistantPathTextKeys} from "./assistant-engine.mjs";
-import {ASSISTANT_PATHS, ASSISTANT_SHARED_TEXTS} from "./assistant-paths.mjs";
+import {planAssistant, describeAssistantPath, describeAssistantCatalog, assistantPathTextKeys} from "./assistant-engine.mjs";
+import {ASSISTANT_GROUPS, ASSISTANT_PATHS, ASSISTANT_SHARED_TEXTS} from "./assistant-paths.mjs";
 import {storageFingerprint} from "./configurator-storage.mjs";
 import {analyzeChangeImpact, rulesetWithout, collectionOfKind} from "./change-impact.mjs";
 
@@ -173,8 +173,10 @@ export function createGraphAPI(registry) {
     listAssistantPaths: () => ASSISTANT_PATHS.map(path => ({id: path.id, group: path.group, keywords: [...(path.keywords ?? [])], produces: copyJSON(path.produces ?? null),
       titleKey: `RTA.Assistant.Path.${path.id}.Title`, summaryKey: `RTA.Assistant.Path.${path.id}.Summary`, limitsKey: `RTA.Assistant.Path.${path.id}.Limits`})),
     /** Every text key of the assistant, so the interface can pass their words (texts: key -> words) to plan and apply. */
-    assistantTextKeys: () => [...new Set([...ASSISTANT_PATHS.flatMap(assistantPathTextKeys), ...ASSISTANT_SHARED_TEXTS.map(key => `RTA.Assistant.Text.${key}`)])],
+    assistantTextKeys: () => [...new Set([...ASSISTANT_PATHS.flatMap(assistantPathTextKeys), ...ASSISTANT_SHARED_TEXTS.map(key => `RTA.Assistant.Text.${key}`), ...ASSISTANT_GROUPS.map(group => `RTA.Assistant.Group.${group}`)])],
     describeAssistantPath: (rulesetId, pathId, answers = {}, {texts = {}} = {}) => describeAssistantPath(definitions.ruleset(rulesetId), pathId, answers, {paths: ASSISTANT_PATHS, text: key => texts[key] ?? key}),
+    /** Every path and question, visible or not, with how each kind is answered: what another program needs to fill a path. */
+    describeAssistantCatalog: ({texts = {}} = {}) => describeAssistantCatalog({paths: ASSISTANT_PATHS, groups: ASSISTANT_GROUPS, text: key => texts[key] ?? key}),
     /** What a path would write, without writing it: created, added, filled and reused entries, errors and warnings. */
     planAssistant: (rulesetId, pathId, answers = {}, {texts = {}} = {}) => {
       const {patch, ...plan} = planAssistant(definitions.ruleset(rulesetId), pathId, answers, {paths: ASSISTANT_PATHS, text: key => texts[key] ?? key});
