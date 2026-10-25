@@ -476,6 +476,36 @@ const derivedValue = {
   }
 };
 
+/** A bound as an expression: a number as it is, a Formula as that Formula; none is null. */
+const boundNode = source => !source ? null : Object.hasOwn(source, "literal") ? lit(source.literal) : formula(source.formulaRef);
+const bounds = {
+  id: "bounds", group: "core", keywords: ["bound", "maximum", "minimum", "limit", "cap", "range", "player character", "pc", "npc"], produces: {collection: "definitionTypes"},
+  // The only path that changes what exists: the bound it sets replaces the one there, which it may keep for other cases.
+  changes: [{collection: "definitionTypes", field: "valueBounds"}, {collection: "definitions", field: "valueBounds"}],
+  questions: [
+    {id: "target", kind: "choice", options: ["type", "definitions"], default: "type"},
+    {id: "type", kind: "entry", accept: {collection: "definitionTypes", capability: "value"}, visible: v => v.target === "type"},
+    {id: "definitions", kind: "entries", min: 1, accept: {collection: "definitions", capability: "value"}, visible: v => v.target === "definitions"},
+    {id: "bound", kind: "choice", options: ["maximum", "minimum"], default: "maximum"},
+    {id: "value", kind: "formula"},
+    {id: "when", kind: "condition", required: false}
+  ],
+  texts: ["maximum", "minimum"],
+  build(ctx) {
+    const v = ctx.values, field = `valueBounds.${v.bound}`;
+    const targets = v.target === "type" ? [{collection: "definitionTypes", id: ctx.entry(v.type).id}] : v.definitions.map(answer => ({collection: "definitions", id: ctx.entry(answer).id}));
+    for (const target of targets) {
+      const entry = ctx.find(target.collection, target.id), name = entry?.nameKey ?? target.id;
+      // The bound in force until now: a Definition's own, else its type's. With a condition, it stays for every other case.
+      const typed = target.collection === "definitions" ? ctx.find("definitionTypes", entry?.definitionTypeId)?.valueBounds?.[v.bound] : null;
+      const previous = boundNode(entry?.valueBounds?.[v.bound] ?? typed);
+      const expression = v.when ? {type: "if", condition: v.when, then: v.value, else: previous ?? lit(null)} : v.value;
+      ctx.replace(target.collection, target.id, field, boundOf(ctx, expression, ctx.t(v.bound, {name})));
+    }
+    return targets[0];
+  }
+};
+
 const resource = {
   id: "resource", group: "core", keywords: ["resource", "hit points", "health", "mana", "energy", "pool"], produces: {collection: "definitions", capability: "pool"},
   questions: [
@@ -1127,7 +1157,7 @@ const permission = {
 };
 
 export const ASSISTANT_PATHS = Object.freeze([
-  characteristics, skills, derivedValue, resource, testPath, attack, state, cost, consumable, level, encumbrance,
+  characteristics, skills, derivedValue, bounds, resource, testPath, attack, state, cost, consumable, level, encumbrance,
   advantage, damageTypes, power, threshold, rest, initiative, creation, progression, scale, contentType, permission,
   definitionType, value, parameterBrick, formulaBrick, conditionBrick, rollBrick, outcomeBrick, durationBrick, effectBrick, actionBrick, counterBrick, triggerBrick, tableBrick, dieBrick
 ]);

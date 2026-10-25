@@ -19,6 +19,7 @@ const scanAst=(node,cb,path='expression')=>{
   if(node.type==='reference'&&isRecord(node.reference))cb(node.reference,path);
   if(node.type==='parameter'&&node.id)cb({objectKind:'parameter',objectId:node.id},path);
   if(node.type==='formula'&&node.id)cb({objectKind:'formula',objectId:node.id},path);
+  if(node.type==='actor'&&node.is==='contentType'&&node.contentTypeId)cb({objectKind:'contentType',objectId:node.contentTypeId},path);
   if(node.type==='contentAggregate'&&node.contentTypeId)cb({objectKind:'contentType',objectId:node.contentTypeId},path);
   for(const [k,v] of Object.entries(node))if(k!=='reference')scanAst(v,cb,`${path}.${k}`);
 };

@@ -8,6 +8,7 @@ import {renderExpressionBlockHTML,renderExpressionSlotHTML} from "../ui/expressi
 import {buildRuleReferenceChoices} from "./entry-reference-catalog.mjs";
 import {selectColorsAttribute} from "../ui/select-option-presentation.mjs";
 import {RTA_NEUTRAL_COLOR} from "../ui/theme-tokens.mjs";
+import {availableDocumentTypes,documentTypeLabel,BASE_DOCUMENT_TYPE} from "../core/system-document-types.mjs";
 
 const BLOCK_ACTIONS = ["addRuleOperand", "removeRuleOperand", "addExprRow", "removeExprRow"];
 
@@ -20,7 +21,10 @@ export function expressionSources(ruleset, {optionColors, findCapability, langua
   // Fields of every Content Type, once each by id: a Formula may serve Contents of several types.
   const fields = new Map();
   for (const type of ruleset.contentTypes ?? []) for (const [id, field] of Object.entries(type.fields ?? {})) if (!fields.has(id)) fields.set(id, {id, label: `${field?.name || id} (${type.nameKey || type.id})`});
-  return {parameters: ruleset.parameters ?? [], formulas: ruleset.formulas ?? [], withColors, contentFields: [...fields.values()],
+  // Kinds of Actor a Condition may ask about: the Foundry Actor types of the system, the Ruleset's Actor Content Types.
+  const actorTypes = availableDocumentTypes("Actor").filter(id => id !== BASE_DOCUMENT_TYPE).map(id => ({id, label: documentTypeLabel("Actor", id)}));
+  const actorContentTypes = (ruleset.contentTypes ?? []).filter(type => type.storageKind === "actor").map(type => ({id: type.id, label: type.nameKey || type.id}));
+  return {parameters: ruleset.parameters ?? [], formulas: ruleset.formulas ?? [], withColors, contentFields: [...fields.values()], actorTypes, actorContentTypes,
     references: buildRuleReferenceChoices({definitions: ruleset.definitions ?? [], parameters: ruleset.parameters ?? [], formulas: ruleset.formulas ?? [], findCapability, optionColors, language}),
     counters: [...counters.values()], neutral: selectColorsAttribute([RTA_NEUTRAL_COLOR]),
     roles: [...new Set((ruleset.actions ?? []).flatMap(action => (action.roleLinks ?? []).map(link => link.role)))],

@@ -80,3 +80,27 @@ test('A field of the Content used is chosen among the fields of the Content Type
   assert.match(html,/data-rule-operand-editor="contentField"><select data-operand-part="field"><option value="munitions"[^>]* selected>Munitions \(Arme\)<\/option>/);
   assert.match(html,/data-operand-part="fallback" value=""/);
 });
+
+test('Kind of Actor: played by a player, a Foundry Actor type or a Content Type, chosen in one list and evaluated on a role', async()=>{
+  const {formulaNodeRegistry}=await import('../src/configurator/operation-registries.mjs');
+  const {RuntimeEvaluator}=await import('../src/runtime/runtime-evaluator.mjs');
+  const {DependencyIndex}=await import('../src/configurator/dependency-index.mjs');
+  const pc={type:'actor',of:'self',is:'player'},npc={type:'actor',of:'target',is:'documentType',documentType:'npc'},beast={type:'actor',of:'self',is:'contentType',contentTypeId:'beast'};
+  for(const node of [pc,npc,beast,{type:'not',value:pc}]){assert.ok(buildable(node,'condition'),JSON.stringify(node));assert.deepEqual(blockNodeOf(rootFormOf(node,'condition')),node);}
+  assert.deepEqual(formOf(npc),{kind:'actor',of:'target',is:'documentType:npc'});
+  assert.deepEqual(nodeOf({kind:'actor',of:'self',is:'contentType:beast'}),beast);
+  const validate=node=>formulaNodeRegistry.get('actor').validate(node,'x');
+  assert.throws(()=>validate({type:'actor',is:'friend'}),/is must be/);
+  assert.throws(()=>validate({type:'actor',is:'contentType'}),/contentTypeId/);
+  const view=slotView(formOf(beast),{label:{}},{actorTypes:[{id:'character',label:'Personnage'},{id:'npc',label:'PNJ'}],actorContentTypes:[{id:'monster',label:'Monstre'}]});
+  // A Content Type no longer offered stays as written.
+  assert.deepEqual(view.actorIsChoices.map(choice=>[choice.id,choice.selected]),[['player',false],['documentType:character',false],['documentType:npc',false],['contentType:monster',false],['contentType:beast',true]]);
+  assert.match(renderExpressionSlotHTML(view),/data-rule-operand-editor="actor"><select data-operand-part="of">/);
+  const facts={hero:{player:true,documentType:'character',contentTypeId:null},wolf:{player:false,documentType:'npc',contentTypeId:'beast'}};
+  const evaluator=new RuntimeEvaluator({ruleset:{},resolveReference:async()=>null,actorFacts:async(context,role)=>facts[context.roles[role]]??null});
+  const context={roles:{self:'hero',target:'wolf'}};
+  assert.deepEqual([await evaluator.evaluate(pc,context),await evaluator.evaluate(npc,context),await evaluator.evaluate(beast,context)],[true,true,false]);
+  assert.equal(await evaluator.evaluate(pc,{roles:{self:'world'}}),false,'a container that is no Actor is none of these');
+  const index=new DependencyIndex({formulas:[{id:'f',expression:beast}]});
+  assert.deepEqual(index.getConsumers('beast','contentType').map(edge=>edge.consumerRef.objectId),['f'],'the Content Type is a dependency of the Formula');
+});

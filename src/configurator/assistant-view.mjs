@@ -20,7 +20,7 @@ export const ASSISTANT_PATH_ICONS = Object.freeze({
   creation: "fa-user-plus", progression: "fa-arrow-trend-up", scale: "fa-ruler", contentType: "fa-box-open", permission: "fa-lock",
   definitionType: "fa-shapes", value: "fa-hashtag", parameter: "fa-sliders", formula: "fa-square-root-variable", condition: "fa-code-branch",
   roll: "fa-dice", outcome: "fa-flag-checkered", duration: "fa-hourglass-half", effect: "fa-bolt", action: "fa-hand-pointer", trigger: "fa-bell",
-  table: "fa-table", die: "fa-dice-six", counter: "fa-list-check"});
+  table: "fa-table", die: "fa-dice-six", counter: "fa-list-check", bounds: "fa-arrows-up-to-line"});
 /** The collection whose section color a path card takes: what it produces, else Systems (initiative). */
 export const pathCollection = path => path?.produces?.collection ?? "creationSystems";
 const NAV_KEYS = {permissionPolicies: "Permissions", eventTypes: "Events"};
@@ -155,7 +155,7 @@ export function formShape(fields) {
 /** Errors whose detail is data the GM recognises (an id, bounds, a field); the others' detail is the engine's own wording. */
 const SHOWN_DETAILS = ["RANGE", "OPTION", "NOT_FOUND", "NOT_ACCEPTED", "TOO_MANY", "ID_TAKEN", "ALREADY_SET", "BUILD", "INVALID"];
 
-/** The preview of a plan: what it creates, uses, adds and fills, its errors (by question) and the warnings left for publishing. */
+/** The preview of a plan: what it creates, uses, adds, fills and changes, its errors (by question) and the warnings left for publishing. */
 export function assistantPreviewModel(plan, {t, entryName, labels = {}, ruleset = {}}) {
   const nameOf = (collection, id) => entryName((ruleset[collection] ?? []).find(entry => entry.id === id)?.nameKey ?? id);
   const fieldLabel = field => { const key = `RTA.Assistant.Field.${String(field).replace(/\./g, "_")}`, words = t(key); return words === key ? field : words; };
@@ -172,6 +172,12 @@ export function assistantPreviewModel(plan, {t, entryName, labels = {}, ruleset 
     }),
     added: plan.added.map(item => ({name: nameOf(item.collection, item.id), field: fieldLabel(item.field), count: item.count})),
     filled: plan.filled.map(item => ({name: item.collection ? nameOf(item.collection, item.id) : "", field: fieldLabel(item.field)})),
+    // A changed setting, before and after: a number, a Formula by its name (one this plan creates too), or none.
+    changed: (plan.changed ?? []).map(item => {
+      const shown = source => !source ? t("RTA.Assistant.Word.None") : Object.hasOwn(source, "literal") ? String(source.literal)
+        : entryName((ruleset.formulas ?? []).find(entry => entry.id === source.formulaRef)?.nameKey ?? plan.created.find(entry => entry.collection === "formulas" && entry.id === source.formulaRef)?.nameKey ?? source.formulaRef);
+      return {name: nameOf(item.collection, item.id), field: fieldLabel(item.field), before: shown(item.before), after: shown(item.after)};
+    }),
     warnings: plan.warnings.map(warning => warning.detail)
   };
 }

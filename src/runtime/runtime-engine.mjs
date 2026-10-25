@@ -348,7 +348,8 @@ export class RuntimeEngine{
   evaluator(versionId,staged=null){const ruleset=this.ruleset(versionId);return new RuntimeEvaluator({ruleset,resolveReference:(reference,context,opts)=>this.resolveReference(versionId,reference,context,{...opts,staged}),
     listContents:async(context,container)=>this.#contents(versionId,context,container??context?.defaultRole??"self",staged),
     currentContent:async context=>{if(!context?.content?.key)return null;return (await this.#contents(versionId,context,context.content.role??"self",staged)).find(row=>row.key===context.content.key)??null;},
-    space:{distance:(context,from,to)=>this.#spatial("distance",context,[from,to]),nearby:(context,role,within,side)=>this.#spatial("nearby",context,[role],within,side)}});}
+    space:{distance:(context,from,to)=>this.#spatial("distance",context,[from,to]),nearby:(context,role,within,side)=>this.#spatial("nearby",context,[role],within,side)},
+    actorFacts:async(context,role)=>{const ref=roleRef(context,role);if(!ref)throw new Error(`EvaluationContext role is missing: ${role}.`);return typeof this.adapter.actorFacts==="function"?this.adapter.actorFacts(normalizeRuntimeContainerRef(ref)):null;}});}
   /** Distances come from the adapter (Foundry: the tokens of the viewed scene). */
   async #spatial(kind,context,roles,...rest){
     const refs=roles.map(role=>{const ref=roleRef(context,role);if(!ref)throw new Error(`EvaluationContext role is missing: ${role}.`);return normalizeRuntimeContainerRef(ref);});

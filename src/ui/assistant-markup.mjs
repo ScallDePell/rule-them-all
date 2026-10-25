@@ -1,7 +1,7 @@
 import {escapeHTML as escape} from "./html-utils.mjs";
 /** Pure HTML of the assistant's form and preview, from the models of src/configurator/assistant-view.mjs.
  * Every control carries data-answer="<path>" and data-answer-kind: the window reads the answers back from them.
- * words: {choose, none, add, remove, existing, enable, id, errors, created, reused, added, filled, warnings, nothing, open}. */
+ * words: {choose, none, add, remove, existing, enable, id, errors, created, reused, added, filled, changed, warnings, nothing, open}. */
 
 const attr = (name, value) => value === undefined || value === null || value === "" ? "" : ` ${name}="${escape(value)}"`;
 const option = o => `<option value="${escape(o.value)}"${o.selected ? " selected" : ""}>${escape(o.label)}</option>`;
@@ -61,6 +61,7 @@ export function previewHTML(preview, words, {open = false} = {}) {
     + list(words.reused, preview.reused, typed, "fa-link")
     + list(words.added, preview.added, item => `<strong>${escape(item.name)}</strong> · ${escape(item.field)} +${escape(item.count)}`, "fa-list-ul")
     + list(words.filled, preview.filled, item => `${item.name ? `<strong>${escape(item.name)}</strong> · ` : ""}${escape(item.field)}`, "fa-pen")
+    + list(words.changed, preview.changed ?? [], item => `<strong>${escape(item.name)}</strong> · ${escape(item.field)} : ${escape(item.before)} → ${escape(item.after)}`, "fa-pen-to-square")
     + list(words.warnings, preview.warnings, item => escape(item), "fa-circle-exclamation");
   return body || `<p class="hint">${escape(words.nothing)}</p>`;
 }

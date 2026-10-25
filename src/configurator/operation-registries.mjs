@@ -153,6 +153,23 @@ function validateNearby(node, label) {
   if (!NEARBY_SIDES.includes(node.side ?? "any")) throw new Error(`${label}.side must be ${NEARBY_SIDES.join(", ")}.`);
   validateDefault(node, label);
 }
+/** actor: {of: role, is: player | documentType | contentType, documentType?, contentTypeId?}: whether the Actor of a role
+ * is played by a player (a PC), is of a Foundry Actor type, or was made from an Actor Content of a Content Type.
+ * A role that is no Actor (the world, a combat) is none of these. */
+export const ACTOR_KINDS = Object.freeze(["player", "documentType", "contentType"]);
+function validateActorNode(node, label) {
+  if (!roleName(node.of ?? "self")) throw new Error(`${label}.of must be a role.`);
+  if (!ACTOR_KINDS.includes(node.is)) throw new Error(`${label}.is must be ${ACTOR_KINDS.join(", ")}.`);
+  if (node.is === "documentType" && !nonempty(node.documentType)) throw new Error(`${label}.documentType is required.`);
+  if (node.is === "contentType" && !nonempty(node.contentTypeId)) throw new Error(`${label}.contentTypeId is required.`);
+}
+async function actorIs(node, kit) {
+  const facts = await kit.actor(node.of ?? "self");
+  if (!facts) return false;
+  if (node.is === "player") return Boolean(facts.player);
+  if (node.is === "documentType") return facts.documentType === node.documentType;
+  return facts.contentTypeId === node.contentTypeId;
+}
 const needsDefinitionNode = keys => (node, label) => { if (!isRecord(node.definition)) throw new Error(`${label}.definition must be an AST node.`); for (const key of keys) if (!nonempty(node[key])) throw new Error(`${label}.${key} is required.`); };
 
 export const formulaNodeRegistry = new FormulaNodeRegistry()
@@ -166,6 +183,7 @@ export const formulaNodeRegistry = new FormulaNodeRegistry()
   .register({id: "nearby", evaluate: async (node, kit) => { const within = num(await kit.ev(node.within), "nearby distance"); return measured(node, kit, () => kit.nearby(node.of, within, node.side ?? "any")); }, resultType: "integer", validate: validateNearby})
   .register({id: "dice", evaluate: diceNode, resultType: "integer", validate: validateDiceNode})
   .register({id: "contentAggregate", evaluate: aggregateContents, resultType: node => node.operation === "count" ? "integer" : "number", validate: validateContentAggregate})
+  .register({id: "actor", evaluate: actorIs, resultType: "boolean", validate: validateActorNode})
   .register({id: "contentField", evaluate: contentField, validate: (node, label) => { if (!nonempty(node.field)) throw new Error(`${label}.field is required.`); }})
   .register({id: "context", evaluate: (node, kit) => { let value = kit.context; for (const part of String(node.path ?? "").split(".").filter(Boolean)) value = value?.[part]; return value === undefined ? undefined : copyJSON(value); }})
   .register({id: "add", evaluate: async (node, {ev}) => { let out = 0; for (const n of args(node)) out += num(await ev(n), "add operand"); return out; }, resultType: allInteger})

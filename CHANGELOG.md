@@ -2,6 +2,12 @@
 
 ## Unreleased
 
+## 1.2.4
+
+- **Kind of Actor** in Formulas and Conditions (visual builder and engine, node `actor`): whether the Actor of a role is played by a player (a PC), is of one of the game system's Actor types, or was made from an Actor Content of a Content Type. A rule can now differ between PCs and NPCs.
+- **Assistant: Bounds of a value** (Basics): sets the minimum or maximum of a Definition Type or of some Definitions, for everyone or **only when** a Condition holds (for example characteristics from 1 to 10, capped at 5 for PCs); in that case the old bound stays for every other case. It is the only path that changes an existing setting: the preview shows it as "before → after" under **Changed**.
+- Assistant API: plans and applied results list `changed` (`[{collection, id, field, before, after}]`); the catalog gives each path's `changes`. Fields added only, the API version stays 1.2.0.
+
 ## 1.2.3
 
 - **Sheets from a Content Type**: right-click a Content Type, **Create its sheet**, or click **Start from the Content Type** in an Item sheet's settings. The sheet starts with a section per Content Type holding its fields (each edited as its value type says), then the buttons of the Actions its templates grant (a weapon's attack). Replacing blocks already there asks first and can be undone.

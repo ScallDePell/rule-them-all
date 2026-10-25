@@ -1,6 +1,8 @@
 /* Ruleset assistant: guided paths that turn a GM's answers into new entries of a draft, written at once.
    A path asks questions (assistant-paths.mjs); its build turns the visible answers into entries to create, references
-   appended to entries already there, and Ruleset fields filled while empty. Nothing existing is changed or removed.
+   appended to entries already there, and Ruleset fields filled while empty. Nothing is removed; an existing setting is
+   changed only by a path made for it (the bounds of a value), on the few fields listed in REPLACEABLE_FIELDS, and the
+   plan says so (changed).
    Pure: no Foundry access; text comes from the injected text(key) function. */
 import {copyJSON, isRecord, COLLECTION_FIELDS} from "./configurator-schema.mjs";
 import {PREPARERS} from "./rule-contracts.mjs";
@@ -18,6 +20,11 @@ export const QUESTION_KINDS = Object.freeze(["name", "text", "number", "integer"
 export const ASSISTANT_LIMITS = Object.freeze({rows: 500, depth: 4});
 /** Ruleset fields a path may fill while they are empty. */
 const FILLABLE_RULESET_FIELDS = Object.freeze(["initiative", "initiative.defeatedConditionRef"]);
+/** Settings of existing entries a path may change (ctx.replace), by collection. */
+export const REPLACEABLE_FIELDS = Object.freeze({
+  definitionTypes: Object.freeze(["valueBounds.minimum", "valueBounds.maximum"]),
+  definitions: Object.freeze(["valueBounds.minimum", "valueBounds.maximum"])
+});
 
 export const pathKey = (pathId, suffix) => `RTA.Assistant.Path.${pathId}.${suffix}`;
 const optionValue = option => isRecord(option) ? option.value : option;
@@ -146,7 +153,7 @@ class AnswerReader {
 class PlanBuilder {
   constructor(ruleset, paths, text) {
     this.ruleset = ruleset; this.paths = paths; this.text = text;
-    this.created = []; this.additions = []; this.fills = []; this.reused = []; this.errors = [];
+    this.created = []; this.additions = []; this.fills = []; this.replacements = []; this.reused = []; this.errors = [];
     this.taken = new Set(COLLECTION_FIELDS.flatMap(collection => (ruleset?.[collection] ?? []).map(entry => entry?.id)));
   }
   /** A new id: the one an answer gives (unique in its collection, checked when the entry is added), else one made from
@@ -195,6 +202,8 @@ class PlanBuilder {
       },
       /** Append items to a list field of an entry (created or existing). Nothing already there is changed. */
       append(collection, id, field, items) { builder.additions.push({collection, id, field, items: copyJSON(items), path: path.id}); },
+      /** Change a setting of an entry (created or existing) among REPLACEABLE_FIELDS; null removes it. */
+      replace(collection, id, field, value) { builder.replacements.push({collection, id, field, value: copyJSON(value ?? null), path: path.id}); },
       /** Set a Ruleset field (collection null) or an entry field that is still empty. */
       fill(collection, id, field, value) { builder.fills.push({collection, id, field, value: copyJSON(value), path: path.id}); },
       /** An entry answer: the entry used, or the one its sub-path created. {id, slotId, collection}. */
@@ -231,6 +240,17 @@ class PlanBuilder {
       addition.added = 0;
       for (const item of addition.items) if (!present.has(storageFingerprint(item))) { list.push(item); present.add(storageFingerprint(item)); addition.added++; }
     }
+    for (const replacement of this.replacements) {
+      const target = collection(replacement.collection).find(entry => entry.id === replacement.id);
+      if (!target || !(REPLACEABLE_FIELDS[replacement.collection] ?? []).includes(replacement.field)) { this.errors.push({path: replacement.path, code: "REPLACE_TARGET", detail: `${replacement.collection} ${replacement.id}.${replacement.field}`}); continue; }
+      const keys = replacement.field.split("."), last = keys.pop();
+      let holder = target;
+      for (const key of keys) { if (!isRecord(holder[key])) holder[key] = {}; holder = holder[key]; }
+      replacement.before = holder[last] === undefined ? null : copyJSON(holder[last]);
+      if (replacement.value === null) delete holder[last]; else holder[last] = replacement.value;
+      // An object left empty is no setting: {valueBounds: {}} is no bound.
+      if (keys.length && isRecord(target[keys[0]]) && !Object.keys(target[keys[0]]).length) delete target[keys[0]];
+    }
     for (const fill of this.fills) {
       if (fill.collection === null) {
         if (!FILLABLE_RULESET_FIELDS.includes(fill.field)) { this.errors.push({path: fill.path, code: "FILL_TARGET", detail: fill.field}); continue; }
@@ -265,7 +285,7 @@ const diagnosticKey = diagnostic => `${diagnostic.code}|${diagnostic.path}|${dia
 
 /**
  * Plan a path on a Ruleset draft without writing anything. text(key) gives the words of the entries a path names
- * itself (a Test's "Success"). Returns {valid, errors, warnings, created, added, filled, reused, main, patch, fingerprint}:
+ * itself (a Test's "Success"). Returns {valid, errors, warnings, created, added, filled, changed, reused, main, patch, fingerprint}:
  * errors block applying it; warnings are what the new entries still lack before the Ruleset can be published.
  */
 export function planAssistant(ruleset, pathId, answers, {paths, text = key => key} = {}) {
@@ -273,7 +293,7 @@ export function planAssistant(ruleset, pathId, answers, {paths, text = key => ke
   if (!path) throw new Error(`Unknown assistant path: ${pathId}.`);
   const reader = new AnswerReader(ruleset, paths, text);
   const values = reader.read(path, answers ?? {});
-  const result = {pathId, valid: false, errors: reader.errors, warnings: [], created: [], added: [], filled: [], reused: [], main: null, patch: {}, fingerprint: storageFingerprint(ruleset)};
+  const result = {pathId, valid: false, errors: reader.errors, warnings: [], created: [], added: [], filled: [], changed: [], reused: [], main: null, patch: {}, fingerprint: storageFingerprint(ruleset)};
   if (reader.errors.length) return result;
   const builder = new PlanBuilder(ruleset, paths, text);
   try { result.main = builder.run(path, values); } catch (error) { builder.errors.push({path: "", code: "BUILD", detail: error.message}); }
@@ -282,6 +302,7 @@ export function planAssistant(ruleset, pathId, answers, {paths, text = key => ke
   result.created = builder.created.map(item => ({collection: item.collection, id: item.entry.id, nameKey: item.entry.nameKey ?? item.entry.id}));
   result.added = builder.additions.filter(item => item.added).map(item => ({collection: item.collection, id: item.id, field: item.field, count: item.added}));
   result.filled = builder.fills.map(item => ({collection: item.collection, id: item.id, field: item.field}));
+  result.changed = builder.replacements.filter(item => Object.hasOwn(item, "before")).map(item => ({collection: item.collection, id: item.id, field: item.field, before: item.before, after: item.value}));
   result.reused = builder.reused;
   result.patch = patch;
   if (result.errors.length) return result;
@@ -420,7 +441,7 @@ export function describeAssistantCatalog({paths, groups = [], text = key => key}
   return {
     kinds: [...QUESTION_KINDS], answerFormats: {...ANSWER_FORMATS}, limits: {...ASSISTANT_LIMITS},
     groups: groups.map(id => ({id, labelKey: `RTA.Assistant.Group.${id}`, label: words(`RTA.Assistant.Group.${id}`)})),
-    paths: paths.map(path => ({id: path.id, group: path.group, keywords: [...(path.keywords ?? [])], produces: copyJSON(path.produces ?? null),
+    paths: paths.map(path => ({id: path.id, group: path.group, keywords: [...(path.keywords ?? [])], produces: copyJSON(path.produces ?? null), changes: copyJSON(path.changes ?? []),
       titleKey: pathKey(path.id, "Title"), title: words(pathKey(path.id, "Title")), summaryKey: pathKey(path.id, "Summary"), summary: words(pathKey(path.id, "Summary")),
       limitsKey: pathKey(path.id, "Limits"), limits: words(pathKey(path.id, "Limits")),
       questions: path.questions.map(item => question(path, item, item.id, path.questions))}))

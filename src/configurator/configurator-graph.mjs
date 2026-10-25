@@ -177,7 +177,7 @@ export function createGraphAPI(registry) {
     describeAssistantPath: (rulesetId, pathId, answers = {}, {texts = {}} = {}) => describeAssistantPath(definitions.ruleset(rulesetId), pathId, answers, {paths: ASSISTANT_PATHS, text: key => texts[key] ?? key}),
     /** Every path and question, visible or not, with how each kind is answered: what another program needs to fill a path. */
     describeAssistantCatalog: ({texts = {}} = {}) => describeAssistantCatalog({paths: ASSISTANT_PATHS, groups: ASSISTANT_GROUPS, text: key => texts[key] ?? key}),
-    /** What a path would write, without writing it: created, added, filled and reused entries, errors and warnings. */
+    /** What a path would write, without writing it: created, added, filled, changed and reused entries, errors and warnings. */
     planAssistant: (rulesetId, pathId, answers = {}, {texts = {}} = {}) => {
       const {patch, ...plan} = planAssistant(definitions.ruleset(rulesetId), pathId, answers, {paths: ASSISTANT_PATHS, text: key => texts[key] ?? key});
       return plan;
@@ -194,7 +194,7 @@ export function createGraphAPI(registry) {
         error.code = "ASSISTANT_INVALID"; error.plan = copyJSON(plan); throw error;
       }
       registry.update(rulesetId, patch);
-      return {main: plan.main, created: plan.created, added: plan.added, filled: plan.filled, reused: plan.reused, warnings: plan.warnings};
+      return {main: plan.main, created: plan.created, added: plan.added, filled: plan.filled, changed: plan.changed, reused: plan.reused, warnings: plan.warnings};
     },
     getDeletionStatus:(v,id,kind="definition")=>{ const used=consumers(v,id,kind), blocking=used.filter(edge=>edge.strength!=="optional"), optional=used.filter(edge=>edge.strength==="optional"); return {canDelete:blocking.length===0,kind,id,code:blocking.length?"REFERENTIAL_INTEGRITY":optional.length?"OPTIONAL_REFERENCES":null,consumers:copyJSON(used),optionalReferences:copyJSON(optional)}; }
   };

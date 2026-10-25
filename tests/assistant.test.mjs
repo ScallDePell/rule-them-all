@@ -397,3 +397,54 @@ test('Every path and group of the assistant has a Font Awesome icon and a sectio
   assert.deepEqual(Object.keys(ASSISTANT_PATH_ICONS).sort(), ASSISTANT_PATHS.map(path => path.id).sort());
   for (const group of ASSISTANT_GROUPS) assert.match(ASSISTANT_GROUP_ICONS[group] ?? '', /^fa-/);
 });
+
+test('Assistant: a bound only for player characters replaces the type\'s maximum and keeps the old one for the others', async()=>{
+  const {api,v,apply}=await setup();
+  await apply('characteristics',{type:{create:{name:'Caractéristique',capability:'value',minimum:1,maximum:10}},items:[{name:'Force'},{name:'Agilité'}]});
+  const pc={type:'actor',of:'self',is:'player'};
+  const plan=api.planAssistant(v,'bounds',{type:{use:'caracteristique'},bound:'maximum',value:5,when:pc},{texts:texts(api)});
+  assert.equal(plan.valid,true,JSON.stringify(plan.errors));
+  assert.deepEqual(plan.changed.map(item=>[item.collection,item.id,item.field,item.before]),[['definitionTypes','caracteristique','valueBounds.maximum',{literal:10}]]);
+  assert.equal(plan.created.length,1,'one Formula for the new bound');
+  await apply('bounds',{type:{use:'caracteristique'},bound:'maximum',value:5,when:pc});
+  const type=api.getRuleset(v).definitionTypes.find(entry=>entry.id==='caracteristique');
+  assert.deepEqual(type.valueBounds.minimum,{literal:1},'the other bound is kept');
+  const formula=api.getRuleset(v).formulas.find(entry=>entry.id===type.valueBounds.maximum.formulaRef);
+  assert.deepEqual(formula.expression,{type:'if',condition:pc,then:{type:'literal',value:5},else:{type:'literal',value:10}});
+  assert.equal(api.diagnoseRuleset(v,{scope:'publish'}).errors.length,0,JSON.stringify(api.diagnoseRuleset(v,{scope:'publish'}).errors));
+  const dice=new Dice();dice.actors=new Map([['actor:hero',{player:true,documentType:'character',contentTypeId:null}]]);
+  const {engine,hero,foe}=await play(api,v,{dice});
+  assert.deepEqual(await engine.valueBounds(v,hero,'force'),{minimum:1,maximum:5});
+  assert.deepEqual(await engine.valueBounds(v,foe,'force'),{minimum:1,maximum:10});
+  await engine.setDefinitionState(v,hero,'force',{base:8});await engine.setDefinitionState(v,foe,'force',{base:8});
+  assert.equal((await engine.getContainerState(hero)).definitionStates.force.capabilityStates.value.base,5);
+  assert.equal((await engine.getContainerState(foe)).definitionStates.force.capabilityStates.value.base,8);
+});
+
+test('Assistant: bounds set on some values, with no bound before, for a Foundry Actor type; a plain bound replaces outright', async()=>{
+  const {api,v,apply}=await setup();
+  await apply('characteristics',{items:[{name:'Force'},{name:'Agilité'}]});
+  const creature={type:'actor',of:'self',is:'documentType',documentType:'npc'};
+  await apply('bounds',{target:'definitions',definitions:[{use:'force'}],bound:'minimum',value:3,when:creature});
+  const force=api.getRuleset(v).definitions.find(entry=>entry.id==='force');
+  assert.deepEqual(api.getRuleset(v).formulas.find(entry=>entry.id===force.valueBounds.minimum.formulaRef).expression.else,{type:'literal',value:null});
+  assert.equal(api.getRuleset(v).definitions.find(entry=>entry.id==='agilite').valueBounds,undefined);
+  const plain=await apply('bounds',{target:'definitions',definitions:[{use:'force'},{use:'agilite'}],bound:'maximum',value:20});
+  assert.equal(plain.changed.length,2);
+  assert.deepEqual(api.getRuleset(v).definitions.find(entry=>entry.id==='agilite').valueBounds,{maximum:{literal:20}});
+  assert.equal(api.diagnoseRuleset(v,{scope:'publish'}).errors.length,0,JSON.stringify(api.diagnoseRuleset(v,{scope:'publish'}).errors));
+  const dice=new Dice();dice.actors=new Map([['actor:foe',{player:false,documentType:'npc',contentTypeId:null}]]);
+  const {engine,hero,foe}=await play(api,v,{dice});
+  assert.deepEqual(await engine.valueBounds(v,hero,'force'),{minimum:null,maximum:20});
+  assert.deepEqual(await engine.valueBounds(v,foe,'force'),{minimum:3,maximum:20});
+});
+
+test('Assistant: a path can only change the settings listed as replaceable', async()=>{
+  const {api,v}=await setup();
+  const {planAssistant}=await import('../src/configurator/assistant-engine.mjs');
+  const rogue={id:'rogue',group:'bricks',questions:[],build:ctx=>{ctx.replace('definitionTypes','x','nameKey','Pirate');return null;}};
+  await api.registerDefinitionType(v,{id:'x',key:'x',nameKey:'X',allowedCapabilities:['value']});
+  const plan=planAssistant(api.getRuleset(v),'rogue',{},{paths:[rogue]});
+  assert.equal(plan.valid,false);assert.equal(plan.errors[0].code,'REPLACE_TARGET');
+  assert.equal(api.getRuleset(v).definitionTypes[0].nameKey,'X');
+});

@@ -44,6 +44,12 @@ export class FoundryRuntimeAdapter{
     const doc=ref?await this.resolveDocument(ref):null,level=Number(doc?.getUserLevel?.(user)??(user.isGM?3:0));
     return {userId:user.id,role:PERMISSION_ROLES[Math.min(Math.max(Number(user.role)-1,0),PERMISSION_ROLES.length-1)],isGM:Boolean(user.isGM),ownership:OWNERSHIP_LEVELS[Math.min(Math.max(level,0),OWNERSHIP_LEVELS.length-1)]};
   }
+  /** What kind of Actor a container is: played by a player (a non-GM user owns it), its Foundry type, and the Content
+   * Type of the Actor Content it was made from. Null for a container that is no Actor. */
+  async actorFacts(ref){
+    let doc=await this.resolveDocument(ref);if(doc?.documentName==="Token")doc=doc.actor;if(doc?.documentName!=="Actor")return null;
+    return {player:Boolean(doc.hasPlayerOwner),documentType:doc.type??null,contentTypeId:foundryJSON(doc.getFlag?.(MODULE_ID,"contentTemplate")??null)?.contentTypeId??null};
+  }
   worldTime(){return Number(game.time?.worldTime??0);}
   roundSeconds(){return Number(CONFIG.time?.roundTime??6);}
   /** The token of an Actor on the viewed scene (a linked Actor's first token, or the token itself). */

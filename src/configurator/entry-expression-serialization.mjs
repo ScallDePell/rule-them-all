@@ -13,6 +13,7 @@ export function readSlotForm(row,kind=value(row?.querySelector(':scope > .rta-ru
   if(kind==='dice')return {kind,read:part('read'),group:part('group'),compare:part('compare'),face:part('value'),counter:part('counter')};
   if(kind==='distance')return {kind,from:part('from'),to:part('to')};
   if(kind==='nearby')return {kind,of:part('of'),within:part('within'),side:part('side')};
+  if(kind==='actor')return {kind,of:part('of'),is:part('is')};
   if(kind==='expression')return {kind,operation:value(own('[data-expr-operation]')),...readBlockForm(row?.querySelector(':scope > [data-expr-block]'))};
   return {kind:'none'};
 }

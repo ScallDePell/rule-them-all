@@ -6,13 +6,13 @@
 import {refToken,parseRefToken} from "./reference-token.mjs";
 /* Operand kinds of the visual builder: a value, a Parameter, a Formula, a Reference, a context path
    (variables.test.total), a field of the Content the Action is used from (a weapon's ammunition), the dice of the
-   roll, a distance between two roles, or Actors nearby. */
-export const OPERAND_KINDS=Object.freeze(["literal","parameter","formula","reference","context","contentField","dice","distance","nearby"]);
+   roll, a distance between two roles, Actors nearby, or what kind of Actor a role is (a PC, a Foundry type, a Content Type). */
+export const OPERAND_KINDS=Object.freeze(["literal","parameter","formula","reference","context","contentField","dice","distance","nearby","actor"]);
 export const OPERAND_ROLES=Object.freeze(["self","target","source"]);
 /* Roles a Reference may be read on (runtime resolveContainer). "-" (never a role name) leaves the container out: the Reference
    is then read on the role the expression is evaluated for. */
 export const REFERENCE_ROLES=Object.freeze(["self","target","source","owner","subject","leader","world","combat"]);
-const KIND_LABELS={literal:"Value",parameter:"Parameter",formula:"Formula",reference:"Reference",context:"Context value",contentField:"Content field",dice:"Dice of the roll",distance:"Distance",nearby:"Actors nearby",expression:"Calculation",none:"None"};
+const KIND_LABELS={literal:"Value",parameter:"Parameter",formula:"Formula",reference:"Reference",context:"Context value",contentField:"Content field",dice:"Dice of the roll",distance:"Distance",nearby:"Actors nearby",actor:"Kind of Actor",expression:"Calculation",none:"None"};
 const DICE_READ_LABELS={count:"Number of dice",sum:"Sum of the dice",highest:"Highest die",lowest:"Lowest die",size:"Dice thrown",matches:"Largest set of equal dice",counter:"Counter of the faces"};
 const COMPARE_LABELS={any:"Of any value",eq:"Equal to",neq:"Other than",gt:"Above",gte:"At least",lt:"Below",lte:"At most"};
 const SIDE_LABELS={any:"Anyone",ally:"Allies",enemy:"Enemies"};
@@ -59,6 +59,8 @@ export function formOf(node){
   if(t==="dice")return {kind:"dice",read:text(node.read),group:text(node.group),compare:text(node.compare),face:node.compare?text(node.value?.value):"",counter:text(node.counter)};
   if(t==="distance")return {kind:"distance",from:text(node.from),to:text(node.to)};
   if(t==="nearby")return {kind:"nearby",of:text(node.of),within:text(node.within?.value),side:text(node.side)};
+  // One choice says what is asked: "player", "documentType:<type>" or "contentType:<id>".
+  if(t==="actor")return node.of===undefined?null:{kind:"actor",of:text(node.of),is:node.is==="documentType"?`documentType:${text(node.documentType)}`:node.is==="contentType"?`contentType:${text(node.contentTypeId)}`:text(node.is)};
   const block=blockFormOf(node);return block?{kind:"expression",...block}:null;
 }
 /** Form state of a block (an operation, its slots and rows). */
@@ -83,6 +85,8 @@ export function nodeOf(form){
   if(k==="contentField"){const fallback=String(form.fallback??"").trim();return {type:"contentField",field:String(form.field??"").trim(),...(fallback===""?{}:{default:lit(parseLiteral(fallback))})};}
   if(k==="distance")return {type:"distance",from:form.from||"self",to:form.to||"target"};
   if(k==="nearby")return {type:"nearby",of:form.of||"self",within:lit(number(form.within,"The distance of nearby Actors")),side:form.side||"any"};
+  if(k==="actor"){const is=String(form.is||"player"),at=is.indexOf(":"),of=form.of||"self";if(at<0)return {type:"actor",of,is};const which=is.slice(0,at),id=is.slice(at+1);
+    return which==="documentType"?{type:"actor",of,is:which,documentType:id}:{type:"actor",of,is:which,contentTypeId:id};}
   if(k==="dice"){
     const read=form.read||"count",node={type:"dice",read,...(form.group.trim()?{group:form.group.trim()}:{})};
     if(read==="counter")return {...node,counter:form.counter};
@@ -134,7 +138,7 @@ const pick=(labels,selected,prefix,colors)=>Object.entries(labels).map(([id,fall
 // resolver used by the rest of the editor (never close over a local variable).
 /** View of one slot: its kind and the controls of each kind, from its form state. */
 export function slotView(form,{label,path="",optional=false,removable=false,editor="formula"},sources={}){
-  const {parameters=[],formulas=[],references=[],contentFields=[],counters=[],roles=[],neutral="",withColors=()=>({colors:""})}=sources;
+  const {parameters=[],formulas=[],references=[],contentFields=[],actorTypes=[],actorContentTypes=[],counters=[],roles=[],neutral="",withColors=()=>({colors:""})}=sources;
   const kind=form?.kind??"literal",f={kind,...form},kinds=[...OPERAND_KINDS,"expression",...(optional?["none"]:[])];
   // A nested block is drawn only for a calculation; choosing Calculation later draws a fresh one.
   const block=kind==="expression"?blockView(f,{path,editor},sources):null;
@@ -152,6 +156,13 @@ export function slotView(form,{label,path="",optional=false,removable=false,edit
     distanceFromChoices:pick(ROLE_LABELS,f.from||"self","RTA.Operand.Role",neutral),distanceToChoices:pick(ROLE_LABELS,f.to||"target","RTA.Operand.Role",neutral),
     nearbyOfChoices:pick(ROLE_LABELS,f.of||"self","RTA.Operand.Role",neutral),nearbyWithin:kind==="nearby"?f.within:"",
     nearbySideChoices:pick(SIDE_LABELS,f.side||"any","RTA.Operand.Side",neutral),
+    // Kind of Actor: played by a player, a Foundry Actor type, or made from an Actor Content of a Content Type; one no
+    // longer offered stays shown, as it is written.
+    actorOfChoices:pick(ROLE_LABELS,f.of||"self","RTA.Operand.Role",neutral),
+    actorIsChoices:(()=>{const is=kind==="actor"?f.is||"player":"player";const rows=[{id:"player",labelKey:"RTA.Operand.ActorIs.player",fallback:"Played by a player (PC)"},
+      ...actorTypes.map(x=>({id:`documentType:${x.id}`,label:x.label||x.id})),...actorContentTypes.map(x=>({id:`contentType:${x.id}`,label:x.label||x.id}))];
+      if(!rows.some(x=>x.id===is))rows.push({id:is,label:is.slice(is.indexOf(":")+1)});
+      return rows.map(x=>({...x,colors:neutral,selected:x.id===is}));})(),
     parameterChoices:parameters.map(x=>({id:x.id,label:x.nameKey,...withColors("parameter",x),selected:kind==="parameter"&&f.id===x.id})),
     formulaChoices:formulas.map(x=>({id:x.id,label:x.nameKey,...withColors("formula",x),selected:kind==="formula"&&f.id===x.id})),
     referenceChoices:references.map(x=>({...x,id:x.token,selected:kind==="reference"&&x.token===f.token})),

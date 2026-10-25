@@ -1269,6 +1269,7 @@
         "dice": "Dés du jet",
         "distance": "Distance",
         "nearby": "Acteurs à proximité",
+        "actor": "Sorte d'Acteur",
         "expression": "Calcul",
         "none": "Aucune"
       },
@@ -1315,6 +1316,9 @@
         "leader": "Meneur du groupe",
         "world": "Monde",
         "combat": "Combat en cours"
+      },
+      "ActorIs": {
+        "player": "Joué par un joueur (PJ)"
       }
     },
     "Sheet": {
@@ -2153,6 +2157,43 @@
           },
           "Text": {
             "Type": "Valeur calculée"
+          }
+        },
+        "bounds": {
+          "Title": "Bornes d'une valeur",
+          "Summary": "Le minimum ou le maximum d'un type de valeurs (toutes les caractéristiques) ou de certaines valeurs, pour tous ou seulement dans un cas : les PJ, un type d'Acteur, un Contenu…",
+          "Limits": "Remplace la borne en place ; avec une condition, l'ancienne borne reste pour tous les autres cas. Les jauges (ressources) ont leurs bornes dans leur emplacement.",
+          "Q": {
+            "target": {
+              "Label": "Ce qui est borné",
+              "Option": {
+                "type": "Toutes les valeurs d'un type",
+                "definitions": "Certaines valeurs"
+              }
+            },
+            "type": {
+              "Label": "Type de valeurs"
+            },
+            "definitions": {
+              "Label": "Valeurs"
+            },
+            "bound": {
+              "Label": "Borne",
+              "Option": {
+                "maximum": "Maximum",
+                "minimum": "Minimum"
+              }
+            },
+            "value": {
+              "Label": "Nouvelle borne"
+            },
+            "when": {
+              "Label": "Seulement quand (sinon la borne actuelle reste)"
+            }
+          },
+          "Text": {
+            "maximum": "Maximum : {name}",
+            "minimum": "Minimum : {name}"
           }
         },
         "resource": {
@@ -3796,7 +3837,7 @@
         }
       },
       "Title": "Assistant",
-      "Intro": "Choisissez à gauche la règle à construire. L'assistant pose quelques questions, montre ce qu'il va créer, réutiliser ou compléter, puis écrit tout d'un coup quand vous appliquez. Il ne modifie ni ne supprime jamais ce qui existe déjà.",
+      "Intro": "Choisissez à gauche la règle à construire. L'assistant pose quelques questions, montre ce qu'il va créer, réutiliser, compléter ou modifier, puis écrit tout d'un coup quand vous appliquez. Il ne supprime jamais rien, et seul un parcours fait pour cela (les bornes d'une valeur) change un réglage existant.",
       "Paths": "Parcours",
       "Search": "Rechercher une règle…",
       "Group": {
@@ -3808,7 +3849,7 @@
       "Preview": "Ce que l'assistant va faire",
       "Questions": "Vos réponses",
       "Apply": "Appliquer",
-      "Applied": "Assistant : {count} entrée(s) créée(s).",
+      "Applied": "Assistant : {count} entrée(s) créée(s), {changed} réglage(s) modifié(s).",
       "AppliedIntro": "C'est écrit. Ouvrez une entrée pour l'ajuster, ou essayez la règle tout de suite.",
       "TryLab": "Essayer les règles",
       "Again": "Construire une autre règle",
@@ -3829,6 +3870,7 @@
         "Reused": "Réutilisé",
         "Added": "Complété",
         "Filled": "Renseigné",
+        "Changed": "Modifié",
         "Warnings": "À compléter avant de publier",
         "Nothing": "Rien à faire pour l'instant : répondez aux questions."
       },
@@ -3847,6 +3889,7 @@
         "BUILD": "Construction impossible",
         "ADD_TARGET": "Impossible de compléter cette entrée",
         "FILL_TARGET": "Impossible de renseigner ce champ",
+        "REPLACE_TARGET": "Impossible de modifier ce réglage",
         "ALREADY_SET": "Déjà renseigné : l'assistant ne remplace rien",
         "INVALID": "Le résultat ne serait pas valide"
       },
@@ -3862,7 +3905,9 @@
         "milestones": "Paliers",
         "scaleRef": "Échelle descriptive",
         "initiative": "Initiative",
-        "initiative_defeatedConditionRef": "Initiative : hors de combat"
+        "initiative_defeatedConditionRef": "Initiative : hors de combat",
+        "valueBounds_maximum": "Valeur maximum",
+        "valueBounds_minimum": "Valeur minimum"
       }
     },
     "Integration": {

@@ -22,7 +22,7 @@ const v = (await api.createRuleset({id: 'qa', nameKey: 'Ruleset QA', version: '1
 // Section colors, so the path cards show their section's hue as in a real Ruleset.
 await api.updateRuleset(v, {sectionColors: {general: '#7a7a7a', definitions: '#4f8fd6', content: '#d9822b', rules: '#c9a227', orchestration: '#3aa776', systems: '#9b6ad6', tools: '#7a7a7a'}});
 const texts = Object.fromEntries(api.assistantTextKeys().map(key => [key, lookup(key)]));
-await api.applyAssistant(v, 'characteristics', {items: [{name: 'Force'}, {name: 'Agilité'}]}, {texts});
+await api.applyAssistant(v, 'characteristics', {type: {create: {name: 'Caractéristique', capability: 'value', minimum: 1, maximum: 10}}, items: [{name: 'Force'}, {name: 'Agilité'}]}, {texts});
 await api.applyAssistant(v, 'resource', {name: 'Vitalité', maxValue: 12}, {texts});
 
 Handlebars.registerHelper('localize', key => lookup(String(key)));
@@ -36,6 +36,7 @@ const states = [
   ['attack', {pathId: 'attack', answers: {name: 'Coup d\'épée', damage: '1d8'}}],
   ['characteristics', {pathId: 'characteristics', answers: {items: [{name: 'Esprit'}, {name: 'Charisme'}], modifier: 'halfMinusTen'}}],
   ['state', {pathId: 'state', answers: {name: 'Empoisonné', duration: 'round', modifiers: [{target: {use: 'agilite'}, operation: 'subtract', amount: {type: 'literal', value: 2}}]}}],
+  ['bounds', {pathId: 'bounds', answers: {type: {use: 'caracteristique'}, value: {type: 'literal', value: 5}, when: {type: 'actor', of: 'self', is: 'player'}}}],
   ['errors', {pathId: 'test', answers: {name: '', dice: '1d20+', target: 'fixed'}}]
 ];
 for (const [name, options] of states) {

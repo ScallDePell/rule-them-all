@@ -1269,6 +1269,7 @@
         "dice": "Dice of the roll",
         "distance": "Distance",
         "nearby": "Actors nearby",
+        "actor": "Kind of Actor",
         "expression": "Calculation",
         "none": "None"
       },
@@ -1315,6 +1316,9 @@
         "leader": "Group leader",
         "world": "World",
         "combat": "Combat in progress"
+      },
+      "ActorIs": {
+        "player": "Played by a player (PC)"
       }
     },
     "Sheet": {
@@ -2153,6 +2157,43 @@
           },
           "Text": {
             "Type": "Computed value"
+          }
+        },
+        "bounds": {
+          "Title": "Bounds of a value",
+          "Summary": "The minimum or maximum of a type of values (every characteristic) or of some values, for everyone or only in one case: PCs, an Actor type, a Content…",
+          "Limits": "Replaces the bound in place; with a condition, the old bound stays for every other case. Gauges (resources) have their bounds in their slot.",
+          "Q": {
+            "target": {
+              "Label": "What is bounded",
+              "Option": {
+                "type": "Every value of a type",
+                "definitions": "Some values"
+              }
+            },
+            "type": {
+              "Label": "Type of values"
+            },
+            "definitions": {
+              "Label": "Values"
+            },
+            "bound": {
+              "Label": "Bound",
+              "Option": {
+                "maximum": "Maximum",
+                "minimum": "Minimum"
+              }
+            },
+            "value": {
+              "Label": "New bound"
+            },
+            "when": {
+              "Label": "Only when (otherwise the current bound stays)"
+            }
+          },
+          "Text": {
+            "maximum": "Maximum: {name}",
+            "minimum": "Minimum: {name}"
           }
         },
         "resource": {
@@ -3796,7 +3837,7 @@
         }
       },
       "Title": "Assistant",
-      "Intro": "Choose on the left the rule to build. The assistant asks a few questions, shows what it will create, reuse or complete, then writes it all at once when you apply. It never changes or removes what already exists.",
+      "Intro": "Choose on the left the rule to build. The assistant asks a few questions, shows what it will create, reuse, complete or change, then writes it all at once when you apply. It never removes anything, and only a path made for it (the bounds of a value) changes an existing setting.",
       "Paths": "Paths",
       "Search": "Search for a rule…",
       "Group": {
@@ -3808,7 +3849,7 @@
       "Preview": "What the assistant will do",
       "Questions": "Your answers",
       "Apply": "Apply",
-      "Applied": "Assistant: {count} entry(ies) created.",
+      "Applied": "Assistant: {count} entry(ies) created, {changed} setting(s) changed.",
       "AppliedIntro": "Done. Open an entry to adjust it, or try the rule right away.",
       "TryLab": "Try the rules",
       "Again": "Build another rule",
@@ -3829,6 +3870,7 @@
         "Reused": "Reused",
         "Added": "Completed",
         "Filled": "Filled in",
+        "Changed": "Changed",
         "Warnings": "To complete before publishing",
         "Nothing": "Nothing to do yet: answer the questions."
       },
@@ -3847,6 +3889,7 @@
         "BUILD": "Cannot build",
         "ADD_TARGET": "Cannot complete this entry",
         "FILL_TARGET": "Cannot fill this field",
+        "REPLACE_TARGET": "Cannot change this setting",
         "ALREADY_SET": "Already set: the assistant replaces nothing",
         "INVALID": "The result would not be valid"
       },
@@ -3862,7 +3905,9 @@
         "milestones": "Milestones",
         "scaleRef": "Descriptive scale",
         "initiative": "Initiative",
-        "initiative_defeatedConditionRef": "Initiative: defeated"
+        "initiative_defeatedConditionRef": "Initiative: defeated",
+        "valueBounds_maximum": "Maximum value",
+        "valueBounds_minimum": "Minimum value"
       }
     },
     "Integration": {

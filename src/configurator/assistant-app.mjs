@@ -16,7 +16,7 @@ import {collectExpression} from "./entry-expression-serialization.mjs";
 import {createSelectColorResolver} from "../ui/select-option-presentation.mjs";
 import {integrations as moduleIntegrations} from "../integrations/integrations.mjs";
 
-const WORDS = ["choose", "none", "add", "remove", "existing", "enable", "id", "errors", "created", "reused", "added", "filled", "warnings", "nothing"];
+const WORDS = ["choose", "none", "add", "remove", "existing", "enable", "id", "errors", "created", "reused", "added", "filled", "changed", "warnings", "nothing"];
 
 export class AssistantApp extends ConfiguratorWindow {
   static DEFAULT_OPTIONS = {id: "rta-assistant", window: {title: "RTA.Assistant.Title", resizable: true}, position: {width: 1080, height: 820}};
@@ -260,7 +260,7 @@ export class AssistantApp extends ConfiguratorWindow {
       const result = await this.#api.applyAssistant(this.#versionId, pathId, answers, {texts, baseFingerprint: this.#plan?.fingerprint ?? null});
       const preview = assistantPreviewModel({...result, valid: true, errors: []}, {t: this.#t, entryName: this.#entryName, ruleset: this.#ruleset()});
       this.#applied = {...preview, pathId}; this.#pathId = null; this.#answers = {}; this.#error = "";
-      ui.notifications?.info?.(game.i18n.format("RTA.Assistant.Applied", {count: result.created.length}));
+      ui.notifications?.info?.(game.i18n.format("RTA.Assistant.Applied", {count: result.created.length, changed: result.changed?.length ?? 0}));
       await this.#onApplied(result);
     } catch (error) {
       this.#answers = answers;
