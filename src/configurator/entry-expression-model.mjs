@@ -6,13 +6,14 @@
 import {refToken,parseRefToken} from "./reference-token.mjs";
 /* Operand kinds of the visual builder: a value, a Parameter, a Formula, a Reference, a context path
    (variables.test.total), a field of the Content the Action is used from (a weapon's ammunition), the dice of the
-   roll, a distance between two roles, Actors nearby, or what kind of Actor a role is (a PC, a Foundry type, a Content Type). */
-export const OPERAND_KINDS=Object.freeze(["literal","parameter","formula","reference","context","contentField","dice","distance","nearby","actor"]);
+   roll, a distance between two roles, Actors nearby, what kind of Actor a role is (a PC, a Foundry type, a Content Type),
+   or a value of the game system's own data on an Actor (dnd5e's Armor Class). */
+export const OPERAND_KINDS=Object.freeze(["literal","parameter","formula","reference","context","contentField","dice","distance","nearby","actor","systemData"]);
 export const OPERAND_ROLES=Object.freeze(["self","target","source"]);
 /* Roles a Reference may be read on (runtime resolveContainer). "-" (never a role name) leaves the container out: the Reference
    is then read on the role the expression is evaluated for. */
 export const REFERENCE_ROLES=Object.freeze(["self","target","source","owner","subject","leader","world","combat"]);
-const KIND_LABELS={literal:"Value",parameter:"Parameter",formula:"Formula",reference:"Reference",context:"Context value",contentField:"Content field",dice:"Dice of the roll",distance:"Distance",nearby:"Actors nearby",actor:"Kind of Actor",expression:"Calculation",none:"None"};
+const KIND_LABELS={literal:"Value",parameter:"Parameter",formula:"Formula",reference:"Reference",context:"Context value",contentField:"Content field",dice:"Dice of the roll",distance:"Distance",nearby:"Actors nearby",actor:"Kind of Actor",systemData:"System data",expression:"Calculation",none:"None"};
 const DICE_READ_LABELS={count:"Number of dice",sum:"Sum of the dice",highest:"Highest die",lowest:"Lowest die",size:"Dice thrown",matches:"Largest set of equal dice",counter:"Counter of the faces"};
 const COMPARE_LABELS={any:"Of any value",eq:"Equal to",neq:"Other than",gt:"Above",gte:"At least",lt:"Below",lte:"At most"};
 const SIDE_LABELS={any:"Anyone",ally:"Allies",enemy:"Enemies"};
@@ -61,6 +62,7 @@ export function formOf(node){
   if(t==="nearby")return {kind:"nearby",of:text(node.of),within:text(node.within?.value),side:text(node.side)};
   // One choice says what is asked: "player", "documentType:<type>" or "contentType:<id>".
   if(t==="actor")return node.of===undefined?null:{kind:"actor",of:text(node.of),is:node.is==="documentType"?`documentType:${text(node.documentType)}`:node.is==="contentType"?`contentType:${text(node.contentTypeId)}`:text(node.is)};
+  if(t==="systemData")return node.default!==undefined&&!(node.default?.type==="literal"&&!isRecord(node.default.value)&&!Array.isArray(node.default.value))?null:{kind:"systemData",of:text(node.of),path:text(node.path),fallback:node.default?.type==="literal"?text(node.default.value):""};
   const block=blockFormOf(node);return block?{kind:"expression",...block}:null;
 }
 /** Form state of a block (an operation, its slots and rows). */
@@ -87,6 +89,7 @@ export function nodeOf(form){
   if(k==="nearby")return {type:"nearby",of:form.of||"self",within:lit(number(form.within,"The distance of nearby Actors")),side:form.side||"any"};
   if(k==="actor"){const is=String(form.is||"player"),at=is.indexOf(":"),of=form.of||"self";if(at<0)return {type:"actor",of,is};const which=is.slice(0,at),id=is.slice(at+1);
     return which==="documentType"?{type:"actor",of,is:which,documentType:id}:{type:"actor",of,is:which,contentTypeId:id};}
+  if(k==="systemData"){const fallback=String(form.fallback??"").trim();return {type:"systemData",of:form.of||"self",path:String(form.path??"").trim(),...(fallback===""?{}:{default:lit(parseLiteral(fallback))})};}
   if(k==="dice"){
     const read=form.read||"count",node={type:"dice",read,...(form.group.trim()?{group:form.group.trim()}:{})};
     if(read==="counter")return {...node,counter:form.counter};
@@ -159,6 +162,7 @@ export function slotView(form,{label,path="",optional=false,removable=false,edit
     // Kind of Actor: played by a player, a Foundry Actor type, or made from an Actor Content of a Content Type; one no
     // longer offered stays shown, as it is written.
     actorOfChoices:pick(ROLE_LABELS,f.of||"self","RTA.Operand.Role",neutral),
+    systemDataOfChoices:pick(ROLE_LABELS,f.of||"self","RTA.Operand.Role",neutral),systemDataPath:kind==="systemData"?f.path:"",systemDataFallback:kind==="systemData"?f.fallback:"",
     actorIsChoices:(()=>{const is=kind==="actor"?f.is||"player":"player";const rows=[{id:"player",labelKey:"RTA.Operand.ActorIs.player",fallback:"Played by a player (PC)"},
       ...actorTypes.map(x=>({id:`documentType:${x.id}`,label:x.label||x.id})),...actorContentTypes.map(x=>({id:`contentType:${x.id}`,label:x.label||x.id}))];
       if(!rows.some(x=>x.id===is))rows.push({id:is,label:is.slice(is.indexOf(":")+1)});

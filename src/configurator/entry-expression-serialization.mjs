@@ -14,6 +14,7 @@ export function readSlotForm(row,kind=value(row?.querySelector(':scope > .rta-ru
   if(kind==='distance')return {kind,from:part('from'),to:part('to')};
   if(kind==='nearby')return {kind,of:part('of'),within:part('within'),side:part('side')};
   if(kind==='actor')return {kind,of:part('of'),is:part('is')};
+  if(kind==='systemData')return {kind,of:part('of'),path:part('path'),fallback:part('fallback')};
   if(kind==='expression')return {kind,operation:value(own('[data-expr-operation]')),...readBlockForm(row?.querySelector(':scope > [data-expr-block]'))};
   return {kind:'none'};
 }

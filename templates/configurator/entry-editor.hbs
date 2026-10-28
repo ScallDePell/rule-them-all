@@ -394,6 +394,12 @@
             </div>
           </section>
         </fieldset>
+        {{#with eventHook}}<details class="rta-config-entry__section" {{#if name}}open{{/if}}><summary><strong>{{localize "RTA.EventHook.Title"}}</strong></summary><p>{{localize "RTA.EventHook.Help"}}</p>
+          <div class="form-group rta-form-row"><label>{{localize "RTA.EventHook.Name"}}</label><input name="hookName" value="{{name}}" placeholder="dnd5e.rollAttack" {{#if @root.readOnly}}readonly{{/if}}></div>
+          <div class="form-group rta-form-row"><label>{{localize "RTA.EventHook.WhoLabel"}}</label><select name="hookWho" {{#if @root.readOnly}}disabled{{/if}}>{{#each whoChoices}}<option value="{{id}}" data-rta-colors="{{colors}}" {{#if selected}}selected{{/if}}>{{localize labelKey}}</option>{{/each}}</select></div>
+          <div class="form-group rta-form-row"><label>{{localize "RTA.EventHook.Self"}}</label><input name="hookSelfPath" value="{{selfPath}}" placeholder="1.subject.actor" {{#if @root.readOnly}}readonly{{/if}}></div>
+          {{#each fields}}<div class="form-group rta-form-row"><label>{{name}}</label><input data-hook-field-path="{{id}}" value="{{path}}" placeholder="0.0.total" {{#if @root.readOnly}}readonly{{/if}}></div>{{/each}}
+        </details>{{/with}}
         {{> rtaNotesSection}}
       {{/if}}
 

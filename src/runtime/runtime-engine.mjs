@@ -173,6 +173,11 @@ export class RuntimeEngine{
     if(method==="chooseActions"){const [,offer={},ids=[]]=args,refs=ids.flatMap(id=>this.writeTargets("executeAction",[versionId,id,offer.context??{}]));return [...new Map(refs.map(ref=>[this.#refKey(ref),ref])).values()];}
     if(method==="runChatAction"){const [,offer,index,options={}]=args;try{const {button,context}=this.#chatContext(versionId,offer,index,options.as);return this.writeTargets("executeAction",[versionId,button.actionRef,context]);}catch{return [];}}
     if(method==="advance"||method==="applyMilestones")return [normalizeRuntimeContainerRef(args[2])];
+    // An event writes what its Triggers' Actions write, and the containers whose timed states it may end.
+    if(method==="emitEvent"){const [,eventTypeId,,context={}]=args,ruleset=this.ruleset(versionId);
+      const refs=[...Object.values(context.roles??{}).filter(Boolean).map(normalizeRuntimeContainerRef),...(ruleset.triggers??[]).filter(trigger=>enabled(trigger)&&trigger.eventTypeId===eventTypeId)
+        .flatMap(trigger=>(trigger.actionRefs??[]).flatMap(id=>this.writeTargets("executeAction",[versionId,id,trigger.actingRole==="target"?swapRoles(context):context])))];
+      return [...new Map(refs.map(ref=>[this.#refKey(ref),ref])).values()];}
     if(method!=="executeAction")return [normalizeRuntimeContainerRef(args[1])];
     const ruleset=this.ruleset(versionId),context=args[2]??{},roles=new Set(),seen=new Set();let turnOrder=false;
     const visit=actionId=>{
@@ -349,7 +354,8 @@ export class RuntimeEngine{
     listContents:async(context,container)=>this.#contents(versionId,context,container??context?.defaultRole??"self",staged),
     currentContent:async context=>{if(!context?.content?.key)return null;return (await this.#contents(versionId,context,context.content.role??"self",staged)).find(row=>row.key===context.content.key)??null;},
     space:{distance:(context,from,to)=>this.#spatial("distance",context,[from,to]),nearby:(context,role,within,side)=>this.#spatial("nearby",context,[role],within,side)},
-    actorFacts:async(context,role)=>{const ref=roleRef(context,role);if(!ref)throw new Error(`EvaluationContext role is missing: ${role}.`);return typeof this.adapter.actorFacts==="function"?this.adapter.actorFacts(normalizeRuntimeContainerRef(ref)):null;}});}
+    actorFacts:async(context,role)=>{const ref=roleRef(context,role);if(!ref)throw new Error(`EvaluationContext role is missing: ${role}.`);return typeof this.adapter.actorFacts==="function"?this.adapter.actorFacts(normalizeRuntimeContainerRef(ref)):null;},
+    systemData:async(context,role,path)=>{const ref=roleRef(context,role);if(!ref)throw new Error(`EvaluationContext role is missing: ${role}.`);return typeof this.adapter.systemData==="function"?this.adapter.systemData(normalizeRuntimeContainerRef(ref),path):undefined;}});}
   /** Distances come from the adapter (Foundry: the tokens of the viewed scene). */
   async #spatial(kind,context,roles,...rest){
     const refs=roles.map(role=>{const ref=roleRef(context,role);if(!ref)throw new Error(`EvaluationContext role is missing: ${role}.`);return normalizeRuntimeContainerRef(ref);});

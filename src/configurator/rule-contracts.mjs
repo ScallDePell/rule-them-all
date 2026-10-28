@@ -310,7 +310,27 @@ export function prepareEventType(data,options={}){
   if(Object.hasOwn(x,'roles'))throw new Error('Unsupported EventType field: roles.');
   if(String(x.id).startsWith(SYSTEM_EVENT_PREFIX))throw new Error(`EventType ids starting with ${SYSTEM_EVENT_PREFIX} are kept for the module's own events.`);
   if(!isRecord(x.payloadFields))throw new Error('EventType.payloadFields must be an object.');
+  if(x.hook!==undefined&&x.hook!==null)prepareEventHook(x.hook,x.payloadFields);
   arr(x.tags,'EventType.tags'); bool(x.enabled,'EventType.enabled'); return x;
+}
+/** EventType.hook: the event also happens when a Foundry hook is called (a game system's "dnd5e.rollAttack").
+ * name: the hook; who: "local" (on the client where it is called: rolls) or "gm" (on the active GM client only: hooks
+ * every client hears); selfPath: where the acting Actor is in the hook's arguments ("1.subject.actor", empty: the
+ * user's controlled token or character); fieldPaths: {payloadField: path in the arguments}. The user's targets are
+ * the target role, one event each. */
+export const EVENT_HOOK_RUNS=Object.freeze(['local','gm']);
+const HOOK_NAME=/^[A-Za-z0-9_.:-]+$/,HOOK_PATH=/^[A-Za-z0-9_-]+(\.[A-Za-z0-9_-]+)*$/;
+function prepareEventHook(hook,payloadFields){
+  if(!isRecord(hook))throw new Error('EventType.hook must be an object or null.');
+  for(const key of Object.keys(hook))if(!['name','who','selfPath','fieldPaths'].includes(key))throw new Error(`EventType.hook contains unsupported field: ${key}.`);
+  if(typeof hook.name!=='string'||!HOOK_NAME.test(hook.name))throw new Error('EventType.hook.name must be a Foundry hook name such as dnd5e.rollAttack.');
+  if(!EVENT_HOOK_RUNS.includes(hook.who??'local'))throw new Error(`EventType.hook.who must be one of ${EVENT_HOOK_RUNS.join(', ')}.`);
+  if(hook.selfPath!==undefined&&hook.selfPath!==''&&!(typeof hook.selfPath==='string'&&HOOK_PATH.test(hook.selfPath)))throw new Error('EventType.hook.selfPath must be a path in the hook arguments such as 1.subject.actor.');
+  if(hook.fieldPaths!==undefined&&!isRecord(hook.fieldPaths))throw new Error('EventType.hook.fieldPaths must be an object.');
+  for(const [id,path] of Object.entries(hook.fieldPaths??{})){
+    if(!Object.hasOwn(payloadFields,id))throw new Error(`EventType.hook.fieldPaths.${id} names no payload field.`);
+    if(typeof path!=='string'||!HOOK_PATH.test(path))throw new Error(`EventType.hook.fieldPaths.${id} must be a path in the hook arguments such as 0.0.total.`);
+  }
 }
 export const TRIGGER_HOLDERS=Object.freeze(['actor','combat','world']);
 export function prepareTrigger(data,options={}){

@@ -1270,6 +1270,7 @@
         "distance": "Distance",
         "nearby": "Actors nearby",
         "actor": "Kind of Actor",
+        "systemData": "System data",
         "expression": "Calculation",
         "none": "None"
       },
@@ -1319,7 +1320,8 @@
       },
       "ActorIs": {
         "player": "Played by a player (PC)"
-      }
+      },
+      "SystemDataFallback": "If it has none"
     },
     "Sheet": {
       "Target": "Used for",
@@ -3933,6 +3935,17 @@
         "upgrade": "Raise to at least",
         "downgrade": "Lower to at most"
       }
+    },
+    "EventHook": {
+      "Title": "Foundry hook",
+      "Help": "The event also happens when this Foundry hook is called, for example a game system's roll (dnd5e.rollAttack, dnd5e.rollDamage). Paths are read in the hook's arguments, numbered from 0: 0.0.total is the total of the first roll, 1.subject.actor the Actor rolling. The user's targets are the target role, one event each. Save new payload fields once to give them a path.",
+      "Name": "Hook",
+      "WhoLabel": "Heard on",
+      "Who": {
+        "local": "The client where it happens (rolls)",
+        "gm": "The active GM's client only"
+      },
+      "Self": "Acting Actor (path)"
     }
   }
 }

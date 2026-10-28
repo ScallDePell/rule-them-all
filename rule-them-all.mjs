@@ -19,6 +19,7 @@ import {registerRulesetDice} from "./src/runtime/foundry-dice.mjs";
 import {installInitiative, installInitiativePasses, rerollEachRound} from "./src/runtime/foundry-initiative.mjs";
 import {installDefeated} from "./src/runtime/foundry-defeated.mjs";
 import {installSystemChanges} from "./src/runtime/foundry-system-changes.mjs";
+import {installHookEvents} from "./src/runtime/foundry-hook-events.mjs";
 import {FoundryRuntimeAdapter} from "./src/runtime/foundry-runtime-adapter.mjs";
 import {actionSummary, registerRulesetSheets, repairSheetChoices, translator} from "./src/runtime/foundry-sheets.mjs";
 import {resolveRuntimeRuleset} from "./src/runtime/runtime-contracts.mjs";
@@ -153,7 +154,10 @@ Hooks.once("ready", () => {
       } catch (error) { console.error("Rule Them'All | Sheet registration failed", error); }
     };
     registerSheets();
-    api.subscribe(() => { registerDice(); registerSheets(); ConfiguratorApp.refreshOpen(); });
+    // Event Types bound to a Foundry hook (a game system's attack roll) happen when it is called.
+    const hookEvents = installHookEvents({configurator: api, getRuntime: () => game.ruleThemAll.runtime, resolveRuleset: versionId => resolveRuntimeRuleset(api, versionId)});
+    hookEvents.refresh();
+    api.subscribe(() => { registerDice(); registerSheets(); hookEvents.refresh(); ConfiguratorApp.refreshOpen(); });
     // The world's shared Definitions (a GM reserve, clocks) exist as soon as the active Ruleset names them.
     if (game.users.activeGM?.isSelf) Promise.resolve(game.ruleThemAll.runtime.initializeShared()).catch(error => console.error("Rule Them'All | Shared containers failed", error));
     Hooks.callAll("ruleThemAllReady", game.ruleThemAll);

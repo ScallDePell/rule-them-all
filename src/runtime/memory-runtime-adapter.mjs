@@ -15,6 +15,8 @@ export class MemoryRuntimeAdapter{
   async nearby(ref,within,side="any"){const me=this.positions?.get(key(ref));if(!me)return NaN;let n=0;for(const [k,p] of this.positions)if(k!==key(ref)&&Math.hypot(p.x-me.x,p.y-me.y)<=within&&(side==="any"||(side==="ally")===(p.disposition===me.disposition)))n++;return n;}
   /** Kinds of Actors for tests: key -> {player, documentType, contentTypeId}; an actor container not listed is a GM's Actor. */
   async actorFacts(ref){const n=normalizeRuntimeContainerRef(ref);const facts=this.actors?.get(key(ref));if(facts)return copyJSON(facts);return n.kind==="actor"||n.uuid?.startsWith?.("Actor.")?{player:false,documentType:null,contentTypeId:null}:null;}
+  /** Game system data for tests: key -> object read by path (system.attributes.ac.value). */
+  async systemData(ref,path){let value=this.systemDocuments?.get(key(ref));for(const part of String(path).split("."))value=value?.[part];return ["number","string","boolean"].includes(typeof value)?value:undefined;}
   /** The combat in progress ({kind: "combat", id}), set by tests. */
   activeCombat(){return this.combat??null;}
   /** Turn order changes asked by Actions, kept for tests. */

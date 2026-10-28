@@ -50,6 +50,11 @@ export class FoundryRuntimeAdapter{
     let doc=await this.resolveDocument(ref);if(doc?.documentName==="Token")doc=doc.actor;if(doc?.documentName!=="Actor")return null;
     return {player:Boolean(doc.hasPlayerOwner),documentType:doc.type??null,contentTypeId:foundryJSON(doc.getFlag?.(MODULE_ID,"contentTemplate")??null)?.contentTypeId??null};
   }
+  /** A scalar of the game system's data on an Actor (a Token reads its Actor): dnd5e's system.attributes.ac.value. */
+  async systemData(ref,path){
+    let doc=await this.resolveDocument(ref);if(doc?.documentName==="Token")doc=doc.actor;if(!doc)return undefined;
+    const value=foundry.utils.getProperty(doc,path);return ["number","string","boolean"].includes(typeof value)?value:undefined;
+  }
   worldTime(){return Number(game.time?.worldTime??0);}
   roundSeconds(){return Number(CONFIG.time?.roundTime??6);}
   /** The token of an Actor on the viewed scene (a linked Actor's first token, or the token itself). */

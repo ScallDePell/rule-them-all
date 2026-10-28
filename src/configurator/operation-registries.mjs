@@ -170,6 +170,20 @@ async function actorIs(node, kit) {
   if (node.is === "documentType") return facts.documentType === node.documentType;
   return facts.contentTypeId === node.contentTypeId;
 }
+/** systemData: {of: role, path, default?}: a value of the game system's own data on the Actor of a role
+ * (dnd5e's system.attributes.ac.value), read as Foundry holds it; default when it has none. */
+const SYSTEM_DATA_PATH = /^[A-Za-z0-9_-]+(\.[A-Za-z0-9_-]+)*$/;
+function validateSystemData(node, label) {
+  if (!roleName(node.of ?? "self")) throw new Error(`${label}.of must be a role.`);
+  if (typeof node.path !== "string" || !SYSTEM_DATA_PATH.test(node.path)) throw new Error(`${label}.path must be a data path such as system.attributes.ac.value.`);
+  validateDefault(node, label);
+}
+async function systemData(node, kit) {
+  const value = await kit.systemData(node.of ?? "self", node.path);
+  if (value !== undefined && value !== null) return value;
+  if (node.default !== undefined) return kit.ev(node.default);
+  throw new Error(`No system data at ${node.path}.`);
+}
 const needsDefinitionNode = keys => (node, label) => { if (!isRecord(node.definition)) throw new Error(`${label}.definition must be an AST node.`); for (const key of keys) if (!nonempty(node[key])) throw new Error(`${label}.${key} is required.`); };
 
 export const formulaNodeRegistry = new FormulaNodeRegistry()
@@ -184,6 +198,7 @@ export const formulaNodeRegistry = new FormulaNodeRegistry()
   .register({id: "dice", evaluate: diceNode, resultType: "integer", validate: validateDiceNode})
   .register({id: "contentAggregate", evaluate: aggregateContents, resultType: node => node.operation === "count" ? "integer" : "number", validate: validateContentAggregate})
   .register({id: "actor", evaluate: actorIs, resultType: "boolean", validate: validateActorNode})
+  .register({id: "systemData", evaluate: systemData, validate: validateSystemData})
   .register({id: "contentField", evaluate: contentField, validate: (node, label) => { if (!nonempty(node.field)) throw new Error(`${label}.field is required.`); }})
   .register({id: "context", evaluate: (node, kit) => { let value = kit.context; for (const part of String(node.path ?? "").split(".").filter(Boolean)) value = value?.[part]; return value === undefined ? undefined : copyJSON(value); }})
   .register({id: "add", evaluate: async (node, {ev}) => { let out = 0; for (const n of args(node)) out += num(await ev(n), "add operand"); return out; }, resultType: allInteger})

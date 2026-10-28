@@ -3,9 +3,10 @@ import {formulaNodeRegistry} from "../configurator/operation-registries.mjs";
 
 export class RuntimeEvaluator {
   /** listContents(context, role) and currentContent(context): owned Contents with their fields (formulas over equipment). */
+  /** systemData(context, role, path): a scalar of the game system's data on the Actor of a role (undefined when none). */
   /** actorFacts(context, role): {player, documentType, contentTypeId} of the Actor of a role, null when it is no Actor. */
   /** space: {distance(context, fromRole, toRole), nearby(context, role, within, side)} over the tokens of the scene. */
-  constructor({ruleset,resolveReference,listContents=async()=>[],currentContent=async()=>null,space=null,actorFacts=async()=>null}) { this.ruleset=ruleset; this.resolveReference=resolveReference; this.listContents=listContents; this.currentContent=currentContent; this.space=space; this.actorFacts=actorFacts; }
+  constructor({ruleset,resolveReference,listContents=async()=>[],currentContent=async()=>null,space=null,actorFacts=async()=>null,systemData=async()=>undefined}) { this.ruleset=ruleset; this.resolveReference=resolveReference; this.listContents=listContents; this.currentContent=currentContent; this.space=space; this.actorFacts=actorFacts; this.systemData=systemData; }
 
   parameter(id){const p=this.ruleset.parameters?.find(x=>x.id===id&&x.enabled!==false);if(!p)throw new Error(`Parameter unavailable: ${id}.`);return copyJSON(p.value);}
   async formula(id,context,stack=new Set()){if(stack.has(id))throw new Error(`Formula cycle detected: ${id}.`);const f=this.ruleset.formulas?.find(x=>x.id===id&&x.enabled!==false);if(!f)throw new Error(`Formula unavailable: ${id}.`);const next=new Set(stack);next.add(id);return this.evaluate(f.expression,context,next);}
@@ -26,6 +27,7 @@ export class RuntimeEvaluator {
       definition:id=>this.ruleset.definitions?.find(x=>x.id===id&&x.enabled!==false)??null,
       content:()=>this.currentContent(context),
       actor:role=>this.actorFacts(context,role),
+      systemData:(role,path)=>this.systemData(context,role,path),
       distance:(from,to)=>{if(!this.space)throw new Error("Distances need the scene.");return this.space.distance(context,from,to);},
       nearby:(role,within,side)=>{if(!this.space)throw new Error("Distances need the scene.");return this.space.nearby(context,role,within,side);}
     };

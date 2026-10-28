@@ -1270,6 +1270,7 @@
         "distance": "Distance",
         "nearby": "Acteurs à proximité",
         "actor": "Sorte d'Acteur",
+        "systemData": "Donnée du système",
         "expression": "Calcul",
         "none": "Aucune"
       },
@@ -1319,7 +1320,8 @@
       },
       "ActorIs": {
         "player": "Joué par un joueur (PJ)"
-      }
+      },
+      "SystemDataFallback": "Si elle n'existe pas"
     },
     "Sheet": {
       "Target": "Utilisée pour",
@@ -3933,6 +3935,17 @@
         "upgrade": "Monter au moins à",
         "downgrade": "Descendre au plus à"
       }
+    },
+    "EventHook": {
+      "Title": "Hook Foundry",
+      "Help": "L'événement arrive aussi quand ce hook Foundry est appelé, par exemple un jet du système de jeu (dnd5e.rollAttack, dnd5e.rollDamage). Les chemins se lisent dans les arguments du hook, numérotés depuis 0 : 0.0.total est le total du premier jet, 1.subject.actor l'Acteur qui lance. Les cibles du joueur sont le rôle cible, un événement chacune. Enregistre une fois les nouveaux champs pour leur donner un chemin.",
+      "Name": "Hook",
+      "WhoLabel": "Entendu sur",
+      "Who": {
+        "local": "Le client où il arrive (les jets)",
+        "gm": "Le client du MJ actif seulement"
+      },
+      "Self": "Acteur qui agit (chemin)"
     }
   }
 }

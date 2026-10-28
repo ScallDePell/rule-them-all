@@ -2,6 +2,12 @@
 
 ## Unreleased
 
+## 1.2.6
+
+- **Events from the game system**: an Event Type can follow a **Foundry hook**, such as dnd5e's attack roll (`dnd5e.rollAttack`). You say where the acting Actor and each payload field are in the hook's arguments; the player's targets are the target role. A Trigger on that event runs its Actions on its own: a dnd5e weapon can now apply a Rule Them'All state when its attack hits, with no macro.
+- **System data** operand in Formulas and Conditions: reads a value of the game system's own data on an Actor (the target's dnd5e Armor Class `system.attributes.ac.value`).
+- `runtime.emitEvent` goes through the connected GM when the event's Actions write on Actors the user doesn't own.
+
 ## 1.2.5
 
 - **System changes** for states: a Definition with a state can list changes of the game system's own data (data path, mode, value). While the state is active on an Actor, a Foundry Active Effect makes them, once per stack, and it is removed when the state ends. In a dnd5e world, a weapon whose attack applies "Weakened" (`system.abilities.str.value`, Add, `-2`) to its target lowers the target's dnd5e Strength. The connected GM's client keeps the effects in step.

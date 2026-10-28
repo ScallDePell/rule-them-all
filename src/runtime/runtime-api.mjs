@@ -35,7 +35,7 @@ export function createRuntimeAPI(configurator,{adapter=new FoundryRuntimeAdapter
     rebindContainer:write("rebindContainer"),
     /** Runs a character creation's writes on that container (see RuntimeEngine.duringCreation). */
     duringCreation:(ref,build)=>engine.duringCreation(ref,build),
-    emitEvent:(versionId,eventTypeId,payload,context,options)=>engine.emitEvent(versionId,eventTypeId,payload,context,options),
+    emitEvent:write("emitEvent"),
     emitSystemEvent:(eventTypeId,payload,refs)=>engine.emitSystemEvent(eventTypeId,payload,refs),
     previewAction:(versionId,id,context)=>engine.previewAction(versionId,id,context),
     rollTable:(versionId,id,context)=>engine.rollTable(versionId,id,context),
