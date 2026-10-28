@@ -2468,6 +2468,27 @@
                 }
               }
             },
+            "systemChanges": {
+              "Label": "Changes of the game system's data while it lasts",
+              "Field": {
+                "key": {
+                  "Label": "Data path (system.abilities.str.value)"
+                },
+                "type": {
+                  "Label": "Mode",
+                  "Option": {
+                    "add": "Add",
+                    "multiply": "Multiply",
+                    "override": "Replace",
+                    "upgrade": "Raise to at least",
+                    "downgrade": "Lower to at most"
+                  }
+                },
+                "value": {
+                  "Label": "Value"
+                }
+              }
+            },
             "role": {
               "Label": "Who it affects",
               "Option": {
@@ -2873,6 +2894,54 @@
             "Recover": "Recover: {name}",
             "Daily": "Each day: {name}",
             "DayPassed": "A day has passed"
+          }
+        },
+        "systemRoll": {
+          "Title": "React to a roll of the system",
+          "Summary": "A game system's roll (a dnd5e weapon attack) runs Actions on its own: for example inflict a state when the weapon hits.",
+          "Limits": "Paths are read in the hook's arguments, numbered from 0. For dnd5e: hook dnd5e.rollAttack, Actor 1.subject, total 0.0.total, weapon 1.subject.item. The player's targets are the Actions' targets.",
+          "Q": {
+            "name": {
+              "Label": "Name of the event"
+            },
+            "hook": {
+              "Label": "Foundry hook (dnd5e.rollAttack)"
+            },
+            "who": {
+              "Label": "Heard on",
+              "Option": {
+                "local": "The client where it happens (rolls)",
+                "gm": "The active GM's client only"
+              }
+            },
+            "selfPath": {
+              "Label": "Acting Actor, path (1.subject)"
+            },
+            "totalPath": {
+              "Label": "Roll total, path (0.0.total)"
+            },
+            "itemPath": {
+              "Label": "Item used, path (1.subject.item)"
+            },
+            "item": {
+              "Label": "Only for the item named"
+            },
+            "reach": {
+              "Label": "Only if the total reaches (the target's AC: System data)"
+            },
+            "actions": {
+              "Label": "Actions run"
+            },
+            "description": {
+              "Label": "Description (optional)"
+            }
+          },
+          "Text": {
+            "Event": "System roll",
+            "Total": "Total",
+            "Item": "Item",
+            "When": "{name}: success",
+            "Trigger": "On {name}"
           }
         },
         "initiative": {

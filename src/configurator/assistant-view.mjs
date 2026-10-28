@@ -20,7 +20,7 @@ export const ASSISTANT_PATH_ICONS = Object.freeze({
   creation: "fa-user-plus", progression: "fa-arrow-trend-up", scale: "fa-ruler", contentType: "fa-box-open", permission: "fa-lock",
   definitionType: "fa-shapes", value: "fa-hashtag", parameter: "fa-sliders", formula: "fa-square-root-variable", condition: "fa-code-branch",
   roll: "fa-dice", outcome: "fa-flag-checkered", duration: "fa-hourglass-half", effect: "fa-bolt", action: "fa-hand-pointer", trigger: "fa-bell",
-  table: "fa-table", die: "fa-dice-six", counter: "fa-list-check", bounds: "fa-arrows-up-to-line"});
+  table: "fa-table", die: "fa-dice-six", counter: "fa-list-check", bounds: "fa-arrows-up-to-line", systemRoll: "fa-plug"});
 /** The collection whose section color a path card takes: what it produces, else Systems (initiative). */
 export const pathCollection = path => path?.produces?.collection ?? "creationSystems";
 const NAV_KEYS = {permissionPolicies: "Permissions", eventTypes: "Events"};

@@ -2468,6 +2468,27 @@
                 }
               }
             },
+            "systemChanges": {
+              "Label": "Changements des données du système tant qu'il dure",
+              "Field": {
+                "key": {
+                  "Label": "Chemin de la donnée (system.abilities.str.value)"
+                },
+                "type": {
+                  "Label": "Mode",
+                  "Option": {
+                    "add": "Ajouter",
+                    "multiply": "Multiplier",
+                    "override": "Remplacer",
+                    "upgrade": "Monter au moins à",
+                    "downgrade": "Descendre au plus à"
+                  }
+                },
+                "value": {
+                  "Label": "Valeur"
+                }
+              }
+            },
             "role": {
               "Label": "Qui est visé",
               "Option": {
@@ -2873,6 +2894,54 @@
             "Recover": "Récupérer : {name}",
             "Daily": "Chaque jour : {name}",
             "DayPassed": "Un jour est passé"
+          }
+        },
+        "systemRoll": {
+          "Title": "Réagir à un jet du système",
+          "Summary": "Le jet d'un système de jeu (l'attaque dnd5e d'une arme) lance des Actions toutes seules : par exemple infliger un état quand l'arme touche.",
+          "Limits": "Les chemins se lisent dans les arguments du hook, numérotés depuis 0. Pour dnd5e : hook dnd5e.rollAttack, Acteur 1.subject, total 0.0.total, arme 1.subject.item. Les cibles du joueur sont les cibles des Actions.",
+          "Q": {
+            "name": {
+              "Label": "Nom de l'évènement"
+            },
+            "hook": {
+              "Label": "Hook Foundry (dnd5e.rollAttack)"
+            },
+            "who": {
+              "Label": "Entendu sur",
+              "Option": {
+                "local": "Le client où il arrive (les jets)",
+                "gm": "Le client du MJ actif seulement"
+              }
+            },
+            "selfPath": {
+              "Label": "Acteur qui agit, chemin (1.subject)"
+            },
+            "totalPath": {
+              "Label": "Total du jet, chemin (0.0.total)"
+            },
+            "itemPath": {
+              "Label": "Objet utilisé, chemin (1.subject.item)"
+            },
+            "item": {
+              "Label": "Seulement pour l'objet nommé"
+            },
+            "reach": {
+              "Label": "Seulement si le total atteint (la CA de la cible : Donnée du système)"
+            },
+            "actions": {
+              "Label": "Actions lancées"
+            },
+            "description": {
+              "Label": "Description (facultative)"
+            }
+          },
+          "Text": {
+            "Event": "Jet du système",
+            "Total": "Total",
+            "Item": "Objet",
+            "When": "{name} : réussi",
+            "Trigger": "Sur {name}"
           }
         },
         "initiative": {

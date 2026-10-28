@@ -37,6 +37,9 @@ const states = [
   ['characteristics', {pathId: 'characteristics', answers: {items: [{name: 'Esprit'}, {name: 'Charisme'}], modifier: 'halfMinusTen'}}],
   ['state', {pathId: 'state', answers: {name: 'Empoisonné', duration: 'round', modifiers: [{target: {use: 'agilite'}, operation: 'subtract', amount: {type: 'literal', value: 2}}]}}],
   ['bounds', {pathId: 'bounds', answers: {type: {use: 'caracteristique'}, value: {type: 'literal', value: 5}, when: {type: 'actor', of: 'self', is: 'player'}}}],
+  ['state-system', {pathId: 'state', answers: {name: 'Force sapée', stacking: 'stack', systemChanges: [{key: 'system.abilities.str.value', type: 'add', value: '-1'}]}}],
+  ['systemRoll', {pathId: 'systemRoll', answers: {name: 'Attaque dnd5e', hook: 'dnd5e.rollAttack', selfPath: '1.subject', totalPath: '0.0.total', itemPath: '1.subject.item', item: 'Lame sapante',
+    reach: {type: 'systemData', of: 'target', path: 'system.attributes.ac.value', default: {type: 'literal', value: 10}}}}],
   ['errors', {pathId: 'test', answers: {name: '', dice: '1d20+', target: 'fixed'}}]
 ];
 for (const [name, options] of states) {

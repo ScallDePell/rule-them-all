@@ -2,6 +2,11 @@
 
 ## Unreleased
 
+## 1.2.7
+
+- Assistant, **State**: a list of **changes of the game system's data** while the state lasts (data path, mode, value).
+- Assistant, new path **React to a roll of the system** (Game systems): an Event Type following a Foundry hook (`dnd5e.rollAttack`), with where the Actor, the roll total and the item are read, a Condition "only for the item named, when the total reaches a mark" (the target's AC through System data) and the Trigger running the Actions you choose. A dnd5e weapon that saps Strength on a hit is now built with the assistant only.
+
 ## 1.2.6
 
 - **Events from the game system**: an Event Type can follow a **Foundry hook**, such as dnd5e's attack roll (`dnd5e.rollAttack`). You say where the acting Actor and each payload field are in the hook's arguments; the player's targets are the target role. A Trigger on that event runs its Actions on its own: a dnd5e weapon can now apply a Rule Them'All state when its attack hits, with no macro.

@@ -5,6 +5,7 @@
    RTA.Assistant.Path.<path>.Text.<key> for the names a path gives its own entries. No game rule is written here. */
 import {pathKey} from "./assistant-engine.mjs";
 import {readableId} from "./identity.mjs";
+import {SYSTEM_CHANGE_TYPES} from "./system-changes-contract.mjs";
 
 export const ASSISTANT_GROUPS = Object.freeze(["core", "systems", "bricks"]);
 /** Names every path may give its entries: RTA.Assistant.Text.<key>. */
@@ -650,6 +651,12 @@ const state = {
       {id: "operation", kind: "choice", options: ["subtract", "add", "multiply", "set", "min", "max"], default: "subtract"},
       {id: "amount", kind: "formula", default: 1}
     ]},
+    // While it is active, a Foundry Active Effect changes the game system's own data (dnd5e's Strength).
+    {id: "systemChanges", kind: "list", required: false, fields: [
+      {id: "key", kind: "text"},
+      {id: "type", kind: "choice", options: SYSTEM_CHANGE_TYPES, default: "add"},
+      {id: "value", kind: "text"}
+    ]},
     {id: "role", kind: "choice", options: ROLES, default: "target"},
     {id: "applyAction", kind: "boolean", default: true},
     {id: "removeAction", kind: "boolean", default: true},
@@ -658,7 +665,9 @@ const state = {
   texts: ["Type", "Active", "Apply", "Remove", "Modifier"],
   build(ctx) {
     const v = ctx.values, name = ctx.name(v.name), id = ctx.id(v.name);
-    ctx.add("definitions", {id, definitionTypeId: ctx.entry(v.type).id, nameKey: name, capabilities: ["state"], ...described(v)});
+    const systemChanges = (v.systemChanges ?? []).filter(row => row.key?.trim()).map(row => ({key: row.key.trim(), type: row.type,
+      value: row.value.trim() !== "" && Number.isFinite(Number(row.value)) ? Number(row.value) : row.value.trim()}));
+    ctx.add("definitions", {id, definitionTypeId: ctx.entry(v.type).id, nameKey: name, capabilities: ["state"], ...(systemChanges.length ? {systemChanges} : {}), ...described(v)});
     if (v.modifiers?.length) {
       // While the state is active, however it was applied, its Modifiers change the values they name.
       const active = conditionOf(ctx, ref(out(id, "state", "state.active")), ctx.t("Active", {name}));
@@ -687,6 +696,39 @@ function durationOf(ctx, v) {
   const name = ctx.shared(`Duration.${v.duration}`, {amount: v.amount});
   return ctx.add("durations", {id: ctx.newId(name), nameKey: name, ...rule});
 }
+
+/* A roll or another moment of the game system, heard through a Foundry hook (dnd5e.rollAttack): an Event Type that
+   follows the hook, and a Trigger running Actions when the right item reaches its mark (a hit against the target's AC). */
+const systemRoll = {
+  id: "systemRoll", group: "systems", keywords: ["system", "hook", "dnd5e", "foundry", "roll", "attack", "hit", "weapon", "on hit", "event"], produces: {collection: "eventTypes"},
+  questions: [
+    nameQuestion("systemRoll", "Event"),
+    {id: "hook", kind: "text"},
+    {id: "who", kind: "choice", options: ["local", "gm"], default: "local"},
+    {id: "selfPath", kind: "text", required: false},
+    {id: "totalPath", kind: "text", required: false},
+    {id: "itemPath", kind: "text", required: false},
+    {id: "item", kind: "text", required: false, visible: v => Boolean(v.itemPath?.trim())},
+    {id: "reach", kind: "formula", required: false, visible: v => Boolean(v.totalPath?.trim())},
+    {id: "actions", kind: "entries", min: 1, accept: {collection: "actions"}},
+    descriptionQuestion
+  ],
+  texts: ["Event", "Total", "Item", "When", "Trigger"],
+  build(ctx) {
+    const v = ctx.values, name = ctx.name(v.name), id = ctx.id(v.name), path = text => String(text ?? "").trim();
+    const field = (key, valueType) => ({name: ctx.t(key), valueType, required: false, nullable: false});
+    const payloadFields = {...(path(v.totalPath) ? {total: field("Total", "number")} : {}), ...(path(v.itemPath) ? {item: field("Item", "string")} : {})};
+    const fieldPaths = {...(path(v.totalPath) ? {total: path(v.totalPath)} : {}), ...(path(v.itemPath) ? {item: path(v.itemPath)} : {})};
+    ctx.add("eventTypes", {id, nameKey: name, payloadFields, hook: {name: path(v.hook), who: v.who, selfPath: path(v.selfPath), fieldPaths}, ...described(v)});
+    // Only for the item named, and only when the total reaches the mark: one Condition holding both.
+    const parts = [...(payloadFields.item && path(v.item) ? [{type: "eq", left: ctxNode("event.payload.item"), right: lit(path(v.item))}] : []),
+      ...(payloadFields.total && v.reach ? [{type: "gte", left: ctxNode("event.payload.total"), right: v.reach}] : [])];
+    const conditionRefs = parts.length ? [conditionOf(ctx, parts.length === 1 ? parts[0] : {type: "and", args: parts}, ctx.t("When", {name}))] : [];
+    const trigger = ctx.t("Trigger", {name});
+    ctx.add("triggers", {id: ctx.newId(trigger), nameKey: trigger, eventTypeId: id, conditionRefs, actionRefs: v.actions.map(answer => ctx.entry(answer).id), holder: "actor", mode: "automatic", actingRole: "self"});
+    return {collection: "eventTypes", id};
+  }
+};
 
 const cost = {
   id: "cost", group: "core", keywords: ["cost", "ammunition", "ammo", "mana", "spend", "uses"], produces: {collection: "actions"},
@@ -1158,7 +1200,7 @@ const permission = {
 
 export const ASSISTANT_PATHS = Object.freeze([
   characteristics, skills, derivedValue, bounds, resource, testPath, attack, state, cost, consumable, level, encumbrance,
-  advantage, damageTypes, power, threshold, rest, initiative, creation, progression, scale, contentType, permission,
+  advantage, damageTypes, power, threshold, rest, systemRoll, initiative, creation, progression, scale, contentType, permission,
   definitionType, value, parameterBrick, formulaBrick, conditionBrick, rollBrick, outcomeBrick, durationBrick, effectBrick, actionBrick, counterBrick, triggerBrick, tableBrick, dieBrick
 ]);
 export const getAssistantPath = pathId => ASSISTANT_PATHS.find(path => path.id === pathId) ?? null;
