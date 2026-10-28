@@ -20,10 +20,11 @@ node qa/architecture-audit.mjs --strict
 node qa/release-readiness.mjs --strict
 ```
 
-Three test files catch most incomplete changes:
+Four test files catch most incomplete changes:
 
 - `tests/contract-completeness.test.mjs`: a new reference that is not a dependency, an object kind that does not resolve to its collection, a Formula node missing from the visual editor, a missing label, a field lost by export/import or changed by the repair.
 - `tests/public-api-contract.test.mjs`: a stable member, method or hook that disappeared or is undocumented.
+- `tests/assistant-docs.test.mjs`: an assistant path or question added, renamed, removed or changed (label, option, default, display condition) without the same change in the assistant guides, English and French (`docs/assistant-guide.md`, `docs/assistant-guide.fr.md`). Any change to an existing path updates the guides in the same commit; `node qa/assistant-doc-skeleton.mjs <en|fr>` shows what to redo.
 - `tests/multiclient-foundry.test.mjs`: behaviour between several Foundry clients (a GM and two players over a simulated server, each running the real module): relayed writes, permissions, concurrent writes, combat hooks. Add a scenario there when a change concerns what one client does for another.
 
 For interface changes, also render the windows in Chromium (see docs/architecture.md §8): `qa/configurator-render.mjs`, then `qa/dynamic-markup-audit.mjs` and `qa/layout-audit.mjs`, or `qa/sheet-render.mjs` and `qa/sheet-editor-flow.mjs` for sheets.
@@ -86,7 +87,8 @@ An assistant path (the Assistant button at the top of a Ruleset in the Configura
 2. **Build only by adding**: `ctx.add(collection, entry)` creates, `ctx.append(collection, id, field, items)` adds to a list of an existing entry, `ctx.fill(...)` sets a field still empty. Nothing existing is removed, and nothing is changed except by `ctx.replace(collection, id, field, value)` on a field listed in `REPLACEABLE_FIELDS` (`assistant-engine.mjs`), by a path that declares it in `changes`; the plan lists it in `changed`. Use `formulaOf`/`conditionOf` for expressions (an identical one is used again; a Formula node is that Formula) and `operandOf` for operands. No game rule and no default dice or difficulty in the code: names come from `ctx.t(key)` (`Text.<key>`, listed in `texts`) and `ctx.shared(key)`.
 3. **Its words**: `RTA.Assistant.Path.<id>.Title`, `.Summary`, `.Limits`, `.Q.<question>.Label`, `.Option.<value>`, list fields under `.Field.<field>`, and `.Text.<key>`, in both languages. `assistantPathTextKeys` lists them; `tests/assistant.test.mjs` fails on a missing one. Give it a Font Awesome icon in `ASSISTANT_PATH_ICONS` (`src/configurator/assistant-view.mjs`); its card takes the color of the section of what it `produces`.
 4. **Tests**: a test in `tests/assistant.test.mjs` that applies the path and plays what it built in the engine; for the window, `qa/assistant-flow.mjs` (browser) and `qa/assistant-render.mjs`.
-5. **Acceptance**: `Rulesets/rwf/outils/rebuild-with-assistant.mjs` rebuilds every rule of the RWF Ruleset with the paths only and compares each entry; a new field of a rule contract that the paths cannot set shows there.
+5. **Its documentation**, in the same change: a section in [docs/assistant-guide.md](docs/assistant-guide.md) (English) and [docs/assistant-guide.fr.md](docs/assistant-guide.fr.md) (French), with what the path builds, an example and one table row per question explaining its role and every option. `node qa/assistant-doc-skeleton.mjs en` (then `fr`) prints the sections to write or redo, with the labels, kinds, defaults and display conditions already filled from the interface words. `tests/assistant-docs.test.mjs` fails until both guides match the paths.
+6. **Acceptance**: `Rulesets/rwf/outils/rebuild-with-assistant.mjs` rebuilds every rule of the RWF Ruleset with the paths only and compares each entry; a new field of a rule contract that the paths cannot set shows there.
 
 ## Releases
 

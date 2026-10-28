@@ -2,6 +2,11 @@
 
 ## Unreleased
 
+## 1.2.8
+
+- Documentation: the **Ruleset assistant guide**, in English (`docs/assistant-guide.md`) and French (`docs/assistant-guide.fr.md`): how the assistant works, the kinds of questions, the preview and its errors, the module's events, then every path with what it builds, an example, and every question with its label, kind, default, when it shows, what it is for and each option. Linked from the README and the GM guide.
+- Checks: `tests/assistant-docs.test.mjs` fails when an assistant path or question is added, changed or removed without the same change in both guides; `qa/assistant-doc-skeleton.mjs` prints the sections to redo. CONTRIBUTING.md and docs/architecture.md say so.
+
 ## 1.2.7
 
 - Assistant, **State**: a list of **changes of the game system's data** while the state lasts (data path, mode, value).

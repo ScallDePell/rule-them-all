@@ -41,6 +41,7 @@ Enable the module in your world. Then open **Game Settings → Configure Setting
 The documentation is in French for now:
 
 - [GM guide](docs/gm-guide.md): installing, building a Ruleset, publishing it, sheets, character creation and play.
+- [Ruleset assistant guide](docs/assistant-guide.md) ([en français](docs/assistant-guide.fr.md)): every assistant path and every question, what it is for and what it builds.
 - [Configuration examples](docs/configuration-examples.md), drawn from well-known games.
 - [Architecture](docs/architecture.md), for contributors, with the public API other modules may rely on.
 - [Contributing](CONTRIBUTING.md): how to make the common changes (a Formula node, an Effect operation, a sheet block, a reference) and which checks to run.

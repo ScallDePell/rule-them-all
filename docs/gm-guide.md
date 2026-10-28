@@ -115,6 +115,8 @@ The **Assistant** button, at the top of the Ruleset next to **Import a part…**
 
 Answer the questions on one page. A question that needs an entry lets you pick an existing one or **create a new one** right there, with its own questions. The **preview** lists what will be created, reused, completed, filled and changed, with any error on its question and what the new entries still lack before publishing. **Apply** writes everything at once. The assistant never removes anything: it adds entries, adds items to an existing entry's lists (a cost to an Action, a step to a creation) and fills fields still empty. Only the **Bounds of a value** path changes an existing setting, the minimum or maximum of a Definition Type or of some Definitions, and the preview shows it as "before → after". With **Only when**, the new bound applies in that case only (for example the Condition "Kind of Actor: Played by a player (PC)") and the old bound stays for everyone else. The id of a new entry comes from its name; Action and Test inputs, fields and creation steps also show an id box, for an id that formulas refer to. Then open what was created, or **Try the rules** on it.
 
+Every path and every question is described in the [Ruleset assistant guide](assistant-guide.md) ([en français](assistant-guide.fr.md)).
+
 A companion module may add its own panel at the top of the assistant (for example a helper that fills a path's answers for you). It only fills the form: you still read the preview and click **Apply**.
 
 ### Tools
