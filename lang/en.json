@@ -3917,6 +3917,22 @@
       "Disable": "Turn off",
       "FieldActions": "Actions on this field",
       "ActionFailed": "This action of another module failed: {error}"
+    },
+    "SystemChanges": {
+      "Title": "System changes",
+      "Help": "While this state is active on an Actor, a Foundry Active Effect changes the game system's own data (once per stack). Example for dnd5e: system.abilities.str.value, Add, -2.",
+      "Add": "Add a change",
+      "Change": "Change",
+      "Key": "Data path",
+      "Type": "Mode",
+      "Value": "Value",
+      "Types": {
+        "add": "Add",
+        "multiply": "Multiply",
+        "override": "Replace",
+        "upgrade": "Raise to at least",
+        "downgrade": "Lower to at most"
+      }
     }
   }
 }

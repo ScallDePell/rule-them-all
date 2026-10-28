@@ -53,7 +53,7 @@ import {buildTestInputContext,syncTestInputSource} from "./test-input-form.mjs";
 import {dieContext,syncDieFaceCounts} from "./die-form.mjs";
 import {CREATION_STEP_KINDS,SHEET_HEADERS,SHEET_TARGETS,STATE_STACKING} from "./rule-contracts.mjs";
 import {SheetLayoutController} from "./sheet-layout-controller.mjs";
-import {rollVariantContext,extraRollContext,actionInputContext,chatActionContext,tableRowContext,scaleRowContext,progressionContext} from "./rule-cards-form.mjs";
+import {systemChangeContext,rollVariantContext,extraRollContext,actionInputContext,chatActionContext,tableRowContext,scaleRowContext,progressionContext} from "./rule-cards-form.mjs";
 import {syncCard} from "./card-form.mjs";
 import {moduleLanguage} from "../core/module-language.mjs";
 /** The number fields of the Content Types, as Effect targets: the field of the Content used (a weapon's ammunition). */
@@ -271,6 +271,7 @@ export class ConfiguratorEntryEditor extends ConfiguratorWindow {
       isCreationSystem:this.#kind==="creationSystem",creationStepRows:this.#kind==="creationSystem"?(data.steps??[]).map(step=>({html:this.#creationStepHTML(step,data.steps)})):[],isGeneric:false,isProgressionSystem:this.#kind==="progressionSystem",isModifier:this.#kind==="modifier",isDuration:this.#kind==="duration",
       ...(this.#kind==="modifier"?modifierFormContext(data,{valueTargetChoices:referenceChoices.filter(x=>parseRefToken(x.token).capabilityId==="value").map(x=>({...x,selected:x.token===targetToken}))}):{}),
       ...(this.#kind==="duration"?durationFormContext(data,{eventTypes,conditions,withColors}):{}),
+      ...(this.#kind==="definition"&&capabilityChoices.some(cap=>cap.id==="state"&&cap.permitted)?systemChangeContext(data,{neutral:selectColorsAttribute([RTA_NEUTRAL_COLOR])}):{}),
       ...(this.#kind==="roll"?rollVariantContext(data,{conditions,withColors}):{}),
       ...(this.#kind==="test"?extraRollContext(data,{conditions,rolls,withColors,neutral:selectColorsAttribute([RTA_NEUTRAL_COLOR])}):{}),
       ...(this.#kind==="action"?actionInputContext(data,{definitionTypes:selectableDefinitionTypes,withColors,neutral:selectColorsAttribute([RTA_NEUTRAL_COLOR])}):{}),

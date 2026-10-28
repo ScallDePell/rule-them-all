@@ -18,6 +18,7 @@ import {createModuleEventQueue} from "./src/runtime/module-event-queue.mjs";
 import {registerRulesetDice} from "./src/runtime/foundry-dice.mjs";
 import {installInitiative, installInitiativePasses, rerollEachRound} from "./src/runtime/foundry-initiative.mjs";
 import {installDefeated} from "./src/runtime/foundry-defeated.mjs";
+import {installSystemChanges} from "./src/runtime/foundry-system-changes.mjs";
 import {FoundryRuntimeAdapter} from "./src/runtime/foundry-runtime-adapter.mjs";
 import {actionSummary, registerRulesetSheets, repairSheetChoices, translator} from "./src/runtime/foundry-sheets.mjs";
 import {resolveRuntimeRuleset} from "./src/runtime/runtime-contracts.mjs";
@@ -83,6 +84,8 @@ Hooks.once("init", () => {
   installInitiativePasses(CONFIG.Combat.documentClass, () => game.ruleThemAll?.runtime);
   // A Ruleset's "defeated" Condition marks its combatants defeated in the tracker (and the token's status) while it holds.
   installDefeated(() => game.ruleThemAll?.runtime);
+  // States with system changes (dnd5e's Strength -2) keep an Active Effect on their Actor while they are active.
+  installSystemChanges(() => game.ruleThemAll?.runtime);
   // The Ruleset's sheets (or AUTO ones), offered for every Actor and Item type next to the game system's.
   rulesetSheets = registerRulesetSheets();
   Hooks.callAll("ruleThemAllInit", game.ruleThemAll);

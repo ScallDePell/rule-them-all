@@ -16,7 +16,7 @@ import {collectTemplateAcquisitions} from './content-template-form.mjs';
 import {collectDefinitionSlots, collectValueBounds} from './slot-form.mjs';
 import {collectTestInputs} from './test-input-form.mjs';
 import {collectDie} from './die-form.mjs';
-import {collectRollVariants,collectExtraRolls,collectActionInputs,collectChatActions,collectTableRows,collectScaleRows,collectProgression} from './rule-cards-form.mjs';
+import {collectSystemChanges,collectRollVariants,collectExtraRolls,collectActionInputs,collectChatActions,collectTableRows,collectScaleRows,collectProgression} from './rule-cards-form.mjs';
 /** An Effect's target: a Definition output, or a number field of the Content used ("contentField|<id>"). */
 const effectTarget=token=>String(token??"").startsWith("contentField|")?{targetRef:null,targetContentField:decodeURIComponent(String(token).slice("contentField|".length))}:{targetRef:parseRefToken(token),targetContentField:null};
 /** Initiative passes from the Ruleset form: a Formula giving each combatant's passes, else a step; none while both are empty. */
@@ -106,7 +106,7 @@ export function collectEntryData(kind,{fd,current,bool,checkedIds,queryOne,query
     if(kind==="definition"){
       const name=String(fd.get("nameKey")??"").trim(),key=current.key||slug(name)||uid("definition"),capabilities=[];
       for(const cap of capabilityTypes)if(bool(`cap:${cap.id}`))capabilities.push(cap.id);
-      return{...current,key,nameKey:name,descriptionKey:String(fd.get("descriptionKey")??""),enabled:bool("enabled"),capabilities,data:collectDefinitionData(queryAll("[data-definition-field]")),slots:collectDefinitionSlots(queryAll,current),tags:checkedIds("tags"),scaleRef:String(fd.get("scaleRef")??"")||null,valueBounds:collectValueBounds({querySelector:queryOne}),presentationProfile:readPresentationRows(queryAll("[data-presentation-key]"))};
+      return{...current,key,nameKey:name,descriptionKey:String(fd.get("descriptionKey")??""),enabled:bool("enabled"),capabilities,data:collectDefinitionData(queryAll("[data-definition-field]")),slots:collectDefinitionSlots(queryAll,current),tags:checkedIds("tags"),scaleRef:String(fd.get("scaleRef")??"")||null,valueBounds:collectValueBounds({querySelector:queryOne}),systemChanges:capabilities.includes("state")?collectSystemChanges(queryAll):undefined,presentationProfile:readPresentationRows(queryAll("[data-presentation-key]"))};
     }
     if(kind==="parameter"){const vt=String(fd.get("valueType")??"number"),value=parseEditorValue(vt,"one",false,fd.get("value")??"");return{...current,nameKey:String(fd.get("nameKey")??"").trim(),descriptionKey:String(fd.get("descriptionKey")??""),enabled:bool("enabled"),valueType:vt,value,scope:"ruleset",tags:checkedIds("tags")};}
     if(kind==="formula"){const fallback=json(fd.get("expressionJson"),{type:"literal",value:0});return{...current,nameKey:String(fd.get("nameKey")??"").trim(),descriptionKey:String(fd.get("descriptionKey")??""),enabled:bool("enabled"),resultType:String(fd.get("resultType")??"number"),expression:collectFormulaExpression(fallback),tags:checkedIds("tags")};}

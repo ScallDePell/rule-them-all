@@ -4,6 +4,7 @@ import {serveRuntimeRelay} from "./runtime-relay.mjs";
 import {projectSheet} from "./sheet-projection.mjs";
 import {describeShared, setSharedValue} from "./shared-resources.mjs";
 import {tokenBarAttributes, tokenBarValue} from "./token-bars.mjs";
+import {systemChangeEffects} from "./system-changes.mjs";
 
 /** relay: {request(method,args)}; a write this client cannot make on a Document goes to the GM client. */
 export function createRuntimeAPI(configurator,{adapter=new FoundryRuntimeAdapter(),hooks=globalThis.Hooks,rulesetSource="published",relay=null}={}){
@@ -61,6 +62,8 @@ export function createRuntimeAPI(configurator,{adapter=new FoundryRuntimeAdapter
     tokenBarAttributes:versionId=>{try{return tokenBarAttributes(engine.ruleset(versionId));}catch{return [];}},
     tokenBarValue:(versionId,ref,attribute)=>tokenBarValue(engine,versionId,ref,attribute),
     describeContainer:ref=>adapter.describe(ref),
+    /** The Active Effects the container's active states ask of the game system (Definition.systemChanges). */
+    systemChanges:async ref=>{const state=await engine.getContainerState(ref);if(!state?.rulesetVersionId)return [];try{return systemChangeEffects(engine.ruleset(state.rulesetVersionId),state);}catch{return [];}},
     getLedger:ref=>engine.getLedger(ref),
     compensate:write("compensate"),
     acquire:write("acquire"),

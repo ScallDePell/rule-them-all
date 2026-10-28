@@ -3917,6 +3917,22 @@
       "Disable": "Désactiver",
       "FieldActions": "Actions sur ce champ",
       "ActionFailed": "Cette action d'un autre module a échoué : {error}"
+    },
+    "SystemChanges": {
+      "Title": "Changements du système",
+      "Help": "Tant que cet État est actif sur un Acteur, un Active Effect Foundry modifie les données propres au système de jeu (une fois par cumul). Exemple pour dnd5e : system.abilities.str.value, Ajouter, -2.",
+      "Add": "Ajouter un changement",
+      "Change": "Changement",
+      "Key": "Chemin de la donnée",
+      "Type": "Mode",
+      "Value": "Valeur",
+      "Types": {
+        "add": "Ajouter",
+        "multiply": "Multiplier",
+        "override": "Remplacer",
+        "upgrade": "Monter au moins à",
+        "downgrade": "Descendre au plus à"
+      }
     }
   }
 }

@@ -66,6 +66,7 @@ Working with cards:
 ### Definitions
 - **Definition Types**: the game's families (attributes, skills, resources, conditions…). A type sets what its Definitions can do (hold a value, a pool, a state…), and can carry **value bounds** (a lowest and highest value, either fixed or computed by a Formula).
 - **Definitions**: each element of a family (Strength, Climbing, Hit Points…). A Definition can override its type's bounds, and can use a **Description scale**.
+- **System changes** (Definitions with a state): while the state is active on an Actor, it changes the game system's own data through a Foundry Active Effect, once per stack. Each row is a data path, a mode (Add, Multiply, Replace, Raise to at least, Lower to at most) and a value. For example, in a dnd5e world, a "Weakened" state with `system.abilities.str.value`, Add, `-2` lowers the Strength shown and used by the dnd5e sheet. Apply the state with an Action (a weapon's attack, on its target); the effect goes away when the state ends or is removed. The connected GM's client creates and removes these effects: don't edit them by hand.
 
 ### Content
 - **Content Types**: weapons, powers, backgrounds, equipment, creatures… **Foundry storage** sets whether a Content becomes a Foundry **Item** or **Actor**. **Availability** is a Condition: while it's false, the Actions of a Content of this type can't be used.
@@ -236,6 +237,7 @@ During creation, the bonuses and penalties from each step add up before the valu
 - A **Progression System** block shows what the Actor can buy (current and target level, cost, currency spent) with a **Buy** button for each purchase, followed by its milestones and the **Apply the milestones reached** button. Players buy for themselves. When a Ruleset permission lets a player buy for an Actor they don't own, the purchase goes through the connected GM. An observer sees the costs but not the buttons.
 - **Token bars** can show a Ruleset pool that has a maximum, or a value with a highest bound: in the token configuration, pick it from the "Rule Them'All" group (its attribute is `rta.<definition>`). The bars update on their own. They're read-only on the token: change them from the sheet or with an Action.
 - **World time** makes timed states and modifiers expire.
+- A state with **system changes** puts an Active Effect named after it on its Actor while it is active (the connected GM's client keeps them in step).
 
 ### Combat
 Set combat up in **General → Edit Ruleset → Combat and shared resources**:

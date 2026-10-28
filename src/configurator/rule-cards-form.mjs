@@ -3,6 +3,7 @@
 import {collectCards, choicesFor, cardInteger} from "./card-form.mjs";
 import {parseTypedText} from "./test-input-form.mjs";
 import {refToken, parseRefToken} from "./reference-token.mjs";
+import {SYSTEM_CHANGE_TYPES} from "./system-changes-contract.mjs";
 
 const named = (kind, entries, withColors) => entries.map(entry => ({id: entry.id, label: entry.nameKey, ...withColors(kind, entry)}));
 
@@ -146,4 +147,19 @@ export function chatActionContext(data, {actions = [], withColors, neutral = ""}
 }
 export function collectChatActions(queryAll) {
   return collectCards(queryAll, "chatAction").map(card => ({actionRef: card.actionRef ?? "", who: card.who || "self"}));
+}
+
+/** State Definition: one card per change of the game system's data while the state is active (Definition.systemChanges). */
+export function systemChangeContext(data, {neutral = ""} = {}) {
+  const row = (change = {}) => ({key: change.key ?? "", value: change.value === undefined ? "" : String(change.value),
+    types: SYSTEM_CHANGE_TYPES.map(id => ({id, labelKey: `RTA.SystemChanges.Types.${id}`, colors: neutral, selected: id === (change.type ?? "add")}))});
+  return {systemChanges: {rows: (data.systemChanges ?? []).map(row), blank: row()}};
+}
+/** The cards with a data path, numbers kept as numbers; undefined when there are none. */
+export function collectSystemChanges(queryAll) {
+  const rows = collectCards(queryAll, "systemChange").filter(card => card.key).map(card => {
+    const number = Number(card.value);
+    return {key: card.key, type: card.type || "add", value: card.value !== "" && Number.isFinite(number) ? number : card.value ?? ""};
+  });
+  return rows.length ? rows : undefined;
 }

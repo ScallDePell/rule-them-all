@@ -2,6 +2,10 @@
 
 ## Unreleased
 
+## 1.2.5
+
+- **System changes** for states: a Definition with a state can list changes of the game system's own data (data path, mode, value). While the state is active on an Actor, a Foundry Active Effect makes them, once per stack, and it is removed when the state ends. In a dnd5e world, a weapon whose attack applies "Weakened" (`system.abilities.str.value`, Add, `-2`) to its target lowers the target's dnd5e Strength. The connected GM's client keeps the effects in step.
+
 ## 1.2.4
 
 - **Kind of Actor** in Formulas and Conditions (visual builder and engine, node `actor`): whether the Actor of a role is played by a player (a PC), is of one of the game system's Actor types, or was made from an Actor Content of a Content Type. A rule can now differ between PCs and NPCs.
